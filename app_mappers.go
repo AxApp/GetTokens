@@ -700,6 +700,47 @@ func mapRateLimitRule(item wailsapp.RateLimitRule) RateLimitRule {
 	}
 }
 
+func mapProjectCandidatePoolRuleToCore(input ProjectCandidatePoolRule) wailsapp.ProjectCandidatePoolRule {
+	return wailsapp.ProjectCandidatePoolRule{
+		ID:                   input.ID,
+		Channel:              input.Channel,
+		ProjectKey:           input.ProjectKey,
+		ProjectName:          input.ProjectName,
+		ProjectKeySource:     input.ProjectKeySource,
+		ProjectKeyConfidence: input.ProjectKeyConfidence,
+		Enabled:              input.Enabled,
+		AllowAccountIDs:      append([]string(nil), input.AllowAccountIDs...),
+		CreatedAt:            input.CreatedAt,
+		UpdatedAt:            input.UpdatedAt,
+	}
+}
+
+func mapProjectCandidatePoolRules(items []wailsapp.ProjectCandidatePoolRule) []ProjectCandidatePoolRule {
+	if len(items) == 0 {
+		return []ProjectCandidatePoolRule{}
+	}
+	out := make([]ProjectCandidatePoolRule, 0, len(items))
+	for _, item := range items {
+		out = append(out, mapProjectCandidatePoolRule(item))
+	}
+	return out
+}
+
+func mapProjectCandidatePoolRule(item wailsapp.ProjectCandidatePoolRule) ProjectCandidatePoolRule {
+	return ProjectCandidatePoolRule{
+		ID:                   item.ID,
+		Channel:              item.Channel,
+		ProjectKey:           item.ProjectKey,
+		ProjectName:          item.ProjectName,
+		ProjectKeySource:     item.ProjectKeySource,
+		ProjectKeyConfidence: item.ProjectKeyConfidence,
+		Enabled:              item.Enabled,
+		AllowAccountIDs:      append([]string(nil), item.AllowAccountIDs...),
+		CreatedAt:            item.CreatedAt,
+		UpdatedAt:            item.UpdatedAt,
+	}
+}
+
 func mapRateLimitState(input *wailsapp.RateLimitState) *RateLimitState {
 	if input == nil {
 		return &RateLimitState{Sources: []RateLimitSourceState{}, Rules: []RateLimitRuleState{}}
@@ -1223,29 +1264,35 @@ func mapSessionManagementSnapshot(result *wailsapp.SessionManagementSnapshot) *S
 		sessions := make([]SessionManagementSessionRecord, 0, len(project.Sessions))
 		for _, session := range project.Sessions {
 			sessions = append(sessions, SessionManagementSessionRecord{
-				ID:                  session.ID,
-				SessionID:           session.SessionID,
-				ProjectID:           session.ProjectID,
-				ProjectName:         session.ProjectName,
-				Title:               session.Title,
-				Status:              session.Status,
-				Archived:            session.Archived,
-				MessageCount:        session.MessageCount,
-				RoleSummary:         session.RoleSummary,
-				StartedAt:           session.StartedAt,
-				UpdatedAt:           session.UpdatedAt,
-				FileLabel:           session.FileLabel,
-				Summary:             session.Summary,
-				Preview:             session.Preview,
-				Topic:               session.Topic,
-				CurrentMessageLabel: session.CurrentMessageLabel,
-				Provider:            session.Provider,
-				Model:               session.Model,
+				ID:                   session.ID,
+				SessionID:            session.SessionID,
+				ProjectID:            session.ProjectID,
+				ProjectName:          session.ProjectName,
+				ProjectKey:           session.ProjectKey,
+				ProjectKeySource:     session.ProjectKeySource,
+				ProjectKeyConfidence: session.ProjectKeyConfidence,
+				Title:                session.Title,
+				Status:               session.Status,
+				Archived:             session.Archived,
+				MessageCount:         session.MessageCount,
+				RoleSummary:          session.RoleSummary,
+				StartedAt:            session.StartedAt,
+				UpdatedAt:            session.UpdatedAt,
+				FileLabel:            session.FileLabel,
+				Summary:              session.Summary,
+				Preview:              session.Preview,
+				Topic:                session.Topic,
+				CurrentMessageLabel:  session.CurrentMessageLabel,
+				Provider:             session.Provider,
+				Model:                session.Model,
 			})
 		}
 		projects = append(projects, SessionManagementProjectRecord{
 			ID:                   project.ID,
 			Name:                 project.Name,
+			ProjectKey:           project.ProjectKey,
+			ProjectKeySource:     project.ProjectKeySource,
+			ProjectKeyConfidence: project.ProjectKeyConfidence,
 			ProviderCounts:       cloneProviderCountMap(project.ProviderCounts),
 			SessionCount:         project.SessionCount,
 			ActiveSessionCount:   project.ActiveSessionCount,
@@ -1277,29 +1324,35 @@ func mapSessionManagementSnapshotToCore(input *SessionManagementSnapshot) *wails
 		sessions := make([]wailsapp.SessionManagementSessionRecord, 0, len(project.Sessions))
 		for _, session := range project.Sessions {
 			sessions = append(sessions, wailsapp.SessionManagementSessionRecord{
-				ID:                  session.ID,
-				SessionID:           session.SessionID,
-				ProjectID:           session.ProjectID,
-				ProjectName:         session.ProjectName,
-				Title:               session.Title,
-				Status:              session.Status,
-				Archived:            session.Archived,
-				MessageCount:        session.MessageCount,
-				RoleSummary:         session.RoleSummary,
-				StartedAt:           session.StartedAt,
-				UpdatedAt:           session.UpdatedAt,
-				FileLabel:           session.FileLabel,
-				Summary:             session.Summary,
-				Preview:             session.Preview,
-				Topic:               session.Topic,
-				CurrentMessageLabel: session.CurrentMessageLabel,
-				Provider:            session.Provider,
-				Model:               session.Model,
+				ID:                   session.ID,
+				SessionID:            session.SessionID,
+				ProjectID:            session.ProjectID,
+				ProjectName:          session.ProjectName,
+				ProjectKey:           session.ProjectKey,
+				ProjectKeySource:     session.ProjectKeySource,
+				ProjectKeyConfidence: session.ProjectKeyConfidence,
+				Title:                session.Title,
+				Status:               session.Status,
+				Archived:             session.Archived,
+				MessageCount:         session.MessageCount,
+				RoleSummary:          session.RoleSummary,
+				StartedAt:            session.StartedAt,
+				UpdatedAt:            session.UpdatedAt,
+				FileLabel:            session.FileLabel,
+				Summary:              session.Summary,
+				Preview:              session.Preview,
+				Topic:                session.Topic,
+				CurrentMessageLabel:  session.CurrentMessageLabel,
+				Provider:             session.Provider,
+				Model:                session.Model,
 			})
 		}
 		projects = append(projects, wailsapp.SessionManagementProjectRecord{
 			ID:                   project.ID,
 			Name:                 project.Name,
+			ProjectKey:           project.ProjectKey,
+			ProjectKeySource:     project.ProjectKeySource,
+			ProjectKeyConfidence: project.ProjectKeyConfidence,
 			ProviderCounts:       cloneProviderCountMap(project.ProviderCounts),
 			SessionCount:         project.SessionCount,
 			ActiveSessionCount:   project.ActiveSessionCount,
@@ -1344,24 +1397,27 @@ func mapSessionManagementSessionDetail(result *wailsapp.SessionManagementSession
 	}
 
 	return &SessionManagementSessionDetail{
-		SessionID:           result.SessionID,
-		ProjectID:           result.ProjectID,
-		ProjectName:         result.ProjectName,
-		Title:               result.Title,
-		Status:              result.Status,
-		Archived:            result.Archived,
-		FileLabel:           result.FileLabel,
-		MessageCount:        result.MessageCount,
-		Masked:              result.Masked,
-		CurrentMessageLabel: result.CurrentMessageLabel,
-		RoleSummary:         result.RoleSummary,
-		Topic:               result.Topic,
-		Preview:             result.Preview,
-		Provider:            result.Provider,
-		Model:               result.Model,
-		StartedAt:           result.StartedAt,
-		UpdatedAt:           result.UpdatedAt,
-		Messages:            messages,
+		SessionID:            result.SessionID,
+		ProjectID:            result.ProjectID,
+		ProjectName:          result.ProjectName,
+		ProjectKey:           result.ProjectKey,
+		ProjectKeySource:     result.ProjectKeySource,
+		ProjectKeyConfidence: result.ProjectKeyConfidence,
+		Title:                result.Title,
+		Status:               result.Status,
+		Archived:             result.Archived,
+		FileLabel:            result.FileLabel,
+		MessageCount:         result.MessageCount,
+		Masked:               result.Masked,
+		CurrentMessageLabel:  result.CurrentMessageLabel,
+		RoleSummary:          result.RoleSummary,
+		Topic:                result.Topic,
+		Preview:              result.Preview,
+		Provider:             result.Provider,
+		Model:                result.Model,
+		StartedAt:            result.StartedAt,
+		UpdatedAt:            result.UpdatedAt,
+		Messages:             messages,
 	}
 }
 

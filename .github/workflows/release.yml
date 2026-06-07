@@ -169,10 +169,18 @@ jobs:
       - name: Wails build
         shell: bash
         run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            chmod +x scripts/build-menubar-swiftui.sh
+            scripts/build-menubar-swiftui.sh "${{ matrix.goarch }}"
+          fi
           wails build \
             -platform ${{ matrix.wails-platform }} \
             ${{ matrix.wails-extra || '' }} \
             -ldflags "-X main.Version=${{ github.ref_name }} -X main.ReleaseLabel=${RELEASE_LABEL}"
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            chmod +x scripts/install-menubar-swiftui.sh
+            scripts/install-menubar-swiftui.sh "build/bin/GetTokens.app"
+          fi
 
       - name: Sync macOS bundle version metadata
         if: runner.os == 'macOS'

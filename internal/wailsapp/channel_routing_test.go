@@ -2,6 +2,8 @@ package wailsapp
 
 import (
 	"encoding/json"
+	"io"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -290,6 +292,176 @@ func TestExplainChannelRoutingDropsLegacyProjectModeAndProjectBindings(t *testin
 	}
 }
 
+func TestExplainChannelRoutingProjectCandidatePoolStrictAllowsAccounts(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{ID: "auth-file:a.json", DisplayName: "A", Status: "active", Priority: 0, SupportedFormats: []string{"codex"}},
+		{ID: "auth-file:b.json", DisplayName: "B", Status: "active", Priority: 1, SupportedFormats: []string{"codex"}},
+		{ID: "auth-file:c.json", DisplayName: "C", Status: "active", Priority: 2, SupportedFormats: []string{"codex"}},
+	}
+
+	result := explainChannelRoutingWithProjectCandidatePool(accounts, ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"auth-file:a.json", "auth-file:b.json", "auth-file:c.json"},
+	}, ChannelRoutingExplainInput{
+		ProjectKey:           "workspace:abc",
+		ProjectName:          "GetTokens",
+		ProjectKeySource:     "codex-turn-workspace",
+		ProjectKeyConfidence: "strong",
+		ProjectMatchKeys:     []string{"workspace:abc"},
+	}, nil, []ProjectCandidatePoolRule{{
+		ID:              "rule-gettokens",
+		Channel:         "codex",
+		ProjectKey:      "workspace:abc",
+		ProjectName:     "GetTokens",
+		Enabled:         true,
+		AllowAccountIDs: []string{"auth-file:b.json"},
+	}})
+
+	if result.SelectedAccountID != "auth-file:b.json" {
+		t.Fatalf("SelectedAccountID = %q, want auth-file:b.json", result.SelectedAccountID)
+	}
+	assertCandidateIDs(t, result.Candidates, []string{"auth-file:b.json"})
+	assertFilteredReason(t, result.Filtered, "auth-file:a.json", "project-candidate-pool")
+	assertFilteredReason(t, result.Filtered, "auth-file:c.json", "project-candidate-pool")
+	if result.ProjectCandidatePool == nil ||
+		!result.ProjectCandidatePool.Evaluated ||
+		!result.ProjectCandidatePool.Activated ||
+		result.ProjectCandidatePool.Reason != "project-candidate-pool:matched" ||
+		result.ProjectCandidatePool.RuleID != "rule-gettokens" ||
+		result.ProjectCandidatePool.BeforeCandidateCount != 3 ||
+		result.ProjectCandidatePool.AfterCandidateCount != 1 {
+		t.Fatalf("project candidate pool explain = %#v", result.ProjectCandidatePool)
+	}
+	assertStepContains(t, result.Steps, "project-candidate-pool:matched")
+}
+
+func TestExplainChannelRoutingLoadsProjectCandidatePoolRulesFromManagementAPI(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == "GET" && path == ManagementAPIPrefix+"/accounts":
+				return []byte(`{"accounts":[
+					{"account_key":"auth-file:a.json","kind":"auth-file","title":"a.json","provider":"codex","credential_source":"sidecar-management-api","priority":0,"auth_file":{"source_file_name":"a.json","auth_type":"codex"}},
+					{"account_key":"auth-file:b.json","kind":"auth-file","title":"b.json","provider":"codex","credential_source":"sidecar-management-api","priority":1,"auth_file":{"source_file_name":"b.json","auth_type":"codex"}},
+					{"account_key":"auth-file:c.json","kind":"auth-file","title":"c.json","provider":"codex","credential_source":"sidecar-management-api","priority":2,"auth_file":{"source_file_name":"c.json","auth_type":"codex"}}
+				]}`), 200, nil
+			case method == "GET" && path == ManagementAPIPrefix+"/gettokens/project-candidate-pool-rules":
+				if got := query.Get("channel"); got != "codex" {
+					t.Fatalf("project rule channel = %q, want codex", got)
+				}
+				return []byte(`{"items":[{"id":"rule-workspace-abc","channel":"codex","projectKey":"workspace:abc","projectName":"GetTokens","projectKeySource":"codex-turn-workspace","projectKeyConfidence":"strong","enabled":true,"allowAccountIDs":["auth-file:b.json"]}]}`), 200, nil
+			default:
+				t.Fatalf("unexpected sidecar request: %s %s", method, path)
+			}
+			return nil, 404, nil
+		},
+	}
+	if _, err := app.SaveChannelRoutingConfig(ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"auth-file:a.json", "auth-file:b.json", "auth-file:c.json"},
+	}); err != nil {
+		t.Fatalf("SaveChannelRoutingConfig: %v", err)
+	}
+
+	result, err := app.ExplainChannelRouting(ChannelRoutingExplainInput{
+		Channel:              "codex",
+		ProjectKey:           "workspace:abc",
+		ProjectName:          "GetTokens",
+		ProjectKeySource:     "codex-turn-workspace",
+		ProjectKeyConfidence: "strong",
+		ProjectMatchKeys:     []string{"workspace:abc"},
+	})
+	if err != nil {
+		t.Fatalf("ExplainChannelRouting: %v", err)
+	}
+
+	if result.SelectedAccountID != "auth-file:b.json" {
+		t.Fatalf("SelectedAccountID = %q, want auth-file:b.json", result.SelectedAccountID)
+	}
+	assertCandidateIDs(t, result.Candidates, []string{"auth-file:b.json"})
+	assertFilteredReason(t, result.Filtered, "auth-file:a.json", "project-candidate-pool")
+	assertFilteredReason(t, result.Filtered, "auth-file:c.json", "project-candidate-pool")
+	if result.ProjectCandidatePool == nil ||
+		!result.ProjectCandidatePool.Evaluated ||
+		!result.ProjectCandidatePool.Activated ||
+		result.ProjectCandidatePool.Reason != "project-candidate-pool:matched" ||
+		result.ProjectCandidatePool.RuleID != "rule-workspace-abc" ||
+		result.ProjectCandidatePool.BeforeCandidateCount != 3 ||
+		result.ProjectCandidatePool.AfterCandidateCount != 1 {
+		t.Fatalf("project candidate pool explain = %#v", result.ProjectCandidatePool)
+	}
+	assertStepContains(t, result.Steps, "project-candidate-pool:matched")
+}
+
+func TestExplainChannelRoutingProjectCandidatePoolAmbiguousDoesNotFilter(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{ID: "auth-file:a.json", DisplayName: "A", Status: "active", Priority: 0, SupportedFormats: []string{"codex"}},
+		{ID: "auth-file:b.json", DisplayName: "B", Status: "active", Priority: 1, SupportedFormats: []string{"codex"}},
+	}
+
+	result := explainChannelRoutingWithProjectCandidatePool(accounts, ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"auth-file:a.json", "auth-file:b.json"},
+	}, ChannelRoutingExplainInput{
+		ProjectKeySource:     "codex-turn-workspace",
+		ProjectKeyConfidence: "ambiguous",
+	}, nil, []ProjectCandidatePoolRule{{
+		ID:              "rule-gettokens",
+		Channel:         "codex",
+		ProjectKey:      "workspace:abc",
+		Enabled:         true,
+		AllowAccountIDs: []string{"auth-file:b.json"},
+	}})
+
+	if result.SelectedAccountID != "auth-file:a.json" {
+		t.Fatalf("SelectedAccountID = %q, want auth-file:a.json", result.SelectedAccountID)
+	}
+	assertCandidateIDs(t, result.Candidates, []string{"auth-file:a.json", "auth-file:b.json"})
+	if result.ProjectCandidatePool == nil ||
+		result.ProjectCandidatePool.Evaluated ||
+		result.ProjectCandidatePool.Activated ||
+		result.ProjectCandidatePool.Reason != "project-candidate-pool:not-evaluated:ambiguous-project" {
+		t.Fatalf("project candidate pool explain = %#v", result.ProjectCandidatePool)
+	}
+}
+
+func TestExplainChannelRoutingProjectCandidatePoolNoRouteableAccountFailsClosed(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{ID: "auth-file:a.json", DisplayName: "A", Status: "active", Priority: 0, SupportedFormats: []string{"codex"}},
+	}
+
+	result := explainChannelRoutingWithProjectCandidatePool(accounts, ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"auth-file:a.json"},
+	}, ChannelRoutingExplainInput{
+		ProjectKey:       "workspace:abc",
+		ProjectMatchKeys: []string{"workspace:abc"},
+	}, nil, []ProjectCandidatePoolRule{{
+		ID:              "rule-gettokens",
+		Channel:         "codex",
+		ProjectKey:      "workspace:abc",
+		Enabled:         true,
+		AllowAccountIDs: []string{"auth-file:missing.json"},
+	}})
+
+	if result.SelectedAccountID != "" {
+		t.Fatalf("SelectedAccountID = %q, want empty fail-closed selection", result.SelectedAccountID)
+	}
+	assertCandidateIDs(t, result.Candidates, []string{})
+	assertFilteredReason(t, result.Filtered, "auth-file:a.json", "project-candidate-pool-no-routeable-account")
+	if result.ProjectCandidatePool == nil ||
+		!result.ProjectCandidatePool.Evaluated ||
+		!result.ProjectCandidatePool.Activated ||
+		result.ProjectCandidatePool.Reason != "project-candidate-pool:no-routeable-account" {
+		t.Fatalf("project candidate pool explain = %#v", result.ProjectCandidatePool)
+	}
+}
+
 func TestExplainChannelRoutingBalancedUsesActiveSessionsThenSortOrder(t *testing.T) {
 	accounts := []accountsdomain.AccountRecord{
 		{ID: "auth-file:a.json", DisplayName: "A", Status: "active", Priority: 0, SupportedFormats: []string{"codex"}},
@@ -445,7 +617,13 @@ func TestChannelRouteEventLedgerStoresRedactedShadowSummary(t *testing.T) {
 			Diff:              true,
 		},
 	}
-	if err := appendChannelRouteEvent(ChannelRoutingExplainInput{Channel: "codex"}, result); err != nil {
+	if err := appendChannelRouteEvent(ChannelRoutingExplainInput{
+		Channel:              "codex",
+		ProjectKey:           "workspace:abc",
+		ProjectName:          "GetTokens",
+		ProjectKeySource:     "codex-turn-workspace",
+		ProjectKeyConfidence: "strong",
+	}, result); err != nil {
 		t.Fatalf("appendChannelRouteEvent: %v", err)
 	}
 
@@ -463,6 +641,12 @@ func TestChannelRouteEventLedgerStoresRedactedShadowSummary(t *testing.T) {
 	}
 	if event.CandidateCount != 1 || event.FilteredCount != 1 {
 		t.Fatalf("event summary mismatch: %#v", event)
+	}
+	if event.ProjectKey != "workspace:abc" || event.ProjectName != "GetTokens" {
+		t.Fatalf("event project identity mismatch: %#v", event)
+	}
+	if event.ProjectKeySource != "codex-turn-workspace" || event.ProjectKeyConfidence != "strong" {
+		t.Fatalf("event project identity metadata mismatch: %#v", event)
 	}
 	body, err := json.Marshal(event)
 	if err != nil {

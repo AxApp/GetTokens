@@ -82,6 +82,7 @@ import { emptyApiKeyForm } from "./model/accountConfig";
 import {
   normalizeApiKeyConfigModels,
   normalizeCurlVariables,
+  normalizeFormatBaseUrls as normalizeDetailFormatBaseUrls,
   type ApiKeyConfigDraft,
 } from "./model/accountDetailConfig";
 import type { AccountImportPayloadItem } from "./model/accountTransfer";
@@ -781,6 +782,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
       const nextAPIKey = draft.apiKey.trim();
       const nextBaseURL = draft.baseUrl.trim();
+      const nextFormatBaseURLs = normalizeDetailFormatBaseUrls(draft.formatBaseUrls);
       const nextPrefix = draft.prefix.trim();
       const nextQuotaCurl = draft.quotaCurl.trim();
       const nextBillingCurl = draft.billingCurl.trim();
@@ -800,25 +802,24 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         return;
       }
 
-      const localPatch: Partial<AccountRecord> = {
-        displayName: nextLabel || selectedAccount.displayName,
-        provider: nextLabel || selectedAccount.provider,
-        apiKey: nextAPIKey,
-        apiKeys: nextAPIKeys,
-        baseUrl: nextBaseURL,
-        prefix: nextPrefix,
-        quotaCurl: nextQuotaCurl,
-        quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
-        billingCurl: nextBillingCurl,
-        billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
-        platformCookie: nextPlatformCookie,
-        curlVariables: nextCurlVariables,
-        proxyUrl: nextProxyURL,
-        models: nextModels,
-      };
-
       if (!hasWailsAppBindings()) {
-        patchAccountLocally(selectedAccount.id, localPatch);
+        patchAccountLocally(selectedAccount.id, {
+          displayName: nextLabel || selectedAccount.displayName,
+          provider: nextLabel || selectedAccount.provider,
+          apiKey: nextAPIKey,
+          apiKeys: nextAPIKeys,
+          baseUrl: nextBaseURL,
+          formatBaseUrls: nextFormatBaseURLs,
+          prefix: nextPrefix,
+          quotaCurl: nextQuotaCurl,
+          quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+          billingCurl: nextBillingCurl,
+          billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+          platformCookie: nextPlatformCookie,
+          curlVariables: nextCurlVariables,
+          proxyUrl: nextProxyURL,
+          models: nextModels,
+        });
         return;
       }
 
@@ -832,6 +833,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                 currentName: selectedAccount.id.startsWith("acct_") ? selectedAccount.id : selectedAccount.provider,
                 name: nextLabel || selectedAccount.provider,
                 baseUrl: nextBaseURL,
+                formatBaseUrls: nextFormatBaseURLs,
                 prefix: nextPrefix,
                 proxyUrl: nextProxyURL,
                 apiKey: nextAPIKey,
@@ -849,7 +851,23 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               }),
             ),
         );
-        patchAccountLocally(selectedAccount.id, localPatch);
+        patchAccountLocally(selectedAccount.id, {
+          displayName: nextLabel || selectedAccount.displayName,
+          provider: nextLabel || selectedAccount.provider,
+          apiKey: nextAPIKey,
+          apiKeys: nextAPIKeys,
+          baseUrl: nextBaseURL,
+          formatBaseUrls: nextFormatBaseURLs,
+          prefix: nextPrefix,
+          quotaCurl: nextQuotaCurl,
+          quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+          billingCurl: nextBillingCurl,
+          billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+          platformCookie: nextPlatformCookie,
+          curlVariables: nextCurlVariables,
+          proxyUrl: nextProxyURL,
+          models: nextModels,
+        });
         await loadAccounts({ refreshSupplementalData: false });
       } catch (error) {
         console.error(error);

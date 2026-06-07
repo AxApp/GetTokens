@@ -1,5 +1,7 @@
 package wailsapp
 
+import "encoding/json"
+
 type AuthFileItem struct {
 	Name          string      `json:"name"`
 	Type          string      `json:"type,omitempty"`
@@ -215,7 +217,26 @@ type AppRuntimeSettings struct {
 	LaunchAgentPath              string `json:"launchAgentPath,omitempty"`
 	CloseAction                  string `json:"closeAction"`
 	MenuBarResident              bool   `json:"menuBarResident"`
+	ShowMenuBarIcon              bool   `json:"showMenuBarIcon"`
+	ShowMenuBarIconSet           bool   `json:"-"`
 	ConfigPath                   string `json:"configPath,omitempty"`
+}
+
+func (s *AppRuntimeSettings) UnmarshalJSON(data []byte) error {
+	type appRuntimeSettingsAlias AppRuntimeSettings
+	var raw struct {
+		appRuntimeSettingsAlias
+		ShowMenuBarIcon *bool `json:"showMenuBarIcon"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	*s = AppRuntimeSettings(raw.appRuntimeSettingsAlias)
+	if raw.ShowMenuBarIcon != nil {
+		s.ShowMenuBarIcon = *raw.ShowMenuBarIcon
+		s.ShowMenuBarIconSet = true
+	}
+	return nil
 }
 
 type UpdateSessionProviderMapping struct {

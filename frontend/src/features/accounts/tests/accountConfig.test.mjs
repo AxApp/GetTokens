@@ -11,6 +11,7 @@ import {
   buildQuotaCurlTemplate,
   hasApiKeyConfigChanges,
   listApiKeyConfigMissingFields,
+  resolveManagementBaseUrl,
 } from '../model/accountDetailConfig.ts';
 import {
   buildAPIKeyLabelStorageKey as buildAPIKeyLabelStorageKeyFromConfig,
@@ -158,6 +159,11 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
     buildApiKeyConfigDraft({
       apiKey: 'sk-test',
       baseUrl: 'https://api.deepseek.com/v1',
+      formatBaseUrls: {
+        openai_chat: 'https://api.deepseek.com/v1',
+        openai_responses: 'https://api.deepseek.com/responses',
+        anthropic: 'https://api.deepseek.com/anthropic',
+      },
       prefix: '/relay/',
       quotaCurl: 'quota',
       quotaEnabled: true,
@@ -171,6 +177,11 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
       label: '',
       apiKey: 'sk-test',
       baseUrl: 'https://api.deepseek.com/v1',
+      formatBaseUrls: {
+        openai_chat: 'https://api.deepseek.com/v1',
+        openai_responses: 'https://api.deepseek.com/responses',
+        anthropic: 'https://api.deepseek.com/anthropic',
+      },
       prefix: '/relay/',
       models: [],
       quotaCurl: 'quota',
@@ -181,6 +192,107 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
       curlVariables: {},
       proxyUrl: 'socks5://127.0.0.1:7890',
     },
+  );
+});
+
+test('resolveManagementBaseUrl prefers the openai-compatible endpoint for management scripts', () => {
+  assert.equal(
+    resolveManagementBaseUrl({
+      baseUrl: ' https://relay.example.com/codex/v1/ ',
+      formatBaseUrls: {
+        openai_chat: ' https://relay.example.com/openai/v1/ ',
+        openai_responses: ' https://relay.example.com/responses/v1/ ',
+        anthropic: ' https://relay.example.com/anthropic/ ',
+      },
+    }),
+    'https://relay.example.com/openai/v1',
+  );
+
+  assert.equal(
+    resolveManagementBaseUrl({
+      baseUrl: ' https://relay.example.com/codex/v1/ ',
+      formatBaseUrls: {
+        openai_chat: ' ',
+      },
+    }),
+    'https://relay.example.com/codex/v1',
+  );
+});
+
+test('buildApiKeyConfigDraft seeds generic quota templates from the management endpoint', () => {
+  const draft = buildApiKeyConfigDraft({
+    displayName: 'Relay Gateway',
+    provider: 'codex',
+    apiKey: 'sk-test',
+    baseUrl: 'https://relay.example.com/codex/v1',
+    formatBaseUrls: {
+      openai_chat: 'https://relay.example.com/openai/v1',
+      openai_responses: 'https://relay.example.com/codex/v1',
+      anthropic: 'https://relay.example.com/anthropic',
+    },
+    prefix: '',
+    quotaCurl: '',
+    quotaEnabled: false,
+    billingCurl: '',
+    billingEnabled: false,
+    proxyUrl: '',
+  });
+
+  assert.match(draft.quotaCurl, /https:\/\/relay\.example\.com\/openai\/v1\/api\/codex\/usage/);
+});
+
+test('buildApiKeyConfigDraft matches vendor billing templates through the management endpoint', () => {
+  const draft = buildApiKeyConfigDraft({
+    displayName: 'DeepSeek Relay',
+    provider: 'codex',
+    apiKey: 'sk-test',
+    baseUrl: 'https://relay.example.com/codex/v1',
+    formatBaseUrls: {
+      openai_chat: 'https://api.deepseek.com/v1',
+      openai_responses: 'https://relay.example.com/codex/v1',
+      anthropic: 'https://relay.example.com/anthropic',
+    },
+    prefix: '',
+    quotaCurl: '',
+    quotaEnabled: false,
+    billingCurl: '',
+    billingEnabled: false,
+    proxyUrl: '',
+  });
+
+  assert.equal(
+    draft.billingCurl,
+    'curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"',
+  );
+});
+
+test('hasApiKeyConfigChanges detects per-format endpoint edits', () => {
+  const account = {
+    apiKey: 'sk-test',
+    baseUrl: 'https://relay.example.com/v1',
+    formatBaseUrls: {
+      openai_chat: 'https://relay.example.com/v1',
+      openai_responses: 'https://relay.example.com/responses',
+      anthropic: 'https://relay.example.com/anthropic',
+    },
+    prefix: '',
+    quotaCurl: '',
+    quotaEnabled: false,
+    billingCurl: '',
+    billingEnabled: false,
+    proxyUrl: '',
+  };
+
+  assert.equal(hasApiKeyConfigChanges(account, buildApiKeyConfigDraft(account)), false);
+  assert.equal(
+    hasApiKeyConfigChanges(account, {
+      ...buildApiKeyConfigDraft(account),
+      formatBaseUrls: {
+        ...account.formatBaseUrls,
+        openai_responses: 'https://relay.example.com/codex',
+      },
+    }),
+    true,
   );
 });
 
@@ -350,13 +462,20 @@ test('generated Wails app bindings expose quota curl draft test method', () => {
   assert.match(source, /export function TestCodexAPIKeyBillingCurl\(arg1\)/);
 });
 
-test('api key config save preflights enabled quota curl before persisting', () => {
+test('api key config save preflights enabled quota and billing curls before persisting', () => {
   const source = readFileSync(accountsActionsPath, 'utf8');
   const testIndex = source.indexOf("'TestCodexAPIKeyQuotaCurl'");
+  const billingTestIndex = source.indexOf("'TestCodexAPIKeyBillingCurl'");
   const updateIndex = source.indexOf("'UpdateCodexAPIKeyConfig'");
 
   assert.ok(testIndex >= 0, 'save action should test enabled quota curl');
+  assert.ok(billingTestIndex >= 0, 'save action should test enabled billing curl');
   assert.ok(updateIndex >= 0, 'save action should persist api key config');
   assert.ok(testIndex < updateIndex, 'quota curl test should run before config update');
+  assert.ok(billingTestIndex < updateIndex, 'billing curl test should run before config update');
   assert.match(source, /if \(draft\.quotaEnabled && nextQuotaCurl\)/);
+  assert.match(source, /if \(draft\.billingEnabled && nextBillingCurl\)/);
+  assert.match(source, /const nextManagementBaseURL = resolveManagementBaseUrl\(\{\s*baseUrl: nextBaseURL,\s*formatBaseUrls: nextFormatBaseURLs,\s*}\);/);
+  assert.match(source, /TestCodexAPIKeyQuotaCurl[\s\S]*baseUrl: nextManagementBaseURL/);
+  assert.match(source, /TestCodexAPIKeyBillingCurl[\s\S]*baseUrl: nextManagementBaseURL/);
 });

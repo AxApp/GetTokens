@@ -4,6 +4,7 @@ import {
   CircleHelp,
   History,
   Play,
+  Settings2,
   ShieldCheck,
   Shuffle,
   Split,
@@ -36,6 +37,7 @@ interface ChannelRoutingWorkbenchProps {
   routeEventsLoading?: boolean;
   accounts?: ChannelRoutingParticipantAccountLike[];
   onModeChange: (mode: ChannelRouteMode) => void;
+  onOpenProjectConfig?: () => void;
   onShadowEnabledChange: (enabled: boolean) => void;
   onShadowModeChange: (mode: ChannelRouteMode) => void;
   onExplain: () => void;
@@ -64,6 +66,7 @@ export default function ChannelRoutingWorkbench({
   routeEvents = [],
   routeEventsLoading = false,
   onModeChange,
+  onOpenProjectConfig,
   onShadowEnabledChange,
   onShadowModeChange,
   onExplain,
@@ -126,19 +129,32 @@ export default function ChannelRoutingWorkbench({
               </button>
             </div>
           </div>
-          <div className="grid min-w-0 flex-1 gap-2 sm:max-w-[28rem] sm:flex-none sm:grid-cols-2">
-            {routeModes.map((item) => (
-              <StrategyButton
-                key={item.mode}
-                mode={item.mode}
-                icon={item.icon}
-                label={item.label}
-                cue={item.cue}
-                active={config.routeMode === item.mode}
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-none">
+            {onOpenProjectConfig ? (
+              <button
+                type="button"
+                onClick={onOpenProjectConfig}
                 disabled={disabled || saving}
-                onModeChange={onModeChange}
-              />
-            ))}
+                className="btn-swiss flex min-h-10 shrink-0 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
+              >
+                <Settings2 className="h-3.5 w-3.5" strokeWidth={4} />
+                项目配置
+              </button>
+            ) : null}
+            <div className="grid min-w-0 flex-1 gap-2 sm:max-w-[28rem] sm:flex-none sm:grid-cols-2">
+              {routeModes.map((item) => (
+                <StrategyButton
+                  key={item.mode}
+                  mode={item.mode}
+                  icon={item.icon}
+                  label={item.label}
+                  cue={item.cue}
+                  active={config.routeMode === item.mode}
+                  disabled={disabled || saving}
+                  onModeChange={onModeChange}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </header>
@@ -175,6 +191,7 @@ export default function ChannelRoutingWorkbench({
               <DiagnosticPill label="命中" value={hasExplain ? explainView.selectedTitle : '—'} />
               <DiagnosticPill label="候选" value={hasExplain ? String(candidateCount) : '—'} />
               <DiagnosticPill label="过滤" value={hasExplain ? String(filteredCount) : '—'} />
+              <DiagnosticPill label="项目池" value={hasExplain ? explainView.projectCandidatePoolLabel : '—'} />
             </div>
             {hasExplain && explainView.selectedMeta ? (
               <p className="mt-3 break-words text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
@@ -235,6 +252,7 @@ export default function ChannelRoutingWorkbench({
             <div className="mt-3 grid gap-2">
               <DiagnosticLine label="对照结果" value={shadowPanelLabel} />
               {shadowPanelMeta ? <DiagnosticLine label="差异" value={shadowPanelMeta} /> : null}
+              {hasExplain ? <DiagnosticLine label="项目池" value={explainView.projectCandidatePoolMeta || explainView.projectCandidatePoolLabel} /> : null}
               {hasExplain ? <DiagnosticLine label="规则" value={explainView.policyLabel} /> : null}
             </div>
           </section>

@@ -1,5 +1,5 @@
-import type { AccountRecord } from "../../../types";
-import { buildDefaultCodexQuotaCurl } from "./accountConfig.ts";
+import type { AccountRecord, ApiFormat } from "../../../types";
+import { buildDefaultCodexQuotaCurl, normalizeBaseUrl } from "./accountConfig.ts";
 import { getVendorPreset, type VendorCredentialField } from "./vendorPresets.ts";
 import { resolveVendorPresetID } from "./vendorPresetHelpers.ts";
 
@@ -7,6 +7,7 @@ export interface ApiKeyConfigDraft {
   label: string;
   apiKey: string;
   baseUrl: string;
+  formatBaseUrls: Partial<Record<ApiFormat, string>>;
   prefix: string;
   models: Array<{ name: string; alias?: string }>;
   quotaCurl: string;
@@ -24,6 +25,7 @@ type ConfigSource = Pick<
   | "provider"
   | "apiKey"
   | "baseUrl"
+  | "formatBaseUrls"
   | "prefix"
   | "models"
   | "quotaCurl"
@@ -39,24 +41,27 @@ export function buildApiKeyConfigDraft(
   account: ConfigSource,
 ): ApiKeyConfigDraft {
   const baseUrl = account.baseUrl ?? "";
+  const formatBaseUrls = normalizeFormatBaseUrls(account.formatBaseUrls);
+  const managementBaseUrl = resolveManagementBaseUrl({ baseUrl, formatBaseUrls });
   const quotaCurl =
     account.quotaCurl ||
     buildQuotaCurlTemplate({
       displayName: account.displayName,
       provider: account.provider,
-      baseUrl,
+      baseUrl: managementBaseUrl,
     });
   const billingCurl =
     account.billingCurl ||
     buildBillingCurlTemplate({
       displayName: account.displayName,
       provider: account.provider,
-      baseUrl,
+      baseUrl: managementBaseUrl,
     });
   return {
     label: account.displayName ?? "",
     apiKey: account.apiKey ?? "",
     baseUrl,
+    formatBaseUrls,
     prefix: account.prefix ?? "",
     models: normalizeApiKeyConfigModels(account.models),
     quotaCurl,
@@ -78,6 +83,7 @@ export function hasApiKeyConfigChanges(
     current.label !== draft.label ||
     current.apiKey !== draft.apiKey ||
     current.baseUrl !== draft.baseUrl ||
+    !isSameFormatBaseUrls(current.formatBaseUrls, draft.formatBaseUrls) ||
     current.prefix !== draft.prefix ||
     current.quotaCurl !== draft.quotaCurl ||
     current.quotaEnabled !== draft.quotaEnabled ||
@@ -99,6 +105,37 @@ export function listApiKeyConfigMissingFields(draft: ApiKeyConfigDraft) {
     fields.push("Base URL");
   }
   return fields;
+}
+
+export function resolveManagementBaseUrl(input: {
+  baseUrl?: string;
+  formatBaseUrls?: Partial<Record<ApiFormat, string>>;
+}) {
+  const formatBaseUrls = normalizeFormatBaseUrls(input.formatBaseUrls);
+  return normalizeBaseUrl(formatBaseUrls.openai_chat ?? "") || normalizeBaseUrl(String(input.baseUrl ?? ""));
+}
+
+export function normalizeFormatBaseUrls(values?: Partial<Record<ApiFormat, string>>): Partial<Record<ApiFormat, string>> {
+  const out: Partial<Record<ApiFormat, string>> = {};
+  for (const [format, value] of Object.entries(values ?? {})) {
+    const key = format.trim() as ApiFormat;
+    const trimmed = String(value ?? "").trim();
+    if (!key || !trimmed) {
+      continue;
+    }
+    out[key] = trimmed;
+  }
+  return out;
+}
+
+export function isSameFormatBaseUrls(
+  a?: Partial<Record<ApiFormat, string>>,
+  b?: Partial<Record<ApiFormat, string>>,
+) {
+  const left = normalizeFormatBaseUrls(a);
+  const right = normalizeFormatBaseUrls(b);
+  const keys = Array.from(new Set([...Object.keys(left), ...Object.keys(right)])).sort();
+  return keys.every((key) => (left[key as ApiFormat] ?? "") === (right[key as ApiFormat] ?? ""));
 }
 
 export function normalizeCurlVariables(values?: Record<string, string>, platformCookie?: string): Record<string, string> {

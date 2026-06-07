@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { ApplyUpdate, CheckUpdate } from '../wailsjs/go/main/App';
-import { BrowserOpenURL, Quit } from '../wailsjs/runtime/runtime';
+import { BrowserOpenURL, EventsOn, Quit } from '../wailsjs/runtime/runtime';
 import Sidebar from './components/biz/Sidebar';
 import PageLoadingFallback from './components/ui/PageLoadingFallback';
 import { DebugProvider } from './context/DebugContext';
@@ -16,6 +16,7 @@ import { useAppBootstrap } from './hooks/useAppBootstrap';
 import { useAppNavigation } from './hooks/useAppNavigation';
 import { toErrorMessage } from './utils/error';
 import { hasWailsRuntime } from './utils/previewMode';
+import type { AppPage } from './types';
 
 const AccountImportPage = lazy(() => import('./pages/AccountImportPage'));
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
@@ -26,6 +27,10 @@ const DesignSystemPage = lazy(() => import('./pages/DesignSystemPage'));
 const ProxyPoolPage = lazy(() => import('./pages/ProxyPoolPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
+
+type MenuBarNavigationPayload = {
+  page?: AppPage;
+};
 
 function AppShell() {
   const { themeMode } = useTheme();
@@ -132,6 +137,24 @@ function AppShell() {
       document.removeEventListener('click', handleDesignSystemComponentLabelClick, true);
     };
   }, []);
+
+  useEffect(() => {
+    if (!hasWailsRuntime()) {
+      return;
+    }
+
+    const offNavigate = EventsOn('menubar:navigate', (payload?: MenuBarNavigationPayload) => {
+      if (payload?.page !== 'accounts') {
+        return;
+      }
+      setActivePage('accounts');
+      window.location.hash = '#frame=accounts';
+    });
+
+    return () => {
+      offNavigate?.();
+    };
+  }, [setActivePage]);
 
   const page = useMemo(() => {
     if (!showDeveloperTools && (activePage === 'debug' || activePage === 'design-system')) {

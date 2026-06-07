@@ -33,6 +33,10 @@ import {
   type LocalProjectedUsageRefreshIntervalID,
 } from './settingsLocalUsage';
 import {
+  resolveAppRuntimeUIState,
+  type AppCloseAction,
+} from './settingsAppRuntime';
+import {
   textScaleOptionIDs,
 } from './settingsTextScale';
 import { getSettingsSectionBadge, type SettingsSectionID } from './settingsLayout';
@@ -51,8 +55,6 @@ const languages: ReadonlyArray<SegmentedOption<LocaleCode>> = [
   { id: 'zh', label: '简体中文' },
   { id: 'en', label: 'ENGLISH' },
 ];
-
-type AppCloseAction = 'quit_app_and_service' | 'keep_service_in_menu_bar';
 
 const closeActionOptions: ReadonlyArray<SegmentedOption<AppCloseAction>> = [
   { id: 'quit_app_and_service', label: 'QUIT' },
@@ -108,6 +110,7 @@ export default function SettingsFeature({
   const [launchAtLoginSupported, setLaunchAtLoginSupported] = useState(false);
   const [closeAction, setCloseAction] = useState<AppCloseAction>('quit_app_and_service');
   const [menuBarResident, setMenuBarResident] = useState(false);
+  const [showMenuBarIcon, setShowMenuBarIcon] = useState(true);
   const [appRuntimeMessage, setAppRuntimeMessage] = useState('');
   const [isLoadingAppRuntimeSettings, setIsLoadingAppRuntimeSettings] = useState(true);
   const [isSavingAppRuntimeSettings, setIsSavingAppRuntimeSettings] = useState(false);
@@ -142,6 +145,7 @@ export default function SettingsFeature({
         setLaunchAtLoginSupported(false);
         setCloseAction('quit_app_and_service');
         setMenuBarResident(false);
+        setShowMenuBarIcon(true);
         setAppRuntimeMessage(t('settings.app_lifecycle_preview'));
         setIsLoadingAppRuntimeSettings(false);
         return;
@@ -155,8 +159,10 @@ export default function SettingsFeature({
         if (!mounted) return;
         setLaunchAtLogin(Boolean(settings?.launchAtLogin));
         setLaunchAtLoginSupported(Boolean(settings?.launchAtLoginSupported));
-        setCloseAction(settings?.closeAction === 'keep_service_in_menu_bar' ? 'keep_service_in_menu_bar' : 'quit_app_and_service');
+        const runtimeState = resolveAppRuntimeUIState(settings?.closeAction, settings?.showMenuBarIcon !== false);
+        setCloseAction(runtimeState.closeAction);
         setMenuBarResident(Boolean(settings?.menuBarResident));
+        setShowMenuBarIcon(runtimeState.showMenuBarIcon);
       } catch (error) {
         if (!mounted) return;
         setAppRuntimeMessage(`${t('settings.app_lifecycle_failed')}: ${toErrorMessage(error)}`);
@@ -364,14 +370,21 @@ export default function SettingsFeature({
     }
   }
 
-  async function saveAppRuntimeSettings(nextLaunchAtLogin: boolean, nextCloseAction: AppCloseAction) {
+  async function saveAppRuntimeSettings(
+    nextLaunchAtLogin: boolean,
+    nextCloseAction: AppCloseAction,
+    nextShowMenuBarIcon: boolean = showMenuBarIcon,
+  ) {
+    const runtimeState = resolveAppRuntimeUIState(nextCloseAction, nextShowMenuBarIcon);
     const previousLaunchAtLogin = launchAtLogin;
     const previousCloseAction = closeAction;
     const previousMenuBarResident = menuBarResident;
+    const previousShowMenuBarIcon = showMenuBarIcon;
 
     setLaunchAtLogin(nextLaunchAtLogin);
-    setCloseAction(nextCloseAction);
-    setMenuBarResident(nextCloseAction === 'keep_service_in_menu_bar');
+    setCloseAction(runtimeState.closeAction);
+    setMenuBarResident(runtimeState.menuBarResident);
+    setShowMenuBarIcon(runtimeState.showMenuBarIcon);
     setIsSavingAppRuntimeSettings(true);
     setAppRuntimeMessage('');
     if (!hasWailsAppBindings()) {
@@ -382,25 +395,29 @@ export default function SettingsFeature({
     try {
       const settings = await trackRequest<any>(
         'UpdateAppRuntimeSettings',
-        { launchAtLogin: nextLaunchAtLogin, closeAction: nextCloseAction },
+        { launchAtLogin: nextLaunchAtLogin, closeAction: runtimeState.closeAction, showMenuBarIcon: runtimeState.showMenuBarIcon },
         () =>
           UpdateAppRuntimeSettings({
             codexModelCatalogSyncEnabled: false,
             launchAtLogin: nextLaunchAtLogin,
             launchAtLoginSupported,
-            closeAction: nextCloseAction,
-            menuBarResident: nextCloseAction === 'keep_service_in_menu_bar',
+            closeAction: runtimeState.closeAction,
+            menuBarResident: runtimeState.menuBarResident,
+            showMenuBarIcon: runtimeState.showMenuBarIcon,
           }),
       );
       setLaunchAtLogin(Boolean(settings?.launchAtLogin));
       setLaunchAtLoginSupported(Boolean(settings?.launchAtLoginSupported));
-      setCloseAction(settings?.closeAction === 'keep_service_in_menu_bar' ? 'keep_service_in_menu_bar' : 'quit_app_and_service');
+      const savedRuntimeState = resolveAppRuntimeUIState(settings?.closeAction, settings?.showMenuBarIcon !== false);
+      setCloseAction(savedRuntimeState.closeAction);
       setMenuBarResident(Boolean(settings?.menuBarResident));
+      setShowMenuBarIcon(savedRuntimeState.showMenuBarIcon);
       setAppRuntimeMessage(t('settings.app_lifecycle_saved'));
     } catch (error) {
       setLaunchAtLogin(previousLaunchAtLogin);
       setCloseAction(previousCloseAction);
       setMenuBarResident(previousMenuBarResident);
+      setShowMenuBarIcon(previousShowMenuBarIcon);
       setAppRuntimeMessage(`${t('settings.app_lifecycle_failed')}: ${toErrorMessage(error)}`);
     } finally {
       setIsSavingAppRuntimeSettings(false);
@@ -556,6 +573,32 @@ export default function SettingsFeature({
               </div>
 
               <div className="space-y-3 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <label className="font-black uppercase italic tracking-widest text-[var(--text-muted)]" style={fieldLabelStyle}>
+                      {t('settings.show_menu_bar_icon')}
+                    </label>
+                    <div className="mt-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={bodyTextStyle}>
+                      {closeAction === 'keep_service_in_menu_bar'
+                        ? t('settings.show_menu_bar_icon_forced_hint')
+                        : t('settings.show_menu_bar_icon_hint')}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono font-bold italic opacity-30 text-[var(--text-muted)]" style={fieldMetaStyle}>
+                      STATUS_ITEM
+                    </span>
+                    <ToggleSwitch
+                      label={t('settings.show_menu_bar_icon')}
+                      checked={showMenuBarIcon}
+                      disabled={isLoadingAppRuntimeSettings || isSavingAppRuntimeSettings || closeAction === 'keep_service_in_menu_bar'}
+                      onChange={(checked) => void saveAppRuntimeSettings(launchAtLogin, closeAction, checked)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 p-5">
                 <div className="flex items-center justify-between">
                   <label className="font-black uppercase italic tracking-widest text-[var(--text-muted)]" style={fieldLabelStyle}>
                     {t('settings.close_action')}
@@ -582,10 +625,10 @@ export default function SettingsFeature({
                 <div className="grid gap-3 border-t border-dashed border-[var(--border-color)] pt-3 sm:grid-cols-2">
                   <div className="border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
                     <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
-                      {t('settings.menu_bar_resident')}
+                      {t('settings.show_menu_bar_icon_status')}
                     </div>
                     <div className="mt-1 font-black uppercase italic text-[var(--text-primary)]" style={valueTextStyle}>
-                      {menuBarResident ? t('settings.enabled') : t('settings.disabled')}
+                      {showMenuBarIcon ? t('settings.enabled') : t('settings.disabled')}
                     </div>
                   </div>
                   <div className="border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">

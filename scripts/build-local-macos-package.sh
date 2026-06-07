@@ -224,6 +224,7 @@ fi
 mkdir -p "${OUTPUT_DIR}"
 
 bash "${SCRIPT_DIR}/ensure-sidecar.sh" darwin "${ARCH}"
+bash "${SCRIPT_DIR}/build-menubar-swiftui.sh" "${ARCH}"
 
 resolve_wails_cmd
 export VITE_VERSION="${VERSION}"
@@ -234,6 +235,7 @@ export GETTOKENS_APP_PROFILE=prod
   -platform "${PLATFORM}" \
   -ldflags "-X main.Version=${VERSION} -X main.ReleaseLabel=${RELEASE_LABEL}"
 
+bash "${SCRIPT_DIR}/install-menubar-swiftui.sh" "${APP_PATH}"
 bash "${SCRIPT_DIR}/sync-macos-bundle-version.sh" "${APP_PATH}" "${VERSION}"
 
 cp "${ROOT_DIR}/build/bin/cli-proxy-api" "${APP_PATH}/Contents/MacOS/cli-proxy-api"

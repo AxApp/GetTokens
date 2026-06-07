@@ -197,13 +197,14 @@ test('codex model routing detail exposes fetch-model action from the account lis
   assert.match(featureSource, /onFetchModelOptions=\{\(\) => void fetchDetailModelOptions\(detailRowWithModels\)\}/);
 });
 
-test('codex account list route probe modal is hash-routed', async () => {
+test('codex account list modals are hash-routed', async () => {
   const source = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /buildCodexModalFrameHash/);
   assert.match(source, /clearCodexModalFrameHash/);
   assert.match(source, /hashState\?\.page === 'codex' && hashState\.codexWorkspace === 'account-list'/);
-  assert.match(source, /hashState\?\.modal === 'route-probe'/);
+  assert.match(source, /accountListModal === 'route-probe'/);
+  assert.match(source, /accountListModal === 'project-config'/);
 });
 
 test('buildCodexAccountRows keeps disabled or errored accounts in order but marks them not requestable', () => {

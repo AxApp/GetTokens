@@ -22,6 +22,39 @@ func TestNormalizeAppRuntimeSettings(t *testing.T) {
 	if settings.MenuBarResident {
 		t.Fatal("MenuBarResident = true for quit close action")
 	}
+	if !settings.ShowMenuBarIcon {
+		t.Fatal("ShowMenuBarIcon = false for default settings, want true")
+	}
+}
+
+func TestNormalizeAppRuntimeSettingsAllowsHidingMenuBarIconWithoutResidency(t *testing.T) {
+	settings := normalizeAppRuntimeSettings(&AppRuntimeSettings{
+		CloseAction:        AppCloseActionQuitAppAndService,
+		ShowMenuBarIcon:    false,
+		ShowMenuBarIconSet: true,
+	})
+
+	if settings.ShowMenuBarIcon {
+		t.Fatal("ShowMenuBarIcon = true for explicit hidden icon, want false")
+	}
+	if settings.MenuBarResident {
+		t.Fatal("MenuBarResident = true for quit close action")
+	}
+}
+
+func TestNormalizeAppRuntimeSettingsForcesMenuBarIconForResidency(t *testing.T) {
+	settings := normalizeAppRuntimeSettings(&AppRuntimeSettings{
+		CloseAction:        AppCloseActionKeepServiceInMenuBar,
+		ShowMenuBarIcon:    false,
+		ShowMenuBarIconSet: true,
+	})
+
+	if !settings.ShowMenuBarIcon {
+		t.Fatal("ShowMenuBarIcon = false for menu bar residency, want true")
+	}
+	if !settings.MenuBarResident {
+		t.Fatal("MenuBarResident = false for menu bar residency, want true")
+	}
 }
 
 func TestAppRuntimeSettingsRoundTrip(t *testing.T) {
@@ -30,8 +63,10 @@ func TestAppRuntimeSettingsRoundTrip(t *testing.T) {
 
 	app := New("", "", "")
 	updated, err := app.UpdateAppRuntimeSettings(AppRuntimeSettings{
-		LaunchAtLogin: false,
-		CloseAction:   AppCloseActionKeepServiceInMenuBar,
+		LaunchAtLogin:      false,
+		CloseAction:        AppCloseActionKeepServiceInMenuBar,
+		ShowMenuBarIcon:    false,
+		ShowMenuBarIconSet: true,
 	})
 	if err != nil {
 		t.Fatalf("UpdateAppRuntimeSettings() error = %v", err)
@@ -41,6 +76,9 @@ func TestAppRuntimeSettingsRoundTrip(t *testing.T) {
 	}
 	if !updated.MenuBarResident {
 		t.Fatal("MenuBarResident = false, want true")
+	}
+	if !updated.ShowMenuBarIcon {
+		t.Fatal("ShowMenuBarIcon = false for resident close action, want true")
 	}
 
 	loaded, err := app.GetAppRuntimeSettings()
@@ -52,6 +90,39 @@ func TestAppRuntimeSettingsRoundTrip(t *testing.T) {
 	}
 	if !loaded.MenuBarResident {
 		t.Fatal("loaded MenuBarResident = false, want true")
+	}
+	if !loaded.ShowMenuBarIcon {
+		t.Fatal("loaded ShowMenuBarIcon = false for resident close action, want true")
+	}
+}
+
+func TestAppRuntimeSettingsCanPersistHiddenMenuBarIconForForegroundMode(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	app := New("", "", "")
+	updated, err := app.UpdateAppRuntimeSettings(AppRuntimeSettings{
+		LaunchAtLogin:      false,
+		CloseAction:        AppCloseActionQuitAppAndService,
+		ShowMenuBarIcon:    false,
+		ShowMenuBarIconSet: true,
+	})
+	if err != nil {
+		t.Fatalf("UpdateAppRuntimeSettings() error = %v", err)
+	}
+	if updated.ShowMenuBarIcon {
+		t.Fatal("updated ShowMenuBarIcon = true, want false")
+	}
+	if updated.MenuBarResident {
+		t.Fatal("updated MenuBarResident = true, want false")
+	}
+
+	loaded, err := app.GetAppRuntimeSettings()
+	if err != nil {
+		t.Fatalf("GetAppRuntimeSettings() error = %v", err)
+	}
+	if loaded.ShowMenuBarIcon {
+		t.Fatal("loaded ShowMenuBarIcon = true, want false")
 	}
 }
 

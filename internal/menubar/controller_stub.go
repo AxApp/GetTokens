@@ -15,3 +15,5 @@ func (c *Controller) Start(callbacks Callbacks) error {
 func (c *Controller) Stop() {}
 
 func (c *Controller) SetStatus(status string) {}
+
+func (c *Controller) SetQuotaSnapshot(snapshotJSON string) {}

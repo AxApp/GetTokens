@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1600" viewBox="0 0 2400 1600" role="img" aria-labelledby="title desc">
+  <title id="title">Project Account Candidate Pool Rule flow</title>
+  <desc id="desc">A flowchart for GetTokens project account candidate pool routing rules.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8faf7"/>
+      <stop offset="1" stop-color="#eef3f1"/>
+    </linearGradient>
+    <filter id="shadow" x="-12%" y="-18%" width="124%" height="136%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#18352f" flood-opacity="0.14"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2f4d46"/>
+    </marker>
+    <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9a4f20"/>
+    </marker>
+    <style>
+      .title { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 54px; font-weight: 760; fill: #17352f; }
+      .subtitle { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 24px; font-weight: 520; fill: #556b66; }
+      .label { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 28px; font-weight: 720; fill: #1c332f; }
+      .body { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 21px; font-weight: 500; fill: #42514e; }
+      .small { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 18px; font-weight: 520; fill: #5e6d69; }
+      .tiny { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 16px; font-weight: 600; fill: #687571; letter-spacing: 0; }
+      .pill { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 18px; font-weight: 760; fill: #26463f; }
+      .card { fill: #ffffff; stroke: #d7e1dd; stroke-width: 2; filter: url(#shadow); }
+      .card-green { fill: #f7fbf8; stroke: #9ec8b7; stroke-width: 2.5; filter: url(#shadow); }
+      .card-blue { fill: #f5f8fb; stroke: #9eb8cc; stroke-width: 2.5; filter: url(#shadow); }
+      .card-warn { fill: #fff7f0; stroke: #e3a66b; stroke-width: 2.5; filter: url(#shadow); }
+      .card-dead { fill: #f8f4f2; stroke: #d9b3a4; stroke-width: 2.5; filter: url(#shadow); }
+      .lane { fill: rgba(255,255,255,0.55); stroke: #d9e2df; stroke-width: 1.5; }
+      .line { fill: none; stroke: #2f4d46; stroke-width: 4; marker-end: url(#arrow); }
+      .line-soft { fill: none; stroke: #79928b; stroke-width: 3; stroke-dasharray: 10 10; marker-end: url(#arrow); }
+      .line-warn { fill: none; stroke: #9a4f20; stroke-width: 4; marker-end: url(#arrow-warn); }
+      .chip { fill: #ecf4f1; stroke: #c8d8d3; stroke-width: 1.4; }
+      .chip-warn { fill: #fff1df; stroke: #e5b477; stroke-width: 1.4; }
+      .chip-dead { fill: #f7e6df; stroke: #d9aa99; stroke-width: 1.4; }
+    </style>
+  </defs>
+
+  <rect width="2400" height="1600" fill="url(#bg)"/>
+  <rect x="64" y="64" width="2272" height="1472" rx="34" fill="#ffffff" opacity="0.68" stroke="#dce6e2" stroke-width="2"/>
+
+  <text x="120" y="150" class="title">Project Account Candidate Pool Rule</text>
+  <text x="120" y="194" class="subtitle">规则对象是账号候选池；按 projectKey + channel 命中后 strict allow，绝不回退到 channel 全池。</text>
+
+  <g transform="translate(120 252)">
+    <rect x="0" y="0" width="662" height="1210" rx="26" class="lane"/>
+    <text x="30" y="48" class="tiny">REQUEST CONTEXT</text>
+
+    <rect x="52" y="96" width="558" height="118" rx="18" class="card"/>
+    <text x="86" y="142" class="label">1. 请求进入 sidecar</text>
+    <text x="86" y="178" class="body">channel / model / session / account runtime</text>
+
+    <path d="M331 214 L331 278" class="line"/>
+
+    <rect x="52" y="278" width="558" height="146" rx="18" class="card-blue"/>
+    <text x="86" y="326" class="label">2. 解析项目标识</text>
+    <text x="86" y="363" class="body">projectName 只用于展示和审计</text>
+    <text x="86" y="395" class="body">projectKey 才能参与运行时匹配</text>
+
+    <path d="M331 424 L331 492" class="line"/>
+
+    <rect x="52" y="492" width="558" height="136" rx="18" class="card-green"/>
+    <text x="86" y="540" class="label">3. RouteContext 标准化</text>
+    <text x="86" y="577" class="body">projectKey / channel / model</text>
+    <text x="86" y="609" class="body">进入 AccountRoutingEngine</text>
+
+    <path d="M331 628 L331 710" class="line"/>
+
+    <rect x="92" y="710" width="478" height="170" rx="22" class="card"/>
+    <text x="135" y="764" class="label">未命中规则？</text>
+    <text x="135" y="806" class="body">保持现有 channel routing</text>
+    <text x="135" y="838" class="body">unknown project 不自动阻断</text>
+
+    <path d="M331 880 L331 985" class="line-soft"/>
+    <rect x="52" y="985" width="558" height="134" rx="18" class="card"/>
+    <text x="86" y="1033" class="label">普通 Channel Routing</text>
+    <text x="86" y="1070" class="body">orderedAccountIDs / groups</text>
+    <text x="86" y="1102" class="body">sequential 或 balanced</text>
+  </g>
+
+  <g transform="translate(870 252)">
+    <rect x="0" y="0" width="662" height="1210" rx="26" class="lane"/>
+    <text x="30" y="48" class="tiny">ROUTE ENGINE PIPELINE</text>
+
+    <rect x="52" y="96" width="558" height="132" rx="18" class="card-blue"/>
+    <text x="86" y="143" class="label">CompiledRouteSnapshot</text>
+    <text x="86" y="179" class="body">channel config / account runtime</text>
+    <text x="86" y="209" class="body">project candidate pool rules</text>
+
+    <path d="M331 228 L331 278" class="line"/>
+
+    <rect x="52" y="278" width="558" height="126" rx="18" class="card-dead"/>
+    <text x="86" y="323" class="label">P0 HardFilter</text>
+    <text x="86" y="358" class="body">manual-disabled / quota / cooldown</text>
+    <text x="86" y="388" class="body">unavailable / auth-error / model block</text>
+
+    <path d="M331 404 L331 456" class="line"/>
+
+    <rect x="52" y="456" width="558" height="158" rx="18" class="card-green"/>
+    <text x="86" y="503" class="label">P1 Candidate Pool Rule</text>
+    <text x="86" y="539" class="body">match: projectKey + channel</text>
+    <text x="86" y="569" class="body">AllowIDs = allowAccountIDs</text>
+    <text x="86" y="599" class="body">AllowFallback = false，写入 trace</text>
+
+    <path d="M331 614 L331 664" class="line"/>
+
+    <rect x="52" y="664" width="558" height="116" rx="18" class="card-warn"/>
+    <text x="86" y="710" class="label">候选池为空？</text>
+    <text x="86" y="746" class="body">项目无可用账号，fail closed</text>
+
+    <path d="M331 780 L331 832" class="line"/>
+
+    <rect x="52" y="832" width="558" height="110" rx="18" class="card"/>
+    <text x="86" y="876" class="label">P2 RequestPolicy</text>
+    <text x="86" y="912" class="body">只能在收窄池内 deny / order</text>
+
+    <path d="M331 942 L331 970" class="line"/>
+
+    <rect x="52" y="970" width="558" height="104" rx="18" class="card"/>
+    <text x="86" y="1014" class="label">P3 Sticky 重新评估</text>
+    <text x="86" y="1050" class="body">sticky 不在 allow set 时释放</text>
+
+    <path d="M331 1074 L331 1102" class="line"/>
+
+    <rect x="52" y="1102" width="558" height="76" rx="18" class="card-blue"/>
+    <text x="86" y="1149" class="label">P4 Selector: sequential / balanced</text>
+  </g>
+
+  <g transform="translate(1620 252)">
+    <rect x="0" y="0" width="662" height="1210" rx="26" class="lane"/>
+    <text x="30" y="48" class="tiny">STATE, TRACE, CLEANUP</text>
+
+    <rect x="52" y="96" width="558" height="150" rx="18" class="card"/>
+    <text x="86" y="145" class="label">Executor 执行请求</text>
+    <text x="86" y="182" class="body">账号选择结果进入 upstream</text>
+    <text x="86" y="214" class="body">已 commit 的流不中途拼接账号</text>
+
+    <path d="M331 246 L331 328" class="line"/>
+
+    <rect x="52" y="328" width="558" height="148" rx="18" class="card"/>
+    <text x="86" y="377" class="label">ResultRecorder / Guard</text>
+    <text x="86" y="414" class="body">401 / 429 / timeout 写入 guard source</text>
+    <text x="86" y="446" class="body">成功只清 transient，不清 manual-disabled</text>
+
+    <path d="M331 476 L331 558" class="line"/>
+
+    <rect x="52" y="558" width="558" height="170" rx="18" class="card-blue"/>
+    <text x="86" y="608" class="label">Route Error / Explain / Audit</text>
+    <text x="86" y="645" class="body">projectKey / matched rule / filtered count</text>
+    <text x="86" y="677" class="body">selectedAccountID / fail closed reason</text>
+    <text x="86" y="709" class="body">不记录 payload、token、cookie</text>
+
+    <path d="M331 728 L331 820" class="line-soft"/>
+
+    <rect x="52" y="820" width="558" height="150" rx="18" class="card-green"/>
+    <text x="86" y="869" class="label">规则变更</text>
+    <text x="86" y="906" class="body">新增 / 删除 / 启停 / 修改 allow set</text>
+    <text x="86" y="938" class="body">bump route snapshot / pool epoch</text>
+
+    <path d="M331 970 L331 1048" class="line-soft"/>
+
+    <rect x="52" y="1048" width="558" height="118" rx="18" class="card-dead"/>
+    <text x="86" y="1096" class="label">删除 legacy projectBindings</text>
+    <text x="86" y="1133" class="body">历史输入只迁移或丢弃，不再写回</text>
+  </g>
+
+  <path d="M730 846 C790 846 790 535 870 535" class="line"/>
+  <text x="740" y="794" class="pill">命中项目规则</text>
+  <path d="M1480 1140 C1540 1140 1540 348 1672 171" class="line"/>
+  <text x="1500" y="1112" class="pill">选中账号</text>
+  <path d="M1480 722 C1550 722 1550 662 1672 642" class="line-warn"/>
+  <text x="1502" y="690" class="pill">fail closed</text>
+  <path d="M1951 970 C1951 1280 990 1280 990 1024" class="line-soft"/>
+  <text x="1490" y="1308" class="pill">pool epoch 触发下一请求重评估 sticky</text>
+
+  <g transform="translate(120 1492)">
+    <rect x="0" y="-58" width="480" height="46" rx="23" class="chip"/>
+    <text x="24" y="-28" class="small">正常路径：命中规则 → strict allow → selector</text>
+    <rect x="520" y="-58" width="470" height="46" rx="23" class="chip-warn"/>
+    <text x="544" y="-28" class="small">失败路径：allow set 内无可路由账号 → fail closed</text>
+    <rect x="1030" y="-58" width="455" height="46" rx="23" class="chip"/>
+    <text x="1054" y="-28" class="small">状态路径：规则变更 → bump pool epoch</text>
+    <rect x="1525" y="-58" width="520" height="46" rx="23" class="chip-dead"/>
+    <text x="1549" y="-28" class="small">清理边界：projectBindings 不再作为配置承载</text>
+  </g>
+</svg>

@@ -54,6 +54,10 @@ export function CreateOpenAICompatibleProvider(arg1) {
   return window['go']['main']['App']['CreateOpenAICompatibleProvider'](arg1);
 }
 
+export function CreateProjectCandidatePoolRule(arg1) {
+  return window['go']['main']['App']['CreateProjectCandidatePoolRule'](arg1);
+}
+
 export function CreateRateLimitRule(arg1) {
   return window['go']['main']['App']['CreateRateLimitRule'](arg1);
 }
@@ -80,6 +84,10 @@ export function DeleteLegacyAccountSources() {
 
 export function DeleteOpenAICompatibleProvider(arg1) {
   return window['go']['main']['App']['DeleteOpenAICompatibleProvider'](arg1);
+}
+
+export function DeleteProjectCandidatePoolRule(arg1) {
+  return window['go']['main']['App']['DeleteProjectCandidatePoolRule'](arg1);
 }
 
 export function DeleteRateLimitRule(arg1) {
@@ -342,6 +350,10 @@ export function ListOpenAICompatibleProviders() {
   return window['go']['main']['App']['ListOpenAICompatibleProviders']();
 }
 
+export function ListProjectCandidatePoolRules(arg1) {
+  return window['go']['main']['App']['ListProjectCandidatePoolRules'](arg1);
+}
+
 export function ListRateLimitEvents(arg1) {
   return window['go']['main']['App']['ListRateLimitEvents'](arg1);
 }
@@ -536,6 +548,10 @@ export function UpdateOAuthModelAliases(arg1) {
 
 export function UpdateOpenAICompatibleProvider(arg1) {
   return window['go']['main']['App']['UpdateOpenAICompatibleProvider'](arg1);
+}
+
+export function UpdateProjectCandidatePoolRule(arg1) {
+  return window['go']['main']['App']['UpdateProjectCandidatePoolRule'](arg1);
 }
 
 export function UpdateRateLimitRule(arg1) {

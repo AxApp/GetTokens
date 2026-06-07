@@ -10,6 +10,7 @@ type RateLimitState = cliproxyapi.RateLimitState
 type RateLimitEvent = cliproxyapi.RateLimitEvent
 type AccountStoreDiagnostics = cliproxyapi.AccountStoreDiagnostics
 type AccountStoreReadRecoveryDiagnostics = cliproxyapi.AccountStoreReadRecoveryDiagnostics
+type ProjectCandidatePoolRule = cliproxyapi.ProjectCandidatePoolRule
 
 func (a *App) GetAccountStoreDiagnostics() (*AccountStoreDiagnostics, error) {
 	return a.managementClient().GetAccountStoreDiagnostics()
@@ -33,6 +34,22 @@ func (a *App) UpdateRateLimitRule(rule RateLimitRule) ([]RateLimitRule, error) {
 
 func (a *App) DeleteRateLimitRule(id string) error {
 	return a.managementClient().DeleteRateLimitRule(id)
+}
+
+func (a *App) ListProjectCandidatePoolRules(channel string) ([]ProjectCandidatePoolRule, error) {
+	return a.managementClient().ListProjectCandidatePoolRules(channel)
+}
+
+func (a *App) CreateProjectCandidatePoolRule(rule ProjectCandidatePoolRule) ([]ProjectCandidatePoolRule, error) {
+	return a.managementClient().CreateProjectCandidatePoolRule(rule)
+}
+
+func (a *App) UpdateProjectCandidatePoolRule(rule ProjectCandidatePoolRule) ([]ProjectCandidatePoolRule, error) {
+	return a.managementClient().UpdateProjectCandidatePoolRule(rule)
+}
+
+func (a *App) DeleteProjectCandidatePoolRule(id string) error {
+	return a.managementClient().DeleteProjectCandidatePoolRule(id)
 }
 
 func (a *App) GetAllRateLimitStatuses() ([]RateLimitState, error) {

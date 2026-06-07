@@ -7,6 +7,7 @@ import {
   DeleteOpenAICompatibleProvider,
   DownloadAuthFile,
   SetAccountDisabled,
+  TestCodexAPIKeyBillingCurl,
   TestCodexAPIKeyQuotaCurl,
   UpdateCodexAPIKeyConfig,
   UpdateCodexAPIKeyLabel,
@@ -32,7 +33,13 @@ import {
   resolveCopiedOpenAICompatibleProviderName,
   resolveNumberedDuplicateTitle,
 } from '../model/accountTransfer';
-import { normalizeApiKeyConfigModels, normalizeCurlVariables, type ApiKeyConfigDraft } from '../model/accountDetailConfig';
+import {
+  normalizeApiKeyConfigModels,
+  normalizeCurlVariables,
+  normalizeFormatBaseUrls as normalizeDetailFormatBaseUrls,
+  resolveManagementBaseUrl,
+  type ApiKeyConfigDraft,
+} from '../model/accountDetailConfig';
 import { resolveAccountDeleteRequest } from '../model/accountDelete';
 import { publishAccountDisabledChange } from '../model/accountDisabledSync';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
@@ -460,9 +467,11 @@ export default function useAccountsActions({
               id: selectedAccount.id,
               priority: nextPriority,
             })
-          );
+        );
 
-        patchAccountLocally(selectedAccount.id, { priority: nextPriority });
+        patchAccountLocally(selectedAccount.id, {
+          priority: nextPriority,
+        });
         await loadAccounts({ refreshSupplementalData: false });
       } catch (error) {
         console.error(error);
@@ -480,6 +489,11 @@ export default function useAccountsActions({
 
       const nextAPIKey = draft.apiKey.trim();
       const nextBaseURL = draft.baseUrl.trim();
+      const nextFormatBaseURLs = normalizeDetailFormatBaseUrls(draft.formatBaseUrls);
+      const nextManagementBaseURL = resolveManagementBaseUrl({
+        baseUrl: nextBaseURL,
+        formatBaseUrls: nextFormatBaseURLs,
+      });
       const nextPrefix = draft.prefix.trim();
       const nextQuotaCurl = draft.quotaCurl.trim();
       const nextBillingCurl = draft.billingCurl.trim();
@@ -493,23 +507,22 @@ export default function useAccountsActions({
         return;
       }
 
-      const localPatch: Partial<AccountRecord> = {
-        displayName: nextLabel || fallbackAPIKeyDisplayName(nextAPIKey),
-        apiKey: nextAPIKey,
-        baseUrl: nextBaseURL,
-        prefix: nextPrefix,
-        quotaCurl: nextQuotaCurl,
-        quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
-        billingCurl: nextBillingCurl,
-        billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
-        platformCookie: nextPlatformCookie,
-        curlVariables: nextCurlVariables,
-        proxyUrl: nextProxyURL,
-        models: nextModels,
-      };
-
       if (!hasWailsAppBindings()) {
-        patchAccountLocally(selectedAccount.id, localPatch);
+        patchAccountLocally(selectedAccount.id, {
+          displayName: nextLabel || fallbackAPIKeyDisplayName(nextAPIKey),
+          apiKey: nextAPIKey,
+          baseUrl: nextBaseURL,
+          formatBaseUrls: nextFormatBaseURLs,
+          prefix: nextPrefix,
+          quotaCurl: nextQuotaCurl,
+          quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+          billingCurl: nextBillingCurl,
+          billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+          platformCookie: nextPlatformCookie,
+          curlVariables: nextCurlVariables,
+          proxyUrl: nextProxyURL,
+          models: nextModels,
+        });
         return;
       }
 
@@ -531,14 +544,32 @@ export default function useAccountsActions({
         if (draft.quotaEnabled && nextQuotaCurl) {
           await trackRequest(
             'TestCodexAPIKeyQuotaCurl',
-            { id: selectedAccount.id, baseUrl: nextBaseURL },
+            { id: selectedAccount.id, baseUrl: nextManagementBaseURL },
             () =>
               TestCodexAPIKeyQuotaCurl(
                 main.TestCodexAPIKeyQuotaCurlInput.createFrom({
                   apiKey: nextAPIKey,
-                  baseUrl: nextBaseURL,
+                  baseUrl: nextManagementBaseURL,
                   prefix: nextPrefix,
                   quotaCurl: nextQuotaCurl,
+                  platformCookie: nextPlatformCookie,
+                  curlVariables: nextCurlVariables,
+                })
+              )
+          );
+        }
+
+        if (draft.billingEnabled && nextBillingCurl) {
+          await trackRequest(
+            'TestCodexAPIKeyBillingCurl',
+            { id: selectedAccount.id, baseUrl: nextManagementBaseURL },
+            () =>
+              TestCodexAPIKeyBillingCurl(
+                main.TestCodexAPIKeyQuotaCurlInput.createFrom({
+                  apiKey: nextAPIKey,
+                  baseUrl: nextManagementBaseURL,
+                  prefix: nextPrefix,
+                  quotaCurl: nextBillingCurl,
                   platformCookie: nextPlatformCookie,
                   curlVariables: nextCurlVariables,
                 })
@@ -555,6 +586,7 @@ export default function useAccountsActions({
                 id: selectedAccount.id,
                 apiKey: nextAPIKey,
                 baseUrl: nextBaseURL,
+                formatBaseUrls: nextFormatBaseURLs,
                 prefix: nextPrefix,
                 quotaCurl: nextQuotaCurl,
                 quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
@@ -568,7 +600,21 @@ export default function useAccountsActions({
             )
           );
 
-        patchAccountLocally(selectedAccount.id, localPatch);
+        patchAccountLocally(selectedAccount.id, {
+          displayName: nextLabel || fallbackAPIKeyDisplayName(nextAPIKey),
+          apiKey: nextAPIKey,
+          baseUrl: nextBaseURL,
+          formatBaseUrls: nextFormatBaseURLs,
+          prefix: nextPrefix,
+          quotaCurl: nextQuotaCurl,
+          quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+          billingCurl: nextBillingCurl,
+          billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+          platformCookie: nextPlatformCookie,
+          curlVariables: nextCurlVariables,
+          proxyUrl: nextProxyURL,
+          models: nextModels,
+        });
         await loadAccounts({ refreshSupplementalData: false });
       } catch (error) {
         console.error(error);

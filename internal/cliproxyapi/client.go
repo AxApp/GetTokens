@@ -355,6 +355,47 @@ func (c *Client) DeleteRateLimitRule(id string) error {
 	return err
 }
 
+func (c *Client) ListProjectCandidatePoolRules(channel string) ([]ProjectCandidatePoolRule, error) {
+	query := url.Values{}
+	if channel != "" {
+		query.Set("channel", channel)
+	}
+	body, _, err := c.request("GET", "/v0/management/gettokens/project-candidate-pool-rules", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	return decodeProjectCandidatePoolRules(body)
+}
+
+func (c *Client) CreateProjectCandidatePoolRule(rule ProjectCandidatePoolRule) ([]ProjectCandidatePoolRule, error) {
+	payload, err := json.Marshal(rule)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/gettokens/project-candidate-pool-rules", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	return decodeProjectCandidatePoolRules(body)
+}
+
+func (c *Client) UpdateProjectCandidatePoolRule(rule ProjectCandidatePoolRule) ([]ProjectCandidatePoolRule, error) {
+	payload, err := json.Marshal(rule)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("PUT", "/v0/management/gettokens/project-candidate-pool-rules/"+url.PathEscape(rule.ID), nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	return decodeProjectCandidatePoolRules(body)
+}
+
+func (c *Client) DeleteProjectCandidatePoolRule(id string) error {
+	_, _, err := c.request("DELETE", "/v0/management/gettokens/project-candidate-pool-rules/"+url.PathEscape(id), nil, nil, "")
+	return err
+}
+
 func (c *Client) GetAccountStoreDiagnostics() (*AccountStoreDiagnostics, error) {
 	body, _, err := c.request("GET", "/v0/management/gettokens/account-store-diagnostics", nil, nil, "")
 	if err != nil {
@@ -547,6 +588,19 @@ func decodeRateLimitRules(body []byte) ([]RateLimitRule, error) {
 	}
 	if response.Items == nil {
 		return []RateLimitRule{}, nil
+	}
+	return response.Items, nil
+}
+
+func decodeProjectCandidatePoolRules(body []byte) ([]ProjectCandidatePoolRule, error) {
+	var response struct {
+		Items []ProjectCandidatePoolRule `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []ProjectCandidatePoolRule{}, nil
 	}
 	return response.Items, nil
 }

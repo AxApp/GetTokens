@@ -52,6 +52,9 @@ type SessionManagementProviderCount struct {
 type SessionManagementProjectRecord struct {
 	ID                   string                           `json:"id"`
 	Name                 string                           `json:"name"`
+	ProjectKey           string                           `json:"projectKey,omitempty"`
+	ProjectKeySource     string                           `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string                           `json:"projectKeyConfidence,omitempty"`
 	ProviderCounts       map[string]int                   `json:"providerCounts,omitempty"`
 	SessionCount         int                              `json:"sessionCount"`
 	ActiveSessionCount   int                              `json:"activeSessionCount"`
@@ -62,45 +65,51 @@ type SessionManagementProjectRecord struct {
 }
 
 type SessionManagementSessionRecord struct {
-	ID                  string `json:"id"`
-	SessionID           string `json:"sessionID"`
-	ProjectID           string `json:"projectID"`
-	ProjectName         string `json:"projectName"`
-	Title               string `json:"title"`
-	Status              string `json:"status"`
-	Archived            bool   `json:"archived"`
-	MessageCount        int    `json:"messageCount"`
-	RoleSummary         string `json:"roleSummary"`
-	StartedAt           string `json:"startedAt"`
-	UpdatedAt           string `json:"updatedAt"`
-	FileLabel           string `json:"fileLabel"`
-	Summary             string `json:"summary"`
-	Preview             string `json:"preview"`
-	Topic               string `json:"topic"`
-	CurrentMessageLabel string `json:"currentMessageLabel"`
-	Provider            string `json:"provider"`
-	Model               string `json:"model,omitempty"`
+	ID                   string `json:"id"`
+	SessionID            string `json:"sessionID"`
+	ProjectID            string `json:"projectID"`
+	ProjectName          string `json:"projectName"`
+	ProjectKey           string `json:"projectKey,omitempty"`
+	ProjectKeySource     string `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string `json:"projectKeyConfidence,omitempty"`
+	Title                string `json:"title"`
+	Status               string `json:"status"`
+	Archived             bool   `json:"archived"`
+	MessageCount         int    `json:"messageCount"`
+	RoleSummary          string `json:"roleSummary"`
+	StartedAt            string `json:"startedAt"`
+	UpdatedAt            string `json:"updatedAt"`
+	FileLabel            string `json:"fileLabel"`
+	Summary              string `json:"summary"`
+	Preview              string `json:"preview"`
+	Topic                string `json:"topic"`
+	CurrentMessageLabel  string `json:"currentMessageLabel"`
+	Provider             string `json:"provider"`
+	Model                string `json:"model,omitempty"`
 }
 
 type SessionManagementSessionDetail struct {
-	SessionID           string                           `json:"sessionID"`
-	ProjectID           string                           `json:"projectID"`
-	ProjectName         string                           `json:"projectName"`
-	Title               string                           `json:"title"`
-	Status              string                           `json:"status"`
-	Archived            bool                             `json:"archived"`
-	FileLabel           string                           `json:"fileLabel"`
-	MessageCount        int                              `json:"messageCount"`
-	Masked              bool                             `json:"masked"`
-	CurrentMessageLabel string                           `json:"currentMessageLabel"`
-	RoleSummary         string                           `json:"roleSummary"`
-	Topic               string                           `json:"topic"`
-	Preview             string                           `json:"preview"`
-	Provider            string                           `json:"provider"`
-	Model               string                           `json:"model,omitempty"`
-	StartedAt           string                           `json:"startedAt"`
-	UpdatedAt           string                           `json:"updatedAt"`
-	Messages            []SessionManagementMessageRecord `json:"messages"`
+	SessionID            string                           `json:"sessionID"`
+	ProjectID            string                           `json:"projectID"`
+	ProjectName          string                           `json:"projectName"`
+	ProjectKey           string                           `json:"projectKey,omitempty"`
+	ProjectKeySource     string                           `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string                           `json:"projectKeyConfidence,omitempty"`
+	Title                string                           `json:"title"`
+	Status               string                           `json:"status"`
+	Archived             bool                             `json:"archived"`
+	FileLabel            string                           `json:"fileLabel"`
+	MessageCount         int                              `json:"messageCount"`
+	Masked               bool                             `json:"masked"`
+	CurrentMessageLabel  string                           `json:"currentMessageLabel"`
+	RoleSummary          string                           `json:"roleSummary"`
+	Topic                string                           `json:"topic"`
+	Preview              string                           `json:"preview"`
+	Provider             string                           `json:"provider"`
+	Model                string                           `json:"model,omitempty"`
+	StartedAt            string                           `json:"startedAt"`
+	UpdatedAt            string                           `json:"updatedAt"`
+	Messages             []SessionManagementMessageRecord `json:"messages"`
 }
 
 type SessionManagementMessageRecord struct {
@@ -210,12 +219,15 @@ type eventMessageEnvelope struct {
 }
 
 type sessionParseResult struct {
-	projectName  string
-	provider     string
-	session      SessionManagementSessionRecord
-	detail       SessionManagementSessionDetail
-	startedAtRaw time.Time
-	updatedAtRaw time.Time
+	projectName          string
+	projectKey           string
+	projectKeySource     string
+	projectKeyConfidence string
+	provider             string
+	session              SessionManagementSessionRecord
+	detail               SessionManagementSessionDetail
+	startedAtRaw         time.Time
+	updatedAtRaw         time.Time
 }
 
 type sessionIndexRecord struct {
@@ -224,11 +236,14 @@ type sessionIndexRecord struct {
 }
 
 type projectAggregate struct {
-	ID             string
-	Name           string
-	LastActiveAt   time.Time
-	ProviderCounts map[string]int
-	Sessions       []SessionManagementSessionRecord
+	ID                   string
+	Name                 string
+	ProjectKey           string
+	ProjectKeySource     string
+	ProjectKeyConfidence string
+	LastActiveAt         time.Time
+	ProviderCounts       map[string]int
+	Sessions             []SessionManagementSessionRecord
 }
 
 type sessionManagementDetailCacheEntry struct {
@@ -879,16 +894,20 @@ func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, 
 		project := projects[projectID]
 		if project == nil {
 			project = &projectAggregate{
-				ID:             projectID,
-				Name:           result.projectName,
-				ProviderCounts: map[string]int{},
-				Sessions:       make([]SessionManagementSessionRecord, 0, 8),
+				ID:                   projectID,
+				Name:                 result.projectName,
+				ProjectKey:           result.projectKey,
+				ProjectKeySource:     result.projectKeySource,
+				ProjectKeyConfidence: result.projectKeyConfidence,
+				ProviderCounts:       map[string]int{},
+				Sessions:             make([]SessionManagementSessionRecord, 0, 8),
 			}
 			projects[projectID] = project
 		}
 		if project.Name == "" {
 			project.Name = result.projectName
 		}
+		applySessionProjectIdentityToAggregate(project, result)
 		if result.updatedAtRaw.After(project.LastActiveAt) {
 			project.LastActiveAt = result.updatedAtRaw
 		}
@@ -911,12 +930,15 @@ func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, 
 		})
 
 		record := SessionManagementProjectRecord{
-			ID:             project.ID,
-			Name:           project.Name,
-			ProviderCounts: cloneSessionProviderCounts(project.ProviderCounts),
-			SessionCount:   len(project.Sessions),
-			LastActiveAt:   formatSessionManagementTimestamp(project.LastActiveAt),
-			Sessions:       project.Sessions,
+			ID:                   project.ID,
+			Name:                 project.Name,
+			ProjectKey:           project.ProjectKey,
+			ProjectKeySource:     project.ProjectKeySource,
+			ProjectKeyConfidence: project.ProjectKeyConfidence,
+			ProviderCounts:       cloneSessionProviderCounts(project.ProviderCounts),
+			SessionCount:         len(project.Sessions),
+			LastActiveAt:         formatSessionManagementTimestamp(project.LastActiveAt),
+			Sessions:             project.Sessions,
 		}
 		for _, session := range project.Sessions {
 			if session.Status == "archived" {
@@ -975,16 +997,20 @@ func (a *App) loadClaudeCodeSessionManagementSnapshot() (*SessionManagementSnaps
 		project := projects[projectID]
 		if project == nil {
 			project = &projectAggregate{
-				ID:             projectID,
-				Name:           result.projectName,
-				ProviderCounts: map[string]int{},
-				Sessions:       make([]SessionManagementSessionRecord, 0, 8),
+				ID:                   projectID,
+				Name:                 result.projectName,
+				ProjectKey:           result.projectKey,
+				ProjectKeySource:     result.projectKeySource,
+				ProjectKeyConfidence: result.projectKeyConfidence,
+				ProviderCounts:       map[string]int{},
+				Sessions:             make([]SessionManagementSessionRecord, 0, 8),
 			}
 			projects[projectID] = project
 		}
 		if project.Name == "" {
 			project.Name = result.projectName
 		}
+		applySessionProjectIdentityToAggregate(project, result)
 		if result.updatedAtRaw.After(project.LastActiveAt) {
 			project.LastActiveAt = result.updatedAtRaw
 		}
@@ -1001,14 +1027,17 @@ func (a *App) loadClaudeCodeSessionManagementSnapshot() (*SessionManagementSnaps
 			return project.Sessions[i].UpdatedAt > project.Sessions[j].UpdatedAt
 		})
 		record := SessionManagementProjectRecord{
-			ID:                 project.ID,
-			Name:               project.Name,
-			ProviderCounts:     cloneSessionProviderCounts(project.ProviderCounts),
-			SessionCount:       len(project.Sessions),
-			ActiveSessionCount: len(project.Sessions),
-			LastActiveAt:       formatSessionManagementTimestamp(project.LastActiveAt),
-			ProviderSummary:    formatProviderSummary(project.ProviderCounts),
-			Sessions:           project.Sessions,
+			ID:                   project.ID,
+			Name:                 project.Name,
+			ProjectKey:           project.ProjectKey,
+			ProjectKeySource:     project.ProjectKeySource,
+			ProjectKeyConfidence: project.ProjectKeyConfidence,
+			ProviderCounts:       cloneSessionProviderCounts(project.ProviderCounts),
+			SessionCount:         len(project.Sessions),
+			ActiveSessionCount:   len(project.Sessions),
+			LastActiveAt:         formatSessionManagementTimestamp(project.LastActiveAt),
+			ProviderSummary:      formatProviderSummary(project.ProviderCounts),
+			Sessions:             project.Sessions,
 		}
 		projectRecords = append(projectRecords, record)
 	}
@@ -1019,6 +1048,17 @@ func (a *App) loadClaudeCodeSessionManagementSnapshot() (*SessionManagementSnaps
 	snapshot.Projects = projectRecords
 	snapshot.ProviderCounts = cloneSessionProviderCounts(providerCounts)
 	return snapshot, nil
+}
+
+func applySessionProjectIdentityToAggregate(project *projectAggregate, result *sessionParseResult) {
+	if project == nil || result == nil || strings.TrimSpace(result.projectKey) == "" {
+		return
+	}
+	if strings.TrimSpace(project.ProjectKey) == "" || result.projectKeyConfidence == "strong" {
+		project.ProjectKey = result.projectKey
+		project.ProjectKeySource = result.projectKeySource
+		project.ProjectKeyConfidence = result.projectKeyConfidence
+	}
 }
 
 func listClaudeCodeSessionPaths(claudeConfigDir string) ([]string, error) {
@@ -1244,6 +1284,9 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	model := ""
 	var meta sessionMetaEnvelope
 	currentCWD := ""
+	projectKey := ""
+	projectKeySource := ""
+	projectKeyConfidence := ""
 	var messageRecords []SessionManagementMessageRecord
 	if collectMessages {
 		messageRecords = make([]SessionManagementMessageRecord, 0, 32)
@@ -1345,6 +1388,9 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 				case "session_meta":
 					if unmarshalErr := json.Unmarshal(envelope.Payload, &meta); unmarshalErr == nil {
 						projectName = deriveProjectName(meta, currentCWD, relativePath)
+						if strings.TrimSpace(meta.Cwd) != "" && projectKey == "" {
+							projectKey, projectKeySource, projectKeyConfidence = deriveSessionProjectIdentityFromCWD(meta.Cwd, "codex-session-cwd")
+						}
 						provider = normalizeSessionProvider(meta.ModelProvider, model)
 						appendRecord(messageTimestamp, "system", "会话元数据", formatSessionMetaSummary(meta))
 					}
@@ -1354,6 +1400,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 						if strings.TrimSpace(turnContext.Cwd) != "" {
 							currentCWD = turnContext.Cwd
 							projectName = deriveProjectName(meta, currentCWD, relativePath)
+							projectKey, projectKeySource, projectKeyConfidence = deriveSessionProjectIdentityFromCWD(currentCWD, "codex-turn-workspace")
 						}
 						if strings.TrimSpace(turnContext.Model) != "" {
 							model = strings.TrimSpace(turnContext.Model)
@@ -1417,54 +1464,63 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	preview := chooseNonEmpty(lastPrimarySummary, lastSummary, fileLabel)
 
 	sessionRecord := SessionManagementSessionRecord{
-		ID:                  relativePath,
-		SessionID:           relativePath,
-		ProjectID:           projectID,
-		ProjectName:         projectName,
-		Title:               sessionTitle,
-		Status:              status,
-		Archived:            archived,
-		MessageCount:        messageCount,
-		RoleSummary:         roleSummary,
-		StartedAt:           formatSessionManagementTimestamp(firstTimestamp),
-		UpdatedAt:           formatSessionManagementTimestamp(lastTimestamp),
-		FileLabel:           fileLabel,
-		Summary:             preview,
-		Preview:             preview,
-		Topic:               sessionTitle,
-		CurrentMessageLabel: currentMessageLabel,
-		Provider:            provider,
-		Model:               model,
+		ID:                   relativePath,
+		SessionID:            relativePath,
+		ProjectID:            projectID,
+		ProjectName:          projectName,
+		ProjectKey:           projectKey,
+		ProjectKeySource:     projectKeySource,
+		ProjectKeyConfidence: projectKeyConfidence,
+		Title:                sessionTitle,
+		Status:               status,
+		Archived:             archived,
+		MessageCount:         messageCount,
+		RoleSummary:          roleSummary,
+		StartedAt:            formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:            formatSessionManagementTimestamp(lastTimestamp),
+		FileLabel:            fileLabel,
+		Summary:              preview,
+		Preview:              preview,
+		Topic:                sessionTitle,
+		CurrentMessageLabel:  currentMessageLabel,
+		Provider:             provider,
+		Model:                model,
 	}
 
 	detail := SessionManagementSessionDetail{
-		SessionID:           relativePath,
-		ProjectID:           projectID,
-		ProjectName:         projectName,
-		Title:               sessionTitle,
-		Status:              status,
-		Archived:            archived,
-		FileLabel:           fileLabel,
-		MessageCount:        messageCount,
-		Masked:              true,
-		CurrentMessageLabel: currentMessageLabel,
-		RoleSummary:         roleSummary,
-		Topic:               sessionTitle,
-		Preview:             preview,
-		Provider:            provider,
-		Model:               model,
-		StartedAt:           formatSessionManagementTimestamp(firstTimestamp),
-		UpdatedAt:           formatSessionManagementTimestamp(lastTimestamp),
-		Messages:            messageRecords,
+		SessionID:            relativePath,
+		ProjectID:            projectID,
+		ProjectName:          projectName,
+		ProjectKey:           projectKey,
+		ProjectKeySource:     projectKeySource,
+		ProjectKeyConfidence: projectKeyConfidence,
+		Title:                sessionTitle,
+		Status:               status,
+		Archived:             archived,
+		FileLabel:            fileLabel,
+		MessageCount:         messageCount,
+		Masked:               true,
+		CurrentMessageLabel:  currentMessageLabel,
+		RoleSummary:          roleSummary,
+		Topic:                sessionTitle,
+		Preview:              preview,
+		Provider:             provider,
+		Model:                model,
+		StartedAt:            formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:            formatSessionManagementTimestamp(lastTimestamp),
+		Messages:             messageRecords,
 	}
 
 	return &sessionParseResult{
-		projectName:  projectName,
-		provider:     provider,
-		session:      sessionRecord,
-		detail:       detail,
-		startedAtRaw: firstTimestamp,
-		updatedAtRaw: lastTimestamp,
+		projectName:          projectName,
+		projectKey:           projectKey,
+		projectKeySource:     projectKeySource,
+		projectKeyConfidence: projectKeyConfidence,
+		provider:             provider,
+		session:              sessionRecord,
+		detail:               detail,
+		startedAtRaw:         firstTimestamp,
+		updatedAtRaw:         lastTimestamp,
 	}, nil
 }
 
@@ -1477,6 +1533,9 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 
 	projectName := fallbackClaudeCodeProjectName(relativePath)
 	projectCWD := ""
+	projectKey := ""
+	projectKeySource := ""
+	projectKeyConfidence := ""
 	sessionID := strings.TrimSuffix(filepath.Base(relativePath), filepath.Ext(relativePath))
 	model := ""
 	var messageRecords []SessionManagementMessageRecord
@@ -1578,6 +1637,7 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 				if strings.TrimSpace(envelope.Cwd) != "" {
 					projectCWD = strings.TrimSpace(envelope.Cwd)
 					projectName = pathBaseFromCWD(projectCWD)
+					projectKey, projectKeySource, projectKeyConfidence = deriveSessionProjectIdentityFromCWD(projectCWD, "claude-session-cwd")
 				}
 				switch envelope.Type {
 				case "attachment":
@@ -1637,52 +1697,61 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 	}
 
 	sessionRecord := SessionManagementSessionRecord{
-		ID:                  relativePath,
-		SessionID:           relativePath,
-		ProjectID:           projectID,
-		ProjectName:         projectName,
-		Title:               title,
-		Status:              "active",
-		Archived:            false,
-		MessageCount:        messageCount,
-		RoleSummary:         roleSummary,
-		StartedAt:           formatSessionManagementTimestamp(firstTimestamp),
-		UpdatedAt:           formatSessionManagementTimestamp(lastTimestamp),
-		FileLabel:           fileLabel,
-		Summary:             preview,
-		Preview:             preview,
-		Topic:               title,
-		CurrentMessageLabel: currentMessageLabel,
-		Provider:            "claude",
-		Model:               model,
+		ID:                   relativePath,
+		SessionID:            relativePath,
+		ProjectID:            projectID,
+		ProjectName:          projectName,
+		ProjectKey:           projectKey,
+		ProjectKeySource:     projectKeySource,
+		ProjectKeyConfidence: projectKeyConfidence,
+		Title:                title,
+		Status:               "active",
+		Archived:             false,
+		MessageCount:         messageCount,
+		RoleSummary:          roleSummary,
+		StartedAt:            formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:            formatSessionManagementTimestamp(lastTimestamp),
+		FileLabel:            fileLabel,
+		Summary:              preview,
+		Preview:              preview,
+		Topic:                title,
+		CurrentMessageLabel:  currentMessageLabel,
+		Provider:             "claude",
+		Model:                model,
 	}
 	detail := SessionManagementSessionDetail{
-		SessionID:           relativePath,
-		ProjectID:           projectID,
-		ProjectName:         projectName,
-		Title:               title,
-		Status:              "active",
-		Archived:            false,
-		FileLabel:           fileLabel,
-		MessageCount:        messageCount,
-		Masked:              true,
-		CurrentMessageLabel: currentMessageLabel,
-		RoleSummary:         roleSummary,
-		Topic:               title,
-		Preview:             preview,
-		Provider:            "claude",
-		Model:               model,
-		StartedAt:           formatSessionManagementTimestamp(firstTimestamp),
-		UpdatedAt:           formatSessionManagementTimestamp(lastTimestamp),
-		Messages:            messageRecords,
+		SessionID:            relativePath,
+		ProjectID:            projectID,
+		ProjectName:          projectName,
+		ProjectKey:           projectKey,
+		ProjectKeySource:     projectKeySource,
+		ProjectKeyConfidence: projectKeyConfidence,
+		Title:                title,
+		Status:               "active",
+		Archived:             false,
+		FileLabel:            fileLabel,
+		MessageCount:         messageCount,
+		Masked:               true,
+		CurrentMessageLabel:  currentMessageLabel,
+		RoleSummary:          roleSummary,
+		Topic:                title,
+		Preview:              preview,
+		Provider:             "claude",
+		Model:                model,
+		StartedAt:            formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:            formatSessionManagementTimestamp(lastTimestamp),
+		Messages:             messageRecords,
 	}
 	return &sessionParseResult{
-		projectName:  projectName,
-		provider:     "claude",
-		session:      sessionRecord,
-		detail:       detail,
-		startedAtRaw: firstTimestamp,
-		updatedAtRaw: lastTimestamp,
+		projectName:          projectName,
+		projectKey:           projectKey,
+		projectKeySource:     projectKeySource,
+		projectKeyConfidence: projectKeyConfidence,
+		provider:             "claude",
+		session:              sessionRecord,
+		detail:               detail,
+		startedAtRaw:         firstTimestamp,
+		updatedAtRaw:         lastTimestamp,
 	}, nil
 }
 
@@ -2249,6 +2318,15 @@ func deriveProjectName(meta sessionMetaEnvelope, cwd string, relativePath string
 		return repository
 	}
 	return fallbackProjectName(relativePath)
+}
+
+func deriveSessionProjectIdentityFromCWD(cwd string, source string) (string, string, string) {
+	cleaned := filepath.Clean(strings.TrimSpace(cwd))
+	if cleaned == "" || cleaned == "." {
+		return "", "", ""
+	}
+	sum := sha256.Sum256([]byte(cleaned))
+	return "workspace:" + hex.EncodeToString(sum[:]), strings.TrimSpace(source), "strong"
 }
 
 func fallbackProjectName(relativePath string) string {

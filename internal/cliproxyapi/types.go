@@ -332,6 +332,19 @@ type RateLimitEvent struct {
 	TriggeredAt int64  `json:"triggered_at"`
 }
 
+type ProjectCandidatePoolRule struct {
+	ID                   string   `json:"id,omitempty"`
+	Channel              string   `json:"channel"`
+	ProjectKey           string   `json:"projectKey"`
+	ProjectName          string   `json:"projectName,omitempty"`
+	ProjectKeySource     string   `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string   `json:"projectKeyConfidence,omitempty"`
+	Enabled              bool     `json:"enabled"`
+	AllowAccountIDs      []string `json:"allowAccountIDs"`
+	CreatedAt            string   `json:"createdAt,omitempty"`
+	UpdatedAt            string   `json:"updatedAt,omitempty"`
+}
+
 const (
 	QuotaRuntimeStatusSuccess  = "success"
 	QuotaRuntimeStatusError    = "error"

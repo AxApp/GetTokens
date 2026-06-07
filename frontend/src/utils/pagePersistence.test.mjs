@@ -775,12 +775,20 @@ test('account-list modal hash helpers add and remove independent modal routes', 
     '#frame=codex&workspace=account-list&modal=route-probe',
   );
   assert.equal(
+    buildCodexModalFrameHash('#frame=codex&workspace=account-list', 'project-config'),
+    '#frame=codex&workspace=account-list&modal=project-config',
+  );
+  assert.equal(
     clearCodexModalFrameHash('#frame=codex&workspace=account-list&modal=route-probe'),
     '#frame=codex&workspace=account-list',
   );
   assert.equal(
     buildClaudeModalFrameHash('#frame=claude&workspace=account-list', 'route-probe'),
     '#frame=claude&workspace=account-list&modal=route-probe',
+  );
+  assert.equal(
+    buildClaudeModalFrameHash('#frame=claude&workspace=account-list', 'project-config'),
+    '#frame=claude&workspace=account-list&modal=project-config',
   );
   assert.equal(
     clearClaudeModalFrameHash('#frame=claude&workspace=account-list&modal=route-probe'),
@@ -867,6 +875,10 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
   assert.equal(
     buildFrameHash('codex', 'all', 'account-list', 'codex', 'codex', null, { modal: 'route-probe' }),
     '#frame=codex&workspace=account-list&modal=route-probe',
+  );
+  assert.equal(
+    buildFrameHash('codex', 'all', 'account-list', 'codex', 'codex', null, { modal: 'project-config' }),
+    '#frame=codex&workspace=account-list&modal=project-config',
   );
   assert.equal(
     buildFrameHash('claude', 'all', 'feature-config', 'codex', 'codex', 'claude:sonnet', {

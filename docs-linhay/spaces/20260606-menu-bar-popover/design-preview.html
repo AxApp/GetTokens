@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GetTokens Menu Bar Popover Design v09</title>
+  <style>
+    :root {
+      --paper: #f4f1e9;
+      --paper-deep: #e9e3d4;
+      --ink: #1b1a17;
+      --muted: #6d675d;
+      --line: #24231f;
+      --soft-line: rgba(31, 30, 27, 0.26);
+      --good: #294b3d;
+      --warn: #76551f;
+      --bad: #6a2c31;
+      --ghost: rgba(255, 255, 255, 0.36);
+      --shadow: rgba(18, 17, 14, 0.24);
+      font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.72), transparent 23rem),
+        linear-gradient(135deg, #d5d2c8 0%, #f2efe6 48%, #d0cabd 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.18;
+      background-image:
+        linear-gradient(rgba(0, 0, 0, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+      background-size: 11px 11px;
+      mix-blend-mode: multiply;
+    }
+
+    .canvas {
+      width: min(1220px, calc(100vw - 48px));
+      margin: 0 auto;
+      padding: 30px 0 46px;
+    }
+
+    .topline {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 32px;
+      margin-bottom: 18px;
+    }
+
+    .kicker {
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 31px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .brief {
+      max-width: 560px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.75;
+      text-align: right;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: 414px minmax(460px, 1fr);
+      gap: 30px;
+      align-items: start;
+    }
+
+    .paper {
+      position: relative;
+      background:
+        radial-gradient(circle at 14% 12%, rgba(255, 255, 255, 0.74), transparent 14rem),
+        linear-gradient(180deg, var(--paper) 0%, var(--paper-deep) 100%);
+      border: 1px solid rgba(34, 33, 29, 0.16);
+      box-shadow: 0 18px 44px var(--shadow);
+      filter: contrast(1.02);
+    }
+
+    .paper::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 10px;
+      background:
+        linear-gradient(135deg, transparent 0 35%, var(--paper-deep) 36% 64%, transparent 65%) 0 0 / 16px 10px repeat-x;
+      filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.08));
+    }
+
+    .noise {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.24;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(0, 0, 0, 0.06) 0 1px, transparent 1px),
+        radial-gradient(circle at 72% 32%, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px),
+        radial-gradient(circle at 38% 80%, rgba(0, 0, 0, 0.04) 0 1px, transparent 1px);
+      background-size: 17px 19px, 23px 29px, 31px 37px;
+      mix-blend-mode: multiply;
+    }
+
+    .popover-shell {
+      width: 392px;
+      margin: 0 auto;
+    }
+
+    .popover-shell::before {
+      content: "";
+      position: absolute;
+      top: -8px;
+      right: 48px;
+      width: 16px;
+      height: 16px;
+      transform: rotate(45deg);
+      background: var(--paper);
+      border-left: 1px solid rgba(33, 32, 28, 0.16);
+      border-top: 1px solid rgba(33, 32, 28, 0.16);
+    }
+
+    .popover {
+      position: relative;
+      padding: 20px 22px 26px;
+    }
+
+    .bar,
+    .section-head,
+    .ledger-row,
+    .receipt-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bar {
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .bar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+    }
+
+    .dot-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 3px);
+      gap: 3px;
+    }
+
+    .dot-grid span {
+      width: 3px;
+      height: 3px;
+      background: var(--ink);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 0 12px;
+    }
+
+    .pixel-key {
+      width: 56px;
+      height: 56px;
+      border: 2px solid var(--line);
+      background:
+        linear-gradient(90deg, transparent 8px, rgba(0, 0, 0, 0.08) 9px 10px, transparent 11px),
+        linear-gradient(transparent 8px, rgba(0, 0, 0, 0.08) 9px 10px, transparent 11px),
+        #e2ded0;
+      background-size: 12px 12px;
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.25);
+    }
+
+    .key-art {
+      width: 34px;
+      height: 34px;
+      image-rendering: pixelated;
+      background:
+        linear-gradient(var(--ink), var(--ink)) 0 15px / 20px 8px no-repeat,
+        linear-gradient(var(--ink), var(--ink)) 18px 9px / 9px 20px no-repeat,
+        linear-gradient(var(--ink), var(--ink)) 27px 5px / 8px 8px no-repeat,
+        linear-gradient(var(--ink), var(--ink)) 27px 26px / 8px 8px no-repeat,
+        linear-gradient(var(--ink), var(--ink)) 34px 12px / 8px 16px no-repeat,
+        linear-gradient(var(--ink), var(--ink)) 4px 25px / 7px 7px no-repeat,
+        linear-gradient(var(--ink), var(--ink)) 13px 28px / 6px 6px no-repeat;
+      transform: rotate(-12deg);
+    }
+
+    .hero h2 {
+      margin: 0 0 5px;
+      font-size: 17px;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .rule {
+      height: 1px;
+      border: 0;
+      margin: 0 -22px;
+      background-image: linear-gradient(90deg, var(--line) 0 55%, transparent 56%);
+      background-size: 8px 1px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 10px 0;
+    }
+
+    .metric {
+      min-width: 0;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .metric .value {
+      margin-top: 4px;
+      font-size: 16px;
+      line-height: 1;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .good {
+      color: var(--good);
+    }
+
+    .warn {
+      color: var(--warn);
+    }
+
+    .bad {
+      color: var(--bad);
+    }
+
+    .section-head {
+      padding: 10px 0 6px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .section-head span:last-child {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .type-ledger {
+      display: grid;
+      gap: 5px;
+    }
+
+    .ledger-row {
+      align-items: stretch;
+      padding-bottom: 5px;
+      border-bottom: 1px dashed var(--soft-line);
+    }
+
+    .ledger-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .type-main {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .type-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
+    .type-title span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .type-desc {
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.25;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 21px;
+      height: 17px;
+      padding: 0 4px;
+      border: 1px solid var(--line);
+      background: var(--ghost);
+      font-size: 9px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .badge.fill {
+      color: var(--paper);
+      background: var(--ink);
+    }
+
+    .type-count {
+      display: grid;
+      align-content: start;
+      justify-items: end;
+      gap: 2px;
+      min-width: 72px;
+      font-size: 9px;
+      color: var(--muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .type-count strong {
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .resource-list {
+      display: grid;
+      gap: 5px;
+      padding-top: 8px;
+    }
+
+    .resource {
+      display: grid;
+      gap: 7px;
+      padding: 10px 0 11px;
+      border-bottom: 1px dashed var(--soft-line);
+    }
+
+    .resource:last-child {
+      border-bottom: 0;
+      padding-bottom: 2px;
+    }
+
+    .resource-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 10px;
+    }
+
+    .resource-main {
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+
+    .resource-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.08;
+    }
+
+    .resource-detail {
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .resource-quota {
+      display: grid;
+      justify-items: end;
+      gap: 1px;
+      min-width: 62px;
+      font-weight: 900;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .resource-quota strong {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .resource-quota span {
+      color: var(--muted);
+      font-size: 8px;
+      line-height: 1;
+    }
+
+    .resource-meter {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .resource-window {
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .resource-meta {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.15;
+    }
+
+    .resource-state {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      height: 16px;
+      padding: 0 5px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.24);
+      color: var(--ink);
+      font-size: 8px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .resource-balance {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .resource-balance span {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .track {
+      height: 7px;
+      border: 1px solid var(--line);
+      background:
+        repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 1px, transparent 1px 5px),
+        rgba(255, 255, 255, 0.28);
+      padding: 1px;
+    }
+
+    .fillbar {
+      height: 100%;
+      background: var(--ink);
+    }
+
+    .fillbar.good {
+      background: var(--good);
+    }
+
+    .fillbar.warn {
+      background: var(--warn);
+    }
+
+    .fillbar.bad {
+      background: var(--bad);
+    }
+
+    .receipt {
+      padding-top: 10px;
+    }
+
+    .receipt-row {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .receipt-row strong {
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .barcode-label {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 9px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .barcode {
+      height: 26px;
+      margin: 5px 18px 4px;
+      background:
+        linear-gradient(90deg,
+          var(--ink) 0 2px, transparent 2px 5px,
+          var(--ink) 5px 7px, transparent 7px 11px,
+          var(--ink) 11px 15px, transparent 15px 18px,
+          var(--ink) 18px 19px, transparent 19px 23px,
+          var(--ink) 23px 27px, transparent 27px 31px,
+          var(--ink) 31px 33px, transparent 33px 37px,
+          var(--ink) 37px 43px, transparent 43px 47px);
+      background-size: 47px 100%;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      padding-top: 10px;
+    }
+
+    .button {
+      min-width: 0;
+      height: 34px;
+      border: 2px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.22);
+      font-size: 12px;
+      font-weight: 900;
+      font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .button.dark {
+      color: var(--paper);
+      background: var(--ink);
+    }
+
+    .footer {
+      padding-top: 8px;
+      color: var(--muted);
+      font-size: 9px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .side {
+      display: grid;
+      gap: 20px;
+    }
+
+    .spec-card {
+      padding: 26px 28px 34px;
+    }
+
+    .spec-card h3 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .spec-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.75;
+    }
+
+    .matrix {
+      margin-top: 18px;
+      border-top: 2px solid var(--line);
+    }
+
+    .matrix-row {
+      display: grid;
+      grid-template-columns: 148px 130px 1fr;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px dashed var(--soft-line);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .matrix-row b {
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .matrix-row span {
+      color: var(--muted);
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 2px solid var(--line);
+      margin-top: 18px;
+    }
+
+    .legend-item {
+      min-height: 70px;
+      padding: 10px;
+      border-right: 1px solid var(--line);
+      display: grid;
+      align-content: space-between;
+    }
+
+    .legend-item:last-child {
+      border-right: 0;
+    }
+
+    .legend-item span {
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .legend-item strong {
+      font-size: 17px;
+      line-height: 1;
+    }
+
+    @media (max-width: 940px) {
+      .canvas {
+        width: min(430px, calc(100vw - 24px));
+        padding: 22px 0 40px;
+      }
+
+      .topline {
+        display: grid;
+      }
+
+      .brief {
+        text-align: left;
+      }
+
+      .board {
+        grid-template-columns: 1fr;
+      }
+
+      .popover-shell {
+        width: 100%;
+      }
+
+      .matrix-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="canvas">
+    <header class="topline">
+      <div>
+        <div class="kicker">GETTOKENS / MENU BAR POPOVER / V09</div>
+        <h1>额度余额小票</h1>
+      </div>
+      <p class="brief">删掉账号类型说明，只保留用户打开 menu bar popover 最关心的两件事：哪些账号额度快没了，哪些余额还剩多少。</p>
+    </header>
+
+    <section class="board">
+      <div class="paper popover-shell" aria-label="GetTokens menu bar popover preview">
+        <div class="noise"></div>
+        <div class="popover">
+          <div class="bar">
+            <span>GETTOKENS</span>
+            <span class="bar-right">BALANCE <span class="dot-grid" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></span></span>
+          </div>
+
+          <div class="hero">
+            <div class="pixel-key" aria-hidden="true"><div class="key-art"></div></div>
+            <div>
+              <h2>Quota receipt</h2>
+              <p>2 个额度风险，1 个已空。API 余额充足，建议优先处理 free-low。</p>
+            </div>
+          </div>
+
+          <hr class="rule" />
+
+          <div class="summary">
+            <div class="metric">
+              <div class="label">最低额度</div>
+              <div class="value bad">06%</div>
+            </div>
+            <div class="metric">
+              <div class="label">风险账号</div>
+              <div class="value warn">2</div>
+            </div>
+            <div class="metric">
+              <div class="label">总余额</div>
+              <div class="value">$124</div>
+            </div>
+            <div class="metric">
+              <div class="label">刷新</div>
+              <div class="value good">22:48</div>
+            </div>
+          </div>
+
+          <hr class="rule" />
+
+          <div class="resource-list">
+            <article class="resource">
+              <div class="resource-top">
+                <div class="resource-main">
+                  <div class="resource-name">codex-free-low.json</div>
+                  <div class="resource-detail">7D · 23:00 重置</div>
+                </div>
+                <div class="resource-quota bad">
+                  <strong>06%</strong>
+                  <span>剩余额度</span>
+                </div>
+              </div>
+              <div class="resource-meter">
+                <div class="track"><div class="fillbar bad" style="width: 6%"></div></div>
+                <span class="resource-window">7D</span>
+              </div>
+              <div class="resource-meta">
+                <span class="resource-balance">$0.00 <span>余额</span></span>
+                <span class="resource-state">需充值</span>
+              </div>
+            </article>
+            <article class="resource">
+              <div class="resource-top">
+                <div class="resource-main">
+                  <div class="resource-name">codex-plus-nightly.json</div>
+                  <div class="resource-detail">5H · 42m 后重置</div>
+                </div>
+                <div class="resource-quota warn">
+                  <strong>18%</strong>
+                  <span>剩余额度</span>
+                </div>
+              </div>
+              <div class="resource-meter">
+                <div class="track"><div class="fillbar warn" style="width: 18%"></div></div>
+                <span class="resource-window">5H</span>
+              </div>
+              <div class="resource-meta">
+                <span class="resource-balance">OK <span>套餐余额</span></span>
+                <span class="resource-state">偏低</span>
+              </div>
+            </article>
+            <article class="resource">
+              <div class="resource-top">
+                <div class="resource-main">
+                  <div class="resource-name">gray-canary</div>
+                  <div class="resource-detail">5H · 01:20 重置</div>
+                </div>
+                <div class="resource-quota warn">
+                  <strong>22%</strong>
+                  <span>剩余额度</span>
+                </div>
+              </div>
+              <div class="resource-meter">
+                <div class="track"><div class="fillbar warn" style="width: 22%"></div></div>
+                <span class="resource-window">5H</span>
+              </div>
+              <div class="resource-meta">
+                <span class="resource-balance">¥86.20 <span>余额</span></span>
+                <span class="resource-state">关注</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="receipt">
+            <hr class="rule" style="margin-top: 12px" />
+            <div class="section-head">
+              <span>余额</span>
+              <span>4 sources</span>
+            </div>
+            <div class="receipt-row"><span>Billing USD Pool</span><strong>$124.60</strong></div>
+            <div class="receipt-row"><span>SiliconFlow</span><strong>¥86.20</strong></div>
+            <div class="receipt-row"><span>DeepSeek Coding Plan</span><strong>¥42.00</strong></div>
+            <div class="receipt-row"><span>OpenRouter</span><strong>disabled</strong></div>
+            <div class="barcode-label">POOL SNAPSHOT / NO SECRET DATA</div>
+            <div class="barcode" aria-hidden="true"></div>
+          </div>
+
+          <hr class="rule" />
+
+          <div class="actions">
+            <a class="button dark" href="#">打开账号池</a>
+            <a class="button" href="#">刷新额度</a>
+          </div>
+          <div class="footer">quota + balance only / sidecar ready :18317</div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <section class="paper spec-card">
+          <div class="noise"></div>
+          <h3>收窄原则</h3>
+          <p>menu bar popover 只展示额度和余额，隐藏账号类型教学、模型映射和路由解释。类型差异只影响数据标签，不占用首屏注意力。</p>
+          <div class="matrix">
+            <div class="matrix-row">
+              <b>Quota</b>
+              <span>5H / 7D / vendor</span>
+              <span>只列风险账号，按剩余比例升序；正常账号不逐个展示。</span>
+            </div>
+            <div class="matrix-row">
+              <b>Balance</b>
+              <span>USD / CNY / vendor</span>
+              <span>展示可读余额源；无余额能力的账号不显示，不写“未知”。</span>
+            </div>
+            <div class="matrix-row">
+              <b>Warnings</b>
+              <span>empty / low / stale</span>
+              <span>只保留影响使用的状态，例如额度空、低于阈值、余额源 stale。</span>
+            </div>
+            <div class="matrix-row">
+              <b>Actions</b>
+              <span>open / refresh</span>
+              <span>完整账号类型、模型、路由和编辑能力统一回主窗口。</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="paper spec-card">
+          <div class="noise"></div>
+          <h3>Popover 首屏优先级</h3>
+          <p>右上角空间有限，首屏先回答“哪个额度快没了、哪个余额还剩多少、是否需要马上处理”。</p>
+          <div class="legend">
+            <div class="legend-item"><span>lowest</span><strong>06%</strong></div>
+            <div class="legend-item"><span>quota risk</span><strong>3</strong></div>
+            <div class="legend-item"><span>balance</span><strong>4</strong></div>
+            <div class="legend-item"><span>stale</span><strong>0</strong></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

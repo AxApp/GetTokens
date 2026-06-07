@@ -131,6 +131,35 @@ test('OpenAI API key account generates Codex API key draft', () => {
   assert.equal(actions[0].draft.codex.supportsWebsocketsSet, true);
 });
 
+test('Codex API draft uses configured openai_responses endpoint before primary base url', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      provider: 'openai',
+      credentialSource: 'api-key',
+      apiKey: 'sk-current-openai-account',
+      baseUrl: 'https://relay.example.com/v1',
+      supportedFormats: ['openai_chat', 'openai_responses'],
+      formatBaseUrls: {
+        openai_chat: 'https://relay.example.com/openai/v1',
+        openai_responses: 'https://relay.example.com/codex/v1',
+      },
+      models: [{ name: 'gpt-5.5', alias: 'GT' }],
+    }),
+    relayKeyItems,
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].target, 'codex');
+  assert.equal(actions[0].sourceFormat, 'openai_responses');
+  assert.equal(actions[0].sourceFormatBaseUrl, 'https://relay.example.com/codex/v1');
+  assert.equal(actions[0].draft.target, 'codex');
+  assert.equal(actions[0].draft.codex.baseUrl, 'https://relay.example.com/codex/v1');
+});
+
 test('Codex API key account apply does not require a relay key', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({

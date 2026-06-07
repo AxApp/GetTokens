@@ -31,6 +31,8 @@ export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void
 
 export function CreateOpenAICompatibleProvider(arg1:main.CreateOpenAICompatibleProviderInput):Promise<void>;
 
+export function CreateProjectCandidatePoolRule(arg1:main.ProjectCandidatePoolRule):Promise<Array<main.ProjectCandidatePoolRule>>;
+
 export function CreateRateLimitRule(arg1:main.RateLimitRule):Promise<Array<main.RateLimitRule>>;
 
 export function DeleteAuthFiles(arg1:Array<string>):Promise<void>;
@@ -44,6 +46,8 @@ export function DeleteCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Pr
 export function DeleteLegacyAccountSources():Promise<main.AccountMigrationDeleteResult>;
 
 export function DeleteOpenAICompatibleProvider(arg1:string):Promise<void>;
+
+export function DeleteProjectCandidatePoolRule(arg1:main.DeleteProjectCandidatePoolRuleInput):Promise<void>;
 
 export function DeleteRateLimitRule(arg1:main.DeleteRateLimitRuleInput):Promise<void>;
 
@@ -175,6 +179,8 @@ export function ListOAuthModelAliases(arg1:string):Promise<Array<main.OpenAIComp
 
 export function ListOpenAICompatibleProviders():Promise<Array<main.OpenAICompatibleProvider>>;
 
+export function ListProjectCandidatePoolRules(arg1:main.ProjectCandidatePoolRulesInput):Promise<Array<main.ProjectCandidatePoolRule>>;
+
 export function ListRateLimitEvents(arg1:main.RateLimitEventsInput):Promise<Array<main.RateLimitEvent>>;
 
 export function ListRateLimitRules(arg1:main.RateLimitRulesInput):Promise<Array<main.RateLimitRule>>;
@@ -272,6 +278,8 @@ export function UpdateLocalProjectedUsageSettings(arg1:main.LocalProjectedUsageS
 export function UpdateOAuthModelAliases(arg1:main.UpdateOAuthModelAliasesInput):Promise<void>;
 
 export function UpdateOpenAICompatibleProvider(arg1:main.UpdateOpenAICompatibleProviderInput):Promise<void>;
+
+export function UpdateProjectCandidatePoolRule(arg1:main.ProjectCandidatePoolRule):Promise<Array<main.ProjectCandidatePoolRule>>;
 
 export function UpdateRateLimitRule(arg1:main.RateLimitRule):Promise<Array<main.RateLimitRule>>;
 

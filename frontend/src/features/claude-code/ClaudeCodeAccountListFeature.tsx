@@ -1,16 +1,21 @@
 import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Terminal } from 'lucide-react';
 import {
+  CreateProjectCandidatePoolRule,
+  DeleteProjectCandidatePoolRule,
   ExplainChannelRouting,
   FetchOpenAICompatibleProviderModels,
   GetAuthFileModels,
   GetChannelRoutingConfig,
+  GetClaudeCodeSessionManagementSnapshot,
   ListChannelRouteEvents,
   ListAccounts,
   ListOAuthModelAliases,
+  ListProjectCandidatePoolRules,
   ProbeClaudeCodeAccountRouting,
   SaveChannelRoutingConfig,
   SetAccountDisabled,
+  UpdateProjectCandidatePoolRule,
   UpdateCodexAPIKeyConfig,
   UpdateOAuthModelAliases,
   UpdateOpenAICompatibleProvider,
@@ -31,13 +36,21 @@ import {
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import { mapBackendAccountRecord } from '../accounts/model/accountPresentation';
 import ChannelRoutingWorkbench from '../channel-routing/components/ChannelRoutingWorkbench';
+import ProjectCandidatePoolRulesModal from '../channel-routing/components/ProjectCandidatePoolRulesModal';
 import {
+  buildPreviewProjectCandidatePoolRules,
   buildPreviewChannelRouteAuditEvent,
+  buildProjectCandidatePoolProjectOptions,
+  buildProjectCandidatePoolProjectsFromSessionManagementSnapshot,
+  normalizeProjectCandidatePoolRuleDraft,
+  normalizeProjectCandidatePoolRules,
   normalizeChannelRoutingConfig,
   updateChannelRoutingConfig,
   type ChannelRouteAuditEvent,
   type ChannelRouteMode,
   type ChannelRoutingConfig,
+  type ProjectCandidatePoolObservedProjectLike,
+  type ProjectCandidatePoolRuleLike,
 } from '../channel-routing/model/channelRouting';
 import { CodexAccountDetailModal, CodexAccountOrderSection, RouteProbeCard } from '../codex/components/CodexAccountListView';
 import {
@@ -65,6 +78,7 @@ import { getClaudeCodeAccountListPreviewAccounts, getClaudeCodeAccountListPrevie
 
 const DEFAULT_CLAUDE_CODE_PROBE_MODEL = 'claude-sonnet-4-6';
 const CLAUDE_OAUTH_MODEL_ALIAS_CHANNEL = 'claude';
+const PROJECT_CANDIDATE_POOL_PROJECT_SYNC_INTERVAL_MS = 15_000;
 
 interface ClaudeCodeAccountListFeatureProps {
   sidecarStatus: SidecarStatus;
@@ -93,6 +107,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   const [routingProbeRequestedAttempts, setRoutingProbeRequestedAttempts] = useState(1);
   const [routingProbeRunning, setRoutingProbeRunning] = useState(false);
   const [routeProbeOpen, setRouteProbeOpen] = useState(false);
+  const [projectConfigOpen, setProjectConfigOpen] = useState(false);
   const [detailRowID, setDetailRowID] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [orderDirty, setOrderDirty] = useState(false);
@@ -103,6 +118,10 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   const [channelExplain, setChannelExplain] = useState<main.ChannelRoutingExplainResult | null>(null);
   const [channelRouteEvents, setChannelRouteEvents] = useState<ChannelRouteAuditEvent[]>([]);
   const [channelRouteEventsLoading, setChannelRouteEventsLoading] = useState(false);
+  const [projectCandidatePoolRules, setProjectCandidatePoolRules] = useState<ProjectCandidatePoolRuleLike[]>([]);
+  const [projectCandidatePoolObservedProjects, setProjectCandidatePoolObservedProjects] = useState<
+    ProjectCandidatePoolObservedProjectLike[]
+  >([]);
   const suppressNextDetailClickRef = useRef(false);
 
   const summary = useMemo(() => buildClaudeCodeAccountSummary(orderedRows), [orderedRows]);
@@ -120,6 +139,15 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     };
   }, [authFileModelMappings, detailRow]);
   const requestableRows = useMemo(() => orderedRows.filter((row) => row.requestable), [orderedRows]);
+  const projectCandidatePoolProjectOptions = useMemo(
+    () =>
+      buildProjectCandidatePoolProjectOptions({
+        rules: projectCandidatePoolRules,
+        sessionProjects: projectCandidatePoolObservedProjects,
+        routeEvents: channelRouteEvents,
+      }),
+    [channelRouteEvents, projectCandidatePoolObservedProjects, projectCandidatePoolRules],
+  );
   const routePolicyDraft = useMemo(
     () => ({
       allowAccountIDs: [],
@@ -162,6 +190,18 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       setChannelExplain(null);
       setChannelRouteEvents([]);
       setOrderedRows(applyChannelOrderToRows(previewRows, previewConfig.orderedAccountIDs));
+      setProjectCandidatePoolRules(buildPreviewProjectCandidatePoolRules('claude', previewRows));
+      setProjectCandidatePoolObservedProjects([
+        {
+          projectKey: 'workspace:preview-gettokens',
+          projectName: 'GetTokens',
+          projectKeySource: 'browser-preview',
+          projectKeyConfidence: 'strong',
+          source: 'session-history',
+          lastSeenAt: '2026-06-07T08:00:00.000Z',
+          sessionCount: 2,
+        },
+      ]);
       setOrderDirty(false);
       setMessage(messageOverride || t('claude_code.account_list_preview_loaded'));
       return;
@@ -169,21 +209,28 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
 
     if (!ready) {
       setOrderedRows([]);
+      setProjectCandidatePoolRules([]);
+      setProjectCandidatePoolObservedProjects([]);
       setMessage(t('claude_code.account_list_waiting_ready'));
       return;
     }
 
     setLoading(true);
     try {
-      const [accountResponse, routingConfig] = await Promise.all([
+      const [accountResponse, routingConfig, projectRulesResponse] = await Promise.all([
         trackRequest('ListAccounts', { args: [] }, () => ListAccounts()),
         trackRequest('GetChannelRoutingConfig', { channel: 'claude' }, () => GetChannelRoutingConfig('claude')),
+        trackRequest('ListProjectCandidatePoolRules', { channel: 'claude' }, () =>
+          ListProjectCandidatePoolRules(main.ProjectCandidatePoolRulesInput.createFrom({ channel: 'claude' })),
+        ),
       ]);
       const accountRows = (accountResponse || []).map((account) => mapBackendAccountRecord(account));
       const normalizedConfig = mapWailsChannelRoutingConfig(routingConfig, 'claude');
       setChannelConfig(normalizedConfig);
       setChannelExplain(null);
       setOrderedRows(applyChannelOrderToRows(buildClaudeCodeAccountRows(accountRows), normalizedConfig.orderedAccountIDs));
+      setProjectCandidatePoolRules(normalizeProjectCandidatePoolRules(projectRulesResponse, 'claude'));
+      void loadProjectCandidatePoolProjectSources();
       void loadChannelRouteEvents();
       setOrderDirty(false);
       setMessage(messageOverride || t('claude_code.account_list_loaded'));
@@ -198,6 +245,19 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   useEffect(() => {
     void reload();
   }, [browserMode, ready]);
+
+  useEffect(() => {
+    if (browserMode || !ready || !projectConfigOpen) {
+      return;
+    }
+    void loadProjectCandidatePoolProjectSources();
+    const timer = window.setInterval(() => {
+      void loadProjectCandidatePoolProjectSources();
+    }, PROJECT_CANDIDATE_POOL_PROJECT_SYNC_INTERVAL_MS);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [browserMode, projectConfigOpen, ready]);
 
   useEffect(() => {
     if (routingProbeModel.trim()) {
@@ -390,6 +450,16 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     clearClaudeModalInHash();
   }
 
+  function openProjectConfigModal() {
+    setProjectConfigOpen(true);
+    markClaudeModalInHash('project-config');
+  }
+
+  function closeProjectConfigModal() {
+    setProjectConfigOpen(false);
+    clearClaudeModalInHash();
+  }
+
   function markClaudeDetailInHash(rowID: string) {
     if (typeof window === 'undefined') {
       return;
@@ -410,7 +480,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     }
   }
 
-  function markClaudeModalInHash(modal: 'route-probe') {
+  function markClaudeModalInHash(modal: 'route-probe' | 'project-config') {
     if (typeof window === 'undefined') {
       return;
     }
@@ -442,7 +512,11 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       } else {
         setDetailRowID(null);
       }
-      setRouteProbeOpen(hashState?.page === 'claude' && hashState.claudeWorkspace === 'account-list' && hashState?.modal === 'route-probe');
+      const accountListModal = hashState?.page === 'claude' && hashState.claudeWorkspace === 'account-list'
+        ? hashState?.modal
+        : undefined;
+      setRouteProbeOpen(accountListModal === 'route-probe');
+      setProjectConfigOpen(accountListModal === 'project-config');
     };
 
     syncModalStateFromHash();
@@ -533,11 +607,11 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     void persistChannelRoutingConfig(nextConfig);
   }
 
-  async function runChannelExplain() {
+  async function runChannelExplain(rule?: ProjectCandidatePoolRuleLike) {
     const nextConfig = withCurrentChannelOrder(channelConfig, orderedRows.map((row) => row.id));
     setChannelConfig(nextConfig);
     if (browserMode) {
-      const candidates = orderedRows
+      const baseCandidates = orderedRows
         .filter((row) => row.requestable)
         .map((row, index) => ({
           id: row.id,
@@ -546,35 +620,81 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           routeOrder: index,
           channelOrder: index,
         }));
+      const normalizedRule = rule ? normalizeProjectCandidatePoolRuleDraft(rule, 'claude') : null;
+      const projectKey = String(normalizedRule?.projectKey || '').trim();
+      const projectAllowIDs = new Set(normalizedRule?.allowAccountIDs || []);
+      const projectFiltered = projectKey
+        ? baseCandidates
+            .filter((candidate) => !projectAllowIDs.has(candidate.id))
+            .map((candidate) => ({ id: candidate.id, reason: 'project-candidate-pool' }))
+        : [];
+      const candidates = projectKey ? baseCandidates.filter((candidate) => projectAllowIDs.has(candidate.id)) : baseCandidates;
+      const projectCandidatePool = projectKey
+        ? {
+            evaluated: true,
+            activated: true,
+            reason:
+              candidates.length > 0
+                ? 'project-candidate-pool:matched'
+                : 'project-candidate-pool:no-routeable-account',
+            ruleID: normalizedRule?.id || '',
+            projectKey,
+            projectName: normalizedRule?.projectName || '',
+            projectKeySource: normalizedRule?.projectKeySource || '',
+            projectKeyConfidence: normalizedRule?.projectKeyConfidence || '',
+            allowAccountIDs: [...projectAllowIDs],
+            filteredAccountIDs: projectFiltered.map((item) => item.id),
+            beforeCandidateCount: baseCandidates.length,
+            afterCandidateCount: candidates.length,
+          }
+        : undefined;
       const result = main.ChannelRoutingExplainResult.createFrom({
-          channel: 'claude',
-          routeMode: nextConfig.routeMode,
-          selectedAccountID: candidates[0]?.id || '',
-          candidates,
-          filtered: orderedRows
-            .filter((row) => !row.requestable)
-            .map((row) => ({ id: row.id, reason: row.disabled ? 'account-disabled' : 'account-unrequestable' })),
-          steps: [`mode:${nextConfig.routeMode}`, `candidates:${candidates.length}`, 'preview:browser'],
-          snapshotVersion: 'preview',
-          policyVersion: 'channel-routing-v1',
-          shadow: nextConfig.shadowEnabled
-            ? {
-                enabled: true,
-                routeMode: nextConfig.shadowRouteMode,
-                selectedAccountID: candidates[candidates.length - 1]?.id || candidates[0]?.id || '',
-                diff: Boolean(candidates.length > 1),
-                steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
+        channel: 'claude',
+        routeMode: nextConfig.routeMode,
+        selectedAccountID: candidates[0]?.id || '',
+        candidates,
+        filtered: orderedRows
+          .filter((row) => !row.requestable)
+          .map((row) => ({ id: row.id, reason: row.disabled ? 'account-disabled' : 'account-unrequestable' }))
+          .concat(projectFiltered),
+        steps: [
+          ...(projectKey ? [projectCandidatePool?.reason || 'project-candidate-pool:matched'] : []),
+          `mode:${nextConfig.routeMode}`,
+          `candidates:${candidates.length}`,
+          'preview:browser',
+        ],
+        snapshotVersion: 'preview',
+        policyVersion: 'channel-routing-v1',
+        projectCandidatePool,
+        shadow: nextConfig.shadowEnabled
+          ? {
+              enabled: true,
+              routeMode: nextConfig.shadowRouteMode,
+              selectedAccountID: candidates[candidates.length - 1]?.id || candidates[0]?.id || '',
+              diff: Boolean(candidates.length > 1),
+              steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
             }
-            : undefined,
-        });
+          : undefined,
+      });
       setChannelExplain(result);
       const event = buildPreviewChannelRouteAuditEvent({ channel: 'claude', explain: result });
       setChannelRouteEvents((prev) => (event ? [event, ...prev].slice(0, 5) : prev));
       return;
     }
     try {
-      const result = await trackRequest('ExplainChannelRouting', { channel: 'claude' }, () =>
-        ExplainChannelRouting(main.ChannelRoutingExplainInput.createFrom({ channel: 'claude' })),
+      const normalizedRule = rule ? normalizeProjectCandidatePoolRuleDraft(rule, 'claude') : null;
+      const projectKey = String(normalizedRule?.projectKey || '').trim();
+      const result = await trackRequest('ExplainChannelRouting', { channel: 'claude', projectKey }, () =>
+        ExplainChannelRouting(
+          main.ChannelRoutingExplainInput.createFrom({
+            channel: 'claude',
+            projectKey,
+            projectName: normalizedRule?.projectName || '',
+            projectKeySource: normalizedRule?.projectKeySource || '',
+            projectKeyConfidence: normalizedRule?.projectKeyConfidence || '',
+            projectMatchKeys: projectKey ? [projectKey] : [],
+          }),
+        ),
       );
       setChannelExplain(result);
       await loadChannelRouteEvents();
@@ -599,6 +719,24 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       setMessage(`${t('claude_code.account_list_probe_failed')}: ${toErrorMessage(error)}`);
     } finally {
       setChannelRouteEventsLoading(false);
+    }
+  }
+
+  async function loadProjectCandidatePoolProjectSources() {
+    if (browserMode || !ready) {
+      return;
+    }
+    try {
+      const sessionSnapshot = await trackRequest(
+        'GetClaudeCodeSessionManagementSnapshot',
+        { source: 'project-candidate-pool' },
+        () => GetClaudeCodeSessionManagementSnapshot(),
+      );
+      setProjectCandidatePoolObservedProjects(
+        buildProjectCandidatePoolProjectsFromSessionManagementSnapshot(sessionSnapshot, 'session-history'),
+      );
+    } catch (error) {
+      console.error(error);
     }
   }
 
@@ -809,6 +947,22 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     return t(key);
   };
 
+  const projectCandidatePoolRulesAPI = browserMode
+    ? undefined
+    : {
+        create: (rule: ProjectCandidatePoolRuleLike) =>
+          CreateProjectCandidatePoolRule(main.ProjectCandidatePoolRule.createFrom(rule)),
+        update: (rule: ProjectCandidatePoolRuleLike) =>
+          UpdateProjectCandidatePoolRule(main.ProjectCandidatePoolRule.createFrom(rule)),
+        delete: (input: { id: string }) =>
+          DeleteProjectCandidatePoolRule(main.DeleteProjectCandidatePoolRuleInput.createFrom(input)),
+      };
+
+  function handleProjectCandidatePoolRulesChange(rules: ProjectCandidatePoolRuleLike[]) {
+    setProjectCandidatePoolRules(rules);
+    setChannelExplain(null);
+  }
+
   return (
     <div className="h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_CLAUDE_CODE_ACCOUNT_LIST">
       <div className="mx-auto w-full max-w-6xl min-w-0 space-y-8">
@@ -846,6 +1000,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           routeEventsLoading={channelRouteEventsLoading}
           accounts={orderedRows}
           onModeChange={updateChannelMode}
+          onOpenProjectConfig={openProjectConfigModal}
           onShadowEnabledChange={updateShadowEnabled}
           onShadowModeChange={updateShadowMode}
           onExplain={() => void runChannelExplain()}
@@ -906,6 +1061,20 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           onProbeOnce={() => void runRoutingProbe(1)}
           onProbeSeries={() => void runRoutingProbe(3)}
           onReset={resetRoutePolicy}
+        />
+      ) : null}
+      {projectConfigOpen ? (
+        <ProjectCandidatePoolRulesModal
+          channel="claude"
+          rules={projectCandidatePoolRules}
+          projectOptions={projectCandidatePoolProjectOptions}
+          accounts={orderedRows}
+          disabled={!ready || saving}
+          saving={saving}
+          api={projectCandidatePoolRulesAPI}
+          onClose={closeProjectConfigModal}
+          onRulesChange={handleProjectCandidatePoolRulesChange}
+          onPreviewRule={(rule) => void runChannelExplain(rule)}
         />
       ) : null}
       {detailRowWithModels ? (

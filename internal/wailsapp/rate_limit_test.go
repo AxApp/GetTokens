@@ -80,6 +80,67 @@ func TestRateLimitBridgeCallsManagementAPI(t *testing.T) {
 	}
 }
 
+func TestProjectCandidatePoolRuleBridgeCallsManagementAPI(t *testing.T) {
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == "GET" && path == ManagementAPIPrefix+"/gettokens/project-candidate-pool-rules":
+				if got := query.Get("channel"); got != "codex" {
+					t.Fatalf("channel = %q", got)
+				}
+				return []byte(`{"items":[{"id":"pcp-1","channel":"codex","projectKey":"workspace:abc","projectName":"GetTokens","projectKeySource":"codex-turn-workspace","projectKeyConfidence":"strong","enabled":true,"allowAccountIDs":["auth-a"]}]}`), 200, nil
+			case method == "POST" && path == ManagementAPIPrefix+"/gettokens/project-candidate-pool-rules":
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read project candidate pool create payload: %v", err)
+				}
+				if !strings.Contains(string(payload), `"projectKey":"workspace:abc"`) || !strings.Contains(string(payload), `"allowAccountIDs":["auth-a","auth-b"]`) {
+					t.Fatalf("create payload = %s", payload)
+				}
+				return []byte(`{"items":[{"id":"pcp-1","channel":"codex","projectKey":"workspace:abc","enabled":true,"allowAccountIDs":["auth-a","auth-b"]}]}`), 200, nil
+			case method == "PUT" && path == ManagementAPIPrefix+"/gettokens/project-candidate-pool-rules/pcp-1":
+				assertBridgePayloadContains(t, body, `"enabled":false`)
+				return []byte(`{"items":[{"id":"pcp-1","channel":"codex","projectKey":"workspace:abc","enabled":false,"allowAccountIDs":[]}]}`), 200, nil
+			case method == "DELETE" && path == ManagementAPIPrefix+"/gettokens/project-candidate-pool-rules/pcp-1":
+				return []byte(`{"ok":true}`), 200, nil
+			default:
+				t.Fatalf("unexpected request: %s %s", method, path)
+			}
+			return nil, 404, nil
+		},
+	}
+
+	rules, err := app.ListProjectCandidatePoolRules("codex")
+	if err != nil || len(rules) != 1 || rules[0].ProjectKey != "workspace:abc" || rules[0].ProjectKeySource != "codex-turn-workspace" {
+		t.Fatalf("rules = %#v, err = %v", rules, err)
+	}
+	created, err := app.CreateProjectCandidatePoolRule(ProjectCandidatePoolRule{
+		Channel:              "codex",
+		ProjectKey:           "workspace:abc",
+		ProjectName:          "GetTokens",
+		ProjectKeySource:     "codex-turn-workspace",
+		ProjectKeyConfidence: "strong",
+		Enabled:              true,
+		AllowAccountIDs:      []string{"auth-a", "auth-b"},
+	})
+	if err != nil || len(created) != 1 || !created[0].Enabled {
+		t.Fatalf("created = %#v, err = %v", created, err)
+	}
+	updated, err := app.UpdateProjectCandidatePoolRule(ProjectCandidatePoolRule{
+		ID:              "pcp-1",
+		Channel:         "codex",
+		ProjectKey:      "workspace:abc",
+		Enabled:         false,
+		AllowAccountIDs: []string{},
+	})
+	if err != nil || len(updated) != 1 || updated[0].Enabled {
+		t.Fatalf("updated = %#v, err = %v", updated, err)
+	}
+	if err := app.DeleteProjectCandidatePoolRule("pcp-1"); err != nil {
+		t.Fatalf("delete project candidate pool rule: %v", err)
+	}
+}
+
 func assertBridgePayloadContains(t *testing.T, body io.Reader, want string) {
 	t.Helper()
 	payload, err := io.ReadAll(body)

@@ -20,7 +20,7 @@ func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.startLocalUsageRefreshLoop(ctx)
 	if settings, err := loadAppRuntimeSettings(); err == nil {
-		a.applyMenuBarResident(settings)
+		a.applyMenuBarSettings(settings)
 	} else {
 		log.Printf("load app runtime settings failed: %v", err)
 	}
@@ -127,7 +127,7 @@ func (a *App) BeforeClose(ctx context.Context) bool {
 	if !a.shouldPreventCloseForRuntimeSettings(settings) {
 		return false
 	}
-	a.applyMenuBarResident(settings)
+	a.applyMenuBarSettings(settings)
 	wailsRuntime.WindowHide(ctx)
 	return true
 }

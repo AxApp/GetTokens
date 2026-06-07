@@ -104,6 +104,22 @@ func TestProfileSpecificPortAndConfigDir(t *testing.T) {
 	}
 }
 
+func TestManagerProfileNormalizesDevAndProd(t *testing.T) {
+	manager := &Manager{profile: "dev"}
+	if got := manager.Profile(); got != "dev" {
+		t.Fatalf("dev manager profile = %q, want dev", got)
+	}
+
+	manager.profile = "release"
+	if got := manager.Profile(); got != "prod" {
+		t.Fatalf("release manager profile = %q, want prod", got)
+	}
+
+	if got := (*Manager)(nil).Profile(); got != "prod" {
+		t.Fatalf("nil manager profile = %q, want prod", got)
+	}
+}
+
 func TestPortAvailabilityMatchesWildcardSidecarBind(t *testing.T) {
 	listener, err := net.Listen("tcp6", "[::]:0")
 	if err != nil {

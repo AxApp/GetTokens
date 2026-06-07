@@ -22,7 +22,9 @@ const (
 
 func defaultAppRuntimeSettings() AppRuntimeSettings {
 	return AppRuntimeSettings{
-		CloseAction: AppCloseActionQuitAppAndService,
+		CloseAction:        AppCloseActionQuitAppAndService,
+		ShowMenuBarIcon:    true,
+		ShowMenuBarIconSet: true,
 	}
 }
 
@@ -34,8 +36,16 @@ func normalizeAppRuntimeSettings(settings *AppRuntimeSettings) AppRuntimeSetting
 		CodexModelCatalogSyncEnabled: settings.CodexModelCatalogSyncEnabled,
 		LaunchAtLogin:                settings.LaunchAtLogin,
 		CloseAction:                  normalizeAppCloseAction(settings.CloseAction),
+		ShowMenuBarIcon:              true,
+		ShowMenuBarIconSet:           true,
 	}
 	normalized.MenuBarResident = normalized.CloseAction == AppCloseActionKeepServiceInMenuBar
+	if settings.ShowMenuBarIconSet {
+		normalized.ShowMenuBarIcon = settings.ShowMenuBarIcon
+	}
+	if normalized.MenuBarResident {
+		normalized.ShowMenuBarIcon = true
+	}
 	return normalized
 }
 
@@ -136,11 +146,15 @@ func (a *App) UpdateAppRuntimeSettings(input AppRuntimeSettings) (*AppRuntimeSet
 	}
 	current.LaunchAtLogin = input.LaunchAtLogin
 	current.CloseAction = input.CloseAction
+	if input.ShowMenuBarIconSet {
+		current.ShowMenuBarIcon = input.ShowMenuBarIcon
+		current.ShowMenuBarIconSet = true
+	}
 	settings, err := saveAppRuntimeSettings(current)
 	if err != nil {
 		return nil, err
 	}
-	a.applyMenuBarResident(settings)
+	a.applyMenuBarSettings(settings)
 	return &settings, nil
 }
 

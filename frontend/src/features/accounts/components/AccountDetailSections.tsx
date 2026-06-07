@@ -9,6 +9,7 @@ import {
   buildQuotaCurlTemplate,
   buildVendorCredentialFields,
   buildVendorCurlVariableFields,
+  resolveManagementBaseUrl,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
 import {
@@ -117,6 +118,11 @@ export interface AccountDetailFooterProps {
 }
 
 const DEFAULT_VERIFY_MODEL = 'gpt-5.4-mini';
+const CAPABILITY_ENDPOINTS: Array<{ format: ApiFormat; label: string; hint: string }> = [
+  { format: 'openai_chat', label: 'openai-compatible', hint: 'Chat Completions / OpenAI-compatible' },
+  { format: 'openai_responses', label: 'codex API', hint: 'Responses / Codex client' },
+  { format: 'anthropic', label: 'anthropic', hint: 'Claude Code / Messages' },
+];
 
 export function AccountDetailHeader({
   account,
@@ -231,6 +237,8 @@ export function AccountCredentialVerifySection({
             </div>
           </section>
 
+          <CapabilityEndpointsPanel draft={draft} setDraft={setDraft} />
+
           <VerifyConnectionPanel
             draft={draft}
             verifyState={verifyState}
@@ -248,6 +256,58 @@ export function AccountCredentialVerifySection({
         </div>
       </div>
     </AccountDetailSection>
+  );
+}
+
+function CapabilityEndpointsPanel({
+  draft,
+  setDraft,
+}: {
+  draft: ApiKeyConfigDraft;
+  setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
+}) {
+  return (
+    <section data-account-credential-list-item="capability-endpoints" className="grid gap-3 border-t-2 border-[var(--border-color)] pt-4">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+        <div>
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            ENDPOINTS
+          </div>
+          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase italic tracking-[0.06em] text-[var(--text-primary)]">
+            三端配置
+          </div>
+        </div>
+        <AccountDetailPill className="!border-2 !text-[var(--text-primary)]">
+          {CAPABILITY_ENDPOINTS.length} CAPABILITIES
+        </AccountDetailPill>
+      </div>
+
+      <div className="grid gap-2">
+        {CAPABILITY_ENDPOINTS.map((endpoint) => (
+          <CredentialInputField
+            key={endpoint.format}
+            label={endpoint.label}
+            value={draft.formatBaseUrls[endpoint.format] ?? ''}
+            placeholder={draft.baseUrl || 'https://relay.example.com/v1'}
+            help={endpoint.hint}
+            onChange={(value) => {
+              setDraft((prev) => ({
+                ...prev,
+                formatBaseUrls: {
+                  ...prev.formatBaseUrls,
+                  [endpoint.format]: value,
+                },
+              }));
+            }}
+            onCopy={
+              draft.formatBaseUrls[endpoint.format]
+                ? () => void navigator.clipboard.writeText(draft.formatBaseUrls[endpoint.format] ?? '')
+                : undefined
+            }
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -609,33 +669,37 @@ export function AccountQuotaSection({
       : testQuotaDisplay;
   const visibleQuotaSource = quotaDisplay?.windows?.length || runtimeQuotaDisplay.windows.length ? 'runtime' : testQuotaDisplay ? 'test' : 'empty';
   const visibleQuotaWindows = visibleQuotaDisplay?.windows ?? [];
+  const managementBaseUrl = useMemo(
+    () => resolveManagementBaseUrl({ baseUrl: draft.baseUrl, formatBaseUrls: draft.formatBaseUrls }),
+    [draft.baseUrl, draft.formatBaseUrls],
+  );
   const quotaTemplate = useMemo(
     () => buildQuotaCurlTemplate({
       displayName: account.displayName,
       provider: account.provider,
-      baseUrl: draft.baseUrl,
+      baseUrl: managementBaseUrl,
     }),
-    [account.displayName, account.provider, draft.baseUrl],
+    [account.displayName, account.provider, managementBaseUrl],
   );
   const quotaTemplates = useMemo(
-    () => buildQuotaCurlTemplates(draft.baseUrl, quotaTemplate),
-    [draft.baseUrl, quotaTemplate],
+    () => buildQuotaCurlTemplates(managementBaseUrl, quotaTemplate),
+    [managementBaseUrl, quotaTemplate],
   );
   const quotaSetupGuide = useMemo(
     () => buildQuotaCurlSetupGuide({
       displayName: account.displayName,
       provider: account.provider,
-      baseUrl: draft.baseUrl,
+      baseUrl: managementBaseUrl,
     }),
-    [account.displayName, account.provider, draft.baseUrl],
+    [account.displayName, account.provider, managementBaseUrl],
   );
   const quotaCurlVariableFields = useMemo(
     () => buildVendorCurlVariableFields({
       displayName: account.displayName,
       provider: account.provider,
-      baseUrl: draft.baseUrl,
+      baseUrl: managementBaseUrl,
     }),
-    [account.displayName, account.provider, draft.baseUrl],
+    [account.displayName, account.provider, managementBaseUrl],
   );
   const editorOpen = routedEditorOpen ?? localEditorOpen;
   const hasQuotaScript = draft.quotaCurl.trim().length > 0;
@@ -678,7 +742,7 @@ export function AccountQuotaSection({
     try {
       const result = await onTestQuotaCurl({
         apiKey: draft.apiKey,
-        baseUrl: draft.baseUrl,
+        baseUrl: managementBaseUrl,
         prefix: draft.prefix,
         quotaCurl: draft.quotaCurl.trim(),
         platformCookie: (draft.platformCookie ?? "").trim(),
@@ -784,7 +848,7 @@ export function AccountQuotaSection({
           title="额度脚本"
           value={draft.quotaCurl}
           enabled={draft.quotaEnabled}
-          variables={buildCurlVariables(draft, quotaCurlVariableFields)}
+          variables={buildCurlVariables({ ...draft, baseUrl: managementBaseUrl }, quotaCurlVariableFields)}
           templates={quotaTemplates}
           placeholder='curl -sS "{{baseUrl}}/usage" -H "Authorization: Bearer {{apiKey}}"'
           setupGuide={quotaSetupGuide}
@@ -815,33 +879,37 @@ export function AccountBillingSection({
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
   const [testBilling, setTestBilling] = useState<BillingDisplay | undefined>(undefined);
+  const managementBaseUrl = useMemo(
+    () => resolveManagementBaseUrl({ baseUrl: draft.baseUrl, formatBaseUrls: draft.formatBaseUrls }),
+    [draft.baseUrl, draft.formatBaseUrls],
+  );
   const billingTemplate = useMemo(
     () => buildBillingCurlTemplate({
       displayName: account.displayName,
       provider: account.provider,
-      baseUrl: draft.baseUrl,
+      baseUrl: managementBaseUrl,
     }),
-    [account.displayName, account.provider, draft.baseUrl],
+    [account.displayName, account.provider, managementBaseUrl],
   );
   const billingTemplates = useMemo(
-    () => buildBillingCurlTemplates(draft.baseUrl, billingTemplate),
-    [billingTemplate, draft.baseUrl],
+    () => buildBillingCurlTemplates(managementBaseUrl, billingTemplate),
+    [billingTemplate, managementBaseUrl],
   );
   const billingSetupGuide = useMemo(
     () => buildBillingCurlSetupGuide({
       displayName: account.displayName,
       provider: account.provider,
-      baseUrl: draft.baseUrl,
+      baseUrl: managementBaseUrl,
     }),
-    [account.displayName, account.provider, draft.baseUrl],
+    [account.displayName, account.provider, managementBaseUrl],
   );
   const billingCurlVariableFields = useMemo(
     () => buildVendorCurlVariableFields({
       displayName: account.displayName,
       provider: account.provider,
-      baseUrl: draft.baseUrl,
+      baseUrl: managementBaseUrl,
     }),
-    [account.displayName, account.provider, draft.baseUrl],
+    [account.displayName, account.provider, managementBaseUrl],
   );
   const editorOpen = routedEditorOpen ?? localEditorOpen;
   const hasBillingScript = draft.billingCurl.trim().length > 0;
@@ -876,7 +944,7 @@ export function AccountBillingSection({
     try {
       const result = await onTestBillingCurl({
         apiKey: draft.apiKey,
-        baseUrl: draft.baseUrl,
+        baseUrl: managementBaseUrl,
         prefix: draft.prefix,
         billingCurl: draft.billingCurl.trim(),
         platformCookie: (draft.platformCookie ?? "").trim(),
@@ -987,7 +1055,7 @@ export function AccountBillingSection({
           title="余额脚本"
           value={draft.billingCurl}
           enabled={draft.billingEnabled}
-          variables={buildCurlVariables(draft, billingCurlVariableFields)}
+          variables={buildCurlVariables({ ...draft, baseUrl: managementBaseUrl }, billingCurlVariableFields)}
           templates={billingTemplates}
           placeholder={billingTemplate || 'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'}
           setupGuide={billingSetupGuide}

@@ -58,6 +58,42 @@ func TestFetchVendorStatusRSSErrorOnNon2xx(t *testing.T) {
 	}
 }
 
+func TestAppRuntimeSettingsRootMappingPreservesShowMenuBarIcon(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	app := NewApp()
+	updated, err := app.UpdateAppRuntimeSettings(AppRuntimeSettings{
+		LaunchAtLogin:   false,
+		CloseAction:     wailsapp.AppCloseActionQuitAppAndService,
+		ShowMenuBarIcon: false,
+	})
+	if err != nil {
+		t.Fatalf("UpdateAppRuntimeSettings() error = %v", err)
+	}
+	if updated.ShowMenuBarIcon {
+		t.Fatal("updated ShowMenuBarIcon = true, want false")
+	}
+	if updated.MenuBarResident {
+		t.Fatal("updated MenuBarResident = true, want false")
+	}
+
+	resident, err := app.UpdateAppRuntimeSettings(AppRuntimeSettings{
+		LaunchAtLogin:   false,
+		CloseAction:     wailsapp.AppCloseActionKeepServiceInMenuBar,
+		ShowMenuBarIcon: false,
+	})
+	if err != nil {
+		t.Fatalf("UpdateAppRuntimeSettings(resident) error = %v", err)
+	}
+	if !resident.ShowMenuBarIcon {
+		t.Fatal("resident ShowMenuBarIcon = false, want forced true")
+	}
+	if !resident.MenuBarResident {
+		t.Fatal("resident MenuBarResident = false, want true")
+	}
+}
+
 func TestChannelRoutingRootMappingPreservesManualRequestableAccountIDs(t *testing.T) {
 	root := ChannelRoutingConfig{
 		Channel:                     "codex",
@@ -124,6 +160,164 @@ func TestMapRateLimitStatePreservesExplainFields(t *testing.T) {
 	}
 	if len(got.Rules) != 1 || got.Rules[0].LimitValue != 2 || got.Rules[0].WindowStart == "" || got.Rules[0].NextReset == "" {
 		t.Fatalf("mapped rules = %#v, want rule explain fields", got.Rules)
+	}
+}
+
+func TestMapProjectCandidatePoolRulePreservesProjectIdentity(t *testing.T) {
+	input := ProjectCandidatePoolRule{
+		ID:                   "pcp-1",
+		Channel:              "codex",
+		ProjectKey:           "workspace:0123456789abcdef",
+		ProjectName:          "GetTokens",
+		ProjectKeySource:     "codex-turn-workspace",
+		ProjectKeyConfidence: "strong",
+		Enabled:              true,
+		AllowAccountIDs:      []string{"auth-file:codex-a.json", "codex-api-key:relay-b"},
+		CreatedAt:            "2026-06-07T10:00:00Z",
+		UpdatedAt:            "2026-06-07T11:00:00Z",
+	}
+
+	core := mapProjectCandidatePoolRuleToCore(input)
+	if core.ID != input.ID ||
+		core.Channel != input.Channel ||
+		core.ProjectKey != input.ProjectKey ||
+		core.ProjectName != input.ProjectName ||
+		core.ProjectKeySource != input.ProjectKeySource ||
+		core.ProjectKeyConfidence != input.ProjectKeyConfidence ||
+		core.Enabled != input.Enabled ||
+		core.CreatedAt != input.CreatedAt ||
+		core.UpdatedAt != input.UpdatedAt {
+		t.Fatalf("core project candidate pool rule = %#v, want project identity fields preserved", core)
+	}
+	if got := core.AllowAccountIDs; len(got) != 2 || got[0] != input.AllowAccountIDs[0] || got[1] != input.AllowAccountIDs[1] {
+		t.Fatalf("core AllowAccountIDs = %#v, want %#v", got, input.AllowAccountIDs)
+	}
+	core.AllowAccountIDs[0] = "mutated"
+	if input.AllowAccountIDs[0] == "mutated" {
+		t.Fatal("mapProjectCandidatePoolRuleToCore aliased AllowAccountIDs")
+	}
+
+	roundtrip := mapProjectCandidatePoolRule(core)
+	if roundtrip.ID != core.ID ||
+		roundtrip.Channel != core.Channel ||
+		roundtrip.ProjectKey != core.ProjectKey ||
+		roundtrip.ProjectName != core.ProjectName ||
+		roundtrip.ProjectKeySource != core.ProjectKeySource ||
+		roundtrip.ProjectKeyConfidence != core.ProjectKeyConfidence ||
+		roundtrip.Enabled != core.Enabled ||
+		roundtrip.CreatedAt != core.CreatedAt ||
+		roundtrip.UpdatedAt != core.UpdatedAt {
+		t.Fatalf("roundtrip project candidate pool rule = %#v, want core fields preserved", roundtrip)
+	}
+	if got := roundtrip.AllowAccountIDs; len(got) != 2 || got[0] != "mutated" || got[1] != input.AllowAccountIDs[1] {
+		t.Fatalf("roundtrip AllowAccountIDs = %#v, want mapped core values", got)
+	}
+	roundtrip.AllowAccountIDs[0] = "mutated-again"
+	if core.AllowAccountIDs[0] == "mutated-again" {
+		t.Fatal("mapProjectCandidatePoolRule aliased AllowAccountIDs")
+	}
+
+	if got := mapProjectCandidatePoolRules(nil); got == nil || len(got) != 0 {
+		t.Fatalf("mapProjectCandidatePoolRules(nil) = %#v, want empty non-nil slice", got)
+	}
+}
+
+func TestMapChannelRoutingExplainPreservesProjectCandidatePool(t *testing.T) {
+	rootInput := ChannelRoutingExplainInput{
+		Channel:              "codex",
+		TriedAccountIDs:      []string{"auth-file:tried.json"},
+		ActiveSessions:       map[string]int{"auth-file:active.json": 2},
+		StickyAccountID:      "auth-file:sticky.json",
+		ProjectKey:           "workspace:0123456789abcdef",
+		ProjectName:          "GetTokens",
+		ProjectKeySource:     "codex-turn-workspace",
+		ProjectKeyConfidence: "strong",
+		ProjectMatchKeys:     []string{"workspace:0123456789abcdef"},
+	}
+
+	coreInput := mapChannelRoutingExplainInputToCore(rootInput)
+	if coreInput.Channel != rootInput.Channel ||
+		coreInput.StickyAccountID != rootInput.StickyAccountID ||
+		coreInput.ProjectKey != rootInput.ProjectKey ||
+		coreInput.ProjectName != rootInput.ProjectName ||
+		coreInput.ProjectKeySource != rootInput.ProjectKeySource ||
+		coreInput.ProjectKeyConfidence != rootInput.ProjectKeyConfidence {
+		t.Fatalf("core explain input = %#v, want project identity preserved", coreInput)
+	}
+	if got := coreInput.ProjectMatchKeys; len(got) != 1 || got[0] != rootInput.ProjectMatchKeys[0] {
+		t.Fatalf("core ProjectMatchKeys = %#v, want %#v", got, rootInput.ProjectMatchKeys)
+	}
+	if got := coreInput.TriedAccountIDs; len(got) != 1 || got[0] != rootInput.TriedAccountIDs[0] {
+		t.Fatalf("core TriedAccountIDs = %#v, want %#v", got, rootInput.TriedAccountIDs)
+	}
+	coreInput.ProjectMatchKeys[0] = "mutated"
+	coreInput.TriedAccountIDs[0] = "mutated"
+	coreInput.ActiveSessions["auth-file:active.json"] = 9
+	if rootInput.ProjectMatchKeys[0] == "mutated" ||
+		rootInput.TriedAccountIDs[0] == "mutated" ||
+		rootInput.ActiveSessions["auth-file:active.json"] == 9 {
+		t.Fatal("mapChannelRoutingExplainInputToCore aliased mutable fields")
+	}
+
+	coreResult := &wailsapp.ChannelRoutingExplainResult{
+		Channel:           "codex",
+		RouteMode:         wailsapp.ChannelRouteModeSequential,
+		SelectedAccountID: "auth-file:allowed.json",
+		Candidates: []wailsapp.ChannelRoutingCandidate{{
+			ID:          "auth-file:allowed.json",
+			DisplayName: "Allowed",
+		}},
+		Filtered: []wailsapp.ChannelRoutingFilteredAccount{{
+			ID:     "auth-file:outside.json",
+			Reason: "project-candidate-pool",
+		}},
+		Steps:           []string{"mode:sequential", "project-candidate-pool:matched", "candidates:1"},
+		SnapshotVersion: "snapshot-project",
+		PolicyVersion:   "channel-routing-v1",
+		ProjectCandidatePool: &wailsapp.ChannelRoutingProjectCandidatePoolInfo{
+			Evaluated:            true,
+			Activated:            true,
+			Reason:               "project-candidate-pool:matched",
+			RuleID:               "rule-gettokens",
+			ProjectKey:           "workspace:0123456789abcdef",
+			ProjectName:          "GetTokens",
+			ProjectKeySource:     "codex-turn-workspace",
+			ProjectKeyConfidence: "strong",
+			AllowAccountIDs:      []string{"auth-file:allowed.json"},
+			FilteredAccountIDs:   []string{"auth-file:outside.json"},
+			BeforeCandidateCount: 2,
+			AfterCandidateCount:  1,
+		},
+	}
+
+	rootResult := mapChannelRoutingExplainResult(coreResult)
+	if rootResult == nil || rootResult.ProjectCandidatePool == nil {
+		t.Fatalf("root explain result = %#v, want project candidate pool", rootResult)
+	}
+	project := rootResult.ProjectCandidatePool
+	if !project.Evaluated ||
+		!project.Activated ||
+		project.Reason != "project-candidate-pool:matched" ||
+		project.RuleID != "rule-gettokens" ||
+		project.ProjectKey != "workspace:0123456789abcdef" ||
+		project.ProjectName != "GetTokens" ||
+		project.ProjectKeySource != "codex-turn-workspace" ||
+		project.ProjectKeyConfidence != "strong" ||
+		project.BeforeCandidateCount != 2 ||
+		project.AfterCandidateCount != 1 {
+		t.Fatalf("project candidate pool = %#v, want explain fields preserved", project)
+	}
+	if got := project.AllowAccountIDs; len(got) != 1 || got[0] != "auth-file:allowed.json" {
+		t.Fatalf("AllowAccountIDs = %#v, want allowed account", got)
+	}
+	if got := project.FilteredAccountIDs; len(got) != 1 || got[0] != "auth-file:outside.json" {
+		t.Fatalf("FilteredAccountIDs = %#v, want filtered account", got)
+	}
+	project.AllowAccountIDs[0] = "mutated"
+	project.FilteredAccountIDs[0] = "mutated"
+	if coreResult.ProjectCandidatePool.AllowAccountIDs[0] == "mutated" ||
+		coreResult.ProjectCandidatePool.FilteredAccountIDs[0] == "mutated" {
+		t.Fatal("mapChannelRoutingExplainResult aliased project candidate pool slices")
 	}
 }
 
@@ -211,6 +405,49 @@ func TestOpenAICompatibleRootDTOsPreserveBillingFields(t *testing.T) {
 				t.Fatalf("%s dto payload %s missing %s", payload.name, text, want)
 			}
 		}
+	}
+}
+
+func TestCodexAPIKeyRootInputsPreserveManagementFields(t *testing.T) {
+	testCurlInput := mapTestCodexAPIKeyQuotaCurlInputToWails(TestCodexAPIKeyQuotaCurlInput{
+		APIKey:         "sk-test",
+		BaseURL:        "https://relay.example.com/openai/v1",
+		Prefix:         "team-a",
+		QuotaCurl:      `curl -sS "{{baseUrl}}/usage" -b "{{platformCookie}}"`,
+		PlatformCookie: "session=abc",
+		CurlVariables:  map[string]string{"region": "cn"},
+	})
+	if testCurlInput.PlatformCookie != "session=abc" || testCurlInput.CurlVariables["region"] != "cn" {
+		t.Fatalf("quota test input = %#v, want management fields preserved", testCurlInput)
+	}
+
+	createInput := mapCreateCodexAPIKeyInputToWails(CreateCodexAPIKeyInput{
+		APIKey:         "sk-test",
+		BaseURL:        "https://relay.example.com/codex/v1",
+		QuotaCurl:      `curl -sS "{{baseUrl}}/usage"`,
+		QuotaEnabled:   true,
+		BillingCurl:    `curl -sS "{{baseUrl}}/billing"`,
+		BillingEnabled: true,
+		PlatformCookie: "session=abc",
+		CurlVariables:  map[string]string{"region": "cn"},
+	})
+	if createInput.PlatformCookie != "session=abc" || createInput.CurlVariables["region"] != "cn" {
+		t.Fatalf("create input = %#v, want management fields preserved", createInput)
+	}
+
+	updateInput := mapUpdateCodexAPIKeyConfigInputToWails(UpdateCodexAPIKeyConfigInput{
+		ID:             "acct_codex_key",
+		APIKey:         "sk-test",
+		BaseURL:        "https://relay.example.com/codex/v1",
+		QuotaCurl:      `curl -sS "{{baseUrl}}/usage"`,
+		QuotaEnabled:   true,
+		BillingCurl:    `curl -sS "{{baseUrl}}/billing"`,
+		BillingEnabled: true,
+		PlatformCookie: "session=abc",
+		CurlVariables:  map[string]string{"region": "cn"},
+	})
+	if updateInput.PlatformCookie != "session=abc" || updateInput.CurlVariables["region"] != "cn" {
+		t.Fatalf("update input = %#v, want management fields preserved", updateInput)
 	}
 }
 

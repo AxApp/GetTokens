@@ -566,8 +566,23 @@ func TestGetCodexSessionManagementSnapshotGroupsProjectsAndStatuses(t *testing.T
 	if gettokensProject.ProviderSummary != "openai 2" {
 		t.Fatalf("GetTokens provider summary = %q, want openai 2", gettokensProject.ProviderSummary)
 	}
+	expectedProjectKey, expectedProjectKeySource, expectedProjectKeyConfidence := deriveSessionProjectIdentityFromCWD("/Users/linhey/Desktop/GetTokens", "codex-session-cwd")
+	if gettokensProject.ProjectKey != expectedProjectKey ||
+		gettokensProject.ProjectKeySource != expectedProjectKeySource ||
+		gettokensProject.ProjectKeyConfidence != expectedProjectKeyConfidence {
+		t.Fatalf("GetTokens project identity = %q/%q/%q, want %q/%q/%q",
+			gettokensProject.ProjectKey,
+			gettokensProject.ProjectKeySource,
+			gettokensProject.ProjectKeyConfidence,
+			expectedProjectKey,
+			expectedProjectKeySource,
+			expectedProjectKeyConfidence)
+	}
 	if gettokensProject.Sessions[0].Status != "active" {
 		t.Fatalf("latest GetTokens session status = %q, want active", gettokensProject.Sessions[0].Status)
+	}
+	if gettokensProject.Sessions[0].ProjectKey != expectedProjectKey {
+		t.Fatalf("latest GetTokens session project key = %q, want %q", gettokensProject.Sessions[0].ProjectKey, expectedProjectKey)
 	}
 	if gettokensProject.Sessions[0].Title != "GetTokens 会话标题" {
 		t.Fatalf("latest GetTokens title = %q, want thread name", gettokensProject.Sessions[0].Title)
@@ -614,6 +629,14 @@ func TestGetCodexSessionDetailMasksSensitiveTextAndKeepsMessageRows(t *testing.T
 
 	if detail.ProjectName != "GetTokens" {
 		t.Fatalf("project name = %q, want GetTokens", detail.ProjectName)
+	}
+	expectedProjectKey, _, _ := deriveSessionProjectIdentityFromCWD("/Users/linhey/Desktop/linhay-open-sources/GetTokens", "codex-session-cwd")
+	if detail.ProjectKey != expectedProjectKey || detail.ProjectKeySource != "codex-session-cwd" || detail.ProjectKeyConfidence != "strong" {
+		t.Fatalf("detail project identity = %q/%q/%q, want %q/codex-session-cwd/strong",
+			detail.ProjectKey,
+			detail.ProjectKeySource,
+			detail.ProjectKeyConfidence,
+			expectedProjectKey)
 	}
 	if detail.Provider != "openai" {
 		t.Fatalf("provider = %q, want openai", detail.Provider)
@@ -746,9 +769,24 @@ func TestGetClaudeCodeSessionManagementSnapshotScansMainSessionsAndSkipsSubagent
 	if project.Name != "GetTokens" {
 		t.Fatalf("project name = %q, want GetTokens", project.Name)
 	}
+	expectedProjectKey, expectedProjectKeySource, expectedProjectKeyConfidence := deriveSessionProjectIdentityFromCWD("/Users/linhey/Desktop/GetTokens", "claude-session-cwd")
+	if project.ProjectKey != expectedProjectKey ||
+		project.ProjectKeySource != expectedProjectKeySource ||
+		project.ProjectKeyConfidence != expectedProjectKeyConfidence {
+		t.Fatalf("Claude project identity = %q/%q/%q, want %q/%q/%q",
+			project.ProjectKey,
+			project.ProjectKeySource,
+			project.ProjectKeyConfidence,
+			expectedProjectKey,
+			expectedProjectKeySource,
+			expectedProjectKeyConfidence)
+	}
 	session := project.Sessions[0]
 	if session.Provider != "claude" || session.Model != "claude-sonnet-4-5" {
 		t.Fatalf("session provider/model mismatch: %#v", session)
+	}
+	if session.ProjectKey != expectedProjectKey {
+		t.Fatalf("Claude session project key = %q, want %q", session.ProjectKey, expectedProjectKey)
 	}
 	if !strings.Contains(session.Summary, "claude --resume main-session") {
 		t.Fatalf("summary missing resume command: %q", session.Summary)
@@ -787,6 +825,14 @@ func TestGetClaudeCodeSessionDetailMasksMessagesAndToolPayloads(t *testing.T) {
 	}
 	if detail.Provider != "claude" || !detail.Masked {
 		t.Fatalf("detail provider/masked mismatch: %#v", detail)
+	}
+	expectedProjectKey, _, _ := deriveSessionProjectIdentityFromCWD("/Users/linhey/Desktop/GetTokens", "claude-session-cwd")
+	if detail.ProjectKey != expectedProjectKey || detail.ProjectKeySource != "claude-session-cwd" || detail.ProjectKeyConfidence != "strong" {
+		t.Fatalf("Claude detail project identity = %q/%q/%q, want %q/claude-session-cwd/strong",
+			detail.ProjectKey,
+			detail.ProjectKeySource,
+			detail.ProjectKeyConfidence,
+			expectedProjectKey)
 	}
 	if detail.MessageCount != 5 {
 		t.Fatalf("message count = %d, want 5: %#v", detail.MessageCount, detail.Messages)

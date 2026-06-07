@@ -402,6 +402,78 @@ func TestUpdateOpenAICompatibleProviderUpdatesPrimaryProxyURL(t *testing.T) {
 	}
 }
 
+func TestUpdateOpenAICompatibleProviderPersistsFormatBaseURLs(t *testing.T) {
+	account := testOpenAICompatibleAccount(
+		"acct_relay",
+		"relay",
+		0,
+		false,
+		"https://relay.example.com/v1",
+		"",
+		[]cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-relay"}},
+		nil,
+		nil,
+	)
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == http.MethodGet && path == "/v0/management/accounts/acct_relay" {
+					return testAccountResponse(t, account), 200, nil
+				}
+				if method == http.MethodGet && path == "/v0/management/accounts" {
+					return testAccountsResponse(t, account), 200, nil
+				}
+				if method == http.MethodPatch && path == "/v0/management/accounts/acct_relay" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					var write cliproxyapi.AccountWriteRequest
+					if err := json.Unmarshal(payload, &write); err != nil {
+						t.Fatalf("unmarshal payload: %v", err)
+					}
+					var formatBaseURLs map[string]string
+					if err := json.Unmarshal([]byte(write.OpenAICompatible.FormatBaseURLsJSON), &formatBaseURLs); err != nil {
+						t.Fatalf("unmarshal format base urls: %v", err)
+					}
+					if formatBaseURLs["openai_chat"] != "https://relay.example.com/openai/v1" {
+						t.Fatalf("openai_chat base url = %q", formatBaseURLs["openai_chat"])
+					}
+					if formatBaseURLs["openai_responses"] != "https://relay.example.com/codex/v1" {
+						t.Fatalf("openai_responses base url = %q", formatBaseURLs["openai_responses"])
+					}
+					if formatBaseURLs["anthropic"] != "https://relay.example.com/anthropic" {
+						t.Fatalf("anthropic base url = %q", formatBaseURLs["anthropic"])
+					}
+					if _, ok := formatBaseURLs["empty"]; ok {
+						t.Fatalf("blank format url should be omitted: %#v", formatBaseURLs)
+					}
+					return testAccountResponse(t, account), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 404, nil
+			})
+		},
+	}
+
+	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+		CurrentName: "acct_relay",
+		Name:        "relay",
+		BaseURL:     "https://relay.example.com/v1",
+		APIKey:      "sk-relay",
+		APIKeys:     []string{"sk-relay"},
+		FormatBaseURLs: map[string]string{
+			"openai_chat":      " https://relay.example.com/openai/v1 ",
+			"openai_responses": "https://relay.example.com/codex/v1",
+			"anthropic":        "https://relay.example.com/anthropic",
+			"empty":            " ",
+		},
+	})
+	if err != nil {
+		t.Fatalf("UpdateOpenAICompatibleProvider returned error: %v", err)
+	}
+}
+
 func TestUpdateOpenAICompatibleProviderKeepsMultipleAliasesForOneRealModel(t *testing.T) {
 	account := testOpenAICompatibleAccount(
 		"acct_mi",

@@ -72,6 +72,71 @@ func TestSetCodexAPIKeyStatusIgnoresPruneErrorAndSchedulesRefresh(t *testing.T) 
 	}
 }
 
+func TestUpdateCodexAPIKeyConfigPersistsFormatBaseURLs(t *testing.T) {
+	account := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_codex_key",
+		Kind:       cliproxyapi.AccountKindCodexAPIKey,
+		Title:      "Codex Key",
+		Provider:   "codex",
+		CodexAPIKey: &cliproxyapi.CodexAPIKeyAccountCredential{
+			APIKey:  "sk-old",
+			BaseURL: "https://relay.example.com/v1",
+		},
+	}
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "GET" && path == "/v0/management/accounts/acct_codex_key" {
+					return testAccountResponse(t, account), 200, nil
+				}
+				if method == "PATCH" && path == "/v0/management/accounts/acct_codex_key" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					var write cliproxyapi.AccountWriteRequest
+					if err := json.Unmarshal(payload, &write); err != nil {
+						t.Fatalf("unmarshal payload: %v", err)
+					}
+					if write.CodexAPIKey == nil {
+						t.Fatalf("missing codex api key payload: %s", string(payload))
+					}
+					var formatBaseURLs map[string]string
+					if err := json.Unmarshal([]byte(write.CodexAPIKey.FormatBaseURLsJSON), &formatBaseURLs); err != nil {
+						t.Fatalf("unmarshal format base urls: %v", err)
+					}
+					if formatBaseURLs["openai_chat"] != "https://relay.example.com/openai/v1" {
+						t.Fatalf("openai_chat base url = %q", formatBaseURLs["openai_chat"])
+					}
+					if formatBaseURLs["openai_responses"] != "https://relay.example.com/codex/v1" {
+						t.Fatalf("openai_responses base url = %q", formatBaseURLs["openai_responses"])
+					}
+					if formatBaseURLs["anthropic"] != "https://relay.example.com/anthropic" {
+						t.Fatalf("anthropic base url = %q", formatBaseURLs["anthropic"])
+					}
+					return testAccountResponse(t, account), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
+		ID:      "acct_codex_key",
+		APIKey:  "sk-new",
+		BaseURL: "https://relay.example.com/v1",
+		FormatBaseURLs: map[string]string{
+			"openai_chat":      "https://relay.example.com/openai/v1",
+			"openai_responses": "https://relay.example.com/codex/v1",
+			"anthropic":        "https://relay.example.com/anthropic",
+		},
+	})
+	if err != nil {
+		t.Fatalf("UpdateCodexAPIKeyConfig returned error: %v", err)
+	}
+}
+
 func TestUpdateAccountPrioritySupportsUnifiedOpenAICompatibleProvider(t *testing.T) {
 	account := testOpenAICompatibleAccount("acct_deepseek", "deepseek", 1, false, "https://api.deepseek.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-old"}}, nil, nil)
 	app := &App{

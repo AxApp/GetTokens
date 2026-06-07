@@ -552,6 +552,7 @@ function UnifiedComposeCurlConfigSection({
     label: "",
     apiKey,
     baseUrl,
+    formatBaseUrls: {},
     prefix,
     models: [],
     quotaCurl: "",

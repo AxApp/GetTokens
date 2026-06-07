@@ -57,7 +57,10 @@ export interface ChannelRouteAuditEvent {
   id: string;
   recordedAt: string;
   channel: string;
+  projectKey?: string;
   projectName?: string;
+  projectKeySource?: string;
+  projectKeyConfidence?: string;
   routeMode: string;
   selectedAccountID?: string;
   candidateCount: number;
@@ -99,6 +102,20 @@ export interface ChannelRoutingExplainLike {
   steps?: string[];
   snapshotVersion?: string;
   policyVersion?: string;
+  projectCandidatePool?: {
+    evaluated?: boolean;
+    activated?: boolean;
+    reason?: string;
+    ruleID?: string;
+    projectKey?: string;
+    projectName?: string;
+    projectKeySource?: string;
+    projectKeyConfidence?: string;
+    allowAccountIDs?: string[];
+    filteredAccountIDs?: string[];
+    beforeCandidateCount?: number;
+    afterCandidateCount?: number;
+  };
   shadow?: {
     enabled?: boolean;
     routeMode?: string;
@@ -134,6 +151,95 @@ export interface ChannelRoutingParticipantAccountLike {
   disabled?: boolean;
 }
 
+export interface ProjectCandidatePoolRuleLike {
+  id?: string;
+  channel?: string;
+  projectKey?: string;
+  projectName?: string;
+  projectKeySource?: string;
+  projectKeyConfidence?: string;
+  enabled?: boolean;
+  allowAccountIDs?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProjectCandidatePoolRuleRow {
+  id: string;
+  projectTitle: string;
+  projectKey: string;
+  projectMeta: string;
+  statusLabel: string;
+  enabled: boolean;
+  allowAccountTitles: string[];
+  missingAccountIDs: string[];
+  accountCountLabel: string;
+  raw: ProjectCandidatePoolRuleLike;
+}
+
+export interface ProjectCandidatePoolObservedProjectLike {
+  projectKey?: string;
+  projectName?: string;
+  projectKeySource?: string;
+  projectKeyConfidence?: string;
+  lastSeenAt?: string;
+  source?: 'live-session' | 'session-history' | 'route-event' | 'configured';
+  active?: boolean;
+  sessionCount?: number;
+}
+
+export interface ProjectCandidatePoolSessionManagementProjectLike {
+  name?: string;
+  projectKey?: string;
+  projectName?: string;
+  projectKeySource?: string;
+  projectKeyConfidence?: string;
+  lastActiveAt?: string;
+  sessionCount?: number;
+  activeSessionCount?: number;
+  sessions?: ProjectCandidatePoolSessionManagementSessionLike[];
+}
+
+export interface ProjectCandidatePoolSessionManagementSessionLike {
+  projectKey?: string;
+  projectName?: string;
+  projectKeySource?: string;
+  projectKeyConfidence?: string;
+  updatedAt?: string;
+  status?: string;
+}
+
+export interface ProjectCandidatePoolSessionManagementSnapshotLike {
+  projects?: ProjectCandidatePoolSessionManagementProjectLike[];
+}
+
+export interface ProjectCandidatePoolLiveSessionLike {
+  projectKey?: string;
+  projectName?: string;
+  projectKeySource?: string;
+  projectKeyConfidence?: string;
+  startedAt?: string;
+  lastEventAt?: string;
+  status?: string;
+}
+
+export interface ProjectCandidatePoolLiveSessionsSnapshotLike {
+  sessions?: ProjectCandidatePoolLiveSessionLike[];
+}
+
+export interface ProjectCandidatePoolProjectOption {
+  projectKey: string;
+  projectName: string;
+  projectKeySource: string;
+  projectKeyConfidence: string;
+  configured: boolean;
+  lastSeenAt?: string;
+  sourceLabel?: string;
+  active?: boolean;
+  sessionCount?: number;
+  sourceRank?: number;
+}
+
 export interface ChannelRoutingParticipantRow {
   rank: number;
   id: string;
@@ -151,6 +257,8 @@ export interface ChannelRoutingExplainDigest {
   policyLabel: string;
   shadowLabel: string;
   shadowMeta: string;
+  projectCandidatePoolLabel: string;
+  projectCandidatePoolMeta: string;
   candidateRows: ChannelRoutingExplainCandidateRow[];
   filteredRows: ChannelRoutingExplainReasonRow[];
   stepRows: ChannelRoutingExplainStepRow[];
@@ -336,6 +444,8 @@ export function buildChannelRoutingExplainDigest(
       policyLabel: '规则未生成',
       shadowLabel: 'Shadow 关闭',
       shadowMeta: '',
+      projectCandidatePoolLabel: '项目池未评估',
+      projectCandidatePoolMeta: '',
       candidateRows: [],
       filteredRows: [],
       stepRows: [],
@@ -377,6 +487,7 @@ export function buildChannelRoutingExplainDigest(
         shadow.diff ? '有' : '无'
       }`
     : '';
+  const projectCandidatePool = buildProjectCandidatePoolDigest(input.projectCandidatePool);
 
   return {
     hasExplain: true,
@@ -388,6 +499,8 @@ export function buildChannelRoutingExplainDigest(
     policyLabel: `规则 ${String(input.policyVersion || '未生成').trim() || '未生成'}`,
     shadowLabel,
     shadowMeta,
+    projectCandidatePoolLabel: projectCandidatePool.label,
+    projectCandidatePoolMeta: projectCandidatePool.meta,
     candidateRows,
     filteredRows,
     stepRows,
@@ -444,6 +557,396 @@ export function buildChannelRoutingParticipantRows(
   }
 
   return rows;
+}
+
+export function normalizeProjectCandidatePoolRuleDraft(
+  draft: ProjectCandidatePoolRuleLike,
+  channel: ChannelID,
+): ProjectCandidatePoolRuleLike {
+  const projectKey = String(draft.projectKey || '').trim();
+  return {
+    id: String(draft.id || '').trim() || undefined,
+    channel,
+    projectKey,
+    projectName: String(draft.projectName || '').trim(),
+    projectKeySource: String(draft.projectKeySource || '').trim() || 'manual-confirmed',
+    projectKeyConfidence: String(draft.projectKeyConfidence || '').trim() || (projectKey ? 'strong' : ''),
+    enabled: draft.enabled !== false,
+    allowAccountIDs: normalizeOrderedAccountIDs(draft.allowAccountIDs),
+    createdAt: draft.createdAt,
+    updatedAt: draft.updatedAt,
+  };
+}
+
+export function normalizeProjectCandidatePoolRules(
+  rules: ProjectCandidatePoolRuleLike[] | null | undefined,
+  channel: ChannelID,
+): ProjectCandidatePoolRuleLike[] {
+  return (rules || [])
+    .map((rule) => normalizeProjectCandidatePoolRuleDraft(rule, channel))
+    .filter((rule) => String(rule.projectKey || '').trim());
+}
+
+export function buildPreviewProjectCandidatePoolRules(
+  channel: ChannelID,
+  accounts: ChannelRoutingParticipantAccountLike[] = [],
+): ProjectCandidatePoolRuleLike[] {
+  const requestableAccountIDs = accounts
+    .filter((account) => account.requestable !== false && account.disabled !== true)
+    .map((account) => String(account.id || '').trim())
+    .filter(Boolean);
+  const allowAccountIDs = requestableAccountIDs.slice(0, Math.max(1, Math.min(2, requestableAccountIDs.length)));
+  if (allowAccountIDs.length === 0) {
+    return [];
+  }
+  return [
+    {
+      id: `preview-${channel}-gettokens`,
+      channel,
+      projectKey: 'workspace:preview-gettokens',
+      projectName: 'GetTokens',
+      projectKeySource: 'browser-preview',
+      projectKeyConfidence: 'strong',
+      enabled: true,
+      allowAccountIDs,
+    },
+  ];
+}
+
+export function validateProjectCandidatePoolRuleDraft(rule: ProjectCandidatePoolRuleLike): string[] {
+  const issues: string[] = [];
+  const projectKey = String(rule.projectKey || '').trim();
+  if (!projectKey) {
+    issues.push('请选择项目');
+  } else if (!/^[a-z][a-z0-9-]*:.+$/i.test(projectKey)) {
+    issues.push('项目标识缺少来源前缀，请重新选择历史项目');
+  }
+  if (normalizeOrderedAccountIDs(rule.allowAccountIDs).length === 0) {
+    issues.push('至少选择一个允许账号');
+  }
+  return issues;
+}
+
+export function buildProjectCandidatePoolProjectOptions(input: {
+  rules?: ProjectCandidatePoolRuleLike[] | null;
+  sessionProjects?: ProjectCandidatePoolObservedProjectLike[] | null;
+  routeEvents?: ChannelRouteAuditEvent[] | null;
+}): ProjectCandidatePoolProjectOption[] {
+  const optionsByKey = new Map<string, ProjectCandidatePoolProjectOption>();
+
+  for (const rule of input.rules || []) {
+    addProjectCandidatePoolProjectOption(optionsByKey, {
+      projectKey: rule.projectKey,
+      projectName: rule.projectName,
+      projectKeySource: rule.projectKeySource,
+      projectKeyConfidence: rule.projectKeyConfidence,
+      configured: true,
+      lastSeenAt: rule.updatedAt || rule.createdAt,
+      source: 'configured',
+    });
+  }
+
+  for (const project of input.sessionProjects || []) {
+    addProjectCandidatePoolProjectOption(optionsByKey, {
+      projectKey: project.projectKey,
+      projectName: project.projectName,
+      projectKeySource: project.projectKeySource,
+      projectKeyConfidence: project.projectKeyConfidence,
+      configured: false,
+      lastSeenAt: project.lastSeenAt,
+      source: project.source || 'session-history',
+      active: project.active,
+      sessionCount: project.sessionCount,
+    });
+  }
+
+  for (const event of input.routeEvents || []) {
+    addProjectCandidatePoolProjectOption(optionsByKey, {
+      projectKey: event.projectKey,
+      projectName: event.projectName,
+      projectKeySource: event.projectKeySource,
+      projectKeyConfidence: event.projectKeyConfidence,
+      configured: false,
+      lastSeenAt: event.recordedAt,
+      source: 'route-event',
+    });
+  }
+
+  return Array.from(optionsByKey.values()).sort(compareProjectCandidatePoolProjectOptions);
+}
+
+export function buildProjectCandidatePoolProjectsFromSessionManagementSnapshot(
+  snapshot: ProjectCandidatePoolSessionManagementSnapshotLike | null | undefined,
+  source: ProjectCandidatePoolObservedProjectLike['source'] = 'session-history',
+): ProjectCandidatePoolObservedProjectLike[] {
+  const items: ProjectCandidatePoolObservedProjectLike[] = [];
+  for (const project of snapshot?.projects || []) {
+    const projectKey = String(project.projectKey || '').trim();
+    if (projectKey) {
+      items.push({
+        projectKey,
+        projectName: String(project.projectName || project.name || '').trim(),
+        projectKeySource: project.projectKeySource,
+        projectKeyConfidence: project.projectKeyConfidence,
+        lastSeenAt: project.lastActiveAt,
+        source,
+        active: source === 'live-session',
+        sessionCount: project.sessionCount,
+      });
+    }
+    for (const session of project.sessions || []) {
+      const sessionProjectKey = String(session.projectKey || '').trim();
+      if (!sessionProjectKey) {
+        continue;
+      }
+      items.push({
+        projectKey: sessionProjectKey,
+        projectName: String(session.projectName || project.projectName || project.name || '').trim(),
+        projectKeySource: session.projectKeySource || project.projectKeySource,
+        projectKeyConfidence: session.projectKeyConfidence || project.projectKeyConfidence,
+        lastSeenAt: session.updatedAt || project.lastActiveAt,
+        source,
+        active: source === 'live-session',
+        sessionCount: 1,
+      });
+    }
+  }
+  return mergeProjectCandidatePoolObservedProjects(items);
+}
+
+export function buildProjectCandidatePoolProjectsFromCodexLiveSessions(
+  snapshot: ProjectCandidatePoolLiveSessionsSnapshotLike | null | undefined,
+  historySnapshot?: ProjectCandidatePoolSessionManagementSnapshotLike | null,
+): ProjectCandidatePoolObservedProjectLike[] {
+  const historyByProjectName = new Map<string, ProjectCandidatePoolObservedProjectLike>();
+  for (const project of buildProjectCandidatePoolProjectsFromSessionManagementSnapshot(historySnapshot, 'session-history')) {
+    const name = normalizeProjectCandidatePoolProjectNameKey(project.projectName);
+    if (name && !historyByProjectName.has(name)) {
+      historyByProjectName.set(name, project);
+    }
+  }
+
+  const items: ProjectCandidatePoolObservedProjectLike[] = [];
+  for (const session of snapshot?.sessions || []) {
+    const projectName = String(session.projectName || '').trim();
+    const historyProject = historyByProjectName.get(normalizeProjectCandidatePoolProjectNameKey(projectName));
+    const projectKey = String(session.projectKey || historyProject?.projectKey || '').trim();
+    if (!projectKey) {
+      continue;
+    }
+    items.push({
+      projectKey,
+      projectName: projectName || historyProject?.projectName || projectKey,
+      projectKeySource: session.projectKeySource || historyProject?.projectKeySource || 'codex-live-session',
+      projectKeyConfidence: session.projectKeyConfidence || historyProject?.projectKeyConfidence || 'observed',
+      lastSeenAt: session.lastEventAt || session.startedAt || historyProject?.lastSeenAt,
+      source: 'live-session',
+      active: session.status !== 'completed' && session.status !== 'archived',
+      sessionCount: 1,
+    });
+  }
+  return mergeProjectCandidatePoolObservedProjects(items);
+}
+
+export function mergeProjectCandidatePoolObservedProjects(
+  projects: ProjectCandidatePoolObservedProjectLike[] = [],
+): ProjectCandidatePoolObservedProjectLike[] {
+  const byKey = new Map<string, ProjectCandidatePoolObservedProjectLike>();
+  for (const project of projects) {
+    const projectKey = String(project.projectKey || '').trim();
+    if (!projectKey) {
+      continue;
+    }
+    const current = byKey.get(projectKey);
+    if (!current) {
+      byKey.set(projectKey, {
+        ...project,
+        projectKey,
+        projectName: String(project.projectName || '').trim() || projectKey,
+        sessionCount: project.sessionCount || 0,
+      });
+      continue;
+    }
+    const projectSourceRank = getProjectCandidatePoolProjectSourceRank(project.source);
+    const currentSourceRank = getProjectCandidatePoolProjectSourceRank(current.source);
+    byKey.set(projectKey, {
+      ...current,
+      projectName:
+        currentSourceRank <= projectSourceRank
+          ? current.projectName || project.projectName
+          : project.projectName || current.projectName,
+      projectKeySource:
+        currentSourceRank <= projectSourceRank
+          ? current.projectKeySource || project.projectKeySource
+          : project.projectKeySource || current.projectKeySource,
+      projectKeyConfidence:
+        current.projectKeyConfidence === 'strong'
+          ? current.projectKeyConfidence
+          : project.projectKeyConfidence || current.projectKeyConfidence,
+      lastSeenAt: pickLatestDateLabel(current.lastSeenAt, project.lastSeenAt),
+      source: currentSourceRank <= projectSourceRank ? current.source : project.source,
+      active: Boolean(current.active || project.active),
+      sessionCount: (current.sessionCount || 0) + (project.sessionCount || 0),
+    });
+  }
+  return Array.from(byKey.values());
+}
+
+export function buildProjectCandidatePoolRuleRows(
+  rules: ProjectCandidatePoolRuleLike[] = [],
+  accounts: ChannelRoutingParticipantAccountLike[] = [],
+): ProjectCandidatePoolRuleRow[] {
+  const accountByID = new Map<string, ChannelRoutingParticipantAccountLike>();
+  for (const account of accounts) {
+    const id = String(account.id || '').trim();
+    if (id && !accountByID.has(id)) {
+      accountByID.set(id, account);
+    }
+  }
+
+  return rules
+    .map((rule, index) => {
+      const projectKey = String(rule.projectKey || '').trim();
+      const allowAccountIDs = normalizeOrderedAccountIDs(rule.allowAccountIDs);
+      const allowAccountTitles: string[] = [];
+      const missingAccountIDs: string[] = [];
+      for (const accountID of allowAccountIDs) {
+        const account = accountByID.get(accountID);
+        if (!account) {
+          missingAccountIDs.push(accountID);
+          continue;
+        }
+        allowAccountTitles.push(String(account.label || account.id || accountID).trim() || accountID);
+      }
+      const projectName = String(rule.projectName || '').trim();
+      const source = String(rule.projectKeySource || '').trim();
+      const confidence = String(rule.projectKeyConfidence || '').trim();
+      return {
+        id: String(rule.id || '').trim() || `${projectKey || 'project'}:${index}`,
+        projectTitle: projectName || projectKey || '未命名项目',
+        projectKey,
+        projectMeta: [source, confidence].filter(Boolean).join(' · '),
+        statusLabel: rule.enabled === false ? '停用' : '启用',
+        enabled: rule.enabled !== false,
+        allowAccountTitles,
+        missingAccountIDs,
+        accountCountLabel: `${allowAccountIDs.length} 个账号`,
+        raw: {
+          ...rule,
+          allowAccountIDs,
+        },
+      };
+    })
+    .filter((row) => row.projectKey);
+}
+
+function addProjectCandidatePoolProjectOption(
+  optionsByKey: Map<string, ProjectCandidatePoolProjectOption>,
+  input: Partial<ProjectCandidatePoolProjectOption> & {
+    source?: ProjectCandidatePoolObservedProjectLike['source'];
+  },
+) {
+  const projectKey = String(input.projectKey || '').trim();
+  if (!projectKey) {
+    return;
+  }
+  const current = optionsByKey.get(projectKey);
+  const projectName = String(input.projectName || '').trim();
+  const projectKeySource = String(input.projectKeySource || '').trim();
+  const projectKeyConfidence = String(input.projectKeyConfidence || '').trim();
+  const keepConfiguredIdentity = current?.configured && !input.configured;
+  const source = input.source || (input.configured ? 'configured' : undefined);
+  const sourceRank = getProjectCandidatePoolProjectSourceRank(source);
+  const currentSourceRank = current?.sourceRank ?? 99;
+  const nextSourceRank = Math.min(currentSourceRank, sourceRank);
+  const active = Boolean(current?.active || input.active);
+  const sessionCount = Math.max(current?.sessionCount || 0, input.sessionCount || 0);
+  const next: ProjectCandidatePoolProjectOption = {
+    projectKey,
+    projectName: keepConfiguredIdentity ? current.projectName : projectName || current?.projectName || projectKey,
+    projectKeySource: keepConfiguredIdentity ? current.projectKeySource : projectKeySource || current?.projectKeySource || 'observed',
+    projectKeyConfidence: keepConfiguredIdentity
+      ? current.projectKeyConfidence
+      : projectKeyConfidence || current?.projectKeyConfidence || 'observed',
+    configured: Boolean(current?.configured || input.configured),
+    lastSeenAt: pickLatestDateLabel(current?.lastSeenAt, input.lastSeenAt),
+    sourceLabel: getProjectCandidatePoolProjectSourceLabel(nextSourceRank, active),
+    active,
+    sessionCount,
+    sourceRank: nextSourceRank,
+  };
+  optionsByKey.set(projectKey, next);
+}
+
+function compareProjectCandidatePoolProjectOptions(
+  left: ProjectCandidatePoolProjectOption,
+  right: ProjectCandidatePoolProjectOption,
+): number {
+  if (left.configured !== right.configured) {
+    return left.configured ? -1 : 1;
+  }
+  if (Boolean(left.active) !== Boolean(right.active)) {
+    return left.active ? -1 : 1;
+  }
+  if ((left.sourceRank ?? 99) !== (right.sourceRank ?? 99)) {
+    return (left.sourceRank ?? 99) - (right.sourceRank ?? 99);
+  }
+  const leftTime = Date.parse(left.lastSeenAt || '');
+  const rightTime = Date.parse(right.lastSeenAt || '');
+  if (Number.isFinite(leftTime) && Number.isFinite(rightTime) && leftTime !== rightTime) {
+    return rightTime - leftTime;
+  }
+  return left.projectName.localeCompare(right.projectName);
+}
+
+function pickLatestDateLabel(left: string | undefined, right: string | undefined): string | undefined {
+  if (!left) {
+    return right;
+  }
+  if (!right) {
+    return left;
+  }
+  const leftTime = Date.parse(left);
+  const rightTime = Date.parse(right);
+  if (!Number.isFinite(leftTime) || !Number.isFinite(rightTime)) {
+    return right || left;
+  }
+  return rightTime >= leftTime ? right : left;
+}
+
+function getProjectCandidatePoolProjectSourceRank(source: string | undefined): number {
+  switch (source) {
+    case 'configured':
+      return 0;
+    case 'live-session':
+      return 1;
+    case 'session-history':
+      return 2;
+    case 'route-event':
+      return 3;
+    default:
+      return 9;
+  }
+}
+
+function getProjectCandidatePoolProjectSourceLabel(sourceRank: number, active: boolean): string {
+  if (active || sourceRank === 1) {
+    return '运行会话';
+  }
+  if (sourceRank === 2) {
+    return '会话历史';
+  }
+  if (sourceRank === 3) {
+    return '路由记录';
+  }
+  if (sourceRank === 0) {
+    return '已配置';
+  }
+  return '已识别';
+}
+
+function normalizeProjectCandidatePoolProjectNameKey(value: string | undefined): string {
+  return String(value || '').trim().toLowerCase();
 }
 
 function formatChannelRouteModeLabel(mode: unknown): string {
@@ -532,6 +1035,50 @@ function formatChannelRoutingFilteredReason(reason: string): string {
       return '运行态模型不可用';
     case 'runtime-upstream-error':
       return '运行态上游错误';
+    case 'project-candidate-pool':
+      return '项目候选池规则';
+    case 'project-candidate-pool-no-routeable-account':
+      return '项目候选池无可路由账号';
+    case 'project-candidate-pool-conflict':
+      return '项目候选池规则冲突';
+    default:
+      return reason;
+  }
+}
+
+function buildProjectCandidatePoolDigest(
+  projectCandidatePool: ChannelRoutingExplainLike['projectCandidatePool'],
+): { label: string; meta: string } {
+  if (!projectCandidatePool) {
+    return { label: '项目池未评估', meta: '' };
+  }
+
+  const reason = String(projectCandidatePool.reason || '').trim();
+  const label = formatProjectCandidatePoolReason(reason) || '项目池已记录';
+  const projectName = String(projectCandidatePool.projectName || '').trim();
+  const ruleID = String(projectCandidatePool.ruleID || '').trim();
+  const before = Number(projectCandidatePool.beforeCandidateCount);
+  const after = Number(projectCandidatePool.afterCandidateCount);
+  const countMeta =
+    Number.isFinite(before) && Number.isFinite(after) && (before > 0 || after > 0) ? `${before} → ${after} 个候选` : '';
+  const meta = [projectName ? `项目:${projectName}` : '', ruleID ? `规则:${ruleID}` : '', countMeta].filter(Boolean).join(' · ');
+  return { label, meta };
+}
+
+function formatProjectCandidatePoolReason(reason: string): string {
+  switch (reason) {
+    case 'project-candidate-pool:matched':
+      return '项目候选池命中';
+    case 'project-candidate-pool:not-matched':
+      return '项目候选池未命中';
+    case 'project-candidate-pool:not-evaluated:no-project-key':
+      return '项目身份缺失';
+    case 'project-candidate-pool:not-evaluated:ambiguous-project':
+      return '项目身份不唯一';
+    case 'project-candidate-pool:no-routeable-account':
+      return '项目候选池无可路由账号';
+    case 'project-candidate-pool:conflict':
+      return '项目候选池规则冲突';
     default:
       return reason;
   }
@@ -541,6 +1088,12 @@ function formatChannelRoutingExplainStep(step: string): ChannelRoutingExplainSte
   const raw = String(step || '').trim();
   if (!raw) {
     return null;
+  }
+  if (raw.startsWith('project-candidate-pool:')) {
+    return {
+      label: '项目候选池',
+      detail: formatProjectCandidatePoolReason(raw),
+    };
   }
   if (raw.startsWith('mode:')) {
     return {

@@ -96,6 +96,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     account.id,
     account.apiKey,
     account.baseUrl,
+    account.formatBaseUrls,
     account.prefix,
     account.quotaCurl,
     account.quotaEnabled,

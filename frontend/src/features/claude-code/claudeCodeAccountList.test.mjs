@@ -55,7 +55,7 @@ test('buildClaudeCodeAccountRows only admits accounts with anthropic supported f
   assert.equal(rows[0].baseUrl, 'https://api.deepseek.com/anthropic');
 });
 
-test('claude account list detail and route probe modals are hash-routed', async () => {
+test('claude account list detail and account-list modals are hash-routed', async () => {
   const source = await readFile(new URL('./ClaudeCodeAccountListFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /buildClaudeDetailFrameHash/);
@@ -64,7 +64,8 @@ test('claude account list detail and route probe modals are hash-routed', async 
   assert.match(source, /clearClaudeModalFrameHash/);
   assert.match(source, /hashState\?\.page === 'claude' && hashState\.claudeWorkspace === 'account-list'/);
   assert.match(source, /hashState\?\.accountDetailID/);
-  assert.match(source, /hashState\?\.modal === 'route-probe'/);
+  assert.match(source, /accountListModal === 'route-probe'/);
+  assert.match(source, /accountListModal === 'project-config'/);
 });
 
 test('disabled and errored Claude Code accounts stay ordered but are not requestable', () => {

@@ -220,6 +220,18 @@ func (m *Manager) CurrentServiceAPIKey() string {
 	return m.serviceAPIKey
 }
 
+func (m *Manager) Profile() string {
+	if m == nil {
+		return "prod"
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if strings.EqualFold(strings.TrimSpace(m.profile), "dev") {
+		return "dev"
+	}
+	return "prod"
+}
+
 func (m *Manager) SetCurrentServiceAPIKey(apiKey string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()

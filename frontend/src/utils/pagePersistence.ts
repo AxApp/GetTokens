@@ -57,12 +57,12 @@ const usageDeskWorkspaces: ReadonlySet<UsageDeskWorkspace> = new Set(['codex', '
 const usageDeskSources = new Set(['observed', 'projected'] as const);
 const usageDeskRanges = new Set(['TODAY', '7D', '14D', '30D', '全部'] as const);
 const accountDetailScriptRoutes = new Set(['quota', 'billing'] as const);
-const accountListModalRoutes = new Set(['route-probe'] as const);
+const accountListModalRoutes = new Set(['route-probe', 'project-config'] as const);
 
 export type UsageDeskSourceStorageValue = 'observed' | 'projected';
 export type UsageDeskRangeStorageValue = 'TODAY' | '7D' | '14D' | '30D' | '全部';
 export type AccountDetailScriptRoute = 'quota' | 'billing';
-export type AccountListModalRoute = 'route-probe';
+export type AccountListModalRoute = 'route-probe' | 'project-config';
 
 export interface FrameHashState {
   page: AppPage;

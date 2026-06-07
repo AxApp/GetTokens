@@ -54,23 +54,44 @@ type ChannelRoutingConfigMeta struct {
 }
 
 type ChannelRoutingExplainInput struct {
-	Channel         string         `json:"channel,omitempty"`
-	TriedAccountIDs []string       `json:"triedAccountIDs,omitempty"`
-	ActiveSessions  map[string]int `json:"activeSessions,omitempty"`
-	StickyAccountID string         `json:"stickyAccountID,omitempty"`
+	Channel              string         `json:"channel,omitempty"`
+	TriedAccountIDs      []string       `json:"triedAccountIDs,omitempty"`
+	ActiveSessions       map[string]int `json:"activeSessions,omitempty"`
+	StickyAccountID      string         `json:"stickyAccountID,omitempty"`
+	ProjectKey           string         `json:"projectKey,omitempty"`
+	ProjectName          string         `json:"projectName,omitempty"`
+	ProjectKeySource     string         `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string         `json:"projectKeyConfidence,omitempty"`
+	ProjectMatchKeys     []string       `json:"projectMatchKeys,omitempty"`
 }
 
 type ChannelRoutingExplainResult struct {
-	Channel           string                          `json:"channel"`
-	RouteMode         ChannelRouteMode                `json:"routeMode"`
-	SelectedAccountID string                          `json:"selectedAccountID,omitempty"`
-	Candidates        []ChannelRoutingCandidate       `json:"candidates"`
-	Filtered          []ChannelRoutingFilteredAccount `json:"filtered"`
-	Steps             []string                        `json:"steps"`
-	Meta              ChannelRoutingConfigMeta        `json:"meta"`
-	SnapshotVersion   string                          `json:"snapshotVersion,omitempty"`
-	PolicyVersion     string                          `json:"policyVersion,omitempty"`
-	Shadow            *ChannelRoutingShadowDecision   `json:"shadow,omitempty"`
+	Channel              string                                  `json:"channel"`
+	RouteMode            ChannelRouteMode                        `json:"routeMode"`
+	SelectedAccountID    string                                  `json:"selectedAccountID,omitempty"`
+	Candidates           []ChannelRoutingCandidate               `json:"candidates"`
+	Filtered             []ChannelRoutingFilteredAccount         `json:"filtered"`
+	Steps                []string                                `json:"steps"`
+	Meta                 ChannelRoutingConfigMeta                `json:"meta"`
+	SnapshotVersion      string                                  `json:"snapshotVersion,omitempty"`
+	PolicyVersion        string                                  `json:"policyVersion,omitempty"`
+	ProjectCandidatePool *ChannelRoutingProjectCandidatePoolInfo `json:"projectCandidatePool,omitempty"`
+	Shadow               *ChannelRoutingShadowDecision           `json:"shadow,omitempty"`
+}
+
+type ChannelRoutingProjectCandidatePoolInfo struct {
+	Evaluated            bool     `json:"evaluated"`
+	Activated            bool     `json:"activated"`
+	Reason               string   `json:"reason,omitempty"`
+	RuleID               string   `json:"ruleID,omitempty"`
+	ProjectKey           string   `json:"projectKey,omitempty"`
+	ProjectName          string   `json:"projectName,omitempty"`
+	ProjectKeySource     string   `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string   `json:"projectKeyConfidence,omitempty"`
+	AllowAccountIDs      []string `json:"allowAccountIDs,omitempty"`
+	FilteredAccountIDs   []string `json:"filteredAccountIDs,omitempty"`
+	BeforeCandidateCount int      `json:"beforeCandidateCount,omitempty"`
+	AfterCandidateCount  int      `json:"afterCandidateCount,omitempty"`
 }
 
 type ChannelRoutingShadowDecision struct {
@@ -106,6 +127,10 @@ type ChannelRouteEvent struct {
 	ID                      string           `json:"id"`
 	RecordedAt              string           `json:"recordedAt"`
 	Channel                 string           `json:"channel"`
+	ProjectKey              string           `json:"projectKey,omitempty"`
+	ProjectName             string           `json:"projectName,omitempty"`
+	ProjectKeySource        string           `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence    string           `json:"projectKeyConfidence,omitempty"`
 	RouteMode               ChannelRouteMode `json:"routeMode"`
 	SelectedAccountID       string           `json:"selectedAccountID,omitempty"`
 	CandidateCount          int              `json:"candidateCount"`
@@ -214,7 +239,15 @@ func (a *App) ExplainChannelRouting(input ChannelRoutingExplainInput) (*ChannelR
 	if err != nil {
 		return nil, err
 	}
-	result := explainChannelRoutingWithRuntime(accounts, *cfg, input, store.RuntimeStates)
+	projectRules := []ProjectCandidatePoolRule(nil)
+	if channelRoutingExplainShouldLoadProjectRules(input) {
+		rules, err := a.ListProjectCandidatePoolRules(channel)
+		if err != nil {
+			return nil, err
+		}
+		projectRules = rules
+	}
+	result := explainChannelRoutingWithProjectCandidatePool(accounts, *cfg, input, store.RuntimeStates, projectRules)
 	if err := appendChannelRouteEvent(input, result); err != nil {
 		return nil, err
 	}
@@ -258,15 +291,19 @@ func explainChannelRoutingWithAccounts(accounts []accountsdomain.AccountRecord, 
 }
 
 func explainChannelRoutingWithRuntime(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
+	return explainChannelRoutingWithProjectCandidatePool(accounts, cfg, input, runtimeStates, nil)
+}
+
+func explainChannelRoutingWithProjectCandidatePool(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, runtimeStates map[string]ChannelAccountRuntimeState, projectRules []ProjectCandidatePoolRule) ChannelRoutingExplainResult {
 	normalized, meta := normalizeChannelRoutingConfig(cfg, cfg.Channel)
-	result := explainNormalizedChannelRouting(accounts, normalized, input, meta, runtimeStates)
+	result := explainNormalizedChannelRouting(accounts, normalized, input, meta, runtimeStates, projectRules)
 	result.SnapshotVersion = channelRoutingSnapshotVersion(normalized)
 	result.PolicyVersion = "channel-routing-v1"
 	if normalized.ShadowEnabled {
 		shadowConfig := normalized
 		shadowConfig.RouteMode = normalizeShadowRouteMode(normalized.ShadowRouteMode, normalized.RouteMode)
 		shadowConfig.ShadowEnabled = false
-		shadow := explainNormalizedChannelRouting(accounts, shadowConfig, input, ChannelRoutingConfigMeta{}, runtimeStates)
+		shadow := explainNormalizedChannelRouting(accounts, shadowConfig, input, ChannelRoutingConfigMeta{}, runtimeStates, projectRules)
 		result.Shadow = &ChannelRoutingShadowDecision{
 			Enabled:           true,
 			RouteMode:         shadow.RouteMode,
@@ -278,14 +315,19 @@ func explainChannelRoutingWithRuntime(accounts []accountsdomain.AccountRecord, c
 	return result
 }
 
-func explainNormalizedChannelRouting(accounts []accountsdomain.AccountRecord, normalized ChannelRoutingConfig, input ChannelRoutingExplainInput, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
+func explainNormalizedChannelRouting(accounts []accountsdomain.AccountRecord, normalized ChannelRoutingConfig, input ChannelRoutingExplainInput, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState, projectRules []ProjectCandidatePoolRule) ChannelRoutingExplainResult {
 	mode := normalized.RouteMode
 	steps := []string{"mode:" + string(mode)}
-	return decideChannelRoute(accounts, normalized, input, mode, steps, meta, runtimeStates)
+	return decideChannelRoute(accounts, normalized, input, mode, steps, meta, runtimeStates, projectRules)
 }
 
-func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, mode ChannelRouteMode, steps []string, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
+func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, mode ChannelRouteMode, steps []string, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState, projectRules []ProjectCandidatePoolRule) ChannelRoutingExplainResult {
 	candidates, filtered := buildChannelRouteablePool(accounts, cfg, input, runtimeStates)
+	projectCandidatePool := (*ChannelRoutingProjectCandidatePoolInfo)(nil)
+	candidates, filtered, projectCandidatePool = applyProjectCandidatePoolExplain(candidates, filtered, cfg.Channel, input, projectRules)
+	if projectCandidatePool != nil && projectCandidatePool.Reason != "" {
+		steps = append(steps, projectCandidatePool.Reason)
+	}
 	steps = append(steps, "candidates:"+intString(len(candidates)))
 	selected := ""
 	stickyAccountID := strings.TrimSpace(input.StickyAccountID)
@@ -307,14 +349,131 @@ func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRout
 		}
 	}
 	return ChannelRoutingExplainResult{
-		Channel:           cfg.Channel,
-		RouteMode:         mode,
-		SelectedAccountID: selected,
-		Candidates:        mapChannelRouteCandidates(candidates),
-		Filtered:          filtered,
-		Steps:             steps,
-		Meta:              meta,
+		Channel:              cfg.Channel,
+		RouteMode:            mode,
+		SelectedAccountID:    selected,
+		Candidates:           mapChannelRouteCandidates(candidates),
+		Filtered:             filtered,
+		Steps:                steps,
+		Meta:                 meta,
+		ProjectCandidatePool: projectCandidatePool,
 	}
+}
+
+func applyProjectCandidatePoolExplain(candidates []channelRouteCandidate, filtered []ChannelRoutingFilteredAccount, channel string, input ChannelRoutingExplainInput, rules []ProjectCandidatePoolRule) ([]channelRouteCandidate, []ChannelRoutingFilteredAccount, *ChannelRoutingProjectCandidatePoolInfo) {
+	if !channelRoutingExplainHasProjectContext(input) {
+		return candidates, filtered, nil
+	}
+	info := &ChannelRoutingProjectCandidatePoolInfo{
+		ProjectKey:           strings.TrimSpace(input.ProjectKey),
+		ProjectName:          strings.TrimSpace(input.ProjectName),
+		ProjectKeySource:     strings.TrimSpace(input.ProjectKeySource),
+		ProjectKeyConfidence: strings.TrimSpace(input.ProjectKeyConfidence),
+		BeforeCandidateCount: len(candidates),
+		AfterCandidateCount:  len(candidates),
+	}
+	if strings.EqualFold(info.ProjectKeyConfidence, "ambiguous") {
+		info.Reason = "project-candidate-pool:not-evaluated:ambiguous-project"
+		return candidates, filtered, info
+	}
+	matchKeys := normalizeIDList(input.ProjectMatchKeys)
+	if len(matchKeys) == 0 && info.ProjectKey != "" {
+		matchKeys = []string{info.ProjectKey}
+	}
+	if len(matchKeys) == 0 {
+		info.Reason = "project-candidate-pool:not-evaluated:no-project-key"
+		return candidates, filtered, info
+	}
+	info.Evaluated = true
+	matches := matchingProjectCandidatePoolExplainRules(rules, channel, matchKeys)
+	switch len(matches) {
+	case 0:
+		info.Reason = "project-candidate-pool:not-matched"
+		return candidates, filtered, info
+	case 1:
+		rule := matches[0]
+		info.Activated = true
+		info.RuleID = rule.ID
+		if info.ProjectName == "" {
+			info.ProjectName = rule.ProjectName
+		}
+		if info.ProjectKeySource == "" {
+			info.ProjectKeySource = rule.ProjectKeySource
+		}
+		if info.ProjectKeyConfidence == "" {
+			info.ProjectKeyConfidence = rule.ProjectKeyConfidence
+		}
+		info.AllowAccountIDs = normalizeIDList(rule.AllowAccountIDs)
+		allowed := idSet(info.AllowAccountIDs)
+		kept := make([]channelRouteCandidate, 0, len(candidates))
+		for _, candidate := range candidates {
+			id := candidate.Account.ID
+			if _, ok := allowed[id]; ok {
+				kept = append(kept, candidate)
+				continue
+			}
+			info.FilteredAccountIDs = append(info.FilteredAccountIDs, id)
+			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: id, Reason: "project-candidate-pool"})
+		}
+		info.AfterCandidateCount = len(kept)
+		if len(kept) == 0 {
+			info.Reason = "project-candidate-pool:no-routeable-account"
+			for index := range filtered {
+				if _, ok := allowed[filtered[index].ID]; !ok && filtered[index].Reason == "project-candidate-pool" {
+					filtered[index].Reason = "project-candidate-pool-no-routeable-account"
+				}
+			}
+			return kept, filtered, info
+		}
+		info.Reason = "project-candidate-pool:matched"
+		return kept, filtered, info
+	default:
+		info.Activated = true
+		info.Reason = "project-candidate-pool:conflict"
+		info.AfterCandidateCount = 0
+		for _, candidate := range candidates {
+			info.FilteredAccountIDs = append(info.FilteredAccountIDs, candidate.Account.ID)
+			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: candidate.Account.ID, Reason: "project-candidate-pool-conflict"})
+		}
+		return []channelRouteCandidate{}, filtered, info
+	}
+}
+
+func channelRoutingExplainHasProjectContext(input ChannelRoutingExplainInput) bool {
+	return strings.TrimSpace(input.ProjectKey) != "" ||
+		strings.TrimSpace(input.ProjectName) != "" ||
+		strings.TrimSpace(input.ProjectKeySource) != "" ||
+		strings.TrimSpace(input.ProjectKeyConfidence) != "" ||
+		len(normalizeIDList(input.ProjectMatchKeys)) > 0
+}
+
+func channelRoutingExplainShouldLoadProjectRules(input ChannelRoutingExplainInput) bool {
+	if !channelRoutingExplainHasProjectContext(input) {
+		return false
+	}
+	return strings.TrimSpace(input.ProjectKey) != "" || len(normalizeIDList(input.ProjectMatchKeys)) > 0
+}
+
+func matchingProjectCandidatePoolExplainRules(rules []ProjectCandidatePoolRule, channel string, matchKeys []string) []ProjectCandidatePoolRule {
+	keySet := idSet(matchKeys)
+	out := make([]ProjectCandidatePoolRule, 0, 1)
+	for _, rule := range rules {
+		if !rule.Enabled {
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(rule.Channel), strings.TrimSpace(channel)) {
+			continue
+		}
+		projectKey := strings.TrimSpace(rule.ProjectKey)
+		if projectKey == "" {
+			continue
+		}
+		if _, ok := keySet[projectKey]; !ok {
+			continue
+		}
+		out = append(out, rule)
+	}
+	return out
 }
 
 func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, runtimeStates map[string]ChannelAccountRuntimeState) ([]channelRouteCandidate, []ChannelRoutingFilteredAccount) {
@@ -901,16 +1060,34 @@ func appendChannelRouteEvent(input ChannelRoutingExplainInput, result ChannelRou
 	}
 	store.NextEventID++
 	event := ChannelRouteEvent{
-		ID:                fmt.Sprintf("route-%06d", store.NextEventID),
-		RecordedAt:        time.Now().UTC().Format(time.RFC3339Nano),
-		Channel:           result.Channel,
-		RouteMode:         result.RouteMode,
-		SelectedAccountID: result.SelectedAccountID,
-		CandidateCount:    len(result.Candidates),
-		FilteredCount:     len(result.Filtered),
-		SnapshotVersion:   result.SnapshotVersion,
-		PolicyVersion:     result.PolicyVersion,
-		Redacted:          true,
+		ID:                   fmt.Sprintf("route-%06d", store.NextEventID),
+		RecordedAt:           time.Now().UTC().Format(time.RFC3339Nano),
+		Channel:              result.Channel,
+		ProjectKey:           strings.TrimSpace(input.ProjectKey),
+		ProjectName:          strings.TrimSpace(input.ProjectName),
+		ProjectKeySource:     strings.TrimSpace(input.ProjectKeySource),
+		ProjectKeyConfidence: strings.TrimSpace(input.ProjectKeyConfidence),
+		RouteMode:            result.RouteMode,
+		SelectedAccountID:    result.SelectedAccountID,
+		CandidateCount:       len(result.Candidates),
+		FilteredCount:        len(result.Filtered),
+		SnapshotVersion:      result.SnapshotVersion,
+		PolicyVersion:        result.PolicyVersion,
+		Redacted:             true,
+	}
+	if result.ProjectCandidatePool != nil {
+		if event.ProjectKey == "" {
+			event.ProjectKey = strings.TrimSpace(result.ProjectCandidatePool.ProjectKey)
+		}
+		if event.ProjectName == "" {
+			event.ProjectName = strings.TrimSpace(result.ProjectCandidatePool.ProjectName)
+		}
+		if event.ProjectKeySource == "" {
+			event.ProjectKeySource = strings.TrimSpace(result.ProjectCandidatePool.ProjectKeySource)
+		}
+		if event.ProjectKeyConfidence == "" {
+			event.ProjectKeyConfidence = strings.TrimSpace(result.ProjectCandidatePool.ProjectKeyConfidence)
+		}
 	}
 	if result.Shadow != nil && result.Shadow.Enabled {
 		event.ShadowEnabled = true

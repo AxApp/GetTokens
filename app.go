@@ -310,16 +310,25 @@ func (a *App) SaveChannelRoutingConfig(input ChannelRoutingConfig) (*ChannelRout
 }
 
 func (a *App) ExplainChannelRouting(input ChannelRoutingExplainInput) (*ChannelRoutingExplainResult, error) {
-	result, err := a.core.ExplainChannelRouting(wailsapp.ChannelRoutingExplainInput{
-		Channel:         input.Channel,
-		TriedAccountIDs: append([]string(nil), input.TriedAccountIDs...),
-		ActiveSessions:  cloneIntMap(input.ActiveSessions),
-		StickyAccountID: input.StickyAccountID,
-	})
+	result, err := a.core.ExplainChannelRouting(mapChannelRoutingExplainInputToCore(input))
 	if err != nil {
 		return nil, err
 	}
 	return mapChannelRoutingExplainResult(result), nil
+}
+
+func mapChannelRoutingExplainInputToCore(input ChannelRoutingExplainInput) wailsapp.ChannelRoutingExplainInput {
+	return wailsapp.ChannelRoutingExplainInput{
+		Channel:              input.Channel,
+		TriedAccountIDs:      append([]string(nil), input.TriedAccountIDs...),
+		ActiveSessions:       cloneIntMap(input.ActiveSessions),
+		StickyAccountID:      input.StickyAccountID,
+		ProjectKey:           input.ProjectKey,
+		ProjectName:          input.ProjectName,
+		ProjectKeySource:     input.ProjectKeySource,
+		ProjectKeyConfidence: input.ProjectKeyConfidence,
+		ProjectMatchKeys:     append([]string(nil), input.ProjectMatchKeys...),
+	}
 }
 
 func (a *App) MarkChannelRouteAccountResult(input ChannelRouteAccountResultInput) (*ChannelAccountRuntimeState, error) {
@@ -351,6 +360,10 @@ func (a *App) ListChannelRouteEvents(input ChannelRouteEventsInput) ([]ChannelRo
 			ID:                      event.ID,
 			RecordedAt:              event.RecordedAt,
 			Channel:                 event.Channel,
+			ProjectKey:              event.ProjectKey,
+			ProjectName:             event.ProjectName,
+			ProjectKeySource:        event.ProjectKeySource,
+			ProjectKeyConfidence:    event.ProjectKeyConfidence,
 			RouteMode:               string(event.RouteMode),
 			SelectedAccountID:       event.SelectedAccountID,
 			CandidateCount:          event.CandidateCount,
@@ -505,6 +518,34 @@ func (a *App) UpdateRateLimitRule(input RateLimitRule) ([]RateLimitRule, error) 
 
 func (a *App) DeleteRateLimitRule(input DeleteRateLimitRuleInput) error {
 	return a.core.DeleteRateLimitRule(input.ID)
+}
+
+func (a *App) ListProjectCandidatePoolRules(input ProjectCandidatePoolRulesInput) ([]ProjectCandidatePoolRule, error) {
+	result, err := a.core.ListProjectCandidatePoolRules(input.Channel)
+	if err != nil {
+		return nil, err
+	}
+	return mapProjectCandidatePoolRules(result), nil
+}
+
+func (a *App) CreateProjectCandidatePoolRule(input ProjectCandidatePoolRule) ([]ProjectCandidatePoolRule, error) {
+	result, err := a.core.CreateProjectCandidatePoolRule(mapProjectCandidatePoolRuleToCore(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapProjectCandidatePoolRules(result), nil
+}
+
+func (a *App) UpdateProjectCandidatePoolRule(input ProjectCandidatePoolRule) ([]ProjectCandidatePoolRule, error) {
+	result, err := a.core.UpdateProjectCandidatePoolRule(mapProjectCandidatePoolRuleToCore(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapProjectCandidatePoolRules(result), nil
+}
+
+func (a *App) DeleteProjectCandidatePoolRule(input DeleteProjectCandidatePoolRuleInput) error {
+	return a.core.DeleteProjectCandidatePoolRule(input.ID)
 }
 
 func (a *App) GetAllRateLimitStatuses() ([]RateLimitState, error) {
@@ -820,14 +861,17 @@ func (a *App) GetAppRuntimeSettings() (*AppRuntimeSettings, error) {
 		LaunchAgentPath:              result.LaunchAgentPath,
 		CloseAction:                  result.CloseAction,
 		MenuBarResident:              result.MenuBarResident,
+		ShowMenuBarIcon:              result.ShowMenuBarIcon,
 		ConfigPath:                   result.ConfigPath,
 	}, nil
 }
 
 func (a *App) UpdateAppRuntimeSettings(input AppRuntimeSettings) (*AppRuntimeSettings, error) {
 	result, err := a.core.UpdateAppRuntimeSettings(wailsapp.AppRuntimeSettings{
-		LaunchAtLogin: input.LaunchAtLogin,
-		CloseAction:   input.CloseAction,
+		LaunchAtLogin:      input.LaunchAtLogin,
+		CloseAction:        input.CloseAction,
+		ShowMenuBarIcon:    input.ShowMenuBarIcon,
+		ShowMenuBarIconSet: true,
 	})
 	if err != nil {
 		return nil, err
@@ -839,6 +883,7 @@ func (a *App) UpdateAppRuntimeSettings(input AppRuntimeSettings) (*AppRuntimeSet
 		LaunchAgentPath:              result.LaunchAgentPath,
 		CloseAction:                  result.CloseAction,
 		MenuBarResident:              result.MenuBarResident,
+		ShowMenuBarIcon:              result.ShowMenuBarIcon,
 		ConfigPath:                   result.ConfigPath,
 	}, nil
 }
@@ -855,6 +900,7 @@ func (a *App) SetCodexModelCatalogSyncEnabled(enabled bool) (*AppRuntimeSettings
 		LaunchAgentPath:              result.LaunchAgentPath,
 		CloseAction:                  result.CloseAction,
 		MenuBarResident:              result.MenuBarResident,
+		ShowMenuBarIcon:              result.ShowMenuBarIcon,
 		ConfigPath:                   result.ConfigPath,
 	}, nil
 }
@@ -1092,12 +1138,7 @@ func (a *App) GetQuotaStatus(accountKey string) (*CodexQuotaResponse, error) {
 }
 
 func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaResponse, error) {
-	result, err := a.core.TestCodexAPIKeyQuotaCurl(wailsapp.TestCodexAPIKeyQuotaCurlInput{
-		APIKey:    input.APIKey,
-		BaseURL:   input.BaseURL,
-		Prefix:    input.Prefix,
-		QuotaCurl: input.QuotaCurl,
-	})
+	result, err := a.core.TestCodexAPIKeyQuotaCurl(mapTestCodexAPIKeyQuotaCurlInputToWails(input))
 	if err != nil {
 		return nil, err
 	}
@@ -1105,16 +1146,22 @@ func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*Co
 }
 
 func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaBillingInfo, error) {
-	result, err := a.core.TestCodexAPIKeyBillingCurl(wailsapp.TestCodexAPIKeyQuotaCurlInput{
-		APIKey:    input.APIKey,
-		BaseURL:   input.BaseURL,
-		Prefix:    input.Prefix,
-		QuotaCurl: input.QuotaCurl,
-	})
+	result, err := a.core.TestCodexAPIKeyBillingCurl(mapTestCodexAPIKeyQuotaCurlInputToWails(input))
 	if err != nil {
 		return nil, err
 	}
 	return mapCodexQuotaBillingInfo(result), nil
+}
+
+func mapTestCodexAPIKeyQuotaCurlInputToWails(input TestCodexAPIKeyQuotaCurlInput) wailsapp.TestCodexAPIKeyQuotaCurlInput {
+	return wailsapp.TestCodexAPIKeyQuotaCurlInput{
+		APIKey:         input.APIKey,
+		BaseURL:        input.BaseURL,
+		Prefix:         input.Prefix,
+		QuotaCurl:      input.QuotaCurl,
+		PlatformCookie: input.PlatformCookie,
+		CurlVariables:  input.CurlVariables,
+	}
 }
 
 func (a *App) ListAccounts() ([]AccountRecord, error) {
@@ -1519,7 +1566,11 @@ func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, 
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
-	return a.core.CreateCodexAPIKey(wailsapp.CreateCodexAPIKeyInput{
+	return a.core.CreateCodexAPIKey(mapCreateCodexAPIKeyInputToWails(input))
+}
+
+func mapCreateCodexAPIKeyInputToWails(input CreateCodexAPIKeyInput) wailsapp.CreateCodexAPIKeyInput {
+	return wailsapp.CreateCodexAPIKeyInput{
 		APIKey:         input.APIKey,
 		Label:          input.Label,
 		BaseURL:        input.BaseURL,
@@ -1534,7 +1585,9 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		QuotaEnabled:   input.QuotaEnabled,
 		BillingCurl:    input.BillingCurl,
 		BillingEnabled: input.BillingEnabled,
-	})
+		PlatformCookie: input.PlatformCookie,
+		CurlVariables:  input.CurlVariables,
+	}
 }
 
 func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
@@ -1545,10 +1598,15 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 }
 
 func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error {
-	return a.core.UpdateCodexAPIKeyConfig(wailsapp.UpdateCodexAPIKeyConfigInput{
+	return a.core.UpdateCodexAPIKeyConfig(mapUpdateCodexAPIKeyConfigInputToWails(input))
+}
+
+func mapUpdateCodexAPIKeyConfigInputToWails(input UpdateCodexAPIKeyConfigInput) wailsapp.UpdateCodexAPIKeyConfigInput {
+	return wailsapp.UpdateCodexAPIKeyConfigInput{
 		ID:             input.ID,
 		APIKey:         input.APIKey,
 		BaseURL:        input.BaseURL,
+		FormatBaseURLs: input.FormatBaseURLs,
 		Prefix:         input.Prefix,
 		ProxyURL:       input.ProxyURL,
 		Models:         mapOpenAICompatibleModelsToWails(input.Models),
@@ -1556,7 +1614,9 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 		QuotaEnabled:   input.QuotaEnabled,
 		BillingCurl:    input.BillingCurl,
 		BillingEnabled: input.BillingEnabled,
-	})
+		PlatformCookie: input.PlatformCookie,
+		CurlVariables:  input.CurlVariables,
+	}
 }
 
 func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProviderInput) error {
@@ -1587,6 +1647,7 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		CurrentName:       input.CurrentName,
 		Name:              input.Name,
 		BaseURL:           input.BaseURL,
+		FormatBaseURLs:    input.FormatBaseURLs,
 		Prefix:            input.Prefix,
 		ProxyURL:          input.ProxyURL,
 		APIKey:            input.APIKey,
@@ -1799,9 +1860,30 @@ func mapChannelRoutingExplainResult(input *wailsapp.ChannelRoutingExplainResult)
 		Meta: ChannelRoutingConfigMeta{
 			InvalidModes: append([]string(nil), input.Meta.InvalidModes...),
 		},
-		SnapshotVersion: input.SnapshotVersion,
-		PolicyVersion:   input.PolicyVersion,
-		Shadow:          mapChannelRoutingShadow(input.Shadow),
+		SnapshotVersion:      input.SnapshotVersion,
+		PolicyVersion:        input.PolicyVersion,
+		ProjectCandidatePool: mapChannelRoutingProjectCandidatePool(input.ProjectCandidatePool),
+		Shadow:               mapChannelRoutingShadow(input.Shadow),
+	}
+}
+
+func mapChannelRoutingProjectCandidatePool(input *wailsapp.ChannelRoutingProjectCandidatePoolInfo) *ChannelRoutingProjectCandidatePoolInfo {
+	if input == nil {
+		return nil
+	}
+	return &ChannelRoutingProjectCandidatePoolInfo{
+		Evaluated:            input.Evaluated,
+		Activated:            input.Activated,
+		Reason:               input.Reason,
+		RuleID:               input.RuleID,
+		ProjectKey:           input.ProjectKey,
+		ProjectName:          input.ProjectName,
+		ProjectKeySource:     input.ProjectKeySource,
+		ProjectKeyConfidence: input.ProjectKeyConfidence,
+		AllowAccountIDs:      append([]string(nil), input.AllowAccountIDs...),
+		FilteredAccountIDs:   append([]string(nil), input.FilteredAccountIDs...),
+		BeforeCandidateCount: input.BeforeCandidateCount,
+		AfterCandidateCount:  input.AfterCandidateCount,
 	}
 }
 

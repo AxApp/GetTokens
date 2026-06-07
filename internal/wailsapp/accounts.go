@@ -82,6 +82,7 @@ type UpdateCodexAPIKeyConfigInput struct {
 	ID             string                  `json:"id"`
 	APIKey         string                  `json:"apiKey"`
 	BaseURL        string                  `json:"baseUrl"`
+	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
 	Prefix         string                  `json:"prefix,omitempty"`
 	ProxyURL       string                  `json:"proxyUrl,omitempty"`
 	Models         []OpenAICompatibleModel `json:"models,omitempty"`
@@ -162,6 +163,9 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 	write := accountWriteFromUnified(*account)
 	write.CodexAPIKey.APIKey = nextAPIKey
 	write.CodexAPIKey.BaseURL = nextBaseURL
+	if input.FormatBaseURLs != nil {
+		write.CodexAPIKey.FormatBaseURLsJSON = mustJSONString(normalizeFormatBaseURLs(input.FormatBaseURLs))
+	}
 	write.CodexAPIKey.Prefix = nextPrefix
 	write.CodexAPIKey.ProxyURL = strings.TrimSpace(input.ProxyURL)
 	write.CodexAPIKey.ModelsJSON = mustJSONString(codexModelsFromOpenAICompatibleModels(input.Models))

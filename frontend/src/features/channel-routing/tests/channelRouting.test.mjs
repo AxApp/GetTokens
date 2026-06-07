@@ -8,11 +8,20 @@ import {
   buildChannelRouteAuditEventSummary,
   buildChannelRoutingParticipantRows,
   buildChannelRoutingExplainDigest,
+  buildProjectCandidatePoolProjectOptions,
+  buildProjectCandidatePoolRuleRows,
+  buildPreviewProjectCandidatePoolRules,
   buildPreviewChannelRouteAuditEvent,
+  buildProjectCandidatePoolProjectsFromCodexLiveSessions,
+  buildProjectCandidatePoolProjectsFromSessionManagementSnapshot,
   classifyChannelRouteMode,
+  mergeProjectCandidatePoolObservedProjects,
   isChannelRouteMode,
   normalizeChannelRoutingConfig,
+  normalizeProjectCandidatePoolRuleDraft,
+  normalizeProjectCandidatePoolRules,
   updateChannelRoutingConfig,
+  validateProjectCandidatePoolRuleDraft,
 } from '../model/channelRouting.ts';
 
 test('ChannelRouteMode only accepts the GetTokens two-mode routing model', () => {
@@ -232,6 +241,8 @@ test('buildChannelRoutingExplainDigest turns raw explain data into readable sect
       policyLabel: '规则 channel-routing-v1',
       shadowLabel: 'Shadow 开启',
       shadowMeta: '顺序 · auth-file:backup.json · 差异:有',
+      projectCandidatePoolLabel: '项目池未评估',
+      projectCandidatePoolMeta: '',
       candidateRows: [
         {
           rank: 1,
@@ -254,6 +265,70 @@ test('buildChannelRoutingExplainDigest turns raw explain data into readable sect
         { label: '当前模式', detail: '均衡' },
         { label: '候选池', detail: '2 个' },
         { label: '粘性命中', detail: 'codex-api-key:stable' },
+      ],
+    },
+  );
+});
+
+test('buildChannelRoutingExplainDigest surfaces project candidate pool explain state', () => {
+  assert.deepEqual(
+    buildChannelRoutingExplainDigest({
+      routeMode: 'sequential',
+      selectedAccountID: 'auth-file:allowed.json',
+      candidates: [
+        {
+          id: 'auth-file:allowed.json',
+          displayName: 'Allowed',
+          provider: 'auth-file',
+        },
+      ],
+      filtered: [
+        { id: 'auth-file:outside.json', reason: 'project-candidate-pool' },
+        { id: 'auth-file:blocked.json', reason: 'project-candidate-pool-no-routeable-account' },
+        { id: 'auth-file:conflict.json', reason: 'project-candidate-pool-conflict' },
+      ],
+      steps: ['mode:sequential', 'project-candidate-pool:matched', 'candidates:1'],
+      snapshotVersion: 'snapshot-project',
+      policyVersion: 'channel-routing-v1',
+      projectCandidatePool: {
+        evaluated: true,
+        activated: true,
+        reason: 'project-candidate-pool:matched',
+        ruleID: 'rule-gettokens',
+        projectName: 'GetTokens',
+        beforeCandidateCount: 4,
+        afterCandidateCount: 1,
+      },
+    }),
+    {
+      hasExplain: true,
+      modeLabel: '顺序',
+      selectedTitle: 'Allowed',
+      selectedMeta: '命中候选 #1 · auth-file',
+      summaryLabel: '1 个候选 / 3 个过滤',
+      snapshotLabel: '快照 snapshot-project',
+      policyLabel: '规则 channel-routing-v1',
+      shadowLabel: 'Shadow 关闭',
+      shadowMeta: '',
+      projectCandidatePoolLabel: '项目候选池命中',
+      projectCandidatePoolMeta: '项目:GetTokens · 规则:rule-gettokens · 4 → 1 个候选',
+      candidateRows: [
+        {
+          rank: 1,
+          id: 'auth-file:allowed.json',
+          title: 'Allowed',
+          meta: 'auth-file',
+        },
+      ],
+      filteredRows: [
+        { label: '项目候选池规则', count: 1 },
+        { label: '项目候选池无可路由账号', count: 1 },
+        { label: '项目候选池规则冲突', count: 1 },
+      ],
+      stepRows: [
+        { label: '当前模式', detail: '顺序' },
+        { label: '项目候选池', detail: '项目候选池命中' },
+        { label: '候选池', detail: '1 个' },
       ],
     },
   );
@@ -346,6 +421,350 @@ test('buildChannelRoutingParticipantRows shows only requestable accounts in chan
   );
 });
 
+test('project candidate pool rule model normalizes exact project keys and allow accounts', () => {
+  const normalized = normalizeProjectCandidatePoolRuleDraft(
+    {
+      id: ' rule-1 ',
+      channel: 'claude',
+      projectKey: ' workspace:abc123 ',
+      projectName: ' GetTokens ',
+      enabled: undefined,
+      allowAccountIDs: ['auth-file:a.json', ' ', 'auth-file:a.json', 'codex-api-key:b'],
+    },
+    'codex',
+  );
+
+  assert.deepEqual(normalized, {
+    id: 'rule-1',
+    channel: 'codex',
+    projectKey: 'workspace:abc123',
+    projectName: 'GetTokens',
+    projectKeySource: 'manual-confirmed',
+    projectKeyConfidence: 'strong',
+    enabled: true,
+    allowAccountIDs: ['auth-file:a.json', 'codex-api-key:b'],
+    createdAt: undefined,
+    updatedAt: undefined,
+  });
+  assert.deepEqual(validateProjectCandidatePoolRuleDraft(normalized), []);
+  assert.deepEqual(validateProjectCandidatePoolRuleDraft({ projectKey: 'GetTokens', allowAccountIDs: ['auth-file:a.json'] }), [
+    '项目标识缺少来源前缀，请重新选择历史项目',
+  ]);
+  assert.deepEqual(validateProjectCandidatePoolRuleDraft({ projectKey: 'workspace:abc123', allowAccountIDs: [] }), [
+    '至少选择一个允许账号',
+  ]);
+});
+
+test('project candidate pool rule lists normalize by channel and preview requestable accounts', () => {
+  assert.deepEqual(
+    normalizeProjectCandidatePoolRules(
+      [
+        {
+          id: 'rule-a',
+          channel: 'claude',
+          projectKey: ' workspace:a ',
+          projectName: 'A',
+          allowAccountIDs: ['acct-a', 'acct-a', 'acct-b'],
+        },
+        {
+          id: 'empty-key',
+          projectKey: ' ',
+          allowAccountIDs: ['acct-a'],
+        },
+      ],
+      'codex',
+    ),
+    [
+      {
+        id: 'rule-a',
+        channel: 'codex',
+        projectKey: 'workspace:a',
+        projectName: 'A',
+        projectKeySource: 'manual-confirmed',
+        projectKeyConfidence: 'strong',
+        enabled: true,
+        allowAccountIDs: ['acct-a', 'acct-b'],
+        createdAt: undefined,
+        updatedAt: undefined,
+      },
+    ],
+  );
+
+  assert.deepEqual(
+    buildPreviewProjectCandidatePoolRules('claude', [
+      { id: 'acct-a', label: 'A', requestable: true },
+      { id: 'acct-b', label: 'B', requestable: false },
+      { id: 'acct-c', label: 'C', requestable: true },
+    ]),
+    [
+      {
+        id: 'preview-claude-gettokens',
+        channel: 'claude',
+        projectKey: 'workspace:preview-gettokens',
+        projectName: 'GetTokens',
+        projectKeySource: 'browser-preview',
+        projectKeyConfidence: 'strong',
+        enabled: true,
+        allowAccountIDs: ['acct-a', 'acct-c'],
+      },
+    ],
+  );
+});
+
+test('project candidate pool rows show project metadata and missing accounts', () => {
+  assert.deepEqual(
+    buildProjectCandidatePoolRuleRows(
+      [
+        {
+          id: 'rule-1',
+          channel: 'codex',
+          projectKey: 'workspace:abc123',
+          projectName: 'GetTokens',
+          projectKeySource: 'codex-turn-workspace',
+          projectKeyConfidence: 'strong',
+          enabled: false,
+          allowAccountIDs: ['auth-file:a.json', 'missing-account'],
+        },
+      ],
+      [
+        {
+          id: 'auth-file:a.json',
+          label: 'OAuth A',
+          provider: 'OpenAI',
+          sourceKind: 'codex-auth-file',
+          requestable: true,
+        },
+      ],
+    ),
+    [
+      {
+        id: 'rule-1',
+        projectTitle: 'GetTokens',
+        projectKey: 'workspace:abc123',
+        projectMeta: 'codex-turn-workspace · strong',
+        statusLabel: '停用',
+        enabled: false,
+        allowAccountTitles: ['OAuth A'],
+        missingAccountIDs: ['missing-account'],
+        accountCountLabel: '2 个账号',
+        raw: {
+          id: 'rule-1',
+          channel: 'codex',
+          projectKey: 'workspace:abc123',
+          projectName: 'GetTokens',
+          projectKeySource: 'codex-turn-workspace',
+          projectKeyConfidence: 'strong',
+          enabled: false,
+          allowAccountIDs: ['auth-file:a.json', 'missing-account'],
+        },
+      },
+    ],
+  );
+});
+
+test('project candidate pool project options prefer configured rules, live sessions, and session history before route events', () => {
+  const sessionProjects = mergeProjectCandidatePoolObservedProjects([
+    ...buildProjectCandidatePoolProjectsFromSessionManagementSnapshot({
+      projects: [
+        {
+          name: 'History Project',
+          projectKey: 'workspace:history',
+          projectKeySource: 'codex-session-cwd',
+          projectKeyConfidence: 'strong',
+          lastActiveAt: '2026-06-05T08:00:00.000Z',
+          sessionCount: 3,
+        },
+        {
+          name: 'Live Project',
+          projectKey: 'workspace:live',
+          projectKeySource: 'codex-session-cwd',
+          projectKeyConfidence: 'strong',
+          lastActiveAt: '2026-06-04T08:00:00.000Z',
+          sessionCount: 1,
+        },
+      ],
+    }),
+    ...buildProjectCandidatePoolProjectsFromCodexLiveSessions(
+      {
+        sessions: [
+          {
+            projectName: 'Live Project',
+            status: 'active',
+            lastEventAt: '2026-06-06T08:00:00.000Z',
+          },
+          {
+            projectName: 'Unknown Live Project',
+            status: 'active',
+            lastEventAt: '2026-06-06T08:30:00.000Z',
+          },
+        ],
+      },
+      {
+        projects: [
+          {
+            name: 'Live Project',
+            projectKey: 'workspace:live',
+            projectKeySource: 'codex-session-cwd',
+            projectKeyConfidence: 'strong',
+            lastActiveAt: '2026-06-04T08:00:00.000Z',
+            sessionCount: 1,
+          },
+        ],
+      },
+    ),
+  ]);
+
+  const options = buildProjectCandidatePoolProjectOptions({
+    rules: [
+      {
+        id: 'rule-1',
+        projectKey: 'workspace:configured',
+        projectName: 'Configured Project',
+        projectKeySource: 'codex-turn-workspace',
+        projectKeyConfidence: 'strong',
+        updatedAt: '2026-06-01T08:00:00.000Z',
+      },
+    ],
+    sessionProjects,
+    routeEvents: [
+      {
+        id: 'event-1',
+        recordedAt: '2026-06-02T08:00:00.000Z',
+        channel: 'codex',
+        projectKey: 'workspace:observed',
+        projectName: 'Route Event Project',
+        projectKeySource: 'codex-turn-workspace',
+        projectKeyConfidence: 'strong',
+        routeMode: 'sequential',
+        candidateCount: 2,
+        filteredCount: 0,
+        snapshotVersion: 'snapshot',
+        policyVersion: 'policy',
+        redacted: true,
+      },
+      {
+        id: 'event-2',
+        recordedAt: '2026-06-03T08:00:00.000Z',
+        channel: 'codex',
+        projectKey: 'workspace:configured',
+        projectName: 'Configured From History',
+        projectKeySource: 'history',
+        projectKeyConfidence: 'observed',
+        routeMode: 'balanced',
+        candidateCount: 2,
+        filteredCount: 0,
+        snapshotVersion: 'snapshot',
+        policyVersion: 'policy',
+        redacted: true,
+      },
+      {
+        id: 'event-no-project',
+        recordedAt: '2026-06-04T08:00:00.000Z',
+        channel: 'codex',
+        routeMode: 'balanced',
+        candidateCount: 2,
+        filteredCount: 0,
+        snapshotVersion: 'snapshot',
+        policyVersion: 'policy',
+        redacted: true,
+      },
+    ],
+  });
+
+  assert.deepEqual(options, [
+    {
+      projectKey: 'workspace:configured',
+      projectName: 'Configured Project',
+      projectKeySource: 'codex-turn-workspace',
+      projectKeyConfidence: 'strong',
+      configured: true,
+      lastSeenAt: '2026-06-03T08:00:00.000Z',
+      sourceLabel: '已配置',
+      active: false,
+      sessionCount: 0,
+      sourceRank: 0,
+    },
+    {
+      projectKey: 'workspace:live',
+      projectName: 'Live Project',
+      projectKeySource: 'codex-session-cwd',
+      projectKeyConfidence: 'strong',
+      configured: false,
+      lastSeenAt: '2026-06-06T08:00:00.000Z',
+      sourceLabel: '运行会话',
+      active: true,
+      sessionCount: 2,
+      sourceRank: 1,
+    },
+    {
+      projectKey: 'workspace:history',
+      projectName: 'History Project',
+      projectKeySource: 'codex-session-cwd',
+      projectKeyConfidence: 'strong',
+      configured: false,
+      lastSeenAt: '2026-06-05T08:00:00.000Z',
+      sourceLabel: '会话历史',
+      active: false,
+      sessionCount: 3,
+      sourceRank: 2,
+    },
+    {
+      projectKey: 'workspace:observed',
+      projectName: 'Route Event Project',
+      projectKeySource: 'codex-turn-workspace',
+      projectKeyConfidence: 'strong',
+      configured: false,
+      lastSeenAt: '2026-06-02T08:00:00.000Z',
+      sourceLabel: '路由记录',
+      active: false,
+      sessionCount: 0,
+      sourceRank: 3,
+    },
+  ]);
+});
+
+test('Codex and Claude account list pages expose project candidate pool rule editing', async () => {
+  const codexSource = await readFile(new URL('../../codex/CodexAccountListFeature.tsx', import.meta.url), 'utf8');
+  const claudeSource = await readFile(new URL('../../claude-code/ClaudeCodeAccountListFeature.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/ProjectCandidatePoolRulesModal.tsx', import.meta.url), 'utf8');
+
+  for (const source of [codexSource, claudeSource]) {
+    assert.match(source, /ProjectCandidatePoolRulesModal/);
+    assert.match(source, /ListProjectCandidatePoolRules/);
+    assert.match(source, /CreateProjectCandidatePoolRule/);
+    assert.match(source, /UpdateProjectCandidatePoolRule/);
+    assert.match(source, /DeleteProjectCandidatePoolRule/);
+    assert.match(source, /projectMatchKeys: projectKey \? \[projectKey\] : \[\]/);
+    assert.match(source, /accountListModal === 'project-config'/);
+    assert.match(source, /buildProjectCandidatePoolProjectOptions/);
+    assert.match(source, /loadProjectCandidatePoolProjectSources/);
+    assert.match(source, /Get(Codex|ClaudeCode)SessionManagementSnapshot/);
+    assert.match(source, /projectOptions=\{projectCandidatePoolProjectOptions\}/);
+  }
+  assert.match(codexSource, /GetCodexLiveSessionsSnapshot/);
+  assert.match(modalSource, /ProjectCandidatePoolRulesPanel/);
+  assert.match(modalSource, /size="detail"/);
+  assert.match(modalSource, /coverViewport/);
+  assert.match(modalSource, /projectOptions/);
+});
+
+test('ProjectCandidatePoolRulesPanel stays flat inside the project config modal', async () => {
+  const source = await readFile(new URL('../components/ProjectCandidatePoolRulesPanel.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /<section className="min-w-0">/);
+  assert.match(source, /xl:border-r xl:border-\[var\(--border-color\)\] xl:pr-5/);
+  assert.match(source, /border-y border-\[var\(--border-color\)\]/);
+  assert.match(source, /projectOptions\.map/);
+  assert.match(source, /请选择历史项目/);
+  assert.match(source, /带工作目录身份的会话/);
+  assert.doesNotMatch(source, /onChange=\{\(event\) => updateDraft\(\{ projectKey/);
+  assert.doesNotMatch(source, /onChange=\{\(event\) => updateDraft\(\{ projectName/);
+  assert.doesNotMatch(source, /placeholder="workspace:\.\.\."/);
+  assert.doesNotMatch(source, /overflow-hidden border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /<section className="min-w-0 border border-\[var\(--border-color\)\] p-3">/);
+  assert.doesNotMatch(source, /<section className="min-w-0 border border-\[var\(--border-color\)\]">/);
+});
+
 test('ChannelRoutingWorkbench leaves participant account filtering to the account order list', async () => {
   const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
 
@@ -388,6 +807,8 @@ test('ChannelRoutingWorkbench keeps route mode toggles in the header and removes
 
   assert.match(source, /routeModes\.map/);
   assert.match(source, /onModeChange\(mode\)/);
+  assert.match(source, /onOpenProjectConfig/);
+  assert.match(source, />\s*项目配置\s*</);
   assert.match(source, /<header className="p-4">/);
   assert.match(source, /grid min-w-0 flex-1 gap-2 sm:max-w-\[28rem\] sm:flex-none sm:grid-cols-2/);
   assert.doesNotMatch(source, /active \? '当前' : cue/);

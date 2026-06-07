@@ -65,6 +65,7 @@ type UpdateOpenAICompatibleProviderInput struct {
 	CurrentName       string                  `json:"currentName"`
 	Name              string                  `json:"name"`
 	BaseURL           string                  `json:"baseUrl"`
+	FormatBaseURLs    map[string]string       `json:"formatBaseUrls,omitempty"`
 	Prefix            string                  `json:"prefix,omitempty"`
 	ProxyURL          *string                 `json:"proxyUrl,omitempty"`
 	APIKey            string                  `json:"apiKey"`
@@ -244,6 +245,10 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 	if title == "" || strings.EqualFold(title, strings.TrimSpace(target.Provider)) || strings.EqualFold(title, strings.TrimSpace(target.OpenAICompatible.ProviderName)) {
 		title = name
 	}
+	nextFormatBaseURLs := parseStringMapJSON(target.OpenAICompatible.FormatBaseURLsJSON)
+	if input.FormatBaseURLs != nil {
+		nextFormatBaseURLs = normalizeFormatBaseURLs(input.FormatBaseURLs)
+	}
 	_, err = a.managementClient().PatchAccount(target.AccountKey, openAICompatibleAccountWrite(
 		title,
 		name,
@@ -259,7 +264,7 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		input.BillingEnabled,
 		normalizePlatformCookie(input.PlatformCookie),
 		normalizeQuotaCurlVariables(input.CurlVariables, input.PlatformCookie),
-		parseStringMapJSON(target.OpenAICompatible.FormatBaseURLsJSON),
+		nextFormatBaseURLs,
 		nextModels,
 		strings.TrimSpace(input.ModelFetchAPIKey),
 		strings.TrimSpace(input.ModelFetchBaseURL),

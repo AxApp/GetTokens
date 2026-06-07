@@ -197,6 +197,7 @@ type UpdateCodexAPIKeyConfigInput struct {
 	ID             string                  `json:"id"`
 	APIKey         string                  `json:"apiKey"`
 	BaseURL        string                  `json:"baseUrl"`
+	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
 	Prefix         string                  `json:"prefix,omitempty"`
 	ProxyURL       string                  `json:"proxyUrl,omitempty"`
 	Models         []OpenAICompatibleModel `json:"models,omitempty"`
@@ -269,23 +270,44 @@ type ChannelRoutingConfigMeta struct {
 }
 
 type ChannelRoutingExplainInput struct {
-	Channel         string         `json:"channel,omitempty"`
-	TriedAccountIDs []string       `json:"triedAccountIDs,omitempty"`
-	ActiveSessions  map[string]int `json:"activeSessions,omitempty"`
-	StickyAccountID string         `json:"stickyAccountID,omitempty"`
+	Channel              string         `json:"channel,omitempty"`
+	TriedAccountIDs      []string       `json:"triedAccountIDs,omitempty"`
+	ActiveSessions       map[string]int `json:"activeSessions,omitempty"`
+	StickyAccountID      string         `json:"stickyAccountID,omitempty"`
+	ProjectKey           string         `json:"projectKey,omitempty"`
+	ProjectName          string         `json:"projectName,omitempty"`
+	ProjectKeySource     string         `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string         `json:"projectKeyConfidence,omitempty"`
+	ProjectMatchKeys     []string       `json:"projectMatchKeys,omitempty"`
 }
 
 type ChannelRoutingExplainResult struct {
-	Channel           string                          `json:"channel"`
-	RouteMode         string                          `json:"routeMode"`
-	SelectedAccountID string                          `json:"selectedAccountID,omitempty"`
-	Candidates        []ChannelRoutingCandidate       `json:"candidates"`
-	Filtered          []ChannelRoutingFilteredAccount `json:"filtered"`
-	Steps             []string                        `json:"steps"`
-	Meta              ChannelRoutingConfigMeta        `json:"meta"`
-	SnapshotVersion   string                          `json:"snapshotVersion,omitempty"`
-	PolicyVersion     string                          `json:"policyVersion,omitempty"`
-	Shadow            *ChannelRoutingShadowDecision   `json:"shadow,omitempty"`
+	Channel              string                                  `json:"channel"`
+	RouteMode            string                                  `json:"routeMode"`
+	SelectedAccountID    string                                  `json:"selectedAccountID,omitempty"`
+	Candidates           []ChannelRoutingCandidate               `json:"candidates"`
+	Filtered             []ChannelRoutingFilteredAccount         `json:"filtered"`
+	Steps                []string                                `json:"steps"`
+	Meta                 ChannelRoutingConfigMeta                `json:"meta"`
+	SnapshotVersion      string                                  `json:"snapshotVersion,omitempty"`
+	PolicyVersion        string                                  `json:"policyVersion,omitempty"`
+	ProjectCandidatePool *ChannelRoutingProjectCandidatePoolInfo `json:"projectCandidatePool,omitempty"`
+	Shadow               *ChannelRoutingShadowDecision           `json:"shadow,omitempty"`
+}
+
+type ChannelRoutingProjectCandidatePoolInfo struct {
+	Evaluated            bool     `json:"evaluated"`
+	Activated            bool     `json:"activated"`
+	Reason               string   `json:"reason,omitempty"`
+	RuleID               string   `json:"ruleID,omitempty"`
+	ProjectKey           string   `json:"projectKey,omitempty"`
+	ProjectName          string   `json:"projectName,omitempty"`
+	ProjectKeySource     string   `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string   `json:"projectKeyConfidence,omitempty"`
+	AllowAccountIDs      []string `json:"allowAccountIDs,omitempty"`
+	FilteredAccountIDs   []string `json:"filteredAccountIDs,omitempty"`
+	BeforeCandidateCount int      `json:"beforeCandidateCount,omitempty"`
+	AfterCandidateCount  int      `json:"afterCandidateCount,omitempty"`
 }
 
 type ChannelRoutingShadowDecision struct {
@@ -321,6 +343,10 @@ type ChannelRouteEvent struct {
 	ID                      string `json:"id"`
 	RecordedAt              string `json:"recordedAt"`
 	Channel                 string `json:"channel"`
+	ProjectKey              string `json:"projectKey,omitempty"`
+	ProjectName             string `json:"projectName,omitempty"`
+	ProjectKeySource        string `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence    string `json:"projectKeyConfidence,omitempty"`
 	RouteMode               string `json:"routeMode"`
 	SelectedAccountID       string `json:"selectedAccountID,omitempty"`
 	CandidateCount          int    `json:"candidateCount"`
@@ -454,6 +480,7 @@ type UpdateOpenAICompatibleProviderInput struct {
 	CurrentName       string                  `json:"currentName"`
 	Name              string                  `json:"name"`
 	BaseURL           string                  `json:"baseUrl"`
+	FormatBaseURLs    map[string]string       `json:"formatBaseUrls,omitempty"`
 	Prefix            string                  `json:"prefix,omitempty"`
 	ProxyURL          *string                 `json:"proxyUrl,omitempty"`
 	APIKey            string                  `json:"apiKey"`
@@ -800,6 +827,14 @@ type RateLimitEventsInput struct {
 	Limit      int    `json:"limit,omitempty"`
 }
 
+type ProjectCandidatePoolRulesInput struct {
+	Channel string `json:"channel,omitempty"`
+}
+
+type DeleteProjectCandidatePoolRuleInput struct {
+	ID string `json:"id"`
+}
+
 type RateLimitStrategyMeta struct {
 	ID               string   `json:"id"`
 	Name             string   `json:"name"`
@@ -871,6 +906,19 @@ type RateLimitEvent struct {
 	TriggeredAt int64  `json:"triggeredAt"`
 }
 
+type ProjectCandidatePoolRule struct {
+	ID                   string   `json:"id,omitempty"`
+	Channel              string   `json:"channel"`
+	ProjectKey           string   `json:"projectKey"`
+	ProjectName          string   `json:"projectName,omitempty"`
+	ProjectKeySource     string   `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string   `json:"projectKeyConfidence,omitempty"`
+	Enabled              bool     `json:"enabled"`
+	AllowAccountIDs      []string `json:"allowAccountIDs"`
+	CreatedAt            string   `json:"createdAt,omitempty"`
+	UpdatedAt            string   `json:"updatedAt,omitempty"`
+}
+
 type LocalProjectedUsageDetail struct {
 	Timestamp         string `json:"timestamp"`
 	Provider          string `json:"provider"`
@@ -912,6 +960,7 @@ type AppRuntimeSettings struct {
 	LaunchAgentPath              string `json:"launchAgentPath,omitempty"`
 	CloseAction                  string `json:"closeAction"`
 	MenuBarResident              bool   `json:"menuBarResident"`
+	ShowMenuBarIcon              bool   `json:"showMenuBarIcon"`
 	ConfigPath                   string `json:"configPath,omitempty"`
 }
 
@@ -1346,6 +1395,9 @@ type SessionManagementProviderCount struct {
 type SessionManagementProjectRecord struct {
 	ID                   string                           `json:"id"`
 	Name                 string                           `json:"name"`
+	ProjectKey           string                           `json:"projectKey,omitempty"`
+	ProjectKeySource     string                           `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string                           `json:"projectKeyConfidence,omitempty"`
 	ProviderCounts       map[string]int                   `json:"providerCounts,omitempty"`
 	SessionCount         int                              `json:"sessionCount"`
 	ActiveSessionCount   int                              `json:"activeSessionCount"`
@@ -1356,45 +1408,51 @@ type SessionManagementProjectRecord struct {
 }
 
 type SessionManagementSessionRecord struct {
-	ID                  string `json:"id"`
-	SessionID           string `json:"sessionID"`
-	ProjectID           string `json:"projectID"`
-	ProjectName         string `json:"projectName"`
-	Title               string `json:"title"`
-	Status              string `json:"status"`
-	Archived            bool   `json:"archived"`
-	MessageCount        int    `json:"messageCount"`
-	RoleSummary         string `json:"roleSummary"`
-	StartedAt           string `json:"startedAt"`
-	UpdatedAt           string `json:"updatedAt"`
-	FileLabel           string `json:"fileLabel"`
-	Summary             string `json:"summary"`
-	Preview             string `json:"preview"`
-	Topic               string `json:"topic"`
-	CurrentMessageLabel string `json:"currentMessageLabel"`
-	Provider            string `json:"provider"`
-	Model               string `json:"model,omitempty"`
+	ID                   string `json:"id"`
+	SessionID            string `json:"sessionID"`
+	ProjectID            string `json:"projectID"`
+	ProjectName          string `json:"projectName"`
+	ProjectKey           string `json:"projectKey,omitempty"`
+	ProjectKeySource     string `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string `json:"projectKeyConfidence,omitempty"`
+	Title                string `json:"title"`
+	Status               string `json:"status"`
+	Archived             bool   `json:"archived"`
+	MessageCount         int    `json:"messageCount"`
+	RoleSummary          string `json:"roleSummary"`
+	StartedAt            string `json:"startedAt"`
+	UpdatedAt            string `json:"updatedAt"`
+	FileLabel            string `json:"fileLabel"`
+	Summary              string `json:"summary"`
+	Preview              string `json:"preview"`
+	Topic                string `json:"topic"`
+	CurrentMessageLabel  string `json:"currentMessageLabel"`
+	Provider             string `json:"provider"`
+	Model                string `json:"model,omitempty"`
 }
 
 type SessionManagementSessionDetail struct {
-	SessionID           string                           `json:"sessionID"`
-	ProjectID           string                           `json:"projectID"`
-	ProjectName         string                           `json:"projectName"`
-	Title               string                           `json:"title"`
-	Status              string                           `json:"status"`
-	Archived            bool                             `json:"archived"`
-	FileLabel           string                           `json:"fileLabel"`
-	MessageCount        int                              `json:"messageCount"`
-	Masked              bool                             `json:"masked"`
-	CurrentMessageLabel string                           `json:"currentMessageLabel"`
-	RoleSummary         string                           `json:"roleSummary"`
-	Topic               string                           `json:"topic"`
-	Preview             string                           `json:"preview"`
-	Provider            string                           `json:"provider"`
-	Model               string                           `json:"model,omitempty"`
-	StartedAt           string                           `json:"startedAt"`
-	UpdatedAt           string                           `json:"updatedAt"`
-	Messages            []SessionManagementMessageRecord `json:"messages"`
+	SessionID            string                           `json:"sessionID"`
+	ProjectID            string                           `json:"projectID"`
+	ProjectName          string                           `json:"projectName"`
+	ProjectKey           string                           `json:"projectKey,omitempty"`
+	ProjectKeySource     string                           `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string                           `json:"projectKeyConfidence,omitempty"`
+	Title                string                           `json:"title"`
+	Status               string                           `json:"status"`
+	Archived             bool                             `json:"archived"`
+	FileLabel            string                           `json:"fileLabel"`
+	MessageCount         int                              `json:"messageCount"`
+	Masked               bool                             `json:"masked"`
+	CurrentMessageLabel  string                           `json:"currentMessageLabel"`
+	RoleSummary          string                           `json:"roleSummary"`
+	Topic                string                           `json:"topic"`
+	Preview              string                           `json:"preview"`
+	Provider             string                           `json:"provider"`
+	Model                string                           `json:"model,omitempty"`
+	StartedAt            string                           `json:"startedAt"`
+	UpdatedAt            string                           `json:"updatedAt"`
+	Messages             []SessionManagementMessageRecord `json:"messages"`
 }
 
 type SessionManagementMessageRecord struct {

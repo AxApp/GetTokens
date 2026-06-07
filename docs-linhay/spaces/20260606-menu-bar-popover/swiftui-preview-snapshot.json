@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "lowestQuota": "06%",
+    "riskAccounts": "2",
+    "totalBalance": "$122.25",
+    "refreshLabel": "21:18"
+  },
+  "resources": [
+    {
+      "name": "codex-free-low.json",
+      "detail": "7D · 23:00 重置",
+      "percentText": "06%",
+      "percent": 0.06,
+      "window": "7D",
+      "balance": "$0.00 余额",
+      "state": "需充值",
+      "tone": "bad"
+    },
+    {
+      "name": "codex-plus-nightly.json",
+      "detail": "5H · 42m 后重置",
+      "percentText": "18%",
+      "percent": 0.18,
+      "window": "5H",
+      "balance": "OK 套餐余额",
+      "state": "偏低",
+      "tone": "warn"
+    },
+    {
+      "name": "gray-canary",
+      "detail": "5H · 01:20 重置",
+      "percentText": "22%",
+      "percent": 0.22,
+      "window": "5H",
+      "balance": "¥86.20 余额",
+      "state": "关注",
+      "tone": "warn"
+    }
+  ],
+  "balances": [
+    {
+      "label": "Billing USD Pool",
+      "value": "$122.25"
+    },
+    {
+      "label": "SiliconFlow",
+      "value": "¥86.20"
+    },
+    {
+      "label": "DeepSeek Coding Plan",
+      "value": "¥42.00"
+    }
+  ]
+}

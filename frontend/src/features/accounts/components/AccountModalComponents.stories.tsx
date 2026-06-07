@@ -487,6 +487,7 @@ function AccountDetailSectionsSample({
     label: apiKeyDetailAccount.displayName ?? '',
     apiKey: apiKeyDetailAccount.apiKey ?? '',
     baseUrl: missing ? '' : apiKeyDetailAccount.baseUrl ?? '',
+    formatBaseUrls: apiKeyDetailAccount.formatBaseUrls ?? {},
     prefix: apiKeyDetailAccount.prefix ?? '',
     models: apiKeyDetailAccount.models ?? [],
     quotaCurl: apiKeyDetailAccount.quotaCurl ?? '',

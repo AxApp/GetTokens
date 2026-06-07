@@ -229,6 +229,68 @@ func TestRateLimitClientCRUDStatusAndEvents(t *testing.T) {
 	}
 }
 
+func TestProjectCandidatePoolRuleClientCRUD(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		switch {
+		case method == "GET" && path == "/v0/management/gettokens/project-candidate-pool-rules":
+			if got := query.Get("channel"); got != "codex" {
+				t.Fatalf("unexpected channel query: %s", got)
+			}
+			return []byte(`{"items":[{"id":"pcp-1","channel":"codex","projectKey":"workspace:abc","projectName":"GetTokens","projectKeySource":"codex-turn-workspace","projectKeyConfidence":"strong","enabled":true,"allowAccountIDs":["auth-a"],"createdAt":"2026-06-07T00:00:00Z","updatedAt":"2026-06-07T00:00:00Z"}]}`), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/project-candidate-pool-rules":
+			if contentType != "application/json" {
+				t.Fatalf("unexpected content type: %s", contentType)
+			}
+			payload, err := io.ReadAll(body)
+			if err != nil {
+				t.Fatalf("read project candidate pool payload: %v", err)
+			}
+			if !strings.Contains(string(payload), `"projectKey":"workspace:abc"`) || !strings.Contains(string(payload), `"allowAccountIDs":["auth-a","auth-b"]`) {
+				t.Fatalf("unexpected payload: %s", payload)
+			}
+			return []byte(`{"items":[{"id":"pcp-1","channel":"codex","projectKey":"workspace:abc","enabled":true,"allowAccountIDs":["auth-a","auth-b"]}]}`), 200, nil
+		case method == "PUT" && path == "/v0/management/gettokens/project-candidate-pool-rules/pcp-1":
+			assertJSONContains(t, body, `"enabled":false`)
+			return []byte(`{"items":[{"id":"pcp-1","channel":"codex","projectKey":"workspace:abc","enabled":false,"allowAccountIDs":[]}]}`), 200, nil
+		case method == "DELETE" && path == "/v0/management/gettokens/project-candidate-pool-rules/pcp-1":
+			return []byte(`{"ok":true}`), 200, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		return nil, 404, nil
+	})
+
+	rules, err := client.ListProjectCandidatePoolRules("codex")
+	if err != nil || len(rules) != 1 || rules[0].ProjectKey != "workspace:abc" || len(rules[0].AllowAccountIDs) != 1 {
+		t.Fatalf("rules = %#v, err = %v", rules, err)
+	}
+	created, err := client.CreateProjectCandidatePoolRule(ProjectCandidatePoolRule{
+		Channel:              "codex",
+		ProjectKey:           "workspace:abc",
+		ProjectName:          "GetTokens",
+		ProjectKeySource:     "codex-turn-workspace",
+		ProjectKeyConfidence: "strong",
+		Enabled:              true,
+		AllowAccountIDs:      []string{"auth-a", "auth-b"},
+	})
+	if err != nil || len(created) != 1 || !created[0].Enabled {
+		t.Fatalf("created = %#v, err = %v", created, err)
+	}
+	updated, err := client.UpdateProjectCandidatePoolRule(ProjectCandidatePoolRule{
+		ID:              "pcp-1",
+		Channel:         "codex",
+		ProjectKey:      "workspace:abc",
+		Enabled:         false,
+		AllowAccountIDs: []string{},
+	})
+	if err != nil || len(updated) != 1 || updated[0].Enabled {
+		t.Fatalf("updated = %#v, err = %v", updated, err)
+	}
+	if err := client.DeleteProjectCandidatePoolRule("pcp-1"); err != nil {
+		t.Fatalf("delete project candidate pool rule: %v", err)
+	}
+}
+
 func TestAccountStoreDiagnosticsClient(t *testing.T) {
 	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		if method != "GET" || path != "/v0/management/gettokens/account-store-diagnostics" {

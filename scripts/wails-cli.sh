@@ -42,12 +42,42 @@ case "${GOARCH}" in
     ;;
 esac
 
+for ((index = 0; index < ${#COMMAND_ARGS[@]}; index++)); do
+  arg="${COMMAND_ARGS[$index]}"
+  platform=""
+  if [[ "${arg}" == "-platform" || "${arg}" == "--platform" ]]; then
+    next_index=$((index + 1))
+    if [[ "${next_index}" -lt "${#COMMAND_ARGS[@]}" ]]; then
+      platform="${COMMAND_ARGS[$next_index]}"
+    fi
+  elif [[ "${arg}" == -platform=* || "${arg}" == --platform=* ]]; then
+    platform="${arg#*=}"
+  fi
+  if [[ -n "${platform}" ]]; then
+    case "${platform}" in
+      darwin/arm64)
+        GOOS="darwin"
+        GOARCH="arm64"
+        ;;
+      darwin/amd64|darwin/x86_64)
+        GOOS="darwin"
+        GOARCH="amd64"
+        ;;
+    esac
+  fi
+done
+
 if [[ -x "${ROOT_DIR}/scripts/ensure-sidecar.sh" ]]; then
   "${ROOT_DIR}/scripts/ensure-sidecar.sh" "${GOOS}" "${GOARCH}"
 fi
 
+if [[ "${GOOS}" == "darwin" && -x "${ROOT_DIR}/scripts/build-menubar-swiftui.sh" ]]; then
+  "${ROOT_DIR}/scripts/build-menubar-swiftui.sh" "${GOARCH}"
+fi
+
 if [[ "${COMMAND}" == "dev" ]]; then
   export GETTOKENS_APP_PROFILE=dev
+  export GETTOKENS_MENUBAR_SWIFTUI_DYLIB="${ROOT_DIR}/build/menubar-swiftui/libGetTokensMenuBarSwiftUI.dylib"
 fi
 
 normalize_wailsjs() {
@@ -81,6 +111,16 @@ run_wails() {
   "${wails_cmd[@]}" "$COMMAND" "${COMMAND_ARGS[@]}"
   local status="$?"
   set -euo pipefail
+  if [[ "${status}" -ne 0 ]]; then
+    normalize_wailsjs
+    exit "$status"
+  fi
+  if [[ "${COMMAND}" == "build" && "${GOOS}" == "darwin" && -x "${ROOT_DIR}/scripts/install-menubar-swiftui.sh" ]]; then
+    "${ROOT_DIR}/scripts/install-menubar-swiftui.sh" "${ROOT_DIR}/build/bin/GetTokens.app"
+    if command -v codesign >/dev/null 2>&1; then
+      codesign --deep --force --sign - "${ROOT_DIR}/build/bin/GetTokens.app"
+    fi
+  fi
   normalize_wailsjs
   exit "$status"
 }

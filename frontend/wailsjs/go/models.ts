@@ -714,7 +714,6 @@ export namespace main {
 	        this.manual = source["manual"];
 	    }
 	}
-
 	export class OpenAICompatibleModel {
 	    name: string;
 	    alias?: string;
@@ -831,6 +830,7 @@ export namespace main {
 		    return a;
 		}
 	}
+
 	export class AccountStoreReadRecoveryDiagnostics {
 	    count: number;
 	    lastEndpoint: string;
@@ -913,6 +913,7 @@ export namespace main {
 	    launchAgentPath?: string;
 	    closeAction: string;
 	    menuBarResident: boolean;
+	    showMenuBarIcon: boolean;
 	    configPath?: string;
 
 	    static createFrom(source: any = {}) {
@@ -927,6 +928,7 @@ export namespace main {
 	        this.launchAgentPath = source["launchAgentPath"];
 	        this.closeAction = source["closeAction"];
 	        this.menuBarResident = source["menuBarResident"];
+	        this.showMenuBarIcon = source["showMenuBarIcon"];
 	        this.configPath = source["configPath"];
 	    }
 	}
@@ -1114,6 +1116,10 @@ export namespace main {
 	    id: string;
 	    recordedAt: string;
 	    channel: string;
+	    projectKey?: string;
+	    projectName?: string;
+	    projectKeySource?: string;
+	    projectKeyConfidence?: string;
 	    routeMode: string;
 	    selectedAccountID?: string;
 	    candidateCount: number;
@@ -1135,6 +1141,10 @@ export namespace main {
 	        this.id = source["id"];
 	        this.recordedAt = source["recordedAt"];
 	        this.channel = source["channel"];
+	        this.projectKey = source["projectKey"];
+	        this.projectName = source["projectName"];
+	        this.projectKeySource = source["projectKeySource"];
+	        this.projectKeyConfidence = source["projectKeyConfidence"];
 	        this.routeMode = source["routeMode"];
 	        this.selectedAccountID = source["selectedAccountID"];
 	        this.candidateCount = source["candidateCount"];
@@ -1249,6 +1259,11 @@ export namespace main {
 	    triedAccountIDs?: string[];
 	    activeSessions?: Record<string, number>;
 	    stickyAccountID?: string;
+	    projectKey?: string;
+	    projectName?: string;
+	    projectKeySource?: string;
+	    projectKeyConfidence?: string;
+	    projectMatchKeys?: string[];
 
 	    static createFrom(source: any = {}) {
 	        return new ChannelRoutingExplainInput(source);
@@ -1260,6 +1275,11 @@ export namespace main {
 	        this.triedAccountIDs = source["triedAccountIDs"];
 	        this.activeSessions = source["activeSessions"];
 	        this.stickyAccountID = source["stickyAccountID"];
+	        this.projectKey = source["projectKey"];
+	        this.projectName = source["projectName"];
+	        this.projectKeySource = source["projectKeySource"];
+	        this.projectKeyConfidence = source["projectKeyConfidence"];
+	        this.projectMatchKeys = source["projectMatchKeys"];
 	    }
 	}
 	export class ChannelRoutingShadowDecision {
@@ -1280,6 +1300,40 @@ export namespace main {
 	        this.selectedAccountID = source["selectedAccountID"];
 	        this.diff = source["diff"];
 	        this.steps = source["steps"];
+	    }
+	}
+	export class ChannelRoutingProjectCandidatePoolInfo {
+	    evaluated: boolean;
+	    activated: boolean;
+	    reason?: string;
+	    ruleID?: string;
+	    projectKey?: string;
+	    projectName?: string;
+	    projectKeySource?: string;
+	    projectKeyConfidence?: string;
+	    allowAccountIDs?: string[];
+	    filteredAccountIDs?: string[];
+	    beforeCandidateCount?: number;
+	    afterCandidateCount?: number;
+
+	    static createFrom(source: any = {}) {
+	        return new ChannelRoutingProjectCandidatePoolInfo(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.evaluated = source["evaluated"];
+	        this.activated = source["activated"];
+	        this.reason = source["reason"];
+	        this.ruleID = source["ruleID"];
+	        this.projectKey = source["projectKey"];
+	        this.projectName = source["projectName"];
+	        this.projectKeySource = source["projectKeySource"];
+	        this.projectKeyConfidence = source["projectKeyConfidence"];
+	        this.allowAccountIDs = source["allowAccountIDs"];
+	        this.filteredAccountIDs = source["filteredAccountIDs"];
+	        this.beforeCandidateCount = source["beforeCandidateCount"];
+	        this.afterCandidateCount = source["afterCandidateCount"];
 	    }
 	}
 	export class ChannelRoutingFilteredAccount {
@@ -1306,6 +1360,7 @@ export namespace main {
 	    meta: ChannelRoutingConfigMeta;
 	    snapshotVersion?: string;
 	    policyVersion?: string;
+	    projectCandidatePool?: ChannelRoutingProjectCandidatePoolInfo;
 	    shadow?: ChannelRoutingShadowDecision;
 
 	    static createFrom(source: any = {}) {
@@ -1323,6 +1378,7 @@ export namespace main {
 	        this.meta = this.convertValues(source["meta"], ChannelRoutingConfigMeta);
 	        this.snapshotVersion = source["snapshotVersion"];
 	        this.policyVersion = source["policyVersion"];
+	        this.projectCandidatePool = this.convertValues(source["projectCandidatePool"], ChannelRoutingProjectCandidatePoolInfo);
 	        this.shadow = this.convertValues(source["shadow"], ChannelRoutingShadowDecision);
 	    }
 
@@ -1344,6 +1400,7 @@ export namespace main {
 		    return a;
 		}
 	}
+
 
 
 
@@ -3467,6 +3524,18 @@ export namespace main {
 	        this.path = source["path"];
 	    }
 	}
+	export class DeleteProjectCandidatePoolRuleInput {
+	    id: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DeleteProjectCandidatePoolRuleInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	    }
+	}
 	export class DeleteRateLimitRuleInput {
 	    id: string;
 
@@ -4055,6 +4124,48 @@ export namespace main {
 	        this.latencyMs = source["latencyMs"];
 	        this.checkedAt = source["checkedAt"];
 	        this.message = source["message"];
+	    }
+	}
+	export class ProjectCandidatePoolRule {
+	    id?: string;
+	    channel: string;
+	    projectKey: string;
+	    projectName?: string;
+	    projectKeySource?: string;
+	    projectKeyConfidence?: string;
+	    enabled: boolean;
+	    allowAccountIDs: string[];
+	    createdAt?: string;
+	    updatedAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ProjectCandidatePoolRule(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.channel = source["channel"];
+	        this.projectKey = source["projectKey"];
+	        this.projectName = source["projectName"];
+	        this.projectKeySource = source["projectKeySource"];
+	        this.projectKeyConfidence = source["projectKeyConfidence"];
+	        this.enabled = source["enabled"];
+	        this.allowAccountIDs = source["allowAccountIDs"];
+	        this.createdAt = source["createdAt"];
+	        this.updatedAt = source["updatedAt"];
+	    }
+	}
+	export class ProjectCandidatePoolRulesInput {
+	    channel?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ProjectCandidatePoolRulesInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.channel = source["channel"];
 	    }
 	}
 	export class RateLimitEvent {
@@ -5185,6 +5296,9 @@ export namespace main {
 	    sessionID: string;
 	    projectID: string;
 	    projectName: string;
+	    projectKey?: string;
+	    projectKeySource?: string;
+	    projectKeyConfidence?: string;
 	    title: string;
 	    status: string;
 	    archived: boolean;
@@ -5210,6 +5324,9 @@ export namespace main {
 	        this.sessionID = source["sessionID"];
 	        this.projectID = source["projectID"];
 	        this.projectName = source["projectName"];
+	        this.projectKey = source["projectKey"];
+	        this.projectKeySource = source["projectKeySource"];
+	        this.projectKeyConfidence = source["projectKeyConfidence"];
 	        this.title = source["title"];
 	        this.status = source["status"];
 	        this.archived = source["archived"];
@@ -5229,6 +5346,9 @@ export namespace main {
 	export class SessionManagementProjectRecord {
 	    id: string;
 	    name: string;
+	    projectKey?: string;
+	    projectKeySource?: string;
+	    projectKeyConfidence?: string;
 	    providerCounts?: Record<string, number>;
 	    sessionCount: number;
 	    activeSessionCount: number;
@@ -5245,6 +5365,9 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
+	        this.projectKey = source["projectKey"];
+	        this.projectKeySource = source["projectKeySource"];
+	        this.projectKeyConfidence = source["projectKeyConfidence"];
 	        this.providerCounts = source["providerCounts"];
 	        this.sessionCount = source["sessionCount"];
 	        this.activeSessionCount = source["activeSessionCount"];
@@ -5276,6 +5399,9 @@ export namespace main {
 	    sessionID: string;
 	    projectID: string;
 	    projectName: string;
+	    projectKey?: string;
+	    projectKeySource?: string;
+	    projectKeyConfidence?: string;
 	    title: string;
 	    status: string;
 	    archived: boolean;
@@ -5301,6 +5427,9 @@ export namespace main {
 	        this.sessionID = source["sessionID"];
 	        this.projectID = source["projectID"];
 	        this.projectName = source["projectName"];
+	        this.projectKey = source["projectKey"];
+	        this.projectKeySource = source["projectKeySource"];
+	        this.projectKeyConfidence = source["projectKeyConfidence"];
 	        this.title = source["title"];
 	        this.status = source["status"];
 	        this.archived = source["archived"];
@@ -5573,6 +5702,7 @@ export namespace main {
 	    id: string;
 	    apiKey: string;
 	    baseUrl: string;
+	    formatBaseUrls?: Record<string, string>;
 	    prefix?: string;
 	    proxyUrl?: string;
 	    models?: OpenAICompatibleModel[];
@@ -5592,6 +5722,7 @@ export namespace main {
 	        this.id = source["id"];
 	        this.apiKey = source["apiKey"];
 	        this.baseUrl = source["baseUrl"];
+	        this.formatBaseUrls = source["formatBaseUrls"];
 	        this.prefix = source["prefix"];
 	        this.proxyUrl = source["proxyUrl"];
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
@@ -5685,6 +5816,7 @@ export namespace main {
 	    currentName: string;
 	    name: string;
 	    baseUrl: string;
+	    formatBaseUrls?: Record<string, string>;
 	    prefix?: string;
 	    proxyUrl?: string;
 	    apiKey: string;
@@ -5709,6 +5841,7 @@ export namespace main {
 	        this.currentName = source["currentName"];
 	        this.name = source["name"];
 	        this.baseUrl = source["baseUrl"];
+	        this.formatBaseUrls = source["formatBaseUrls"];
 	        this.prefix = source["prefix"];
 	        this.proxyUrl = source["proxyUrl"];
 	        this.apiKey = source["apiKey"];

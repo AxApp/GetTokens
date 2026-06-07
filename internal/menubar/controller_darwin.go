@@ -4,7 +4,7 @@ package menubar
 
 /*
 #cgo CFLAGS: -x objective-c -fmodules
-#cgo LDFLAGS: -framework Foundation -framework AppKit
+#cgo LDFLAGS: -framework Foundation -framework AppKit -framework QuartzCore
 #import <stdlib.h>
 #import "menubar_bridge.h"
 */
@@ -38,9 +38,15 @@ func (c *Controller) Start(callbacks Callbacks) error {
 	activeController = c
 	activeMu.Unlock()
 
-	status := C.CString("GetTokens")
+	displayName := callbacks.DisplayName
+	if displayName == "" {
+		displayName = "GetTokens"
+	}
+	status := C.CString(displayName)
+	name := C.CString(displayName)
 	defer C.free(unsafe.Pointer(status))
-	C.GetTokensMenuBarStart(status)
+	defer C.free(unsafe.Pointer(name))
+	C.GetTokensMenuBarStart(status, name)
 	if len(menuBarIconPNG) > 0 {
 		icon := C.CBytes(menuBarIconPNG)
 		defer C.free(icon)
@@ -68,6 +74,18 @@ func (c *Controller) SetStatus(status string) {
 	C.GetTokensMenuBarSetStatus(value)
 }
 
+func (c *Controller) SetQuotaSnapshot(snapshotJSON string) {
+	c.mu.Lock()
+	started := c.started
+	c.mu.Unlock()
+	if !started {
+		return
+	}
+	value := C.CString(snapshotJSON)
+	defer C.free(unsafe.Pointer(value))
+	C.GetTokensMenuBarSetQuotaSnapshot(value)
+}
+
 func currentCallbacks() Callbacks {
 	activeMu.Lock()
 	controller := activeController
@@ -87,9 +105,9 @@ func gettokensMenuBarOpenWindow() {
 	}
 }
 
-//export gettokensMenuBarCheckForUpdates
-func gettokensMenuBarCheckForUpdates() {
-	if callback := currentCallbacks().CheckForUpdates; callback != nil {
+//export gettokensMenuBarRefreshSnapshot
+func gettokensMenuBarRefreshSnapshot() {
+	if callback := currentCallbacks().RefreshSnapshot; callback != nil {
 		callback()
 	}
 }
