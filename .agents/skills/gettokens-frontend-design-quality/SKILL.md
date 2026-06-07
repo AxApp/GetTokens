@@ -219,3 +219,22 @@ Score: <0-20> / 20
 - 协议 endpoint 区放在凭据字段和连通验证之间，导致凭据流被路由配置打断。
 - `ENDPOINTS / 三端配置 / 分别覆盖... / 3 CAPABILITIES` 多层长文案同时出现。
 - 右侧第一个模块顶部额外加粗线，看起来像被切成两个独立卡片。
+
+### 4.7 Detail modal primary action slot
+
+当 detail modal 内部表单有主动作，例如新建、保存、更新或应用配置时，优先放到 modal 顶部 header 导航栏动作位，不要在 body 顶部或列表底部单独插一条动作行。
+
+适用模块：账号详情、项目配置、路由规则、调试详情、其他覆盖全应用视口的 detail modal。
+
+执行顺序：
+1. modal header 提供 primary action slot；业务组件仍持有 action handler、draft、validation、saving/pending 禁用态。
+2. 如果 handler 必须留在业务组件里，用 portal 挂载到 header slot；不要把业务 draft 状态硬提到 shell 层。
+3. body 首屏直接进入主要表单或列表，不再重复二级标题、规则计数、说明段落或空白动作条。
+4. 主动作按钮只出现一次；源码测试固定 `onClick` 出现次数和 slot 挂载位置。
+5. 浏览器验收检查按钮在 header 内、不在 body 内、位于 body 上方；同时检查 body 不出现横向滚动条。
+
+常见反例：
+- `新建规则` 放在左侧列表底部，用户滚动后才看到主动作。
+- modal header 下面又渲染 `项目候选池 / 说明 / 1 rules` 这种重复标题栏。
+- 为了把按钮放到 header，把表单 draft 和保存逻辑全部上提到 modal shell，导致 shell 承担业务状态。
+- body 顶部保留一条只有按钮的空白 action row，占用内容空间。

@@ -122,6 +122,55 @@ rg -n 'ProjectCandidatePool|CreateProjectCandidatePoolRule|UpdateProjectCandidat
 - 前端 `buildProjectCandidatePoolProjectOptions` 排序调整为：已配置规则优先，其次运行会话、会话历史、route event；下拉会标注 `运行会话 / 会话历史 / 路由记录 / 已配置`，保存规则仍只写稳定 `projectKey`、展示 `projectName` 和 allow account set。
 - 验证通过：`go test ./internal/wailsapp -run 'TestGetCodexSessionManagementSnapshotGroupsProjectsAndStatuses|TestGetCodexSessionDetailMasksSensitiveTextAndKeepsMessageRows|TestGetClaudeCodeSessionManagementSnapshotScansMainSessionsAndSkipsSubagents|TestGetClaudeCodeSessionDetailMasksMessagesAndToolPayloads' -count=1`、`go test . -run 'Test.*SessionManagement|TestMap.*SessionManagement|TestMapProjectCandidatePoolRule|TestMapChannelRoutingExplain' -count=1`、`node --test frontend/src/features/channel-routing/tests/channelRouting.test.mjs frontend/src/features/codex/codexAccountList.test.mjs frontend/src/features/claude-code/claudeCodeAccountList.test.mjs`、`npm --prefix frontend run typecheck`、`git diff --check`。
 
+2026-06-08 允许账号排序与启用补充：
+
+- 用户确认项目配置 modal 的“允许账号”不能只是勾选列表，需要支持排序和启用。本轮将允许账号改为项目内候选子队列：checkbox 表示该账号是否进入项目候选池，启用账号显示 `#N` 顺位并可用上/下箭头调整顺序，未启用账号保留在列表下方可随时加入。
+- `allowAccountIDs` 继续作为唯一保存字段：数组顺序即项目内候选顺序，移除账号即停用，不新增新的 per-account enabled DTO，避免扩大管理 API 合约。
+- Wails explain 与 sidecar runtime 都已对齐顺序语义：项目规则命中后按 `allowAccountIDs` 重排候选；sidecar `project-candidate-pool` policy 同时输出 `AllowIDs` 和 `OrderIDs`，让真实 routing engine 在 strict allow 后按项目规则顺序进入 sequential / balanced。
+- 验证通过：`node --test frontend/src/features/channel-routing/tests/channelRouting.test.mjs frontend/src/features/codex/codexAccountList.test.mjs frontend/src/features/claude-code/claudeCodeAccountList.test.mjs`、`npm --prefix frontend run typecheck`、`go test ./internal/wailsapp -run 'TestExplainChannelRoutingProjectCandidatePoolStrictAllowsAccounts|TestExplainChannelRoutingLoadsProjectCandidatePoolRulesFromManagementAPI' -count=1`、`cd docs-linhay/references/CLIProxyAPI && go test ./internal/gettokenshooks -run 'TestProjectCandidatePoolPolicyExactMatchStrictAllowsAccounts|TestProjectCandidatePoolPolicy' -count=1`。
+
+2026-06-08 项目配置 modal 填满视口修复：
+
+- 用户指出项目配置内容区没有贴到底。根因是 `ModalFrame` body 虽然是 `flex-1`，但项目候选池 panel 仍按内容自然高度渲染，主 grid 与配置列 / 规则列没有继续继承 `min-h-0 / flex-1`。
+- 已将 modal body 调整为 `flex min-h-0 flex-col`，panel 根节点、主 grid、左右列和右侧规则列表全部使用 full-height flex/grid 结构；内容区现在会填满 detail modal 的剩余高度。
+- 前端源码断言已覆盖该布局边界：`ProjectCandidatePoolRulesPanel` 必须保留 `flex min-h-0 flex-1 flex-col` 与 `grid min-h-0 flex-1`，modal body 必须保留 full-height flex class。
+- 浏览器实测 `http://localhost:5173/#frame=codex&workspace=account-list&modal=project-config`：viewport `1324x804` 下 modal body 高 `666px`，panel 高 `626px`，主 grid 高 `568px`，grid / 左侧配置列 / 配置列表 bottom 一致；body 额外 `20px` 是 `p-5` 底部内边距。
+
+2026-06-08 项目配置左列表布局补充：
+
+- 用户指出 `请选择项目` 校验提示不应出现在左列底部，应上移到表单区域；左侧列表底部需要贴近 modal 左列底部。
+- 已将 draft 校验提示移动到项目选择 / 历史项目提示之后、允许账号列表之前；允许账号列表从固定 `max-h-56` 改为 `min-h-0 flex-1 overflow-auto`，让列表吃满剩余高度，底部操作按钮自然贴住左列底部。
+- 浏览器实测 `1324x804` 下 `请选择项目` 位于 `允许账号` 上方，账号列表高 `307px`，列表到底部按钮间距 `12px`，`新建规则` 按钮 bottom 与左列 bottom 一致。
+
+2026-06-08 新建规则入口位置调整：
+
+- 用户指出 `新建规则` 不应放在左侧列表底部，应放到右上角菜单。已将提交按钮移动到内容区右上角动作位；左侧配置列不再渲染底部提交按钮。
+- 该按钮仍复用原 `saveRule` 逻辑和禁用条件：存在 draft 校验问题、正在保存或有 pending rule 时不可点击；编辑已有规则时仍显示 `更新规则`。
+- 浏览器实测页面仅剩一个 `新建规则` 按钮，位于内容区右上角，且不属于左侧配置列。
+
+2026-06-08 项目候选池二级标题移除：
+
+- 用户指出 `项目候选池 / 命中历史项目后... / rules` 这一整条内容 header 需要移除。已删除项目配置 modal 内容区的二级标题、说明文案和规则计数，避免 modal 顶部 `项目配置` 下再重复出现一条大标题栏。
+- `新建规则 / 更新规则` 操作保留在内容区右上角轻量动作位，仍复用原 `saveRule` 与禁用条件；左侧配置列和右侧规则列表直接作为 modal 主体内容。
+- 浏览器快照确认：可见内容中不再出现 `项目候选池` heading、`命中历史项目后` 说明和 `rules` 计数，仍保留一个 disabled 状态的 `新建规则` 按钮。
+
+2026-06-08 左侧中间提示移除：
+
+- 用户指出项目配置左列中间的提示不需要。已移除项目下拉与允许账号之间的历史项目说明块、选中项目摘要块和红色 inline draft 校验提示。
+- 保存 / 新建规则按钮仍按 `draftIssues` 禁用，避免未选项目时误提交；只是页面中间不再显示 `暂无可选历史项目...`、`请选择项目` 等提示文字。
+- 浏览器实测确认：页面文本中不再包含 `暂无可选历史项目`、`带工作目录身份` 和 `请选择项目`，左列从项目下拉直接进入允许账号配置。
+
+2026-06-08 项目配置横向滚动条移除：
+
+- 用户指出项目配置主体底部不应出现横向滑动条。已将 modal body 增加 `overflow-x-hidden`，主体 grid 增加 `overflow-x-hidden`，左右列表滚动容器从双向 `overflow-auto` 调整为 `overflow-y-auto overflow-x-hidden`。
+- 浏览器实测 dialog 内部：body / grid / 左右列表 `overflowX=hidden`，且各自 `scrollWidth == clientWidth`，`overflowingInsideDialog` 为空。
+
+2026-06-08 新建规则进入导航栏：
+
+- 用户指出 `新建规则` 应放到导航栏上。已在 modal header 中增加 primary action slot，并通过 portal 将 panel 内部的 `saveRule` 按钮挂到 `项目配置 / 关闭` 同一导航栏；主体内容区不再渲染动作行。
+- 按钮逻辑仍由 `ProjectCandidatePoolRulesPanel` 拥有，继续使用当前 draft、`draftIssues`、saving / pending 禁用态和 `新建规则 / 更新规则` 文案；modal 只提供 header slot，不承接业务状态。
+- 浏览器实测：页面仅有一个 `新建规则` 按钮，`buttonInHeader=true`、`buttonNotInBody=true`、`buttonAboveBody=true`，header 文本为 `项目配置账号候选池规则新建规则关闭`。
+
 ## 路由系统校准后的推荐
 
 这条需求必须沿用现有 `AccountRoutingEngine` 主链路：
@@ -206,5 +255,5 @@ RouteContext Normalize
 - [项目账号候选池规则流程图](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260606-project-account-candidate-pool-rule/screenshots/20260606/project-account-candidate-pool-rule/20260606-project-account-candidate-pool-rule-flowchart-baseline-v01.png)
 
 ## 当前状态
-- 状态：frontend-session-project-sync-tested
-- 最近更新：2026-06-07
+- 状态：frontend-project-config-primary-action-in-navbar
+- 最近更新：2026-06-08

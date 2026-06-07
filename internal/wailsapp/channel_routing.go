@@ -405,15 +405,23 @@ func applyProjectCandidatePoolExplain(candidates []channelRouteCandidate, filter
 		}
 		info.AllowAccountIDs = normalizeIDList(rule.AllowAccountIDs)
 		allowed := idSet(info.AllowAccountIDs)
+		candidatesByID := make(map[string]channelRouteCandidate, len(candidates))
 		kept := make([]channelRouteCandidate, 0, len(candidates))
 		for _, candidate := range candidates {
 			id := candidate.Account.ID
 			if _, ok := allowed[id]; ok {
-				kept = append(kept, candidate)
+				if _, exists := candidatesByID[id]; !exists {
+					candidatesByID[id] = candidate
+				}
 				continue
 			}
 			info.FilteredAccountIDs = append(info.FilteredAccountIDs, id)
 			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: id, Reason: "project-candidate-pool"})
+		}
+		for _, id := range info.AllowAccountIDs {
+			if candidate, ok := candidatesByID[id]; ok {
+				kept = append(kept, candidate)
+			}
 		}
 		info.AfterCandidateCount = len(kept)
 		if len(kept) == 0 {

@@ -1,5 +1,6 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { main } from '../../../../wailsjs/go/models';
 import {
   buildProjectCandidatePoolRuleRows,
@@ -27,6 +28,7 @@ interface ProjectCandidatePoolRulesPanelProps {
   api?: ProjectCandidatePoolRulesAPI;
   onRulesChange: (rules: ProjectCandidatePoolRuleLike[]) => void;
   onPreviewRule?: (rule: ProjectCandidatePoolRuleLike) => void;
+  primaryActionSlot?: HTMLElement | null;
 }
 
 const emptyDraft: ProjectCandidatePoolRuleLike = {
@@ -48,6 +50,7 @@ export default function ProjectCandidatePoolRulesPanel({
   api,
   onRulesChange,
   onPreviewRule,
+  primaryActionSlot,
 }: ProjectCandidatePoolRulesPanelProps) {
   const [draft, setDraft] = useState<ProjectCandidatePoolRuleLike>(emptyDraft);
   const [message, setMessage] = useState('');
@@ -56,9 +59,10 @@ export default function ProjectCandidatePoolRulesPanel({
   const rows = useMemo(() => buildProjectCandidatePoolRuleRows(rules, accounts), [accounts, rules]);
   const requestableAccounts = accounts.filter((account) => account.requestable !== false && account.disabled !== true);
   const normalizedDraft = normalizeProjectCandidatePoolRuleDraft(draft, channel);
+  const normalizedAllowAccountIDs = normalizeAllowAccountIDs(normalizedDraft.allowAccountIDs);
+  const draftAccountRows = buildDraftAccountRows(requestableAccounts, normalizedAllowAccountIDs);
   const draftIssues = validateProjectCandidatePoolRuleDraft(normalizedDraft);
   const controlsDisabled = disabled || saving || creating || Boolean(pendingRuleID);
-  const selectedProjectOption = projectOptions.find((option) => option.projectKey === normalizedDraft.projectKey);
   const selectedExistingRule = rules.find(
     (rule) => String(rule.projectKey || '').trim() === normalizedDraft.projectKey,
   );
@@ -72,13 +76,23 @@ export default function ProjectCandidatePoolRulesPanel({
   }
 
   function toggleDraftAccount(accountID: string) {
-    const selected = new Set(normalizedDraft.allowAccountIDs || []);
-    if (selected.has(accountID)) {
-      selected.delete(accountID);
-    } else {
-      selected.add(accountID);
+    const selected = new Set(normalizedAllowAccountIDs);
+    updateDraft({
+      allowAccountIDs: selected.has(accountID)
+        ? normalizedAllowAccountIDs.filter((id) => id !== accountID)
+        : [...normalizedAllowAccountIDs, accountID],
+    });
+  }
+
+  function moveDraftAccount(accountID: string, direction: -1 | 1) {
+    const index = normalizedAllowAccountIDs.indexOf(accountID);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= normalizedAllowAccountIDs.length) {
+      return;
     }
-    updateDraft({ allowAccountIDs: Array.from(selected) });
+    const next = [...normalizedAllowAccountIDs];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    updateDraft({ allowAccountIDs: next });
   }
 
   function selectProject(projectKey: string) {
@@ -99,7 +113,7 @@ export default function ProjectCandidatePoolRulesPanel({
       allowAccountIDs:
         normalizeAllowAccountIDs(existingRule?.allowAccountIDs).length > 0
           ? normalizeAllowAccountIDs(existingRule?.allowAccountIDs)
-          : normalizedDraft.allowAccountIDs,
+          : normalizedAllowAccountIDs,
     });
   }
 
@@ -206,24 +220,25 @@ export default function ProjectCandidatePoolRulesPanel({
   }
 
   return (
-    <section className="min-w-0">
-      <header className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--border-color)] pb-3">
-        <div className="min-w-0">
-          <h2 className="text-[length:var(--font-size-ui-lg)] font-black leading-5 text-[var(--text-primary)]">
-            项目候选池
-          </h2>
-          <p className="mt-1 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
-            命中历史项目后，只在允许账号内进入顺序或均衡路由。
-          </p>
-        </div>
-        <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-          {rows.length} rules
-        </span>
-      </header>
+    <section className="flex min-h-0 flex-1 flex-col">
+      {primaryActionSlot
+        ? createPortal(
+            <button
+              type="button"
+              onClick={saveRule}
+              disabled={controlsDisabled || draftIssues.length > 0}
+              className="btn-swiss flex min-h-9 items-center justify-center gap-2 !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={4} />
+              {selectedExistingRule ? '更新规则' : '新建规则'}
+            </button>,
+            primaryActionSlot,
+          )
+        : null}
 
-      <div className="grid gap-6 pt-4 xl:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)]">
-        <section className="min-w-0 xl:border-r xl:border-[var(--border-color)] xl:pr-5">
-          <div className="grid gap-3">
+      <div className="grid min-h-0 flex-1 gap-6 overflow-x-hidden xl:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)]">
+        <section className="flex min-h-0 min-w-0 flex-col xl:border-r xl:border-[var(--border-color)] xl:pr-5">
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
             <label className="block min-w-0">
               <span className="mb-1 block text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">项目</span>
               <select
@@ -241,85 +256,87 @@ export default function ProjectCandidatePoolRulesPanel({
                 ))}
               </select>
             </label>
-            {selectedProjectOption ? (
-              <div className="border-y border-[var(--border-color)] px-3 py-2">
-                <div className="truncate text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
-                  {selectedProjectOption.projectName || selectedProjectOption.projectKey}
-                </div>
-                <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                  {selectedProjectOption.projectKey}
-                </div>
-                <div className="mt-1 text-[length:var(--font-size-ui-xs)] text-[var(--text-secondary)]">
-                  {[
-                    selectedProjectOption.sourceLabel,
-                    selectedProjectOption.projectKeySource,
-                    selectedProjectOption.projectKeyConfidence,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ') || '历史识别项目'}
-                </div>
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
+                <span className="text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">允许账号</span>
+                <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  {normalizedAllowAccountIDs.length} enabled
+                </span>
               </div>
-            ) : (
-              <div className="border-y border-[var(--border-color)] px-3 py-3 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-muted)]">
-                暂无可选历史项目。打开或产生一次带工作目录身份的会话后，会定期同步到这里。
-              </div>
-            )}
-            <div className="min-w-0">
-              <div className="mb-1 text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">允许账号</div>
-              <div className="max-h-56 overflow-auto border-y border-[var(--border-color)]">
+              <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden border-y border-[var(--border-color)]">
                 {requestableAccounts.length === 0 ? (
                   <div className="px-3 py-3 text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">暂无可选账号</div>
                 ) : (
-                  requestableAccounts.map((account) => {
+                  draftAccountRows.map(({ account, rank, enabled }) => {
                     const accountID = String(account.id || '').trim();
-                    const checked = (normalizedDraft.allowAccountIDs || []).includes(accountID);
+                    const canMoveUp = enabled && rank > 1;
+                    const canMoveDown = enabled && rank > 0 && rank < normalizedAllowAccountIDs.length;
                     return (
-                      <label key={accountID} className="grid cursor-pointer grid-cols-[1rem_minmax(0,1fr)] gap-2 border-b border-[var(--border-color)] px-3 py-2 last:border-b-0">
+                      <div
+                        key={accountID}
+                        className={[
+                          'grid min-w-0 grid-cols-[1rem_2rem_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--border-color)] px-3 py-2 last:border-b-0',
+                          enabled ? 'bg-[var(--bg-panel)]' : 'opacity-70',
+                        ].join(' ')}
+                      >
                         <input
+                          id={`project-candidate-account-${accountID}`}
                           type="checkbox"
-                          checked={checked}
+                          checked={enabled}
                           disabled={controlsDisabled}
                           onChange={() => toggleDraftAccount(accountID)}
-                          className="mt-1 h-4 w-4 accent-[var(--text-primary)]"
+                          className="h-4 w-4 accent-[var(--text-primary)]"
+                          aria-label={`${enabled ? '停用' : '启用'} ${account.label || accountID}`}
                         />
-                        <span className="min-w-0">
+                        <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                          {enabled ? `#${rank}` : '--'}
+                        </span>
+                        <label htmlFor={`project-candidate-account-${accountID}`} className="min-w-0 cursor-pointer">
                           <span className="block truncate text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
                             {account.label || accountID}
                           </span>
                           <span className="block truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
                             {account.provider || account.sourceKind || accountID}
                           </span>
+                        </label>
+                        <span className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={controlsDisabled || !canMoveUp}
+                            onClick={() => moveDraftAccount(accountID, -1)}
+                            className="btn-swiss flex h-7 w-7 items-center justify-center !px-0 !py-0"
+                            aria-label={`上移 ${account.label || accountID}`}
+                            title="上移"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" strokeWidth={4} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={controlsDisabled || !canMoveDown}
+                            onClick={() => moveDraftAccount(accountID, 1)}
+                            className="btn-swiss flex h-7 w-7 items-center justify-center !px-0 !py-0"
+                            aria-label={`下移 ${account.label || accountID}`}
+                            title="下移"
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" strokeWidth={4} />
+                          </button>
                         </span>
-                      </label>
+                      </div>
                     );
                   })
                 )}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={saveRule}
-              disabled={controlsDisabled || draftIssues.length > 0}
-              className="btn-swiss flex min-h-9 items-center justify-center gap-2 !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]"
-            >
-              <Plus className="h-3.5 w-3.5" strokeWidth={4} />
-              {selectedExistingRule ? '更新规则' : '新建规则'}
-            </button>
-            {draftIssues.length > 0 ? (
-              <div className="text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--color-status-danger)]">
-                {draftIssues[0]}
-              </div>
-            ) : null}
           </div>
         </section>
 
-        <section className="min-w-0">
+        <section className="flex min-h-0 min-w-0 flex-col">
           {rows.length === 0 ? (
-            <div className="border-y border-[var(--border-color)] px-3 py-4 text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">
+            <div className="min-h-0 flex-1 border-y border-[var(--border-color)] px-3 py-4 text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">
               暂无项目候选池规则
             </div>
           ) : (
-            <div className="border-y border-[var(--border-color)]">
+            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden border-y border-[var(--border-color)]">
               {rows.map((row) => (
                 <article key={row.id} className="min-w-0 border-b border-[var(--border-color)] p-3 last:border-b-0">
                   <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
@@ -414,6 +431,38 @@ function mapProjectRules(input: main.ProjectCandidatePoolRule[] | ProjectCandida
     createdAt: rule.createdAt,
     updatedAt: rule.updatedAt,
   }));
+}
+
+function buildDraftAccountRows(
+  accounts: ChannelRoutingParticipantAccountLike[],
+  allowAccountIDs: string[],
+): Array<{ account: ChannelRoutingParticipantAccountLike; enabled: boolean; rank: number }> {
+  const accountByID = new Map<string, ChannelRoutingParticipantAccountLike>();
+  for (const account of accounts) {
+    const id = String(account.id || '').trim();
+    if (id && !accountByID.has(id)) {
+      accountByID.set(id, account);
+    }
+  }
+
+  const rows: Array<{ account: ChannelRoutingParticipantAccountLike; enabled: boolean; rank: number }> = [];
+  const used = new Set<string>();
+  allowAccountIDs.forEach((accountID, index) => {
+    const account = accountByID.get(accountID);
+    if (!account) {
+      return;
+    }
+    used.add(accountID);
+    rows.push({ account, enabled: true, rank: index + 1 });
+  });
+  for (const account of accounts) {
+    const accountID = String(account.id || '').trim();
+    if (!accountID || used.has(accountID)) {
+      continue;
+    }
+    rows.push({ account, enabled: false, rank: 0 });
+  }
+  return rows;
 }
 
 function normalizeAllowAccountIDs(input: string[] | null | undefined): string[] {

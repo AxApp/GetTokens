@@ -745,18 +745,42 @@ test('Codex and Claude account list pages expose project candidate pool rule edi
   assert.match(modalSource, /ProjectCandidatePoolRulesPanel/);
   assert.match(modalSource, /size="detail"/);
   assert.match(modalSource, /coverViewport/);
+  assert.match(modalSource, /bodyClassName="flex min-h-0 flex-col overflow-x-hidden p-4 sm:p-5"/);
   assert.match(modalSource, /projectOptions/);
+  assert.match(modalSource, /useState<HTMLDivElement \| null>/);
+  assert.match(modalSource, /ref=\{setPrimaryActionSlot\}/);
+  assert.match(modalSource, /primaryActionSlot=\{primaryActionSlot\}/);
 });
 
 test('ProjectCandidatePoolRulesPanel stays flat inside the project config modal', async () => {
   const source = await readFile(new URL('../components/ProjectCandidatePoolRulesPanel.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /<section className="min-w-0">/);
+  assert.match(source, /<section className="flex min-h-0 flex-1 flex-col">/);
+  assert.match(source, /grid min-h-0 flex-1 gap-6 overflow-x-hidden/);
   assert.match(source, /xl:border-r xl:border-\[var\(--border-color\)\] xl:pr-5/);
   assert.match(source, /border-y border-\[var\(--border-color\)\]/);
   assert.match(source, /projectOptions\.map/);
   assert.match(source, /请选择历史项目/);
-  assert.match(source, /带工作目录身份的会话/);
+  assert.match(source, /flex min-h-0 min-w-0 flex-1 flex-col/);
+  assert.match(source, /min-h-0 flex-1 overflow-y-auto overflow-x-hidden border-y border-\[var\(--border-color\)\]/);
+  assert.match(source, /createPortal/);
+  assert.match(source, /primaryActionSlot/);
+  assert.match(source, /onClick=\{saveRule\}[\s\S]*\{selectedExistingRule \? '更新规则' : '新建规则'\}/);
+  assert.equal(source.match(/onClick=\{saveRule\}/g)?.length || 0, 1);
+  assert.match(source, /moveDraftAccount/);
+  assert.match(source, /ArrowUp/);
+  assert.match(source, /ArrowDown/);
+  assert.match(source, /enabled \? `#\$\{rank\}` : '--'/);
+  assert.match(source, /aria-label=\{`\$\{enabled \? '停用' : '启用'\}/);
+  assert.doesNotMatch(source, /max-h-56/);
+  assert.doesNotMatch(source, /flex shrink-0 justify-end pb-3/);
+  assert.doesNotMatch(source, /min-h-0 flex-1 overflow-auto border-y/);
+  assert.doesNotMatch(source, /<h2[\s\S]*项目候选池/);
+  assert.doesNotMatch(source, /<p[\s\S]*命中历史项目后/);
+  assert.doesNotMatch(source, /\{rows\.length\} rules/);
+  assert.doesNotMatch(source, /selectedProjectOption/);
+  assert.doesNotMatch(source, /带工作目录身份的会话/);
+  assert.doesNotMatch(source, /border-y border-\[var\(--color-status-danger\)\]/);
   assert.doesNotMatch(source, /onChange=\{\(event\) => updateDraft\(\{ projectKey/);
   assert.doesNotMatch(source, /onChange=\{\(event\) => updateDraft\(\{ projectName/);
   assert.doesNotMatch(source, /placeholder="workspace:\.\.\."/);

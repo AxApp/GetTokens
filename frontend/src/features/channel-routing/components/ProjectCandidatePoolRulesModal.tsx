@@ -1,4 +1,5 @@
 import { Settings2, X } from 'lucide-react';
+import { useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import type {
   ChannelID,
@@ -33,6 +34,8 @@ export default function ProjectCandidatePoolRulesModal({
   onRulesChange,
   onPreviewRule,
 }: ProjectCandidatePoolRulesModalProps) {
+  const [primaryActionSlot, setPrimaryActionSlot] = useState<HTMLDivElement | null>(null);
+
   return (
     <ModalFrame
       onClose={onClose}
@@ -52,18 +55,21 @@ export default function ProjectCandidatePoolRulesModal({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="关闭项目配置"
-            className="btn-swiss flex min-h-9 items-center gap-2 !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]"
-          >
-            <X className="h-3.5 w-3.5" strokeWidth={4} />
-            关闭
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <div ref={setPrimaryActionSlot} className="flex shrink-0 items-center" />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="关闭项目配置"
+              className="btn-swiss flex min-h-9 items-center gap-2 !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={4} />
+              关闭
+            </button>
+          </div>
         </div>
       }
-      bodyClassName="p-4 sm:p-5"
+      bodyClassName="flex min-h-0 flex-col overflow-x-hidden p-4 sm:p-5"
     >
       <ProjectCandidatePoolRulesPanel
         channel={channel}
@@ -75,6 +81,7 @@ export default function ProjectCandidatePoolRulesModal({
         api={api}
         onRulesChange={onRulesChange}
         onPreviewRule={onPreviewRule}
+        primaryActionSlot={primaryActionSlot}
       />
     </ModalFrame>
   );

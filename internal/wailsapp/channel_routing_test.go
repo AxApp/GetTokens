@@ -315,14 +315,13 @@ func TestExplainChannelRoutingProjectCandidatePoolStrictAllowsAccounts(t *testin
 		ProjectKey:      "workspace:abc",
 		ProjectName:     "GetTokens",
 		Enabled:         true,
-		AllowAccountIDs: []string{"auth-file:b.json"},
+		AllowAccountIDs: []string{"auth-file:b.json", "auth-file:a.json"},
 	}})
 
 	if result.SelectedAccountID != "auth-file:b.json" {
 		t.Fatalf("SelectedAccountID = %q, want auth-file:b.json", result.SelectedAccountID)
 	}
-	assertCandidateIDs(t, result.Candidates, []string{"auth-file:b.json"})
-	assertFilteredReason(t, result.Filtered, "auth-file:a.json", "project-candidate-pool")
+	assertCandidateIDs(t, result.Candidates, []string{"auth-file:b.json", "auth-file:a.json"})
 	assertFilteredReason(t, result.Filtered, "auth-file:c.json", "project-candidate-pool")
 	if result.ProjectCandidatePool == nil ||
 		!result.ProjectCandidatePool.Evaluated ||
@@ -330,7 +329,7 @@ func TestExplainChannelRoutingProjectCandidatePoolStrictAllowsAccounts(t *testin
 		result.ProjectCandidatePool.Reason != "project-candidate-pool:matched" ||
 		result.ProjectCandidatePool.RuleID != "rule-gettokens" ||
 		result.ProjectCandidatePool.BeforeCandidateCount != 3 ||
-		result.ProjectCandidatePool.AfterCandidateCount != 1 {
+		result.ProjectCandidatePool.AfterCandidateCount != 2 {
 		t.Fatalf("project candidate pool explain = %#v", result.ProjectCandidatePool)
 	}
 	assertStepContains(t, result.Steps, "project-candidate-pool:matched")
