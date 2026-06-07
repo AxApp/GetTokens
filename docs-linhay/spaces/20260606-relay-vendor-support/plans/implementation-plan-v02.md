@@ -12,6 +12,10 @@
 
 系统接线审计：`20260607-system-connection-audit-v01.md`
 
+需求整理与新建议：`20260608-requirements-review-and-recommendations-v02.md`
+
+可行性评估：`20260608-feasibility-assessment-v01.md`
+
 ## 当前结论
 
 1. `sub2api` 是 AI API gateway / relay 平台，不是单一上游模型提供商。
@@ -184,6 +188,38 @@
 4. `supportedFormats` 当前仍主要由 provider 名推断，需补能力事实源或从 `formatBaseUrls` 派生。
 5. 后续实现必须先补 P0-P2 后端链路，再落 `sub2api` / `new-api` 预设，避免形成只在表单层支持三端的假完成。
 
+## 2026-06-08 建议调整
+
+本计划后续执行采用 runtime-first 顺序：
+
+1. 首期不先新增 `sub2api/new-api` 预设，而是先补 endpoint resolver、能力派生规则、sidecar runtime projection 和 executor endpoint selection。
+2. `supportedFormats` 首期建议从非空 `formatBaseUrls` keys 派生；旧账号无多端配置时才使用 provider 默认能力兜底。暂缓独立 `supported_formats_json`，直到 UI 需要“端点存在但能力禁用”的单独状态。
+3. Codex / Responses 不默认 fallback 到 `openai_chat`。如果 relay 同一个 `/v1` 支持 Chat 和 Responses，必须显式让 `openai_chat` 与 `openai_responses` 指向同一 URL。
+4. route explain 需要输出缺失目标 format 的原因，例如 `missing_format:openai_responses` 或 `missing_format:anthropic`。
+5. 首期验收增加 endpoint matrix smoke：用不同 mock server 验证 Chat、Responses、Anthropic 请求分别命中正确 endpoint。
+6. `vendorPresets` 和旧 OpenAI-compatible provider 入口在 P3 才落地，且旧入口只作为统一 preset 的过滤视图或薄别名。
+
+## 2026-06-08 可行性评估追加
+
+评估结论：可行性高，实现风险中等，推荐小步切片。
+
+已具备：
+
+1. 主仓 AccountRecord / Wails DTO 已有 `supportedFormats` 与 `formatBaseUrls`。
+2. 前端详情页、创建流、变更检测和保存 payload 已承载 `formatBaseUrls`。
+3. CLIProxyAPI account-store 已有 `format_base_urls_json`，并有旧 schema 补列和往返测试。
+4. local CLI apply 已有按目标选择 `openai_responses / anthropic / openai_chat` 的模型函数。
+5. Channel Routing 已有 filtered reason 结构。
+
+主要缺口：
+
+1. `supportedFormats` 仍主要按 provider 名推断，需从 `formatBaseUrls` 派生。
+2. synthesizer 未把 `format_base_urls_json` 投影到 runtime auth attributes。
+3. executor 仍读取单一 `base_url`。
+4. Codex Channel Routing 对 openai-compatible 账号仍过宽。
+
+下一步建议直接执行 Slice 1：能力派生与 route explain 精确过滤。
+
 ## 当前验证结果（2026-06-06）
 
 已通过：
@@ -196,6 +232,34 @@
 
 1. `npm --prefix frontend run test:unit -- src/features/accounts/tests/accountConfig.test.mjs` 会运行项目全量前端单测；账号配置相关用例已通过，但既有 `frontend/src/features/codex/codexAccountList.test.mjs` 中 `buildCodexAccountRows separates waiting check from verified requestability evidence` 仍失败。
 2. `go test ./internal/wailsapp` 当前被 `internal/wailsapp/channel_routing_test.go` 中仍引用已移除字段 `ManualRequestableAccountIDs` 阻塞。
+
+## 当前验证结果（2026-06-08）
+
+已通过：
+
+1. `go test ./internal/accounts`
+2. `go test ./internal/wailsapp -run 'TestExplainChannelRouting|TestNormalizeChannelRouting|TestChannelRouting'`
+3. `go test ./internal/watcher/synthesizer -run 'TestConfigSynthesizer_UsesAccountStoreForCodexAndOpenAICompatible'`
+4. `go test ./internal/runtime/executor`
+5. `node --test frontend/src/features/accounts/tests/accountConfig.test.mjs frontend/src/features/accounts/tests/accountLocalCliMapping.test.mjs frontend/src/features/accounts/tests/accountDetailLayout.test.mjs`
+6. `npm --prefix frontend run typecheck`
+7. `docs-linhay/scripts/check-docs.sh`
+
+追加通过：
+
+1. `node --test frontend/src/features/accounts/tests/accountTransfer.test.mjs frontend/src/features/accounts/tests/openAICompatible.test.mjs`
+2. `go test ./internal/wailsapp -run 'TestListRelaySupportedModels(FallsBackToOpenAIChatEndpointWhenModelFetchCredentialsMissing|UsesDedicatedModelFetchCredentials|FallsBackToRuntimeCredentialsWhenModelFetchCredentialsMissing)'`
+
+红灯到绿灯覆盖：
+
+1. Codex Channel Routing 缺少 `openai_responses` 时输出 `missing_format:openai_responses`，不再把只有 `openai_chat` 的账号当作 Codex 可用账号。
+2. Claude Channel Routing 缺少 `anthropic` 时输出 `missing_format:anthropic`。
+3. account-store synthesis 投影 `format_base_url:<format>` runtime attributes。
+4. OpenAI-compatible / Codex / Claude executor 分别命中 `openai_chat / openai_responses / anthropic` 专用 endpoint，而不是主 `base_url`。
+5. `sub2api/new-api` vendor preset 和 local CLI apply 草稿按下游目标选择对应 endpoint。
+6. 账号复制 payload 与导入解析保留 `supportedFormats / formatBaseUrls`；导入恢复时把 `formatBaseUrls` 写回 Codex API Key / OpenAI-compatible provider 创建更新 payload。
+7. 账号详情页模型拉取和 relay model catalog 缺省使用 `formatBaseUrls.openai_chat`，不误用 Codex / Anthropic endpoint。
+8. 旧 `openAICompatibleProviderPresets` 对 `sub2api/new-api` 从统一 `vendorPresets` 派生薄别名。
 
 ### 阶段 5：文档写回
 

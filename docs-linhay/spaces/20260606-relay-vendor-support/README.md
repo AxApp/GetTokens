@@ -98,13 +98,15 @@
 - 上游仓库：[Wei-Shaw/sub2api](https://github.com/Wei-Shaw/sub2api)
 - 上游仓库：[QuantumNous/new-api](https://github.com/QuantumNous/new-api)
 - 需求设计：`plans/20260606-relay-vendor-support-requirements-design-v01.md`
+- 需求整理与新建议：`plans/20260608-requirements-review-and-recommendations-v02.md`
+- 可行性评估：`plans/20260608-feasibility-assessment-v01.md`
 - 执行计划：`plans/implementation-plan-v02.md`
 - 系统接线审计：`plans/20260607-system-connection-audit-v01.md`
 - 参考摘要：`docs-linhay/references/20260606-relay-vendor-reference-summary.md`
 
 ## 当前状态
-- 状态：system-audited / runtime-gap-identified
-- 最近更新：2026-06-07
+- 状态：implemented / focused-tests-passed
+- 最近更新：2026-06-08
 
 ## 当前判断
 
@@ -117,10 +119,7 @@
    - `codex API`
    - `anthropic`
 6. GetTokens 内部再把这三类能力映射为具体 `sourceFormat / baseUrl / authField / provider` 产物，不应在需求阶段直接把外部能力偷换成单一内部格式枚举；其中 `codex API` 当前落到 `openai_responses`，`openai-compatible` 落到 `openai_chat`。
-7. 后续实现前需要再确认：
-   - `openAICompatibleProviderPresets` 是复用 `vendorPresets`，还是增加薄别名
-   - `sub2api` 普通 Claude 账户是否需要除 `/antigravity` 外的第二个推荐 Anthropic endpoint
-   - 是否为两个 relay 预设提供专用 logo alias
+7. 旧 `openAICompatibleProviderPresets` 对 `sub2api/new-api` 采用从统一 `vendorPresets` 派生的薄别名；旧入口只提供 legacy OpenAI-compatible 单端创建便利，不作为多端事实源。
 
 ## 2026-06-07 系统接线审计
 
@@ -135,6 +134,49 @@
 
 详细审计见：`plans/20260607-system-connection-audit-v01.md`。
 
+## 2026-06-08 需求整理与新建议
+
+本轮在系统接线审计基础上进一步整理需求，形成 `plans/20260608-requirements-review-and-recommendations-v02.md`。新的建议是：
+
+1. 下一轮实现不要从 `vendorPresets.ts` 开始，而是先补 `formatBaseUrls` 的事实源、endpoint resolver、sidecar runtime projection 和 executor endpoint selection。
+2. 首期不急着新增独立 `supported_formats_json`，先用非空 `formatBaseUrls` keys 作为显式能力来源；旧账号无多端配置时才回退 provider 默认能力。
+3. Codex / Responses 请求不默认 fallback 到 `openai_chat`；如果 relay 同一 `/v1` 同时支持 Chat 和 Responses，应显式配置两个 format 指向同一 endpoint。
+4. 账号详情页建议新增“请求端点预览”，直接展示 OpenAI-compatible、Codex、Claude、模型拉取、quota/billing 各自会用哪个 endpoint。
+5. `openAICompatibleProviderPresets` 建议收敛为 `vendorPresets` 的薄别名或过滤视图，不再维护第二套事实源。
+6. 首期不内置 `sub2api/new-api` 的生产 quota / billing 模板，先保留用户自定义 cURL 和统一管理 base URL 解析。
+7. 验收建议新增本地 endpoint matrix smoke，用三个不同 mock server 验证 Chat、Responses、Anthropic 请求分别命中正确 endpoint。
+
+## 2026-06-08 可行性评估
+
+本轮继续读取主仓 DTO/Wails/前端、CLIProxyAPI account-store、synthesizer、executor 和 Channel Routing 后，结论是：需求可行，且不需要推倒重来。主仓字段、Wails 保存、前端详情页、account-store 持久化和 local CLI apply 已经具备基础；主要缺口集中在 runtime synthesis、executor endpoint selection 和 Codex Channel Routing 精确过滤。
+
+建议下一步从 Slice 1 开始：
+
+1. 新增 `resolveSupportedFormats(provider, formatBaseURLs)`，优先从非空 `formatBaseUrls` keys 派生能力。
+2. 收窄 Channel Routing：Codex 要求 `openai_responses`，Claude 要求 `anthropic`，并输出 `missing_format:<format>`。
+3. 再补 sidecar runtime projection 和 executor per-format endpoint selection。
+
+详细评估见：`plans/20260608-feasibility-assessment-v01.md`。
+
+## 2026-06-08 实施结果
+
+本轮按 runtime-first 顺序完成首期实现：
+
+1. 账号能力事实源：`codex-api-key` 与 `openai-compatible` 账号优先从非空 `formatBaseUrls` keys 派生 `supportedFormats`，旧账号无多端配置时继续回退 provider 默认能力。
+2. Channel Routing：Codex / Responses channel 要求 `openai_responses`，Claude channel 要求 `anthropic`；route explain 可输出 `missing_format:openai_responses` 或 `missing_format:anthropic`。
+3. sidecar runtime projection：CLIProxyAPI account-store synthesis 将 `format_base_urls_json` 投影为 runtime auth attributes：
+   - `format_base_url:openai_chat`
+   - `format_base_url:openai_responses`
+   - `format_base_url:anthropic`
+4. executor endpoint selection：OpenAI-compatible / Codex / Claude 执行器分别按 `openai_chat / openai_responses / anthropic` 读取专用 endpoint，缺省才回退 `base_url`。
+5. 厂商入口：统一 `vendorPresets` 新增 `sub2api` 与 `new-api`，均按 `aggregator` 建模，不新增账号类型。
+6. 本地 CLI apply：`sub2api/new-api` 模板开放 Codex 与 Claude 动作；Codex 草稿取 `openai_responses` endpoint，Claude 动作识别 `anthropic` endpoint。
+7. 账号结构化流转：账号卡片复制、解析、导入恢复路径保留 `formatBaseUrls`，导入创建/更新时写回 `formatBaseUrls`；`supportedFormats` 在复制 payload 中保留，恢复后的运行态能力由 `formatBaseUrls` 派生。
+8. `/models` 管理调用：账号详情页拉取模型与 Wails relay model catalog 缺省都使用 `formatBaseUrls.openai_chat`，只有设置了 `modelFetchBaseUrl/modelFetchApiKey` 时才优先使用专用模型拉取凭据。
+9. 旧 OpenAI-compatible provider 入口：`sub2api/new-api` legacy preset 由统一 `vendorPresets` 派生，不维护第二套手写默认值。
+
+本期仍不内置 `sub2api/new-api` 的生产 quota / billing 模板；管理接口继续使用 `openai_chat` 管理 base URL 与用户自定义 cURL。真实部署联调也不在本期范围内。
+
 ## 2026-06-06 实现进展
 
 1. 已补齐账号详情页三端配置展示与保存链路：
@@ -145,12 +187,6 @@
    - 新增 `resolveManagementBaseUrl`，优先使用 `formatBaseUrls.openai_chat`，否则回落主 `baseUrl`
    - 额度和余额脚本模板、变量面板、测试调用、刷新额度都使用同一管理 base URL；保存动作不触发 quota/billing 网络请求
    - Codex API Key 根层 Wails DTO 到 internal DTO 的 `platformCookie` / `curlVariables` 透传已补齐
-3. 尚未完成：
-   - `sub2api` 与 `new-api` 厂商预设落地
-   - 创建流是否已把三端 `formatBaseUrls` 与预设完全对齐的测试收敛
-   - 账号复制 / 导入 / 恢复链路是否完整往返 `supportedFormats` 与 `formatBaseUrls`
-   - 本地 CLI apply、`/models` 模型拉取与三端 endpoint 的聚焦验证
-   - 旧 `openAICompatibleProviderPresets` 入口是否复用统一预设或增加同源薄别名
-   - 两个参考项目的真实联调
-   - sidecar runtime auth 是否投影并消费三端 endpoint
-   - Channel Routing / route explain 是否按下游协议精确过滤目标 format
+3. 后续可选工作：
+   - 如要做可视验收，可补统一厂商创建流截图；本期以模型/动作/DTO/运行态测试为验收依据。
+   - 两个参考项目的真实部署联调仍留后续，不作为本期自动化测试完成条件。
