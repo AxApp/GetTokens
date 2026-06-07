@@ -664,6 +664,15 @@ test('api-key detail model mappings are part of the saved config draft', async (
   assert.match(modalSource, /resolveDefaultModelMappingNames/);
   assert.match(featureSource, /FetchOpenAICompatibleProviderModels/);
 });
+
+test('account copy import and model fetch preserve multi-endpoint account config', async () => {
+  const actionsSource = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(actionsSource, /formatBaseUrls:\s*item\.formatBaseUrls/);
+  assert.match(modalSource, /resolveManagementBaseUrl\(\{ baseUrl: draft\.baseUrl, formatBaseUrls: draft\.formatBaseUrls \}\)/);
+  assert.match(modalSource, /baseUrl:\s*resolveManagementBaseUrl\(\{ baseUrl: draft\.baseUrl, formatBaseUrls: draft\.formatBaseUrls \}\)/);
+});
 test('auth-file config management keeps apply API boundary explicit', async () => {
   const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');

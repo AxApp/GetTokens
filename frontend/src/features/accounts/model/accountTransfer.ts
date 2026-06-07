@@ -22,6 +22,8 @@ export interface AccountCardImportPayload {
     apiKey?: string;
     baseUrl?: string;
     prefix?: string;
+    supportedFormats?: string[];
+    formatBaseUrls?: Record<string, string>;
   };
   openAICompatibleProvider?: {
     name?: string;
@@ -32,6 +34,8 @@ export interface AccountCardImportPayload {
     proxyUrl?: string;
     headers?: Record<string, string>;
     models?: Array<{ name?: string; alias?: string }>;
+    supportedFormats?: string[];
+    formatBaseUrls?: Record<string, string>;
   };
 }
 
@@ -47,6 +51,8 @@ export type ParsedAccountCardImport =
       apiKey: string;
       baseUrl: string;
       prefix: string;
+      supportedFormats?: string[];
+      formatBaseUrls?: Record<string, string>;
     }
   | {
       type: 'openai-compatible';
@@ -58,6 +64,8 @@ export type ParsedAccountCardImport =
       proxyUrl: string;
       headers: Record<string, string>;
       models: Array<{ name: string; alias?: string }>;
+      supportedFormats?: string[];
+      formatBaseUrls?: Record<string, string>;
     };
 
 export type AccountImportPayloadItem =
@@ -133,6 +141,7 @@ export function parseAccountCardImportPayload(parsed: unknown): ParsedAccountCar
       apiKey,
       baseUrl,
       prefix: String(payload.codexAPIKey?.prefix || '').trim(),
+      ...optionalMultiEndpointFields(payload.codexAPIKey),
     };
   }
 
@@ -154,6 +163,7 @@ export function parseAccountCardImportPayload(parsed: unknown): ParsedAccountCar
       proxyUrl: String(provider?.proxyUrl || '').trim(),
       headers: normalizeHeaders(provider?.headers),
       models: normalizeModels(provider?.models),
+      ...optionalMultiEndpointFields(provider),
     };
   }
 
@@ -299,6 +309,37 @@ function normalizeStringList(items: unknown[]): string[] {
     }
     seen.add(value);
     out.push(value);
+  }
+  return out;
+}
+
+function optionalMultiEndpointFields(input: unknown): {
+  supportedFormats?: string[];
+  formatBaseUrls?: Record<string, string>;
+} {
+  const source = input && typeof input === 'object' ? input as {
+    supportedFormats?: unknown;
+    formatBaseUrls?: unknown;
+  } : {};
+  const supportedFormats = normalizeStringList(Array.isArray(source.supportedFormats) ? source.supportedFormats : []);
+  const formatBaseUrls = normalizeStringMap(source.formatBaseUrls);
+  return {
+    ...(supportedFormats.length > 0 ? { supportedFormats } : {}),
+    ...(Object.keys(formatBaseUrls).length > 0 ? { formatBaseUrls } : {}),
+  };
+}
+
+function normalizeStringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const [key, item] of Object.entries(value)) {
+    const nextKey = String(key || '').trim();
+    const nextValue = String(item || '').trim();
+    if (nextKey && nextValue) {
+      out[nextKey] = nextValue;
+    }
   }
   return out;
 }

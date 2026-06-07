@@ -160,6 +160,46 @@ test('Codex API draft uses configured openai_responses endpoint before primary b
   assert.equal(actions[0].draft.codex.baseUrl, 'https://relay.example.com/codex/v1');
 });
 
+test('relay presets map Codex to responses endpoint and Claude to anthropic endpoint', () => {
+  for (const presetID of ['sub2api', 'new-api']) {
+    const actions = resolveAccountLocalCliMappings({
+      account: account({
+        id: `openai-compatible:${presetID}`,
+        provider: presetID,
+        displayName: presetID,
+        credentialSource: 'api-key',
+        apiKey: 'sk-current-relay-account',
+        baseUrl: presetID === 'sub2api' ? 'http://localhost:8080/v1' : 'http://localhost:3000/v1',
+        supportedFormats: ['openai_chat', 'openai_responses', 'anthropic'],
+        formatBaseUrls: presetID === 'sub2api'
+          ? {
+              openai_chat: 'http://localhost:8080/v1',
+              openai_responses: 'http://localhost:8080/v1',
+              anthropic: 'http://localhost:8080/antigravity',
+            }
+          : {
+              openai_chat: 'http://localhost:3000/v1',
+              openai_responses: 'http://localhost:3000/v1',
+              anthropic: 'http://localhost:3000',
+            },
+      }),
+      relayKeyItems,
+      relayEndpoint,
+      currentCodexProviderState: customProviderState,
+      localCodexAuthState,
+      sidecarReady: true,
+    });
+
+    assert.equal(actions.length, 2, presetID);
+    const codex = actions.find((item) => item.target === 'codex');
+    const claude = actions.find((item) => item.target === 'claude');
+    assert.equal(codex.sourceFormat, 'openai_responses', presetID);
+    assert.equal(codex.draft.codex.baseUrl, presetID === 'sub2api' ? 'http://localhost:8080/v1' : 'http://localhost:3000/v1');
+    assert.equal(claude.sourceFormat, 'anthropic', presetID);
+    assert.equal(claude.sourceFormatBaseUrl, presetID === 'sub2api' ? 'http://localhost:8080/antigravity' : 'http://localhost:3000');
+  }
+});
+
 test('Codex API key account apply does not require a relay key', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({

@@ -37,6 +37,8 @@ export function buildAccountCardContentText(account: AccountRecord, authFileCont
             apiKey: account.apiKey || '',
             baseUrl: account.baseUrl || '',
             prefix: account.prefix || '',
+            supportedFormats: account.supportedFormats || [],
+            formatBaseUrls: account.formatBaseUrls || {},
           }
         : undefined,
     openAICompatibleProvider: isOpenAICompatible
@@ -49,6 +51,8 @@ export function buildAccountCardContentText(account: AccountRecord, authFileCont
           proxyUrl: account.proxyUrl || '',
           headers: account.headers || {},
           models: account.models || [],
+          supportedFormats: account.supportedFormats || [],
+          formatBaseUrls: account.formatBaseUrls || {},
         }
       : undefined,
   };

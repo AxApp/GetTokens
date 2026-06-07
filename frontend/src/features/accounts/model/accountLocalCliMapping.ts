@@ -161,6 +161,8 @@ const verifiedTemplateTargets: Record<string, AccountLocalCliTarget[]> = {
   aihubmix: ['claude'],
   shengsuanyun: ['claude'],
   novita: ['claude'],
+  sub2api: ['codex', 'claude'],
+  'new-api': ['codex', 'claude'],
   openrouter: ['codex', 'claude'],
   openai: ['codex'],
 };

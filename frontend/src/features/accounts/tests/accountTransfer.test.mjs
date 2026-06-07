@@ -82,6 +82,11 @@ test('copied codex api key card content can be pasted as an import payload', () 
     apiKey: 'sk-test-1111',
     baseUrl: 'https://api.openai.com/v1',
     prefix: 'team-a',
+    supportedFormats: ['openai_chat', 'openai_responses'],
+    formatBaseUrls: {
+      openai_chat: 'https://relay.example.com/chat/v1',
+      openai_responses: 'https://relay.example.com/responses/v1',
+    },
   });
 
   assert.deepEqual(parseAccountCardImportPayload(JSON.parse(copiedText)), {
@@ -90,6 +95,11 @@ test('copied codex api key card content can be pasted as an import payload', () 
     apiKey: 'sk-test-1111',
     baseUrl: 'https://api.openai.com/v1',
     prefix: 'team-a',
+    supportedFormats: ['openai_chat', 'openai_responses'],
+    formatBaseUrls: {
+      openai_chat: 'https://relay.example.com/chat/v1',
+      openai_responses: 'https://relay.example.com/responses/v1',
+    },
   });
 });
 
@@ -129,6 +139,12 @@ test('copied openai-compatible card content can be pasted as an import payload',
     proxyUrl: 'socks5://127.0.0.1:7890',
     headers: { 'X-Provider': 'deepseek' },
     models: [{ name: 'deepseek-chat', alias: 'codex-deepseek' }],
+    supportedFormats: ['openai_chat', 'openai_responses', 'anthropic'],
+    formatBaseUrls: {
+      openai_chat: 'https://relay.example.com/openai/v1',
+      openai_responses: 'https://relay.example.com/codex/v1',
+      anthropic: 'https://relay.example.com/anthropic',
+    },
   });
 
   assert.deepEqual(parseAccountCardImportPayload(JSON.parse(copiedText)), {
@@ -141,6 +157,12 @@ test('copied openai-compatible card content can be pasted as an import payload',
     proxyUrl: 'socks5://127.0.0.1:7890',
     headers: { 'X-Provider': 'deepseek' },
     models: [{ name: 'deepseek-chat', alias: 'codex-deepseek' }],
+    supportedFormats: ['openai_chat', 'openai_responses', 'anthropic'],
+    formatBaseUrls: {
+      openai_chat: 'https://relay.example.com/openai/v1',
+      openai_responses: 'https://relay.example.com/codex/v1',
+      anthropic: 'https://relay.example.com/anthropic',
+    },
   });
 });
 

@@ -291,6 +291,7 @@ export default function useAccountsActions({
                 baseUrl: item.baseUrl,
                 priority: nextPriority,
                 prefix: item.prefix,
+                formatBaseUrls: item.formatBaseUrls,
               })),
           );
           mutated = true;
@@ -319,6 +320,7 @@ export default function useAccountsActions({
                 apiKey: item.apiKey,
                 baseUrl: item.baseUrl,
                 prefix: item.prefix,
+                formatBaseUrls: item.formatBaseUrls,
               })),
           );
           mutated = true;
@@ -332,6 +334,7 @@ export default function useAccountsActions({
                 apiKey: item.apiKey,
                 apiKeys: item.apiKeys,
                 baseUrl: item.baseUrl,
+                formatBaseUrls: item.formatBaseUrls,
                 prefix: item.prefix,
                 proxyUrl: item.proxyUrl || undefined,
                 headers: item.headers,

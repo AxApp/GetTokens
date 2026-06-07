@@ -24,6 +24,10 @@ import {
   normalizeBaseUrl as normalizeBaseUrlFromConfig,
   normalizePrefix as normalizePrefixFromConfig,
 } from '../model/accountConfig.ts';
+import {
+  getFormatBaseUrl,
+  getVendorPreset,
+} from '../model/vendorPresets.ts';
 
 const wailsModelsPath = fileURLToPath(new URL('../../../../wailsjs/go/models.ts', import.meta.url));
 const wailsAppBindingsPath = fileURLToPath(new URL('../../../../wailsjs/go/main/App.js', import.meta.url));
@@ -428,6 +432,24 @@ test('vendor presets drive auxiliary credentials and cURL variables generically'
   assert.match(presetSource, /credentialFields: \[XIAOMI_MIMO_PLATFORM_COOKIE_FIELD/);
   assert.match(presetSource, /variableName: "platformCookie"/);
   assert.match(presetSource, /scope: "model_fetch"/);
+});
+
+test('relay vendor presets expose OpenAI chat, Codex responses, and Anthropic endpoints', () => {
+  const sub2api = getVendorPreset('sub2api');
+  assert.ok(sub2api);
+  assert.equal(sub2api.category, 'aggregator');
+  assert.deepEqual(sub2api.supportedFormats, ['openai_chat', 'openai_responses', 'anthropic']);
+  assert.equal(getFormatBaseUrl(sub2api, 'openai_chat'), 'http://localhost:8080/v1');
+  assert.equal(getFormatBaseUrl(sub2api, 'openai_responses'), 'http://localhost:8080/v1');
+  assert.equal(getFormatBaseUrl(sub2api, 'anthropic'), 'http://localhost:8080/antigravity');
+
+  const newAPI = getVendorPreset('new-api');
+  assert.ok(newAPI);
+  assert.equal(newAPI.category, 'aggregator');
+  assert.deepEqual(newAPI.supportedFormats, ['openai_chat', 'openai_responses', 'anthropic']);
+  assert.equal(getFormatBaseUrl(newAPI, 'openai_chat'), 'http://localhost:3000/v1');
+  assert.equal(getFormatBaseUrl(newAPI, 'openai_responses'), 'http://localhost:3000/v1');
+  assert.equal(getFormatBaseUrl(newAPI, 'anthropic'), 'http://localhost:3000');
 });
 
 test('generated Wails account models preserve quota curl fields', () => {

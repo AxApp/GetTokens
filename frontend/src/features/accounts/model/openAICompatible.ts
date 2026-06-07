@@ -1,5 +1,6 @@
 import type { main } from "../../../../wailsjs/go/models";
 import { normalizeBaseUrl } from "./accountConfig.ts";
+import { getFormatBaseUrl, getVendorPreset } from "./vendorPresets.ts";
 
 export type OpenAICompatibleProvider = main.OpenAICompatibleProvider;
 
@@ -234,7 +235,26 @@ export const openAICompatibleProviderPresets: OpenAICompatibleProviderPreset[] =
         { name: "gpt-5-chat", alias: "GPT 5 Chat" },
       ],
     },
+    ...buildRelayOpenAICompatibleProviderPresetAliases(),
   ];
+
+function buildRelayOpenAICompatibleProviderPresetAliases(): OpenAICompatibleProviderPreset[] {
+  return ["sub2api", "new-api"].flatMap((id) => {
+    const preset = getVendorPreset(id);
+    if (!preset) {
+      return [];
+    }
+    return [{
+      id: preset.id,
+      label: preset.name,
+      baseUrl: getFormatBaseUrl(preset, "openai_chat"),
+      apiKeyPlaceholder: preset.apiKeyPlaceholder,
+      models: preset.modelSuggestions.map((name) => ({ name, alias: "" })),
+      notes: preset.notes,
+      consoleUrl: preset.websiteUrl,
+    }];
+  });
+}
 
 export function getOpenAICompatibleProviderPreset(
   presetID: string,

@@ -26,6 +26,10 @@ import {
   resolveOpenAICompatibleCardTone,
   resolveOpenAICompatibleVerifyMessage,
 } from '../model/openAICompatibleCard.ts';
+import {
+  getFormatBaseUrl,
+  getVendorPreset,
+} from '../model/vendorPresets.ts';
 
 const t = (key) =>
   ({
@@ -130,6 +134,21 @@ test('openAICompatibleProviderPresets exposes cherry-studio vendor defaults adap
       ],
     },
   ]);
+});
+
+test('legacy openai-compatible preset entries for relay vendors are derived from unified vendor presets', () => {
+  for (const id of ['sub2api', 'new-api']) {
+    const vendorPreset = getVendorPreset(id);
+    const legacyPreset = getOpenAICompatibleProviderPreset(id);
+    assert.ok(vendorPreset);
+    assert.ok(legacyPreset);
+    assert.equal(legacyPreset.label, vendorPreset.name);
+    assert.equal(legacyPreset.baseUrl, getFormatBaseUrl(vendorPreset, 'openai_chat'));
+    assert.deepEqual(
+      legacyPreset.models.map((item) => item.name),
+      vendorPreset.modelSuggestions,
+    );
+  }
 });
 
 test('applyOpenAICompatibleProviderPreset fills provider name and base url while keeping user secrets intact', () => {

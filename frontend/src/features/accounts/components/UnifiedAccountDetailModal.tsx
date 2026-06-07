@@ -18,6 +18,7 @@ import {
   buildApiKeyConfigDraft,
   hasApiKeyConfigChanges,
   listApiKeyConfigMissingFields,
+  resolveManagementBaseUrl,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
 import { buildAccountDetailModulePlan } from '../model/accountDetailLayout';
@@ -630,7 +631,7 @@ function CompatibleModelsSection({
     try {
       const result = await onFetchModels({
         apiKey: draft.apiKey.trim(),
-        baseUrl: draft.baseUrl.trim(),
+        baseUrl: resolveManagementBaseUrl({ baseUrl: draft.baseUrl, formatBaseUrls: draft.formatBaseUrls }),
         headers: account.headers || {},
       });
       const nextNames = normalizeAPIKeyModelNames(result.models);
