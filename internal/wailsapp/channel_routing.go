@@ -497,8 +497,8 @@ func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg Chan
 		if account.ID == "" {
 			continue
 		}
-		if !accountSupportsChannel(account, cfg.Channel) {
-			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: "channel-unsupported"})
+		if reason, ok := accountSupportsChannel(account, cfg.Channel); !ok {
+			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: reason})
 			continue
 		}
 		if _, ok := tried[account.ID]; ok {
@@ -784,24 +784,29 @@ func effectiveChannelGroup(accountID string, groups map[string]ChannelAccountGro
 	return bestID, bestOrder, true, ""
 }
 
-func accountSupportsChannel(account accountsdomain.AccountRecord, channel string) bool {
-	if channel == "claude" {
-		for _, item := range account.SupportedFormats {
-			if strings.TrimSpace(item) == accountsdomain.APIFmtAnthropic {
-				return true
-			}
+func accountSupportsChannel(account accountsdomain.AccountRecord, channel string) (string, bool) {
+	switch strings.TrimSpace(strings.ToLower(channel)) {
+	case "claude":
+		if accountHasFormat(account, accountsdomain.APIFmtAnthropic) {
+			return "", true
 		}
+		return "missing_format:" + accountsdomain.APIFmtAnthropic, false
+	default:
+		if accountHasFormat(account, "codex") || accountHasFormat(account, accountsdomain.APIFmtOpenAIResponses) ||
+			strings.TrimSpace(strings.ToLower(account.Provider)) == "codex" {
+			return "", true
+		}
+		return "missing_format:" + accountsdomain.APIFmtOpenAIResponses, false
+	}
+}
+
+func accountHasFormat(account accountsdomain.AccountRecord, format string) bool {
+	target := strings.TrimSpace(format)
+	if target == "" {
 		return false
 	}
-
-	if account.AccountKind == accountsdomain.AccountKindCodexAPIKey ||
-		account.AccountKind == accountsdomain.AccountKindOpenAICompatible ||
-		strings.TrimSpace(strings.ToLower(account.Provider)) == "codex" {
-		return true
-	}
 	for _, item := range account.SupportedFormats {
-		switch strings.TrimSpace(item) {
-		case "codex", accountsdomain.APIFmtOpenAIResponses, accountsdomain.APIFmtOpenAIChat:
+		if strings.TrimSpace(item) == target {
 			return true
 		}
 	}

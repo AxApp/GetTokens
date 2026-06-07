@@ -83,6 +83,22 @@ func TestBuildCodexAPIKeyAccountRecordPrefersStableLocalID(t *testing.T) {
 	}
 }
 
+func TestBuildCodexAPIKeyAccountRecordDerivesSupportedFormatsFromFormatBaseURLs(t *testing.T) {
+	record := BuildCodexAPIKeyAccountRecord(cliproxyapi.CodexAPIKey{
+		APIKey:  "sk-test-123456",
+		BaseURL: "https://relay.example.com/default",
+		FormatBaseURLs: map[string]string{
+			APIFmtOpenAIResponses: "https://relay.example.com/responses",
+			APIFmtOpenAIChat:      "https://relay.example.com/chat",
+			APIFmtAnthropic:       "",
+		},
+	})
+
+	if got, want := strings.Join(record.SupportedFormats, ","), "openai_chat,openai_responses"; got != want {
+		t.Fatalf("SupportedFormats = %q, want %q", got, want)
+	}
+}
+
 func TestBuildOpenAICompatibleProviderAccountRecordUsesProviderPriority(t *testing.T) {
 	record := BuildOpenAICompatibleProviderAccountRecord(cliproxyapi.OpenAICompatibleProvider{
 		Name:     "deepseek",
@@ -108,6 +124,22 @@ func TestBuildOpenAICompatibleProviderAccountRecordUsesProviderPriority(t *testi
 	}
 	if got := record.DisplayName; got != "OPENAI-COMPATIBLE · DEEPSEEK" {
 		t.Fatalf("DisplayName = %q, want OPENAI-COMPATIBLE · DEEPSEEK", got)
+	}
+}
+
+func TestBuildOpenAICompatibleProviderAccountRecordDerivesSupportedFormatsFromFormatBaseURLs(t *testing.T) {
+	record := BuildOpenAICompatibleProviderAccountRecord(cliproxyapi.OpenAICompatibleProvider{
+		Name:    "sub2api",
+		BaseURL: "https://relay.example.com/default",
+		FormatBaseURLs: map[string]string{
+			APIFmtAnthropic:       "https://relay.example.com/antigravity",
+			APIFmtOpenAIResponses: "https://relay.example.com/v1",
+			APIFmtOpenAIChat:      "https://relay.example.com/v1",
+		},
+	})
+
+	if got, want := strings.Join(record.SupportedFormats, ","), "openai_chat,openai_responses,anthropic"; got != want {
+		t.Fatalf("SupportedFormats = %q, want %q", got, want)
 	}
 }
 

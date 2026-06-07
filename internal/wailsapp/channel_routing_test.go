@@ -132,7 +132,59 @@ func TestExplainChannelRoutingSequentialFiltersDisabledAndUnsupportedAccounts(t 
 		t.Fatalf("Candidates = %#v", result.Candidates)
 	}
 	assertFilteredReason(t, result.Filtered, "auth-file:codex-b.json", "account-disabled")
-	assertFilteredReason(t, result.Filtered, "openai-compatible:anthropic", "channel-unsupported")
+	assertFilteredReason(t, result.Filtered, "openai-compatible:anthropic", "missing_format:openai_responses")
+}
+
+func TestExplainChannelRoutingCodexRequiresResponsesFormat(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{
+			ID:               "openai-compatible:chat-only",
+			AccountKind:      accountsdomain.AccountKindOpenAICompatible,
+			DisplayName:      "Chat Only",
+			Status:           "active",
+			SupportedFormats: []string{accountsdomain.APIFmtOpenAIChat},
+		},
+		{
+			ID:               "openai-compatible:responses",
+			AccountKind:      accountsdomain.AccountKindOpenAICompatible,
+			DisplayName:      "Responses",
+			Status:           "active",
+			SupportedFormats: []string{accountsdomain.APIFmtOpenAIResponses},
+		},
+	}
+
+	result := explainChannelRoutingWithAccounts(accounts, ChannelRoutingConfig{
+		Channel:   "codex",
+		RouteMode: "sequential",
+	}, ChannelRoutingExplainInput{})
+
+	if result.SelectedAccountID != "openai-compatible:responses" {
+		t.Fatalf("SelectedAccountID = %q, want openai-compatible:responses", result.SelectedAccountID)
+	}
+	assertCandidateIDs(t, result.Candidates, []string{"openai-compatible:responses"})
+	assertFilteredReason(t, result.Filtered, "openai-compatible:chat-only", "missing_format:openai_responses")
+}
+
+func TestExplainChannelRoutingClaudeReportsMissingAnthropicFormat(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{
+			ID:               "openai-compatible:responses",
+			AccountKind:      accountsdomain.AccountKindOpenAICompatible,
+			DisplayName:      "Responses",
+			Status:           "active",
+			SupportedFormats: []string{accountsdomain.APIFmtOpenAIResponses},
+		},
+	}
+
+	result := explainChannelRoutingWithAccounts(accounts, ChannelRoutingConfig{
+		Channel:   "claude",
+		RouteMode: "sequential",
+	}, ChannelRoutingExplainInput{})
+
+	if result.SelectedAccountID != "" {
+		t.Fatalf("SelectedAccountID = %q, want empty", result.SelectedAccountID)
+	}
+	assertFilteredReason(t, result.Filtered, "openai-compatible:responses", "missing_format:anthropic")
 }
 
 func TestExplainChannelRoutingSeparatesWaitingCheckFromManualRequestable(t *testing.T) {

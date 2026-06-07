@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/linhay/gettokens/internal/cliproxyapi"
@@ -44,6 +45,46 @@ func resolveDefaultFormats(provider string) []string {
 	default:
 		return []string{APIFmtAnthropic}
 	}
+}
+
+func resolveSupportedFormats(provider string, formatBaseURLs map[string]string) []string {
+	formats := supportedFormatsFromBaseURLs(formatBaseURLs)
+	if len(formats) > 0 {
+		return formats
+	}
+	return resolveDefaultFormats(provider)
+}
+
+func supportedFormatsFromBaseURLs(formatBaseURLs map[string]string) []string {
+	if len(formatBaseURLs) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(formatBaseURLs))
+	for rawFormat, rawURL := range formatBaseURLs {
+		format := strings.TrimSpace(rawFormat)
+		if format == "" || strings.TrimSpace(rawURL) == "" {
+			continue
+		}
+		seen[format] = struct{}{}
+	}
+	if len(seen) == 0 {
+		return nil
+	}
+	ordered := []string{APIFmtOpenAIChat, APIFmtOpenAIResponses, APIFmtAnthropic, APIFmtGeminiNative, "codex"}
+	formats := make([]string, 0, len(seen))
+	for _, format := range ordered {
+		if _, ok := seen[format]; ok {
+			formats = append(formats, format)
+			delete(seen, format)
+		}
+	}
+	remaining := make([]string, 0, len(seen))
+	for format := range seen {
+		remaining = append(remaining, format)
+	}
+	sort.Strings(remaining)
+	formats = append(formats, remaining...)
+	return formats
 }
 
 type AuthFileRecord struct {
@@ -175,7 +216,7 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 		BaseURL:          baseURL,
 		Prefix:           prefix,
 		ProxyURL:         proxyURL,
-		SupportedFormats: resolveDefaultFormats(name),
+		SupportedFormats: resolveSupportedFormats(name, provider.FormatBaseURLs),
 		FormatBaseURLs:   cloneStringMap(provider.FormatBaseURLs),
 	}
 }
@@ -265,7 +306,7 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 		QuotaKey:         codexAPIKeyQuotaKey(key),
 		QuotaCurl:        strings.TrimSpace(key.QuotaCurl),
 		QuotaEnabled:     key.QuotaEnabled,
-		SupportedFormats: resolveDefaultFormats("codex"),
+		SupportedFormats: resolveSupportedFormats("codex", key.FormatBaseURLs),
 		FormatBaseURLs:   cloneStringMap(key.FormatBaseURLs),
 		BillingCurl:      strings.TrimSpace(key.BillingCurl),
 		BillingEnabled:   key.BillingEnabled && strings.TrimSpace(key.BillingCurl) != "",

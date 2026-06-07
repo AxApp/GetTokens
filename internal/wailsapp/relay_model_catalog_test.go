@@ -58,6 +58,35 @@ func TestListRelaySupportedModelsFallsBackToRuntimeCredentialsWhenModelFetchCred
 	}
 }
 
+func TestListRelaySupportedModelsFallsBackToOpenAIChatEndpointWhenModelFetchCredentialsMissing(t *testing.T) {
+	providers := []OpenAICompatibleProvider{
+		{
+			Name:    "relay",
+			BaseURL: "https://relay.example.com/codex/v1",
+			APIKey:  "sk-runtime",
+			FormatBaseURLs: map[string]string{
+				"openai_chat":      "https://relay.example.com/openai/v1",
+				"openai_responses": "https://relay.example.com/codex/v1",
+				"anthropic":        "https://relay.example.com/anthropic",
+			},
+		},
+	}
+
+	models := listRelaySupportedModels(providers, nil, func(input FetchOpenAICompatibleProviderModelsInput) ([]OpenAICompatibleModel, error) {
+		if input.BaseURL != "https://relay.example.com/openai/v1" {
+			t.Fatalf("unexpected fallback base url: %#v", input)
+		}
+		if input.APIKey != "sk-runtime" {
+			t.Fatalf("unexpected fallback api key: %#v", input)
+		}
+		return []OpenAICompatibleModel{{Name: "relay-chat-model"}}, nil
+	}, nil, nil)
+
+	if len(models) != 1 || models[0].Name != "relay-chat-model" {
+		t.Fatalf("unexpected models: %#v", models)
+	}
+}
+
 func TestListRelaySupportedModelsAggregatesRemoteLocalAndCodexKeyModels(t *testing.T) {
 	providers := []OpenAICompatibleProvider{
 		{

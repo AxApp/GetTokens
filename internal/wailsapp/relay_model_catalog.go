@@ -187,6 +187,11 @@ func relayModelFetchBaseURL(provider OpenAICompatibleProvider) string {
 	if value := strings.TrimSpace(provider.ModelFetchBaseURL); value != "" {
 		return value
 	}
+	if provider.FormatBaseURLs != nil {
+		if value := strings.TrimSpace(provider.FormatBaseURLs["openai_chat"]); value != "" {
+			return value
+		}
+	}
 	return strings.TrimSpace(provider.BaseURL)
 }
 
