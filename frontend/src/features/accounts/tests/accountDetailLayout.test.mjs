@@ -93,10 +93,12 @@ test('api key credential module uses left-right credential and connection layout
   assert.match(source, /data-account-credential-field-label="above"/);
   assert.doesNotMatch(source, /data-account-credential-field-label="embedded"/);
   assert.match(source, /data-account-credential-list-item="credential"/);
+  assert.match(source, /账号凭据/);
+  assert.match(source, /连通验证/);
   assert.match(source, /data-account-credential-list-item="capability-endpoints"/);
-  assert.match(source, /openai-compatible/);
-  assert.match(source, /codex API/);
-  assert.match(source, /anthropic/);
+  assert.match(source, /label: 'OpenAI'/);
+  assert.match(source, /label: 'Codex'/);
+  assert.match(source, /label: 'Anthropic'/);
   assert.match(source, /formatBaseUrls/);
   assert.match(source, /data-account-credential-list-item="connection"/);
   assert.match(source, /data-account-credential-list-item="proxy-route"/);
@@ -105,13 +107,46 @@ test('api key credential module uses left-right credential and connection layout
     'connection short-message panel should be in the left credential module',
   );
   assert.ok(
+    source.indexOf('data-account-credential-left-pane="credential-connection"') < source.indexOf('data-account-credential-list-item="credential"'),
+    'left pane should still start with account credential fields',
+  );
+  assert.ok(
     source.indexOf('data-account-credential-right-pane="route"') < source.indexOf('<CredentialProxyRoutePanel'),
     'right pane should only own the route panel',
+  );
+  assert.ok(
+    source.indexOf('data-account-credential-right-pane="route"') < source.indexOf('<CapabilityEndpointsPanel'),
+    'protocol endpoint overrides should live in the right connection pane',
+  );
+  assert.ok(
+    source.indexOf('<CapabilityEndpointsPanel') < source.indexOf('<CredentialProxyRoutePanel'),
+    'protocol endpoint overrides should sit above route proxy controls',
   );
   assert.match(modalSource, /<AccountCredentialVerifySection[\s\S]*?span="wide"/);
   assert.doesNotMatch(source, /export function AccountCredentialsSection/);
   assert.doesNotMatch(source, /export function AccountVerifySection/);
   assert.doesNotMatch(source, /data-account-credential-verify-layout="v09-low-nesting"/);
+});
+
+test('credential endpoint copy explains default base url versus protocol overrides', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const endpointsBlock = source.match(/function CapabilityEndpointsPanel[\s\S]*?\nfunction CredentialProxyRoutePanel/)?.[0] ?? '';
+  const credentialBlock = source.match(/data-account-credential-list-item="credential"[\s\S]*?\n\s*<\/section>/)?.[0] ?? '';
+  const connectionBlock = source.match(/data-account-credential-list-item="connection"[\s\S]*?\n\s*<\/section>/)?.[0] ?? '';
+
+  assert.match(source, /label="默认基础 URL"/);
+  assert.doesNotMatch(credentialBlock, /默认入口/);
+  assert.doesNotMatch(credentialBlock, /专用端点留空时使用/);
+  assert.doesNotMatch(credentialBlock, />\s*CREDENTIAL\s*</);
+  assert.doesNotMatch(connectionBlock, />\s*CONNECTION\s*</);
+  assert.doesNotMatch(connectionBlock, /发送一条短消息验证连通性/);
+  assert.doesNotMatch(connectionBlock, /send one short chat message only/);
+  assert.match(endpointsBlock, /协议端点/);
+  assert.match(endpointsBlock, /留空使用默认基础 URL/);
+  assert.match(endpointsBlock, /\{CAPABILITY_ENDPOINTS\.length\} 端/);
+  assert.match(endpointsBlock, /data-account-credential-list-item="capability-endpoints" className="grid gap-3"/);
+  assert.doesNotMatch(endpointsBlock, /data-account-credential-list-item="capability-endpoints" className="[^"]*border-t-2/);
+  assert.doesNotMatch(endpointsBlock, /分别覆盖 OpenAI-compatible、Codex Responses 和 Anthropic 请求/);
 });
 
 test('credential module edits account name before credential secrets', async () => {
@@ -512,10 +547,10 @@ test('account detail header removes status pill and uses type label for codex au
 test('account detail verify copy is scoped to sending one short message', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /短消息验证/);
-  assert.match(source, /短消息内容/);
+  assert.match(source, /连通验证/);
   assert.match(source, /发送验证/);
-  assert.match(source, /send one short chat message only/);
+  assert.doesNotMatch(source, /发送一条短消息验证连通性/);
+  assert.doesNotMatch(source, /send one short chat message only/);
   assert.doesNotMatch(source, /验证连接/);
   assert.doesNotMatch(source, /credential \+ proxy \+ model route/);
 });

@@ -119,9 +119,9 @@ export interface AccountDetailFooterProps {
 
 const DEFAULT_VERIFY_MODEL = 'gpt-5.4-mini';
 const CAPABILITY_ENDPOINTS: Array<{ format: ApiFormat; label: string; hint: string }> = [
-  { format: 'openai_chat', label: 'openai-compatible', hint: 'Chat Completions / OpenAI-compatible' },
-  { format: 'openai_responses', label: 'codex API', hint: 'Responses / Codex client' },
-  { format: 'anthropic', label: 'anthropic', hint: 'Claude Code / Messages' },
+  { format: 'openai_chat', label: 'OpenAI', hint: 'Chat' },
+  { format: 'openai_responses', label: 'Codex', hint: 'Responses' },
+  { format: 'anthropic', label: 'Anthropic', hint: 'Messages' },
 ];
 
 export function AccountDetailHeader({
@@ -192,15 +192,15 @@ export function AccountCredentialVerifySection({
   return (
     <AccountDetailSection
       componentName="AccountCredentialVerifySection"
-      eyebrow="Credential / Connection"
+      eyebrow="API Key"
       title="凭据与验证"
       span={span}
     >
       <div data-account-credential-verify-layout="v09-split" className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div data-account-credential-left-pane="credential-connection" className="grid content-start gap-4 lg:pr-4">
           <section data-account-credential-list-item="credential" className="grid content-start gap-3">
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              CREDENTIAL
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+              账号凭据
             </div>
             <div data-account-credential-fields="balanced-grid" className="grid gap-3">
               <CredentialInputField
@@ -215,7 +215,7 @@ export function AccountCredentialVerifySection({
                 onCopy={() => void navigator.clipboard.writeText(draft.apiKey)}
               />
               <CredentialInputField
-                label="基础 URL"
+                label="默认基础 URL"
                 value={draft.baseUrl}
                 onChange={(value) => setDraft((prev) => ({ ...prev, baseUrl: value }))}
                 onCopy={() => void navigator.clipboard.writeText(draft.baseUrl)}
@@ -237,8 +237,6 @@ export function AccountCredentialVerifySection({
             </div>
           </section>
 
-          <CapabilityEndpointsPanel draft={draft} setDraft={setDraft} />
-
           <VerifyConnectionPanel
             draft={draft}
             verifyState={verifyState}
@@ -247,7 +245,9 @@ export function AccountCredentialVerifySection({
           />
         </div>
 
-        <div data-account-credential-right-pane="route" className="grid min-w-0 content-start border-t-2 border-[var(--border-color)] pt-4 lg:border-l-2 lg:border-t-0 lg:pl-4 lg:pt-0">
+        <div data-account-credential-right-pane="route" className="grid min-w-0 content-start gap-4 border-t-2 border-[var(--border-color)] pt-4 lg:border-l-2 lg:border-t-0 lg:pl-4 lg:pt-0">
+          <CapabilityEndpointsPanel draft={draft} setDraft={setDraft} />
+
           <CredentialProxyRoutePanel
             proxyUrl={draft.proxyUrl}
             onProxyUrlChange={(nextProxyURL) => setDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
@@ -267,18 +267,21 @@ function CapabilityEndpointsPanel({
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
 }) {
   return (
-    <section data-account-credential-list-item="capability-endpoints" className="grid gap-3 border-t-2 border-[var(--border-color)] pt-4">
+    <section data-account-credential-list-item="capability-endpoints" className="grid gap-3">
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
         <div>
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             ENDPOINTS
           </div>
           <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase italic tracking-[0.06em] text-[var(--text-primary)]">
-            三端配置
+            协议端点
           </div>
+          <p className="mt-2 max-w-[42rem] text-[length:var(--font-size-ui-2xs)] font-bold leading-relaxed text-[var(--text-muted)]">
+            留空使用默认基础 URL。
+          </p>
         </div>
         <AccountDetailPill className="!border-2 !text-[var(--text-primary)]">
-          {CAPABILITY_ENDPOINTS.length} CAPABILITIES
+          {CAPABILITY_ENDPOINTS.length} 端
         </AccountDetailPill>
       </div>
 
@@ -556,11 +559,8 @@ function VerifyConnectionPanel({
 
   return (
     <section data-account-credential-list-item="connection" className="grid gap-3 border-t-2 border-[var(--border-color)] pt-4">
-      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-        CONNECTION
-      </div>
       <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
-        短消息验证
+        连通验证
       </div>
       {vs.lastVerifiedAt ? (
         <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
@@ -616,10 +616,6 @@ function VerifyConnectionPanel({
         >
           {vs.status === 'loading' ? '发送中...' : '发送验证'}
         </button>
-      </div>
-
-      <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-        短消息内容：请回复 OK，用于连通性验证 · send one short chat message only
       </div>
 
       {vs.status !== 'idle' ? (
