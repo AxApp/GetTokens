@@ -86,6 +86,30 @@ normalize_wailsjs() {
   fi
 }
 
+install_sidecar_into_app_bundle() {
+  local app_path="${ROOT_DIR}/build/bin/GetTokens.app"
+  local app_macos_dir="${app_path}/Contents/MacOS"
+  local sidecar_path="${ROOT_DIR}/build/bin/cli-proxy-api"
+  local sidecar_meta_path="${ROOT_DIR}/build/bin/cli-proxy-api.meta.json"
+
+  if [[ ! -d "${app_macos_dir}" ]]; then
+    echo "GetTokens.app bundle is missing: ${app_path}" >&2
+    return 1
+  fi
+  if [[ ! -x "${sidecar_path}" ]]; then
+    echo "sidecar binary is missing or not executable: ${sidecar_path}" >&2
+    return 1
+  fi
+  if [[ ! -f "${sidecar_meta_path}" ]]; then
+    echo "sidecar metadata is missing: ${sidecar_meta_path}" >&2
+    return 1
+  fi
+
+  cp "${sidecar_path}" "${app_macos_dir}/cli-proxy-api"
+  cp "${sidecar_meta_path}" "${app_macos_dir}/cli-proxy-api.meta.json"
+  chmod +x "${app_macos_dir}/cli-proxy-api"
+}
+
 run_wails() {
   local -a wails_cmd=("$@")
   if [[ "${COMMAND}" == "dev" ]]; then
@@ -115,8 +139,11 @@ run_wails() {
     normalize_wailsjs
     exit "$status"
   fi
-  if [[ "${COMMAND}" == "build" && "${GOOS}" == "darwin" && -x "${ROOT_DIR}/scripts/install-menubar-swiftui.sh" ]]; then
-    "${ROOT_DIR}/scripts/install-menubar-swiftui.sh" "${ROOT_DIR}/build/bin/GetTokens.app"
+  if [[ "${COMMAND}" == "build" && "${GOOS}" == "darwin" ]]; then
+    install_sidecar_into_app_bundle
+    if [[ -x "${ROOT_DIR}/scripts/install-menubar-swiftui.sh" ]]; then
+      "${ROOT_DIR}/scripts/install-menubar-swiftui.sh" "${ROOT_DIR}/build/bin/GetTokens.app"
+    fi
     if command -v codesign >/dev/null 2>&1; then
       codesign --deep --force --sign - "${ROOT_DIR}/build/bin/GetTokens.app"
     fi

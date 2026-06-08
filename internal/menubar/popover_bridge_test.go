@@ -141,6 +141,9 @@ func TestMenuBarSwiftUIPopoverBuildScriptsAreWired(t *testing.T) {
 		"scripts/install-menubar-swiftui.sh",
 		"codesign --deep --force --sign -",
 		"if [[ \"${status}\" -ne 0 ]]",
+		"build/bin/cli-proxy-api",
+		"build/bin/cli-proxy-api.meta.json",
+		"${app_macos_dir}/cli-proxy-api.meta.json",
 		"darwin/amd64|darwin/x86_64",
 		"darwin/arm64",
 	} {
