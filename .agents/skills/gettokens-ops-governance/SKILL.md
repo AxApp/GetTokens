@@ -124,8 +124,17 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Rules -> `AGENTS.md`
 - **Memory**: Keep entries concise and decision-oriented.
 - **Governance**: Read `AGENTS.md` first. Update it only for repo-wide, durable rules. Ensure `docs-linhay` is not ignored in `.gitignore`.
+- **Automatic distillation audit**: At the end of every significant repair round, subagent delivery, interrupted implementation, or explicit "整理" request, run the session distillation audit automatically. Decide whether each reusable pattern belongs in a domain skill, a `docs-linhay/dev/` workflow, `AGENTS.md`, or memory-only notes. Do not wait for the user to ask "what should be saved".
 
-### 3.1 Cleanup Before Claiming Done
+### 3.1 Interrupted Repair Deferral
+- If the user pauses a repair round or says the remaining work should move to the next phase, unfinished implementation is not a deliverable.
+- Revert only the half-finished code and generated artifacts from the interrupted round; do not revert unrelated user changes or earlier completed commits.
+- Preserve the useful evidence in the matching `space`: issue source, code/UI fact location, observed gap, acceptance path, and disproof condition.
+- Convert the unfinished item into a next-phase requirement document under `docs-linhay/spaces/<space-key>/plans/`.
+- Update the space README, backlog, and memory so the item is marked as deferred / next-phase rather than fixed.
+- For pure deferral docs, run `docs-linhay/scripts/check-docs.sh` and `git diff --check`; do not run frontend/backend tests unless code remains changed.
+
+### 3.2 Cleanup Before Claiming Done
 - If a long implementation session leaves tracked files still drifting after the “main” commit, do not stop at the first commit.
 - Keep reconciling residual tracked diffs that belong to the same rollout until the remaining worktree noise is clearly limited to:
   - external reference submodules
@@ -163,6 +172,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Goal**: Extract durable workflows and failure modes into skills. Avoid copying transient guesses or chat fluff.
 - **Output**: Create/update skills in `.agents/skills/` and record the decision in project memory.
 - **Do Not Over-promote**: Feature-domain verification workflows, such as CLIProxyAPI fork checks or Proxyman capture procedures, should normally live in the relevant domain skill and dev docs. Promote to `AGENTS.md` only when the rule becomes repo-wide governance.
+- **Automatic closure rule**: Before the final response of a substantial round, check whether new reusable behavior appeared. If yes, update the right skill/workflow/governance file as part of the round; if no, say it was reviewed and not promoted.
 
 ## 6. Release Governance
 - **Scope**: Current release scope is macOS only.
