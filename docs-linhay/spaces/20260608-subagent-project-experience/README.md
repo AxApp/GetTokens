@@ -65,7 +65,8 @@
 - 第 10 轮证据 backlog 修复验收：`plans/round-10-evidence-backlog-acceptance.md`
 - 第 11 轮 Usage Desk 分面方案：`plans/round-11-usage-desk-facets-plan.md`
 - 第 11 轮 Usage Desk 分面验收：`plans/round-11-usage-desk-facets-acceptance.md`
+- 下期需求：Live Sessions 运营摘要：`plans/round-12-live-sessions-operational-summary-plan.md`
 
 ## 当前状态
-- 状态：round-11-usage-desk-facets-complete
+- 状态：round-11-complete-round-12-deferred
 - 最近更新：2026-06-08

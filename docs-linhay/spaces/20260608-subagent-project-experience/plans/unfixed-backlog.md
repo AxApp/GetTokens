@@ -4,7 +4,7 @@
 
 - 日期：2026-06-08
 - 来源：三份第 1 轮体验报告、`evaluation-and-fixes*.md`、`final-acceptance.md`
-- 当前判断：第 1-11 轮已修复低风险项与第一批高证据项；真实 dev App 手点不再作为每轮硬门槛，后续按风险选择验收证据。
+- 当前判断：第 1-11 轮已修复低风险项与第一批高证据项；`P11` 已完成证据复核并整理为下期需求草案，尚未正式实现；真实 dev App 手点不再作为每轮硬门槛，后续按风险选择验收证据。
 
 ## 产品/体验决策类
 
@@ -18,7 +18,7 @@
 | P5 | 账号操作入口过于集中在菜单，新增/导入/登录路径缺少主次优先级 | 未修复 | 重新排账号新增/导入/OAuth 登录的主入口层级 |
 | P7 | Usage Desk 缺少 provider / account / model 的运营分面入口 | 已修复 | 第 11 轮补 Observed `Provider/Account/Model` 与 Projected `Provider/Project/Model` 分面；点击过滤当前图表、摘要和明细 |
 | P8 | Usage Desk 索引刷新/重建动作缺少影响范围说明 | 已修复 | 第 9 轮补动作影响范围说明，并明确不删除原始 session 文件 |
-| P11 | Live Sessions 项目/会话切换入口偏窄，缺少运营摘要 | 未修复 | 设计项目维度摘要和会话维度切换路径 |
+| P11 | Live Sessions 项目/会话切换入口偏窄，缺少运营摘要 | 下期需求 / 待实现 | 已整理到 `round-12-live-sessions-operational-summary-plan.md`；下期先补 model 结构化字段红灯测试，再做 Workbench/i18n UI |
 | P12 | 侧边栏二级菜单靠 hover/pin，Codex 高频入口排序不贴近日常运营 | 未修复 | 决定 Codex 高频入口排序和固定展示策略 |
 | P13 | 菜单栏快捷入口缺少完整产品化入口 | 已修复 | 第 9 轮真实 dev App 菜单栏手点验收通过 |
 | P14 | 菜单栏 quota snapshot 只取最低 3 个 quota 和 4 个余额，缺少“更多风险”入口 | 已修复 | 第 9 轮真实 dev App 菜单栏风险入口验收通过 |
@@ -74,6 +74,6 @@
 
 ## 建议修复顺序
 
-1. `P11` Live Sessions 运营摘要：进入证据复核，结合第 10 轮历史窗口结果决定是否做 compact operational strip。
+1. `P11` Live Sessions 运营摘要：证据已复核，作为下期第一候选；实现前先确保 selector 不输出人类展示文案，UI/i18n 负责 `risk / active / recent` 标签。
 2. `P3/P4/P5/P12` 账号池/侧边栏运营入口：属于产品信息架构项，需要先补 UI/代码证据和入口优先级方案。
 3. `R1/R4/R5` sidecar 热路径技术项：需要先补技术方案、失败测试和接口边界，不直接凭 backlog 开修。
