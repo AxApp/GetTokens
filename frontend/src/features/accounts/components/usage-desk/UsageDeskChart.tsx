@@ -122,6 +122,8 @@ function ChartSurface({
   const primaryAreaTone = 'var(--color-chart-primary-area)';
   const secondaryTone = 'var(--color-chart-secondary)';
   const secondaryAreaTone = 'var(--color-chart-secondary-area)';
+  const chartGridBackgroundImage =
+    'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid) calc(25% - 1px), var(--color-chart-grid) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid) calc(50% - 1px), var(--color-chart-grid) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid) calc(75% - 1px), var(--color-chart-grid) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, var(--color-chart-grid-subtle) 55px, var(--color-chart-grid-subtle) 56px)';
 
   const buildChartCoords = (points: Array<{ value: number }>) =>
     points.map((point, index) => ({
@@ -190,17 +192,19 @@ function ChartSurface({
   }, [selectedPrimaryX]);
 
   return (
-    <div ref={chartScrollRef} className="overflow-x-auto overflow-y-hidden bg-[var(--bg-main)]">
-        <div
-          className="relative mx-auto transition-all duration-300 ease-out"
-          style={{
-            height: `${chartHeight}px`,
-            width: `${chartWidth}px`,
-            backgroundImage:
-              'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid) calc(25% - 1px), var(--color-chart-grid) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid) calc(50% - 1px), var(--color-chart-grid) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid) calc(75% - 1px), var(--color-chart-grid) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, var(--color-chart-grid-subtle) 55px, var(--color-chart-grid-subtle) 56px)',
-          }}
-        >
-          <style>{`
+    <div
+      ref={chartScrollRef}
+      className="overflow-x-auto overflow-y-hidden bg-[var(--bg-main)]"
+      style={{ backgroundImage: chartGridBackgroundImage }}
+    >
+      <div
+        className="relative mx-auto transition-all duration-300 ease-out"
+        style={{
+          height: `${chartHeight}px`,
+          width: `${chartWidth}px`,
+        }}
+      >
+        <style>{`
             @keyframes usage-desk-curve-sweep {
               0% { stroke-dashoffset: 1; opacity: 0.32; }
               100% { stroke-dashoffset: 0; opacity: 1; }
@@ -214,121 +218,121 @@ function ChartSurface({
               100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
             }
           `}</style>
-          {/* 背景与曲线层 */}
-          <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
-            <defs>
-              <linearGradient id="usage-primary-area-live" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={primaryAreaTone} stopOpacity="0.24" />
-                <stop offset="100%" stopColor={primaryAreaTone} stopOpacity="0.03" />
+        {/* 背景与曲线层 */}
+        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
+          <defs>
+            <linearGradient id="usage-primary-area-live" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={primaryAreaTone} stopOpacity="0.24" />
+              <stop offset="100%" stopColor={primaryAreaTone} stopOpacity="0.03" />
+            </linearGradient>
+            {secondary?.length ? (
+              <linearGradient id="usage-secondary-area-live" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={secondaryAreaTone} stopOpacity="0.18" />
+                <stop offset="100%" stopColor={secondaryAreaTone} stopOpacity="0.02" />
               </linearGradient>
-              {secondary?.length ? (
-                <linearGradient id="usage-secondary-area-live" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={secondaryAreaTone} stopOpacity="0.18" />
-                  <stop offset="100%" stopColor={secondaryAreaTone} stopOpacity="0.02" />
-                </linearGradient>
-              ) : null}
-            </defs>
+            ) : null}
+          </defs>
+          <path
+            key={`primary-area-${rangeAnimationVersion}-${primary.length}`}
+            d={buildSmoothAreaPath(primaryCoords)}
+            fill="url(#usage-primary-area-live)"
+            style={{ transformBox: 'fill-box', transformOrigin: 'center bottom', animation: 'usage-desk-area-fade 320ms cubic-bezier(0.22,1,0.36,1)' }}
+          />
+          {secondary?.length ? (
             <path
-              key={`primary-area-${rangeAnimationVersion}-${primary.length}`}
-              d={buildSmoothAreaPath(primaryCoords)}
-              fill="url(#usage-primary-area-live)"
+              key={`secondary-area-${rangeAnimationVersion}-${secondary.length}`}
+              d={buildSmoothAreaPath(secondaryCoords)}
+              fill="url(#usage-secondary-area-live)"
               style={{ transformBox: 'fill-box', transformOrigin: 'center bottom', animation: 'usage-desk-area-fade 320ms cubic-bezier(0.22,1,0.36,1)' }}
             />
-            {secondary?.length ? (
-              <path
-                key={`secondary-area-${rangeAnimationVersion}-${secondary.length}`}
-                d={buildSmoothAreaPath(secondaryCoords)}
-                fill="url(#usage-secondary-area-live)"
-                style={{ transformBox: 'fill-box', transformOrigin: 'center bottom', animation: 'usage-desk-area-fade 320ms cubic-bezier(0.22,1,0.36,1)' }}
-              />
-            ) : null}
-            {selectedPrimaryX !== null ? (
-              <line
-                x1={selectedPrimaryX}
-                y1={12}
-                x2={selectedPrimaryX}
-                y2={chartHeight - 8}
-                stroke="var(--color-chart-primary)"
-                strokeOpacity="0.35"
-                strokeWidth="1.5"
-                strokeDasharray="6 6"
-              />
-            ) : null}
+          ) : null}
+          {selectedPrimaryX !== null ? (
+            <line
+              x1={selectedPrimaryX}
+              y1={12}
+              x2={selectedPrimaryX}
+              y2={chartHeight - 8}
+              stroke="var(--color-chart-primary)"
+              strokeOpacity="0.35"
+              strokeWidth="1.5"
+              strokeDasharray="6 6"
+            />
+          ) : null}
+          <path
+            key={`primary-line-${rangeAnimationVersion}-${primary.length}`}
+            d={buildSmoothLinePath(primaryCoords)}
+            fill="none"
+            stroke={primaryTone}
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            pathLength={1}
+            strokeDasharray={1}
+            strokeDashoffset={0}
+            style={{ animation: `usage-desk-curve-sweep ${curveAnimation.durationMs}ms cubic-bezier(0.22,1,0.36,1)` }}
+          />
+          {secondary?.length ? (
             <path
-              key={`primary-line-${rangeAnimationVersion}-${primary.length}`}
-              d={buildSmoothLinePath(primaryCoords)}
+              key={`secondary-line-${rangeAnimationVersion}-${secondary.length}`}
+              d={buildSmoothLinePath(secondaryCoords)}
               fill="none"
-              stroke={primaryTone}
-              strokeWidth="4"
+              stroke={secondaryTone}
+              strokeWidth="3"
+              strokeDasharray="10 8"
               strokeLinecap="round"
               strokeLinejoin="round"
               pathLength={1}
-              strokeDasharray={1}
               strokeDashoffset={0}
               style={{ animation: `usage-desk-curve-sweep ${curveAnimation.durationMs}ms cubic-bezier(0.22,1,0.36,1)` }}
             />
-            {secondary?.length ? (
-              <path
-                key={`secondary-line-${rangeAnimationVersion}-${secondary.length}`}
-                d={buildSmoothLinePath(secondaryCoords)}
-                fill="none"
-                stroke={secondaryTone}
-                strokeWidth="3"
-                strokeDasharray="10 8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                pathLength={1}
-                strokeDashoffset={0}
-                style={{ animation: `usage-desk-curve-sweep ${curveAnimation.durationMs}ms cubic-bezier(0.22,1,0.36,1)` }}
-              />
-            ) : null}
-          </svg>
+          ) : null}
+        </svg>
 
-          {/* HTML 点位与标签层 (防止缩放变形) */}
-          <div className="absolute inset-0 h-full w-full overflow-hidden pointer-events-none">
-            <div className="relative h-full w-full pointer-events-auto">
-              {primary.map((point, index) => {
-                const coord = primaryCoords[index];
-                if (!coord) return null;
-                return (
-                  <ChartPoint
-                    key={`primary-${rangeAnimationVersion}-${point.label}`}
-                    x={coord.x}
-                    y={coord.y}
-                    label={formatUsageDeskChartValue(point.value, unit)}
-                    color={primaryTone}
-                    helper={point.label}
-                    helperY={labelBaseY}
-                    selected={selectedPointKey === point.label}
-                    onSelect={() => onSelectPoint(point.label, point.drilldownDayKey)}
-                    animationDelayMs={curveAnimation.pointDelayMs * index}
-                    animate
-                  />
-                );
-              })}
-              {secondary?.map((point, index) => {
-                const coord = secondaryCoords[index];
-                if (!coord) return null;
-                return (
-                  <ChartPoint
-                    key={`secondary-${rangeAnimationVersion}-${point.label}`}
-                    x={coord.x}
-                    y={coord.y}
-                    label={formatUsageDeskChartValue(point.value, unit)}
-                    color={secondaryTone}
-                    helper={point.label}
-                    helperY={labelBaseY}
-                    labelPosition="bottom"
-                    small
-                    selected={selectedPointKey === point.label}
-                    animationDelayMs={curveAnimation.pointDelayMs * index}
-                    animate
-                  />
-                );
-              })}
-            </div>
+        {/* HTML 点位与标签层 (防止缩放变形) */}
+        <div className="absolute inset-0 h-full w-full overflow-hidden pointer-events-none">
+          <div className="relative h-full w-full pointer-events-auto">
+            {primary.map((point, index) => {
+              const coord = primaryCoords[index];
+              if (!coord) return null;
+              return (
+                <ChartPoint
+                  key={`primary-${rangeAnimationVersion}-${point.label}`}
+                  x={coord.x}
+                  y={coord.y}
+                  label={formatUsageDeskChartValue(point.value, unit)}
+                  color={primaryTone}
+                  helper={point.label}
+                  helperY={labelBaseY}
+                  selected={selectedPointKey === point.label}
+                  onSelect={() => onSelectPoint(point.label, point.drilldownDayKey)}
+                  animationDelayMs={curveAnimation.pointDelayMs * index}
+                  animate
+                />
+              );
+            })}
+            {secondary?.map((point, index) => {
+              const coord = secondaryCoords[index];
+              if (!coord) return null;
+              return (
+                <ChartPoint
+                  key={`secondary-${rangeAnimationVersion}-${point.label}`}
+                  x={coord.x}
+                  y={coord.y}
+                  label={formatUsageDeskChartValue(point.value, unit)}
+                  color={secondaryTone}
+                  helper={point.label}
+                  helperY={labelBaseY}
+                  labelPosition="bottom"
+                  small
+                  selected={selectedPointKey === point.label}
+                  animationDelayMs={curveAnimation.pointDelayMs * index}
+                  animate
+                />
+              );
+            })}
           </div>
         </div>
+      </div>
     </div>
   );
 }

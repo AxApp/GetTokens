@@ -13,8 +13,6 @@ import {
   type UsageDeskProjectedSurfaceView,
   type UsageDeskRangeOption,
   type UsageDeskResolution,
-  type UsageDeskFacetGroup,
-  type UsageDeskFacetKind,
 } from './model/usageDesk';
 import { UsageChartCard } from './components/usage-desk/UsageDeskChart';
 import { UsageDetailTable } from './components/usage-desk/UsageDetailTable';
@@ -39,13 +37,10 @@ export default function UsageDeskFeature({
     projectedLoading,
     loadError,
     projectedLoadError,
-    projectedActionMessage,
     projectedProgress,
     projectedChartMetric,
     setProjectedChartMetric,
     projectedSurfaceView,
-    usageFacetGroups,
-    activeFacetSummary,
     selectedDetailRowKey,
     selectedChartPointKey,
     detailTransitionActive,
@@ -73,7 +68,6 @@ export default function UsageDeskFeature({
     handleViewScaleChange,
     handleProjectedSurfaceViewChange,
     handleRangeSelect,
-    handleUsageFacetSelect,
   } = useUsageDeskFeature(sidecarStatus, workspace);
 
   const supportsProjectedUsage = workspace === 'codex' || workspace === 'claude';
@@ -146,8 +140,8 @@ export default function UsageDeskFeature({
             <section className="space-y-5">
               {source === 'observed' ? (
                 <section className="space-y-5">
-                    <div className="space-y-5">
-                      <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
+                  <div className="space-y-5">
+                    <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
                       {loading ? (
                         <StatePanel
                           title="加载中"
@@ -165,27 +159,6 @@ export default function UsageDeskFeature({
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"
-                            status={
-                              <>
-                                <div className="flex items-center gap-3 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-wider text-[var(--text-primary)]">
-                                  <div className="h-3 w-3 bg-[var(--text-primary)]" />
-                                  <span>数据源: Sidecar 归因</span>
-                                  <span className="opacity-40">/</span>
-                                  <span>{observedDrilldownDayKey || '全部'}</span>
-                                  {selectedChartPointKey && (
-                                    <>
-                                      <span className="opacity-40">/</span>
-                                      <span>{selectedChartPointKey}</span>
-                                    </>
-                                  )}
-                                </div>
-                                <UsageDeskFacetStrip
-                                  groups={usageFacetGroups}
-                                  activeSummary={activeFacetSummary}
-                                  onSelect={handleUsageFacetSelect}
-                                />
-                              </>
-                            }
                             controls={
                               <UsageDeskObservedControls
                                 range={range}
@@ -218,23 +191,22 @@ export default function UsageDeskFeature({
                           />
                         </div>
                       )}
-                      </div>
-
-                      {!loading && !loadError && observedSnapshot.hasData ? (
-                        <UsageDetailTable
-                          rows={observedDrilldownDayKey ? observedSnapshot.minuteRows : activeDetailRows}
-                          columns={activeDetailColumns}
-                          selectedRowKey={selectedDetailRowKey}
-                          onSelectRow={handleDetailRowSelect}
-                        />
-                      ) : null}
-
                     </div>
+
+                    {!loading && !loadError && observedSnapshot.hasData ? (
+                      <UsageDetailTable
+                        rows={observedDrilldownDayKey ? observedSnapshot.minuteRows : activeDetailRows}
+                        columns={activeDetailColumns}
+                        selectedRowKey={selectedDetailRowKey}
+                        onSelectRow={handleDetailRowSelect}
+                      />
+                    ) : null}
+                  </div>
                 </section>
               ) : (
                 <section className="space-y-5">
-                    <div className="space-y-5">
-                      <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
+                  <div className="space-y-5">
+                    <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
                       {projectedLoading ? (
                         <StatePanel title="加载中" body={projectedLoadingBody} />
                       ) : projectedLoadError ? (
@@ -264,62 +236,6 @@ export default function UsageDeskFeature({
                                 />
                               ) : undefined
                             }
-                            status={
-                              <>
-                                <div className="flex items-center gap-6">
-                                  <div className="flex items-center gap-3 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-wider text-[var(--text-primary)]">
-                                    <div className="h-3 w-3 bg-[var(--text-primary)]" />
-                                    <span>数据源: 本地文件投影</span>
-                                    <span className="opacity-40">/</span>
-                                    <span>{projectedDrilldownDayKey || '概览'}</span>
-                                    {selectedChartPointKey && (
-                                      <>
-                                        <span className="opacity-40">/</span>
-                                        <span>{selectedChartPointKey}</span>
-                                      </>
-                                    )}
-                                  </div>
-                                  {projectedActionMessage && (
-                                    <div className="text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] px-2 bg-[var(--bg-surface)] border-2 border-[var(--border-color)]">
-                                      {projectedActionMessage}
-                                    </div>
-                                  )}
-                                </div>
-                                <UsageDeskFacetStrip
-                                  groups={usageFacetGroups}
-                                  activeSummary={activeFacetSummary}
-                                  onSelect={handleUsageFacetSelect}
-                                />
-                                <div className="grid max-w-[620px] grid-cols-3 gap-2">
-                                  {usageDeskProjectedActionImpacts.map((action) => {
-                                    const disabled = projectedLoading || (action.id === 'rebuild-day' && !selectedDayKey);
-                                    const handleClick =
-                                      action.id === 'refresh'
-                                        ? () => void refreshProjectedUsage()
-                                        : action.id === 'rebuild-day'
-                                          ? () => void rebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)
-                                          : () => void rebuildProjectedUsage();
-
-                                    return (
-                                      <div key={action.id} className="min-w-0">
-                                        <button
-                                          type="button"
-                                          onClick={handleClick}
-                                          className="w-full border-2 border-[var(--border-color)] px-3 py-1.5 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30"
-                                          disabled={disabled}
-                                          title={action.description}
-                                        >
-                                          {action.label}
-                                        </button>
-                                        <div className="mt-1 text-[10px] font-bold leading-tight text-[var(--text-muted)]">
-                                          {action.description}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </>
-                            }
                             controls={
                               <UsageDeskProjectedControls
                                 range={range}
@@ -331,23 +247,28 @@ export default function UsageDeskFeature({
                                 onResolutionSelect={setResolution}
                                 onSurfaceViewChange={handleProjectedSurfaceViewChange}
                                 onMetricChange={setProjectedChartMetric}
+                                projectedLoading={projectedLoading}
+                                selectedDayKey={selectedDayKey}
+                                projectedDrilldownDayKey={projectedDrilldownDayKey}
+                                onRefreshProjectedUsage={refreshProjectedUsage}
+                                onRebuildProjectedUsage={rebuildProjectedUsage}
+                                onRebuildProjectedUsageDay={rebuildProjectedUsageDay}
                               />
                             }
                             primary={projectedPrimaryChartPoints}
                           />
                         </div>
                       )}
-                      </div>
+                    </div>
 
-                      {!projectedLoading && !projectedLoadError && projectedSnapshot.hasData ? (
-                          <UsageDetailTable
-                            rows={projectedDrilldownDayKey ? projectedSnapshot.minuteRows : activeDetailRows}
-                            columns={activeDetailColumns}
-                            selectedRowKey={selectedDetailRowKey}
-                            onSelectRow={handleDetailRowSelect}
-                          />
-                      ) : null}
-
+                    {!projectedLoading && !projectedLoadError && projectedSnapshot.hasData ? (
+                      <UsageDetailTable
+                        rows={projectedDrilldownDayKey ? projectedSnapshot.minuteRows : activeDetailRows}
+                        columns={activeDetailColumns}
+                        selectedRowKey={selectedDetailRowKey}
+                        onSelectRow={handleDetailRowSelect}
+                      />
+                    ) : null}
                   </div>
                 </section>
               )}
@@ -422,6 +343,12 @@ function UsageDeskProjectedControls({
   onResolutionSelect,
   onSurfaceViewChange,
   onMetricChange,
+  projectedLoading,
+  selectedDayKey,
+  projectedDrilldownDayKey,
+  onRefreshProjectedUsage,
+  onRebuildProjectedUsage,
+  onRebuildProjectedUsageDay,
 }: {
   range: UsageDeskRangeOption;
   resolution: UsageDeskResolution;
@@ -432,6 +359,12 @@ function UsageDeskProjectedControls({
   onResolutionSelect: (option: UsageDeskResolution) => void;
   onSurfaceViewChange: (view: UsageDeskProjectedSurfaceView) => void;
   onMetricChange: (metric: UsageDeskMetric) => void;
+  projectedLoading: boolean;
+  selectedDayKey: string | null;
+  projectedDrilldownDayKey: string | null;
+  onRefreshProjectedUsage: () => Promise<void>;
+  onRebuildProjectedUsage: () => Promise<void>;
+  onRebuildProjectedUsageDay: (dayKey: string | null) => Promise<void>;
 }) {
   return (
     <div className="usage-desk-control-bar">
@@ -474,6 +407,32 @@ function UsageDeskProjectedControls({
         </div>
 
         <UsageDeskOverflowMenu className="usage-desk-projected-overflow-menu">
+          <div className="usage-desk-overflow-section usage-desk-index-overflow-section">
+            <div className="usage-desk-overflow-heading">索引</div>
+            {usageDeskProjectedActionImpacts.map((action) => {
+              const disabled = projectedLoading || (action.id === 'rebuild-day' && !selectedDayKey);
+              const handleClick =
+                action.id === 'refresh'
+                  ? () => void onRefreshProjectedUsage()
+                  : action.id === 'rebuild-day'
+                    ? () => void onRebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)
+                    : () => void onRebuildProjectedUsage();
+
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={handleClick}
+                  className={usageDeskOverflowItemClass(false)}
+                  disabled={disabled}
+                  title={action.description}
+                >
+                  {action.label}
+                </button>
+              );
+            })}
+          </div>
+
           <div className="usage-desk-overflow-section usage-desk-surface-overflow-section">
             <div className="usage-desk-overflow-heading">视图</div>
             {usageDeskProjectedSurfaceViewOptions
@@ -596,66 +555,6 @@ function UsageDeskOverflowMenu({
       </summary>
       <div className="usage-desk-overflow-panel">{children}</div>
     </details>
-  );
-}
-
-function UsageDeskFacetStrip({
-  groups,
-  activeSummary,
-  onSelect,
-}: {
-  groups: UsageDeskFacetGroup[];
-  activeSummary: string;
-  onSelect: (kind: UsageDeskFacetKind, value: string) => void;
-}) {
-  const visibleGroups = groups
-    .map((group) => ({
-      ...group,
-      options: group.options.slice(0, 5),
-    }))
-    .filter((group) => group.options.length > 0);
-
-  if (visibleGroups.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="mt-3 space-y-2">
-      <div className="flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-        <span>运营分面</span>
-        {activeSummary ? (
-          <>
-            <span className="opacity-40">/</span>
-            <span className="text-[var(--text-primary)]">{activeSummary}</span>
-          </>
-        ) : null}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {visibleGroups.map((group) => (
-          <div key={group.kind} className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-              {group.label}
-            </span>
-            {group.options.map((option) => (
-              <button
-                key={`${group.kind}:${option.value}`}
-                type="button"
-                onClick={() => onSelect(group.kind, option.value)}
-                title={`${group.label}: ${option.label}`}
-                className={`border-2 px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase leading-none transition-colors ${
-                  option.active
-                    ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                    : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
-                }`}
-              >
-                <span className="inline-block max-w-[180px] truncate align-bottom">{option.label}</span>
-                <span className="ml-1 opacity-60">{option.count}</span>
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 

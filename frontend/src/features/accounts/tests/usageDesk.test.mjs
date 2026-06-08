@@ -76,6 +76,26 @@ test('usage desk chart controls stay on one line and expose compact overflow', a
   assert.match(styleSource, /@container\s*\(max-width:\s*520px\)\s*\{[^}]*\.usage-desk-range-slot/s);
 });
 
+test('usage desk chart header removes source and facet summary strip', async () => {
+  const featureSource = await readFile(new URL('../UsageDeskFeature.tsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(featureSource, /UsageDeskFacetStrip/);
+  assert.doesNotMatch(featureSource, /数据源:/);
+  assert.doesNotMatch(featureSource, /运营分面/);
+  assert.doesNotMatch(featureSource, /status=\{/);
+  assert.doesNotMatch(featureSource, /<div className="mt-1[^"]*"[^>]*>\s*\{\s*action\.description\s*\}\s*<\/div>/s);
+  assert.match(featureSource, /usage-desk-index-overflow-section/);
+  assert.match(featureSource, /title=\{action\.description\}/);
+});
+
+test('usage desk chart grid fills the scroll viewport', async () => {
+  const chartSource = await readFile(new URL('../components/usage-desk/UsageDeskChart.tsx', import.meta.url), 'utf8');
+
+  assert.match(chartSource, /const chartGridBackgroundImage\s*=/);
+  assert.match(chartSource, /ref=\{chartScrollRef\}[\s\S]*?style=\{\{ backgroundImage: chartGridBackgroundImage \}\}/);
+  assert.doesNotMatch(chartSource, /height: `\$\{chartHeight\}px`,\s*width: `\$\{chartWidth\}px`,\s*backgroundImage:/);
+});
+
 test('usage desk detail selection starts from summary state and supports toggling off', async () => {
   const hookSource = await readFile(new URL('../hooks/useUsageDeskFeature.ts', import.meta.url), 'utf8');
 
