@@ -65,6 +65,15 @@ And 只有在明确验证模型路由时才临时指定模型。
 | `gettokens_macos_runtime_operator` | `workspace-write` | Wails root binding、macOS lifecycle、sidecar 进程归属、status item、App menu、native 验证 |
 | `gettokens_upstream_fork_curator` | `workspace-write` | CLIProxyAPI fork、上游源码校准、gitlink、sidecar rebuild、双仓提交边界 |
 
+## 体验巡检 Agent
+
+| Agent | Sandbox | 适用任务 |
+| --- | --- | --- |
+| `gettokens_experience_product_operator` | `read-only` | dev App 产品/运营体验巡检，输出账号池、Usage Desk、Live Sessions、菜单栏和运营入口的中度建议 |
+| `gettokens_experience_runtime_routing` | `read-only` | sidecar、账号路由、rate-limit、usage attribution、live sessions 和运行态证据链巡检 |
+| `gettokens_experience_extension_workbench` | `read-only` | Codex Skills、MCP Servers、配置编辑、Git source、local apply 和 deep-link import 体验巡检 |
+| `gettokens_evaluation_repair_controller` | `workspace-write` | 汇总体验报告、建立证据门禁、筛选低风险修复候选、维护 backlog / 下期需求 / 小范围修复计划 |
+
 ## 推荐组合
 
 1. 复杂功能：`gettokens_explorer` 先映射边界，再按领域选择专题 agent；没有明确专题时使用 `gettokens_domain_engineer`，最后由 `gettokens_verifier` 做验证，主控 agent 集成。
@@ -78,6 +87,7 @@ And 只有在明确验证模型路由时才临时指定模型。
 9. 发布：`gettokens_release_operator` 负责 release 证据链，主控 agent 避免把 CI 发布和可分发 DMG 验收混为一谈。
 10. subagent 治理：`gettokens_subagent_architect` 负责 agent 设计、裁剪、合并与配置校验；具体业务实现继续交给对应专题 agent。
 11. 会话整理：`gettokens_session_distiller` 提炼可复用模式，主控 agent 审阅后确认是否升级到 `AGENTS.md`。
+12. 项目体验巡检：并行使用 `gettokens_experience_product_operator`、`gettokens_experience_runtime_routing`、`gettokens_experience_extension_workbench` 产出三份至少 10 条中度建议的体验报告，再由 `gettokens_evaluation_repair_controller` 归并、证据门禁、筛选修复候选；主控 agent 负责最终集成、验证、提交和沉淀。
 
 ## 使用边界
 
@@ -88,6 +98,7 @@ And 只有在明确验证模型路由时才临时指定模型。
 5. 如果后续需要专门验证某个模型路由策略，应在单次任务中显式指定或临时新增实验 agent，完成后再决定是否长期保留。
 6. 专题 agent 优先处理自己文档边界内的任务；跨专题改动必须由主控 agent 拆分写入面，避免多个 agent 同时改同一文件族。
 7. `gettokens_domain_engineer` 是兜底实现 agent，不应在已有专题 agent 明确命中的情况下继续承接全部工作。
+8. 体验巡检 agent 默认只读，输出建议和证据；`gettokens_evaluation_repair_controller` 虽可写，但只在主控 agent 指派下处理低风险、小范围修复或文档/计划写回。
 
 ## 后续维护
 
