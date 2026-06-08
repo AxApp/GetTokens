@@ -19,9 +19,9 @@ test('account detail frame uses the fullscreen detail modal shell', async () => 
   assert.match(frameSource, /size="detail"/);
   assert.match(modalFrameSource, /const detailFullscreen = size === 'detail'/);
   assert.match(modalFrameSource, /position === 'fixed' && !detailFullscreen/);
-  assert.match(modalFrameSource, /detailFullscreen[\s\S]*\? 'place-items-center overflow-hidden p-4 sm:p-6'/);
-  assert.match(modalFrameSource, /detailFullscreen[\s\S]*h-\[calc\(100vh-2rem\)\]/);
-  assert.match(modalFrameSource, /sm:h-\[calc\(100vh-3rem\)\]/);
+  assert.match(modalFrameSource, /detailFullscreen[\s\S]*\? 'items-start justify-items-center overflow-hidden px-4 pb-4 pt-8 sm:px-6 sm:pb-6 sm:pt-10'/);
+  assert.match(modalFrameSource, /detailFullscreen[\s\S]*h-\[calc\(100vh-3rem\)\]/);
+  assert.match(modalFrameSource, /sm:h-\[calc\(100vh-4rem\)\]/);
   assert.match(modalFrameSource, /createPortal\(modal, document\.body\)/);
 });
 

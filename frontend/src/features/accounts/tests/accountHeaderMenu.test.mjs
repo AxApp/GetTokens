@@ -78,6 +78,7 @@ test('AccountsHeader exposes separate account-list and runtime refresh actions',
   assert.match(headerSource, /onRefreshRuntime/);
   assert.match(headerSource, /accounts\.refresh_accounts/);
   assert.match(headerSource, /accounts\.refresh_runtime/);
+  assert.match(headerSource, /accounts\.refresh_runtime_hint/);
   assert.match(featureSource, /onRefreshAccounts=\{\(\) => void loadAccounts\(\{ refreshSupplementalData: false \}\)\}/);
   assert.match(featureSource, /onRefreshRuntime=\{\(\) => void refreshAccountsRuntime\(\)\}/);
   assert.doesNotMatch(featureSource, /onRefresh=\{\(\) => void loadAccounts\(\{ showSupplementalRefreshing: true \}\)\}/);
@@ -89,6 +90,8 @@ test('AccountsHeader menu visible labels are localized from locale files', () =>
 
   for (const locale of [zh, en]) {
     assert.ok(Object.hasOwn(locale.accounts, 'header_actions_menu'));
+    assert.ok(Object.hasOwn(locale.accounts, 'refresh_runtime'));
+    assert.ok(Object.hasOwn(locale.accounts, 'refresh_runtime_hint'));
     assert.ok(Object.hasOwn(locale.accounts, 'add_account'));
     assert.ok(Object.hasOwn(locale.accounts, 'login_chatgpt'));
     assert.ok(Object.hasOwn(locale.accounts, 'import_accounts'));

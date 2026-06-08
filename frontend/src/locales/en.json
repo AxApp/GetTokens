@@ -1148,12 +1148,15 @@
     "codex_features_stage_unsupported": "Unsupported"
   },
   "accounts": {
+    "usage_desk_codex_title": "Codex Usage Desk",
+    "usage_desk_claude_title": "Claude Usage Desk",
     "title": "Accounts",
     "subtitle": "Authorized credential files",
     "add_account": "Add Third-Party Provider Account",
     "header_actions_menu": "Account actions menu",
     "refresh_accounts": "Refresh account list",
-    "refresh_runtime": "Refresh quota / usage / rate limits",
+    "refresh_runtime": "Sync runtime status",
+    "refresh_runtime_hint": "Sync runtime status: quota, usage, and rate limits",
     "unified_compose_title_select": "Choose a Vendor",
     "unified_compose_title_configure": "Configure Account",
     "unified_compose_search_placeholder": "Search vendor / ID",

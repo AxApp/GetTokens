@@ -104,7 +104,7 @@ export default function AccountsHeader({
               onClick={onRefreshRuntime}
               className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
               disabled={!ready || loading}
-              title={t('accounts.refresh_runtime')}
+              title={t('accounts.refresh_runtime_hint')}
               aria-label={t('accounts.refresh_runtime')}
             >
               <Activity className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} strokeWidth={3} />

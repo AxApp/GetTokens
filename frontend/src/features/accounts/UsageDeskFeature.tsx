@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
+import { useI18n } from '../../context/I18nContext';
 import type { SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from '../../types';
 import {
   rangeOptions,
@@ -25,6 +26,7 @@ export default function UsageDeskFeature({
   sidecarStatus: SidecarStatus;
   workspace: UsageDeskWorkspaceID;
 }) {
+  const { t } = useI18n();
   const {
     source,
     setSource,
@@ -71,7 +73,7 @@ export default function UsageDeskFeature({
   } = useUsageDeskFeature(sidecarStatus, workspace);
 
   const supportsProjectedUsage = workspace === 'codex' || workspace === 'claude';
-  const pageTitle = workspace === 'claude' ? 'Claude Usage Desk' : 'Codex Usage Desk';
+  const pageTitle = workspace === 'claude' ? t('accounts.usage_desk_claude_title') : t('accounts.usage_desk_codex_title');
   const pageDescription =
     workspace === 'claude'
         ? 'Sidecar 归因展示经过 GetTokens 运行态归属的请求，本地文件投影只读扫描 Claude Code session 文件。'

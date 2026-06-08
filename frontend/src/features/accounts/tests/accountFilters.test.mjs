@@ -268,7 +268,8 @@ test('AccountsHeader splits account list refresh from runtime refresh', async ()
   assert.match(headerSource, /onRefreshAccounts: \(\) => void/);
   assert.match(headerSource, /onRefreshRuntime: \(\) => void/);
   assert.match(headerSource, /title=\{t\('accounts\.refresh_accounts'\)\}/);
-  assert.match(headerSource, /title=\{t\('accounts\.refresh_runtime'\)\}/);
+  assert.match(headerSource, /title=\{t\('accounts\.refresh_runtime_hint'\)\}/);
+  assert.match(headerSource, /aria-label=\{t\('accounts\.refresh_runtime'\)\}/);
   assert.match(featureSource, /onRefreshAccounts=\{\(\) => void loadAccounts\(\{ refreshSupplementalData: false \}\)\}/);
   assert.match(featureSource, /onRefreshRuntime=\{\(\) => void refreshAccountsRuntime\(\)\}/);
 });

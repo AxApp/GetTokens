@@ -77,10 +77,10 @@ export default function ModalFrame({
     ? { left: 'var(--app-sidebar-width, 0px)' }
     : undefined;
   const overlayLayoutClassName = detailFullscreen
-    ? 'place-items-center overflow-hidden p-4 sm:p-6'
+    ? 'items-start justify-items-center overflow-hidden px-4 pb-4 pt-8 sm:px-6 sm:pb-6 sm:pt-10'
     : 'place-items-center overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6';
   const panelViewportClassName = detailFullscreen
-    ? 'h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] sm:max-h-[calc(100vh-3rem)]'
+    ? 'h-[calc(100vh-3rem)] max-h-[calc(100vh-3rem)] sm:h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-4rem)]'
     : panelMaxHeightClassNames[position];
 
   const modal = (

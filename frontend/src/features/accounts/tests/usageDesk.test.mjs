@@ -78,14 +78,24 @@ test('usage desk chart controls stay on one line and expose compact overflow', a
 
 test('usage desk chart header removes source and facet summary strip', async () => {
   const featureSource = await readFile(new URL('../UsageDeskFeature.tsx', import.meta.url), 'utf8');
+  const zhLocaleSource = await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8');
+  const enLocaleSource = await readFile(new URL('../../../locales/en.json', import.meta.url), 'utf8');
 
   assert.doesNotMatch(featureSource, /UsageDeskFacetStrip/);
   assert.doesNotMatch(featureSource, /数据源:/);
   assert.doesNotMatch(featureSource, /运营分面/);
+  assert.doesNotMatch(featureSource, /Codex Usage Desk/);
+  assert.doesNotMatch(featureSource, /Claude Usage Desk/);
   assert.doesNotMatch(featureSource, /status=\{/);
   assert.doesNotMatch(featureSource, /<div className="mt-1[^"]*"[^>]*>\s*\{\s*action\.description\s*\}\s*<\/div>/s);
+  assert.match(featureSource, /t\('accounts\.usage_desk_codex_title'\)/);
+  assert.match(featureSource, /t\('accounts\.usage_desk_claude_title'\)/);
   assert.match(featureSource, /usage-desk-index-overflow-section/);
   assert.match(featureSource, /title=\{action\.description\}/);
+  assert.match(zhLocaleSource, /"usage_desk_codex_title": "Codex 用量分析"/);
+  assert.match(zhLocaleSource, /"usage_desk_claude_title": "Claude 用量分析"/);
+  assert.match(enLocaleSource, /"usage_desk_codex_title": "Codex Usage Desk"/);
+  assert.match(enLocaleSource, /"usage_desk_claude_title": "Claude Usage Desk"/);
 });
 
 test('usage desk chart grid fills the scroll viewport', async () => {

@@ -1148,12 +1148,15 @@
     "codex_features_stage_unsupported": "不支持"
   },
   "accounts": {
+    "usage_desk_codex_title": "Codex 用量分析",
+    "usage_desk_claude_title": "Claude 用量分析",
     "title": "账号池",
     "subtitle": "已授权的凭据资产库",
     "add_account": "添加第三方厂商账号",
     "header_actions_menu": "账号操作菜单",
     "refresh_accounts": "刷新账号列表",
-    "refresh_runtime": "刷新额度 / 用量 / 限流",
+    "refresh_runtime": "同步运行状态",
+    "refresh_runtime_hint": "同步运行状态：额度、用量和限流",
     "unified_compose_title_select": "选择厂商",
     "unified_compose_title_configure": "配置账号",
     "unified_compose_search_placeholder": "搜索厂商 / ID",
