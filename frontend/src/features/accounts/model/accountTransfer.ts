@@ -4,6 +4,13 @@ export interface UploadFilePayload {
 }
 
 export const ACCOUNT_CARD_IMPORT_SCHEMA = 'gettokens.account-card.v1';
+export const ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT = 224;
+export const ACCOUNT_IMPORT_QUEUE_OVERSCAN = 4;
+const ZIP_EOCD_SIGNATURE = 0x06054b50;
+const ZIP_CENTRAL_DIRECTORY_SIGNATURE = 0x02014b50;
+const ZIP_LOCAL_FILE_SIGNATURE = 0x04034b50;
+const ZIP_MAX_EOCD_SEARCH_BYTES = 65557;
+const ZIP_JSON_ENTRY_LIMIT = 1000;
 
 export interface AccountCardImportPayload {
   schema: typeof ACCOUNT_CARD_IMPORT_SCHEMA;
@@ -216,6 +223,57 @@ export function resolveAccountImportPayloadPreview(item: AccountImportPayloadIte
   return normalizeAccountImportPreview(redactSensitiveAccountImportPreview(JSON.stringify(item, null, 2)));
 }
 
+export interface AccountImportQueueRenderWindow {
+  startIndex: number;
+  endIndex: number;
+  visibleCount: number;
+  topOffset: number;
+  totalHeight: number;
+}
+
+export function resolveAccountImportQueueRenderWindow({
+  itemCount,
+  scrollTop,
+  viewportHeight,
+  itemHeight = ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT,
+  overscan = ACCOUNT_IMPORT_QUEUE_OVERSCAN,
+}: {
+  itemCount: number;
+  scrollTop: number;
+  viewportHeight: number;
+  itemHeight?: number;
+  overscan?: number;
+}): AccountImportQueueRenderWindow {
+  const safeItemCount = Math.max(0, Math.floor(itemCount));
+  const safeItemHeight = Math.max(1, Math.floor(itemHeight));
+  const safeViewportHeight = Math.max(safeItemHeight, Math.floor(viewportHeight));
+  const safeScrollTop = Math.max(0, Math.floor(scrollTop));
+  const safeOverscan = Math.max(0, Math.floor(overscan));
+
+  if (safeItemCount === 0) {
+    return {
+      startIndex: 0,
+      endIndex: 0,
+      visibleCount: 0,
+      topOffset: 0,
+      totalHeight: 0,
+    };
+  }
+
+  const firstVisibleIndex = Math.floor(safeScrollTop / safeItemHeight);
+  const viewportItemCount = Math.ceil(safeViewportHeight / safeItemHeight);
+  const startIndex = Math.max(0, firstVisibleIndex - safeOverscan);
+  const endIndex = Math.min(safeItemCount, firstVisibleIndex + viewportItemCount + safeOverscan);
+
+  return {
+    startIndex,
+    endIndex,
+    visibleCount: endIndex - startIndex,
+    topOffset: startIndex * safeItemHeight,
+    totalHeight: safeItemCount * safeItemHeight,
+  };
+}
+
 function parseSingleAccountImportPayload(parsed: unknown): ParsedAccountCardImport | null {
   const copiedAccount = parseAccountCardImportPayload(parsed);
   if (copiedAccount) {
@@ -395,31 +453,155 @@ export function encodeUTF8Base64(value: string) {
   return window.btoa(unescape(encodeURIComponent(value)));
 }
 
-export async function readUploadFiles(files: FileList) {
-  return Promise.all(
-    Array.from(files).map(
-      (file) =>
-        new Promise<UploadFilePayload>((resolve, reject) => {
-          const reader = new FileReader();
+export async function readUploadFiles(files: FileList | File[]) {
+  const payloads = await Promise.all(Array.from(files).map((file) => readUploadFile(file)));
+  return payloads.flat();
+}
 
-          reader.onload = () => {
-            const result = reader.result;
-            if (typeof result !== 'string') {
-              reject(new Error('文件读取失败'));
-              return;
-            }
+async function readUploadFile(file: File): Promise<UploadFilePayload[]> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (isZipUploadFile(file, bytes)) {
+    return readZipArchiveJSONFiles(bytes, file.name);
+  }
+  return [
+    {
+      name: file.name,
+      contentBase64: bytesToBase64(bytes),
+    },
+  ];
+}
 
-            const marker = 'base64,';
-            const base64Index = result.indexOf(marker);
-            resolve({
-              name: file.name,
-              contentBase64: base64Index >= 0 ? result.slice(base64Index + marker.length) : result,
-            });
-          };
+export async function readZipArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
+  const entries = readZipArchiveEntries(bytes)
+    .filter((entry) => entry.name.toLowerCase().endsWith('.json'))
+    .slice(0, ZIP_JSON_ENTRY_LIMIT);
+  const payloads: UploadFilePayload[] = [];
+  for (const entry of entries) {
+    const content = await readZipEntryBytes(bytes, entry);
+    payloads.push({
+      name: resolveArchiveEntryUploadName(archiveName, entry.name),
+      contentBase64: bytesToBase64(content),
+    });
+  }
+  return payloads;
+}
 
-          reader.onerror = () => reject(reader.error ?? new Error('文件读取失败'));
-          reader.readAsDataURL(file);
-        })
-    )
-  );
+interface ZipArchiveEntry {
+  name: string;
+  compressionMethod: number;
+  compressedSize: number;
+  localHeaderOffset: number;
+}
+
+function readZipArchiveEntries(bytes: Uint8Array): ZipArchiveEntry[] {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const eocdOffset = findZipEndOfCentralDirectory(view);
+  if (eocdOffset < 0) {
+    throw new Error('压缩包读取失败：未找到 ZIP 目录');
+  }
+
+  const totalEntries = view.getUint16(eocdOffset + 10, true);
+  const centralDirectoryOffset = view.getUint32(eocdOffset + 16, true);
+  const entries: ZipArchiveEntry[] = [];
+  let offset = centralDirectoryOffset;
+
+  for (let index = 0; index < totalEntries && offset + 46 <= bytes.length; index += 1) {
+    if (view.getUint32(offset, true) !== ZIP_CENTRAL_DIRECTORY_SIGNATURE) {
+      break;
+    }
+
+    const generalPurposeFlags = view.getUint16(offset + 8, true);
+    const compressionMethod = view.getUint16(offset + 10, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const fileNameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    const localHeaderOffset = view.getUint32(offset + 42, true);
+    const nameStart = offset + 46;
+    const nameEnd = nameStart + fileNameLength;
+    const name = decodeZipText(bytes.slice(nameStart, nameEnd), (generalPurposeFlags & 0x0800) !== 0);
+
+    if (name && !name.endsWith('/') && !name.startsWith('__MACOSX/') && (generalPurposeFlags & 0x0001) === 0) {
+      entries.push({
+        name,
+        compressionMethod,
+        compressedSize,
+        localHeaderOffset,
+      });
+    }
+
+    offset = nameEnd + extraLength + commentLength;
+  }
+
+  return entries;
+}
+
+function findZipEndOfCentralDirectory(view: DataView) {
+  const start = Math.max(0, view.byteLength - ZIP_MAX_EOCD_SEARCH_BYTES);
+  for (let offset = view.byteLength - 22; offset >= start; offset -= 1) {
+    if (view.getUint32(offset, true) === ZIP_EOCD_SIGNATURE) {
+      return offset;
+    }
+  }
+  return -1;
+}
+
+async function readZipEntryBytes(bytes: Uint8Array, entry: ZipArchiveEntry): Promise<Uint8Array> {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const offset = entry.localHeaderOffset;
+  if (offset + 30 > bytes.length || view.getUint32(offset, true) !== ZIP_LOCAL_FILE_SIGNATURE) {
+    throw new Error(`压缩包读取失败：${entry.name}`);
+  }
+
+  const fileNameLength = view.getUint16(offset + 26, true);
+  const extraLength = view.getUint16(offset + 28, true);
+  const dataStart = offset + 30 + fileNameLength + extraLength;
+  const compressed = bytes.slice(dataStart, dataStart + entry.compressedSize);
+
+  if (entry.compressionMethod === 0) {
+    return compressed;
+  }
+  if (entry.compressionMethod === 8) {
+    return inflateRawDeflate(compressed, entry.name);
+  }
+  throw new Error(`压缩包读取失败：暂不支持 ${entry.name} 的压缩方式`);
+}
+
+async function inflateRawDeflate(bytes: Uint8Array, entryName: string): Promise<Uint8Array> {
+  const DecompressionStreamCtor = globalThis.DecompressionStream;
+  if (typeof DecompressionStreamCtor !== 'function') {
+    throw new Error(`压缩包读取失败：当前浏览器暂不支持解压 ${entryName}`);
+  }
+  const compressedBuffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(compressedBuffer).set(bytes);
+  const stream = new Blob([compressedBuffer]).stream().pipeThrough(new DecompressionStreamCtor('deflate-raw'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+function isZipUploadFile(file: File, bytes: Uint8Array) {
+  const name = file.name.toLowerCase();
+  return name.endsWith('.zip') || (bytes[0] === 0x50 && bytes[1] === 0x4b);
+}
+
+function resolveArchiveEntryUploadName(archiveName: string, entryName: string) {
+  const archive = String(archiveName || 'archive.zip').trim() || 'archive.zip';
+  const normalizedEntry = String(entryName || 'entry.json').replace(/^\/+/, '').trim() || 'entry.json';
+  return `${archive}:${normalizedEntry}`;
+}
+
+function decodeZipText(bytes: Uint8Array, utf8: boolean) {
+  if (utf8) {
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+  return Array.from(bytes, (byte) => String.fromCharCode(byte)).join('');
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.slice(offset, offset + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
 }

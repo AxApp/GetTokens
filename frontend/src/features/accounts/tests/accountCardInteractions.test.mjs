@@ -110,12 +110,16 @@ test('accounts import modal opens with app-local copied account payload when ava
 });
 
 test('account import queue candidates render with account card styling', async () => {
-  const source = await readFile(new URL('../components/AccountImportModal.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/AccountImportModal.tsx', import.meta.url), 'utf8');
+  const queueSource = await readFile(new URL('../components/AccountImportQueueList.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /data-account-card/);
-  assert.match(source, /className="card-swiss[^"]*flex[^"]*p-0"/);
-  assert.match(source, /resolveAccountImportPayloadPreview\(item\.payload\)/);
-  assert.doesNotMatch(source, /grid-cols-\[2\.25rem_minmax\(0,1fr\)_auto\]/);
+  assert.match(modalSource, /<AccountImportQueueList/);
+  assert.match(queueSource, /data-account-card/);
+  assert.match(queueSource, /data-account-import-queue-viewport/);
+  assert.match(queueSource, /data-account-import-queue-rendered-item/);
+  assert.match(queueSource, /resolveAccountImportQueueRenderWindow/);
+  assert.match(queueSource, /resolveAccountImportPayloadPreview\(item\.payload\)/);
+  assert.doesNotMatch(queueSource, /grid-cols-\[2\.25rem_minmax\(0,1fr\)_auto\]/);
 });
 
 test('account import modal uses merged input panel beside account preview', async () => {

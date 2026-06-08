@@ -1,22 +1,16 @@
 import { useMemo, useRef, useState } from 'react';
-import { ClipboardPaste, FilePlus, Loader2, Trash2, Upload } from 'lucide-react';
+import { ClipboardPaste, FilePlus, Loader2, Upload } from 'lucide-react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import { toErrorMessage } from '../../../utils/error';
 import {
   parseAccountImportPayloads,
   readUploadFiles,
-  resolveAccountImportPayloadPreview,
   type AccountImportPayloadItem,
 } from '../model/accountTransfer';
 import type { TextInputEvent, Translator } from '../model/types';
+import AccountImportQueueList, { type AccountImportQueueItem } from './AccountImportQueueList';
 
 type AccountImportSource = 'file' | 'paste';
-
-interface AccountImportQueueItem {
-  id: string;
-  source: AccountImportSource;
-  payload: AccountImportPayloadItem;
-}
 
 interface AccountImportModalProps {
   t: Translator;
@@ -289,49 +283,12 @@ export default function AccountImportModal({
               {t('accounts.import_account_queue_empty')}
             </div>
           ) : (
-            <div className="grid gap-3 bg-[var(--bg-surface)] p-4">
-              {queueItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  data-account-card
-                  className="card-swiss relative flex min-w-0 max-w-full flex-col overflow-visible bg-[var(--bg-main)] p-0"
-                >
-                  <div className="grid gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <span className="grid h-9 w-9 shrink-0 place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] font-mono text-[length:var(--font-size-ui-xs)] font-black">
-                        {index + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="truncate text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-primary)]">
-                          {resolveQueueItemTitle(item.payload)}
-                        </div>
-                        <div className="mt-1 flex min-w-0 flex-wrap gap-2">
-                          <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                            {item.source === 'file' ? t('accounts.import_account_source_file') : t('accounts.import_account_source_paste')}
-                          </span>
-                          <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
-                            {resolveQueueItemKind(item.payload)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setQueueItems((prev) => prev.filter((candidate) => candidate.id !== item.id))}
-                      disabled={submitting}
-                      className="justify-self-end border-0 bg-transparent p-1 text-[var(--color-status-danger)] transition-transform active:scale-95 disabled:opacity-45"
-                      aria-label={t('accounts.import_account_remove_item')}
-                      title={t('accounts.import_account_remove_item')}
-                    >
-                      <Trash2 className="h-4 w-4" strokeWidth={3} />
-                    </button>
-                  </div>
-                  <pre className="max-h-28 overflow-auto whitespace-pre-wrap break-words border-0 bg-[var(--bg-surface)] px-4 py-3 font-mono text-[length:var(--font-size-ui-2xs)] leading-relaxed text-[var(--text-secondary)]">
-                    {resolveAccountImportPayloadPreview(item.payload)}
-                  </pre>
-                </div>
-              ))}
-            </div>
+            <AccountImportQueueList
+              items={queueItems}
+              submitting={submitting}
+              t={t}
+              onRemove={(id) => setQueueItems((prev) => prev.filter((candidate) => candidate.id !== id))}
+            />
           )}
         </section>
       </div>
@@ -350,26 +307,6 @@ function createQueueItem(
     source,
     payload,
   };
-}
-
-function resolveQueueItemKind(item: AccountImportPayloadItem) {
-  if (item.type === 'upload-file' || item.type === 'auth-file') {
-    return 'AUTH FILE';
-  }
-  if (item.type === 'codex-api-key') {
-    return 'API KEY';
-  }
-  return 'PROVIDER';
-}
-
-function resolveQueueItemTitle(item: AccountImportPayloadItem) {
-  if (item.type === 'upload-file' || item.type === 'auth-file') {
-    return item.name;
-  }
-  if (item.type === 'codex-api-key') {
-    return item.label || 'Codex API Key';
-  }
-  return item.name || 'OpenAI Compatible Provider';
 }
 
 function formatQueueSummary(

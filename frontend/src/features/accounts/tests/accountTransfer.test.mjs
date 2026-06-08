@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 
 import {
   ACCOUNT_CARD_IMPORT_SCHEMA,
+  ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT,
   buildAccountsExportFilename,
   parseAccountCardImportPayload,
   parseAccountImportPayloads,
+  readZipArchiveJSONFiles,
+  resolveAccountImportQueueRenderWindow,
   resolveAccountImportPayloadPreview,
   resolveCopiedAuthFileName,
   resolveCopiedOpenAICompatibleProviderName,
@@ -277,6 +280,36 @@ test('resolveAccountImportPayloadPreview shows parsed card payload content', () 
   assert.doesNotMatch(preview, /sk-preview-deepseek/);
 });
 
+test('readZipArchiveJSONFiles scans json files inside upload archives', async () => {
+  const archive = buildStoredZipArchive([
+    ['auth/codex-auth.json', '{ "type": "codex", "access_token": "zip-token" }'],
+    ['notes/readme.txt', 'not imported'],
+    ['nested/provider.JSON', '{ "schema": "gettokens.account-card.v1" }'],
+  ]);
+
+  const payloads = await readZipArchiveJSONFiles(archive, 'accounts.zip');
+
+  assert.deepEqual(payloads.map((payload) => payload.name), [
+    'accounts.zip:auth/codex-auth.json',
+    'accounts.zip:nested/provider.JSON',
+  ]);
+  assert.equal(Buffer.from(payloads[0].contentBase64, 'base64').toString('utf8'), '{ "type": "codex", "access_token": "zip-token" }');
+});
+
+test('resolveAccountImportQueueRenderWindow keeps large import queues virtualized by scroll viewport', () => {
+  const renderWindow = resolveAccountImportQueueRenderWindow({
+    itemCount: 1000,
+    scrollTop: ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT * 500,
+    viewportHeight: ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT * 3,
+  });
+
+  assert.equal(renderWindow.startIndex, 496);
+  assert.equal(renderWindow.endIndex, 507);
+  assert.equal(renderWindow.visibleCount, 11);
+  assert.equal(renderWindow.topOffset, ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT * 496);
+  assert.equal(renderWindow.totalHeight, ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT * 1000);
+});
+
 test('resolveCopiedAuthFileName creates a new auth-file asset name when importing into existing accounts', () => {
   assert.equal(resolveCopiedAuthFileName('codex-auth.json', []), 'codex-auth.json');
   assert.equal(resolveCopiedAuthFileName('codex-auth.json', ['codex-auth.json']), 'codex-auth #2.json');
@@ -300,3 +333,79 @@ test('resolveNumberedDuplicateTitle starts from #2 and keeps incrementing from t
   assert.equal(resolveNumberedDuplicateTitle('deepseek', ['deepseek', 'deepseek #2']), 'deepseek #3');
   assert.equal(resolveNumberedDuplicateTitle('deepseek #2', ['deepseek', 'deepseek #2']), 'deepseek #3');
 });
+
+function buildStoredZipArchive(entries) {
+  const encoder = new TextEncoder();
+  const chunks = [];
+  const centralChunks = [];
+  let offset = 0;
+
+  function pushUint16(target, value) {
+    target.push(value & 0xff, (value >> 8) & 0xff);
+  }
+
+  function pushUint32(target, value) {
+    target.push(value & 0xff, (value >> 8) & 0xff, (value >> 16) & 0xff, (value >> 24) & 0xff);
+  }
+
+  for (const [name, content] of entries) {
+    const nameBytes = encoder.encode(name);
+    const contentBytes = encoder.encode(content);
+    const localOffset = offset;
+    const local = [];
+    pushUint32(local, 0x04034b50);
+    pushUint16(local, 20);
+    pushUint16(local, 0x0800);
+    pushUint16(local, 0);
+    pushUint16(local, 0);
+    pushUint16(local, 0);
+    pushUint32(local, 0);
+    pushUint32(local, contentBytes.length);
+    pushUint32(local, contentBytes.length);
+    pushUint16(local, nameBytes.length);
+    pushUint16(local, 0);
+    chunks.push(Uint8Array.from(local), nameBytes, contentBytes);
+    offset += local.length + nameBytes.length + contentBytes.length;
+
+    const central = [];
+    pushUint32(central, 0x02014b50);
+    pushUint16(central, 20);
+    pushUint16(central, 20);
+    pushUint16(central, 0x0800);
+    pushUint16(central, 0);
+    pushUint16(central, 0);
+    pushUint16(central, 0);
+    pushUint32(central, 0);
+    pushUint32(central, contentBytes.length);
+    pushUint32(central, contentBytes.length);
+    pushUint16(central, nameBytes.length);
+    pushUint16(central, 0);
+    pushUint16(central, 0);
+    pushUint16(central, 0);
+    pushUint16(central, 0);
+    pushUint32(central, 0);
+    pushUint32(central, localOffset);
+    centralChunks.push(Uint8Array.from(central), nameBytes);
+  }
+
+  const centralOffset = offset;
+  const centralSize = centralChunks.reduce((size, chunk) => size + chunk.length, 0);
+  const eocd = [];
+  pushUint32(eocd, 0x06054b50);
+  pushUint16(eocd, 0);
+  pushUint16(eocd, 0);
+  pushUint16(eocd, entries.length);
+  pushUint16(eocd, entries.length);
+  pushUint32(eocd, centralSize);
+  pushUint32(eocd, centralOffset);
+  pushUint16(eocd, 0);
+
+  const totalSize = chunks.concat(centralChunks, [Uint8Array.from(eocd)]).reduce((size, chunk) => size + chunk.length, 0);
+  const out = new Uint8Array(totalSize);
+  let cursor = 0;
+  for (const chunk of chunks.concat(centralChunks, [Uint8Array.from(eocd)])) {
+    out.set(chunk, cursor);
+    cursor += chunk.length;
+  }
+  return out;
+}
