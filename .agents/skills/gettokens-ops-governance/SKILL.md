@@ -10,9 +10,9 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 ## 1. Wails Dev Loop & Restart Rules
 - **Restart**: Always restart the app if Go files, Wails bindings, or sidecar logic change. Restart for Svelte/CSS if HMR shows stale results.
 - **Readiness**: Sidecar `ready` status is required for account data flow. UI mount success does not guarantee data flow.
-- **Verification**: Only claim a fix is live after verifying it in the actual desktop app window, not just the browser.
+- **Verification**: Match validation to the risk surface. Native macOS/Wails runtime changes need real dev App validation; ordinary frontend/backend/sidecar fixes may use automated tests, Wails build, browser/DOM checks, dev bridge, or API state evidence.
 - **Evidence gate before fixes**: Do not enter implementation from an unverified backlog item or intuition. Before a repair round starts, write an evidence matrix in the matching `space` or plan: issue source, current code/UI location, observed symptom or missing-state proof, expected acceptance path, and what evidence would disprove the candidate. Items without this evidence stay in research/planning and are not patched.
-- **Real dev App hand-click acceptance**: Every repair round must end with a real dev App hand-click check using the repository-built app and `GETTOKENS_APP_PROFILE=dev`. Walk the round's key entry point in the actual macOS/Wails window or menu bar, save screenshots under the matching `space`, and record the path plus result in acceptance docs. Automated tests, browser previews, hash assertions, and Wails build are preconditions, not substitutes. If the desktop check is blocked, document the blocker and remaining risk explicitly.
+- **Real dev App hand-click acceptance**: Do not make real desktop hand-click a blanket requirement. Use it only for macOS menu bar, window lifecycle, status item, LaunchServices, native runtime, Wails binding visibility, or when the user explicitly requests it in the current round. Avoid low-signal coordinate clicking and desktop focus churn for ordinary repair rounds.
 - **Binding Boundary**: Wails binds the root `main.App`, not `internal/wailsapp.App`. Any new Wails-facing method or DTO added under `internal/wailsapp` must also be exposed through root-level `app.go`, `app_types.go`, and mappers as needed before regenerating bindings; otherwise `wails dev` will remove the frontend export.
 - **Generated Binding Hygiene**: Run Wails through `scripts/wails-cli.sh`, not raw `wails`, for local dev/build. The wrapper normalizes `frontend/wailsjs` trailing whitespace after generation so `frontend/wailsjs/go/models.ts` does not stay dirty from generator-only formatting drift.
 - **Startup Config Apply**: If a setting writes sidecar `config.yaml` while the sidecar is not yet `ready`, persist the local config first and mark the change as pending. The next `ready` callback must apply the latest config through the management API and clear the pending marker only after a successful response; failures should keep the marker for the next ready retry.
@@ -205,7 +205,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Only claim "可分发 DMG 已发布" after the DMG-level Gatekeeper, stapler, app signature, architecture, and bundle metadata checks all pass.
 
 ## Acceptance Checklist
-- App launches with latest code and reaches `ready` state.
+- If the change touches native/Wails runtime behavior, the dev App launches with latest code and reaches `ready` state.
 - Space boundaries are clear; screenshots follow naming rules.
 - Durable knowledge is written to the correct directory.
 - New skills or rules are distilled without bloating governance files.

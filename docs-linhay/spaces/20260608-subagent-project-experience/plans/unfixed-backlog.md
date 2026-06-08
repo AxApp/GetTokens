@@ -4,7 +4,7 @@
 
 - 日期：2026-06-08
 - 来源：三份第 1 轮体验报告、`evaluation-and-fixes*.md`、`final-acceptance.md`
-- 当前判断：第 1-9 轮已修复低风险项与第一批高证据项；以下为仍未修复、仅部分修复或需要证据复核的事项。
+- 当前判断：第 1-10 轮已修复低风险项与第一批高证据项；真实 dev App 手点不再作为每轮硬门槛，后续按风险选择验收证据。
 
 ## 产品/体验决策类
 
@@ -25,7 +25,7 @@
 | E1 | Git Skill 安装入口仍停留在浏览器预览/计划层，没有真实安装闭环 | 未修复 | 确认 Git skill install 是否进入近期扩展工作台范围 |
 | E11 | openai-compatible 模型映射与 Codex 扩展/配置页缺少跳转闭环 | 未修复 | 定义跨页跳转、回退和上下文保留 |
 | E12 | deep-link import 与 Codex config apply 没有进入扩展工作台可见审计面 | 未修复 | 定义审计记录、展示范围和敏感字段规则 |
-| E15 | 缺少 MCP “运行前诊断”按钮 | 已修复 | 第 10 轮补 server 级只读 preflight；自动化、Wails build 与 Wails dev bridge 辅助交互验收通过，真实桌面窗口手点因 dev App 窗口不可枚举阻塞 |
+| E15 | 缺少 MCP “运行前诊断”按钮 | 已修复 | 第 10 轮补 server 级只读 preflight；自动化、Wails build 与 Wails dev bridge 辅助交互验收通过 |
 
 ## 技术方案类
 
@@ -57,7 +57,7 @@
 
 | ID | 问题 | 当前状态 | 建议下一步 |
 | --- | --- | --- | --- |
-| D1 | 本仓 dev App 桌面窗口无法完成真实手点，构建产物/Wails dev 只显示启动背景或无可枚举窗口控件 | 证据复核 | 第 10 轮真实桌面窗口验收阻塞；优先诊断 Wails 窗口显示、LaunchServices/AX 枚举、menu bar reopen 与当前桌面 Space/透明窗口配置 |
+| D1 | 本仓 dev App 桌面窗口无法完成真实手点，构建产物/Wails dev 只显示启动背景或无可枚举窗口控件 | 不再作为每轮阻塞项 | 用户已取消每轮真实点击验收；仅在 native/Wails 桌面行为相关需求中按需复核 |
 | P6 | Usage Desk 的数据源文案偏研发，运营用户难以判断该看哪一个 | 未修复 | 结合 Usage Desk 信息架构一起改文案和入口 |
 | P15 | 账号禁用失败提示复用 `deleteError`，错误归因会串到删除语义 | 已修复 | 第 8 轮补独立 `accountActionErrors` 与失败文案测试 |
 | R2 | Channel routing 历史事件只有数量，缺少过滤原因摘要 | 已修复 | 第 8 轮补 `filteredReasonCounts` 与前端摘要 |
@@ -74,7 +74,6 @@
 
 ## 建议修复顺序
 
-1. `D1` dev App 真实桌面窗口不可手点：第 10 轮已形成硬证据，且它会阻塞后续每轮真实手点验收，下一轮应优先定位。
-2. `P7/P6` Usage Desk 分面与数据源文案：进入证据复核，先明确缺的是可操作分面 UI、数据归因还是文案层。
-3. `P11` Live Sessions 运营摘要：进入证据复核，结合第 10 轮历史窗口结果决定是否做 compact operational strip。
-4. `P3/P4/P5/P12` 账号池/侧边栏运营入口：属于产品信息架构项，需要先补真实 dev UI 证据和入口优先级方案。
+1. `P7/P6` Usage Desk 分面与数据源文案：进入证据复核，先明确缺的是可操作分面 UI、数据归因还是文案层。
+2. `P11` Live Sessions 运营摘要：进入证据复核，结合第 10 轮历史窗口结果决定是否做 compact operational strip。
+3. `P3/P4/P5/P12` 账号池/侧边栏运营入口：属于产品信息架构项，需要先补真实 dev UI 证据和入口优先级方案。

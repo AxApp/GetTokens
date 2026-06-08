@@ -61,7 +61,9 @@
 - 第 8 轮第一修复包验收：`plans/round-8-first-fix-acceptance.md`
 - 第 9 轮入口诊断方案：`plans/round-9-entry-diagnostics-plan.md`
 - 第 9 轮入口诊断验收：`plans/round-9-entry-diagnostics-acceptance.md`
+- 第 10 轮证据 backlog 修复方案：`plans/round-10-evidence-backlog-plan.md`
+- 第 10 轮证据 backlog 修复验收：`plans/round-10-evidence-backlog-acceptance.md`
 
 ## 当前状态
-- 状态：round-9-real-dev-app-accepted
+- 状态：round-10-evidence-backlog-complete
 - 最近更新：2026-06-08
