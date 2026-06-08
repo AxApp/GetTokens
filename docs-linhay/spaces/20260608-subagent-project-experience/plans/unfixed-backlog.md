@@ -4,7 +4,7 @@
 
 - 日期：2026-06-08
 - 来源：三份第 1 轮体验报告、`evaluation-and-fixes*.md`、`final-acceptance.md`
-- 当前判断：第 1-10 轮已修复低风险项与第一批高证据项；真实 dev App 手点不再作为每轮硬门槛，后续按风险选择验收证据。
+- 当前判断：第 1-11 轮已修复低风险项与第一批高证据项；真实 dev App 手点不再作为每轮硬门槛，后续按风险选择验收证据。
 
 ## 产品/体验决策类
 
@@ -16,7 +16,7 @@
 | P3 | 账号筛选偏能力字段，缺少运营巡检视图 | 未修复 | 定义运营巡检视图字段、排序和筛选目标 |
 | P4 | 批量选择工具条只在进入选择模式后出现，发现成本偏高 | 未修复 | 决定是否常驻批量入口或增加显性入口 |
 | P5 | 账号操作入口过于集中在菜单，新增/导入/登录路径缺少主次优先级 | 未修复 | 重新排账号新增/导入/OAuth 登录的主入口层级 |
-| P7 | Usage Desk 缺少 provider / account / model 的运营分面入口 | 未修复 | 定义 Usage Desk 分面维度与 URL/hash 状态 |
+| P7 | Usage Desk 缺少 provider / account / model 的运营分面入口 | 已修复 | 第 11 轮补 Observed `Provider/Account/Model` 与 Projected `Provider/Project/Model` 分面；点击过滤当前图表、摘要和明细 |
 | P8 | Usage Desk 索引刷新/重建动作缺少影响范围说明 | 已修复 | 第 9 轮补动作影响范围说明，并明确不删除原始 session 文件 |
 | P11 | Live Sessions 项目/会话切换入口偏窄，缺少运营摘要 | 未修复 | 设计项目维度摘要和会话维度切换路径 |
 | P12 | 侧边栏二级菜单靠 hover/pin，Codex 高频入口排序不贴近日常运营 | 未修复 | 决定 Codex 高频入口排序和固定展示策略 |
@@ -58,7 +58,7 @@
 | ID | 问题 | 当前状态 | 建议下一步 |
 | --- | --- | --- | --- |
 | D1 | 本仓 dev App 桌面窗口无法完成真实手点，构建产物/Wails dev 只显示启动背景或无可枚举窗口控件 | 不再作为每轮阻塞项 | 用户已取消每轮真实点击验收；仅在 native/Wails 桌面行为相关需求中按需复核 |
-| P6 | Usage Desk 的数据源文案偏研发，运营用户难以判断该看哪一个 | 未修复 | 结合 Usage Desk 信息架构一起改文案和入口 |
+| P6 | Usage Desk 的数据源文案偏研发，运营用户难以判断该看哪一个 | 已修复 | 第 11 轮 source 按钮和说明改为 `Sidecar 归因` / `本地文件投影`，明确运行态归因与本地只读投影边界 |
 | P15 | 账号禁用失败提示复用 `deleteError`，错误归因会串到删除语义 | 已修复 | 第 8 轮补独立 `accountActionErrors` 与失败文案测试 |
 | R2 | Channel routing 历史事件只有数量，缺少过滤原因摘要 | 已修复 | 第 8 轮补 `filteredReasonCounts` 与前端摘要 |
 | R3 | Rate-limit 规则仍有 legacy account key，运行态会静默失效 | 已修复 | 第 8 轮补 legacy key 只读检测与提示 |
@@ -74,6 +74,6 @@
 
 ## 建议修复顺序
 
-1. `P7/P6` Usage Desk 分面与数据源文案：进入证据复核，先明确缺的是可操作分面 UI、数据归因还是文案层。
-2. `P11` Live Sessions 运营摘要：进入证据复核，结合第 10 轮历史窗口结果决定是否做 compact operational strip。
-3. `P3/P4/P5/P12` 账号池/侧边栏运营入口：属于产品信息架构项，需要先补真实 dev UI 证据和入口优先级方案。
+1. `P11` Live Sessions 运营摘要：进入证据复核，结合第 10 轮历史窗口结果决定是否做 compact operational strip。
+2. `P3/P4/P5/P12` 账号池/侧边栏运营入口：属于产品信息架构项，需要先补 UI/代码证据和入口优先级方案。
+3. `R1/R4/R5` sidecar 热路径技术项：需要先补技术方案、失败测试和接口边界，不直接凭 backlog 开修。

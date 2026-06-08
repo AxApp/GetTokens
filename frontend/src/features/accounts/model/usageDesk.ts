@@ -6,6 +6,27 @@ import type {
 import type { UsageDeskWorkspace } from '../../../types';
 
 export type UsageDeskSource = 'observed' | 'projected';
+export type UsageDeskFacetKind = 'provider' | 'account' | 'model';
+
+export interface UsageDeskFacetFilters {
+  provider?: string;
+  account?: string;
+  model?: string;
+}
+
+export interface UsageDeskFacetOption {
+  kind: UsageDeskFacetKind;
+  value: string;
+  label: string;
+  count: number;
+  active: boolean;
+}
+
+export interface UsageDeskFacetGroup {
+  kind: UsageDeskFacetKind;
+  label: string;
+  options: UsageDeskFacetOption[];
+}
 
 export interface UsageDeskObservedDetail {
   timestamp: string;
@@ -528,6 +549,124 @@ function normalizeUsageDeskMetricValue(value: unknown): number {
   return Number.isFinite(normalized) && normalized > 0 ? normalized : 0;
 }
 
+function normalizeUsageDeskFacetValue(value: unknown, fallback: string): string {
+  const normalized = typeof value === 'string' ? value.trim() : '';
+  return normalized || fallback;
+}
+
+export function normalizeUsageDeskFacetFilters(filters?: UsageDeskFacetFilters | null): Required<UsageDeskFacetFilters> {
+  return {
+    provider: typeof filters?.provider === 'string' ? filters.provider.trim() : '',
+    account: typeof filters?.account === 'string' ? filters.account.trim() : '',
+    model: typeof filters?.model === 'string' ? filters.model.trim() : '',
+  };
+}
+
+function resolveObservedFacetValue(detail: UsageDeskObservedDetail, kind: UsageDeskFacetKind): string {
+  if (kind === 'provider') {
+    return normalizeUsageDeskFacetValue(detail.provider, 'unknown');
+  }
+  if (kind === 'model') {
+    return normalizeUsageDeskFacetValue(detail.model, 'unknown-model');
+  }
+  return normalizeUsageDeskFacetValue(detail.accountKey || detail.attributionKey, 'unattributed');
+}
+
+function resolveProjectedFacetValue(detail: UsageDeskProjectedDetail, kind: UsageDeskFacetKind): string {
+  if (kind === 'provider') {
+    return normalizeUsageDeskFacetValue(detail.provider, 'unknown');
+  }
+  if (kind === 'model') {
+    return normalizeUsageDeskFacetValue(detail.model, 'unknown-model');
+  }
+  return normalizeUsageDeskFacetValue(detail.projectName || detail.sessionID, 'unknown-project');
+}
+
+function createUsageDeskFacetGroups<T>(
+  details: T[],
+  filters: UsageDeskFacetFilters | undefined,
+  groupLabels: Record<UsageDeskFacetKind, string>,
+  resolveValue: (detail: T, kind: UsageDeskFacetKind) => string,
+  resolveCount: (detail: T) => number,
+): UsageDeskFacetGroup[] {
+  const normalizedFilters = normalizeUsageDeskFacetFilters(filters);
+  const kinds: UsageDeskFacetKind[] = ['provider', 'account', 'model'];
+
+  return kinds.map((kind) => {
+    const countByValue = new Map<string, number>();
+    details.forEach((detail) => {
+      const value = resolveValue(detail, kind);
+      countByValue.set(value, (countByValue.get(value) ?? 0) + Math.max(0, resolveCount(detail)));
+    });
+    const options = Array.from(countByValue.entries())
+      .map(([value, count]) => ({
+        kind,
+        value,
+        label: value,
+        count,
+        active: normalizedFilters[kind] === value,
+      }))
+      .sort((left, right) => {
+        if (right.count !== left.count) {
+          return right.count - left.count;
+        }
+        return left.label.localeCompare(right.label);
+      });
+    return {
+      kind,
+      label: groupLabels[kind],
+      options,
+    };
+  });
+}
+
+function filterUsageDeskFacetDetails<T>(
+  details: T[],
+  filters: UsageDeskFacetFilters | undefined,
+  resolveValue: (detail: T, kind: UsageDeskFacetKind) => string,
+): T[] {
+  const normalizedFilters = normalizeUsageDeskFacetFilters(filters);
+  return details.filter((detail) => {
+    if (normalizedFilters.provider && resolveValue(detail, 'provider') !== normalizedFilters.provider) {
+      return false;
+    }
+    if (normalizedFilters.account && resolveValue(detail, 'account') !== normalizedFilters.account) {
+      return false;
+    }
+    if (normalizedFilters.model && resolveValue(detail, 'model') !== normalizedFilters.model) {
+      return false;
+    }
+    return true;
+  });
+}
+
+export function buildUsageDeskObservedFacetGroups(
+  usageData: unknown,
+  filters?: UsageDeskFacetFilters,
+  workspace: UsageDeskWorkspace = 'codex',
+): UsageDeskFacetGroup[] {
+  return createUsageDeskFacetGroups(
+    collectUsageDeskObservedDetails(usageData, workspace),
+    filters,
+    { provider: 'Provider', account: 'Account', model: 'Model' },
+    resolveObservedFacetValue,
+    (detail) => detail.requestCount,
+  );
+}
+
+export function buildUsageDeskProjectedFacetGroups(
+  payload: unknown,
+  filters?: UsageDeskFacetFilters,
+): UsageDeskFacetGroup[] {
+  return createUsageDeskFacetGroups(
+    collectUsageDeskProjectedDetails(payload),
+    filters,
+    { provider: 'Provider', account: 'Project', model: 'Model' },
+    resolveProjectedFacetValue,
+    (detail) => detail.requestCount,
+  );
+}
+
 function formatRequestedModelsLabel(models: unknown): string {
   if (!Array.isArray(models)) {
     return '';
@@ -763,8 +902,13 @@ export function buildUsageDeskObservedSnapshot(
   selectedDayKey?: string | null,
   resolution: UsageDeskResolution = '1M',
   workspace: UsageDeskWorkspace = 'codex',
+  filters?: UsageDeskFacetFilters,
 ): UsageDeskObservedSnapshot {
-  const details = collectUsageDeskObservedDetails(usageData, workspace);
+  const details = filterUsageDeskFacetDetails(
+    collectUsageDeskObservedDetails(usageData, workspace),
+    filters,
+    resolveObservedFacetValue,
+  );
   if (details.length === 0) {
     return {
       hasData: false,
@@ -1003,8 +1147,13 @@ export function buildUsageDeskProjectedSnapshot(
   payload: unknown,
   selectedDayKey?: string | null,
   resolution: UsageDeskResolution = '1M',
+  filters?: UsageDeskFacetFilters,
 ): UsageDeskProjectedSnapshot {
-  const details = collectUsageDeskProjectedDetails(payload);
+  const details = filterUsageDeskFacetDetails(
+    collectUsageDeskProjectedDetails(payload),
+    filters,
+    resolveProjectedFacetValue,
+  );
   if (details.length === 0) {
     return {
       hasData: false,

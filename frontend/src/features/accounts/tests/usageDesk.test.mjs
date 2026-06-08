@@ -10,8 +10,10 @@ import {
   buildUsageDeskProjectedSnapshot,
   buildUsageDeskProjectedProjectUsageRows,
   buildUsageDeskProjectedSummaryItems,
+  buildUsageDeskObservedFacetGroups,
   collectUsageDeskObservedDetails,
   collectUsageDeskProjectedDetails,
+  buildUsageDeskProjectedFacetGroups,
   formatUsageDeskChartValue,
   readUsageDeskProjectedStats,
   resolveUsageDeskCurveAnimationConfig,
@@ -283,6 +285,151 @@ test('collectUsageDeskObservedDetails supports sidecar attribution buckets', () 
   assert.equal(details[0].cachedInputTokens, 80);
   assert.equal(details[0].outputTokens, 120);
   assert.equal(details[0].totalTokens, 600);
+});
+
+test('observed usage desk facets expose provider account and model filters', () => {
+  const payload = {
+    items: [
+      {
+        accountKey: 'codex-api-key:local-1',
+        attributionKey: 'auth-id:runtime-auth-1',
+        provider: 'codex',
+        requestedModels: ['gpt-5'],
+        buckets: [
+          {
+            start: '2026-04-28T06:20:00.000Z',
+            requestCount: 4,
+            failedCount: 1,
+            totalTokens: 600,
+          },
+        ],
+      },
+      {
+        accountKey: 'openai-compatible:deepseek',
+        attributionKey: 'provider:deepseek',
+        provider: 'deepseek',
+        requestedModels: ['deepseek-chat'],
+        buckets: [
+          {
+            start: '2026-04-28T06:25:00.000Z',
+            requestCount: 2,
+            failedCount: 0,
+            totalTokens: 300,
+          },
+        ],
+      },
+    ],
+    unresolved: [],
+  };
+
+  const groups = buildUsageDeskObservedFacetGroups(payload, { provider: 'codex', account: '', model: '' });
+
+  assert.deepEqual(
+    groups.map((group) => ({
+      kind: group.kind,
+      label: group.label,
+      options: group.options.map((option) => ({
+        value: option.value,
+        label: option.label,
+        count: option.count,
+        active: option.active,
+      })),
+    })),
+    [
+      {
+        kind: 'provider',
+        label: 'Provider',
+        options: [
+          { value: 'codex', label: 'codex', count: 4, active: true },
+          { value: 'deepseek', label: 'deepseek', count: 2, active: false },
+        ],
+      },
+      {
+        kind: 'account',
+        label: 'Account',
+        options: [
+          { value: 'codex-api-key:local-1', label: 'codex-api-key:local-1', count: 4, active: false },
+          { value: 'openai-compatible:deepseek', label: 'openai-compatible:deepseek', count: 2, active: false },
+        ],
+      },
+      {
+        kind: 'model',
+        label: 'Model',
+        options: [
+          { value: 'gpt-5', label: 'gpt-5', count: 4, active: false },
+          { value: 'deepseek-chat', label: 'deepseek-chat', count: 2, active: false },
+        ],
+      },
+    ],
+  );
+
+  const snapshot = buildUsageDeskObservedSnapshot(payload, null, '1M', 'codex', {
+    provider: 'deepseek',
+    account: '',
+    model: '',
+  });
+
+  assert.equal(snapshot.success, 2);
+  assert.equal(snapshot.failure, 0);
+  assert.equal(snapshot.dailyPoints[0].requests, 2);
+  assert.equal(snapshot.minuteRows[0].provider, 'deepseek');
+  assert.equal(snapshot.minuteRows[0].note, 'openai-compatible:deepseek');
+});
+
+test('projected usage desk facets use project as the operational account dimension', () => {
+  const payload = {
+    details: [
+      {
+        timestamp: '2026-04-28T06:20:00.000Z',
+        provider: 'codex',
+        sessionID: 'sessions/a.jsonl',
+        projectName: 'GetTokens',
+        model: 'gpt-5-codex',
+        inputTokens: 400,
+        cachedInputTokens: 20,
+        outputTokens: 60,
+        requestCount: 1,
+      },
+      {
+        timestamp: '2026-04-28T06:25:00.000Z',
+        provider: 'codex',
+        sessionID: 'sessions/b.jsonl',
+        projectName: 'CLIProxyAPI',
+        model: 'o3',
+        inputTokens: 100,
+        cachedInputTokens: 0,
+        outputTokens: 40,
+        requestCount: 2,
+      },
+    ],
+  };
+
+  const groups = buildUsageDeskProjectedFacetGroups(payload, { provider: '', account: 'GetTokens', model: '' });
+  const accountGroup = groups.find((group) => group.kind === 'account');
+  assert.equal(accountGroup?.label, 'Project');
+  assert.deepEqual(
+    accountGroup?.options.map((option) => ({
+      value: option.value,
+      label: option.label,
+      count: option.count,
+      active: option.active,
+    })),
+    [
+      { value: 'CLIProxyAPI', label: 'CLIProxyAPI', count: 2, active: false },
+      { value: 'GetTokens', label: 'GetTokens', count: 1, active: true },
+    ],
+  );
+
+  const snapshot = buildUsageDeskProjectedSnapshot(payload, null, '1M', {
+    provider: '',
+    account: 'GetTokens',
+    model: '',
+  });
+
+  assert.equal(snapshot.totalRequests, 1);
+  assert.equal(snapshot.totalTokens, 460);
+  assert.equal(snapshot.dailyPoints[0].model, 'gpt-5-codex');
+  assert.equal(snapshot.minuteRows[0].provider, 'codex');
 });
 
 test('Claude usage desk keeps only Anthropic-compatible observed attribution', () => {

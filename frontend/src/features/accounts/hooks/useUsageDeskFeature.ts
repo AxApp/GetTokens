@@ -23,7 +23,9 @@ import {
 } from '../../../utils/pagePersistence';
 import {
   buildUsageDeskChartPointStyle,
+  buildUsageDeskObservedFacetGroups,
   buildUsageDeskObservedSummaryItems,
+  buildUsageDeskProjectedFacetGroups,
   buildUsageDeskProjectedProjectUsageRows,
   buildUsageDeskProjectedSessionBucketKey,
   buildUsageDeskObservedSnapshot,
@@ -42,6 +44,8 @@ import {
   type UsageDeskProjectedSurfaceView,
   type UsageDeskRangeOption,
   type UsageDeskSource,
+  type UsageDeskFacetFilters,
+  type UsageDeskFacetKind,
   resolveUsageDeskRangeDrilldownDayKey,
 } from '../model/usageDesk';
 import {
@@ -164,6 +168,11 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   const [projectedProgress, setProjectedProgress] = useState<LocalUsageProgressEvent | null>(null);
   const [projectedChartMetric, setProjectedChartMetric] = useState<ProjectedChartMetric>('tokens');
   const [projectedSurfaceView, setProjectedSurfaceView] = useState<'chart' | 'projects' | 'sessions'>('chart');
+  const [facetFilters, setFacetFilters] = useState<Required<UsageDeskFacetFilters>>({
+    provider: '',
+    account: '',
+    model: '',
+  });
   const [selectedDetailRowKey, setSelectedDetailRowKey] = useState('');
   const [selectedChartPointKey, setSelectedChartPointKey] = useState('');
   const [detailTransitionActive, setDetailTransitionActive] = useState(false);
@@ -180,6 +189,12 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   useEffect(() => {
     persistUsageDeskSource(typeof window === 'undefined' ? null : window.localStorage, source);
   }, [source]);
+
+  useEffect(() => {
+    setFacetFilters({ provider: '', account: '', model: '' });
+    setSelectedDetailRowKey('');
+    setSelectedChartPointKey('');
+  }, [source, workspace]);
 
   useEffect(() => {
     persistUsageDeskRange(typeof window === 'undefined' ? null : window.localStorage, range);
@@ -440,12 +455,26 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   };
 
   const observedSnapshot = useMemo(
-    () => buildUsageDeskObservedSnapshot(observedUsageData, selectedDayKey, resolution, workspace),
-    [observedUsageData, selectedDayKey, resolution, workspace],
+    () => buildUsageDeskObservedSnapshot(observedUsageData, selectedDayKey, resolution, workspace, facetFilters),
+    [observedUsageData, selectedDayKey, resolution, workspace, facetFilters],
   );
   const projectedSnapshot = useMemo(
-    () => buildUsageDeskProjectedSnapshot(projectedUsageData, selectedDayKey, resolution),
-    [projectedUsageData, selectedDayKey, resolution],
+    () => buildUsageDeskProjectedSnapshot(projectedUsageData, selectedDayKey, resolution, facetFilters),
+    [projectedUsageData, selectedDayKey, resolution, facetFilters],
+  );
+  const usageFacetGroups = useMemo(
+    () =>
+      source === 'observed'
+        ? buildUsageDeskObservedFacetGroups(observedUsageData, facetFilters, workspace)
+        : buildUsageDeskProjectedFacetGroups(projectedUsageData, facetFilters),
+    [facetFilters, observedUsageData, projectedUsageData, source, workspace],
+  );
+  const activeFacetSummary = useMemo(
+    () =>
+      usageFacetGroups
+        .flatMap((group) => group.options.filter((option) => option.active).map((option) => `${group.label}: ${option.label}`))
+        .join(' / '),
+    [usageFacetGroups],
   );
   const visibleDailyPoints = useMemo(
     () => applyRange(observedSnapshot.dailyPoints, range),
@@ -704,6 +733,16 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     setSelectedDayKey(null);
   }
 
+  function handleUsageFacetSelect(kind: UsageDeskFacetKind, value: string) {
+    setFacetFilters((current) => ({
+      ...current,
+      [kind]: current[kind] === value ? '' : value,
+    }));
+    setSelectedDetailRowKey('');
+    setSelectedChartPointKey('');
+    setRangeAnimationVersion((current) => current + 1);
+  }
+
   return {
     source,
     setSource,
@@ -723,6 +762,9 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     projectedChartMetric,
     setProjectedChartMetric,
     projectedSurfaceView,
+    facetFilters,
+    usageFacetGroups,
+    activeFacetSummary,
     selectedDetailRowKey,
     selectedChartPointKey,
     detailTransitionActive,
@@ -752,5 +794,6 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     handleViewScaleChange,
     handleProjectedSurfaceViewChange,
     handleRangeSelect,
+    handleUsageFacetSelect,
   };
 }

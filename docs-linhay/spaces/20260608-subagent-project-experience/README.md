@@ -63,7 +63,9 @@
 - 第 9 轮入口诊断验收：`plans/round-9-entry-diagnostics-acceptance.md`
 - 第 10 轮证据 backlog 修复方案：`plans/round-10-evidence-backlog-plan.md`
 - 第 10 轮证据 backlog 修复验收：`plans/round-10-evidence-backlog-acceptance.md`
+- 第 11 轮 Usage Desk 分面方案：`plans/round-11-usage-desk-facets-plan.md`
+- 第 11 轮 Usage Desk 分面验收：`plans/round-11-usage-desk-facets-acceptance.md`
 
 ## 当前状态
-- 状态：round-10-evidence-backlog-complete
+- 状态：round-11-usage-desk-facets-complete
 - 最近更新：2026-06-08

@@ -13,6 +13,8 @@ import {
   type UsageDeskProjectedSurfaceView,
   type UsageDeskRangeOption,
   type UsageDeskResolution,
+  type UsageDeskFacetGroup,
+  type UsageDeskFacetKind,
 } from './model/usageDesk';
 import { UsageChartCard } from './components/usage-desk/UsageDeskChart';
 import { UsageDetailTable } from './components/usage-desk/UsageDetailTable';
@@ -42,6 +44,8 @@ export default function UsageDeskFeature({
     projectedChartMetric,
     setProjectedChartMetric,
     projectedSurfaceView,
+    usageFacetGroups,
+    activeFacetSummary,
     selectedDetailRowKey,
     selectedChartPointKey,
     detailTransitionActive,
@@ -69,14 +73,15 @@ export default function UsageDeskFeature({
     handleViewScaleChange,
     handleProjectedSurfaceViewChange,
     handleRangeSelect,
+    handleUsageFacetSelect,
   } = useUsageDeskFeature(sidecarStatus, workspace);
 
   const supportsProjectedUsage = workspace === 'codex' || workspace === 'claude';
   const pageTitle = workspace === 'claude' ? 'Claude Usage Desk' : 'Codex Usage Desk';
   const pageDescription =
     workspace === 'claude'
-        ? '当前已经接入 Claude / Anthropic relay attribution 与 Claude Code 本地 session 文件投影，两条数据链路分开展示。'
-      : '当前已经接入 ObservedRequestUsage 与 LocalProjectedUsage 两条真实数据链路，并在同一页内承接按日与分钟级切换。';
+        ? 'Sidecar 归因展示经过 GetTokens 运行态归属的请求，本地文件投影只读扫描 Claude Code session 文件。'
+      : 'Sidecar 归因展示经过 GetTokens 运行态归属的请求，本地文件投影只读扫描 Codex session / rollout 文件。';
 
   const projectedLoadingBody = useMemo<ReactNode>(() => {
     const processedFiles = projectedProgress?.processedFiles ?? 0;
@@ -122,14 +127,14 @@ export default function UsageDeskFeature({
                 onClick={() => setSource('observed')}
                 className={`btn-swiss ${source === 'observed' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
               >
-                真实请求量
+                Sidecar 归因
               </button>
               {supportsProjectedUsage ? (
                 <button
                   onClick={() => setSource('projected')}
                   className={`btn-swiss ${source === 'projected' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
                 >
-                  {workspace === 'claude' ? '本地文件投影' : '本地投影用量'}
+                  本地文件投影
                 </button>
               ) : null}
             </>
@@ -161,18 +166,25 @@ export default function UsageDeskFeature({
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"
                             status={
+                              <>
                                 <div className="flex items-center gap-3 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-wider text-[var(--text-primary)]">
                                   <div className="h-3 w-3 bg-[var(--text-primary)]" />
-                                <span>{workspace === 'claude' ? '数据源: Claude Attribution' : '数据源: Sidecar Attribution'}</span>
-                                <span className="opacity-40">/</span>
-                                <span>{observedDrilldownDayKey || '全部'}</span>
-                                {selectedChartPointKey && (
-                                  <>
-                                    <span className="opacity-40">/</span>
-                                    <span>{selectedChartPointKey}</span>
-                                  </>
-                                )}
-                              </div>
+                                  <span>数据源: Sidecar 归因</span>
+                                  <span className="opacity-40">/</span>
+                                  <span>{observedDrilldownDayKey || '全部'}</span>
+                                  {selectedChartPointKey && (
+                                    <>
+                                      <span className="opacity-40">/</span>
+                                      <span>{selectedChartPointKey}</span>
+                                    </>
+                                  )}
+                                </div>
+                                <UsageDeskFacetStrip
+                                  groups={usageFacetGroups}
+                                  activeSummary={activeFacetSummary}
+                                  onSelect={handleUsageFacetSelect}
+                                />
+                              </>
                             }
                             controls={
                               <UsageDeskObservedControls
@@ -257,7 +269,7 @@ export default function UsageDeskFeature({
                                 <div className="flex items-center gap-6">
                                   <div className="flex items-center gap-3 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-wider text-[var(--text-primary)]">
                                     <div className="h-3 w-3 bg-[var(--text-primary)]" />
-                                    <span>本地投影索引</span>
+                                    <span>数据源: 本地文件投影</span>
                                     <span className="opacity-40">/</span>
                                     <span>{projectedDrilldownDayKey || '概览'}</span>
                                     {selectedChartPointKey && (
@@ -273,6 +285,11 @@ export default function UsageDeskFeature({
                                     </div>
                                   )}
                                 </div>
+                                <UsageDeskFacetStrip
+                                  groups={usageFacetGroups}
+                                  activeSummary={activeFacetSummary}
+                                  onSelect={handleUsageFacetSelect}
+                                />
                                 <div className="grid max-w-[620px] grid-cols-3 gap-2">
                                   {usageDeskProjectedActionImpacts.map((action) => {
                                     const disabled = projectedLoading || (action.id === 'rebuild-day' && !selectedDayKey);
@@ -579,6 +596,66 @@ function UsageDeskOverflowMenu({
       </summary>
       <div className="usage-desk-overflow-panel">{children}</div>
     </details>
+  );
+}
+
+function UsageDeskFacetStrip({
+  groups,
+  activeSummary,
+  onSelect,
+}: {
+  groups: UsageDeskFacetGroup[];
+  activeSummary: string;
+  onSelect: (kind: UsageDeskFacetKind, value: string) => void;
+}) {
+  const visibleGroups = groups
+    .map((group) => ({
+      ...group,
+      options: group.options.slice(0, 5),
+    }))
+    .filter((group) => group.options.length > 0);
+
+  if (visibleGroups.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <span>运营分面</span>
+        {activeSummary ? (
+          <>
+            <span className="opacity-40">/</span>
+            <span className="text-[var(--text-primary)]">{activeSummary}</span>
+          </>
+        ) : null}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {visibleGroups.map((group) => (
+          <div key={group.kind} className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              {group.label}
+            </span>
+            {group.options.map((option) => (
+              <button
+                key={`${group.kind}:${option.value}`}
+                type="button"
+                onClick={() => onSelect(group.kind, option.value)}
+                title={`${group.label}: ${option.label}`}
+                className={`border-2 px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase leading-none transition-colors ${
+                  option.active
+                    ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                    : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
+                }`}
+              >
+                <span className="inline-block max-w-[180px] truncate align-bottom">{option.label}</span>
+                <span className="ml-1 opacity-60">{option.count}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
