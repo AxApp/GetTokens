@@ -22,6 +22,7 @@ description: GetTokens 项目级 Codex subagent 生命周期治理：创建、�
 4. 默认不写 `model = ...`，继承父会话模型；只有明确验证模型路由或用户指定模型时才临时设置。
 5. 用 `description` 写触发边界，用 `developer_instructions` 写职责和禁止事项；不要把 `AGENTS.md` 或项目 skills 全文复制进 agent。
 6. 删除或合并 agent 时，同步删除文档引用，避免留下不可调用角色。
+7. 当一组 agent 是固定协作模式时，不只沉淀 agent 文件，还要沉淀使用 workflow：触发条件、并行/串行顺序、输出路径、证据门禁、主控收口责任和验证命令。
 
 ## 标准流程
 
@@ -29,8 +30,9 @@ description: GetTokens 项目级 Codex subagent 生命周期治理：创建、�
 2. 判断是新增 agent、修改现有 agent、合并 agent，还是删除 agent。
 3. 修改 `.codex/agents/*.toml` 或 `.codex/config.toml`。
 4. 更新 `docs-linhay/dev/20260530-codex-project-subagents.md`。
-5. 有意义的治理变化写入 `docs-linhay/memory/YYYY-MM-DD.md`。
-6. 验证：
+5. 若新增的是协作套件，补充或新增 `docs-linhay/dev/*subagent*workflow*.md`，并在相关 supervision skill 中挂入口。
+6. 有意义的治理变化写入 `docs-linhay/memory/YYYY-MM-DD.md`。
+7. 验证：
    - TOML 可解析。
    - `.codex/agents` 中没有意外固定 `model = ...`。
    - `docs-linhay/scripts/check-docs.sh` 通过。

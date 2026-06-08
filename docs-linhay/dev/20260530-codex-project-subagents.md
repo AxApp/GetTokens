@@ -89,6 +89,8 @@ And 只有在明确验证模型路由时才临时指定模型。
 11. 会话整理：`gettokens_session_distiller` 提炼可复用模式，主控 agent 审阅后确认是否升级到 `AGENTS.md`。
 12. 项目体验巡检：并行使用 `gettokens_experience_product_operator`、`gettokens_experience_runtime_routing`、`gettokens_experience_extension_workbench` 产出三份至少 10 条中度建议的体验报告，再由 `gettokens_evaluation_repair_controller` 归并、证据门禁、筛选修复候选；主控 agent 负责最终集成、验证、提交和沉淀。
 
+配套 workflow：`docs-linhay/dev/20260608-subagent-experience-review-usage-workflow.md`。
+
 ## 使用边界
 
 1. subagent 不拥有最终完成判断。GetTokens 的主控 agent 仍负责需求边界、集成、测试门禁、Wails/桌面验收、截图、docs 和 memory 收口。

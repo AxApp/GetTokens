@@ -35,6 +35,23 @@ description: GetTokens 监督交付模式：当用户说“用 subagent 做、�
    - 必要时 `docs-linhay/scripts/check-docs.sh`
 5. 如果仍有未完成项，继续推进；如果卡住，明确写出 blocker 和剩余工作。
 
+## 体验巡检型用法
+
+当用户要求“用 subagents 体验项目、给修改意见、再评估修复”时，优先使用项目级体验巡检四件套：
+
+1. `gettokens_experience_product_operator`：只读体验产品/运营路径，至少 10 条中度建议。
+2. `gettokens_experience_runtime_routing`：只读体验运行态、路由、归因和 sidecar 证据链，至少 10 条中度建议。
+3. `gettokens_experience_extension_workbench`：只读体验 Skills / MCP / config / local apply 等扩展工作台，至少 10 条中度建议。
+4. `gettokens_evaluation_repair_controller`：汇总三份报告，建立证据门禁，筛选低风险修复候选，维护 backlog / 下期需求 / 小范围修复计划。
+
+主控 agent 的额外责任：
+
+1. 在 space 中固定每个 subagent 的报告路径和输出格式。
+2. 要求体验报告同时覆盖业务体验和代码/文档事实，不接受纯主观建议。
+3. 评估修复前必须有 evidence matrix；证据不足的候选只能进 backlog、调研或下期需求。
+4. 每轮结束自动更新 unfixed backlog、acceptance、memory，并按自动沉淀审计判断是否更新 skill / workflow / AGENTS。
+5. 若用户暂停或要求剩余项下期实现，撤回半成品代码，只保留证据和下期需求文档。
+
 ## 停止条件
 
 只有以下情况可以停止：
