@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import {
+  ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY,
   buildRuntimeSyncAccountKeys,
   normalizeRuntimeSyncDocumentHidden,
+  runAccountRuntimeRequestPool,
   shouldRunRuntimeSyncOnVisibilityRestore,
   shouldScheduleAccountRuntimeSync,
 } from '../model/accountRuntimeSync.ts';
@@ -97,6 +99,35 @@ test('runtime sync account keys are stable and deduplicated by account key', () 
   ]);
 });
 
+test('runtime request pool caps concurrent account refreshes', async () => {
+  const items = Array.from({ length: 23 }, (_, index) => index);
+  let active = 0;
+  let maxActive = 0;
+  const visited = [];
+
+  await runAccountRuntimeRequestPool(items, async (item, index) => {
+    active += 1;
+    maxActive = Math.max(maxActive, active);
+    visited.push([item, index]);
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    active -= 1;
+  }, { concurrency: 5 });
+
+  assert.equal(maxActive, 5);
+  assert.deepEqual(
+    visited.map(([item]) => item).sort((a, b) => a - b),
+    items,
+  );
+  assert.deepEqual(
+    visited.map(([, index]) => index).sort((a, b) => a - b),
+    items,
+  );
+});
+
+test('runtime quota refresh uses a conservative request pool size', () => {
+  assert.equal(ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY, 6);
+});
+
 test('quota runtime sync reads sidecar status without triggering active quota refresh', async () => {
   const source = await readFile(new URL('../hooks/useAccountsQuotaState.ts', import.meta.url), 'utf8');
   const syncStart = source.indexOf('const syncCodexQuotaStatuses = useCallback');
@@ -120,6 +151,8 @@ test('accounts feature owns the unified account runtime sync loop', async () => 
   assert.match(source, /normalizeRuntimeSyncDocumentHidden/);
   assert.match(source, /runtimeSyncAccounts/);
   assert.match(source, /syncCodexQuotaStatuses\(runtimeSyncAccounts, \{ replace: false \}\)/);
+  assert.match(source, /runAccountRuntimeRequestPool\(runtimeSyncAccounts,\s*refreshCodexQuota/);
+  assert.doesNotMatch(source, /Promise\.all\(runtimeSyncAccounts\.map\(\(account\) => refreshCodexQuota\(account\)\)\)/);
   assert.match(source, /resolveAccountKeys: false/);
   assert.match(source, /fallbackUsageStatistics: false/);
   assert.match(source, /loadAccountRateLimits\(runtimeSyncAccounts\)/);

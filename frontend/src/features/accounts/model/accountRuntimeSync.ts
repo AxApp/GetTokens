@@ -1,6 +1,7 @@
 import type { AccountRecord } from '../../../types';
 
 export const ACCOUNT_RUNTIME_SYNC_INTERVAL_MS = 30000;
+export const ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY = 6;
 
 export interface AccountRuntimeSyncScheduleState {
   ready: boolean;
@@ -42,4 +43,42 @@ export function buildRuntimeSyncAccountKeys(accounts: Array<Pick<AccountRecord, 
     keys.push(key);
   });
   return keys;
+}
+
+export async function runAccountRuntimeRequestPool<T>(
+  items: T[],
+  worker: (item: T, index: number) => Promise<void> | void,
+  options: { concurrency?: number } = {},
+) {
+  if (items.length === 0) {
+    return;
+  }
+
+  const concurrency = resolveAccountRuntimeRequestPoolConcurrency(options.concurrency);
+  let nextIndex = 0;
+  const errors: unknown[] = [];
+
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      try {
+        await worker(items[index], index);
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+  });
+
+  await Promise.all(workers);
+  if (errors.length > 0) {
+    throw errors[0];
+  }
+}
+
+function resolveAccountRuntimeRequestPoolConcurrency(value?: number) {
+  if (value === undefined || !Number.isFinite(value)) {
+    return ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY;
+  }
+  return Math.max(1, Math.floor(value));
 }

@@ -117,6 +117,13 @@
 
 ## 实施记录
 
+2026-06-08 追加导入后手动刷新卡顿修复证据：
+
+1. 问题来源：用户反馈导入 1000 个账号后导入界面与导入后的刷新都很卡，并明确提出“应该建立请求池来控制请求数”。
+2. 当前事实位置：`frontend/src/features/accounts/hooks/useAccountsPageState.ts` 的 `refreshAccountsRuntime` 对 `runtimeSyncAccounts.map((account) => refreshCodexQuota(account))` 直接 `Promise.all`，1000 个账号会形成 1000 个并发 quota 刷新请求。
+3. 已排除边界：`useAccountsUsageState.ts` 的 usage 刷新走 `GetSidecarUsageAttribution` / `GetUsageStatistics` 批量接口；`useAccountsRateLimitState.ts` 的 rate-limit 刷新走 `ListRateLimitStrategies` + `GetAllRateLimitStatuses` 批量接口；不应把这两路拆成账号级串行请求。
+4. 预期验收：新增纯模型并发池测试，证明 quota 手动刷新最大并发受控；source-level 测试锁定 `refreshAccountsRuntime` 不再使用 `Promise.all(runtimeSyncAccounts.map(...))` 裸并发。
+
 2026-06-06 已完成第一版账号级 runtime sync：
 
 1. Wails 新增只读 quota runtime bridge：

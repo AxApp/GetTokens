@@ -79,8 +79,10 @@ import type {
 } from '../model/types';
 import { shouldEnsureAccountSnapshot } from '../model/accountSnapshot';
 import {
+  ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY,
   ACCOUNT_RUNTIME_SYNC_INTERVAL_MS,
   normalizeRuntimeSyncDocumentHidden,
+  runAccountRuntimeRequestPool,
   shouldRunRuntimeSyncOnVisibilityRestore,
   shouldScheduleAccountRuntimeSync,
 } from '../model/accountRuntimeSync';
@@ -462,7 +464,9 @@ export default function useAccountsPageState({
     }
 
     await Promise.all([
-      Promise.all(runtimeSyncAccounts.map((account) => refreshCodexQuota(account))),
+      runAccountRuntimeRequestPool(runtimeSyncAccounts, refreshCodexQuota, {
+        concurrency: ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY,
+      }),
       refreshAccountUsage(runtimeSyncAccounts),
       refreshAccountRateLimits(runtimeSyncAccounts),
     ]);
