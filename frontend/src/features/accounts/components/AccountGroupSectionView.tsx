@@ -1,9 +1,16 @@
 import type { ReactNode } from 'react';
 import { MoreVertical, Power, RefreshCw, SquareCheckBig } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountGroup, AccountRecord, Translator } from '../model/types';
 import { resolveBulkQuotaRefreshTargets, resolveBulkSetDisabledTargets } from '../model/accountSelection';
+import { countRenderedGridColumns } from '../model/accountCardLayout';
+import {
+  ACCOUNT_GROUP_FULL_ROW_ESTIMATE,
+  ACCOUNT_GROUP_LIST_ROW_ESTIMATE,
+  ACCOUNT_GROUP_VIRTUALIZATION_THRESHOLD,
+  resolveAccountGroupRenderWindow,
+} from '../model/accountListLayout';
 
 interface AccountGroupSectionViewProps {
   t: Translator;
@@ -31,6 +38,13 @@ export default function AccountGroupSectionView({
   emptyContent = null,
 }: AccountGroupSectionViewProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [renderMetrics, setRenderMetrics] = useState(() => ({
+    columns: 1,
+    viewportStart: 0,
+    viewportEnd: resolveEstimatedAccountGroupRowHeight(displayMode) * 8,
+    rowHeight: resolveEstimatedAccountGroupRowHeight(displayMode),
+  }));
+  const gridRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const hasAccounts = group.accounts.length > 0;
   const allGroupSelected = hasAccounts && group.accounts.every((account) => selectedAccountIDSet?.has(account.id));
@@ -38,6 +52,27 @@ export default function AccountGroupSectionView({
   const canEnableGroup = resolveBulkSetDisabledTargets(group.accounts, false).targets.length > 0;
   const canDisableGroup = resolveBulkSetDisabledTargets(group.accounts, true).targets.length > 0;
   const groupSelectionAction = isSelectionMode ? onToggleGroupSelection : undefined;
+  const shouldVirtualize = group.accounts.length > ACCOUNT_GROUP_VIRTUALIZATION_THRESHOLD;
+  const renderWindow = shouldVirtualize
+    ? resolveAccountGroupRenderWindow({
+        itemCount: group.accounts.length,
+        columns: renderMetrics.columns,
+        viewportStart: renderMetrics.viewportStart,
+        viewportEnd: renderMetrics.viewportEnd,
+        rowHeight: renderMetrics.rowHeight,
+      })
+    : {
+        startIndex: 0,
+        endIndex: group.accounts.length,
+        renderedCount: group.accounts.length,
+        rowCount: Math.ceil(group.accounts.length / Math.max(1, renderMetrics.columns)),
+        topSpacerHeight: 0,
+        bottomSpacerHeight: 0,
+      };
+  const visibleAccounts = useMemo(
+    () => group.accounts.slice(renderWindow.startIndex, renderWindow.endIndex),
+    [group.accounts, renderWindow.endIndex, renderWindow.startIndex],
+  );
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -55,6 +90,82 @@ export default function AccountGroupSectionView({
       window.removeEventListener('mousedown', handlePointerDown);
     };
   }, [isMenuOpen]);
+
+  useLayoutEffect(() => {
+    setRenderMetrics((current) => ({
+      ...current,
+      rowHeight: resolveEstimatedAccountGroupRowHeight(displayMode),
+    }));
+  }, [displayMode]);
+
+  useLayoutEffect(() => {
+    if (!shouldVirtualize) {
+      return undefined;
+    }
+    const gridNode = gridRef.current;
+    if (!gridNode) {
+      return undefined;
+    }
+
+    const scrollParent = resolveAccountGroupScrollParent(gridNode);
+    let frameID = 0;
+
+    const measure = () => {
+      frameID = 0;
+      const gridRect = gridNode.getBoundingClientRect();
+      const rootRect = getAccountGroupScrollRootRect(scrollParent);
+      const columns = resolveAccountGroupRenderedColumns(gridNode);
+
+      setRenderMetrics((current) => {
+        const nextMetrics = {
+          columns,
+          viewportStart: rootRect.top - gridRect.top,
+          viewportEnd: rootRect.bottom - gridRect.top,
+          rowHeight: resolveEstimatedAccountGroupRowHeight(displayMode),
+        };
+        if (
+          current.columns === nextMetrics.columns &&
+          Math.abs(current.viewportStart - nextMetrics.viewportStart) < 1 &&
+          Math.abs(current.viewportEnd - nextMetrics.viewportEnd) < 1 &&
+          Math.abs(current.rowHeight - nextMetrics.rowHeight) < 1
+        ) {
+          return current;
+        }
+        return nextMetrics;
+      });
+    };
+
+    const scheduleMeasure = () => {
+      if (frameID) {
+        return;
+      }
+      frameID = window.requestAnimationFrame(measure);
+    };
+
+    scheduleMeasure();
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleMeasure);
+    resizeObserver?.observe(gridNode);
+    if (scrollParent instanceof HTMLElement) {
+      resizeObserver?.observe(scrollParent);
+      scrollParent.addEventListener('scroll', scheduleMeasure, { passive: true });
+    } else {
+      window.addEventListener('scroll', scheduleMeasure, { passive: true });
+    }
+    window.addEventListener('resize', scheduleMeasure);
+
+    return () => {
+      if (frameID) {
+        window.cancelAnimationFrame(frameID);
+      }
+      resizeObserver?.disconnect();
+      if (scrollParent instanceof HTMLElement) {
+        scrollParent.removeEventListener('scroll', scheduleMeasure);
+      } else {
+        window.removeEventListener('scroll', scheduleMeasure);
+      }
+      window.removeEventListener('resize', scheduleMeasure);
+    };
+  }, [displayMode, group.accounts.length, shouldVirtualize]);
 
   return (
     <section className="space-y-4">
@@ -144,16 +255,69 @@ export default function AccountGroupSectionView({
         emptyContent
       ) : (
         <div
+          ref={gridRef}
           className={
             displayMode === 'list'
               ? 'grid grid-cols-1 gap-3'
               : 'account-card-grid-full grid gap-8'
           }
           data-plan-group-grid={group.id}
+          data-account-group-virtualized={shouldVirtualize ? 'true' : undefined}
+          data-account-group-render-window={shouldVirtualize ? `${renderWindow.startIndex}:${renderWindow.endIndex}` : undefined}
         >
-          {group.accounts.map((account) => renderAccount(account))}
+          {shouldVirtualize && renderWindow.topSpacerHeight > 0 ? (
+            <div
+              aria-hidden="true"
+              className="col-span-full"
+              data-account-group-virtual-spacer="top"
+              style={{ height: renderWindow.topSpacerHeight }}
+            />
+          ) : null}
+          {visibleAccounts.map((account) => renderAccount(account))}
+          {shouldVirtualize && renderWindow.bottomSpacerHeight > 0 ? (
+            <div
+              aria-hidden="true"
+              className="col-span-full"
+              data-account-group-virtual-spacer="bottom"
+              style={{ height: renderWindow.bottomSpacerHeight }}
+            />
+          ) : null}
         </div>
       )}
     </section>
   );
+}
+
+function resolveEstimatedAccountGroupRowHeight(displayMode: AccountListDisplayMode) {
+  return displayMode === 'list' ? ACCOUNT_GROUP_LIST_ROW_ESTIMATE : ACCOUNT_GROUP_FULL_ROW_ESTIMATE;
+}
+
+function resolveAccountGroupRenderedColumns(gridNode: HTMLElement) {
+  if (gridNode.classList.contains('grid-cols-1')) {
+    return 1;
+  }
+  const columns = countRenderedGridColumns(window.getComputedStyle(gridNode).gridTemplateColumns);
+  return Math.max(1, columns);
+}
+
+function resolveAccountGroupScrollParent(node: HTMLElement): HTMLElement | Window {
+  let current = node.parentElement;
+  while (current) {
+    const overflowY = window.getComputedStyle(current).overflowY;
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return window;
+}
+
+function getAccountGroupScrollRootRect(scrollParent: HTMLElement | Window) {
+  if (scrollParent instanceof HTMLElement) {
+    return scrollParent.getBoundingClientRect();
+  }
+  return {
+    top: 0,
+    bottom: window.innerHeight,
+  };
 }

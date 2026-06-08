@@ -5,6 +5,7 @@ import type { RateLimitState } from './model/rateLimit';
 import type { CodexQuotaState } from './model/types';
 
 const NOW_MS = Date.parse('2026-05-15T14:00:00+08:00');
+const ACCOUNTS_PREVIEW_COUNT_QUERY_PARAM = 'accountsPreviewCount';
 
 const PREVIEW_AUTH_FILES: AuthFile[] = [
   {
@@ -611,7 +612,7 @@ export function getAccountsPreviewAuthFiles(): AuthFile[] {
 }
 
 export function getAccountsPreviewAPIKeyRecords(): AccountRecord[] {
-  return [
+  return expandPreviewAccountRecords([
     ...PREVIEW_API_KEY_ACCOUNTS.map((account) => ({ ...account })),
     ...PREVIEW_OPENAI_COMPATIBLE_PROVIDERS.map((provider): AccountRecord => ({
       id: String(provider.accountKey || provider.name || '').trim(),
@@ -629,7 +630,7 @@ export function getAccountsPreviewAPIKeyRecords(): AccountRecord[] {
       proxyUrl: provider.proxyUrl || '',
       supportedFormats: ['openai_chat', 'openai_responses'],
     })),
-  ];
+  ]);
 }
 
 export function getAccountsPreviewCodexAccounts(): AccountRecord[] {
@@ -662,12 +663,19 @@ export function getAccountsPreviewOpenAICompatibleProviders(): OpenAICompatibleP
 }
 
 export function getAccountsPreviewQuotaStateByKey(accounts: AccountRecord[]): Record<string, CodexQuotaState> {
+  const useFallbackQuota = readRequestedAccountsPreviewCount() > 0;
   return accounts.reduce<Record<string, CodexQuotaState>>((result, account) => {
     const key = String(account.quotaKey || '').trim();
-    if (!key || !PREVIEW_QUOTA_BY_KEY[key]) {
+    if (!key) {
       return result;
     }
-    result[key] = cloneQuotaState(PREVIEW_QUOTA_BY_KEY[key]);
+    if (PREVIEW_QUOTA_BY_KEY[key]) {
+      result[key] = cloneQuotaState(PREVIEW_QUOTA_BY_KEY[key]);
+      return result;
+    }
+    if (useFallbackQuota) {
+      result[key] = createHighVolumePreviewQuotaState(account, Object.keys(result).length);
+    }
     return result;
   }, {});
 }
@@ -721,6 +729,89 @@ export function getAccountsPreviewRelayModelNames(): string[] {
     }
   }
   return Array.from(names).sort((a, b) => a.localeCompare(b));
+}
+
+function expandPreviewAccountRecords(records: AccountRecord[]): AccountRecord[] {
+  const requestedCount = readRequestedAccountsPreviewCount();
+  const requestedAPIKeyCount = Math.max(records.length, requestedCount - PREVIEW_AUTH_FILES.length);
+  if (requestedAPIKeyCount <= records.length) {
+    return records;
+  }
+
+  return Array.from({ length: requestedAPIKeyCount }, (_, index) => {
+    const base = records[index % records.length];
+    const cycle = Math.floor(index / records.length);
+    if (cycle === 0) {
+      return { ...base };
+    }
+    const id = `${base.id}:preview-${cycle}`;
+    const provider = String(base.provider || 'preview').trim() || 'preview';
+    return {
+      ...base,
+      id,
+      displayName: `${base.displayName || provider} #${cycle + 1}`,
+      priority: typeof base.priority === 'number' ? base.priority : index % 10,
+      quotaKey: base.quotaKey ? `${base.quotaKey}:preview-${cycle}` : id,
+      apiKey: base.apiKey ? `${base.apiKey}-${cycle}` : base.apiKey,
+      keySuffix: `${cycle}`.padStart(4, '0').slice(-4),
+    };
+  });
+}
+
+function readRequestedAccountsPreviewCount() {
+  if (typeof window === 'undefined') {
+    return 0;
+  }
+  try {
+    const value = new URL(window.location.href).searchParams.get(ACCOUNTS_PREVIEW_COUNT_QUERY_PARAM);
+    const count = Number(value);
+    if (!Number.isFinite(count)) {
+      return 0;
+    }
+    return Math.max(0, Math.min(5000, Math.floor(count)));
+  } catch {
+    return 0;
+  }
+}
+
+function createHighVolumePreviewQuotaState(account: AccountRecord, index: number): CodexQuotaState {
+  const remainingPercent = 25 + (index % 70);
+  return {
+    status: 'success',
+    quota: previewQuota({
+      planType: account.planType || (index % 5 === 0 ? 'PLUS' : 'PRO'),
+      billing:
+        index % 4 === 0
+          ? {
+              isAvailable: true,
+              balanceInfos: [
+                {
+                  currency: 'USD',
+                  totalBalance: '100.00',
+                  grantedBalance: '80.00',
+                  toppedUpBalance: '20.00',
+                },
+              ],
+            }
+          : undefined,
+      windows: [
+        {
+          id: 'five-hour',
+          label: '5H',
+          remainingPercent,
+          resetLabel: '2026-05-15 18:30',
+          resetAtUnix: 1747305000 + index * 60,
+        },
+        {
+          id: 'weekly',
+          label: '7D',
+          remainingPercent: Math.min(99, remainingPercent + 8),
+          resetLabel: '2026-05-21 12:00',
+          resetAtUnix: 1747800000 + index * 60,
+        },
+      ],
+    }),
+  };
 }
 
 export function getAccountsPreviewAuthFileContent(name: string): string {

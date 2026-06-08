@@ -3,11 +3,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import {
+  ACCOUNT_GROUP_FULL_ROW_ESTIMATE,
+  ACCOUNT_GROUP_VIRTUALIZATION_THRESHOLD,
   ACCOUNTS_SELECTION_ACTION_MENU_GAP,
   ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY,
   DEFAULT_ACCOUNT_LIST_DISPLAY_MODE,
   buildAccountListDisplayModeHash,
   parseAccountListDisplayMode,
+  resolveAccountGroupRenderWindow,
   shouldUseAccountsSelectionActionMenu,
 } from '../model/accountListLayout.ts';
 
@@ -38,6 +41,36 @@ test('shouldUseAccountsSelectionActionMenu only falls back when inline actions o
   assert.equal(shouldUseAccountsSelectionActionMenu(720, 0), false);
   assert.equal(shouldUseAccountsSelectionActionMenu(376, 360), false);
   assert.equal(shouldUseAccountsSelectionActionMenu(375, 360), true);
+});
+
+test('resolveAccountGroupRenderWindow keeps high-volume account groups windowed by rows', () => {
+  assert.equal(ACCOUNT_GROUP_VIRTUALIZATION_THRESHOLD, 120);
+
+  const renderWindow = resolveAccountGroupRenderWindow({
+    itemCount: 1000,
+    columns: 3,
+    viewportStart: ACCOUNT_GROUP_FULL_ROW_ESTIMATE * 100,
+    viewportEnd: ACCOUNT_GROUP_FULL_ROW_ESTIMATE * 104,
+    rowHeight: ACCOUNT_GROUP_FULL_ROW_ESTIMATE,
+  });
+
+  assert.equal(renderWindow.startIndex, 291);
+  assert.equal(renderWindow.endIndex, 321);
+  assert.equal(renderWindow.renderedCount, 30);
+  assert.equal(renderWindow.rowCount, 334);
+  assert.equal(renderWindow.topSpacerHeight, ACCOUNT_GROUP_FULL_ROW_ESTIMATE * 97);
+  assert.equal(renderWindow.bottomSpacerHeight, ACCOUNT_GROUP_FULL_ROW_ESTIMATE * 227);
+});
+
+test('AccountGroupSectionView virtualizes large account groups instead of mapping every card', async () => {
+  const source = await readFile(new URL('../components/AccountGroupSectionView.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /ACCOUNT_GROUP_VIRTUALIZATION_THRESHOLD/);
+  assert.match(source, /data-account-group-virtualized/);
+  assert.match(source, /data-account-group-render-window/);
+  assert.match(source, /data-account-group-virtual-spacer="top"/);
+  assert.match(source, /visibleAccounts\.map\(\(account\) => renderAccount\(account\)\)/);
+  assert.doesNotMatch(source, /group\.accounts\.map\(\(account\) => renderAccount\(account\)\)/);
 });
 
 test('accounts selection toolbar stays sticky while scrolling selected accounts', async () => {
