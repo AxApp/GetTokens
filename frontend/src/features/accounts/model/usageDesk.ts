@@ -193,6 +193,29 @@ export interface UsageDeskProjectedStats {
 
 export type UsageDeskChartUnit = 'count' | 'tokens';
 export type UsageDeskProjectedSurfaceView = 'daily' | 'minute' | 'projects' | 'sessions';
+export type UsageDeskProjectedActionImpactID = 'refresh' | 'rebuild-day' | 'rebuild-all';
+
+export const usageDeskProjectedActionImpacts: Array<{
+  id: UsageDeskProjectedActionImpactID;
+  label: string;
+  description: string;
+}> = [
+  {
+    id: 'refresh',
+    label: '刷新索引',
+    description: '增量读取本地投影索引，补齐新写入的本地 session 片段。',
+  },
+  {
+    id: 'rebuild-day',
+    label: '重建当日',
+    description: '只重算当前日期的本地投影索引，不影响其他日期。',
+  },
+  {
+    id: 'rebuild-all',
+    label: '重建索引',
+    description: '重扫本地投影索引并重新计算缓存；不会删除原始 session 文件。',
+  },
+];
 
 export const usageDeskProjectedSurfaceViewOptions: Array<{ id: UsageDeskProjectedSurfaceView; label: string }> = [
   { id: 'daily', label: '天级趋势' },

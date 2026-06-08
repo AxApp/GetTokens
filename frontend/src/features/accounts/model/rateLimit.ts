@@ -71,6 +71,12 @@ export interface RateLimitEvent {
   triggeredAt: number;
 }
 
+export interface LegacyRateLimitBinding {
+  source: 'rules' | 'status' | 'events';
+  accountKey: string;
+  id?: string;
+}
+
 export interface RateLimitGuardRowDisplay {
   id: string;
   label: string;
@@ -89,6 +95,40 @@ export const DEFAULT_RATE_LIMIT_STRATEGIES: RateLimitStrategyMeta[] = [
   { id: 'token-window', name: 'Token 窗口限流', supportedWindows: DEFAULT_RATE_LIMIT_WINDOWS },
   { id: 'request-window', name: '请求窗口限流', supportedWindows: DEFAULT_RATE_LIMIT_WINDOWS },
 ];
+
+export function isLegacyRateLimitAccountKey(accountKey: unknown) {
+  const normalized = String(accountKey || '').trim();
+  return (
+    normalized.startsWith('auth-file:') ||
+    normalized.startsWith('codex-api-key:') ||
+    normalized.startsWith('openai-compatible:')
+  );
+}
+
+export function collectLegacyRateLimitBindings(input: {
+  currentAccountKey?: string;
+  rules?: RateLimitRule[] | null;
+  status?: RateLimitState | null;
+  events?: RateLimitEvent[] | null;
+}): LegacyRateLimitBinding[] {
+  const currentAccountKey = String(input.currentAccountKey || '').trim();
+  const result: LegacyRateLimitBinding[] = [];
+  const add = (source: LegacyRateLimitBinding['source'], accountKey: unknown, id?: string) => {
+    const normalized = String(accountKey || '').trim();
+    if (!normalized || normalized === currentAccountKey || !isLegacyRateLimitAccountKey(normalized)) {
+      return;
+    }
+    result.push({ source, accountKey: normalized, id });
+  };
+
+  (input.rules ?? []).forEach((rule) => add('rules', rule.accountKey, rule.id));
+  (input.status?.rules ?? []).forEach((ruleState) => add('status', ruleState.rule?.accountKey, ruleState.rule?.id));
+  if (input.status && input.status.accountKey !== currentAccountKey) {
+    add('status', input.status.accountKey);
+  }
+  (input.events ?? []).forEach((event) => add('events', event.accountKey, event.id));
+  return result;
+}
 
 export function buildRateLimitStatusMap(items: RateLimitState[] | undefined) {
   return (items ?? []).reduce<Record<string, RateLimitState>>((result, item) => {

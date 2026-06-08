@@ -98,23 +98,23 @@ func currentCallbacks() Callbacks {
 	return controller.callbacks
 }
 
+func dispatchCallback(callback func()) {
+	if callback != nil {
+		go callback()
+	}
+}
+
 //export gettokensMenuBarOpenWindow
 func gettokensMenuBarOpenWindow() {
-	if callback := currentCallbacks().OpenWindow; callback != nil {
-		callback()
-	}
+	dispatchCallback(currentCallbacks().OpenWindow)
 }
 
 //export gettokensMenuBarRefreshSnapshot
 func gettokensMenuBarRefreshSnapshot() {
-	if callback := currentCallbacks().RefreshSnapshot; callback != nil {
-		callback()
-	}
+	dispatchCallback(currentCallbacks().RefreshSnapshot)
 }
 
 //export gettokensMenuBarQuit
 func gettokensMenuBarQuit() {
-	if callback := currentCallbacks().Quit; callback != nil {
-		callback()
-	}
+	dispatchCallback(currentCallbacks().Quit)
 }

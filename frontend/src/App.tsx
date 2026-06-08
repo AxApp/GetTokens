@@ -14,9 +14,9 @@ import { AccountsPageStateProvider } from './features/accounts/AccountsPageState
 import AccountMigrationGate from './features/account-migration/AccountMigrationGate';
 import { useAppBootstrap } from './hooks/useAppBootstrap';
 import { useAppNavigation } from './hooks/useAppNavigation';
+import { readFrameHashState, resolveMenuBarNavigationHash, type MenuBarNavigationPayload } from './utils/pagePersistence';
 import { toErrorMessage } from './utils/error';
 import { hasWailsRuntime } from './utils/previewMode';
-import type { AppPage } from './types';
 
 const AccountImportPage = lazy(() => import('./pages/AccountImportPage'));
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
@@ -27,10 +27,6 @@ const DesignSystemPage = lazy(() => import('./pages/DesignSystemPage'));
 const ProxyPoolPage = lazy(() => import('./pages/ProxyPoolPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
-
-type MenuBarNavigationPayload = {
-  page?: AppPage;
-};
 
 function AppShell() {
   const { themeMode } = useTheme();
@@ -144,17 +140,25 @@ function AppShell() {
     }
 
     const offNavigate = EventsOn('menubar:navigate', (payload?: MenuBarNavigationPayload) => {
-      if (payload?.page !== 'accounts') {
+      const nextHash = resolveMenuBarNavigationHash(payload);
+      const hashState = readFrameHashState(nextHash, { includeDeveloperPages: import.meta.env.DEV });
+      if (!nextHash || !hashState) {
         return;
       }
-      setActivePage('accounts');
-      window.location.hash = '#frame=accounts';
+      setActivePage(hashState.page);
+      if (hashState.page === 'codex') {
+        setActiveCodexWorkspace(hashState.codexWorkspace ?? 'feature-config');
+        if (hashState.codexWorkspace === 'live-sessions') {
+          setActiveCodexLiveSessionsView(hashState.codexLiveSessionsView ?? 'session');
+        }
+      }
+      window.location.hash = nextHash;
     });
 
     return () => {
       offNavigate?.();
     };
-  }, [setActivePage]);
+  }, [setActiveCodexLiveSessionsView, setActiveCodexWorkspace, setActivePage]);
 
   const page = useMemo(() => {
     if (!showDeveloperTools && (activePage === 'debug' || activePage === 'design-system')) {

@@ -5,12 +5,18 @@ import { readFile } from 'node:fs/promises';
 import {
   ACCOUNTS_FILTERS_STORAGE_KEY,
   applyAccountsFilterState,
+  buildAccountsRiskFilterState,
   defaultAccountsFilterState,
   normalizeAccountsFilterState,
   persistAccountsFilterState,
   readStoredAccountsFilterState,
+  resolveAccountsFilterStateFromHash,
+  resolveAccountsEmptyState,
   summarizeAccountsFilterState,
 } from '../model/accountFilters.ts';
+import { filterAccounts } from '../model/accountSelectors.ts';
+
+const t = (key) => key;
 
 test('readStoredAccountsFilterState restores a valid grouped filter state', () => {
   const storage = {
@@ -54,6 +60,38 @@ test('normalizeAccountsFilterState migrates the legacy flat filter payload', () 
   );
 });
 
+test('resolveAccountsFilterStateFromHash maps accounts risk filter to diagnostic statuses only', () => {
+  assert.deepEqual(
+    resolveAccountsFilterStateFromHash('#frame=accounts&workspace=all&filter=risk', {
+      ...defaultAccountsFilterState,
+      source: { authFile: false, apiKey: true },
+      resource: { hasLongestQuota: false, hasBalance: true },
+      status: { error: false, disabled: false, requestable: true },
+      plan: { plus: false, team: true },
+    }),
+    {
+      source: { authFile: true, apiKey: true },
+      resource: { hasLongestQuota: true, hasBalance: true },
+      status: { error: true, disabled: true, requestable: false },
+      plan: {},
+    },
+  );
+});
+
+test('resolveAccountsFilterStateFromHash falls back to stored filters outside accounts risk routes', () => {
+  const stored = {
+    ...defaultAccountsFilterState,
+    source: { authFile: false, apiKey: true },
+    resource: { hasLongestQuota: false, hasBalance: true },
+    status: { error: false, disabled: false, requestable: true },
+    plan: { plus: false },
+  };
+
+  assert.deepEqual(resolveAccountsFilterStateFromHash('#frame=accounts', stored), stored);
+  assert.deepEqual(resolveAccountsFilterStateFromHash('#frame=accounts&filter=unknown', stored), stored);
+  assert.deepEqual(resolveAccountsFilterStateFromHash('#frame=codex&filter=risk', stored), stored);
+});
+
 test('applyAccountsFilterState deep merges nested patch objects', () => {
   assert.deepEqual(
     applyAccountsFilterState(
@@ -77,6 +115,30 @@ test('applyAccountsFilterState deep merges nested patch objects', () => {
       status: { error: false, disabled: false, requestable: true },
       plan: { free: true, plus: true, team: false },
     },
+  );
+});
+
+test('buildAccountsRiskFilterState keeps account dimensions broad and selects disabled or error accounts', () => {
+  const riskFilters = buildAccountsRiskFilterState(defaultAccountsFilterState);
+
+  assert.deepEqual(riskFilters, {
+    ...defaultAccountsFilterState,
+    status: { error: true, disabled: true, requestable: false },
+  });
+
+  const accounts = [
+    { id: 'ok', displayName: 'OK', provider: 'codex', credentialSource: 'api-key', status: 'ACTIVE' },
+    { id: 'disabled', displayName: 'Disabled', provider: 'codex', credentialSource: 'api-key', status: 'ACTIVE', disabled: true },
+    { id: 'error', displayName: 'Error', provider: 'codex', credentialSource: 'auth-file', status: 'ERROR' },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: riskFilters,
+      codexQuotaByName: {},
+    }).map((account) => account.id),
+    ['disabled', 'error'],
   );
 });
 
@@ -197,4 +259,65 @@ test('AccountsToolbar design-system default story starts with all filters select
 
   assert.equal(source.includes('initialFilters = defaultAccountsFilterState'), true);
   assert.equal(source.includes('initialFilters = emptyFilters'), false);
+});
+
+test('AccountsHeader splits account list refresh from runtime refresh', async () => {
+  const headerSource = await readFile(new URL('../components/AccountsHeader.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(headerSource, /onRefreshAccounts: \(\) => void/);
+  assert.match(headerSource, /onRefreshRuntime: \(\) => void/);
+  assert.match(headerSource, /title=\{t\('accounts\.refresh_accounts'\)\}/);
+  assert.match(headerSource, /title=\{t\('accounts\.refresh_runtime'\)\}/);
+  assert.match(featureSource, /onRefreshAccounts=\{\(\) => void loadAccounts\(\{ refreshSupplementalData: false \}\)\}/);
+  assert.match(featureSource, /onRefreshRuntime=\{\(\) => void refreshAccountsRuntime\(\)\}/);
+});
+
+test('resolveAccountsEmptyState distinguishes no accounts from filtered empty results', () => {
+  assert.deepEqual(
+    resolveAccountsEmptyState(t, {
+      accountCount: 0,
+      filteredAccountCount: 0,
+      searchTerm: '',
+      filters: defaultAccountsFilterState,
+      availablePlanTypes: [],
+    }),
+    {
+      kind: 'empty',
+      title: 'accounts.empty',
+      body: 'accounts.empty_hint',
+      showClearSearch: false,
+      showResetFilters: false,
+    },
+  );
+
+  assert.deepEqual(
+    resolveAccountsEmptyState(t, {
+      accountCount: 4,
+      filteredAccountCount: 0,
+      searchTerm: 'missing-account',
+      filters: applyAccountsFilterState(defaultAccountsFilterState, {
+        source: { apiKey: false },
+      }),
+      availablePlanTypes: [],
+    }),
+    {
+      kind: 'filtered',
+      title: 'accounts.filter_empty_title',
+      body: 'accounts.filter_empty_hint',
+      showClearSearch: true,
+      showResetFilters: true,
+    },
+  );
+
+  assert.equal(
+    resolveAccountsEmptyState(t, {
+      accountCount: 4,
+      filteredAccountCount: 2,
+      searchTerm: '',
+      filters: defaultAccountsFilterState,
+      availablePlanTypes: [],
+    }),
+    null,
+  );
 });

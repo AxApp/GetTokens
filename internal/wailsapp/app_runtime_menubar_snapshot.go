@@ -21,10 +21,12 @@ type menuBarQuotaSnapshot struct {
 }
 
 type menuBarQuotaSummary struct {
-	LowestQuota  string `json:"lowestQuota"`
-	RiskAccounts string `json:"riskAccounts"`
-	TotalBalance string `json:"totalBalance"`
-	RefreshLabel string `json:"refreshLabel"`
+	LowestQuota   string `json:"lowestQuota"`
+	RiskAccounts  string `json:"riskAccounts"`
+	RiskSummary   string `json:"riskSummary"`
+	MoreRiskLabel string `json:"moreRiskLabel"`
+	TotalBalance  string `json:"totalBalance"`
+	RefreshLabel  string `json:"refreshLabel"`
 }
 
 type menuBarQuotaResource struct {
@@ -104,10 +106,12 @@ func (a *App) setMenuBarQuotaSnapshot(snapshot menuBarQuotaSnapshot) {
 func menuBarEmptyQuotaSnapshot() menuBarQuotaSnapshot {
 	return menuBarQuotaSnapshot{
 		Summary: menuBarQuotaSummary{
-			LowestQuota:  "--%",
-			RiskAccounts: "--",
-			TotalBalance: "--",
-			RefreshLabel: "--:--",
+			LowestQuota:   "--%",
+			RiskAccounts:  "--",
+			RiskSummary:   "暂无风险账号",
+			MoreRiskLabel: "",
+			TotalBalance:  "--",
+			RefreshLabel:  "--:--",
 		},
 		Resources: []menuBarQuotaResource{},
 		Balances:  []menuBarQuotaBalance{},
@@ -214,9 +218,15 @@ func buildMenuBarQuotaSnapshot(statuses []cliproxyapi.QuotaRuntimeState, account
 		snapshot.Summary.LowestQuota = fmt.Sprintf("%02d%%", lowest)
 	}
 	if len(riskAccounts) > 0 {
-		snapshot.Summary.RiskAccounts = strconv.Itoa(len(riskAccounts))
+		riskCount := len(riskAccounts)
+		snapshot.Summary.RiskAccounts = strconv.Itoa(riskCount)
+		snapshot.Summary.RiskSummary = fmt.Sprintf("%d 个风险账号", riskCount)
+		if hiddenRiskCount := riskCount - len(candidates); hiddenRiskCount > 0 {
+			snapshot.Summary.MoreRiskLabel = fmt.Sprintf("还有 %d 个风险账号", hiddenRiskCount)
+		}
 	} else if len(statuses) > 0 {
 		snapshot.Summary.RiskAccounts = "0"
+		snapshot.Summary.RiskSummary = "0 个风险账号"
 	}
 	if summary := balanceSummary.summary(); summary != "" {
 		snapshot.Summary.TotalBalance = summary

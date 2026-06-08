@@ -304,7 +304,8 @@ function AccountsListSample({
           onOpenApiKeyModal={() => undefined}
           onOpenRotationModal={() => undefined}
           onStartCodexOAuth={() => undefined}
-          onRefresh={() => undefined}
+          onRefreshAccounts={() => undefined}
+          onRefreshRuntime={() => undefined}
           onOpenUnifiedCompose={() => undefined}
           searchTerm={searchTerm}
           filters={filters}

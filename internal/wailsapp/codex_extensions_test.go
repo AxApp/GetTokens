@@ -3,6 +3,7 @@ package wailsapp
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -172,6 +173,58 @@ func TestGetCodexSkillFilePreviewRejectsPathTraversal(t *testing.T) {
 	}
 }
 
+func TestGetCodexSkillsSnapshotWarnsWhenFileScanBudgetIsExceeded(t *testing.T) {
+	home := t.TempDir()
+	codexHome := filepath.Join(home, ".codex")
+	t.Setenv("HOME", home)
+	t.Setenv("CODEX_HOME", codexHome)
+
+	skillDir := filepath.Join(home, ".agents", "skills", "large")
+	if err := os.MkdirAll(skillDir, 0700); err != nil {
+		t.Fatalf("MkdirAll skillDir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("# Large"), 0600); err != nil {
+		t.Fatalf("WriteFile SKILL.md: %v", err)
+	}
+	for index := 0; index < 260; index++ {
+		if err := os.WriteFile(filepath.Join(skillDir, "file-"+strconv.Itoa(index)+".md"), []byte("# file"), 0600); err != nil {
+			t.Fatalf("WriteFile extra file: %v", err)
+		}
+	}
+	deepDir := skillDir
+	for index := 0; index < 10; index++ {
+		deepDir = filepath.Join(deepDir, "deep-"+strconv.Itoa(index))
+	}
+	if err := os.MkdirAll(deepDir, 0700); err != nil {
+		t.Fatalf("MkdirAll deepDir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(deepDir, "too-deep.md"), []byte("# deep"), 0600); err != nil {
+		t.Fatalf("WriteFile deep file: %v", err)
+	}
+
+	app := &App{}
+	snapshot, err := app.GetCodexSkillsSnapshot()
+	if err != nil {
+		t.Fatalf("GetCodexSkillsSnapshot returned error: %v", err)
+	}
+	if len(snapshot.Skills) != 1 {
+		t.Fatalf("skills len = %d, want 1: %#v", len(snapshot.Skills), snapshot.Skills)
+	}
+	skill := snapshot.Skills[0]
+	warnings := strings.Join(skill.Warnings, "\n")
+	if !strings.Contains(warnings, "file scan budget") || !strings.Contains(warnings, "depth budget") {
+		t.Fatalf("expected file and depth scan budget warnings, got %#v", skill.Warnings)
+	}
+	if len(skill.Files) > 200 {
+		t.Fatalf("file list should be capped, got %d files", len(skill.Files))
+	}
+	for _, file := range skill.Files {
+		if strings.Contains(file.Path, "too-deep.md") {
+			t.Fatalf("deep file should be omitted after depth budget warning: %#v", file)
+		}
+	}
+}
+
 func TestSaveCodexSkillEnabledWritesAndRemovesDisabledOverride(t *testing.T) {
 	home := t.TempDir()
 	codexHome := filepath.Join(home, ".codex")
@@ -327,6 +380,38 @@ func TestCodexSkillConfigRulesApplyInOrderAndNormalizePath(t *testing.T) {
 	}
 	if codexSkillEnabled(skillPath, "demo-skill", rules) {
 		t.Fatalf("canonicalized path selector should disable the skill")
+	}
+}
+
+func TestCodexSkillEnabledStateReportsRuleSource(t *testing.T) {
+	home := t.TempDir()
+	skillDir := filepath.Join(home, ".agents", "skills", "demo")
+	if err := os.MkdirAll(skillDir, 0700); err != nil {
+		t.Fatalf("MkdirAll skillDir: %v", err)
+	}
+	skillPath := filepath.Join(skillDir, "SKILL.md")
+	if err := os.WriteFile(skillPath, []byte("# Demo"), 0600); err != nil {
+		t.Fatalf("WriteFile SKILL.md: %v", err)
+	}
+	nonCanonicalPath := filepath.Join(skillDir, "..", "demo", "SKILL.md")
+	rules := []codexSkillConfigRule{
+		{name: "demo-skill", enabled: false},
+		{path: normalizeCodexSkillConfigPath(nonCanonicalPath), enabled: true},
+	}
+
+	state := codexSkillEnabledState(skillPath, "demo-skill", rules)
+	if !state.enabled || state.source != "path_rule" || state.sourceValue != normalizeCodexSkillConfigPath(skillPath) {
+		t.Fatalf("path rule should be reported as final source: %#v", state)
+	}
+
+	state = codexSkillEnabledState(skillPath, "demo-skill", rules[:1])
+	if state.enabled || state.source != "name_rule" || state.sourceValue != "demo-skill" {
+		t.Fatalf("name rule should be reported as final source: %#v", state)
+	}
+
+	state = codexSkillEnabledState(skillPath, "demo-skill", nil)
+	if !state.enabled || state.source != "default_enabled" || state.sourceValue != "" {
+		t.Fatalf("default enabled source mismatch: %#v", state)
 	}
 }
 
@@ -555,6 +640,82 @@ func TestGetCodexMcpServersParsesSectionServers(t *testing.T) {
 	}
 }
 
+func TestPreflightCodexMcpServerChecksStdioWithoutLeakingEnvValues(t *testing.T) {
+	home := t.TempDir()
+	codexHome := filepath.Join(home, ".codex")
+	workspace := filepath.Join(home, "workspace")
+	t.Setenv("HOME", home)
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("PRESENT_TOKEN", "super-secret-token")
+	if err := os.MkdirAll(workspace, 0700); err != nil {
+		t.Fatalf("MkdirAll workspace: %v", err)
+	}
+
+	app := &App{}
+	result, err := app.PreflightCodexMcpServer(PreflightCodexMcpServerInput{
+		Server: CodexMcpServer{
+			ID:         "filesystem",
+			Enabled:    true,
+			Transport:  "stdio",
+			Command:    "sh",
+			Cwd:        workspace,
+			Env:        []CodexMcpEnvRow{{Key: "INLINE_SECRET", Value: "inline-secret-value"}},
+			EnvVarsRaw: `["PRESENT_TOKEN", { name = "MISSING_TOKEN", source = "remote" }]`,
+		},
+	})
+	if err != nil {
+		t.Fatalf("PreflightCodexMcpServer returned error: %v", err)
+	}
+	if result.Status != "error" {
+		t.Fatalf("status = %q, want error: %#v", result.Status, result.Checks)
+	}
+	details := preflightDetails(result.Checks)
+	if !strings.Contains(details, "PRESENT_TOKEN is present") || !strings.Contains(details, "MISSING_TOKEN is missing") {
+		t.Fatalf("preflight should report env var presence by name: %s", details)
+	}
+	if strings.Contains(details, "super-secret-token") || strings.Contains(details, "inline-secret-value") {
+		t.Fatalf("preflight leaked env values: %s", details)
+	}
+}
+
+func TestPreflightCodexMcpServerChecksHTTPShapeAndBearerEnv(t *testing.T) {
+	t.Setenv("LINEAR_TOKEN", "secret")
+	app := &App{}
+	result, err := app.PreflightCodexMcpServer(PreflightCodexMcpServerInput{
+		Server: CodexMcpServer{
+			ID:                "linear",
+			Enabled:           true,
+			Transport:         "streamable_http",
+			URL:               "https://mcp.linear.app/mcp",
+			BearerTokenEnvVar: "LINEAR_TOKEN",
+			EnvHTTPHeaders:    []CodexMcpEnvRow{{Key: "Authorization", Value: "MISSING_HEADER_TOKEN"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("PreflightCodexMcpServer returned error: %v", err)
+	}
+	if result.Status != "error" {
+		t.Fatalf("status = %q, want error: %#v", result.Status, result.Checks)
+	}
+	details := preflightDetails(result.Checks)
+	if !strings.Contains(details, "https://mcp.linear.app") ||
+		!strings.Contains(details, "LINEAR_TOKEN is present") ||
+		!strings.Contains(details, "Authorization env is missing") {
+		t.Fatalf("preflight should report http shape and env presence: %s", details)
+	}
+	if strings.Contains(details, "secret") {
+		t.Fatalf("preflight leaked bearer env value: %s", details)
+	}
+}
+
+func preflightDetails(checks []CodexMcpPreflightCheck) string {
+	parts := make([]string, 0, len(checks))
+	for _, check := range checks {
+		parts = append(parts, check.Detail)
+	}
+	return strings.Join(parts, "\n")
+}
+
 func TestGetCodexMcpServersTreatsToolApprovalSectionsAsNestedConfig(t *testing.T) {
 	home := t.TempDir()
 	codexHome := filepath.Join(home, ".codex")
@@ -604,6 +765,42 @@ func TestGetCodexMcpServersTreatsToolApprovalSectionsAsNestedConfig(t *testing.T
 		!strings.Contains(server.RawConfig, `args = ["-y", "chrome-devtools-mcp@latest"]`) ||
 		!strings.Contains(server.RawConfig, `[mcp_servers.chrome-devtools.tools.evaluate_script]`) {
 		t.Fatalf("raw config should preserve the server and nested tool sections: %q", server.RawConfig)
+	}
+}
+
+func TestGetCodexMcpServersWarnsAboutMultilineRawStructures(t *testing.T) {
+	home := t.TempDir()
+	codexHome := filepath.Join(home, ".codex")
+	t.Setenv("HOME", home)
+	t.Setenv("CODEX_HOME", codexHome)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll codexHome: %v", err)
+	}
+	config := strings.Join([]string{
+		`[mcp_servers.filesystem]`,
+		`command = "npx"`,
+		`args = [`,
+		`  "-y",`,
+		`  "@modelcontextprotocol/server-filesystem",`,
+		`]`,
+		`env = {`,
+		`  PROJECT_ROOT = "/tmp/project"`,
+		`}`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(filepath.Join(codexHome, "config.toml"), []byte(config), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := &App{}
+	snapshot, err := app.GetCodexMcpServers()
+	if err != nil {
+		t.Fatalf("GetCodexMcpServers returned error: %v", err)
+	}
+	warnings := strings.Join(snapshot.Warnings, "\n")
+	if !strings.Contains(warnings, "mcp_servers.filesystem.args") ||
+		!strings.Contains(warnings, "mcp_servers.filesystem.env") ||
+		!strings.Contains(warnings, "多行 TOML") {
+		t.Fatalf("expected multiline TOML warnings, got %#v", snapshot.Warnings)
 	}
 }
 
@@ -682,6 +879,142 @@ func TestSaveCodexMcpServerPatchesTargetSectionOnly(t *testing.T) {
 	}
 }
 
+func TestSaveCodexMcpServerPatchesQuotedServerIDInPlace(t *testing.T) {
+	home := t.TempDir()
+	codexHome := filepath.Join(home, ".codex")
+	t.Setenv("HOME", home)
+	t.Setenv("CODEX_HOME", codexHome)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll codexHome: %v", err)
+	}
+	configPath := filepath.Join(codexHome, "config.toml")
+	config := strings.Join([]string{
+		`[mcp_servers."linear.team"]`,
+		`url = "https://mcp.linear.app/mcp"`,
+		`unknown = "keep"`,
+		``,
+		`[mcp_servers."linear.team".oauth]`,
+		`client_id = "old-client"`,
+		``,
+		`[mcp_servers."linear.team".tools.search]`,
+		`approval_mode = "approve"`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(config), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := &App{}
+	result, err := app.SaveCodexMcpServer(SaveCodexMcpServerInput{
+		Server: CodexMcpServer{
+			ID:            "linear.team",
+			Enabled:       true,
+			Transport:     "streamable_http",
+			URL:           "https://mcp.linear.app/sse",
+			OAuthClientID: "new-client",
+		},
+	})
+	if err != nil {
+		t.Fatalf("SaveCodexMcpServer returned error: %v", err)
+	}
+	if result.Server.ID != "linear.team" {
+		t.Fatalf("saved server id mismatch: %#v", result.Server)
+	}
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	content := string(body)
+	if !strings.Contains(content, `[mcp_servers."linear.team"]`) ||
+		!strings.Contains(content, `unknown = "keep"`) ||
+		!strings.Contains(content, `url = "https://mcp.linear.app/sse"`) ||
+		!strings.Contains(content, `[mcp_servers."linear.team".oauth]`) ||
+		!strings.Contains(content, `client_id = "new-client"`) ||
+		!strings.Contains(content, `[mcp_servers."linear.team".tools.search]`) ||
+		!strings.Contains(content, `approval_mode = "approve"`) {
+		t.Fatalf("quoted id patch did not preserve expected content: %s", content)
+	}
+	if strings.Contains(content, `[mcp_servers.linear.team]`) {
+		t.Fatalf("quoted id patch must not append dotted bare section: %s", content)
+	}
+}
+
+func TestSaveCodexMcpServerPatchesToolApprovalSections(t *testing.T) {
+	home := t.TempDir()
+	codexHome := filepath.Join(home, ".codex")
+	t.Setenv("HOME", home)
+	t.Setenv("CODEX_HOME", codexHome)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll codexHome: %v", err)
+	}
+	configPath := filepath.Join(codexHome, "config.toml")
+	config := strings.Join([]string{
+		`[mcp_servers.linear]`,
+		`url = "https://mcp.linear.app/mcp"`,
+		``,
+		`[mcp_servers.linear.tools.search]`,
+		`approval_mode = "prompt"`,
+		``,
+		`[mcp_servers.linear.tools.old_tool]`,
+		`approval_mode = "approve"`,
+		``,
+		`[mcp_servers.filesystem]`,
+		`command = "npx"`,
+		``,
+		`[mcp_servers.filesystem.tools.read_file]`,
+		`approval_mode = "auto"`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(config), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := &App{}
+	result, err := app.SaveCodexMcpServer(SaveCodexMcpServerInput{
+		Server: CodexMcpServer{
+			ID:        "linear",
+			Enabled:   true,
+			Transport: "streamable_http",
+			URL:       "https://mcp.linear.app/mcp",
+			Tools: []CodexMcpToolRow{
+				{Name: "search", ApprovalMode: "approve"},
+				{Name: "create issue", ApprovalMode: "prompt"},
+				{Name: "empty_mode"},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SaveCodexMcpServer returned error: %v", err)
+	}
+	if len(result.Server.Tools) != 3 ||
+		result.Server.Tools[0].Name != "create issue" ||
+		result.Server.Tools[0].ApprovalMode != "prompt" ||
+		result.Server.Tools[1].Name != "empty_mode" ||
+		result.Server.Tools[2].Name != "search" ||
+		result.Server.Tools[2].ApprovalMode != "approve" {
+		t.Fatalf("saved server should return requested tool approvals: %#v", result.Server.Tools)
+	}
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	content := string(body)
+	if !strings.Contains(content, `[mcp_servers.linear.tools.search]`) ||
+		!strings.Contains(content, `approval_mode = "approve"`) ||
+		!strings.Contains(content, `[mcp_servers.linear.tools."create issue"]`) ||
+		!strings.Contains(content, `approval_mode = "prompt"`) ||
+		!strings.Contains(content, `[mcp_servers.linear.tools.empty_mode]`) {
+		t.Fatalf("tool approval sections were not written: %s", content)
+	}
+	if strings.Contains(content, `[mcp_servers.linear.tools.old_tool]`) {
+		t.Fatalf("stale tool approval section should be removed: %s", content)
+	}
+	if !strings.Contains(content, `[mcp_servers.filesystem.tools.read_file]`) ||
+		!strings.Contains(content, `approval_mode = "auto"`) {
+		t.Fatalf("other server tool approvals must be preserved: %s", content)
+	}
+}
+
 func TestSaveCodexMcpServerRejectsTransportConflict(t *testing.T) {
 	app := &App{}
 	_, err := app.SaveCodexMcpServer(SaveCodexMcpServerInput{
@@ -694,6 +1027,32 @@ func TestSaveCodexMcpServerRejectsTransportConflict(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "transport") {
 		t.Fatalf("expected transport conflict error, got %v", err)
+	}
+}
+
+func TestSaveCodexMcpServerRejectsInvalidToolApprovalMode(t *testing.T) {
+	home := t.TempDir()
+	codexHome := filepath.Join(home, ".codex")
+	t.Setenv("HOME", home)
+	t.Setenv("CODEX_HOME", codexHome)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll codexHome: %v", err)
+	}
+
+	app := &App{}
+	_, err := app.SaveCodexMcpServer(SaveCodexMcpServerInput{
+		Server: CodexMcpServer{
+			ID:        "linear",
+			Enabled:   true,
+			Transport: "streamable_http",
+			URL:       "https://mcp.linear.app/mcp",
+			Tools: []CodexMcpToolRow{
+				{Name: "search", ApprovalMode: "always"},
+			},
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "tool approval_mode") {
+		t.Fatalf("expected invalid tool approval error, got %v", err)
 	}
 }
 
@@ -762,5 +1121,103 @@ func TestCodexConfigTomlDocumentReadsAndSavesRawContent(t *testing.T) {
 	}
 	if !reloaded.Exists || reloaded.Content != content {
 		t.Fatalf("saved config not reloaded exactly: %#v", reloaded)
+	}
+}
+
+func TestSaveCodexConfigTomlCreatesBackupForExistingFile(t *testing.T) {
+	home := t.TempDir()
+	codexHome := filepath.Join(home, ".codex")
+	t.Setenv("HOME", home)
+	t.Setenv("CODEX_HOME", codexHome)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll codexHome: %v", err)
+	}
+	configPath := filepath.Join(codexHome, "config.toml")
+	original := "model = \"gpt-5.4\"\n"
+	if err := os.WriteFile(configPath, []byte(original), 0600); err != nil {
+		t.Fatalf("WriteFile original config.toml: %v", err)
+	}
+
+	next := "model = \"gpt-5.5\"\n"
+	app := &App{}
+	result, err := app.SaveCodexConfigToml(SaveCodexConfigTomlInput{Content: next})
+	if err != nil {
+		t.Fatalf("SaveCodexConfigToml returned error: %v", err)
+	}
+	if result.BackupPath == "" {
+		t.Fatalf("expected backup path in result: %#v", result)
+	}
+	backupBody, err := os.ReadFile(result.BackupPath)
+	if err != nil {
+		t.Fatalf("ReadFile backup: %v", err)
+	}
+	if string(backupBody) != original {
+		t.Fatalf("backup should contain original content, got %q", string(backupBody))
+	}
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if string(body) != next {
+		t.Fatalf("config.toml should contain new content, got %q", string(body))
+	}
+}
+
+func TestSaveCodexConfigTomlDoesNotCreateBackupWhenMissing(t *testing.T) {
+	home := t.TempDir()
+	codexHome := filepath.Join(home, ".codex")
+	t.Setenv("HOME", home)
+	t.Setenv("CODEX_HOME", codexHome)
+
+	content := "model = \"gpt-5.5\"\n"
+	app := &App{}
+	result, err := app.SaveCodexConfigToml(SaveCodexConfigTomlInput{Content: content})
+	if err != nil {
+		t.Fatalf("SaveCodexConfigToml returned error: %v", err)
+	}
+	if result.BackupPath != "" {
+		t.Fatalf("missing original file should not produce backup: %#v", result)
+	}
+	body, err := os.ReadFile(filepath.Join(codexHome, "config.toml"))
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if string(body) != content {
+		t.Fatalf("config.toml content mismatch: %q", string(body))
+	}
+}
+
+func TestSaveCodexConfigTomlRejectsInvalidContentBeforeBackup(t *testing.T) {
+	home := t.TempDir()
+	codexHome := filepath.Join(home, ".codex")
+	t.Setenv("HOME", home)
+	t.Setenv("CODEX_HOME", codexHome)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll codexHome: %v", err)
+	}
+	configPath := filepath.Join(codexHome, "config.toml")
+	original := "model = \"gpt-5.4\"\n"
+	if err := os.WriteFile(configPath, []byte(original), 0600); err != nil {
+		t.Fatalf("WriteFile original config.toml: %v", err)
+	}
+
+	app := &App{}
+	_, err := app.SaveCodexConfigToml(SaveCodexConfigTomlInput{Content: "model = \"unterminated\n"})
+	if err == nil || !strings.Contains(err.Error(), "config.toml preflight failed") {
+		t.Fatalf("expected preflight error, got %v", err)
+	}
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if string(body) != original {
+		t.Fatalf("invalid save should not overwrite original, got %q", string(body))
+	}
+	backups, err := filepath.Glob(filepath.Join(codexHome, "config.toml.gettokens-backup-*"))
+	if err != nil {
+		t.Fatalf("Glob backups: %v", err)
+	}
+	if len(backups) != 0 {
+		t.Fatalf("invalid save should not create backups: %#v", backups)
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -281,17 +282,41 @@ func (a *App) SaveCodexMcpServer(input SaveCodexMcpServerInput) (*SaveCodexMcpSe
 	if err := writeFileAtomically(document.configPath, []byte(preview), 0600); err != nil {
 		return nil, err
 	}
+	nextDocument, err := readCodexMcpDocument()
+	if err != nil {
+		return nil, err
+	}
 	saved := input.Server
 	saved.Label = saved.ID
 	saved.SourcePath = document.configPath
 	saved.Status = codexMcpStatus(saved)
-	saved.Tools = append([]CodexMcpToolRow(nil), document.tools[saved.ID]...)
+	saved.Tools = append([]CodexMcpToolRow(nil), nextDocument.tools[saved.ID]...)
 	saved.RawConfig = formatMcpCurrentConfigToml(saved)
 	return &SaveCodexMcpServerResult{
 		ConfigPath: document.configPath,
 		Server:     saved,
 		Preview:    preview,
 		Changes:    buildCodexMcpChanges(original, saved),
+	}, nil
+}
+
+func (a *App) PreflightCodexMcpServer(input PreflightCodexMcpServerInput) (*CodexMcpPreflightResult, error) {
+	checks := preflightCodexMcpServer(input.Server)
+	status := "ok"
+	for _, check := range checks {
+		switch check.Status {
+		case "error":
+			status = "error"
+		case "warning":
+			if status == "ok" {
+				status = "warning"
+			}
+		}
+	}
+	return &CodexMcpPreflightResult{
+		ServerID: input.Server.ID,
+		Status:   status,
+		Checks:   checks,
 	}, nil
 }
 
@@ -337,7 +362,14 @@ func (a *App) SaveCodexConfigToml(input SaveCodexConfigTomlInput) (*SaveCodexCon
 		return nil, err
 	}
 	configPath := filepath.Join(codexHome, "config.toml")
+	if err := validateCodexConfigTomlPreflight(input.Content); err != nil {
+		return nil, fmt.Errorf("config.toml preflight failed: %w", err)
+	}
 	if err := os.MkdirAll(filepath.Dir(configPath), 0700); err != nil {
+		return nil, err
+	}
+	backupPath, err := backupExistingCodexConfigToml(configPath)
+	if err != nil {
 		return nil, err
 	}
 	if err := writeFileAtomically(configPath, []byte(input.Content), 0600); err != nil {
@@ -346,7 +378,117 @@ func (a *App) SaveCodexConfigToml(input SaveCodexConfigTomlInput) (*SaveCodexCon
 	return &SaveCodexConfigTomlResult{
 		ConfigPath: configPath,
 		Content:    input.Content,
+		BackupPath: backupPath,
 	}, nil
+}
+
+func backupExistingCodexConfigToml(configPath string) (string, error) {
+	body, err := os.ReadFile(configPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	stamp := time.Now().UTC().Format("20060102T150405.000000000Z")
+	for attempt := 0; attempt < 10; attempt++ {
+		suffix := stamp
+		if attempt > 0 {
+			suffix = fmt.Sprintf("%s-%d", stamp, attempt)
+		}
+		backupPath := configPath + ".gettokens-backup-" + suffix
+		file, err := os.OpenFile(backupPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		if errors.Is(err, os.ErrExist) {
+			continue
+		}
+		if err != nil {
+			return "", err
+		}
+		if _, err := file.Write(body); err != nil {
+			_ = file.Close()
+			return "", err
+		}
+		if err := file.Close(); err != nil {
+			return "", err
+		}
+		return backupPath, nil
+	}
+	return "", fmt.Errorf("unable to create unique backup for %s", configPath)
+}
+
+func validateCodexConfigTomlPreflight(content string) error {
+	lines, _ := splitTomlDocument(content)
+	squareDepth := 0
+	curlyDepth := 0
+	for index, line := range lines {
+		trimmed := strings.TrimSpace(stripTomlLineComment(line))
+		if squareDepth == 0 && curlyDepth == 0 && strings.HasPrefix(trimmed, "[") && !isTomlSectionHeader(trimmed) {
+			return fmt.Errorf("line %d has an invalid TOML section header", index+1)
+		}
+		squareDelta, curlyDelta, err := scanTomlStructureLine(line)
+		if err != nil {
+			return fmt.Errorf("line %d %w", index+1, err)
+		}
+		squareDepth += squareDelta
+		curlyDepth += curlyDelta
+		if squareDepth < 0 || curlyDepth < 0 {
+			return fmt.Errorf("line %d closes a TOML array or table before it is opened", index+1)
+		}
+	}
+	if squareDepth != 0 || curlyDepth != 0 {
+		return errors.New("contains an unclosed TOML array or inline table")
+	}
+	return nil
+}
+
+func scanTomlStructureLine(line string) (int, int, error) {
+	squareDelta := 0
+	curlyDelta := 0
+	inDouble := false
+	inSingle := false
+	escaped := false
+	for _, ch := range line {
+		if inDouble {
+			if escaped {
+				escaped = false
+				continue
+			}
+			if ch == '\\' {
+				escaped = true
+				continue
+			}
+			if ch == '"' {
+				inDouble = false
+			}
+			continue
+		}
+		if inSingle {
+			if ch == '\'' {
+				inSingle = false
+			}
+			continue
+		}
+		switch ch {
+		case '#':
+			return squareDelta, curlyDelta, nil
+		case '"':
+			inDouble = true
+		case '\'':
+			inSingle = true
+		case '[':
+			squareDelta++
+		case ']':
+			squareDelta--
+		case '{':
+			curlyDelta++
+		case '}':
+			curlyDelta--
+		}
+	}
+	if inDouble || inSingle {
+		return 0, 0, errors.New("contains an unterminated TOML string")
+	}
+	return squareDelta, curlyDelta, nil
 }
 
 func ensureEditableCodexConfigToml(configPath string) error {
@@ -431,19 +573,24 @@ func readCodexSkillRecord(root CodexSkillRoot, dir string, skillConfigRules []co
 	if description == "" {
 		description = strings.TrimSpace(frontmatter.Metadata.ShortDescription)
 	}
+	enabledState := codexSkillEnabledState(skillPath, name, skillConfigRules)
+	fileScan := listCodexSkillFiles(dir)
 	return &CodexSkillRecord{
-		ID:              skillPath,
-		Name:            name,
-		Description:     description,
-		Enabled:         codexSkillEnabled(skillPath, name, skillConfigRules),
-		RootLabel:       root.Label,
-		RootPath:        dir,
-		SourceKind:      root.SourceKind,
-		Origin:          "local",
-		VersionLabel:    "local",
-		Files:           listCodexSkillFiles(dir),
-		SkillMarkdown:   string(body),
-		PreviewMarkdown: preview,
+		ID:                 skillPath,
+		Name:               name,
+		Description:        description,
+		Enabled:            enabledState.enabled,
+		EnabledSource:      enabledState.source,
+		EnabledSourceValue: enabledState.sourceValue,
+		RootLabel:          root.Label,
+		RootPath:           dir,
+		SourceKind:         root.SourceKind,
+		Origin:             "local",
+		VersionLabel:       "local",
+		Files:              fileScan.files,
+		SkillMarkdown:      string(body),
+		PreviewMarkdown:    preview,
+		Warnings:           fileScan.warnings,
 	}, nil
 }
 
@@ -518,14 +665,42 @@ func parseCodexSkillMarkdown(markdown string) (codexSkillFrontmatter, string) {
 	return frontmatter, preview
 }
 
-func listCodexSkillFiles(root string) []CodexSkillFile {
+type codexSkillFileScanResult struct {
+	files    []CodexSkillFile
+	warnings []string
+}
+
+func listCodexSkillFiles(root string) codexSkillFileScanResult {
 	files := []CodexSkillFile{}
+	warnings := []string{}
+	fileBudgetWarned := false
+	depthBudgetWarned := false
 	_ = filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
-		if err != nil || entry.IsDir() {
+		if err != nil {
 			return nil
 		}
 		rel, err := filepath.Rel(root, path)
 		if err != nil {
+			return nil
+		}
+		if rel != "." && codexSkillRelativeDepth(rel) > maxCodexSkillFileScanDepth {
+			if !depthBudgetWarned {
+				warnings = append(warnings, fmt.Sprintf("Skill depth budget exceeded for %s: max depth %d", root, maxCodexSkillFileScanDepth))
+				depthBudgetWarned = true
+			}
+			if entry.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		if len(files) >= maxCodexSkillFileScanEntries {
+			if !fileBudgetWarned {
+				warnings = append(warnings, fmt.Sprintf("Skill file scan budget exceeded for %s: showing first %d files", root, maxCodexSkillFileScanEntries))
+				fileBudgetWarned = true
+			}
 			return nil
 		}
 		file := CodexSkillFile{Path: rel, Kind: codexSkillFileKind(rel)}
@@ -536,10 +711,20 @@ func listCodexSkillFiles(root string) []CodexSkillFile {
 		return nil
 	})
 	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
-	return files
+	return codexSkillFileScanResult{files: files, warnings: warnings}
 }
 
 const maxCodexSkillPreviewBytes = 64 * 1024
+const maxCodexSkillFileScanEntries = 200
+const maxCodexSkillFileScanDepth = 8
+
+func codexSkillRelativeDepth(path string) int {
+	clean := filepath.Clean(path)
+	if clean == "." {
+		return 0
+	}
+	return len(strings.Split(clean, string(filepath.Separator)))
+}
 
 func resolveCodexSkillFilePreviewTarget(skillDir string, filePath string) (string, string, error) {
 	cleanRel := filepath.Clean(filePath)
@@ -641,18 +826,28 @@ func readCodexSkillConfigRules(configPath string) ([]codexSkillConfigRule, []str
 }
 
 func codexSkillEnabled(skillPath string, skillName string, rules []codexSkillConfigRule) bool {
+	return codexSkillEnabledState(skillPath, skillName, rules).enabled
+}
+
+type codexSkillEnabledRuleState struct {
+	enabled     bool
+	source      string
+	sourceValue string
+}
+
+func codexSkillEnabledState(skillPath string, skillName string, rules []codexSkillConfigRule) codexSkillEnabledRuleState {
 	normalizedPath := normalizeCodexSkillConfigPath(skillPath)
-	enabled := true
+	state := codexSkillEnabledRuleState{enabled: true, source: "default_enabled"}
 	for _, rule := range rules {
 		if rule.path != "" && rule.path == normalizedPath {
-			enabled = rule.enabled
+			state = codexSkillEnabledRuleState{enabled: rule.enabled, source: "path_rule", sourceValue: normalizedPath}
 			continue
 		}
 		if rule.name != "" && rule.name == skillName {
-			enabled = rule.enabled
+			state = codexSkillEnabledRuleState{enabled: rule.enabled, source: "name_rule", sourceValue: rule.name}
 		}
 	}
-	return enabled
+	return state
 }
 
 type codexSkillConfigBlock struct {
@@ -1047,6 +1242,10 @@ func parseCodexMcpServerSection(section codexMcpServerSection, configPath string
 				continue
 			}
 		}
+		if key, ok := codexMcpMultilineEditableKey(line); ok {
+			warnings = append(warnings, fmt.Sprintf("mcp_servers.%s.%s 使用多行 TOML 结构，结构化编辑器可能无法完整解析，请优先使用 raw config.toml 检查", section.id, key))
+			continue
+		}
 		if tomlLineDefinesKey(line, "bearer_token") {
 			warnings = append(warnings, fmt.Sprintf("mcp_servers.%s 使用了无效 bearer_token，应改用 bearer_token_env_var", section.id))
 		}
@@ -1071,9 +1270,28 @@ func parseCodexMcpServerSection(section codexMcpServerSection, configPath string
 	return server, warnings
 }
 
+func codexMcpMultilineEditableKey(line string) (string, bool) {
+	key := tomlLineKey(line)
+	switch key {
+	case "args", "enabled_tools", "disabled_tools", "scopes", "env_vars":
+		value, ok := parseTomlRawKeyValue(line, key)
+		return key, ok && startsUnclosedTomlValue(value, "[", "]")
+	case "env", "http_headers", "env_http_headers", "oauth":
+		value, ok := parseTomlRawKeyValue(line, key)
+		return key, ok && startsUnclosedTomlValue(value, "{", "}")
+	default:
+		return "", false
+	}
+}
+
+func startsUnclosedTomlValue(value string, open string, close string) bool {
+	trimmed := strings.TrimSpace(stripTomlLineComment(value))
+	return strings.HasPrefix(trimmed, open) && !strings.HasSuffix(trimmed, close)
+}
+
 func validateCodexMcpServer(server CodexMcpServer) error {
-	if strings.TrimSpace(server.ID) == "" || !isBareTomlKey(server.ID) {
-		return errors.New("mcp server id must be a bare TOML key")
+	if !isValidCodexMcpServerID(server.ID) {
+		return errors.New("mcp server id must be a non-empty TOML key segment")
 	}
 	if server.Command != "" && server.URL != "" {
 		return errors.New("transport conflict: command and url cannot both be set")
@@ -1105,6 +1323,12 @@ func validateCodexMcpServer(server CodexMcpServer) error {
 	if server.DefaultToolsApprovalMode != "" && server.DefaultToolsApprovalMode != "auto" && server.DefaultToolsApprovalMode != "prompt" && server.DefaultToolsApprovalMode != "approve" {
 		return errors.New("default_tools_approval_mode must be auto, prompt, or approve")
 	}
+	for _, tool := range server.Tools {
+		mode := strings.TrimSpace(tool.ApprovalMode)
+		if mode != "" && mode != "auto" && mode != "prompt" && mode != "approve" {
+			return fmt.Errorf("tool approval_mode for %q must be auto, prompt, or approve", strings.TrimSpace(tool.Name))
+		}
+	}
 	if err := validateOptionalNonNegativeNumber(server.StartupTimeoutSec, "startup_timeout_sec"); err != nil {
 		return err
 	}
@@ -1112,6 +1336,19 @@ func validateCodexMcpServer(server CodexMcpServer) error {
 		return err
 	}
 	return nil
+}
+
+func isValidCodexMcpServerID(id string) bool {
+	trimmed := strings.TrimSpace(id)
+	if trimmed == "" {
+		return false
+	}
+	for _, ch := range trimmed {
+		if ch == '\x00' || ch == '\n' || ch == '\r' {
+			return false
+		}
+	}
+	return true
 }
 
 func validateOptionalNonNegativeNumber(value string, field string) error {
@@ -1126,7 +1363,7 @@ func validateOptionalNonNegativeNumber(value string, field string) error {
 }
 
 func patchCodexMcpServerSection(lines []string, newline string, server CodexMcpServer) []string {
-	header := "[mcp_servers." + server.ID + "]"
+	header := codexMcpServerSectionHeader(server.ID)
 	start, end, found := findTomlSection(lines, header)
 	if !found {
 		if len(lines) > 0 && strings.TrimSpace(lines[len(lines)-1]) != "" {
@@ -1134,7 +1371,7 @@ func patchCodexMcpServerSection(lines []string, newline string, server CodexMcpS
 		}
 		lines = append(lines, header)
 		lines = append(lines, formatCodexMcpServerKnownLines(server)...)
-		return patchCodexMcpOAuthSection(lines, server)
+		return patchCodexMcpToolSections(patchCodexMcpOAuthSection(lines, server), server)
 	}
 
 	known := map[string]bool{
@@ -1156,7 +1393,7 @@ func patchCodexMcpServerSection(lines []string, newline string, server CodexMcpS
 	next := append([]string{}, lines[:start]...)
 	next = append(next, nextSection...)
 	next = append(next, lines[end:]...)
-	return patchCodexMcpOAuthSection(next, server)
+	return patchCodexMcpToolSections(patchCodexMcpOAuthSection(next, server), server)
 }
 
 func formatCodexMcpServerKnownLines(server CodexMcpServer) []string {
@@ -1227,7 +1464,7 @@ func formatCodexMcpServerKnownLines(server CodexMcpServer) []string {
 }
 
 func patchCodexMcpOAuthSection(lines []string, server CodexMcpServer) []string {
-	header := "[mcp_servers." + server.ID + ".oauth]"
+	header := codexMcpOAuthSectionHeader(server.ID)
 	if start, end, found := findTomlSection(lines, header); found {
 		next := append([]string{}, lines[:start]...)
 		next = append(next, lines[end:]...)
@@ -1237,7 +1474,7 @@ func patchCodexMcpOAuthSection(lines []string, server CodexMcpServer) []string {
 	if clientID == "" {
 		return lines
 	}
-	mainHeader := "[mcp_servers." + server.ID + "]"
+	mainHeader := codexMcpServerSectionHeader(server.ID)
 	_, insertAt, found := findTomlSection(lines, mainHeader)
 	if !found {
 		insertAt = len(lines)
@@ -1254,6 +1491,72 @@ func patchCodexMcpOAuthSection(lines []string, server CodexMcpServer) []string {
 	next = append(next, section...)
 	next = append(next, lines[insertAt:]...)
 	return next
+}
+
+func patchCodexMcpToolSections(lines []string, server CodexMcpServer) []string {
+	if server.Tools == nil {
+		return lines
+	}
+	next := append([]string{}, lines...)
+	for index := len(next) - 1; index >= 0; index-- {
+		section := strings.TrimSpace(stripTomlLineComment(next[index]))
+		if serverID, _, ok := parseCodexMcpToolSectionID(section); ok && serverID == server.ID {
+			end := len(next)
+			for scan := index + 1; scan < len(next); scan++ {
+				if isTomlSectionHeader(next[scan]) {
+					end = scan
+					break
+				}
+			}
+			next = append(next[:index], next[end:]...)
+		}
+	}
+
+	toolLines := formatCodexMcpToolSectionLines(server)
+	if len(toolLines) == 0 {
+		return next
+	}
+	insertAt := codexMcpNestedInsertIndex(next, server.ID)
+	section := []string{}
+	if insertAt > 0 && strings.TrimSpace(next[insertAt-1]) != "" {
+		section = append(section, "")
+	}
+	section = append(section, toolLines...)
+	if insertAt < len(next) && strings.TrimSpace(next[insertAt]) != "" {
+		section = append(section, "")
+	}
+	result := append([]string{}, next[:insertAt]...)
+	result = append(result, section...)
+	result = append(result, next[insertAt:]...)
+	return result
+}
+
+func codexMcpNestedInsertIndex(lines []string, serverID string) int {
+	insertAt := len(lines)
+	if _, end, found := findTomlSection(lines, codexMcpServerSectionHeader(serverID)); found {
+		insertAt = end
+	}
+	if _, end, found := findTomlSection(lines, codexMcpOAuthSectionHeader(serverID)); found {
+		insertAt = end
+	}
+	return insertAt
+}
+
+func formatCodexMcpToolSectionLines(server CodexMcpServer) []string {
+	lines := []string{}
+	for _, tool := range server.Tools {
+		if strings.TrimSpace(tool.Name) == "" {
+			continue
+		}
+		if len(lines) > 0 {
+			lines = append(lines, "")
+		}
+		lines = append(lines, codexMcpToolSectionHeader(server.ID, tool.Name))
+		if strings.TrimSpace(tool.ApprovalMode) != "" {
+			lines = append(lines, fmt.Sprintf("approval_mode = %s", quoteTomlString(tool.ApprovalMode)))
+		}
+	}
+	return lines
 }
 
 func codexMcpNestedSections(document *codexMcpDocument, serverID string) []codexMcpServerSection {
@@ -1283,22 +1586,31 @@ func formatCodexMcpRawConfig(lines []string, section codexMcpServerSection, nest
 }
 
 func formatMcpCurrentConfigToml(server CodexMcpServer) string {
-	lines := []string{"[mcp_servers." + server.ID + "]"}
+	lines := []string{codexMcpServerSectionHeader(server.ID)}
 	lines = append(lines, formatCodexMcpServerKnownLines(server)...)
 	if strings.TrimSpace(server.OAuthClientID) != "" {
-		lines = append(lines, "", "[mcp_servers."+server.ID+".oauth]")
+		lines = append(lines, "", codexMcpOAuthSectionHeader(server.ID))
 		lines = append(lines, fmt.Sprintf("client_id = %s", quoteTomlString(server.OAuthClientID)))
 	}
-	for _, tool := range server.Tools {
-		if strings.TrimSpace(tool.Name) == "" {
-			continue
+	if len(server.Tools) > 0 {
+		if len(lines) > 0 {
+			lines = append(lines, "")
 		}
-		lines = append(lines, "", "[mcp_servers."+server.ID+".tools."+tool.Name+"]")
-		if strings.TrimSpace(tool.ApprovalMode) != "" {
-			lines = append(lines, fmt.Sprintf("approval_mode = %s", quoteTomlString(tool.ApprovalMode)))
-		}
+		lines = append(lines, formatCodexMcpToolSectionLines(server)...)
 	}
 	return strings.Join(lines, "\n")
+}
+
+func codexMcpServerSectionHeader(serverID string) string {
+	return "[mcp_servers." + formatTomlKey(strings.TrimSpace(serverID)) + "]"
+}
+
+func codexMcpOAuthSectionHeader(serverID string) string {
+	return "[mcp_servers." + formatTomlKey(strings.TrimSpace(serverID)) + ".oauth]"
+}
+
+func codexMcpToolSectionHeader(serverID string, toolName string) string {
+	return "[mcp_servers." + formatTomlKey(strings.TrimSpace(serverID)) + ".tools." + formatTomlKey(strings.TrimSpace(toolName)) + "]"
 }
 
 func parseTomlRawKeyValue(line string, key string) (string, bool) {
@@ -1459,6 +1771,286 @@ func codexMcpStatus(server CodexMcpServer) string {
 		return "disabled"
 	}
 	return "ready"
+}
+
+func preflightCodexMcpServer(server CodexMcpServer) []CodexMcpPreflightCheck {
+	checks := []CodexMcpPreflightCheck{}
+	add := func(id string, label string, status string, detail string) {
+		checks = append(checks, CodexMcpPreflightCheck{ID: id, Label: label, Status: status, Detail: detail})
+	}
+
+	if !server.Enabled {
+		add("enabled", "enabled", "warning", "server is disabled in config.toml")
+	}
+
+	switch server.Transport {
+	case "stdio":
+		preflightCodexMcpStdio(server, add)
+	case "streamable_http":
+		preflightCodexMcpHTTP(server, add)
+	case "conflict":
+		add("transport", "transport", "error", "command and url are both configured")
+	default:
+		add("transport", "transport", "error", "transport cannot be resolved from command or url")
+	}
+
+	if len(checks) == 0 {
+		add("config", "config", "ok", "no preflight checks were required")
+	}
+	return checks
+}
+
+func preflightCodexMcpStdio(server CodexMcpServer, add func(string, string, string, string)) {
+	command := strings.TrimSpace(server.Command)
+	if command == "" {
+		add("command", "command", "error", "stdio server requires command")
+	} else if resolved, err := resolveCodexMcpCommandPath(command, server.Cwd); err != nil {
+		add("command", "command", "error", err.Error())
+	} else {
+		add("command", "command", "ok", resolved)
+	}
+
+	cwd := strings.TrimSpace(server.Cwd)
+	if cwd == "" {
+		add("cwd", "cwd", "ok", "not configured")
+	} else if resolved, err := resolveCodexMcpPath(cwd, ""); err != nil {
+		add("cwd", "cwd", "error", err.Error())
+	} else if info, err := os.Stat(resolved); err != nil {
+		add("cwd", "cwd", "error", "directory does not exist")
+	} else if !info.IsDir() {
+		add("cwd", "cwd", "error", "path is not a directory")
+	} else {
+		add("cwd", "cwd", "ok", resolved)
+	}
+
+	if len(server.Env) > 0 {
+		add("env", "env", "ok", fmt.Sprintf("%d inline env keys configured", len(server.Env)))
+	}
+	envNames := collectCodexMcpEnvVarNames(server.EnvVarsRaw)
+	if len(envNames) == 0 {
+		add("env_vars", "env_vars", "ok", "no inherited env vars configured")
+		return
+	}
+	for _, name := range envNames {
+		if _, ok := os.LookupEnv(name); ok {
+			add("env_vars:"+name, "env_vars", "ok", name+" is present")
+		} else {
+			add("env_vars:"+name, "env_vars", "error", name+" is missing")
+		}
+	}
+}
+
+func preflightCodexMcpHTTP(server CodexMcpServer, add func(string, string, string, string)) {
+	rawURL := strings.TrimSpace(server.URL)
+	if rawURL == "" {
+		add("url", "url", "error", "streamable_http server requires url")
+	} else if parsed, err := url.Parse(rawURL); err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		add("url", "url", "error", "url is invalid")
+	} else if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		add("url", "url", "error", "url scheme must be http or https")
+	} else {
+		add("url", "url", "ok", parsed.Scheme+"://"+parsed.Host)
+	}
+
+	bearerEnv := strings.TrimSpace(server.BearerTokenEnvVar)
+	if bearerEnv == "" {
+		add("bearer_token_env_var", "bearer_token_env_var", "warning", "no bearer token env var configured")
+	} else if _, ok := os.LookupEnv(bearerEnv); ok {
+		add("bearer_token_env_var", "bearer_token_env_var", "ok", bearerEnv+" is present")
+	} else {
+		add("bearer_token_env_var", "bearer_token_env_var", "error", bearerEnv+" is missing")
+	}
+
+	if len(server.HTTPHeaders) > 0 {
+		add("http_headers", "http_headers", "ok", fmt.Sprintf("%d inline headers configured", len(server.HTTPHeaders)))
+	}
+	for _, row := range server.EnvHTTPHeaders {
+		envName := strings.TrimSpace(row.Value)
+		if envName == "" {
+			continue
+		}
+		if _, ok := os.LookupEnv(envName); ok {
+			add("env_http_headers:"+row.Key, "env_http_headers", "ok", row.Key+" env is present")
+		} else {
+			add("env_http_headers:"+row.Key, "env_http_headers", "error", row.Key+" env is missing")
+		}
+	}
+}
+
+func resolveCodexMcpCommandPath(command string, cwd string) (string, error) {
+	if strings.ContainsAny(command, `/\`) || strings.HasPrefix(command, ".") {
+		resolved, err := resolveCodexMcpPath(command, cwd)
+		if err != nil {
+			return "", err
+		}
+		info, err := os.Stat(resolved)
+		if err != nil {
+			return "", fmt.Errorf("command does not exist")
+		}
+		if info.IsDir() {
+			return "", fmt.Errorf("command points to a directory")
+		}
+		return resolved, nil
+	}
+	resolved, err := exec.LookPath(command)
+	if err != nil {
+		return "", fmt.Errorf("command not found on PATH")
+	}
+	return resolved, nil
+}
+
+func resolveCodexMcpPath(value string, cwd string) (string, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "", fmt.Errorf("path is empty")
+	}
+	if strings.HasPrefix(trimmed, "~") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		if trimmed == "~" {
+			trimmed = home
+		} else if strings.HasPrefix(trimmed, "~/") {
+			trimmed = filepath.Join(home, strings.TrimPrefix(trimmed, "~/"))
+		}
+	}
+	if filepath.IsAbs(trimmed) {
+		return filepath.Clean(trimmed), nil
+	}
+	if base := strings.TrimSpace(cwd); base != "" {
+		resolvedBase, err := resolveCodexMcpPath(base, "")
+		if err != nil {
+			return "", err
+		}
+		return filepath.Clean(filepath.Join(resolvedBase, trimmed)), nil
+	}
+	abs, err := filepath.Abs(trimmed)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Clean(abs), nil
+}
+
+func collectCodexMcpEnvVarNames(raw string) []string {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return nil
+	}
+	seen := map[string]bool{}
+	names := []string{}
+	add := func(name string) {
+		trimmed := strings.TrimSpace(name)
+		if trimmed == "" || seen[trimmed] {
+			return
+		}
+		seen[trimmed] = true
+		names = append(names, trimmed)
+	}
+	for _, segment := range extractInlineTomlTableSegments(value) {
+		if name, ok := extractTomlInlineName(segment); ok {
+			add(name)
+		}
+	}
+	withoutTables := removeInlineTomlTableSegments(value)
+	for _, name := range extractQuotedStrings(withoutTables) {
+		add(name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func extractInlineTomlTableSegments(value string) []string {
+	segments := []string{}
+	depth := 0
+	start := -1
+	inString := false
+	escaped := false
+	for index, char := range value {
+		if inString {
+			if escaped {
+				escaped = false
+				continue
+			}
+			if char == '\\' {
+				escaped = true
+				continue
+			}
+			if char == '"' {
+				inString = false
+			}
+			continue
+		}
+		switch char {
+		case '"':
+			inString = true
+		case '{':
+			if depth == 0 {
+				start = index
+			}
+			depth++
+		case '}':
+			if depth > 0 {
+				depth--
+				if depth == 0 && start >= 0 {
+					segments = append(segments, value[start:index+1])
+					start = -1
+				}
+			}
+		}
+	}
+	return segments
+}
+
+func removeInlineTomlTableSegments(value string) string {
+	result := value
+	for _, segment := range extractInlineTomlTableSegments(value) {
+		result = strings.ReplaceAll(result, segment, "")
+	}
+	return result
+}
+
+func extractTomlInlineName(value string) (string, bool) {
+	parts := strings.Split(value, "=")
+	for index := 0; index < len(parts)-1; index++ {
+		if strings.TrimSpace(strings.TrimPrefix(parts[index], "{")) != "name" {
+			continue
+		}
+		for _, quoted := range extractQuotedStrings(parts[index+1]) {
+			return quoted, true
+		}
+	}
+	return "", false
+}
+
+func extractQuotedStrings(value string) []string {
+	values := []string{}
+	inString := false
+	escaped := false
+	start := -1
+	for index, char := range value {
+		if inString {
+			if escaped {
+				escaped = false
+				continue
+			}
+			if char == '\\' {
+				escaped = true
+				continue
+			}
+			if char == '"' {
+				values = append(values, value[start:index])
+				inString = false
+				start = -1
+			}
+			continue
+		}
+		if char == '"' {
+			inString = true
+			start = index + 1
+		}
+	}
+	return values
 }
 
 func buildCodexMcpChanges(before CodexMcpServer, after CodexMcpServer) []CodexMcpChange {

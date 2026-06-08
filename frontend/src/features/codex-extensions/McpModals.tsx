@@ -1,15 +1,20 @@
-import { GitBranch, Save, X } from 'lucide-react';
+import { Activity, GitBranch, Save, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
 import {
   buildMcpChangePreview,
+  isEditableMcpTransport,
   parseMcpArgs,
   parseMcpEnv,
   parseMcpList,
+  parseMcpTools,
   serializeMcpArgs,
   serializeMcpEnv,
   serializeMcpList,
   serializeMcpTools,
+  validateMcpEnvRows,
+  validateMcpToolRows,
+  type McpPreflightResult,
   type McpServerRecord,
   type McpTransport,
 } from './model';
@@ -27,14 +32,20 @@ export function McpServerEditorModal({
   onReset,
   onClose,
   onSave,
+  onPreflight,
+  preflight,
+  preflightLoading,
 }: {
   draft: McpServerRecord;
   preview: ReturnType<typeof buildMcpChangePreview>;
   loading: boolean;
+  preflight: McpPreflightResult | null;
+  preflightLoading: boolean;
   onPatch: (patch: Partial<McpServerRecord>) => void;
   onReset: () => void;
   onClose: () => void;
   onSave: () => void;
+  onPreflight: () => void;
 } & TProps) {
   function patchTransport(transport: McpTransport) {
     if (transport === draft.transport) {
@@ -63,6 +74,13 @@ export function McpServerEditorModal({
     });
   }
 
+  const transportNeedsResolution = !isEditableMcpTransport(draft.transport);
+  const envValidationIssues = [
+    ...validateMcpEnvRows(draft.env),
+    ...validateMcpEnvRows(draft.httpHeaders),
+    ...validateMcpEnvRows(draft.envHttpHeaders),
+  ];
+  const toolValidationIssues = validateMcpToolRows(draft.tools);
   const currentValueToml = draft.rawConfig?.trim() || formatMcpCurrentValueToml(draft);
   return (
     <div
@@ -113,6 +131,9 @@ export function McpServerEditorModal({
                     className="select-swiss"
                     onChange={(event) => patchTransport(event.target.value as McpTransport)}
                   >
+                    {transportNeedsResolution ? (
+                      <option value={draft.transport} disabled>{draft.transport}</option>
+                    ) : null}
                     <option value="stdio">stdio</option>
                     <option value="streamable_http">streamable_http</option>
                   </select>
@@ -120,14 +141,23 @@ export function McpServerEditorModal({
               </div>
             </McpEditorSection>
 
-            {draft.transport === 'stdio' ? (
+            {transportNeedsResolution ? (
+              <McpEditorSection
+                title={t('codex_extensions.mcp_transport_resolution_section')}
+                meta={draft.transport}
+              >
+                <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+                  {t('codex_extensions.mcp_transport_resolution_hint')}
+                </div>
+              </McpEditorSection>
+            ) : draft.transport === 'stdio' ? (
               <McpEditorSection
                 title={t('codex_extensions.mcp_stdio_section')}
                 meta="stdio"
               >
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label={t('codex_extensions.command')} value={draft.command || ''} onChange={(value) => onPatch({ command: value })} />
-                  <Field label={t('codex_extensions.args')} value={serializeMcpArgs(draft.args)} onChange={(value) => onPatch({ args: parseMcpArgs(value) })} />
+                  <TextareaField label={t('codex_extensions.args')} value={serializeMcpArgs(draft.args)} onChange={(value) => onPatch({ args: parseMcpArgs(value) })} />
                   <Field label={t('codex_extensions.cwd')} value={draft.cwd || ''} onChange={(value) => onPatch({ cwd: value })} />
                   <TextareaField label={t('codex_extensions.env_vars')} value={draft.envVarsRaw || ''} onChange={(value) => onPatch({ envVarsRaw: value })} />
                   <TextareaField label={t('codex_extensions.env')} value={serializeMcpEnv(draft.env)} onChange={(value) => onPatch({ env: parseMcpEnv(value) })} />
@@ -194,14 +224,34 @@ export function McpServerEditorModal({
                 <TextareaField label={t('codex_extensions.enabled_tools')} value={serializeMcpList(draft.enabledTools)} onChange={(value) => onPatch({ enabledTools: parseMcpList(value) })} />
                 <TextareaField label={t('codex_extensions.disabled_tools')} value={serializeMcpList(draft.disabledTools)} onChange={(value) => onPatch({ disabledTools: parseMcpList(value) })} />
                 <TextareaField label={t('codex_extensions.scopes')} value={serializeMcpList(draft.scopes)} onChange={(value) => onPatch({ scopes: parseMcpList(value) })} />
+                <TextareaField label={t('codex_extensions.tool_approval_modes')} value={serializeMcpTools(draft.tools)} onChange={(value) => onPatch({ tools: parseMcpTools(value) })} />
               </div>
             </McpEditorSection>
 
             <div className="flex flex-wrap gap-2 bg-[var(--bg-surface)] p-4">
+              {envValidationIssues.length > 0 ? (
+                <div className="basis-full border-2 border-[var(--accent-red)] bg-[color-mix(in_srgb,var(--accent-red)_10%,transparent)] p-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+                  {t('codex_extensions.mcp_env_validation_error')}: {formatMcpEnvValidationIssues(envValidationIssues, t)}
+                </div>
+              ) : null}
+              {toolValidationIssues.length > 0 ? (
+                <div className="basis-full border-2 border-[var(--accent-red)] bg-[color-mix(in_srgb,var(--accent-red)_10%,transparent)] p-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+                  {t('codex_extensions.mcp_tool_validation_error')}: {formatMcpToolValidationIssues(toolValidationIssues, t)}
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={onPreflight}
+                disabled={loading || preflightLoading || transportNeedsResolution}
+                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Activity className="h-3.5 w-3.5" />
+                {preflightLoading ? t('codex_extensions.mcp_preflight_running') : t('codex_extensions.mcp_preflight')}
+              </button>
               <button
                 type="button"
                 onClick={onSave}
-                disabled={preview.length === 0 || loading}
+                disabled={preview.length === 0 || loading || transportNeedsResolution || envValidationIssues.length > 0 || toolValidationIssues.length > 0}
                 className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />
@@ -210,6 +260,7 @@ export function McpServerEditorModal({
               <button type="button" onClick={onReset} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
                 {t('common.cancel')}
               </button>
+              {preflight ? <McpPreflightPanel result={preflight} t={t} /> : null}
             </div>
           </main>
           <aside className="border-t-2 border-[var(--border-color)] p-4 xl:border-l-2 xl:border-t-0">
@@ -243,6 +294,72 @@ export function McpServerEditorModal({
       </div>
     </div>
   );
+}
+
+function formatMcpEnvValidationIssues(
+  issues: ReturnType<typeof validateMcpEnvRows>,
+  t: (key: string) => string,
+): string {
+  return issues
+    .slice(0, 3)
+    .map((issue) => `${issue.key || '-'} ${t(`codex_extensions.mcp_env_issue_${issue.reason}`)}`)
+    .join(' / ');
+}
+
+function formatMcpToolValidationIssues(
+  issues: ReturnType<typeof validateMcpToolRows>,
+  t: (key: string) => string,
+): string {
+  return issues
+    .slice(0, 3)
+    .map((issue) => `${issue.name || '-'}=${issue.approvalMode || '-'} ${t(`codex_extensions.mcp_tool_issue_${issue.reason}`)}`)
+    .join(' / ');
+}
+
+function McpPreflightPanel({ result, t }: { result: McpPreflightResult; t: (key: string) => string }) {
+  const statusClass = {
+    ok: 'border-[var(--color-status-success)] text-[var(--color-status-success)]',
+    warning: 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]',
+    error: 'border-[var(--accent-red)] text-[var(--accent-red)]',
+  }[result.status];
+
+  return (
+    <section className="basis-full border-2 border-[var(--border-color)] bg-[var(--bg-main)]" data-codex-mcp-preflight-result="true">
+      <header className={`flex items-center justify-between gap-3 border-b-2 px-3 py-2 ${statusClass}`}>
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em]">
+          {t('codex_extensions.mcp_preflight_result')}
+        </div>
+        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em]">
+          {t(`codex_extensions.mcp_preflight_status_${result.status}`)}
+        </div>
+      </header>
+      <div className="divide-y-2 divide-[var(--border-color)]">
+        {result.checks.map((check) => (
+          <div key={check.id} className="grid gap-1 px-3 py-2 md:grid-cols-[8rem_minmax(0,1fr)_6rem] md:items-center">
+            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              {check.label}
+            </div>
+            <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)]">
+              {check.detail || '-'}
+            </div>
+            <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] ${preflightCheckClass(check.status)}`}>
+              {t(`codex_extensions.mcp_preflight_status_${check.status}`)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function preflightCheckClass(status: McpPreflightResult['status']): string {
+  if (status === 'error') {
+    return 'text-[var(--accent-red)]';
+  }
+  if (status === 'warning') {
+    return 'text-[var(--color-status-warning)]';
+  }
+  return 'text-[var(--color-status-success)]';
 }
 
 export function ConfigTomlEditorModal({

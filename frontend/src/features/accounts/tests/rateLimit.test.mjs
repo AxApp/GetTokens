@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import { resolveUnboundedTrafficActivityPercent } from '../model/accountUsage.ts';
-import { buildRateLimitGuardRows } from '../model/rateLimit.ts';
+import {
+  buildRateLimitGuardRows,
+  collectLegacyRateLimitBindings,
+  isLegacyRateLimitAccountKey,
+} from '../model/rateLimit.ts';
 
 test('rate limit guard rows expose quota-like progress details for account cards', () => {
   const rows = buildRateLimitGuardRows({
@@ -43,6 +47,68 @@ test('rate limit guard rows expose quota-like progress details for account cards
       windowLabel: '1h',
       resetLabel: '06/03 01:00',
     },
+  ]);
+});
+
+test('rate limit model detects legacy account key bindings without migrating them', () => {
+  assert.equal(isLegacyRateLimitAccountKey('auth-file:codex.json'), true);
+  assert.equal(isLegacyRateLimitAccountKey('codex-api-key:stable'), true);
+  assert.equal(isLegacyRateLimitAccountKey('openai-compatible:deepseek'), true);
+  assert.equal(isLegacyRateLimitAccountKey('acct_00000000-0000-4000-8000-000000000001'), false);
+
+  const bindings = collectLegacyRateLimitBindings({
+    currentAccountKey: 'acct_00000000-0000-4000-8000-000000000001',
+    rules: [
+      {
+        id: 'rule-legacy',
+        accountKey: 'codex-api-key:stable',
+        strategy: 'token-window',
+        window: '24h',
+        limitValue: 1000,
+        action: 'block',
+        enabled: true,
+      },
+    ],
+    status: {
+      accountKey: 'acct_00000000-0000-4000-8000-000000000001',
+      blocked: false,
+      rules: [
+        {
+          exceeded: false,
+          usagePct: 10,
+          currentUsage: 10,
+          rule: {
+            id: 'status-legacy',
+            accountKey: 'auth-file:codex.json',
+            strategy: 'request-window',
+            window: '1h',
+            limitValue: 100,
+            action: 'warn',
+            enabled: true,
+          },
+        },
+      ],
+    },
+    events: [
+      {
+        id: 'event-legacy',
+        accountKey: 'openai-compatible:deepseek',
+        ruleID: 'rule-legacy',
+        strategy: 'token-window',
+        window: '24h',
+        action: 'block',
+        usageValue: 1000,
+        limitValue: 1000,
+        blocked: true,
+        triggeredAt: 1760000000000,
+      },
+    ],
+  });
+
+  assert.deepEqual(bindings.map((item) => `${item.source}:${item.accountKey}`), [
+    'rules:codex-api-key:stable',
+    'status:auth-file:codex.json',
+    'events:openai-compatible:deepseek',
   ]);
 });
 
@@ -141,7 +207,8 @@ test('account quota refresh also refreshes route guard status and marks guard ro
   assert.match(pageSource, /void refreshAccountUsage\(groupAccounts\)/);
   assert.match(pageSource, /void refreshAccountRateLimits\(\[account\]\)/);
   assert.match(pageSource, /void refreshAccountUsage\(\[account\]\)/);
-  assert.match(pageSource, /loadAccounts\(\{ showSupplementalRefreshing: true \}\)/);
+  assert.match(pageStateSource, /refreshAccountsRuntime/);
+  assert.match(pageSource, /void refreshAccountsRuntime\(\)/);
   assert.match(groupSource, /rateLimitRefreshing=\{rateLimitRefreshingAccountIDSet\.has\(account\.id\)\}/);
   assert.match(groupSource, /usageRefreshing=\{usageRefreshingAccountIDSet\.has\(account\.id\)\}/);
   assert.match(cardSource, /rateLimitRefreshing\?: boolean/);

@@ -16,6 +16,7 @@ import {
   buildCodexLiveRequestFeedRows,
   buildRequestRowSummary,
   buildSessionRowSummary,
+  markHistoricalRequest,
 } from './components/formatters.ts';
 import { copyCodexLiveSessionID } from './components/sessionClipboard.ts';
 import {
@@ -339,6 +340,33 @@ test('buildCodexLiveHistoryRequestFeedRows keeps global history timing usable fo
   assert.equal(rows[0].request?.requestID, 'history-req-1');
   assert.equal(rows[0].request?.timing?.firstEventMs, 800);
   assert.equal(rows[0].session.sessionID, session.sessionID);
+});
+
+test('codex live history rows mark unclosed historical statuses instead of current streaming state', () => {
+  const session = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[0],
+    requests: [],
+  };
+  const request = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[0].requests[0],
+    requestID: 'history-streaming-1',
+    sessionID: session.sessionID,
+    status: 'streaming',
+    completedAt: '',
+  };
+
+  const marked = markHistoricalRequest(request);
+  const rows = buildCodexLiveHistoryRequestFeedRows([session], [request]);
+  const summary = buildRequestRowSummary(rows[0], (key) => {
+    if (key === 'codex_live_sessions.status_historical_unclosed') {
+      return '历史未闭合';
+    }
+    return key;
+  });
+
+  assert.equal(marked.historyState, 'historical_unclosed');
+  assert.equal(rows[0].request?.historyState, 'historical_unclosed');
+  assert.equal(summary.statusLabel, '历史未闭合');
 });
 
 test('buildRequestRowSummary designs request rollup labels around request, project, model, and timing', () => {
@@ -924,12 +952,43 @@ test('codex live sessions workbench keeps the right pane as overview until a ses
 test('codex live sessions clear action lives in the page navigation actions', async () => {
   const workbenchSource = await readFile(new URL('./components/CodexLiveSessionsWorkbench.tsx', import.meta.url), 'utf8');
   const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
+  const zhLocale = JSON.parse(await readFile(new URL('../../locales/zh.json', import.meta.url), 'utf8'));
 
   assert.match(workbenchSource, /<Trash2 className="h-3\.5 w-3\.5"/);
   assert.match(workbenchSource, /title=\{t\('codex_live_sessions\.clear_sessions_title'\)\}/);
-  assert.match(workbenchSource, /onClearSessions\?\.\(\)/);
+  assert.match(workbenchSource, /confirmClearSessions/);
+  assert.match(workbenchSource, /t\('codex_live_sessions\.clear_sessions_confirm'\)/);
+  assert.match(workbenchSource, /t\('codex_live_sessions\.clear_sessions'\)/);
+  assert.match(workbenchSource, /onClearSessions\(\)/);
   assert.doesNotMatch(feedSource, /clear_sessions_title/);
   assert.doesNotMatch(feedSource, /onClearSessions/);
+  assert.equal(zhLocale.codex_live_sessions.clear_sessions, '清空实时视图');
+  assert.match(zhLocale.codex_live_sessions.clear_sessions_title, /不删除磁盘历史/);
+  assert.match(zhLocale.codex_live_sessions.clear_sessions_confirm, /不取消正在进行的请求/);
+});
+
+test('codex live session history window exposes load-more controls and offset paging', async () => {
+  const featureSource = await readFile(new URL('./CodexLiveSessionsFeature.tsx', import.meta.url), 'utf8');
+  const workbenchSource = await readFile(new URL('./components/CodexLiveSessionsWorkbench.tsx', import.meta.url), 'utf8');
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+  const zhLocale = JSON.parse(await readFile(new URL('../../locales/zh.json', import.meta.url), 'utf8'));
+
+  assert.match(featureSource, /codexLiveOverviewHistoryLimit = 80/);
+  assert.match(featureSource, /codexLiveDetailHistoryLimit = 50/);
+  assert.match(featureSource, /const nextOffset = overviewState\.offset \+ overviewState\.requests\.length/);
+  assert.match(featureSource, /const nextOffset = detailState\.offset \+ detailState\.requests\.length/);
+  assert.match(featureSource, /offset: current\.offset/);
+  assert.match(featureSource, /mergeCodexLiveHistoryRequests/);
+  assert.match(featureSource, /mergeCodexLiveHistoryRefresh/);
+  assert.match(featureSource, /requests\.length > refreshedRequests\.length/);
+  assert.match(workbenchSource, /overviewCanLoadMore/);
+  assert.match(workbenchSource, /detailCanLoadMore/);
+  assert.match(detailSource, /data-codex-history-window-control="true"/);
+  assert.match(detailSource, /codex_live_sessions\.history_load_more/);
+  assert.match(detailSource, /historicalStatusLabel/);
+  assert.match(detailSource, /codex_live_sessions\.status_historical_unclosed/);
+  assert.equal(zhLocale.codex_live_sessions.history_load_more, '加载更多历史');
+  assert.equal(zhLocale.codex_live_sessions.status_historical_unclosed, '历史未闭合');
 });
 
 test('codex live session feed renders session id as an independent copy target', async () => {
@@ -1125,7 +1184,7 @@ test('codex live sessions feature splits row snapshot polling from detail histor
   assert.match(featureSource, /detailRequestVersionRef/);
   assert.match(featureSource, /overviewRequestVersionRef/);
   assert.match(featureSource, /const loadOverview = useCallback/);
-  assert.match(featureSource, /GetCodexLiveSessionHistory\(\{\s*sessionID: '',\s*window: 'all',\s*limit: 80,\s*offset: 0,\s*\}\)/);
+  assert.match(featureSource, /GetCodexLiveSessionHistory\(\{\s*sessionID: '',\s*window: 'all',\s*limit: codexLiveOverviewHistoryLimit,\s*offset: 0,\s*\}\)/);
   assert.match(featureSource, /overviewRequests=\{!selectedSessionID \? overviewState\.requests : \[\]\}/);
   assert.match(featureSource, /onClearSessions=\{clearSessions\}/);
 });

@@ -201,6 +201,8 @@ export function ParseDeepLink(arg1:string):Promise<main.DeepLinkImportRequest>;
 
 export function PatchClaudeCodeSettings(arg1:main.PatchClaudeCodeSettingsInputDTO):Promise<main.PatchClaudeCodeSettingsResultDTO>;
 
+export function PreflightCodexMcpServer(arg1:main.PreflightCodexMcpServerInput):Promise<main.CodexMcpPreflightResult>;
+
 export function PreviewCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
 
 export function PreviewDeepLinkImport(arg1:string):Promise<main.DeepLinkImportPreview>;

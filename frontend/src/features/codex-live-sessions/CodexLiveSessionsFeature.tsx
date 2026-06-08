@@ -17,6 +17,9 @@ import {
 import { mergeCodexLiveSessionsSnapshot } from './model/snapshotMerge';
 import type { CodexLiveRequest, CodexLiveSessionSnapshot } from './model/types';
 
+const codexLiveOverviewHistoryLimit = 80;
+const codexLiveDetailHistoryLimit = 50;
+
 interface CodexLiveSessionsFeatureProps {
   sidecarStatus: SidecarStatus;
   view: CodexLiveSessionsView;
@@ -27,6 +30,10 @@ interface CodexLiveSessionDetailState {
   sessionID?: string;
   requests: CodexLiveRequest[];
   generatedAt: string;
+  window: string;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
   loading: boolean;
   error?: string;
 }
@@ -34,6 +41,10 @@ interface CodexLiveSessionDetailState {
 interface CodexLiveSessionOverviewState {
   requests: CodexLiveRequest[];
   generatedAt: string;
+  window: string;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
   loading: boolean;
   error?: string;
 }
@@ -48,11 +59,19 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
   const [detailState, setDetailState] = useState<CodexLiveSessionDetailState>({
     requests: [],
     generatedAt: '',
+    window: 'all',
+    limit: codexLiveDetailHistoryLimit,
+    offset: 0,
+    hasMore: false,
     loading: false,
   });
   const [overviewState, setOverviewState] = useState<CodexLiveSessionOverviewState>({
     requests: [],
     generatedAt: '',
+    window: 'all',
+    limit: codexLiveOverviewHistoryLimit,
+    offset: 0,
+    hasMore: false,
     loading: false,
   });
   const [documentHidden, setDocumentHidden] = useState(() =>
@@ -98,8 +117,8 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
       detailRequestVersionRef.current += 1;
       overviewRequestVersionRef.current += 1;
       setSelectedSessionID(undefined);
-      setDetailState({ sessionID: undefined, requests: [], generatedAt: '', loading: false });
-      setOverviewState({ requests: [], generatedAt: '', loading: false });
+      setDetailState(createEmptyDetailHistoryState());
+      setOverviewState(createEmptyOverviewHistoryState());
       setSnapshot((current) => ({
         ...current,
         summary: {
@@ -125,7 +144,15 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
     if (browserMode) {
       overviewRequestVersionRef.current += 1;
       const requests = snapshot.sessions.flatMap((session) => session.requests);
-      setOverviewState({ requests, generatedAt: snapshot.generatedAt, loading: false });
+      setOverviewState({
+        requests,
+        generatedAt: snapshot.generatedAt,
+        window: 'preview',
+        limit: requests.length,
+        offset: 0,
+        hasMore: false,
+        loading: false,
+      });
       return;
     }
     if (!sidecarReady) {
@@ -142,17 +169,30 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
       const nextHistory = await GetCodexLiveSessionHistory({
         sessionID: '',
         window: 'all',
-        limit: 80,
+        limit: codexLiveOverviewHistoryLimit,
         offset: 0,
       });
       const history = mapBackendCodexLiveSessionHistory(nextHistory);
       if (overviewRequestVersionRef.current != requestVersion) {
         return;
       }
-      setOverviewState({
-        requests: history.items,
-        generatedAt: history.generatedAt,
-        loading: false,
+      const refreshedRequests = markCodexLiveHistoryRequests(history.items);
+      setOverviewState((current) => {
+        const limit = history.limit || current.limit || codexLiveOverviewHistoryLimit;
+        const offset = history.offset || current.offset || 0;
+        const requests = offset === current.offset
+          ? mergeCodexLiveHistoryRefresh(current.requests, refreshedRequests)
+          : refreshedRequests;
+        return {
+          requests,
+          generatedAt: history.generatedAt,
+          window: history.window || current.window || 'all',
+          limit,
+          offset,
+          hasMore: requests.length > refreshedRequests.length || refreshedRequests.length >= limit,
+          loading: false,
+          error: undefined,
+        };
       });
     } catch (error) {
       if (overviewRequestVersionRef.current != requestVersion) {
@@ -167,10 +207,56 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
     }
   }, [browserMode, selectedSessionID, sidecarReady, snapshot.generatedAt, snapshot.sessions]);
 
+  const loadMoreOverview = useCallback(async () => {
+    if (browserMode || selectedSessionID || !sidecarReady || overviewState.loading || !overviewState.hasMore) {
+      return;
+    }
+    setOverviewState((current) => ({ ...current, loading: true }));
+    const requestVersion = overviewRequestVersionRef.current + 1;
+    overviewRequestVersionRef.current = requestVersion;
+    const nextOffset = overviewState.offset + overviewState.requests.length;
+    const limit = overviewState.limit || codexLiveOverviewHistoryLimit;
+
+    try {
+      const nextHistory = await GetCodexLiveSessionHistory({
+        sessionID: '',
+        window: overviewState.window || 'all',
+        limit,
+        offset: nextOffset,
+      });
+      const history = mapBackendCodexLiveSessionHistory(nextHistory);
+      if (overviewRequestVersionRef.current != requestVersion) {
+        return;
+      }
+      const nextRequests = markCodexLiveHistoryRequests(history.items);
+      setOverviewState((current) => ({
+        ...current,
+        requests: mergeCodexLiveHistoryRequests(current.requests, nextRequests),
+        generatedAt: history.generatedAt,
+        window: history.window || current.window,
+        limit: history.limit || limit,
+        offset: current.offset,
+        hasMore: nextRequests.length >= (history.limit || limit),
+        loading: false,
+        error: undefined,
+      }));
+    } catch (error) {
+      if (overviewRequestVersionRef.current != requestVersion) {
+        return;
+      }
+      console.error(error);
+      setOverviewState((current) => ({
+        ...current,
+        loading: false,
+        error: error instanceof Error ? error.message : 'overview-load-more-failed',
+      }));
+    }
+  }, [browserMode, overviewState.hasMore, overviewState.limit, overviewState.loading, overviewState.offset, overviewState.requests, overviewState.window, selectedSessionID, sidecarReady]);
+
   const loadDetail = useCallback(async () => {
     if (!selectedSessionID) {
       detailRequestVersionRef.current += 1;
-      setDetailState({ sessionID: undefined, requests: [], generatedAt: '', loading: false });
+      setDetailState(createEmptyDetailHistoryState());
       return;
     }
     if (browserMode) {
@@ -180,6 +266,10 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
         sessionID: selectedSessionID,
         requests: previewSession?.requests ?? [],
         generatedAt: snapshot.generatedAt,
+        window: 'preview',
+        limit: previewSession?.requests.length ?? 0,
+        offset: 0,
+        hasMore: false,
         loading: false,
       });
       return;
@@ -190,6 +280,10 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
         sessionID: selectedSessionID,
         requests: current.sessionID === selectedSessionID ? current.requests : [],
         generatedAt: current.generatedAt,
+        window: current.window,
+        limit: current.limit,
+        offset: current.offset,
+        hasMore: false,
         loading: false,
         error: current.error,
       }));
@@ -200,6 +294,10 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
       sessionID: selectedSessionID,
       requests: current.sessionID === selectedSessionID ? current.requests : [],
       generatedAt: current.generatedAt,
+      window: current.window,
+      limit: current.limit,
+      offset: current.offset,
+      hasMore: current.hasMore,
       loading: true,
     }));
     const requestVersion = detailRequestVersionRef.current + 1;
@@ -209,18 +307,31 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
       const nextHistory = await GetCodexLiveSessionHistory({
         sessionID: selectedSessionID,
         window: 'all',
-        limit: 50,
+        limit: codexLiveDetailHistoryLimit,
         offset: 0,
       });
       const history = mapBackendCodexLiveSessionHistory(nextHistory);
       if (detailRequestVersionRef.current != requestVersion) {
         return;
       }
-      setDetailState({
-        sessionID: selectedSessionID,
-        requests: history.items,
-        generatedAt: history.generatedAt,
-        loading: false,
+      const refreshedRequests = markCodexLiveHistoryRequests(history.items);
+      setDetailState((current) => {
+        const limit = history.limit || current.limit || codexLiveDetailHistoryLimit;
+        const offset = history.offset || current.offset || 0;
+        const requests = current.sessionID === selectedSessionID && offset === current.offset
+          ? mergeCodexLiveHistoryRefresh(current.requests, refreshedRequests)
+          : refreshedRequests;
+        return {
+          sessionID: selectedSessionID,
+          requests,
+          generatedAt: history.generatedAt,
+          window: history.window || current.window || 'all',
+          limit,
+          offset,
+          hasMore: requests.length > refreshedRequests.length || refreshedRequests.length >= limit,
+          loading: false,
+          error: undefined,
+        };
       });
     } catch (error) {
       if (detailRequestVersionRef.current != requestVersion) {
@@ -231,11 +342,62 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
         sessionID: selectedSessionID,
         requests: current.sessionID === selectedSessionID ? current.requests : [],
         generatedAt: current.generatedAt,
+        window: current.window,
+        limit: current.limit,
+        offset: current.offset,
+        hasMore: current.hasMore,
         loading: false,
         error: error instanceof Error ? error.message : 'detail-load-failed',
       }));
     }
   }, [browserMode, selectedSessionID, sidecarReady, snapshot.generatedAt, snapshot.sessions]);
+
+  const loadMoreDetail = useCallback(async () => {
+    if (browserMode || !selectedSessionID || !sidecarReady || detailState.loading || !detailState.hasMore) {
+      return;
+    }
+    setDetailState((current) => ({ ...current, loading: true }));
+    const requestVersion = detailRequestVersionRef.current + 1;
+    detailRequestVersionRef.current = requestVersion;
+    const nextOffset = detailState.offset + detailState.requests.length;
+    const limit = detailState.limit || codexLiveDetailHistoryLimit;
+
+    try {
+      const nextHistory = await GetCodexLiveSessionHistory({
+        sessionID: selectedSessionID,
+        window: detailState.window || 'all',
+        limit,
+        offset: nextOffset,
+      });
+      const history = mapBackendCodexLiveSessionHistory(nextHistory);
+      if (detailRequestVersionRef.current != requestVersion) {
+        return;
+      }
+      const nextRequests = markCodexLiveHistoryRequests(history.items);
+      setDetailState((current) => ({
+        ...current,
+        sessionID: selectedSessionID,
+        requests: mergeCodexLiveHistoryRequests(current.requests, nextRequests),
+        generatedAt: history.generatedAt,
+        window: history.window || current.window,
+        limit: history.limit || limit,
+        offset: current.offset,
+        hasMore: nextRequests.length >= (history.limit || limit),
+        loading: false,
+        error: undefined,
+      }));
+    } catch (error) {
+      if (detailRequestVersionRef.current != requestVersion) {
+        return;
+      }
+      console.error(error);
+      setDetailState((current) => ({
+        ...current,
+        loading: false,
+        error: error instanceof Error ? error.message : 'detail-load-more-failed',
+      }));
+    }
+  }, [browserMode, detailState.hasMore, detailState.limit, detailState.loading, detailState.offset, detailState.requests, detailState.window, selectedSessionID, sidecarReady]);
 
   useEffect(() => {
     refreshSnapshot();
@@ -329,6 +491,12 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
       onViewChange={onViewChange}
       detailRequests={detailState.sessionID === selectedSessionID ? detailState.requests : []}
       overviewRequests={!selectedSessionID ? overviewState.requests : []}
+      overviewHistoryLabel={!selectedSessionID ? buildHistoryWindowLabel(overviewState) : undefined}
+      overviewCanLoadMore={!selectedSessionID && overviewState.hasMore}
+      onLoadMoreOverview={loadMoreOverview}
+      detailHistoryLabel={detailState.sessionID === selectedSessionID ? buildHistoryWindowLabel(detailState) : undefined}
+      detailCanLoadMore={detailState.sessionID === selectedSessionID && detailState.hasMore}
+      onLoadMoreDetail={loadMoreDetail}
       overviewLoading={!selectedSessionID && overviewState.loading}
       overviewError={!selectedSessionID ? overviewState.error : undefined}
       detailLoading={detailState.loading}
@@ -338,4 +506,68 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
       onSelectionChange={setSelectedSessionID}
     />
   );
+}
+
+function createEmptyDetailHistoryState(): CodexLiveSessionDetailState {
+  return {
+    sessionID: undefined,
+    requests: [],
+    generatedAt: '',
+    window: 'all',
+    limit: codexLiveDetailHistoryLimit,
+    offset: 0,
+    hasMore: false,
+    loading: false,
+  };
+}
+
+function createEmptyOverviewHistoryState(): CodexLiveSessionOverviewState {
+  return {
+    requests: [],
+    generatedAt: '',
+    window: 'all',
+    limit: codexLiveOverviewHistoryLimit,
+    offset: 0,
+    hasMore: false,
+    loading: false,
+  };
+}
+
+function markCodexLiveHistoryRequests(requests: readonly CodexLiveRequest[]): CodexLiveRequest[] {
+  return requests.map((request) => ({
+    ...request,
+    historyState: isCodexLiveHistoryUnclosed(request.status) ? 'historical_unclosed' : 'history',
+  }));
+}
+
+function isCodexLiveHistoryUnclosed(status: string): boolean {
+  return status === 'active' || status === 'streaming' || status === 'reconnecting' || status === 'upstream_disconnected';
+}
+
+function mergeCodexLiveHistoryRequests(current: readonly CodexLiveRequest[], next: readonly CodexLiveRequest[]): CodexLiveRequest[] {
+  const seen = new Set(current.map((request) => request.requestID));
+  const merged = [...current];
+  next.forEach((request) => {
+    if (!seen.has(request.requestID)) {
+      seen.add(request.requestID);
+      merged.push(request);
+    }
+  });
+  return merged;
+}
+
+function mergeCodexLiveHistoryRefresh(current: readonly CodexLiveRequest[], refreshed: readonly CodexLiveRequest[]): CodexLiveRequest[] {
+  if (current.length <= refreshed.length) {
+    return [...refreshed];
+  }
+  const refreshedIDs = new Set(refreshed.map((request) => request.requestID));
+  const preservedTail = current.filter((request) => !refreshedIDs.has(request.requestID));
+  return [...refreshed, ...preservedTail];
+}
+
+function buildHistoryWindowLabel(state: Pick<CodexLiveSessionOverviewState, 'requests' | 'limit' | 'offset' | 'window'>): string {
+  const start = state.requests.length > 0 ? state.offset + 1 : 0;
+  const end = state.offset + state.requests.length;
+  const limit = state.limit || state.requests.length;
+  return `History ${state.window || 'all'} · ${start}-${end} · ${limit}/page`;
 }

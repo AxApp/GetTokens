@@ -44,6 +44,12 @@ export function SessionDetail({
   overviewSessions = [],
   overviewRequestCount = 0,
   overviewRequestRows = [],
+  overviewHistoryLabel,
+  overviewCanLoadMore = false,
+  onLoadMoreOverview,
+  detailHistoryLabel,
+  detailCanLoadMore = false,
+  onLoadMoreDetail,
   overviewLoading = false,
   overviewError,
   loading = false,
@@ -55,6 +61,12 @@ export function SessionDetail({
   overviewSessions?: readonly CodexLiveSession[];
   overviewRequestCount?: number;
   overviewRequestRows?: readonly CodexLiveRequestFeedRow[];
+  overviewHistoryLabel?: string;
+  overviewCanLoadMore?: boolean;
+  onLoadMoreOverview?: () => void;
+  detailHistoryLabel?: string;
+  detailCanLoadMore?: boolean;
+  onLoadMoreDetail?: () => void;
   overviewLoading?: boolean;
   overviewError?: string;
   loading?: boolean;
@@ -69,6 +81,9 @@ export function SessionDetail({
         sessions={overviewSessions}
         requestCount={overviewRequestCount}
         requestRows={overviewRequestRows}
+        historyLabel={overviewHistoryLabel}
+        canLoadMore={overviewCanLoadMore}
+        onLoadMore={onLoadMoreOverview}
         selectedMetric={selectedTimingMetric}
         onSelectMetric={setSelectedTimingMetric}
         loading={overviewLoading}
@@ -109,6 +124,15 @@ export function SessionDetail({
         </div>
         <div className="min-w-0" data-codex-detail-slot="timeline">
           <Timeline requests={session.requests} fallbackEvents={timeline} t={t} />
+          {detailHistoryLabel || detailCanLoadMore ? (
+            <HistoryWindowControl
+              label={detailHistoryLabel}
+              canLoadMore={detailCanLoadMore}
+              onLoadMore={onLoadMoreDetail}
+              loading={loading}
+              t={t}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -131,6 +155,9 @@ function SessionOverview({
   sessions,
   requestCount,
   requestRows,
+  historyLabel,
+  canLoadMore,
+  onLoadMore,
   selectedMetric,
   onSelectMetric,
   loading,
@@ -140,6 +167,9 @@ function SessionOverview({
   sessions: readonly CodexLiveSession[];
   requestCount: number;
   requestRows: readonly CodexLiveRequestFeedRow[];
+  historyLabel?: string;
+  canLoadMore?: boolean;
+  onLoadMore?: () => void;
   selectedMetric: CodexLiveTimingTrendMetric;
   onSelectMetric: (metric: CodexLiveTimingTrendMetric) => void;
   loading?: boolean;
@@ -203,7 +233,37 @@ function SessionOverview({
         countLabel={`${requestRows.length} ${t('codex_live_sessions.request_rows')}`}
         t={t}
       />
+      <HistoryWindowControl label={historyLabel} canLoadMore={canLoadMore} onLoadMore={onLoadMore} loading={loading} t={t} />
     </section>
+  );
+}
+
+function HistoryWindowControl({
+  label,
+  canLoadMore,
+  onLoadMore,
+  loading,
+  t,
+}: {
+  label?: string;
+  canLoadMore?: boolean;
+  onLoadMore?: () => void;
+  loading?: boolean;
+  t: Translate;
+}) {
+  if (!label && !canLoadMore) {
+    return null;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em]" data-codex-history-window-control="true">
+      <span className="text-[var(--text-muted)]">{label || t('codex_live_sessions.history_recent_window')}</span>
+      {canLoadMore ? (
+        <button type="button" className="btn-swiss h-8 !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]" onClick={onLoadMore} disabled={loading}>
+          {loading ? t('common.loading') : t('codex_live_sessions.history_load_more')}
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -1154,6 +1214,7 @@ function Timeline({
           visibleRequests.map((request) => (
             <TimelineRequestRow
               key={request.requestID}
+              request={request}
               summary={buildRequestTimelineSummary(request)}
               t={t}
               onOpen={() => setDetailTarget({ type: 'request', request })}
@@ -1174,15 +1235,24 @@ function Timeline({
 }
 
 function TimelineRequestRow({
+  request,
   summary,
   t,
   onOpen,
 }: {
+  request: CodexLiveRequest;
   summary: RequestTimelineSummary;
   t: Translate;
   onOpen: () => void;
 }) {
-  return <TimelineSummaryRow summary={summary} t={t} onOpen={onOpen} />;
+  return (
+    <TimelineSummaryRow
+      summary={summary}
+      t={t}
+      onOpen={onOpen}
+      historicalStatusLabel={request.historyState === 'historical_unclosed' ? t('codex_live_sessions.status_historical_unclosed') : ''}
+    />
+  );
 }
 
 function TimelineFallbackRow({
@@ -1201,11 +1271,13 @@ function TimelineSummaryRow({
   summary,
   t,
   onOpen,
+  historicalStatusLabel = '',
   dashed = false,
 }: {
   summary: RequestTimelineSummary | FallbackTimelineSummary;
   t: Translate;
   onOpen: () => void;
+  historicalStatusLabel?: string;
   dashed?: boolean;
 }) {
   const timeRangeLabel = buildTimelineTimeRange(summary);
@@ -1226,7 +1298,12 @@ function TimelineSummaryRow({
       <span className="shrink-0 whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
         {requestIDLabel}
       </span>
-      <span className="min-w-0 truncate whitespace-nowrap font-mono font-black text-[var(--text-primary)]">
+      <span className="flex min-w-0 items-center gap-2 truncate whitespace-nowrap font-mono font-black text-[var(--text-primary)]">
+        {historicalStatusLabel ? (
+          <span className="shrink-0 border border-[var(--border-color)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-[length:var(--font-size-ui-2xs)] uppercase text-[var(--text-muted)]">
+            {historicalStatusLabel}
+          </span>
+        ) : null}
         {timeRangeLabel}
       </span>
       <div className="flex min-w-0 flex-nowrap items-center justify-end gap-1 overflow-hidden">
@@ -1309,7 +1386,9 @@ function RequestTimelineDetailModal({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
-                {t(statusLabelKeys[request.status])}
+                {request.historyState === 'historical_unclosed'
+                  ? t('codex_live_sessions.status_historical_unclosed')
+                  : t(statusLabelKeys[request.status])}
               </span>
               <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
                 #{request.sequence} · {request.model}
@@ -1321,7 +1400,7 @@ function RequestTimelineDetailModal({
           </div>
           <div className="shrink-0 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] sm:text-right">
             <div>{request.startedAt}</div>
-            <div>{request.completedAt || t('codex_live_sessions.status_streaming')}</div>
+            <div>{request.completedAt || (request.historyState === 'historical_unclosed' ? t('codex_live_sessions.status_historical_unclosed') : t('codex_live_sessions.status_streaming'))}</div>
           </div>
         </div>
       }

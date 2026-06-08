@@ -1,5 +1,5 @@
 import type { MutableRefObject } from 'react';
-import { KeyRound, LogIn, Menu, Plus, RefreshCw, RotateCcw, Upload } from 'lucide-react';
+import { Activity, KeyRound, LogIn, Menu, Plus, RefreshCw, RotateCcw, Upload } from 'lucide-react';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { Translator } from '../model/types';
 import {
@@ -24,7 +24,8 @@ interface AccountsHeaderProps {
   onOpenApiKeyModal: () => void;
   onOpenRotationModal?: () => void;
   onStartCodexOAuth: () => void;
-  onRefresh: () => void;
+  onRefreshAccounts: () => void;
+  onRefreshRuntime: () => void;
   onOpenUnifiedCompose?: () => void;
 }
 
@@ -40,7 +41,8 @@ export default function AccountsHeader({
   onOpenApiKeyModal,
   onOpenRotationModal,
   onStartCodexOAuth,
-  onRefresh,
+  onRefreshAccounts,
+  onRefreshRuntime,
   onOpenUnifiedCompose,
 }: AccountsHeaderProps) {
   const headerActionsMenuItems = buildAccountsHeaderMenuItems({
@@ -90,12 +92,22 @@ export default function AccountsHeader({
         actions={
           <>
             <button
-              onClick={onRefresh}
+              onClick={onRefreshAccounts}
               className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
               disabled={!ready || loading}
-              title={t('common.refresh')}
+              title={t('accounts.refresh_accounts')}
+              aria-label={t('accounts.refresh_accounts')}
             >
               <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} strokeWidth={3} />
+            </button>
+            <button
+              onClick={onRefreshRuntime}
+              className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
+              disabled={!ready || loading}
+              title={t('accounts.refresh_runtime')}
+              aria-label={t('accounts.refresh_runtime')}
+            >
+              <Activity className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} strokeWidth={3} />
             </button>
             <div ref={headerActionsMenuRef} className="relative">
               <button

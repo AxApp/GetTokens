@@ -105,6 +105,7 @@ export interface CodexLiveRequest {
   timing?: CodexLiveTimingMetrics;
   error?: CodexLiveErrorSummary;
   timeline: CodexLiveTimelineEvent[];
+  historyState?: 'history' | 'historical_unclosed';
 }
 
 export interface CodexLiveSession {

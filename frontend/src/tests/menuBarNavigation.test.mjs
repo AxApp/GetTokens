@@ -1,12 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 
-test('menu bar navigate event opens the accounts frame', async () => {
-  const appSource = await readFile(new URL('../App.tsx', import.meta.url), 'utf8');
+import { readFrameHashState, resolveMenuBarNavigationHash } from '../utils/pagePersistence.ts';
 
-  assert.match(appSource, /EventsOn\('menubar:navigate'/);
-  assert.match(appSource, /payload\?\.page !== 'accounts'/);
-  assert.match(appSource, /setActivePage\('accounts'\)/);
-  assert.match(appSource, /window\.location\.hash = '#frame=accounts'/);
+test('menu bar navigation resolver opens supported operational frames', () => {
+  assert.equal(resolveMenuBarNavigationHash({ page: 'accounts' }), '#frame=accounts');
+  assert.equal(resolveMenuBarNavigationHash({ page: 'accounts', workspace: 'all', filter: 'risk' }), '#frame=accounts&workspace=all&filter=risk');
+  assert.equal(
+    resolveMenuBarNavigationHash({ page: 'codex', workspace: 'live-sessions', view: 'project' }),
+    '#frame=codex&workspace=live-sessions&view=project',
+  );
+  assert.equal(
+    resolveMenuBarNavigationHash({ page: 'codex', workspace: 'usage-codex' }),
+    '#frame=codex&workspace=usage-codex',
+  );
+});
+
+test('menu bar account risk hash is parsed for accounts feature consumption', () => {
+  assert.deepEqual(readFrameHashState('#frame=accounts&workspace=all&filter=risk'), {
+    page: 'accounts',
+    workspace: 'all',
+    accountFilter: 'risk',
+  });
+});
+
+test('menu bar navigation resolver ignores unsupported payloads', () => {
+  assert.equal(resolveMenuBarNavigationHash(), null);
+  assert.equal(resolveMenuBarNavigationHash({ page: 'debug' }), null);
+  assert.equal(
+    resolveMenuBarNavigationHash({ page: 'codex', workspace: 'not-a-workspace' }),
+    '#frame=codex',
+  );
 });

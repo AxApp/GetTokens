@@ -72,6 +72,9 @@ func TestBuildMenuBarQuotaSnapshotSortsByRemainingAndSummarizesBalance(t *testin
 	if snapshot.Summary.RiskAccounts != "2" {
 		t.Fatalf("risk accounts = %q, want 2", snapshot.Summary.RiskAccounts)
 	}
+	if snapshot.Summary.RiskSummary != "2 个风险账号" {
+		t.Fatalf("risk summary = %q", snapshot.Summary.RiskSummary)
+	}
 	if snapshot.Summary.TotalBalance != "$122.25 + ¥12.5" {
 		t.Fatalf("total balance = %q", snapshot.Summary.TotalBalance)
 	}
@@ -93,6 +96,33 @@ func TestBuildMenuBarQuotaSnapshotSortsByRemainingAndSummarizesBalance(t *testin
 	}
 	if len(snapshot.Balances) != 3 || snapshot.Balances[0].Value != "$80.25" || snapshot.Balances[1].Value != "$42.00" || snapshot.Balances[2].Value != "¥12.50" {
 		t.Fatalf("balances = %#v", snapshot.Balances)
+	}
+}
+
+func TestBuildMenuBarQuotaSnapshotKeepsMoreRiskSummaryBeyondVisibleResources(t *testing.T) {
+	remainingLow := 4
+	statuses := []cliproxyapi.QuotaRuntimeState{}
+	accounts := []accountsdomain.AccountRecord{}
+	for _, key := range []string{"acct_1", "acct_2", "acct_3", "acct_4"} {
+		statuses = append(statuses, cliproxyapi.QuotaRuntimeState{
+			AccountKey: key,
+			Status:     cliproxyapi.QuotaRuntimeStatusSuccess,
+			Windows: []cliproxyapi.QuotaRuntimeWindow{{
+				ID:               "five-hour",
+				Label:            "5H",
+				RemainingPercent: &remainingLow,
+			}},
+		})
+		accounts = append(accounts, accountsdomain.AccountRecord{ID: key, QuotaKey: key, DisplayName: key})
+	}
+
+	snapshot := buildMenuBarQuotaSnapshot(statuses, accounts)
+
+	if len(snapshot.Resources) != 3 {
+		t.Fatalf("resources len = %d, want visible cap 3", len(snapshot.Resources))
+	}
+	if snapshot.Summary.RiskAccounts != "4" || snapshot.Summary.MoreRiskLabel != "还有 1 个风险账号" {
+		t.Fatalf("summary = %#v", snapshot.Summary)
 	}
 }
 

@@ -1053,6 +1053,16 @@ func (a *App) SaveCodexMcpServer(input SaveCodexMcpServerInput) (*SaveCodexMcpSe
 	return mapCodexMcpSaveResult(result), nil
 }
 
+func (a *App) PreflightCodexMcpServer(input PreflightCodexMcpServerInput) (*CodexMcpPreflightResult, error) {
+	result, err := a.core.PreflightCodexMcpServer(wailsapp.PreflightCodexMcpServerInput{
+		Server: mapWailsCodexMcpServer(input.Server),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexMcpPreflightResult(result), nil
+}
+
 func (a *App) OpenCodexConfigToml() (*OpenCodexConfigTomlResult, error) {
 	result, err := a.core.OpenCodexConfigToml()
 	if err != nil {

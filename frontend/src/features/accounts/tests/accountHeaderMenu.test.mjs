@@ -70,6 +70,19 @@ test('AccountsHeader menu row styles stay flat instead of card-like', () => {
   assert.doesNotMatch(source, /btn-swiss whitespace-nowrap bg-\[var\(--text-primary\)\]/);
 });
 
+test('AccountsHeader exposes separate account-list and runtime refresh actions', () => {
+  const headerSource = readFileSync(new URL('../components/AccountsHeader.tsx', import.meta.url), 'utf8');
+  const featureSource = readFileSync(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(headerSource, /onRefreshAccounts/);
+  assert.match(headerSource, /onRefreshRuntime/);
+  assert.match(headerSource, /accounts\.refresh_accounts/);
+  assert.match(headerSource, /accounts\.refresh_runtime/);
+  assert.match(featureSource, /onRefreshAccounts=\{\(\) => void loadAccounts\(\{ refreshSupplementalData: false \}\)\}/);
+  assert.match(featureSource, /onRefreshRuntime=\{\(\) => void refreshAccountsRuntime\(\)\}/);
+  assert.doesNotMatch(featureSource, /onRefresh=\{\(\) => void loadAccounts\(\{ showSupplementalRefreshing: true \}\)\}/);
+});
+
 test('AccountsHeader menu visible labels are localized from locale files', () => {
   const zh = JSON.parse(readFileSync(new URL('../../../locales/zh.json', import.meta.url), 'utf8'));
   const en = JSON.parse(readFileSync(new URL('../../../locales/en.json', import.meta.url), 'utf8'));

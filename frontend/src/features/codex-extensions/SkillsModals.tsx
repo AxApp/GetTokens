@@ -257,7 +257,20 @@ export function SkillPreviewModal({
             <aside className="scrollbar-stable min-h-0 overflow-y-auto border-b-2 border-[var(--border-color)] p-4 lg:border-b-0 lg:border-r-2">
               <MetaLine label={t('codex_extensions.source')} value={skill.origin || '-'} />
               <MetaLine label={t('codex_extensions.root')} value={skill.rootLabel || '-'} />
+              <MetaLine label={t('codex_extensions.skill_enabled_source')} value={formatSkillEnabledSource(skill, t)} />
               <MetaLine label={t('codex_extensions.version')} value={skill.versionLabel || '-'} />
+              {skill.warnings && skill.warnings.length > 0 ? (
+                <div className="mt-4 border-2 border-[var(--accent-red)] bg-[color-mix(in_srgb,var(--accent-red)_10%,transparent)] p-3">
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--accent-red)]">
+                    {t('codex_extensions.skill_scan_warnings')}
+                  </div>
+                  <ul className="mt-2 grid gap-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+                    {skill.warnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               <div className="mt-5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('codex_extensions.files')}
               </div>
@@ -415,6 +428,12 @@ function MetaLine({ label, value }: { label: string; value: string }) {
       <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">{value}</div>
     </div>
   );
+}
+
+function formatSkillEnabledSource(skill: CodexSkillRecord, t: (key: string) => string): string {
+  const source = skill.enabledSource || 'default_enabled';
+  const label = t(`codex_extensions.skill_enabled_source_${source}`);
+  return skill.enabledSourceValue ? `${label}: ${skill.enabledSourceValue}` : label;
 }
 
 function isMarkdownSkillFile(path: string): boolean {

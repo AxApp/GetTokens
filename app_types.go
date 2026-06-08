@@ -1271,6 +1271,23 @@ type SaveCodexMcpServerResult struct {
 	Changes    []CodexMcpChange `json:"changes"`
 }
 
+type PreflightCodexMcpServerInput struct {
+	Server CodexMcpServer `json:"server"`
+}
+
+type CodexMcpPreflightResult struct {
+	ServerID string                   `json:"serverID"`
+	Status   string                   `json:"status"`
+	Checks   []CodexMcpPreflightCheck `json:"checks"`
+}
+
+type CodexMcpPreflightCheck struct {
+	ID     string `json:"id"`
+	Label  string `json:"label"`
+	Status string `json:"status"`
+	Detail string `json:"detail,omitempty"`
+}
+
 type OpenCodexConfigTomlResult struct {
 	ConfigPath string `json:"configPath"`
 }

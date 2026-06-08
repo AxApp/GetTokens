@@ -13,6 +13,7 @@ import {
   DEFAULT_RATE_LIMIT_STRATEGIES,
   DEFAULT_RATE_LIMIT_WINDOWS,
   RATE_LIMIT_CALENDAR_DAY_WINDOW,
+  collectLegacyRateLimitBindings,
   formatRateLimitLimitDraftValue,
   formatRateLimitMetric,
   formatRateLimitWindowLabel,
@@ -83,6 +84,10 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
     [baselineRuleDrafts, deletedRuleIDs, ruleDrafts],
   );
   const rateLimitMetaTimestamp = rateLimitStatus?.lastEvaluatedAt || rateLimitStatus?.updatedAt || '';
+  const legacyBindings = useMemo(
+    () => collectLegacyRateLimitBindings({ currentAccountKey: accountKey, rules: ruleDrafts, status: rateLimitStatus }),
+    [accountKey, rateLimitStatus, ruleDrafts],
+  );
 
   useEffect(() => {
     dirtyRef.current = dirty;
@@ -306,6 +311,12 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
         {rateLimitMessage ? (
           <AccountDetailNotice tone={rateLimitMessageTone}>
             {rateLimitMessage}
+          </AccountDetailNotice>
+        ) : null}
+
+        {legacyBindings.length > 0 ? (
+          <AccountDetailNotice tone="neutral">
+            {t('accounts.rate_limit_legacy_key_warning')} {legacyBindings.length}
           </AccountDetailNotice>
         ) : null}
 

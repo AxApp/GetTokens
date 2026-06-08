@@ -74,6 +74,11 @@ import {
   type AccountListDisplayMode,
   type AccountSortMode,
 } from "./model/accountListLayout";
+import {
+  defaultAccountsFilterState,
+  resolveAccountsFilterStateFromHash,
+  resolveAccountsEmptyState,
+} from "./model/accountFilters";
 import { shouldShowAccountSkeletons } from "./model/accountSnapshot";
 import { toggleAccountGroupSelection } from "./model/accountSelection";
 import type { OpenAICompatibleProvider } from "./model/openAICompatible";
@@ -187,6 +192,17 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     sidecarStatus,
     headerActionsMenuRef,
   } = useAccountsPageStateContext();
+  const accountsEmptyState = useMemo(
+    () =>
+      resolveAccountsEmptyState(t, {
+        accountCount: accounts.length,
+        filteredAccountCount: filteredAccounts.length,
+        searchTerm,
+        filters,
+        availablePlanTypes,
+      }),
+    [accounts.length, availablePlanTypes, filteredAccounts.length, filters, searchTerm, t],
+  );
 
   const [isUnifiedComposeOpen, setIsUnifiedComposeOpen] = useState(false);
   const [unifiedComposeForm, setUnifiedComposeForm] =
@@ -232,6 +248,13 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     useState<AccountDetailScriptRoute | "">(() =>
       readAccountDetailScriptFromHash(),
     );
+  const refreshAccountsRuntime = useCallback(() => {
+    accounts.forEach((account) => {
+      void refreshCodexQuota(account);
+    });
+    void refreshAccountUsage(accounts);
+    void refreshAccountRateLimits(accounts);
+  }, [accounts, refreshAccountRateLimits, refreshAccountUsage, refreshCodexQuota]);
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const [accountModelNamesByID, setAccountModelNamesByID] = useState<Record<string, string[]>>({});
@@ -471,10 +494,14 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       const hashState = readFrameHashState(window.location.hash);
       setAccountDetailIDFromHash(hashState?.accountDetailID ?? "");
       setAccountDetailScriptFromHash(hashState?.accountDetailScript ?? "");
+      if (hashState?.accountFilter === "risk") {
+        setFilters((current) => resolveAccountsFilterStateFromHash(window.location.hash, current));
+      }
     }
+    syncDetailIDFromHash();
     window.addEventListener("hashchange", syncDetailIDFromHash);
     return () => window.removeEventListener("hashchange", syncDetailIDFromHash);
-  }, []);
+  }, [setFilters]);
 
   useEffect(() => {
     if (!accountDetailIDFromHash) {
@@ -1184,7 +1211,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               void startCodexOAuth();
               setIsHeaderActionsMenuOpen(false);
             }}
-            onRefresh={() => void loadAccounts({ showSupplementalRefreshing: true })}
+            onRefreshAccounts={() => void loadAccounts({ refreshSupplementalData: false })}
+            onRefreshRuntime={() => void refreshAccountsRuntime()}
           />
 
           <AccountsToolbar
@@ -1293,9 +1321,36 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                 <AccountCardSkeleton key={i} />
               ))}
             </div>
-          ) : filteredAccounts.length === 0 ? (
-            <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center font-black uppercase italic text-[var(--text-muted)]">
-              {t("accounts.empty")}
+          ) : accountsEmptyState ? (
+            <div className="grid gap-4 border-2 border-dashed border-[var(--border-color)] p-16 text-center">
+              <div className="font-mono text-[length:var(--font-size-ui-lg)] font-black uppercase italic tracking-wide text-[var(--text-muted)]">
+                {accountsEmptyState.title}
+              </div>
+              <div className="mx-auto max-w-2xl text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                {accountsEmptyState.body}
+              </div>
+              {accountsEmptyState.kind === 'filtered' ? (
+                <div className="flex flex-wrap justify-center gap-2">
+                  {accountsEmptyState.showClearSearch ? (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm('')}
+                      className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
+                    >
+                      {t('common.clear_search')}
+                    </button>
+                  ) : null}
+                  {accountsEmptyState.showResetFilters ? (
+                    <button
+                      type="button"
+                      onClick={() => setFilters({ ...defaultAccountsFilterState })}
+                      className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
+                    >
+                      {t('accounts.filter_reset')}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className={isSelectionMode ? "space-y-8 !mt-4" : "space-y-8"}>

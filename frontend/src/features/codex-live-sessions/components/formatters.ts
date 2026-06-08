@@ -40,6 +40,7 @@ export interface CodexLiveRequestFeedRow {
   model: string;
   status: CodexLiveSessionStatus;
   startedAt: string;
+  historyState?: CodexLiveRequest['historyState'];
 }
 
 export function buildCodexLiveRequestFeedRows(sessions: readonly CodexLiveSession[]): CodexLiveRequestFeedRow[] {
@@ -95,19 +96,30 @@ export function buildCodexLiveHistoryRequestFeedRows(
   const sessionsByID = new Map(sessions.map((session) => [session.sessionID, session]));
   return requests
     .map((request) => {
-      const session = sessionsByID.get(request.sessionID) ?? buildFallbackSessionFromRequest(request);
+      const historyRequest = markHistoricalRequest(request);
+      const session = sessionsByID.get(historyRequest.sessionID) ?? buildFallbackSessionFromRequest(historyRequest);
       return {
-        rowID: `${request.sessionID}:${request.requestID}`,
+        rowID: `${historyRequest.sessionID}:${historyRequest.requestID}`,
         session,
-        request,
-        requestID: request.requestID,
-        sequence: request.sequence,
-        model: request.model,
-        status: request.status,
-        startedAt: request.startedAt,
+        request: historyRequest,
+        requestID: historyRequest.requestID,
+        sequence: historyRequest.sequence,
+        model: historyRequest.model,
+        status: historyRequest.status,
+        startedAt: historyRequest.startedAt,
+        historyState: historyRequest.historyState,
       };
     })
     .sort(compareRequestFeedRows);
+}
+
+export function markHistoricalRequest(request: CodexLiveRequest): CodexLiveRequest {
+  const historyState = isUnclosedHistoricalStatus(request.status) ? 'historical_unclosed' : 'history';
+  return { ...request, historyState };
+}
+
+export function isUnclosedHistoricalStatus(status: CodexLiveSessionStatus): boolean {
+  return status === 'active' || status === 'streaming' || status === 'reconnecting' || status === 'upstream_disconnected';
 }
 
 function compareRequestFeedRows(left: CodexLiveRequestFeedRow, right: CodexLiveRequestFeedRow): number {
@@ -161,7 +173,9 @@ export function buildRequestRowSummary(row: CodexLiveRequestFeedRow, t: Translat
     projectLabel: projectName,
     accountLabel: auth,
     modelLabel: row.model || t('codex_live_sessions.unknown'),
-    statusLabel: t(statusLabelKeys[row.status] || 'codex_live_sessions.unknown'),
+    statusLabel: row.historyState === 'historical_unclosed'
+      ? t('codex_live_sessions.status_historical_unclosed')
+      : t(statusLabelKeys[row.status] || 'codex_live_sessions.unknown'),
     transportLabel: request ? getShortTransportLabel(row.session, request) : getShortTransportLabel(row.session),
     timingLabel: totalDuration === 'n/a' && ttft === 'n/a' ? t('codex_live_sessions.no_timing_data') : `${totalDuration} / ${ttft}`,
     sequenceLabel: row.sequence > 0 ? `#${row.sequence}` : '-',

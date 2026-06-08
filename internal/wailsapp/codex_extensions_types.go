@@ -19,19 +19,21 @@ type GetCodexSkillFilePreviewResult struct {
 }
 
 type CodexSkillRecord struct {
-	ID              string           `json:"id"`
-	Name            string           `json:"name"`
-	Description     string           `json:"description,omitempty"`
-	Enabled         bool             `json:"enabled"`
-	RootLabel       string           `json:"rootLabel"`
-	RootPath        string           `json:"rootPath"`
-	SourceKind      string           `json:"sourceKind"`
-	Origin          string           `json:"origin"`
-	VersionLabel    string           `json:"versionLabel,omitempty"`
-	Files           []CodexSkillFile `json:"files"`
-	SkillMarkdown   string           `json:"skillMarkdown"`
-	PreviewMarkdown string           `json:"previewMarkdown"`
-	Warnings        []string         `json:"warnings,omitempty"`
+	ID                 string           `json:"id"`
+	Name               string           `json:"name"`
+	Description        string           `json:"description,omitempty"`
+	Enabled            bool             `json:"enabled"`
+	EnabledSource      string           `json:"enabledSource,omitempty"`
+	EnabledSourceValue string           `json:"enabledSourceValue,omitempty"`
+	RootLabel          string           `json:"rootLabel"`
+	RootPath           string           `json:"rootPath"`
+	SourceKind         string           `json:"sourceKind"`
+	Origin             string           `json:"origin"`
+	VersionLabel       string           `json:"versionLabel,omitempty"`
+	Files              []CodexSkillFile `json:"files"`
+	SkillMarkdown      string           `json:"skillMarkdown"`
+	PreviewMarkdown    string           `json:"previewMarkdown"`
+	Warnings           []string         `json:"warnings,omitempty"`
 }
 
 type CodexSkillsSnapshot struct {
@@ -148,6 +150,23 @@ type SaveCodexMcpServerResult struct {
 	Changes    []CodexMcpChange `json:"changes"`
 }
 
+type PreflightCodexMcpServerInput struct {
+	Server CodexMcpServer `json:"server"`
+}
+
+type CodexMcpPreflightResult struct {
+	ServerID string                   `json:"serverID"`
+	Status   string                   `json:"status"`
+	Checks   []CodexMcpPreflightCheck `json:"checks"`
+}
+
+type CodexMcpPreflightCheck struct {
+	ID     string `json:"id"`
+	Label  string `json:"label"`
+	Status string `json:"status"`
+	Detail string `json:"detail,omitempty"`
+}
+
 type CodexMcpChange struct {
 	Key    string `json:"key"`
 	Before string `json:"before"`
@@ -171,6 +190,7 @@ type SaveCodexConfigTomlInput struct {
 type SaveCodexConfigTomlResult struct {
 	ConfigPath string `json:"configPath"`
 	Content    string `json:"content"`
+	BackupPath string `json:"backupPath,omitempty"`
 }
 
 type codexSkillFrontmatter struct {

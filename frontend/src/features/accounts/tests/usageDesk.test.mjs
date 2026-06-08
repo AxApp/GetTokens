@@ -19,6 +19,7 @@ import {
   resolveUsageDeskLinkedRowKey,
   resolveUsageDeskRangeDrilldownDayKey,
   shouldOpenUsageDeskProjectedSessionSurface,
+  usageDeskProjectedActionImpacts,
   usageDeskProjectDrilldownColumnLabels,
   usageDeskSessionDrilldownColumnLabels,
   usageDeskProjectedSurfaceViewOptions,
@@ -95,6 +96,38 @@ test('projected usage row selection opens session surface only for local project
   assert.equal(shouldOpenUsageDeskProjectedSessionSurface('projected', '2026-04-28'), true);
   assert.equal(shouldOpenUsageDeskProjectedSessionSurface('projected', '   '), false);
   assert.equal(shouldOpenUsageDeskProjectedSessionSurface('observed', '2026-04-28'), false);
+});
+
+test('projected usage index actions explain scope and raw session safety', async () => {
+  assert.deepEqual(
+    usageDeskProjectedActionImpacts.map((action) => ({
+      id: action.id,
+      label: action.label,
+      description: action.description,
+    })),
+    [
+      {
+        id: 'refresh',
+        label: '刷新索引',
+        description: '增量读取本地投影索引，补齐新写入的本地 session 片段。',
+      },
+      {
+        id: 'rebuild-day',
+        label: '重建当日',
+        description: '只重算当前日期的本地投影索引，不影响其他日期。',
+      },
+      {
+        id: 'rebuild-all',
+        label: '重建索引',
+        description: '重扫本地投影索引并重新计算缓存；不会删除原始 session 文件。',
+      },
+    ],
+  );
+
+  const featureSource = await readFile(new URL('../UsageDeskFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /usageDeskProjectedActionImpacts\.map/);
+  assert.match(featureSource, /action\.description/);
 });
 
 test('resolveUsageDeskCurveAnimationConfig keeps realtime motion bounded', () => {

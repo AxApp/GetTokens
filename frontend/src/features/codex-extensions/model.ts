@@ -1,6 +1,6 @@
 export type CodexGitProvider = 'github' | 'gitlab';
 export type CodexSkillSourceKind = 'system' | 'user' | 'project' | 'github' | 'gitlab';
-export type McpTransport = 'stdio' | 'streamable_http';
+export type McpTransport = 'stdio' | 'streamable_http' | 'conflict' | 'unknown';
 
 export interface CodexSkillFile {
   path: string;
@@ -14,6 +14,8 @@ export interface CodexSkillRecord {
   name: string;
   description: string;
   enabled: boolean;
+  enabledSource?: 'default_enabled' | 'path_rule' | 'name_rule';
+  enabledSourceValue?: string;
   rootLabel: string;
   rootPath: string;
   sourceKind: CodexSkillSourceKind;
@@ -21,11 +23,13 @@ export interface CodexSkillRecord {
   versionLabel: string;
   files: CodexSkillFile[];
   skillMarkdown: string;
+  warnings?: string[];
 }
 
 export interface McpEnvRow {
   key: string;
   value: string;
+  source?: 'missing-separator';
 }
 
 export interface McpToolRow {
@@ -62,7 +66,22 @@ export interface McpServerRecord {
   tools?: McpToolRow[];
   rawConfig?: string;
   sourcePath: string;
-  status: 'ready' | 'missing-env' | 'disabled';
+  status: 'ready' | 'missing-env' | 'disabled' | 'error';
+}
+
+export type McpPreflightStatus = 'ok' | 'warning' | 'error';
+
+export interface McpPreflightCheck {
+  id: string;
+  label: string;
+  status: McpPreflightStatus;
+  detail: string;
+}
+
+export interface McpPreflightResult {
+  serverID: string;
+  status: McpPreflightStatus;
+  checks: McpPreflightCheck[];
 }
 
 export interface GitSkillSource {
@@ -79,7 +98,19 @@ export interface McpChangePreview {
   after: string;
 }
 
+export interface McpEnvValidationIssue {
+  key: string;
+  reason: 'invalid-key' | 'missing-separator';
+}
+
+export interface McpToolValidationIssue {
+  name: string;
+  approvalMode: string;
+  reason: 'invalid-approval-mode';
+}
+
 const gitlabAllowlist = new Set(['gitlab.com']);
+const windowsDrivePathPattern = /^[a-zA-Z]:[\\/]/;
 
 export function stripSkillFrontmatter(markdown: string): string {
   if (!markdown.startsWith('---')) {
@@ -125,13 +156,19 @@ export function parseTkGitSkillSource(input: string): GitSkillSource | null {
     return null;
   }
 
+  const sourcePathParam = url.searchParams.get('path');
+  const sourcePath = sourcePathParam === null ? '.' : sourcePathParam;
+  if (!isSafeGitSkillSourcePath(sourcePath)) {
+    return null;
+  }
+
   if (host === 'github.com') {
     return {
       provider: 'github',
       host,
       repo: `${segments[0]}/${segments[1]}`,
       ref: url.searchParams.get('ref') || 'main',
-      path: url.searchParams.get('path') || '.',
+      path: sourcePath,
     };
   }
 
@@ -142,19 +179,37 @@ export function parseTkGitSkillSource(input: string): GitSkillSource | null {
       host,
       repo: repoSegments.join('/'),
       ref: url.searchParams.get('ref') || 'main',
-      path: url.searchParams.get('path') || '.',
+      path: sourcePath,
     };
   }
 
   return null;
 }
 
+export function isEditableMcpTransport(transport: McpTransport): transport is 'stdio' | 'streamable_http' {
+  return transport === 'stdio' || transport === 'streamable_http';
+}
+
+function isSafeGitSkillSourcePath(sourcePath: string): boolean {
+  const value = sourcePath.trim();
+  if (!value) {
+    return false;
+  }
+  if (value.includes('\0') || value.startsWith('/') || windowsDrivePathPattern.test(value)) {
+    return false;
+  }
+  return value.split(/[\\/]+/).every((segment) => segment !== '..');
+}
+
 export function serializeMcpArgs(args: string[] | undefined): string {
-  return (args || []).join(' ');
+  return (args || []).join('\n');
 }
 
 export function parseMcpArgs(value: string): string[] {
-  return value.split(/\s+/).map((item) => item.trim()).filter(Boolean);
+  return value
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 export function serializeMcpEnv(env: McpEnvRow[] | undefined): string {
@@ -169,7 +224,7 @@ export function parseMcpEnv(value: string): McpEnvRow[] {
     .map((line) => {
       const index = line.indexOf('=');
       if (index === -1) {
-        return { key: line, value: '' };
+        return { key: line, value: '', source: 'missing-separator' as const };
       }
       return {
         key: line.slice(0, index).trim(),
@@ -177,6 +232,23 @@ export function parseMcpEnv(value: string): McpEnvRow[] {
       };
     })
     .filter((row) => row.key.length > 0);
+}
+
+export function validateMcpEnvRows(rows: readonly McpEnvRow[] | undefined): McpEnvValidationIssue[] {
+  return (rows || []).flatMap<McpEnvValidationIssue>((row) => {
+    const key = row.key.trim();
+    if (row.source === 'missing-separator') {
+      return [{ key, reason: 'missing-separator' as const }];
+    }
+    if (!isBareTomlKey(key)) {
+      return [{ key, reason: 'invalid-key' as const }];
+    }
+    return [];
+  });
+}
+
+export function isBareTomlKey(key: string): boolean {
+  return /^[A-Za-z0-9_-]+$/.test(key);
 }
 
 export function serializeMcpList(values: string[] | undefined): string {
@@ -192,6 +264,32 @@ export function parseMcpList(value: string): string[] {
 
 export function serializeMcpTools(tools: McpToolRow[] | undefined): string {
   return (tools || []).map((tool) => `${tool.name}${tool.approvalMode ? `=${tool.approvalMode}` : ''}`).join('\n');
+}
+
+export function parseMcpTools(value: string): McpToolRow[] {
+  return value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, approvalMode = ''] = line.split('=', 2);
+      return { name: name.trim(), approvalMode: approvalMode.trim() };
+    })
+    .filter((tool) => tool.name);
+}
+
+export function validateMcpToolRows(rows: readonly McpToolRow[] | undefined): McpToolValidationIssue[] {
+  return (rows || []).flatMap<McpToolValidationIssue>((row) => {
+    const approvalMode = (row.approvalMode || '').trim();
+    if (approvalMode === '' || approvalMode === 'auto' || approvalMode === 'prompt' || approvalMode === 'approve') {
+      return [];
+    }
+    return [{
+      name: row.name.trim(),
+      approvalMode,
+      reason: 'invalid-approval-mode',
+    }];
+  });
 }
 
 export function buildMcpChangePreview(original: McpServerRecord, draft: McpServerRecord): McpChangePreview[] {
@@ -241,6 +339,7 @@ export function buildMcpChangePreview(original: McpServerRecord, draft: McpServe
   pushChange('scopes', serializeMcpList(original.scopes), serializeMcpList(draft.scopes));
   pushChange('oauth.client_id', original.oauthClientId, draft.oauthClientId);
   pushChange('oauth_resource', original.oauthResource, draft.oauthResource);
+  pushChange('tools', serializeMcpTools(original.tools), serializeMcpTools(draft.tools));
 
   return changes;
 }

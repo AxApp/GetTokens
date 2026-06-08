@@ -14,6 +14,7 @@ import {
   buildAccountDetailFrameHash,
   buildAccountDetailScriptFrameHash,
   buildCodexDetailFrameHash,
+  buildCodexSkillDetailFrameHash,
   buildCodexModalFrameHash,
   buildClaudeDetailFrameHash,
   buildClaudeModalFrameHash,
@@ -21,6 +22,7 @@ import {
   clearAccountDetailFrameHash,
   clearAccountDetailScriptFrameHash,
   clearCodexDetailFrameHash,
+  clearCodexSkillDetailFrameHash,
   clearCodexModalFrameHash,
   clearClaudeDetailFrameHash,
   clearClaudeModalFrameHash,
@@ -563,6 +565,11 @@ test('readFrameHashState rejects developer frames in production', () => {
 });
 
 test('readFrameHashState parses accounts workspace and falls back to all for legacy', () => {
+  assert.deepEqual(readFrameHashState('#frame=accounts&workspace=all&filter=risk'), {
+    page: 'accounts',
+    workspace: 'all',
+    accountFilter: 'risk',
+  });
   assert.deepEqual(readFrameHashState('#frame=accounts&workspace=codex'), {
     page: 'accounts',
     workspace: 'all',
@@ -624,6 +631,11 @@ test('readFrameHashState parses codex workspace and falls back to feature config
     page: 'codex',
     codexWorkspace: 'account-list',
     accountDetailID: 'openai-compatible:deepseek',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=skills&detail=%2FUsers%2Fme%2F.agents%2Fskills%2Fdemo%2FSKILL.md'), {
+    page: 'codex',
+    codexWorkspace: 'skills',
+    codexSkillDetailID: '/Users/me/.agents/skills/demo/SKILL.md',
   });
   assert.deepEqual(readFrameHashState('#frame=codex&workspace=session-management'), {
     page: 'codex',
@@ -755,6 +767,17 @@ test('codex detail hash helpers add and remove modal marker', () => {
   assert.equal(
     clearCodexDetailFrameHash('#frame=codex&workspace=account-list&detail=openai-compatible%3Adeepseek'),
     '#frame=codex&workspace=account-list',
+  );
+});
+
+test('codex skill detail hash helpers preserve peer params and only clear detail', () => {
+  assert.equal(
+    buildCodexSkillDetailFrameHash('#frame=codex&workspace=skills&modal=route-probe', '/Users/me/.agents/skills/demo/SKILL.md'),
+    '#frame=codex&workspace=skills&modal=route-probe&detail=%2FUsers%2Fme%2F.agents%2Fskills%2Fdemo%2FSKILL.md',
+  );
+  assert.equal(
+    clearCodexSkillDetailFrameHash('#frame=codex&workspace=skills&modal=route-probe&detail=%2FUsers%2Fme%2F.agents%2Fskills%2Fdemo%2FSKILL.md'),
+    '#frame=codex&workspace=skills&modal=route-probe',
   );
 });
 

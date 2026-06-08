@@ -64,7 +64,8 @@ function AccountsHeaderSample({
         onOpenApiKeyModal={() => undefined}
         onOpenRotationModal={rotation ? () => undefined : undefined}
         onStartCodexOAuth={() => undefined}
-        onRefresh={() => undefined}
+        onRefreshAccounts={() => undefined}
+        onRefreshRuntime={() => undefined}
         onOpenUnifiedCompose={unifiedCompose ? () => undefined : undefined}
       />
     </HeaderViewport>

@@ -5,6 +5,7 @@ import {
   GetCodexMcpServers,
   GetCodexSkillsSnapshot,
   OpenCodexSkillInFinder,
+  PreflightCodexMcpServer,
   RemoveCodexSkill,
   SaveCodexConfigToml,
   SaveCodexMcpServer,
@@ -19,6 +20,11 @@ import ToggleSwitch from '../../components/ui/ToggleSwitch';
 import { useI18n } from '../../context/I18nContext';
 import type { CodexWorkspace, SegmentedOption } from '../../types';
 import { toErrorMessage } from '../../utils/error';
+import {
+  buildCodexSkillDetailFrameHash,
+  clearCodexSkillDetailFrameHash,
+  readFrameHashState,
+} from '../../utils/pagePersistence';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import {
   buildMcpChangePreview,
@@ -26,6 +32,7 @@ import {
   parseTkGitSkillSource,
   updateCodexSkillEnabled,
   type CodexSkillRecord,
+  type McpPreflightResult,
   type McpServerRecord,
   type McpTransport,
 } from './model';
@@ -34,6 +41,7 @@ import {
   formatSkillSourceLabel,
   formatSkillSourceValue,
   isGlobalSkillSource,
+  mapBackendMcpPreflightResult,
   mapBackendMcpServer,
   mapBackendSkill,
   toBackendMcpServer,
@@ -116,7 +124,9 @@ function CodexSkillsWorkspace() {
 
   async function reloadSkills(messageOverride?: string) {
     if (browserMode) {
-      setSkills(previewSkills.filter(isGlobalSkillSource).map((skill) => ({ ...skill })));
+      const nextSkills = previewSkills.filter(isGlobalSkillSource).map((skill) => ({ ...skill }));
+      setSkills(nextSkills);
+      setSelectedID((current) => resolveCodexSkillDetailSelection(nextSkills, current));
       setMessage(messageOverride || t('codex_extensions.preview_loaded'));
       return;
     }
@@ -126,7 +136,7 @@ function CodexSkillsWorkspace() {
       const snapshot = await GetCodexSkillsSnapshot();
       const nextSkills = (snapshot.skills || []).map(mapBackendSkill).filter(isGlobalSkillSource);
       setSkills(nextSkills);
-      setSelectedID((current) => (nextSkills.some((skill) => skill.id === current) ? current : ''));
+      setSelectedID((current) => resolveCodexSkillDetailSelection(nextSkills, current));
       setMessage(messageOverride || t('codex_extensions.real_loaded'));
     } catch (error) {
       console.error(error);
@@ -139,6 +149,17 @@ function CodexSkillsWorkspace() {
   useEffect(() => {
     void reloadSkills();
   }, [browserMode]);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setSelectedID(resolveCodexSkillDetailIDFromHash(window.location.hash) || '');
+    };
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
 
   useEffect(
     () => () => {
@@ -158,6 +179,16 @@ function CodexSkillsWorkspace() {
       setSuccessHud(null);
       successHudTimerRef.current = null;
     }, 1800);
+  }
+
+  function openSkillDetail(skill: CodexSkillRecord) {
+    window.history.replaceState(null, '', buildCodexSkillDetailFrameHash(window.location.hash, skill.id));
+    setSelectedID(skill.id);
+  }
+
+  function closeSkillDetail() {
+    window.history.replaceState(null, '', clearCodexSkillDetailFrameHash(window.location.hash));
+    setSelectedID('');
   }
 
   async function toggleSkill(skill: CodexSkillRecord, checked: boolean) {
@@ -189,7 +220,7 @@ function CodexSkillsWorkspace() {
     try {
       const result = await RemoveCodexSkill(main.RemoveCodexSkillInput.createFrom({ path: skill.id }));
       setSkills((prev) => removeCodexSkillByID(prev, skill.id));
-      setSelectedID('');
+      closeSkillDetail();
       setMessage(t('codex_extensions.skill_removed_saved'));
       showSuccessHud(result?.removedPath || skill.rootPath || skill.id);
     } catch (error) {
@@ -322,7 +353,7 @@ Path: ${parsedGitSource.path}`,
             <button
               type="button"
               aria-label={`${skill.name} ${t('common.details')}`}
-              onClick={() => setSelectedID(skill.id)}
+              onClick={() => openSkillDetail(skill)}
               className="absolute inset-0 z-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)]"
             />
             <div className="pointer-events-none relative z-[1] min-w-0 text-left">
@@ -361,7 +392,7 @@ Path: ${parsedGitSource.path}`,
           loading={loading}
           browserMode={browserMode}
           canDeleteLocalFiles={!browserMode}
-          onClose={() => setSelectedID('')}
+          onClose={closeSkillDetail}
           onToggle={(checked) => void toggleSkill(selectedSkill, checked)}
           onOpenFinder={() => void openSkillInFinder(selectedSkill)}
           onRemove={() => void removeSkill(selectedSkill)}
@@ -382,6 +413,48 @@ Path: ${parsedGitSource.path}`,
   );
 }
 
+function resolveCodexSkillDetailIDFromHash(hash: string): string {
+  const state = readFrameHashState(hash);
+  if (state?.page === 'codex' && state.codexWorkspace === 'skills' && state.codexSkillDetailID) {
+    return state.codexSkillDetailID;
+  }
+  return '';
+}
+
+function resolveCodexSkillDetailSelection(skills: CodexSkillRecord[], currentID: string): string {
+  const hashID = resolveCodexSkillDetailIDFromHash(window.location.hash);
+  if (hashID && skills.some((skill) => skill.id === hashID)) {
+    return hashID;
+  }
+  return skills.some((skill) => skill.id === currentID) ? currentID : '';
+}
+
+function buildPreviewMcpPreflight(server: McpServerRecord): McpPreflightResult {
+  const checks: McpPreflightResult['checks'] = [];
+  const add = (id: string, label: string, status: McpPreflightResult['status'], detail: string) => {
+    checks.push({ id, label, status, detail });
+  };
+  if (!server.enabled) {
+    add('enabled', 'enabled', 'warning', 'server is disabled in preview config');
+  }
+  if (server.transport === 'stdio') {
+    add('command', 'command', server.command ? 'ok' : 'error', server.command ? 'preview command configured' : 'stdio server requires command');
+    add('cwd', 'cwd', server.cwd ? 'ok' : 'ok', server.cwd || 'not configured');
+    add('env_vars', 'env_vars', server.envVarsRaw ? 'warning' : 'ok', server.envVarsRaw ? 'desktop app checks env var presence' : 'no inherited env vars configured');
+  } else if (server.transport === 'streamable_http') {
+    add('url', 'url', server.url ? 'ok' : 'error', server.url ? 'preview url configured' : 'streamable_http server requires url');
+    add('bearer_token_env_var', 'bearer_token_env_var', server.bearerTokenEnvVar ? 'warning' : 'warning', server.bearerTokenEnvVar ? 'desktop app checks env var presence' : 'no bearer token env var configured');
+  } else {
+    add('transport', 'transport', 'error', 'transport must be resolved before preflight');
+  }
+  const status = checks.some((check) => check.status === 'error')
+    ? 'error'
+    : checks.some((check) => check.status === 'warning')
+      ? 'warning'
+      : 'ok';
+  return { serverID: server.id, status, checks };
+}
+
 function CodexMcpServersWorkspace() {
   const { t } = useI18n();
   const browserMode = !hasWailsAppBindings();
@@ -392,6 +465,8 @@ function CodexMcpServersWorkspace() {
   const [selectedID, setSelectedID] = useState('');
   const original = servers.find((server) => server.id === selectedID) || null;
   const [draft, setDraft] = useState<McpServerRecord | null>(() => (original ? cloneServer(original) : null));
+  const [preflight, setPreflight] = useState<McpPreflightResult | null>(null);
+  const [preflightLoading, setPreflightLoading] = useState(false);
   const [message, setMessage] = useState(t('codex_extensions.preview_loaded'));
   const [loading, setLoading] = useState(false);
   const [configEditor, setConfigEditor] = useState<ConfigEditorState>({
@@ -405,6 +480,7 @@ function CodexMcpServersWorkspace() {
 
   useEffect(() => {
     setDraft(original ? cloneServer(original) : null);
+    setPreflight(null);
   }, [original?.id]);
 
   const filteredServers = useMemo(
@@ -422,6 +498,7 @@ function CodexMcpServersWorkspace() {
     [filter, query, servers],
   );
   const preview = original && draft ? buildMcpChangePreview(original, draft) : [];
+  const isConfigEditorDirty = configEditor.content !== configEditor.originalContent;
   const enabledServerCount = servers.filter((server) => server.enabled).length;
   const mcpHeaderSubtitle = [
     mcpConfigPath,
@@ -463,22 +540,55 @@ function CodexMcpServersWorkspace() {
 
   function patchDraft(patch: Partial<McpServerRecord>) {
     setDraft((prev) => (prev ? { ...prev, ...patch } : prev));
+    setPreflight(null);
     setMessage('');
   }
 
   function openMcpServerEditor(server: McpServerRecord) {
+    if (isConfigEditorDirty) {
+      setMessage(t('codex_extensions.config_dirty_blocks_structured_edit'));
+      return;
+    }
     setSelectedID(server.id);
     setDraft(cloneServer(server));
+    setPreflight(null);
     setMessage('');
   }
 
   function closeMcpServerEditor() {
     setSelectedID('');
     setDraft(null);
+    setPreflight(null);
+  }
+
+  async function runMcpPreflight() {
+    if (!draft) {
+      return;
+    }
+    setPreflightLoading(true);
+    setMessage('');
+    if (browserMode) {
+      setPreflight(buildPreviewMcpPreflight(draft));
+      setPreflightLoading(false);
+      return;
+    }
+    try {
+      const result = await PreflightCodexMcpServer(main.PreflightCodexMcpServerInput.createFrom({ server: toBackendMcpServer(draft) }));
+      setPreflight(mapBackendMcpPreflightResult(result));
+    } catch (error) {
+      console.error(error);
+      setMessage(`${t('codex_extensions.mcp_preflight_failed')}: ${toErrorMessage(error)}`);
+    } finally {
+      setPreflightLoading(false);
+    }
   }
 
   async function saveDraft() {
     if (!draft) {
+      return;
+    }
+    if (isConfigEditorDirty) {
+      setMessage(t('codex_extensions.config_dirty_blocks_structured_save'));
       return;
     }
     if (!browserMode) {
@@ -504,6 +614,10 @@ function CodexMcpServersWorkspace() {
   }
 
   async function openConfigToml() {
+    if (preview.length > 0) {
+      setMessage(t('codex_extensions.structured_dirty_blocks_config_edit'));
+      return;
+    }
     if (browserMode) {
       setConfigEditor({
         open: true,
@@ -542,6 +656,7 @@ function CodexMcpServersWorkspace() {
     setConfigEditor((prev) => ({ ...prev, saving: true }));
     try {
       const result = await SaveCodexConfigToml(main.SaveCodexConfigTomlInput.createFrom({ content: configEditor.content }));
+      const extendedResult = result as typeof result & { backupPath?: string };
       setConfigEditor((prev) => ({
         ...prev,
         configPath: result.configPath,
@@ -549,7 +664,10 @@ function CodexMcpServersWorkspace() {
         originalContent: result.content,
         saving: false,
       }));
-      await reloadServers(t('codex_extensions.config_saved'));
+      const savedMessage = extendedResult.backupPath
+        ? `${t('codex_extensions.config_saved')} · ${t('codex_extensions.config_backup_created')}: ${extendedResult.backupPath}`
+        : t('codex_extensions.config_saved');
+      await reloadServers(savedMessage);
     } catch (error) {
       console.error(error);
       setConfigEditor((prev) => ({ ...prev, saving: false }));
@@ -644,6 +762,9 @@ function CodexMcpServersWorkspace() {
             onReset={() => setDraft(original ? cloneServer(original) : null)}
             onClose={closeMcpServerEditor}
             onSave={() => void saveDraft()}
+            onPreflight={() => void runMcpPreflight()}
+            preflight={preflight}
+            preflightLoading={preflightLoading}
           />
         ) : null}
         {configEditor.open ? (

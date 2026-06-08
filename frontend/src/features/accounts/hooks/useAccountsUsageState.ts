@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { GetSidecarUsageAttribution, GetUsageStatistics } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
-import { buildAccountUsageSummaryMap, type AccountUsageSummary } from '../model/accountUsage';
+import { buildAccountUsageSummaryMap, buildFailedAccountUsageSummaryMap, type AccountUsageSummary } from '../model/accountUsage';
 import { getAccountsPreviewUsageByID } from '../previewData';
 import type { TrackRequest } from '../model/types';
 
@@ -69,8 +69,10 @@ export default function useAccountsUsageState(trackRequest: TrackRequest) {
         setAccountUsageByID((prev) => (mergeUsage ? { ...prev, ...usageMap } : usageMap));
       } catch (error) {
         console.error(error);
-        const usageMap = buildAccountUsageSummaryMap(accounts, null);
-        setAccountUsageByID((prev) => (mergeUsage ? { ...prev, ...usageMap } : usageMap));
+        setAccountUsageByID((prev) => {
+          const usageMap = buildFailedAccountUsageSummaryMap(accounts, mergeUsage ? prev : {}, error);
+          return mergeUsage ? { ...prev, ...usageMap } : usageMap;
+        });
       } finally {
         if (showRefreshing) {
           const remainingFeedbackMs = Math.max(0, 350 - (Date.now() - startedAt));

@@ -20,7 +20,8 @@ interface AccountsListWorkbenchViewProps {
   onOpenApiKeyModal: () => void;
   onOpenRotationModal?: () => void;
   onStartCodexOAuth: () => void;
-  onRefresh: () => void;
+  onRefreshAccounts: () => void;
+  onRefreshRuntime: () => void;
   onOpenUnifiedCompose?: () => void;
   searchTerm: string;
   filters: AccountsFilterState;
@@ -63,7 +64,8 @@ export default function AccountsListWorkbenchView({
   onOpenApiKeyModal,
   onOpenRotationModal,
   onStartCodexOAuth,
-  onRefresh,
+  onRefreshAccounts,
+  onRefreshRuntime,
   onOpenUnifiedCompose,
   searchTerm,
   filters,
@@ -107,7 +109,8 @@ export default function AccountsListWorkbenchView({
         onOpenApiKeyModal={onOpenApiKeyModal}
         onOpenRotationModal={onOpenRotationModal}
         onStartCodexOAuth={onStartCodexOAuth}
-        onRefresh={onRefresh}
+        onRefreshAccounts={onRefreshAccounts}
+        onRefreshRuntime={onRefreshRuntime}
         onOpenUnifiedCompose={onOpenUnifiedCompose}
       />
 

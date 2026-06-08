@@ -394,6 +394,10 @@ export function PatchClaudeCodeSettings(arg1) {
   return window['go']['main']['App']['PatchClaudeCodeSettings'](arg1);
 }
 
+export function PreflightCodexMcpServer(arg1) {
+  return window['go']['main']['App']['PreflightCodexMcpServer'](arg1);
+}
+
 export function PreviewCodexFeatureConfig(arg1) {
   return window['go']['main']['App']['PreviewCodexFeatureConfig'](arg1);
 }

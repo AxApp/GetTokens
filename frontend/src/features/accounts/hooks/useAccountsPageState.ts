@@ -456,6 +456,18 @@ export default function useAccountsPageState({
     syncCodexQuotaStatuses,
   ]);
 
+  const refreshAccountsRuntime = useCallback(async () => {
+    if (!ready || runtimeSyncAccounts.length === 0) {
+      return;
+    }
+
+    await Promise.all([
+      Promise.all(runtimeSyncAccounts.map((account) => refreshCodexQuota(account))),
+      refreshAccountUsage(runtimeSyncAccounts),
+      refreshAccountRateLimits(runtimeSyncAccounts),
+    ]);
+  }, [ready, refreshAccountRateLimits, refreshAccountUsage, refreshCodexQuota, runtimeSyncAccounts]);
+
   useEffect(() => {
     if (
       typeof window === 'undefined' ||
@@ -851,6 +863,7 @@ export default function useAccountsPageState({
     loadAccountUsage,
     syncCodexQuotaStatuses,
     refreshAccountUsage,
+    refreshAccountsRuntime,
     loadAccountRateLimits,
     refreshAccountRateLimits,
     startCodexOAuth,

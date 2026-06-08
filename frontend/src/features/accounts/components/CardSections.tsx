@@ -73,19 +73,32 @@ export function AccountMiniMetrics({ usageSummary, quotaDisplay, t }: AccountMin
     : quotaDisplay?.status === 'unsupported'
       ? t('accounts.quota_unsupported')
       : '—';
+  const usageErrorTitle = usageSummary?.errorMessage || '';
+  const requestValue =
+    usageSummary?.loadState === 'error'
+      ? 'ERR'
+      : usageSummary?.loadState === 'stale'
+        ? `${formatCountMetric(usageSummary?.requestCount ?? 0)} STALE`
+        : formatCountMetric(usageSummary?.requestCount ?? 0);
+  const tokenValue =
+    usageSummary?.loadState === 'error'
+      ? 'ERR'
+      : usageSummary?.loadState === 'stale'
+        ? `${formatTokenMetric(usageSummary?.totalTokens ?? 0)} STALE`
+        : formatTokenMetric(usageSummary?.totalTokens ?? 0);
 
   return (
     <div className="account-card-list-metrics grid min-w-0 gap-0">
-      <AccountMiniMetric label={t('accounts.recent_requests')} value={formatCountMetric(usageSummary?.requestCount ?? 0)} />
-      <AccountMiniMetric label={t('accounts.total_tokens')} value={formatTokenMetric(usageSummary?.totalTokens ?? 0)} />
+      <AccountMiniMetric label={t('accounts.recent_requests')} value={requestValue} title={usageErrorTitle} />
+      <AccountMiniMetric label={t('accounts.total_tokens')} value={tokenValue} title={usageErrorTitle} />
       <AccountMiniMetric label={firstQuotaWindow?.label || t('accounts.quota_remaining')} value={quotaValue} />
     </div>
   );
 }
 
-export function AccountMiniMetric({ label, value }: { label: string; value: string }) {
+export function AccountMiniMetric({ label, value, title = '' }: { label: string; value: string; title?: string }) {
   return (
-    <div className="account-card-list-metric-cell min-w-0 border-l border-dashed border-[var(--border-color)] px-2 py-1.5 first:border-l-0">
+    <div className="account-card-list-metric-cell min-w-0 border-l border-dashed border-[var(--border-color)] px-2 py-1.5 first:border-l-0" title={title}>
       <div className="truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
         {label}
       </div>

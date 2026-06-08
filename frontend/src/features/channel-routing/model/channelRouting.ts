@@ -65,6 +65,14 @@ export interface ChannelRouteAuditEvent {
   selectedAccountID?: string;
   candidateCount: number;
   filteredCount: number;
+  filtered?: Array<{
+    id?: string;
+    reason?: string;
+  }>;
+  filteredReasonCounts?: Array<{
+    reason?: string;
+    count?: number;
+  }>;
   snapshotVersion: string;
   policyVersion: string;
   shadowEnabled?: boolean;
@@ -371,10 +379,12 @@ export function buildChannelRouteAuditEventSummary(event: ChannelRouteAuditEvent
   const candidateCount = Number.isFinite(event.candidateCount) ? event.candidateCount : 0;
   const filteredCount = Number.isFinite(event.filteredCount) ? event.filteredCount : 0;
   const title = `${routeMode} → ${selected}`;
+  const reasonSummary = formatChannelRoutingReasonSummary(event);
   const metaParts = [
     project ? `项目:${project}` : '',
     `${candidateCount} 个候选`,
     `${filteredCount} 个过滤`,
+    reasonSummary ? `过滤原因 ${reasonSummary}` : '',
     `快照 ${snapshot}`,
     `规则 ${policy}`,
   ].filter(Boolean);
@@ -390,6 +400,31 @@ export function buildChannelRouteAuditEventSummary(event: ChannelRouteAuditEvent
     shadow,
     redacted: event.redacted !== false,
   };
+}
+
+function formatChannelRoutingReasonSummary(event: ChannelRouteAuditEvent) {
+  const counts = new Map<string, number>();
+  (event.filteredReasonCounts ?? []).forEach((item) => {
+    const reason = String(item.reason || '').trim();
+    const count = Number(item.count || 0);
+    if (reason && count > 0) {
+      counts.set(reason, (counts.get(reason) ?? 0) + count);
+    }
+  });
+  (event.filtered ?? []).forEach((item) => {
+    const reason = String(item.reason || '').trim();
+    if (reason) {
+      counts.set(reason, (counts.get(reason) ?? 0) + 1);
+    }
+  });
+  return Array.from(counts.entries())
+    .sort(([leftReason, leftCount], [rightReason, rightCount]) => {
+      if (leftCount !== rightCount) return rightCount - leftCount;
+      return leftReason.localeCompare(rightReason);
+    })
+    .slice(0, 3)
+    .map(([reason, count]) => `${reason} x${count}`)
+    .join(', ');
 }
 
 export function buildPreviewChannelRouteAuditEvent(input: {

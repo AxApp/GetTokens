@@ -1,5 +1,5 @@
 import { main } from '../../../wailsjs/go/models';
-import type { CodexSkillRecord, McpServerRecord } from './model';
+import { isEditableMcpTransport, type CodexSkillRecord, type McpPreflightResult, type McpServerRecord, type McpTransport } from './model';
 
 export function formatSkillSourceLabel(skill: CodexSkillRecord, t: (key: string) => string): string {
   if ((skill.sourceKind === 'github' || skill.sourceKind === 'gitlab') && skill.origin && skill.origin !== 'local') {
@@ -32,11 +32,18 @@ export function cloneServer(server: McpServerRecord): McpServerRecord {
 }
 
 export function mapBackendSkill(skill: main.CodexSkillRecord): CodexSkillRecord {
+  const extendedSkill = skill as main.CodexSkillRecord & {
+    enabledSource?: string;
+    enabledSourceValue?: string;
+    warnings?: string[];
+  };
   return {
     id: skill.id,
     name: skill.name,
     description: skill.description || '',
     enabled: skill.enabled,
+    enabledSource: normalizeSkillEnabledSource(extendedSkill.enabledSource),
+    enabledSourceValue: extendedSkill.enabledSourceValue || '',
     rootLabel: skill.rootLabel,
     rootPath: skill.rootPath,
     sourceKind: normalizeSkillSourceKind(skill.sourceKind),
@@ -49,6 +56,7 @@ export function mapBackendSkill(skill: main.CodexSkillRecord): CodexSkillRecord 
       previewable: Boolean(file.previewable),
     })),
     skillMarkdown: skill.skillMarkdown || skill.previewMarkdown || '',
+    warnings: [...(extendedSkill.warnings || [])],
   };
 }
 
@@ -63,12 +71,19 @@ function normalizeSkillSourceKind(value: string): CodexSkillRecord['sourceKind']
   return 'user';
 }
 
+function normalizeSkillEnabledSource(value: string | undefined): CodexSkillRecord['enabledSource'] {
+  if (value === 'path_rule' || value === 'name_rule' || value === 'default_enabled') {
+    return value;
+  }
+  return 'default_enabled';
+}
+
 export function mapBackendMcpServer(server: main.CodexMcpServer): McpServerRecord {
   return {
     id: server.id,
     label: server.label || server.id,
     enabled: server.enabled,
-    transport: server.transport === 'streamable_http' ? 'streamable_http' : 'stdio',
+    transport: normalizeMcpTransport(server.transport),
     command: server.command || '',
     args: [...(server.args || [])],
     env: (server.env || []).map((row) => ({ key: row.key, value: row.value })),
@@ -93,11 +108,14 @@ export function mapBackendMcpServer(server: main.CodexMcpServer): McpServerRecor
     tools: (server.tools || []).map((tool) => ({ name: tool.name, approvalMode: tool.approvalMode || '' })),
     rawConfig: server.rawConfig || '',
     sourcePath: server.sourcePath,
-    status: server.status === 'disabled' || server.status === 'missing-env' ? server.status : 'ready',
+    status: normalizeMcpStatus(server.status),
   };
 }
 
 export function toBackendMcpServer(server: McpServerRecord): main.CodexMcpServer {
+  if (!isEditableMcpTransport(server.transport)) {
+    throw new Error(`MCP transport ${server.transport} must be resolved before saving`);
+  }
   return {
     id: server.id,
     label: server.label || server.id,
@@ -129,4 +147,38 @@ export function toBackendMcpServer(server: McpServerRecord): main.CodexMcpServer
     sourcePath: server.sourcePath,
     status: server.status,
   } as main.CodexMcpServer;
+}
+
+export function mapBackendMcpPreflightResult(result: main.CodexMcpPreflightResult): McpPreflightResult {
+  return {
+    serverID: result.serverID || '',
+    status: normalizeMcpPreflightStatus(result.status),
+    checks: (result.checks || []).map((check) => ({
+      id: check.id || '',
+      label: check.label || '',
+      status: normalizeMcpPreflightStatus(check.status),
+      detail: check.detail || '',
+    })),
+  };
+}
+
+function normalizeMcpTransport(value: string): McpTransport {
+  if (value === 'streamable_http' || value === 'conflict' || value === 'unknown') {
+    return value;
+  }
+  return 'stdio';
+}
+
+function normalizeMcpPreflightStatus(value: string): McpPreflightResult['status'] {
+  if (value === 'warning' || value === 'error') {
+    return value;
+  }
+  return 'ok';
+}
+
+function normalizeMcpStatus(value: string): McpServerRecord['status'] {
+  if (value === 'disabled' || value === 'missing-env' || value === 'error') {
+    return value;
+  }
+  return 'ready';
 }

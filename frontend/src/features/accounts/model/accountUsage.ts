@@ -38,6 +38,8 @@ export interface StatusBarData {
 
 export interface AccountUsageSummary {
   source: 'none' | 'legacy' | 'attribution';
+  loadState?: 'ready' | 'empty' | 'stale' | 'error';
+  errorMessage?: string;
   hasData: boolean;
   requestCount: number;
   failedCount: number;
@@ -460,6 +462,8 @@ export function resolveResponsiveStatusBarData(statusBar: StatusBarData, contain
 function buildEmptyAccountUsageSummary(): AccountUsageSummary {
   return {
     source: 'none',
+    loadState: 'empty',
+    errorMessage: '',
     hasData: false,
     requestCount: 0,
     failedCount: 0,
@@ -478,6 +482,29 @@ function buildEmptyAccountUsageSummary(): AccountUsageSummary {
     requestedModels: [],
     trafficBuckets: [],
     statusBar: EMPTY_STATUS_BAR,
+  };
+}
+
+function usageErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message.trim();
+  if (typeof error === 'string') return error.trim();
+  if (isRecord(error) && typeof error.message === 'string') return error.message.trim();
+  return 'Usage data loading failed';
+}
+
+function buildFailedAccountUsageSummary(previous: AccountUsageSummary | undefined, error: unknown): AccountUsageSummary {
+  const message = usageErrorMessage(error);
+  if (previous) {
+    return {
+      ...previous,
+      loadState: previous.hasData ? 'stale' : 'error',
+      errorMessage: message,
+    };
+  }
+  return {
+    ...buildEmptyAccountUsageSummary(),
+    loadState: 'error',
+    errorMessage: message,
   };
 }
 
@@ -572,6 +599,8 @@ function buildAccountUsageSummaryFromAttribution(
 
   return {
     source: 'attribution',
+    loadState: requestCount > 0 ? 'ready' : 'empty',
+    errorMessage: '',
     hasData: requestCount > 0,
     requestCount,
     failedCount,
@@ -656,6 +685,8 @@ export function buildAccountUsageSummary(account: AccountRecord, usageData: unkn
   const total = success + failure;
   return {
     source: 'legacy',
+    loadState: 'ready',
+    errorMessage: '',
     hasData: total > 0,
     requestCount: total,
     failedCount: failure,
@@ -680,6 +711,17 @@ export function buildAccountUsageSummary(account: AccountRecord, usageData: unkn
 export function buildAccountUsageSummaryMap(accounts: AccountRecord[], usageData: unknown, nowMs: number = Date.now()) {
   return accounts.reduce<Record<string, AccountUsageSummary>>((result, account) => {
     result[account.id] = buildAccountUsageSummary(account, usageData, nowMs);
+    return result;
+  }, {});
+}
+
+export function buildFailedAccountUsageSummaryMap(
+  accounts: AccountRecord[],
+  previous: Record<string, AccountUsageSummary> = {},
+  error: unknown,
+) {
+  return accounts.reduce<Record<string, AccountUsageSummary>>((result, account) => {
+    result[account.id] = buildFailedAccountUsageSummary(previous[account.id], error);
     return result;
   }, {});
 }

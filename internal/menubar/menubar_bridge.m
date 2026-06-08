@@ -40,18 +40,23 @@ static const CGFloat kPopoverHeight = 560.0;
 static void show_popover(void);
 static void update_status_item_presentation(void);
 
+static void run_swiftui_action_after_button_event(GetTokensSwiftUIActionFn action) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (popover != nil) {
+            [popover performClose:nil];
+        }
+        if (action != NULL) {
+            action();
+        }
+    });
+}
+
 static void swiftui_open_window_callback(void) {
-    if (popover != nil) {
-        [popover performClose:nil];
-    }
-    gettokensMenuBarOpenWindow();
+    run_swiftui_action_after_button_event(gettokensMenuBarOpenWindow);
 }
 
 static void swiftui_refresh_snapshot_callback(void) {
-    if (popover != nil) {
-        [popover performClose:nil];
-    }
-    gettokensMenuBarRefreshSnapshot();
+    run_swiftui_action_after_button_event(gettokensMenuBarRefreshSnapshot);
 }
 
 @interface GetTokensMenuBarTarget : NSObject

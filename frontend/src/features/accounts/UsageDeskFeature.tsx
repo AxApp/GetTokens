@@ -8,6 +8,7 @@ import {
   useUsageDeskFeature,
 } from './hooks/useUsageDeskFeature';
 import {
+  usageDeskProjectedActionImpacts,
   usageDeskProjectedSurfaceViewOptions,
   type UsageDeskProjectedSurfaceView,
   type UsageDeskRangeOption,
@@ -272,16 +273,33 @@ export default function UsageDeskFeature({
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <button onClick={() => void refreshProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
-                                    刷新索引
-                                  </button>
-                                  <button onClick={() => void rebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading || !selectedDayKey}>
-                                    重建当日
-                                  </button>
-                                  <button onClick={() => void rebuildProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
-                                    重建索引
-                                  </button>
+                                <div className="grid max-w-[620px] grid-cols-3 gap-2">
+                                  {usageDeskProjectedActionImpacts.map((action) => {
+                                    const disabled = projectedLoading || (action.id === 'rebuild-day' && !selectedDayKey);
+                                    const handleClick =
+                                      action.id === 'refresh'
+                                        ? () => void refreshProjectedUsage()
+                                        : action.id === 'rebuild-day'
+                                          ? () => void rebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)
+                                          : () => void rebuildProjectedUsage();
+
+                                    return (
+                                      <div key={action.id} className="min-w-0">
+                                        <button
+                                          type="button"
+                                          onClick={handleClick}
+                                          className="w-full border-2 border-[var(--border-color)] px-3 py-1.5 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30"
+                                          disabled={disabled}
+                                          title={action.description}
+                                        >
+                                          {action.label}
+                                        </button>
+                                        <div className="mt-1 text-[10px] font-bold leading-tight text-[var(--text-muted)]">
+                                          {action.description}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </>
                             }

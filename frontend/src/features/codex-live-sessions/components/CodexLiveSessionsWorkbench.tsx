@@ -29,6 +29,12 @@ interface CodexLiveSessionsWorkbenchProps {
   onViewChange?: (view: CodexLiveSessionsView) => void;
   detailRequests?: readonly CodexLiveRequest[];
   overviewRequests?: readonly CodexLiveRequest[];
+  overviewHistoryLabel?: string;
+  overviewCanLoadMore?: boolean;
+  onLoadMoreOverview?: () => void;
+  detailHistoryLabel?: string;
+  detailCanLoadMore?: boolean;
+  onLoadMoreDetail?: () => void;
   overviewLoading?: boolean;
   overviewError?: string;
   detailLoading?: boolean;
@@ -52,6 +58,12 @@ export default function CodexLiveSessionsWorkbench({
   onViewChange,
   detailRequests = [],
   overviewRequests = [],
+  overviewHistoryLabel,
+  overviewCanLoadMore = false,
+  onLoadMoreOverview,
+  detailHistoryLabel,
+  detailCanLoadMore = false,
+  onLoadMoreDetail,
   overviewLoading = false,
   overviewError,
   detailLoading = false,
@@ -166,6 +178,18 @@ export default function CodexLiveSessionsWorkbench({
     }
   }
 
+  function confirmClearSessions() {
+    if (!onClearSessions) {
+      return;
+    }
+    if (!window.confirm(t('codex_live_sessions.clear_sessions_confirm'))) {
+      return;
+    }
+    setSelectedSessionID(undefined);
+    setSelectedProjectID(undefined);
+    onClearSessions();
+  }
+
   return (
     <section
       data-design-system-component="true"
@@ -217,11 +241,7 @@ export default function CodexLiveSessionsWorkbench({
               <button
                 type="button"
                 className="btn-swiss flex items-center gap-2 !px-3 !py-2 text-[length:var(--font-size-ui-xs)]"
-                onClick={() => {
-                  setSelectedSessionID(undefined);
-                  setSelectedProjectID(undefined);
-                  onClearSessions?.();
-                }}
+                onClick={confirmClearSessions}
                 disabled={!onClearSessions || snapshot.sessions.length === 0}
                 title={t('codex_live_sessions.clear_sessions_title')}
               >
@@ -342,6 +362,12 @@ export default function CodexLiveSessionsWorkbench({
               overviewSessions={sessions}
               overviewRequestCount={overviewRequestRows.length}
               overviewRequestRows={overviewRequestRows}
+              overviewHistoryLabel={overviewHistoryLabel}
+              overviewCanLoadMore={overviewCanLoadMore}
+              onLoadMoreOverview={onLoadMoreOverview}
+              detailHistoryLabel={detailHistoryLabel}
+              detailCanLoadMore={detailCanLoadMore}
+              onLoadMoreDetail={onLoadMoreDetail}
               overviewLoading={overviewLoading}
               overviewError={overviewError}
               loading={detailLoading}

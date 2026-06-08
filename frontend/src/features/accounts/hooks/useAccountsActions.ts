@@ -39,6 +39,7 @@ import {
 } from '../model/accountDetailConfig';
 import { resolveAccountDeleteRequest } from '../model/accountDelete';
 import { publishAccountDisabledChange } from '../model/accountDisabledSync';
+import { buildAccountDisabledActionNotice } from '../model/accountActionErrors';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import {
   resolveBulkQuotaRefreshTargets,
@@ -121,10 +122,10 @@ export default function useAccountsActions({
         await setAccountDisabled(account, !account.disabled);
       } catch (error) {
         console.error(error);
-        setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
+        setAccountActionNotice(buildAccountDisabledActionNotice(!account.disabled, error));
       }
     },
-    [setAccountDisabled, setDeleteError],
+    [setAccountDisabled, setAccountActionNotice],
   );
 
   const executeDeleteAccount = useCallback(

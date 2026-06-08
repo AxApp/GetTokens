@@ -1224,6 +1224,26 @@ func mapWailsCodexMcpToolRows(rows []CodexMcpToolRow) []wailsapp.CodexMcpToolRow
 	return result
 }
 
+func mapCodexMcpPreflightResult(result *wailsapp.CodexMcpPreflightResult) *CodexMcpPreflightResult {
+	if result == nil {
+		return &CodexMcpPreflightResult{Checks: []CodexMcpPreflightCheck{}}
+	}
+	checks := make([]CodexMcpPreflightCheck, 0, len(result.Checks))
+	for _, check := range result.Checks {
+		checks = append(checks, CodexMcpPreflightCheck{
+			ID:     check.ID,
+			Label:  check.Label,
+			Status: check.Status,
+			Detail: check.Detail,
+		})
+	}
+	return &CodexMcpPreflightResult{
+		ServerID: result.ServerID,
+		Status:   result.Status,
+		Checks:   checks,
+	}
+}
+
 func mapCodexMcpSaveResult(result *wailsapp.SaveCodexMcpServerResult) *SaveCodexMcpServerResult {
 	if result == nil {
 		return &SaveCodexMcpServerResult{Changes: []CodexMcpChange{}}

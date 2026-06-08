@@ -197,6 +197,28 @@ test('buildChannelRouteAuditEventSummary keeps route ledger redacted and compact
   );
 });
 
+test('buildChannelRouteAuditEventSummary includes filtered reason counts when available', () => {
+  const summary = buildChannelRouteAuditEventSummary({
+    id: 'route-reasons',
+    recordedAt: '2026-05-25T10:00:00Z',
+    channel: 'codex',
+    routeMode: 'balanced',
+    selectedAccountID: 'codex-api-key:stable',
+    candidateCount: 5,
+    filteredCount: 3,
+    filtered: [
+      { id: 'auth-file:a.json', reason: 'account-disabled' },
+      { id: 'auth-file:b.json', reason: 'runtime-rate-limit' },
+      { id: 'auth-file:c.json', reason: 'runtime-rate-limit' },
+    ],
+    snapshotVersion: 'snapshot-7',
+    policyVersion: 'channel-routing-v1',
+    redacted: true,
+  });
+
+  assert.match(summary.meta, /过滤原因 runtime-rate-limit x2, account-disabled x1/);
+});
+
 test('buildChannelRoutingExplainDigest turns raw explain data into readable sections', () => {
   assert.deepEqual(
     buildChannelRoutingExplainDigest({

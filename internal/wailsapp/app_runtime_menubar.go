@@ -25,7 +25,7 @@ func (a *App) applyMenuBarSettings(settings AppRuntimeSettings) {
 		OpenWindow: func() {
 			wailsRuntime.Show(a.ctx)
 			wailsRuntime.WindowShow(a.ctx)
-			wailsRuntime.EventsEmit(a.ctx, "menubar:navigate", map[string]string{"page": "accounts"})
+			wailsRuntime.EventsEmit(a.ctx, "menubar:navigate", menuBarAccountsRiskPayload())
 		},
 		RefreshSnapshot: func() {
 			go a.refreshMenuBarQuotaSnapshotActive()
@@ -38,6 +38,10 @@ func (a *App) applyMenuBarSettings(settings AppRuntimeSettings) {
 	}
 	a.updateMenuBarStatus(a.sidecar.CurrentStatus())
 	go a.refreshMenuBarQuotaSnapshot()
+}
+
+func menuBarAccountsRiskPayload() map[string]string {
+	return map[string]string{"page": "accounts", "workspace": "all", "filter": "risk"}
 }
 
 func (a *App) updateMenuBarStatus(status sidecar.Status) {

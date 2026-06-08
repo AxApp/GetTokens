@@ -721,6 +721,47 @@ test('filterAccounts separates disabled accounts from unavailable error accounts
   );
 });
 
+test('filterAccounts risk preset keeps resource filters unrestricted while selecting risky statuses', () => {
+  const accounts = [
+    {
+      id: 'auth-file:active-without-quota',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Active',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'auth-file:disabled-without-resource',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Disabled',
+      status: 'DISABLED',
+      disabled: true,
+    },
+    {
+      id: 'auth-file:error-without-resource',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Error',
+      status: 'ERROR',
+      statusMessage: 'refresh token expired',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        resource: { hasLongestQuota: true, hasBalance: true },
+        status: { error: true, disabled: true, requestable: false },
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    ['auth-file:disabled-without-resource', 'auth-file:error-without-resource'],
+  );
+});
+
 test('groupAccountsByVendor groups by normalized provider', () => {
   const accounts = [
     {

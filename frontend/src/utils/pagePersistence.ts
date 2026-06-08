@@ -63,13 +63,16 @@ export type UsageDeskSourceStorageValue = 'observed' | 'projected';
 export type UsageDeskRangeStorageValue = 'TODAY' | '7D' | '14D' | '30D' | '全部';
 export type AccountDetailScriptRoute = 'quota' | 'billing';
 export type AccountListModalRoute = 'route-probe' | 'project-config';
+export type AccountFilterRoute = 'risk';
 
 export interface FrameHashState {
   page: AppPage;
   workspace?: AccountWorkspace;
+  accountFilter?: AccountFilterRoute;
   accountDetailID?: string;
   accountDetailScript?: AccountDetailScriptRoute;
   modal?: AccountListModalRoute;
+  codexSkillDetailID?: string;
   codexWorkspace?: CodexWorkspace;
   codexLiveSessionsView?: CodexLiveSessionsView;
   claudeWorkspace?: ClaudeWorkspace;
@@ -77,8 +80,16 @@ export interface FrameHashState {
   usageDeskWorkspace?: UsageDeskWorkspace;
 }
 
+export interface MenuBarNavigationPayload {
+  page?: AppPage;
+  workspace?: string;
+  view?: string;
+  filter?: string;
+}
+
 interface FrameHashOptions {
   accountDetailScript?: AccountDetailScriptRoute | null;
+  accountFilter?: AccountFilterRoute | null;
   codexLiveSessionsView?: CodexLiveSessionsView | null;
   claudeWorkspace?: ClaudeWorkspace;
   density?: string | null;
@@ -378,6 +389,9 @@ export function readFrameHashState(
       page,
       workspace: isAccountWorkspace(workspace) ? workspace : 'all',
     };
+    if (params.get('filter') === 'risk') {
+      state.accountFilter = 'risk';
+    }
     if (detail && detail.trim()) {
       state.accountDetailID = detail;
       if (isAccountDetailScriptRoute(script)) {
@@ -406,7 +420,9 @@ export function readFrameHashState(
     if (codexWorkspace === 'live-sessions') {
       state.codexLiveSessionsView = resolveInitialCodexLiveSessionsView(view);
     }
-    if (detail && detail.trim()) {
+    if (codexWorkspace === 'skills' && detail && detail.trim()) {
+      state.codexSkillDetailID = detail;
+    } else if (detail && detail.trim()) {
       state.accountDetailID = detail;
     }
     if (isAccountListModalRoute(modal)) {
@@ -457,6 +473,9 @@ export function buildFrameHash(
   if (page === 'accounts' && accountWorkspace !== 'all') {
     params.set('workspace', accountWorkspace);
   }
+  if (page === 'accounts' && options?.accountFilter === 'risk') {
+    params.set('filter', 'risk');
+  }
   if (page === 'accounts' && (options?.density === 'compact' || options?.density === 'list')) {
     params.set('density', options.density);
   }
@@ -497,6 +516,39 @@ export function buildFrameHash(
     params.set('script', options.accountDetailScript);
   }
   return `#${params.toString()}`;
+}
+
+export function resolveMenuBarNavigationHash(payload?: MenuBarNavigationPayload): string | null {
+  if (payload?.page === 'accounts') {
+    if (payload.workspace === 'all' && payload.filter === 'risk') {
+      return '#frame=accounts&workspace=all&filter=risk';
+    }
+    return buildFrameHash('accounts', 'all', 'feature-config', 'codex', 'codex');
+  }
+
+  if (payload?.page === 'codex') {
+    const codexWorkspace = isCodexWorkspace(payload.workspace) ? payload.workspace : 'feature-config';
+    return buildFrameHash('codex', 'all', codexWorkspace, 'codex', 'codex', null, {
+      codexLiveSessionsView:
+        codexWorkspace === 'live-sessions' && isCodexLiveSessionsView(payload.view)
+          ? payload.view
+          : null,
+    });
+  }
+
+  if (payload?.page === 'session-management') {
+    return buildFrameHash('codex', 'all', 'session-management', 'codex', 'codex');
+  }
+
+  if (payload?.page === 'vendor-status') {
+    return buildFrameHash('codex', 'all', 'vendor-status', 'codex', 'codex');
+  }
+
+  if (payload?.page === 'usage-desk') {
+    return buildFrameHash('codex', 'all', 'usage-codex', 'codex', 'codex');
+  }
+
+  return null;
 }
 
 export function buildAccountDetailFrameHash(hash: string | null | undefined, detailID: string): string {
@@ -545,6 +597,22 @@ export function buildCodexDetailFrameHash(hash: string | null | undefined, detai
 }
 
 export function clearCodexDetailFrameHash(hash: string | null | undefined): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.delete('detail');
+  return `#${params.toString()}`;
+}
+
+export function buildCodexSkillDetailFrameHash(hash: string | null | undefined, skillID: string): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.set('frame', 'codex');
+  params.set('workspace', 'skills');
+  params.set('detail', skillID);
+  return `#${params.toString()}`;
+}
+
+export function clearCodexSkillDetailFrameHash(hash: string | null | undefined): string {
   const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
   const params = new URLSearchParams(normalized);
   params.delete('detail');

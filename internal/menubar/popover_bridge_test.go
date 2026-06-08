@@ -44,6 +44,7 @@ func TestMenuBarBridgeUsesPopoverInsteadOfStatusMenu(t *testing.T) {
 		"libGetTokensMenuBarSwiftUI.dylib",
 		"GetTokensMenuBarCreateSwiftUIViewController",
 		"swiftui_popover_controller",
+		"run_swiftui_action_after_button_event",
 	} {
 		if !strings.Contains(source, want) {
 			t.Fatalf("menubar bridge missing %q", want)
@@ -66,6 +67,50 @@ func TestMenuBarBridgeUsesPopoverInsteadOfStatusMenu(t *testing.T) {
 	}
 	if strings.Contains(source, "@selector(checkForUpdates:)") || strings.Contains(source, "gettokensMenuBarCheckForUpdates") {
 		t.Fatal("menubar bridge still uses update-check callback; want local quota snapshot refresh")
+	}
+}
+
+func TestMenuBarSwiftUIActionsAreDeferredOutsideButtonStack(t *testing.T) {
+	body, err := os.ReadFile("menubar_bridge.m")
+	if err != nil {
+		t.Fatalf("read menubar bridge: %v", err)
+	}
+	source := string(body)
+
+	for _, want := range []string{
+		"static void run_swiftui_action_after_button_event(GetTokensSwiftUIActionFn action)",
+		"dispatch_async(dispatch_get_main_queue(), ^{",
+		"run_swiftui_action_after_button_event(gettokensMenuBarOpenWindow)",
+		"run_swiftui_action_after_button_event(gettokensMenuBarRefreshSnapshot)",
+	} {
+		if !strings.Contains(source, want) {
+			t.Fatalf("SwiftUI menu bar action should be deferred, missing %q", want)
+		}
+	}
+
+	openCallback := source[strings.Index(source, "static void swiftui_open_window_callback"):strings.Index(source, "static void swiftui_refresh_snapshot_callback")]
+	if strings.Contains(openCallback, "gettokensMenuBarOpenWindow();") {
+		t.Fatal("SwiftUI open callback must not synchronously enter Go/Wails from the button action")
+	}
+}
+
+func TestMenuBarCallbacksDispatchOutsideNativeEventStack(t *testing.T) {
+	body, err := os.ReadFile("controller_darwin.go")
+	if err != nil {
+		t.Fatalf("read controller_darwin.go: %v", err)
+	}
+	source := string(body)
+
+	for _, want := range []string{
+		"func dispatchCallback(callback func())",
+		"go callback()",
+		"dispatchCallback(currentCallbacks().OpenWindow)",
+		"dispatchCallback(currentCallbacks().RefreshSnapshot)",
+		"dispatchCallback(currentCallbacks().Quit)",
+	} {
+		if !strings.Contains(source, want) {
+			t.Fatalf("menu bar callbacks should dispatch outside native event stack, missing %q", want)
+		}
 	}
 }
 

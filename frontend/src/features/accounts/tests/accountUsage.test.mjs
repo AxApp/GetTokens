@@ -5,6 +5,7 @@ import {
   buildAccountUsageSummary,
   buildAccountUsageSummaryMap,
   buildCandidateUsageSourceIds,
+  buildFailedAccountUsageSummaryMap,
   shouldScheduleAccountUsageRefresh,
   calculateStatusBarData,
   collectUsageDetails,
@@ -222,6 +223,48 @@ test('buildAccountUsageSummaryMap returns per-account summaries', () => {
 
   assert.equal(summaries['auth-file:alpha'].hasData, true);
   assert.equal(summaries['auth-file:beta'].hasData, false);
+});
+
+test('buildFailedAccountUsageSummaryMap keeps stale data on merge failures and marks first load errors', () => {
+  const accounts = [
+    {
+      id: 'acct_with_previous',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'previous',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'acct_first_load',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'first',
+      status: 'ACTIVE',
+    },
+  ];
+  const previous = {
+    acct_with_previous: {
+      ...buildAccountUsageSummary(accounts[0], {
+        items: [
+          {
+            accountKey: 'acct_with_previous',
+            requestCount: 9,
+            failedCount: 1,
+            totalTokens: 1200,
+          },
+        ],
+      }),
+    },
+  };
+
+  const summaries = buildFailedAccountUsageSummaryMap(accounts, previous, new Error('usage endpoint timeout'));
+
+  assert.equal(summaries.acct_with_previous.requestCount, 9);
+  assert.equal(summaries.acct_with_previous.loadState, 'stale');
+  assert.equal(summaries.acct_with_previous.errorMessage, 'usage endpoint timeout');
+  assert.equal(summaries.acct_first_load.hasData, false);
+  assert.equal(summaries.acct_first_load.loadState, 'error');
+  assert.equal(summaries.acct_first_load.errorMessage, 'usage endpoint timeout');
 });
 
 test('buildAccountUsageSummary consumes sidecar attribution items for codex api key local-id', () => {

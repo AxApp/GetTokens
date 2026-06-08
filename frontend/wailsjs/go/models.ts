@@ -2658,6 +2658,58 @@ export namespace main {
 	        this.value = source["value"];
 	    }
 	}
+	export class CodexMcpPreflightCheck {
+	    id: string;
+	    label: string;
+	    status: string;
+	    detail?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexMcpPreflightCheck(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.label = source["label"];
+	        this.status = source["status"];
+	        this.detail = source["detail"];
+	    }
+	}
+	export class CodexMcpPreflightResult {
+	    serverID: string;
+	    status: string;
+	    checks: CodexMcpPreflightCheck[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexMcpPreflightResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.serverID = source["serverID"];
+	        this.status = source["status"];
+	        this.checks = this.convertValues(source["checks"], CodexMcpPreflightCheck);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class CodexMcpToolRow {
 	    name: string;
 	    approvalMode?: string;
@@ -4024,6 +4076,36 @@ export namespace main {
 	        this.configPath = source["configPath"];
 	        this.preview = source["preview"];
 	        this.changes = this.convertValues(source["changes"], ClaudeCodeSettingsChangeDTO);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class PreflightCodexMcpServerInput {
+	    server: CodexMcpServer;
+
+	    static createFrom(source: any = {}) {
+	        return new PreflightCodexMcpServerInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.server = this.convertValues(source["server"], CodexMcpServer);
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

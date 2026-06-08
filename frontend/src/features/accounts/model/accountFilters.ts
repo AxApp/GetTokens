@@ -8,6 +8,22 @@ export interface AccountsFilterSummaryPart {
   label: string;
 }
 
+export interface AccountsEmptyState {
+  kind: 'empty' | 'filtered';
+  title: string;
+  body: string;
+  showClearSearch: boolean;
+  showResetFilters: boolean;
+}
+
+interface ResolveAccountsEmptyStateArgs {
+  accountCount: number;
+  filteredAccountCount: number;
+  searchTerm: string;
+  filters: AccountsFilterState;
+  availablePlanTypes?: readonly string[];
+}
+
 type AccountsFilterGroupSelection<T extends string> = Record<T, boolean>;
 
 type AccountsFilterStatePatch = {
@@ -80,6 +96,38 @@ export function applyAccountsFilterState(
   });
 }
 
+export function buildAccountsRiskFilterState(base: AccountsFilterState = defaultAccountsFilterState): AccountsFilterState {
+  return applyAccountsFilterState(defaultAccountsFilterState, {
+    source: {
+      authFile: true,
+      apiKey: true,
+    },
+    resource: {
+      hasLongestQuota: true,
+      hasBalance: true,
+    },
+    status: {
+      error: true,
+      disabled: true,
+      requestable: false,
+    },
+    plan: {},
+  });
+}
+
+export function resolveAccountsFilterStateFromHash(
+  hash: string | null | undefined,
+  fallback: AccountsFilterState = defaultAccountsFilterState,
+): AccountsFilterState {
+  const rawHash = String(hash || '');
+  const normalized = rawHash.startsWith('#') ? rawHash.slice(1) : rawHash;
+  const params = new URLSearchParams(normalized);
+  if (params.get('frame') === 'accounts' && params.get('filter') === 'risk') {
+    return buildAccountsRiskFilterState(defaultAccountsFilterState);
+  }
+  return fallback;
+}
+
 export function summarizeAccountsFilterState(
   t: (key: string) => string,
   state: AccountsFilterState,
@@ -126,6 +174,39 @@ export function summarizeAccountsFilterState(
   }
 
   return parts;
+}
+
+export function resolveAccountsEmptyState(
+  t: (key: string) => string,
+  {
+    accountCount,
+    filteredAccountCount,
+    searchTerm,
+    filters,
+    availablePlanTypes = Object.keys(filters.plan),
+  }: ResolveAccountsEmptyStateArgs,
+): AccountsEmptyState | null {
+  if (filteredAccountCount > 0) {
+    return null;
+  }
+
+  if (accountCount <= 0) {
+    return {
+      kind: 'empty',
+      title: t('accounts.empty'),
+      body: t('accounts.empty_hint'),
+      showClearSearch: false,
+      showResetFilters: false,
+    };
+  }
+
+  return {
+    kind: 'filtered',
+    title: t('accounts.filter_empty_title'),
+    body: t('accounts.filter_empty_hint'),
+    showClearSearch: searchTerm.trim().length > 0,
+    showResetFilters: summarizeAccountsFilterState(t, filters, availablePlanTypes).length > 0,
+  };
 }
 
 export function readStoredAccountsFilterState(storage: Pick<Storage, 'getItem'> | null | undefined): AccountsFilterState {

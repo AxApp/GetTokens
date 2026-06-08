@@ -74,6 +74,8 @@ test('buildAccountCardContentText returns structured account summary json', () =
       apiKey: 'sk-test-1111',
       baseUrl: 'https://api.openai.com/v1',
       prefix: 'team-a',
+      supportedFormats: [],
+      formatBaseUrls: {},
     },
   });
 });
