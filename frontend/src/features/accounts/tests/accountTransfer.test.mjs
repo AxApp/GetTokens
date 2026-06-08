@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { zipSync, strToU8 } from 'fflate';
 
 import {
   ACCOUNT_CARD_IMPORT_SCHEMA,
@@ -7,6 +8,7 @@ import {
   buildAccountsExportFilename,
   parseAccountCardImportPayload,
   parseAccountImportPayloads,
+  readUploadFiles,
   readZipArchiveJSONFiles,
   resolveAccountImportQueueRenderWindow,
   resolveAccountImportPayloadPreview,
@@ -292,6 +294,23 @@ test('readZipArchiveJSONFiles scans json files inside upload archives', async ()
   assert.deepEqual(payloads.map((payload) => payload.name), [
     'accounts.zip:auth/codex-auth.json',
     'accounts.zip:nested/provider.JSON',
+  ]);
+  assert.equal(Buffer.from(payloads[0].contentBase64, 'base64').toString('utf8'), '{ "type": "codex", "access_token": "zip-token" }');
+});
+
+test('readUploadFiles expands zip archives into json upload candidates', async () => {
+  const archive = zipSync({
+    'auth/codex-auth.json': strToU8('{ "type": "codex", "access_token": "zip-token" }'),
+    'nested/provider.json': strToU8('{ "schema": "gettokens.account-card.v1" }'),
+    'notes/readme.txt': strToU8('not imported'),
+  });
+  const payloads = await readUploadFiles([
+    new File([archive], 'accounts.zip', { type: 'application/zip' }),
+  ]);
+
+  assert.deepEqual(payloads.map((payload) => payload.name), [
+    'accounts.zip:auth/codex-auth.json',
+    'accounts.zip:nested/provider.json',
   ]);
   assert.equal(Buffer.from(payloads[0].contentBase64, 'base64').toString('utf8'), '{ "type": "codex", "access_token": "zip-token" }');
 });

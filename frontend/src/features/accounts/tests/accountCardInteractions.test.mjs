@@ -124,6 +124,7 @@ test('account import queue candidates render with account card styling', async (
 
 test('account import modal uses merged input panel beside account preview', async () => {
   const source = await readFile(new URL('../components/AccountImportModal.tsx', import.meta.url), 'utf8');
+  const pageSource = await readFile(new URL('../../../pages/AccountImportPage.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /data-account-import-input-panel/);
   assert.match(source, /lg:grid-cols-\[minmax\(0,0\.92fr\)_minmax\(0,1\.08fr\)\]/);
@@ -136,6 +137,10 @@ test('account import modal uses merged input panel beside account preview', asyn
   assert.ok(inputPanelIndex >= 0 && inputPanelIndex < fileIndex);
   assert.ok(fileIndex < pasteIndex);
   assert.ok(pasteIndex < queueIndex);
+  assert.match(source, /onDrop=\{handleFileDrop\}/);
+  assert.match(pageSource, /onDrop=\{handleFileDrop\}/);
+  assert.match(source, /accept="\.json,\.zip,application\/json,application\/zip"/);
+  assert.match(pageSource, /accept="\.json,\.zip,application\/json,application\/zip"/);
 });
 
 test('pasted codex api key copies use numbered duplicate titles', async () => {

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type DragEvent } from 'react';
 import { ArrowLeft, ClipboardPaste, FilePlus, Loader2, Upload } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
 import { useAccountsPageStateContext } from '../features/accounts/AccountsPageStateContext';
@@ -26,6 +26,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
   const [pasteContent, setPasteContent] = useState('');
   const [error, setError] = useState('');
   const [readingFiles, setReadingFiles] = useState(false);
+  const [isFileDragOver, setIsFileDragOver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const queueSummary = useMemo(() => {
@@ -65,6 +66,27 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
     } finally {
       setReadingFiles(false);
     }
+  }
+
+  function handleFileDragOver(event: DragEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = readingFiles || submitting ? 'none' : 'copy';
+    if (!readingFiles && !submitting) {
+      setIsFileDragOver(true);
+    }
+  }
+
+  function handleFileDragLeave() {
+    setIsFileDragOver(false);
+  }
+
+  function handleFileDrop(event: DragEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    setIsFileDragOver(false);
+    if (readingFiles || submitting) {
+      return;
+    }
+    void handleAddFiles(event.dataTransfer.files);
   }
 
   function handleAddPaste() {
@@ -172,6 +194,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                 ref={fileInputRef}
                 type="file"
                 multiple
+                accept=".json,.zip,application/json,application/zip"
                 hidden
                 onChange={(event) => {
                   void handleAddFiles(event.target.files);
@@ -181,8 +204,16 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
+                onDragEnter={handleFileDragOver}
+                onDragOver={handleFileDragOver}
+                onDragLeave={handleFileDragLeave}
+                onDrop={handleFileDrop}
                 disabled={readingFiles || submitting}
-                className="grid min-h-36 place-items-center border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-6 text-center transition-[background-color,transform] active:scale-[0.99] disabled:opacity-45"
+                className={`grid min-h-36 place-items-center border-2 border-dashed px-5 py-6 text-center transition-[background-color,border-color,transform] active:scale-[0.99] disabled:opacity-45 ${
+                  isFileDragOver
+                    ? 'border-[var(--text-primary)] bg-[color-mix(in_srgb,var(--text-primary)_8%,var(--bg-surface))]'
+                    : 'border-[var(--border-color)] bg-[var(--bg-surface)]'
+                }`}
               >
                 <span className="grid justify-items-center gap-3">
                   {readingFiles ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" strokeWidth={3} />}

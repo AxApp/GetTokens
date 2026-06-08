@@ -69,6 +69,24 @@ When 用户关闭 modal 或取消
 Then 草稿状态被丢弃
 And 已有账户列表不受影响
 
+### 场景 6：拖入 ZIP 扫描内部 JSON
+
+Given 用户把包含多份账号 JSON 的 `.zip` 拖入导入文件区域
+When 系统读取压缩包
+Then 仅压缩包内的 `.json` 文件进入候选队列
+And 非 JSON 文件、目录和 macOS 元数据目录不会进入候选
+And 用户仍可在提交前逐项移除候选
+
+## 证据门禁
+
+### 2026-06-08 ZIP 拖入导入
+
+- 问题来源：浏览器批注要求“支持拖入压缩包，扫描内部 json 文件”。
+- 当前事实位置：`AccountImportModal` 与 `AccountImportPage` 的文件输入区只支持点击选择文件；`accountTransfer.readUploadFiles` 已有 ZIP 解析入口但 UI 未提供拖放交互，文案也未说明 ZIP 内 JSON 扫描。
+- 当前现象：用户拖入 `.zip` 时导入区域没有明确 drop 处理；选择文件可读取 ZIP，但 UI 预期不清晰，且原生解压实现依赖浏览器 `DecompressionStream`。
+- 验收路径：补单测覆盖 ZIP 内 JSON 展开、源码守护覆盖两个导入入口的 `onDrop` 与 `.json/.zip` accept；浏览器 DOM 烟测拖入 `accounts.zip`，确认两个 JSON 候选进入队列、txt 被忽略、提交按钮可用。
+- 反证条件：若拖入 ZIP 后候选仍为空、非 JSON 文件进入队列、只 modal 或只独立导入页支持拖放，均视为未完成。
+
 ## 设计稿入口
 
 - 本期设计稿：`design-preview.html`
@@ -102,6 +120,7 @@ And 已有账户列表不受影响
 6. 队列项现在直接展示解析后的内容预览，便于提交前核对导入对象。
 7. 2026-05-28 追加：候选队列项从普通分隔列表行改为复用账号卡片视觉骨架，外层使用 `data-account-card` 与 `card-swiss`，顶部展示标题、来源和类型 badge，底部保留解析内容预览。
 8. 2026-05-28 追加：导入 modal 主体改为左右布局，左侧合并“选择文件”和“粘贴输入”，右侧固定为账号预览候选队列。
+9. 2026-06-08 追加：文件输入区支持拖入 `.json/.zip`；ZIP 解析改用 `fflate.unzipSync`，扫描内部 JSON 并忽略非 JSON 文件、目录和 `__MACOSX` 元数据；modal 与独立导入页保持同一交互。
 
 ## 验证
 
@@ -116,3 +135,5 @@ And 已有账户列表不受影响
 - 2026-05-28 账号卡片与左右布局追加验证：`node --test frontend/src/features/accounts/tests/accountTransfer.test.mjs frontend/src/features/accounts/tests/accountHeaderMenu.test.mjs frontend/src/features/accounts/tests/accountCardInteractions.test.mjs` 通过，`30 pass / 0 fail`；`npm --prefix frontend run typecheck` 通过；`npm --prefix frontend run test:unit` 通过，完整单测 `609 pass / 0 fail`。
 - 2026-05-28 浏览器预览 DOM 验收：`http://127.0.0.1:4173/?preview=accounts#frame=accounts` 中打开导入 modal，粘贴 auth JSON 后候选项渲染为 `data-account-card` / `card-swiss ... flex ... p-0`，并显示 `AUTH FILE` 与脱敏内容预览。
 - 2026-05-28 功能冒烟：浏览器预览中“账号操作菜单 -> 导入账号”可打开 modal；粘贴 auth JSON 可加入候选队列，预览敏感字段脱敏；点击“移除候选”后队列恢复为空且提交按钮重新禁用。
+- 2026-06-08 ZIP 拖入追加验证：`node --test src/features/accounts/tests/accountTransfer.test.mjs src/features/accounts/tests/accountCardInteractions.test.mjs` 通过，`33 pass / 0 fail`；`npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit`（`789 pass / 0 fail`）和 `npm --prefix frontend run build` 通过。
+- 2026-06-08 浏览器 DOM 烟测：`http://127.0.0.1:5173/#frame=account-import` 合成并拖入 `accounts.zip`，队列渲染 `accounts.zip:auth/codex-auth.json` 与 `accounts.zip:nested/provider.json` 两个候选，`notes/readme.txt` 未进入候选，提交按钮可用；控制台仅有既有 `favicon.ico` 404。
