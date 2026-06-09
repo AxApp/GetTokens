@@ -1,4 +1,4 @@
-import { unzipSync } from 'fflate';
+import { gunzipSync, unzipSync } from 'fflate';
 
 export interface UploadFilePayload {
   name: string;
@@ -8,7 +8,8 @@ export interface UploadFilePayload {
 export const ACCOUNT_CARD_IMPORT_SCHEMA = 'gettokens.account-card.v1';
 export const ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT = 224;
 export const ACCOUNT_IMPORT_QUEUE_OVERSCAN = 4;
-const ZIP_JSON_ENTRY_LIMIT = 1000;
+const ARCHIVE_JSON_ENTRY_LIMIT = 1000;
+const TAR_BLOCK_SIZE = 512;
 
 export interface AccountCardImportPayload {
   schema: typeof ACCOUNT_CARD_IMPORT_SCHEMA;
@@ -458,8 +459,8 @@ export async function readUploadFiles(files: FileList | File[]) {
 
 async function readUploadFile(file: File): Promise<UploadFilePayload[]> {
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (isZipUploadFile(file, bytes)) {
-    return readZipArchiveJSONFiles(bytes, file.name);
+  if (isArchiveUploadFile(file, bytes)) {
+    return readArchiveJSONFiles(bytes, file.name);
   }
   return [
     {
@@ -469,28 +470,127 @@ async function readUploadFile(file: File): Promise<UploadFilePayload[]> {
   ];
 }
 
-export async function readZipArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
-  const entries = Object.entries(unzipSync(bytes))
-    .filter(([name]) => isImportableZipJSONEntry(name))
-    .slice(0, ZIP_JSON_ENTRY_LIMIT);
-  return entries.map(([name, content]) => ({
-    name: resolveArchiveEntryUploadName(archiveName, name),
-    contentBase64: bytesToBase64(content),
-  }));
+export async function readArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
+  const normalizedName = archiveName.toLowerCase();
+  if (isZipArchiveBytes(bytes) || normalizedName.endsWith('.zip')) {
+    return readZipArchiveJSONFiles(bytes, archiveName);
+  }
+  if (isGzipArchiveBytes(bytes) || isGzipArchiveName(normalizedName)) {
+    return readGzipArchiveJSONFiles(bytes, archiveName);
+  }
+  if (isTarArchiveName(normalizedName) || isTarArchiveBytes(bytes)) {
+    return readTarArchiveJSONFiles(bytes, archiveName);
+  }
+  return [];
 }
 
-function isZipUploadFile(file: File, bytes: Uint8Array) {
+export async function readZipArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
+  const entries = Object.entries(unzipSync(bytes))
+    .filter(([name]) => isImportableArchiveJSONEntry(name))
+    .slice(0, ARCHIVE_JSON_ENTRY_LIMIT);
+  return entries.map(([name, content]) => createArchiveEntryUploadPayload(archiveName, name, content));
+}
+
+export async function readGzipArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
+  const content = gunzipSync(bytes);
+  const entryName = resolveGzipEntryName(archiveName);
+  if (isTarArchiveName(entryName.toLowerCase()) || isTarArchiveBytes(content)) {
+    return readTarArchiveJSONFiles(content, archiveName);
+  }
+  if (!isImportableArchiveJSONEntry(entryName) && !looksLikeJSONBytes(content)) {
+    return [];
+  }
+  return [createArchiveEntryUploadPayload(archiveName, entryName.endsWith('.json') ? entryName : `${entryName}.json`, content)];
+}
+
+export async function readTarArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
+  const entries: UploadFilePayload[] = [];
+  let offset = 0;
+  let pendingLongName = '';
+
+  while (offset + TAR_BLOCK_SIZE <= bytes.length && entries.length < ARCHIVE_JSON_ENTRY_LIMIT) {
+    const header = bytes.slice(offset, offset + TAR_BLOCK_SIZE);
+    offset += TAR_BLOCK_SIZE;
+    if (isZeroTarBlock(header)) {
+      break;
+    }
+
+    const size = parseTarOctal(header, 124, 12);
+    const typeFlag = String.fromCharCode(header[156] || 0);
+    const rawName = pendingLongName || readTarEntryName(header);
+    pendingLongName = '';
+    const dataStart = offset;
+    const dataEnd = Math.min(bytes.length, dataStart + size);
+    const content = bytes.slice(dataStart, dataEnd);
+    offset += Math.ceil(size / TAR_BLOCK_SIZE) * TAR_BLOCK_SIZE;
+
+    if (typeFlag === 'L') {
+      pendingLongName = decodeTarText(content).replace(/\0+$/g, '').trim();
+      continue;
+    }
+    if (typeFlag && typeFlag !== '0' && typeFlag !== '\0') {
+      continue;
+    }
+    if (!isImportableArchiveJSONEntry(rawName)) {
+      continue;
+    }
+    entries.push(createArchiveEntryUploadPayload(archiveName, rawName, content));
+  }
+
+  return entries;
+}
+
+function isArchiveUploadFile(file: File, bytes: Uint8Array) {
   const name = file.name.toLowerCase();
-  return name.endsWith('.zip') || (bytes[0] === 0x50 && bytes[1] === 0x4b);
+  return (
+    isZipArchiveBytes(bytes)
+    || isGzipArchiveBytes(bytes)
+    || isTarArchiveBytes(bytes)
+    || name.endsWith('.zip')
+    || isGzipArchiveName(name)
+    || isTarArchiveName(name)
+  );
+}
+
+function createArchiveEntryUploadPayload(archiveName: string, entryName: string, content: Uint8Array): UploadFilePayload {
+  return {
+    name: resolveArchiveEntryUploadName(archiveName, entryName),
+    contentBase64: bytesToBase64(content),
+  };
+}
+
+function isZipArchiveBytes(bytes: Uint8Array) {
+  return bytes[0] === 0x50 && bytes[1] === 0x4b;
+}
+
+function isGzipArchiveBytes(bytes: Uint8Array) {
+  return bytes[0] === 0x1f && bytes[1] === 0x8b;
+}
+
+function isGzipArchiveName(name: string) {
+  return name.endsWith('.gz') || name.endsWith('.gzip') || name.endsWith('.tgz') || name.endsWith('.tar.gz');
+}
+
+function isTarArchiveName(name: string) {
+  return name.endsWith('.tar') || name.endsWith('.tar.gz') || name.endsWith('.tgz');
+}
+
+function isTarArchiveBytes(bytes: Uint8Array) {
+  return bytes.length > 265
+    && bytes[257] === 0x75
+    && bytes[258] === 0x73
+    && bytes[259] === 0x74
+    && bytes[260] === 0x61
+    && bytes[261] === 0x72;
 }
 
 function resolveArchiveEntryUploadName(archiveName: string, entryName: string) {
-  const archive = String(archiveName || 'archive.zip').trim() || 'archive.zip';
+  const archive = String(archiveName || 'archive').trim() || 'archive';
   const normalizedEntry = String(entryName || 'entry.json').replace(/^\/+/, '').trim() || 'entry.json';
   return `${archive}:${normalizedEntry}`;
 }
 
-function isImportableZipJSONEntry(name: string) {
+function isImportableArchiveJSONEntry(name: string) {
   const normalizedName = String(name || '').replace(/^\/+/, '');
   return Boolean(
     normalizedName
@@ -498,6 +598,40 @@ function isImportableZipJSONEntry(name: string) {
     && !normalizedName.startsWith('__MACOSX/')
     && normalizedName.toLowerCase().endsWith('.json')
   );
+}
+
+function resolveGzipEntryName(archiveName: string) {
+  const trimmed = String(archiveName || 'archive.json.gz').trim() || 'archive.json.gz';
+  return trimmed
+    .replace(/\.tar\.gz$/i, '.tar')
+    .replace(/\.tgz$/i, '.tar')
+    .replace(/\.gzip$/i, '')
+    .replace(/\.gz$/i, '') || 'archive.json';
+}
+
+function readTarEntryName(header: Uint8Array) {
+  const name = decodeTarText(header.slice(0, 100)).replace(/\0+$/g, '').trim();
+  const prefix = decodeTarText(header.slice(345, 500)).replace(/\0+$/g, '').trim();
+  return prefix ? `${prefix}/${name}` : name;
+}
+
+function parseTarOctal(header: Uint8Array, start: number, length: number) {
+  const text = decodeTarText(header.slice(start, start + length)).replace(/\0.*$/g, '').trim();
+  const value = Number.parseInt(text || '0', 8);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function isZeroTarBlock(block: Uint8Array) {
+  return block.every((byte) => byte === 0);
+}
+
+function decodeTarText(bytes: Uint8Array) {
+  return new TextDecoder().decode(bytes);
+}
+
+function looksLikeJSONBytes(bytes: Uint8Array) {
+  const text = new TextDecoder().decode(bytes.slice(0, 1024)).trimStart();
+  return text.startsWith('{') || text.startsWith('[');
 }
 
 function bytesToBase64(bytes: Uint8Array) {

@@ -139,8 +139,10 @@ test('account import modal uses merged input panel beside account preview', asyn
   assert.ok(pasteIndex < queueIndex);
   assert.match(source, /onDrop=\{handleFileDrop\}/);
   assert.match(pageSource, /onDrop=\{handleFileDrop\}/);
-  assert.match(source, /accept="\.json,\.zip,application\/json,application\/zip"/);
-  assert.match(pageSource, /accept="\.json,\.zip,application\/json,application\/zip"/);
+  assert.match(source, /data-account-import-dropzone/);
+  assert.match(pageSource, /data-account-import-dropzone/);
+  assert.match(source, /accept="\.json,\.zip,\.tar,\.tar\.gz,\.tgz,\.gz,\.gzip,application\/json,application\/zip,application\/gzip,application\/x-tar"/);
+  assert.match(pageSource, /accept="\.json,\.zip,\.tar,\.tar\.gz,\.tgz,\.gz,\.gzip,application\/json,application\/zip,application\/gzip,application\/x-tar"/);
 });
 
 test('pasted codex api key copies use numbered duplicate titles', async () => {

@@ -226,7 +226,7 @@ export default function AccountImportModal({
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".json,.zip,application/json,application/zip"
+              accept=".json,.zip,.tar,.tar.gz,.tgz,.gz,.gzip,application/json,application/zip,application/gzip,application/x-tar"
               hidden
               onChange={(event) => {
                 void handleAddFiles(event.target.files);
@@ -235,6 +235,7 @@ export default function AccountImportModal({
             />
             <button
               type="button"
+              data-account-import-dropzone
               onClick={() => fileInputRef.current?.click()}
               onDragEnter={handleFileDragOver}
               onDragOver={handleFileDragOver}

@@ -1212,7 +1212,7 @@
     "import_account_eyebrow": "Account Import",
     "import_account_title": "Import Account Content",
     "import_account_files": "File Input",
-    "import_account_files_hint": "Drop .json / .zip files; JSON files inside ZIP archives are scanned automatically, and ChatGPT Session, 9router OAuth, CPA, and Codex Auth JSON are auto-detected.",
+    "import_account_files_hint": "Drop .json files or archives; JSON files inside archives are scanned automatically, and ChatGPT Session, 9router OAuth, CPA, and Codex Auth JSON are auto-detected.",
     "import_account_choose_files": "Choose, Drop, Or Add Files",
     "import_account_paste": "Paste Input",
     "import_account_paste_placeholder": "Paste auth file JSON, copied account card content, or a JSON array...",
