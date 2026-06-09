@@ -163,6 +163,77 @@ func TestProbeCodexAccountRoutingSendsRoutePolicyHeaders(t *testing.T) {
 	}
 }
 
+func TestProbeCodexAccountRoutingSendsAuthFileAllowHeaderFromUnifiedAccountID(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	app := New("dev", "", "AxApp/GetTokens")
+	account := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_auth",
+		Kind:       cliproxyapi.AccountKindAuthFile,
+		Title:      "Codex Plus",
+		Provider:   "codex",
+		Priority:   8,
+		AuthFile: &cliproxyapi.AuthFileAccountCredential{
+			SourceFileName: "codex-plus-nightly.json",
+			AuthType:       "codex",
+			AuthJSON:       `{"type":"codex","access_token":"test"}`,
+		},
+	}
+	app.managementAPI = func() *cliproxyapi.Client {
+		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			_ = method
+			_ = query
+			_ = body
+			_ = contentType
+			switch path {
+			case "/v0/management/api-keys":
+				return []byte(`{"api-keys":["sk-relay"]}`), 200, nil
+			case "/v0/management/accounts":
+				return testAccountsResponse(t, account), 200, nil
+			default:
+				return nil, 404, nil
+			}
+		})
+	}
+	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		_ = method
+		_ = query
+		_ = body
+		_ = contentType
+		switch path {
+		case ManagementAPIPrefix + "/auth-files":
+			return []byte(`{"files":[]}`), 200, nil
+		default:
+			return nil, 404, nil
+		}
+	}
+	app.relayRequest = func(method string, path string, body io.Reader, contentType string, apiKey string, headers map[string]string) ([]byte, int, map[string][]string, error) {
+		_ = method
+		_ = path
+		_ = body
+		_ = contentType
+		_ = apiKey
+		if got := headers["X-GetTokens-Route-Allow"]; got != "codex-plus-nightly.json" {
+			t.Fatalf("allow header = %q, want codex-plus-nightly.json", got)
+		}
+		if got := headers["X-GetTokens-Route-Fallback"]; got != "false" {
+			t.Fatalf("fallback header = %q, want false", got)
+		}
+		return []byte(`{"choices":[{"message":{"content":"OK"}}]}`), 200, nil, nil
+	}
+
+	_, err := app.ProbeCodexAccountRouting(ProbeCodexAccountRoutingInput{
+		Model:           "gpt-5.4",
+		Attempts:        1,
+		AllowAccountIDs: []string{"acct_auth"},
+		OrderAccountIDs: []string{"acct_auth"},
+		AllowFallback:   false,
+	})
+	if err != nil {
+		t.Fatalf("ProbeCodexAccountRouting returned error: %v", err)
+	}
+}
+
 func TestDetectCodexRoutingProbeHitPrefersCandidateWithUsageIncrease(t *testing.T) {
 	candidates := []codexRoutingProbeCandidate{
 		{ID: "acct_auth_a", Label: "A"},

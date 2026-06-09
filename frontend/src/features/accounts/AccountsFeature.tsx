@@ -14,6 +14,7 @@ import {
   GetRelayServiceConfig,
   ListRateLimitRules,
   ListRelaySupportedModels,
+  ProbeCodexAccountRouting,
   PreviewDeepLinkImport,
   UpdateOpenAICompatibleProvider,
   UpdateRateLimitRule,
@@ -39,12 +40,13 @@ import UnifiedComposeModal, {
   type UnifiedComposeFormState,
 } from "./components/UnifiedComposeModal";
 import UnifiedAccountDetailModal from "./components/UnifiedAccountDetailModal";
+import type { OAuthModelProbeState } from "./components/OAuthModelProbeSection";
 import { useAccountsPageStateContext } from "./AccountsPageStateContext";
 import useOpenAICompatibleState from "./hooks/useOpenAICompatibleState";
 import { getAccountsPreviewRelayModelNames } from "./previewData";
 import { isCodexAuthFile } from "./model/accountPresentation";
 import { readAccountClipboardFallback } from "./model/accountClipboard";
-import { findAccountDetailByID } from "./model/accountDetailSelection";
+import { resolveAccountDetailSelection } from "./model/accountDetailSelection";
 import {
   buildRelayModelProviderSignature,
   normalizeAPIKeyModelNames,
@@ -266,6 +268,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const [accountModelNamesByID, setAccountModelNamesByID] = useState<Record<string, string[]>>({});
+  const [oauthModelProbeStateByID, setOAuthModelProbeStateByID] = useState<Record<string, OAuthModelProbeState>>({});
   const loadRelayModelNames = useCallback(
     async (isCancelled: () => boolean = () => false) => {
       if (!hasWailsAppBindings()) {
@@ -515,17 +518,20 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     if (!accountDetailIDFromHash) {
       return;
     }
-    if (selectedAccount?.id === accountDetailIDFromHash) {
-      return;
-    }
-    const account = findAccountDetailByID(accounts, accountDetailIDFromHash);
-    if (account) {
-      setSelectedAccount(account);
+    const nextSelectedAccount = resolveAccountDetailSelection(
+      accounts,
+      accountDetailIDFromHash,
+      selectedAccount,
+      accountsLoaded,
+    );
+    if (nextSelectedAccount !== selectedAccount) {
+      setSelectedAccount(nextSelectedAccount);
     }
   }, [
     accountDetailIDFromHash,
+    accountsLoaded,
     accounts,
-    selectedAccount?.id,
+    selectedAccount,
     setSelectedAccount,
   ]);
 
@@ -811,6 +817,97 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     ? isCodexAPIKeyAccount(selectedAccount)
     : false;
   const selectedAccountCanSaveApiConfig = selectedAccount?.credentialSource === "api-key";
+  const selectedAccountCanProbeOAuthModel =
+    selectedAccount?.credentialSource === "auth-file" &&
+    selectedAccount.id.startsWith("acct_");
+
+  const probeSelectedOAuthModel = useCallback(
+    async (model: string) => {
+      if (!selectedAccount || !selectedAccountCanProbeOAuthModel) {
+        return;
+      }
+      const nextModel = model.trim();
+      const accountID = selectedAccount.id;
+      if (!nextModel) {
+        setOAuthModelProbeStateByID((prev) => ({
+          ...prev,
+          [accountID]: {
+            model: '',
+            status: 'error',
+            message: '请选择要测试的模型',
+            lastTestedAt: prev[accountID]?.lastTestedAt ?? null,
+          },
+        }));
+        return;
+      }
+
+      setOAuthModelProbeStateByID((prev) => ({
+        ...prev,
+        [accountID]: {
+          model: nextModel,
+          status: 'loading',
+          message: '',
+          lastTestedAt: prev[accountID]?.lastTestedAt ?? null,
+        },
+      }));
+
+      if (previewMode) {
+        setOAuthModelProbeStateByID((prev) => ({
+          ...prev,
+          [accountID]: {
+            model: nextModel,
+            status: 'success',
+            message: `PREVIEW ONLY / ${selectedAccount.displayName} 可使用 ${nextModel}`,
+            lastTestedAt: Date.now(),
+          },
+        }));
+        return;
+      }
+
+      try {
+        const result = await trackRequest(
+          "ProbeCodexAccountRouting",
+          { model: nextModel, accountID, source: "accounts-detail-oauth" },
+          () =>
+            ProbeCodexAccountRouting(
+              main.ProbeCodexAccountRoutingInput.createFrom({
+                model: nextModel,
+                attempts: 1,
+                allowAccountIDs: [selectedAccount.id],
+                orderAccountIDs: [selectedAccount.id],
+                allowFallback: false,
+              }),
+            ),
+        );
+        const attempt = result?.attempts?.[0];
+        const matched = Boolean(attempt?.success && attempt.accountID === accountID);
+        setOAuthModelProbeStateByID((prev) => ({
+          ...prev,
+          [accountID]: {
+            model: nextModel,
+            status: matched ? 'success' : 'error',
+            message: matched
+              ? attempt?.message || `模型 ${nextModel} 测试通过，命中当前账号。`
+              : attempt?.accountID
+                ? `测试未命中当前账号：${attempt.accountID}`
+                : attempt?.message || '模型测试失败，未确认当前账号命中。',
+            lastTestedAt: Date.now(),
+          },
+        }));
+      } catch (error) {
+        setOAuthModelProbeStateByID((prev) => ({
+          ...prev,
+          [accountID]: {
+            model: nextModel,
+            status: 'error',
+            message: toErrorMessage(error),
+            lastTestedAt: Date.now(),
+          },
+        }));
+      }
+    },
+    [previewMode, selectedAccount, selectedAccountCanProbeOAuthModel, trackRequest],
+  );
 
   const saveSelectedApiLikeConfig = useCallback(
     async (draft: ApiKeyConfigDraft) => {
@@ -1442,6 +1539,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                     }
               }
               verifyState={apiKeyVerifyState}
+              oauthModelProbeState={oauthModelProbeStateByID[selectedAccount.id]}
               modelNames={resolveAccountVerifyModelNames(
                 selectedAccount,
                 relayModelNames,
@@ -1460,6 +1558,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               onVerify={
                 selectedAccountIsCodexAPIKey
                   ? (input) => void verifySelectedApiKey(input)
+                  : undefined
+              }
+              onOAuthModelProbe={
+                selectedAccountCanProbeOAuthModel
+                  ? (model) => void probeSelectedOAuthModel(model)
                   : undefined
               }
               onFetchModels={

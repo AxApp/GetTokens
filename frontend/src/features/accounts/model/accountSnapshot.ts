@@ -15,5 +15,5 @@ export interface AccountSkeletonRenderState {
 }
 
 export function shouldShowAccountSkeletons(state: AccountSkeletonRenderState) {
-  return !state.ready || (!state.loaded && state.accountCount === 0);
+  return state.accountCount === 0 && (!state.ready || !state.loaded);
 }

@@ -16,6 +16,7 @@ import {
   AccountDetailSection,
 } from '../../accounts/components/AccountDetailPrimitives';
 import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from '../../accounts/components/RateLimitRulesSection';
+import { OAuthModelProbeSection, type OAuthModelProbeState } from '../../accounts/components/OAuthModelProbeSection';
 import {
   buildApiKeyConfigDraft,
   hasApiKeyConfigChanges,
@@ -129,11 +130,13 @@ export function CodexAccountDetailModal({
   codexModelOptions,
   loadingModelOptions,
   modelOptionError,
+  oauthModelProbeState,
   onClose,
   onSaveConfig,
   onRateLimitRulesChanged,
   onSaveModelMappings,
   onFetchModelOptions,
+  onOAuthModelProbe,
 }: {
   row: CodexAccountRow;
   t: (key: string) => string;
@@ -150,11 +153,13 @@ export function CodexAccountDetailModal({
   codexModelOptions: CodexModelMappingRow[];
   loadingModelOptions: boolean;
   modelOptionError: string;
+  oauthModelProbeState?: OAuthModelProbeState;
   onClose: () => void;
   onSaveConfig?: (draft: ApiKeyConfigDraft, mappings: CodexModelMappingRow[]) => Promise<void>;
   onRateLimitRulesChanged?: () => void;
   onSaveModelMappings: (mappings: CodexModelMappingRow[]) => Promise<void>;
   onFetchModelOptions?: () => void;
+  onOAuthModelProbe?: (model: string) => void;
 }) {
   const account = useMemo(() => buildCodexQuotaSummaryAccount(row), [row]);
   const blockedLabel = buildCodexBlockedLabel(row, t);
@@ -271,6 +276,31 @@ export function CodexAccountDetailModal({
         return <CodexAuthFileSummarySection key={moduleID} account={account} />;
       case 'models':
         return <CodexAuthFileModelsSection key={moduleID} row={row} />;
+      case 'model-probe': {
+        const canProbeOAuthAccount = row.sourceKind === 'codex-auth-file' && row.id.startsWith('acct_');
+        const probeModelOptions = buildCodexModelOptionNames([
+          ...modelOptions,
+          ...codexModelOptions,
+          ...row.modelMappings,
+        ]);
+        return (
+          <OAuthModelProbeSection
+            key={moduleID}
+            accountID={row.id}
+            accountLabel={row.label}
+            modelOptions={probeModelOptions}
+            defaultModel={probeModelOptions[0] || 'gpt-5.4-mini'}
+            disabled={!canProbeOAuthAccount || !onOAuthModelProbe}
+            disabledReason={
+              canProbeOAuthAccount
+                ? '当前运行环境不可执行模型测试'
+                : '仅支持统一账号库 acct_ OAuth 账号模型测试'
+            }
+            probeState={oauthModelProbeState}
+            onProbe={onOAuthModelProbe}
+          />
+        );
+      }
       case 'rate-limit':
         return (
           <CodexRateLimitSection

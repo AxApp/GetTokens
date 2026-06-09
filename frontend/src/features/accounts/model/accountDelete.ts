@@ -1,4 +1,4 @@
-import type { AccountRecord, AuthFile } from '../../../types';
+import type { AccountRecord } from '../../../types';
 
 export type AccountDeleteRequest =
   | { type: 'auth-file'; name: string }
@@ -28,14 +28,6 @@ export function resolveAccountDeleteRequest(
   return { type: 'auth-file', name: account.name };
 }
 
-export function removeDeletedAuthFile(files: AuthFile[], deletedAccount: Pick<AccountRecord, 'credentialSource' | 'name'>): AuthFile[] {
-  if (deletedAccount.credentialSource !== 'auth-file' || !deletedAccount.name) {
-    return files;
-  }
-
-  return files.filter((file) => file.name !== deletedAccount.name);
-}
-
 export function removeDeletedAPIKeyRecord(
   records: AccountRecord[],
   deletedAccount: Pick<AccountRecord, 'credentialSource' | 'id'>,
@@ -54,10 +46,5 @@ export function shouldClearDeletedSelectedAccount(
   if (!selectedAccount || selectedAccount.credentialSource !== deletedAccount.credentialSource) {
     return false;
   }
-
-  if (deletedAccount.credentialSource === 'auth-file') {
-    return Boolean(deletedAccount.name) && selectedAccount.name === deletedAccount.name;
-  }
-
   return selectedAccount.id === deletedAccount.id;
 }

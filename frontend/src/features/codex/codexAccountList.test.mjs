@@ -139,8 +139,21 @@ test('buildCodexAccountDetailModulePlan merges account detail modules with model
   );
   assert.deepEqual(
     buildCodexAccountDetailModulePlan({ sourceKind: 'codex-auth-file' }),
-    ['auth-file-actions', 'models', 'rate-limit', 'quota', 'billing', 'model-routing'],
+    ['auth-file-actions', 'models', 'model-probe', 'rate-limit', 'quota', 'billing', 'model-routing'],
   );
+});
+
+test('codex oauth detail exposes single-account model probe with fallback disabled', async () => {
+  const modalSource = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(modalSource, /<OAuthModelProbeSection/);
+  assert.match(modalSource, /onOAuthModelProbe/);
+  assert.match(featureSource, /async function runDetailOAuthModelProbe\(row: CodexAccountRow, model: string\)/);
+  assert.match(featureSource, /ProbeCodexAccountRouting/);
+  assert.match(featureSource, /allowAccountIDs:\s*\[row\.id\]/);
+  assert.match(featureSource, /orderAccountIDs:\s*\[row\.id\]/);
+  assert.match(featureSource, /allowFallback:\s*false/);
 });
 
 test('codex account detail header keeps labeled identity and metadata blocks', async () => {
@@ -1223,7 +1236,7 @@ test('buildCodexModelAliasOptionNames returns only alias when configured and rea
 
 test('getCodexAccountListPreviewRows provides browser-safe rows with model mappings', () => {
   const rows = getCodexAccountListPreviewRows();
-  const codexPro = rows.find((row) => row.id === 'auth-file:codex-pro.json');
+  const codexPro = rows.find((row) => row.id === 'acct_preview_codex_pro_json');
   const deepseek = rows.find((row) => row.id === 'acct_deepseek');
 
   assert.ok(rows.length >= 4);

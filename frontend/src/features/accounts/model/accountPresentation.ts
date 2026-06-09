@@ -1,5 +1,5 @@
 import type { main } from '../../../../wailsjs/go/models';
-import type { AccountRecord, ApiFormat, AuthFile, CredentialSource } from '../../../types';
+import type { AccountRecord, ApiFormat, CredentialSource } from '../../../types';
 import type { AccountUsageSummary } from './accountUsage';
 import type { AccountStabilitySummary, QuotaDisplay, Translator } from './types';
 import { formatLabel, formatShortLabel } from './vendorPresetHelpers.ts';
@@ -84,36 +84,6 @@ export function resolveAccountConfigurationWorkspaceHeading(account: AccountReco
 
 export function resolveAccountAPIKeyPlainNotice(account: AccountRecord, t: Translator) {
   return replaceProviderPlaceholder(t('accounts.api_key_plain_notice_with_provider'), providerLabel(account));
-}
-
-export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
-  const provider = String(account.provider || account.type || 'unknown').trim().toLowerCase() || 'unknown';
-  const authIndex = String(account.authIndex || '').trim();
-  return {
-    id: authIndex || account.name,
-    accountKind: 'auth-file',
-    provider,
-    credentialSource: 'auth-file',
-    displayName: account.name,
-    status: String(account.status || 'active').trim().toUpperCase() || 'ACTIVE',
-    statusMessage: String(account.statusMessage || '').trim(),
-    priority: account.priority,
-    disabled: account.disabled,
-    email: account.email,
-    planType: account.planType,
-    name: account.name,
-    authIndex: account.authIndex,
-    quotaKey: account.name,
-    rawAuthFile: account,
-    supportedFormats: resolveSupportedFormats(provider),
-  };
-}
-
-export function resolveLoadedAuthFileRecords(files: AuthFile[], mappedAccounts: AccountRecord[]) {
-  if (files.length > 0) {
-    return files.map((account) => mapAuthFileToRecord(account));
-  }
-  return mappedAccounts.filter((account) => account.credentialSource === 'auth-file');
 }
 
 export function resolveLoadedAccountIDs(authFileRecords: AccountRecord[], apiKeyAccounts: AccountRecord[]) {

@@ -396,6 +396,18 @@ export const designSystemComponentManifest = [
     mockDataSources: ['storybook oauth url and copy state mock'],
   },
   {
+    id: 'accounts-oauth-model-probe-section',
+    componentName: 'OAuthModelProbeSection',
+    sourcePath: 'frontend/src/features/accounts/components/OAuthModelProbeSection.tsx',
+    ownerFeature: 'accounts',
+    status: 'deferred',
+    tier: 'feature-component',
+    decisionReason: 'OAuth 账号模型探测区块依赖真实路由探测回调和账号详情上下文，当前先随账号详情运行态复用，不单独进入 design-system story。',
+    matchedPatterns: ['AccountDetailSection', 'Combobox'],
+    suggestedDesignComponent: 'OAuthModelProbeSection',
+    revisitTrigger: '为账号详情 story 补充 OAuth 模型探测状态矩阵后复查。',
+  },
+  {
     id: 'accounts-openai-compatible-compose-modal',
     componentName: 'OpenAICompatibleComposeModal',
     sourcePath: 'frontend/src/features/accounts/components/OpenAICompatibleComposeModal.tsx',

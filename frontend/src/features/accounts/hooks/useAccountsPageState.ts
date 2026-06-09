@@ -3,7 +3,7 @@ import {
   FinalizeCodexOAuth,
   GetOAuthStatus,
   ListAccounts,
-  ListAuthFiles,
+  ListCachedAccounts,
   StartCodexOAuth,
   TestCodexAPIKeyBillingCurl,
   TestCodexAPIKeyQuotaCurl,
@@ -39,8 +39,11 @@ import {
   type AccountSortMode,
 } from '../model/accountListLayout';
 import {
+  persistStoredAccountRecords,
+  readStoredAccountRecords,
+} from '../model/accountListCache';
+import {
   removeDeletedAPIKeyRecord,
-  removeDeletedAuthFile,
   shouldClearDeletedSelectedAccount,
 } from '../model/accountDelete';
 import { patchAccountDetailByID } from '../model/accountDetailSelection';
@@ -52,10 +55,8 @@ import { buildCodexOAuthBannerMessage } from '../model/accountOAuth';
 import { buildAccountsView } from '../model/accountSelectors';
 import {
   isCodexReauthEligible,
-  mapAuthFileToRecord,
   mapBackendAccountRecord,
   resolveLoadedAccountIDs,
-  resolveLoadedAuthFileRecords,
 } from '../model/accountPresentation';
 import {
   applyAccountDisabledChangeToRecord,
@@ -64,7 +65,7 @@ import {
   subscribeAccountDisabledChanges,
   type AccountDisabledChange,
 } from '../model/accountDisabledSync';
-import { getAccountsPreviewAPIKeyRecords, getAccountsPreviewAuthFiles } from '../previewData';
+import { getAccountsPreviewAPIKeyRecords, getAccountsPreviewAuthFileRecords } from '../previewData';
 import useAccountsActions from './useAccountsActions';
 import useAccountsQuotaState from './useAccountsQuotaState';
 import useAccountsRateLimitState from './useAccountsRateLimitState';
@@ -73,7 +74,6 @@ import type {
   AccountActionNotice,
   ApiKeyFormState,
   AccountsFilterState,
-  AuthFile,
   TrackRequest,
   Translator,
 } from '../model/types';
@@ -132,9 +132,13 @@ export default function useAccountsPageState({
   trackRequest,
   headerActionsMenuRef,
 }: UseAccountsPageStateArgs) {
-  const [authFiles, setAuthFiles] = useState<AuthFile[]>([]);
-  const [derivedAuthFileRecords, setDerivedAuthFileRecords] = useState<AccountRecord[]>([]);
-  const [apiKeyRecords, setApiKeyRecords] = useState<AccountRecord[]>([]);
+  const [initialCachedAccounts] = useState(() => readInitialAccountRecordsCache());
+  const [authFileRecords, setAuthFileRecords] = useState<AccountRecord[]>(() =>
+    initialCachedAccounts.filter((account) => account.credentialSource === 'auth-file')
+  );
+  const [apiKeyRecords, setApiKeyRecords] = useState<AccountRecord[]>(() =>
+    initialCachedAccounts.filter((account) => account.credentialSource === 'api-key')
+  );
   const [loading, setLoading] = useState(false);
   const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -158,6 +162,9 @@ export default function useAccountsPageState({
   const [pendingStatusAccountID, setPendingStatusAccountID] = useState<string | null>(null);
   const [apiKeyVerifyStateByID, setAPIKeyVerifyStateByID] = useState<Record<string, APIKeyVerifyState>>({});
   const legacyAPIKeyLabelsRef = useRef<Record<string, string>>(loadAPIKeyLabels());
+  const accountRecordsRef = useRef<AccountRecord[]>(initialCachedAccounts);
+  const liveAccountsLoadedRef = useRef(false);
+  const sqliteSnapshotRequestedRef = useRef(false);
   const {
     isSelectionMode,
     selectedAccountIDs,
@@ -182,14 +189,14 @@ export default function useAccountsPageState({
     refreshAccountRateLimits,
   } = useAccountsRateLimitState(trackRequest);
 
-  const authFileRecords = useMemo(
-    () => (authFiles.length > 0 ? authFiles.map((account) => mapAuthFileToRecord(account)) : derivedAuthFileRecords),
-    [authFiles, derivedAuthFileRecords]
-  );
   const runtimeSyncAccounts = useMemo(
     () => [...authFileRecords, ...apiKeyRecords],
     [apiKeyRecords, authFileRecords],
   );
+
+  useEffect(() => {
+    accountRecordsRef.current = runtimeSyncAccounts;
+  }, [runtimeSyncAccounts]);
 
   const {
     accounts,
@@ -292,12 +299,15 @@ export default function useAccountsPageState({
 
     if (!hasWailsAppBindings()) {
       const disabledOverrides = readAccountDisabledOverrides();
-      const files = applyDisabledOverridesToPreviewAuthFiles(getAccountsPreviewAuthFiles(), disabledOverrides);
-      const apiKeyAccounts = applyDisabledOverridesToPreviewAccounts(getAccountsPreviewAPIKeyRecords(), disabledOverrides);
-      const nextAuthFileRecords = resolveLoadedAuthFileRecords(files, []);
-      setAuthFiles(files);
-      setDerivedAuthFileRecords([]);
+      const previewAccounts = applyDisabledOverridesToPreviewAccounts(
+        [...getAccountsPreviewAuthFileRecords(), ...getAccountsPreviewAPIKeyRecords()],
+        disabledOverrides,
+      );
+      const nextAuthFileRecords = previewAccounts.filter((account) => account.credentialSource === 'auth-file');
+      const apiKeyAccounts = previewAccounts.filter((account) => account.credentialSource === 'api-key');
+      setAuthFileRecords(nextAuthFileRecords);
       setApiKeyRecords(apiKeyAccounts);
+      persistAccountRecordsCache([...nextAuthFileRecords, ...apiKeyAccounts]);
       setAccountsLoaded(true);
       setPendingDeleteID(null);
       setSelectedAccountIDs((prev) =>
@@ -318,20 +328,15 @@ export default function useAccountsPageState({
       setLoading(true);
     }
     try {
-      const authFileResponsePromise = trackRequest('ListAuthFiles', { args: [] }, () => ListAuthFiles()).catch(() => {
-        // sidecar unavailable — auth files will be empty, keys still load
-        return { files: [] };
-      });
-      const accountResponsePromise = trackRequest('ListAccounts', { args: [] }, () => ListAccounts());
-      const [authFileResponse, rawAccountResponse] = await Promise.all([authFileResponsePromise, accountResponsePromise]);
+      const rawAccountResponse = await trackRequest('ListAccounts', { args: [] }, () => ListAccounts());
       const accountResponse = await migrateLegacyAPIKeyLabels(rawAccountResponse || []);
-      const files = authFileResponse?.files || [];
       const mappedAccounts = (accountResponse || []).map((account) => mapBackendAccountRecord(account));
       const apiKeyAccounts = mappedAccounts.filter((account) => account.credentialSource === 'api-key');
-      const nextAuthFileRecords = resolveLoadedAuthFileRecords(files, mappedAccounts);
-      setAuthFiles(files);
-      setDerivedAuthFileRecords(files.length === 0 ? nextAuthFileRecords : []);
+      const nextAuthFileRecords = mappedAccounts.filter((account) => account.credentialSource === 'auth-file');
+      liveAccountsLoadedRef.current = true;
+      setAuthFileRecords(nextAuthFileRecords);
       setApiKeyRecords(apiKeyAccounts);
+      persistAccountRecordsCache(mappedAccounts);
       setAccountsLoaded(true);
       setPendingDeleteID(null);
       setSelectedAccountIDs((prev) =>
@@ -346,6 +351,9 @@ export default function useAccountsPageState({
       }
     } catch (error) {
       console.error(error);
+      if (accountRecordsRef.current.length > 0) {
+        setAccountsLoaded(true);
+      }
     } finally {
       if (showLoading) {
         setLoading(false);
@@ -353,10 +361,46 @@ export default function useAccountsPageState({
     }
   }, [loadAccountRateLimits, loadAccountUsage, loadCodexQuotas, migrateLegacyAPIKeyLabels, ready, trackRequest]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !hasWailsAppBindings() || sqliteSnapshotRequestedRef.current) {
+      return;
+    }
+    sqliteSnapshotRequestedRef.current = true;
+    let cancelled = false;
+
+    async function loadSQLiteSnapshot() {
+      try {
+        const snapshot = await trackRequest('ListCachedAccounts', { args: [] }, () => ListCachedAccounts());
+        if (cancelled || liveAccountsLoadedRef.current) {
+          return;
+        }
+        const mappedAccounts = (snapshot || []).map((account) => mapBackendAccountRecord(account));
+        if (mappedAccounts.length === 0) {
+          return;
+        }
+        const nextAuthFileRecords = mappedAccounts.filter((account) => account.credentialSource === 'auth-file');
+        const apiKeyAccounts = mappedAccounts.filter((account) => account.credentialSource === 'api-key');
+        setAuthFileRecords(nextAuthFileRecords);
+        setApiKeyRecords(apiKeyAccounts);
+        persistAccountRecordsCache(mappedAccounts);
+        setPendingDeleteID(null);
+        setSelectedAccountIDs((prev) =>
+          filterSelectedAccountIDs(prev, resolveLoadedAccountIDs(nextAuthFileRecords, apiKeyAccounts))
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    void loadSQLiteSnapshot();
+    return () => {
+      cancelled = true;
+    };
+  }, [setSelectedAccountIDs, trackRequest]);
+
   const removeDeletedAccountLocally = useCallback(
     (account: AccountRecord) => {
-      setAuthFiles((prev) => removeDeletedAuthFile(prev, account));
-      setDerivedAuthFileRecords((prev) => prev.filter((item) => item.id !== account.id));
+      setAuthFileRecords((prev) => prev.filter((item) => item.id !== account.id));
       setApiKeyRecords((prev) => removeDeletedAPIKeyRecord(prev, account));
       setSelectedAccount((prev) => (shouldClearDeletedSelectedAccount(prev, account) ? null : prev));
       setSelectedAccountIDs((prev) => prev.filter((id) => id !== account.id));
@@ -366,7 +410,7 @@ export default function useAccountsPageState({
 
   const patchAccountLocally = useCallback(
     (accountID: string, patch: Partial<AccountRecord>) => {
-      setDerivedAuthFileRecords((prev) => patchAccountDetailByID(prev, accountID, patch));
+      setAuthFileRecords((prev) => patchAccountDetailByID(prev, accountID, patch));
       setApiKeyRecords((prev) => patchAccountDetailByID(prev, accountID, patch));
       setSelectedAccount((prev) =>
         prev?.id === accountID
@@ -387,26 +431,7 @@ export default function useAccountsPageState({
       if (!normalized) {
         return;
       }
-      setAuthFiles((prev) =>
-        prev.map((item) => {
-          const id = String(item.authIndex || '').trim();
-          if (!id) {
-            return item;
-          }
-          const patched = applyAccountDisabledChangeToRecord(
-            {
-              id,
-              status: String(item.status || ''),
-              disabled: item.disabled,
-            },
-            normalized,
-          );
-          return patched.id === id && patched.disabled !== item.disabled
-            ? { ...item, disabled: patched.disabled, status: patched.status }
-            : item;
-        })
-      );
-      setDerivedAuthFileRecords((prev) =>
+      setAuthFileRecords((prev) =>
         prev.map((item) => applyAccountDisabledChangeToRecord(item, normalized))
       );
       setApiKeyRecords((prev) =>
@@ -628,7 +653,7 @@ export default function useAccountsPageState({
         setOAuthFlow({
           state: String(result.state || '').trim(),
           existingName,
-          previousNames: authFiles.map((file) => file.name),
+          previousNames: authFileRecords.map((file) => String(file.name || '').trim()).filter(Boolean),
           pendingAccountID: account?.id || null,
         });
         setOAuthDialog({
@@ -646,7 +671,7 @@ export default function useAccountsPageState({
         });
       }
     },
-    [authFiles, oauthFlow, ready, t, trackRequest]
+    [authFileRecords, oauthFlow, ready, t, trackRequest]
   );
 
   const openOAuthDialogInBrowser = useCallback(() => {
@@ -772,6 +797,7 @@ export default function useAccountsPageState({
     toggleAccountDisabled,
     deleteAccount,
     bulkActionPending,
+    runAccountsBulkDelete,
     runSelectedBulkDelete,
     runSelectedBulkRefresh,
     runAccountsBulkSetDisabled,
@@ -907,6 +933,7 @@ export default function useAccountsPageState({
     exportSelectedAccounts,
     deleteAccount,
     bulkActionPending,
+    runAccountsBulkDelete,
     runSelectedBulkDelete,
     runSelectedBulkRefresh,
     runAccountsBulkSetDisabled,
@@ -952,29 +979,18 @@ function readInitialAccountSortMode(): AccountSortMode {
   }
 }
 
-function applyDisabledOverridesToPreviewAuthFiles(files: AuthFile[], overrides: Record<string, boolean>) {
-  return files.map((file) => {
-    const id = String(file.authIndex || '').trim();
-    if (!id) {
-      return file;
-    }
-    if (!Object.prototype.hasOwnProperty.call(overrides, id)) {
-      return file;
-    }
-    const patched = applyAccountDisabledChangeToRecord(
-      {
-        id,
-        status: String(file.status || ''),
-        disabled: file.disabled,
-      },
-      { id, disabled: overrides[id] },
-    );
-    return {
-      ...file,
-      disabled: patched.disabled,
-      status: patched.status,
-    };
-  });
+function readInitialAccountRecordsCache(): AccountRecord[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+  return readStoredAccountRecords(window.localStorage);
+}
+
+function persistAccountRecordsCache(accounts: AccountRecord[]) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  persistStoredAccountRecords(window.localStorage, accounts);
 }
 
 function applyDisabledOverridesToPreviewAccounts(accounts: AccountRecord[], overrides: Record<string, boolean>) {

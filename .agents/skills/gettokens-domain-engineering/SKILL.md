@@ -153,6 +153,8 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Preserve unrelated settings such as permissions, hooks, status line, MCP, and unknown fields.
 - **Rendering Rule**:
   - Account groups should render available local data first. Do not block the full account list on slower per-account enrichment; update enrichment-dependent fields incrementally.
+  - Account-list cold start should seed first paint from a sanitized local account snapshot when available, then let `ListAccounts()` overwrite it after sidecar readiness. The snapshot must exclude credentials and raw auth material such as `apiKey/apiKeys`, headers, cookies, cURL scripts, `modelFetchApiKey`, and `rawAuthFile`.
+  - Whole-page account skeletons should only block when no account rows are available. A not-ready sidecar may disable actions, but it must not hide cached account cards; filter-empty states must render as filtered empty UI, not as loading skeletons.
   - Runtime quota sync must separate batch reads from active refresh writes:
     - page entry, visibility restore, interval sync, and global "refresh runtime" actions read sidecar runtime snapshots through `GetQuotaStatuses(accountKeys)` / `/v0/management/gettokens/quota-status?account_keys=...` when the target keys are known, with `GetAllQuotaStatuses` retained only as compatibility fallback; they must not loop over account cards and call single-account `GetCodexQuota`
     - sidecar quota-status batch reads must return ordered `items`, include stale empty states for missing requested keys, and keep the single `account_key` response shape compatible for old callers

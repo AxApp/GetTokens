@@ -5,7 +5,38 @@ export function findAccountDetailByID(accounts: AccountRecord[], detailID?: stri
   if (!normalized) {
     return null;
   }
-  return accounts.find((account) => account.id === normalized) ?? null;
+  const direct = accounts.find((account) => account.id === normalized);
+  if (direct) {
+    return direct;
+  }
+  return (
+    accounts.find((account) => {
+      if (account.credentialSource !== 'auth-file') {
+        return false;
+      }
+      return String(account.name || '').trim() === normalized;
+    }) ?? null
+  );
+}
+
+export function resolveAccountDetailSelection(
+  accounts: AccountRecord[],
+  detailID: string | null | undefined,
+  selectedAccount: AccountRecord | null,
+  accountsLoaded: boolean,
+) {
+  const normalized = String(detailID || '').trim();
+  if (!normalized) {
+    return selectedAccount;
+  }
+  if (selectedAccount?.id === normalized) {
+    return selectedAccount;
+  }
+  const account = findAccountDetailByID(accounts, normalized);
+  if (account) {
+    return account;
+  }
+  return accountsLoaded ? null : selectedAccount;
 }
 
 export function patchAccountDetailByID(

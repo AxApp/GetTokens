@@ -470,10 +470,10 @@ const PREVIEW_QUOTA_BY_KEY: Record<string, CodexQuotaState> = {
 };
 
 const PREVIEW_USAGE_BY_ID: Record<string, AccountUsageSummary> = {
-  'auth-file:codex-pro.json': createUsageSummary({
-    id: 'auth-file:codex-pro.json',
+  'acct_preview_codex_pro_json': createUsageSummary({
+    id: 'acct_preview_codex_pro_json',
     provider: 'codex',
-    attributionKey: 'auth-file:codex-pro.json',
+    attributionKey: 'acct_preview_codex_pro_json',
     requestCount: 128,
     failedCount: 4,
     latency: 912,
@@ -481,10 +481,10 @@ const PREVIEW_USAGE_BY_ID: Record<string, AccountUsageSummary> = {
     requestedModels: ['gpt-5.4', 'gpt-5.4-mini'],
     lastActivityOffsetMs: 6 * 60 * 1000,
   }),
-  'auth-file:codex-team.json': createUsageSummary({
-    id: 'auth-file:codex-team.json',
+  'acct_preview_codex_team_json': createUsageSummary({
+    id: 'acct_preview_codex_team_json',
     provider: 'codex',
-    attributionKey: 'auth-file:codex-team.json',
+    attributionKey: 'acct_preview_codex_team_json',
     requestCount: 84,
     failedCount: 2,
     latency: 1045,
@@ -492,10 +492,10 @@ const PREVIEW_USAGE_BY_ID: Record<string, AccountUsageSummary> = {
     requestedModels: ['gpt-5.4-mini'],
     lastActivityOffsetMs: 14 * 60 * 1000,
   }),
-  'auth-file:codex-expired.json': createUsageSummary({
-    id: 'auth-file:codex-expired.json',
+  'acct_preview_codex_expired_json': createUsageSummary({
+    id: 'acct_preview_codex_expired_json',
     provider: 'codex',
-    attributionKey: 'auth-file:codex-expired.json',
+    attributionKey: 'acct_preview_codex_expired_json',
     requestCount: 12,
     failedCount: 9,
     latency: 1860,
@@ -640,8 +640,12 @@ export function getAccountsPreviewCodexAccounts(): AccountRecord[] {
 }
 
 export function getAccountsPreviewAuthFileRecords(): AccountRecord[] {
-  return PREVIEW_AUTH_FILES.map((account) => ({
-    id: `auth-file:${account.name}`,
+  return PREVIEW_AUTH_FILES.map((account) => {
+    const sourceName = String(account.name || '').trim();
+    const previewID = buildPreviewAuthFileAccountID(sourceName);
+    return {
+    id: previewID,
+    accountKind: 'auth-file',
     provider: String(account.provider || account.type || 'unknown').trim().toLowerCase() || 'unknown',
     credentialSource: 'auth-file',
     displayName: account.name,
@@ -652,10 +656,19 @@ export function getAccountsPreviewAuthFileRecords(): AccountRecord[] {
     email: account.email,
     planType: account.planType,
     name: account.name,
-    authIndex: account.authIndex,
+    authIndex: previewID,
     quotaKey: account.name,
     rawAuthFile: { ...account },
-  }));
+    };
+  });
+}
+
+function buildPreviewAuthFileAccountID(name: string): string {
+  return `acct_preview_${String(name || '')
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase()}`;
 }
 
 export function getAccountsPreviewOpenAICompatibleProviders(): OpenAICompatibleProvider[] {
@@ -820,7 +833,7 @@ export function getAccountsPreviewAuthFileContent(name: string): string {
     JSON.stringify(
       {
         email: `${name.replace(/\.json$/i, '')}@example.com`,
-        account_key: `auth-file:${name}`,
+        account_key: buildPreviewAuthFileAccountID(name),
         refresh_token: '[PREVIEW_REFRESH_TOKEN]',
       },
       null,
@@ -876,8 +889,8 @@ export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'claude' =
         ],
       }),
       previewObservedUsageItem({
-        accountKey: 'auth-file:codex-pro.json',
-        attributionKey: 'auth-file:codex-pro.json',
+        accountKey: 'acct_preview_codex_pro_json',
+        attributionKey: 'acct_preview_codex_pro_json',
         provider: 'codex',
         requestedModels: ['gpt-5.4-mini'],
         buckets: [

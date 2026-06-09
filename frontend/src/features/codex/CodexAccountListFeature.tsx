@@ -46,6 +46,7 @@ import useAccountsRateLimitState from '../accounts/hooks/useAccountsRateLimitSta
 import useAccountsUsageState from '../accounts/hooks/useAccountsUsageState';
 import { getAccountsPreviewCodexAccounts } from '../accounts/previewData';
 import type { ApiKeyConfigDraft } from '../accounts/model/accountDetailConfig';
+import type { OAuthModelProbeState } from '../accounts/components/OAuthModelProbeSection';
 import {
   publishAccountDisabledChange,
   readAccountDisabledOverrides,
@@ -128,6 +129,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const [codexModelCatalogOptions, setCodexModelCatalogOptions] = useState<CodexModelMappingRow[]>([]);
   const [routingProbeModel, setRoutingProbeModel] = useState(DEFAULT_CODEX_ROUTING_PROBE_MODEL);
   const [routingProbeAttempts, setRoutingProbeAttempts] = useState<CodexRoutingProbeAttemptView[]>([]);
+  const [detailOAuthModelProbeStateByID, setDetailOAuthModelProbeStateByID] = useState<Record<string, OAuthModelProbeState>>({});
   const [routingProbeRequestedAttempts, setRoutingProbeRequestedAttempts] = useState(1);
   const [routingProbeRunning, setRoutingProbeRunning] = useState(false);
   const [routeProbeOpen, setRouteProbeOpen] = useState(false);
@@ -1030,6 +1032,90 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     }
   }
 
+  async function runDetailOAuthModelProbe(row: CodexAccountRow, model: string) {
+    if (row.sourceKind !== 'codex-auth-file' || !row.id.startsWith('acct_')) {
+      return;
+    }
+    const nextModel = model.trim();
+    if (!nextModel) {
+      setDetailOAuthModelProbeStateByID((prev) => ({
+        ...prev,
+        [row.id]: {
+          model: '',
+          status: 'error',
+          message: '请选择要测试的模型',
+          lastTestedAt: prev[row.id]?.lastTestedAt ?? null,
+        },
+      }));
+      return;
+    }
+
+    setDetailOAuthModelProbeStateByID((prev) => ({
+      ...prev,
+      [row.id]: {
+        model: nextModel,
+        status: 'loading',
+        message: '',
+        lastTestedAt: prev[row.id]?.lastTestedAt ?? null,
+      },
+    }));
+
+    if (browserMode) {
+      setDetailOAuthModelProbeStateByID((prev) => ({
+        ...prev,
+        [row.id]: {
+          model: nextModel,
+          status: 'success',
+          message: `PREVIEW ONLY / ${row.label} 可使用 ${nextModel}`,
+          lastTestedAt: Date.now(),
+        },
+      }));
+      return;
+    }
+
+    try {
+      const result = await trackRequest(
+        'ProbeCodexAccountRouting',
+        { model: nextModel, accountID: row.id, source: 'codex-account-detail-oauth' },
+        () =>
+          ProbeCodexAccountRouting(
+            main.ProbeCodexAccountRoutingInput.createFrom({
+              model: nextModel,
+              attempts: 1,
+              allowAccountIDs: [row.id],
+              orderAccountIDs: [row.id],
+              allowFallback: false,
+            }),
+          ),
+      );
+      const attempt = result?.attempts?.[0];
+      const matched = Boolean(attempt?.success && attempt.accountID === row.id);
+      setDetailOAuthModelProbeStateByID((prev) => ({
+        ...prev,
+        [row.id]: {
+          model: nextModel,
+          status: matched ? 'success' : 'error',
+          message: matched
+            ? attempt?.message || `模型 ${nextModel} 测试通过，命中当前账号。`
+            : attempt?.accountID
+              ? `测试未命中当前账号：${attempt.accountID}`
+              : attempt?.message || '模型测试失败，未确认当前账号命中。',
+          lastTestedAt: Date.now(),
+        },
+      }));
+    } catch (error) {
+      setDetailOAuthModelProbeStateByID((prev) => ({
+        ...prev,
+        [row.id]: {
+          model: nextModel,
+          status: 'error',
+          message: toErrorMessage(error),
+          lastTestedAt: Date.now(),
+        },
+      }));
+    }
+  }
+
   function resetRoutePolicy() {
     setRoutingProbeAttempts([]);
   }
@@ -1451,11 +1537,17 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           codexModelOptions={codexModelCatalogOptions}
           loadingModelOptions={loadingOpenAICompatibleModelID === detailRowWithModels.id}
           modelOptionError={openAICompatibleModelErrors[detailRowWithModels.id] || ''}
+          oauthModelProbeState={detailOAuthModelProbeStateByID[detailRowWithModels.id]}
           onClose={closeDetail}
           onSaveConfig={(draft, mappings) => saveDetailConfig(detailRowWithModels, draft, mappings)}
           onRateLimitRulesChanged={() => void loadAccountRateLimits(orderedRows.map(buildCodexQuotaSummaryAccount))}
           onSaveModelMappings={(mappings) => saveModelMappings(detailRowWithModels, mappings)}
           onFetchModelOptions={() => void fetchDetailModelOptions(detailRowWithModels)}
+          onOAuthModelProbe={
+            detailRowWithModels.sourceKind === 'codex-auth-file' && detailRowWithModels.id.startsWith('acct_')
+              ? (model) => void runDetailOAuthModelProbe(detailRowWithModels, model)
+              : undefined
+          }
         />
       ) : null}
     </div>

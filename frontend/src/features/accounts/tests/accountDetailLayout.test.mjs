@@ -2,7 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildAccountDetailModulePlan } from '../model/accountDetailLayout.ts';
-import { findAccountDetailByID, patchAccountDetailByID } from '../model/accountDetailSelection.ts';
+import {
+  findAccountDetailByID,
+  patchAccountDetailByID,
+  resolveAccountDetailSelection,
+} from '../model/accountDetailSelection.ts';
 import { normalizeQuotaTestDisplay } from '../model/accountQuota.ts';
 
 test('account detail no longer mounts runtime evidence overview sections', async () => {
@@ -28,8 +32,31 @@ test('account detail frame uses the fullscreen detail modal shell', async () => 
 test('account detail keeps auth-file modules lightweight', () => {
   assert.deepEqual(
     buildAccountDetailModulePlan({ credentialSource: 'auth-file' }),
-    ['auth-file-actions', 'models', 'rate-limit'],
+    ['auth-file-actions', 'models', 'model-probe', 'rate-limit'],
   );
+});
+
+test('accounts page loads auth-file rows from unified account store only', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(source, /ListAuthFiles/);
+  assert.doesNotMatch(source, /mapAuthFileToRecord/);
+  assert.doesNotMatch(source, /resolveLoadedAuthFileRecords/);
+  assert.doesNotMatch(source, /getAccountsPreviewAuthFiles/);
+  assert.doesNotMatch(source, /setAuthFiles/);
+  assert.doesNotMatch(source, /setDerivedAuthFileRecords/);
+});
+
+test('auth-file account detail exposes single-account OAuth model probe', async () => {
+  const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(modalSource, /<OAuthModelProbeSection/);
+  assert.match(modalSource, /onOAuthModelProbe/);
+  assert.match(featureSource, /ProbeCodexAccountRouting/);
+  assert.match(featureSource, /allowAccountIDs:\s*\[selectedAccount\.id\]/);
+  assert.match(featureSource, /orderAccountIDs:\s*\[selectedAccount\.id\]/);
+  assert.match(featureSource, /allowFallback:\s*false/);
 });
 
 test('auth-file summary keeps raw content hidden and retains model catalog', async () => {
@@ -379,12 +406,33 @@ test('curl editor variable buttons insert at cursor or copy when no cursor is ac
 
 test('account detail deep link resolves an account by stable id', () => {
   const accounts = [
-    { id: 'auth-file:codex-pro.json', credentialSource: 'auth-file', provider: 'codex', displayName: 'Pro', status: 'active' },
+    { id: 'acct_preview_codex_plus_nightly_json', name: 'codex-plus-nightly.json', credentialSource: 'auth-file', provider: 'codex', displayName: 'Pro', status: 'active' },
     { id: 'codex-api-key:stable-001', credentialSource: 'api-key', provider: 'codex', displayName: 'Stable', status: 'configured' },
   ];
 
-  assert.equal(findAccountDetailByID(accounts, 'auth-file:codex-pro.json')?.displayName, 'Pro');
+  assert.equal(findAccountDetailByID(accounts, 'acct_preview_codex_plus_nightly_json')?.displayName, 'Pro');
+  assert.equal(findAccountDetailByID(accounts, 'codex-plus-nightly.json')?.id, 'acct_preview_codex_plus_nightly_json');
   assert.equal(findAccountDetailByID(accounts, 'missing'), null);
+});
+
+test('account detail resolves legacy filename to unified oauth account after records are loaded', () => {
+  const selected = {
+    id: 'acct_codex_pro',
+    name: 'codex-plus-nightly.json',
+    credentialSource: 'auth-file',
+    provider: 'codex',
+    displayName: 'Pro',
+    status: 'active',
+  };
+
+  assert.equal(
+    resolveAccountDetailSelection([selected], 'codex-plus-nightly.json', selected, true),
+    selected,
+  );
+  assert.equal(
+    resolveAccountDetailSelection([], 'acct_codex_pro', selected, false),
+    selected,
+  );
 });
 
 test('account detail save patches the local list copy by stable id', () => {

@@ -8,7 +8,6 @@ import {
   isCodexAuthFile,
   isCodexReauthEligible,
   mapBackendAccountRecord,
-  mapAuthFileToRecord,
   resolveLoadedAccountIDs,
   resolveAccountAPIKeyPlainNotice,
   resolveAccountConfigurationWorkspaceHeading,
@@ -18,7 +17,6 @@ import {
   resolveAccountStatusTone,
   resolveAccountSourceHeading,
   buildAccountDetailStatusMessage,
-  resolveLoadedAuthFileRecords,
 } from '../model/accountPresentation.ts';
 import { shouldLoadAccountsData } from '../model/accountRuntime.ts';
 import { buildAccountRuntimeStats, formatRuntimeLatency, formatRuntimeTokens } from '../model/accountDetailRuntime.ts';
@@ -215,18 +213,6 @@ test('vendor preset picker resolves local logo specs with fallback initials', ()
   }
 });
 
-test('mapAuthFileToRecord keeps auth file status message', () => {
-  const record = mapAuthFileToRecord({
-    name: 'broken.json',
-    provider: 'codex',
-    status: 'error',
-    statusMessage: 'refresh token expired',
-  });
-
-  assert.equal(record.status, 'ERROR');
-  assert.equal(record.statusMessage, 'refresh token expired');
-});
-
 test('mapBackendAccountRecord keeps backend display name for api keys', () => {
   const record = mapBackendAccountRecord({
     id: 'codex-api-key:test',
@@ -258,36 +244,33 @@ test('mapBackendAccountRecord infers provider and formats from known base url', 
   assert.deepEqual(record.supportedFormats, ['anthropic', 'openai_chat']);
 });
 
-test('resolveLoadedAuthFileRecords falls back to ListAccounts auth-file records when auth files are unavailable', () => {
-  const authFileRecords = resolveLoadedAuthFileRecords([], [
+test('auth-file records come from unified account-store records only', () => {
+  const mappedAccounts = [
     {
-      id: 'auth-file:codex-pro.json',
+      id: 'acct_codex_pro',
+      accountKind: 'auth-file',
       provider: 'codex',
       credentialSource: 'auth-file',
       displayName: 'codex-pro.json',
       status: 'ACTIVE',
+      name: 'codex-pro.json',
     },
     {
-      id: 'codex-api-key:stable-001',
+      id: 'acct_stable_001',
+      accountKind: 'codex-api-key',
       provider: 'openai',
       credentialSource: 'api-key',
       displayName: 'Stable 001',
       status: 'CONFIGURED',
     },
-  ]);
+  ];
+  const authFileRecords = mappedAccounts.filter((account) => account.credentialSource === 'auth-file');
+  const apiKeyRecords = mappedAccounts.filter((account) => account.credentialSource === 'api-key');
 
-  assert.deepEqual(authFileRecords.map((account) => account.id), ['auth-file:codex-pro.json']);
+  assert.deepEqual(authFileRecords.map((account) => account.id), ['acct_codex_pro']);
   assert.deepEqual(
-    resolveLoadedAccountIDs(authFileRecords, [
-      {
-        id: 'codex-api-key:stable-001',
-        provider: 'openai',
-        credentialSource: 'api-key',
-        displayName: 'Stable 001',
-        status: 'CONFIGURED',
-      },
-    ]),
-    ['auth-file:codex-pro.json', 'codex-api-key:stable-001']
+    resolveLoadedAccountIDs(authFileRecords, apiKeyRecords),
+    ['acct_codex_pro', 'acct_stable_001']
   );
 });
 

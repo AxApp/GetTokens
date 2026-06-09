@@ -1,0 +1,105 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+import {
+  ACCOUNT_LIST_CACHE_STORAGE_KEY,
+  persistStoredAccountRecords,
+  readStoredAccountRecords,
+} from '../model/accountListCache.ts';
+
+function createMemoryStorage(initial = {}) {
+  const values = { ...initial };
+  return {
+    getItem(key) {
+      return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null;
+    },
+    setItem(key, value) {
+      values[key] = value;
+    },
+    values,
+  };
+}
+
+test('readStoredAccountRecords restores cached account records for first paint', () => {
+  const storage = createMemoryStorage({
+    [ACCOUNT_LIST_CACHE_STORAGE_KEY]: JSON.stringify({
+      version: 1,
+      updatedAt: 1781000000000,
+      items: [
+        {
+          id: 'acct_cache_1',
+          accountKind: 'codex-api-key',
+          provider: 'openai',
+          credentialSource: 'api-key',
+          displayName: 'Cached API Key',
+          status: 'ACTIVE',
+          quotaKey: 'acct_cache_1',
+          priority: 9,
+          supportedFormats: ['openai_responses'],
+          formatBaseUrls: { openai_responses: 'https://api.openai.com/v1' },
+        },
+      ],
+    }),
+  });
+
+  const records = readStoredAccountRecords(storage);
+
+  assert.equal(records.length, 1);
+  assert.equal(records[0].id, 'acct_cache_1');
+  assert.equal(records[0].credentialSource, 'api-key');
+  assert.equal(records[0].displayName, 'Cached API Key');
+  assert.equal(records[0].quotaKey, 'acct_cache_1');
+});
+
+test('persistStoredAccountRecords stores display data without account secrets', () => {
+  const storage = createMemoryStorage();
+
+  persistStoredAccountRecords(storage, [
+    {
+      id: 'acct_secret',
+      accountKind: 'codex-api-key',
+      provider: 'openai',
+      credentialSource: 'api-key',
+      displayName: 'Secret Account',
+      status: 'ACTIVE',
+      apiKey: 'sk-live-secret',
+      apiKeys: ['sk-live-secret-2'],
+      headers: { Authorization: 'Bearer hidden' },
+      platformCookie: 'session=hidden',
+      curlVariables: { platformCookie: 'session=hidden' },
+      modelFetchApiKey: 'sk-model-secret',
+      modelFetchBaseUrl: 'https://models.example.com',
+      rawAuthFile: { access_token: 'hidden' },
+      quotaCurl: 'curl https://quota.example.com -b session=hidden',
+      quotaEnabled: true,
+      quotaKey: 'acct_secret',
+      keySuffix: 'cret',
+      baseUrl: 'https://api.openai.com/v1',
+    },
+  ]);
+
+  const raw = storage.values[ACCOUNT_LIST_CACHE_STORAGE_KEY];
+  assert.equal(raw.includes('sk-live-secret'), false);
+  assert.equal(raw.includes('session=hidden'), false);
+  assert.equal(raw.includes('Authorization'), false);
+  assert.equal(raw.includes('access_token'), false);
+
+  const records = readStoredAccountRecords(storage);
+  assert.equal(records.length, 1);
+  assert.equal(records[0].id, 'acct_secret');
+  assert.equal(records[0].keySuffix, 'cret');
+  assert.equal(records[0].quotaEnabled, true);
+  assert.equal(records[0].apiKey, undefined);
+  assert.equal(records[0].rawAuthFile, undefined);
+});
+
+test('useAccountsPageState seeds first paint from account list cache and refreshes it from ListAccounts', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /readInitialAccountRecordsCache\(\)/);
+  assert.match(source, /initialCachedAccounts\.filter\(\(account\) => account\.credentialSource === 'auth-file'\)/);
+  assert.match(source, /initialCachedAccounts\.filter\(\(account\) => account\.credentialSource === 'api-key'\)/);
+  assert.match(source, /persistAccountRecordsCache\(mappedAccounts\)/);
+  assert.match(source, /persistAccountRecordsCache\(\[\.\.\.nextAuthFileRecords, \.\.\.apiKeyAccounts\]\)/);
+});

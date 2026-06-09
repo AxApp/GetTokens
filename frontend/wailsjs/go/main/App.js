@@ -342,6 +342,10 @@ export function ListAccounts() {
   return window['go']['main']['App']['ListAccounts']();
 }
 
+export function ListCachedAccounts() {
+  return window['go']['main']['App']['ListCachedAccounts']();
+}
+
 export function ListAuthFiles() {
   return window['go']['main']['App']['ListAuthFiles']();
 }

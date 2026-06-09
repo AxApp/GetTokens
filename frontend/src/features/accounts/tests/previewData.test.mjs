@@ -17,7 +17,7 @@ import {
 
 test('accounts preview quota state only returns requested preview keys', () => {
   const records = [...getAccountsPreviewAuthFileRecords(), ...getAccountsPreviewAPIKeyRecords()].filter((account) =>
-    ['auth-file:codex-pro.json', 'codex-api-key:stable-001'].includes(account.id),
+    ['acct_preview_codex_pro_json', 'codex-api-key:stable-001'].includes(account.id),
   );
 
   assert.deepEqual(Object.keys(getAccountsPreviewQuotaStateByKey(records)).sort(), [

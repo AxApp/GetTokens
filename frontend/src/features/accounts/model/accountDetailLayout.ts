@@ -4,6 +4,7 @@ export type AccountDetailModuleID =
   | 'credentials'
   | 'auth-file-actions'
   | 'models'
+  | 'model-probe'
   | 'rate-limit'
   | 'quota'
   | 'billing';
@@ -14,7 +15,7 @@ export function buildAccountDetailModulePlan(account: Pick<AccountRecord, 'crede
   }
 
   if (account.credentialSource === 'auth-file') {
-    return ['auth-file-actions', 'models', 'rate-limit'];
+    return ['auth-file-actions', 'models', 'model-probe', 'rate-limit'];
   }
 
   return ['rate-limit'];

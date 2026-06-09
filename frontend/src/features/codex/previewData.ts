@@ -7,11 +7,11 @@ import {
 } from './model/codexAccountList.ts';
 
 const PREVIEW_AUTH_FILE_MODELS = {
-  'auth-file:codex-pro.json': [
+  'acct_preview_codex_pro_json': [
     { id: 'gpt-5.4', display_name: 'GPT 5.4' },
     { id: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
   ],
-  'auth-file:codex-team.json': [
+  'acct_preview_codex_team_json': [
     { id: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
     { id: 'gpt-5.2', display_name: 'GPT 5.2' },
   ],

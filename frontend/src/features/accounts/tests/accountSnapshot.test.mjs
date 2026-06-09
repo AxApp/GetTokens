@@ -24,6 +24,7 @@ test('shouldEnsureAccountSnapshot waits until the app data source is ready', () 
 
 test('shouldShowAccountSkeletons only blocks the first empty snapshot', () => {
   assert.equal(shouldShowAccountSkeletons({ ready: false, loaded: false, accountCount: 0 }), true);
+  assert.equal(shouldShowAccountSkeletons({ ready: false, loaded: false, accountCount: 2 }), false);
   assert.equal(shouldShowAccountSkeletons({ ready: true, loaded: false, accountCount: 0 }), true);
   assert.equal(shouldShowAccountSkeletons({ ready: true, loaded: false, accountCount: 2 }), false);
   assert.equal(shouldShowAccountSkeletons({ ready: true, loaded: true, accountCount: 2 }), false);

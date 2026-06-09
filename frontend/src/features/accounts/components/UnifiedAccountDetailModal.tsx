@@ -48,6 +48,7 @@ import {
 } from './AccountDetailPrimitives';
 import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
 import { getAccountsPreviewAuthFileContent, getAccountsPreviewAuthFileModels } from '../previewData';
+import { OAuthModelProbeSection, type OAuthModelProbeState } from './OAuthModelProbeSection';
 
 export type { APIKeyVerifyState } from './AccountDetailSections';
 
@@ -59,6 +60,7 @@ export interface UnifiedAccountDetailProps {
   rateLimitStrategies?: RateLimitStrategyMeta[];
   rateLimitRulesAPI?: RateLimitRulesAPI;
   verifyState?: APIKeyVerifyState;
+  oauthModelProbeState?: OAuthModelProbeState;
   modelNames?: string[];
   localModelNames?: string[];
   cachedModelNames?: string[];
@@ -66,6 +68,7 @@ export interface UnifiedAccountDetailProps {
   onRename?: (nextName: string) => void;
   onSaveConfig?: (draft: ApiKeyConfigDraft) => Promise<void>;
   onVerify?: (input: { apiKey: string; baseUrl: string; model: string }) => void;
+  onOAuthModelProbe?: (model: string) => void;
   onFetchModels?: (input: { apiKey: string; baseUrl: string; headers?: Record<string, string> }) => Promise<{ models: string[]; message: string }>;
   onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
@@ -237,6 +240,31 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     onFetchModels={props.onFetchModels}
                   />
                 );
+              case 'model-probe': {
+                const canProbeOAuthAccount = account.credentialSource === 'auth-file' && account.id.startsWith('acct_');
+                const modelOptions = normalizeAPIKeyModelNames([
+                  ...(props.modelNames ?? []),
+                  ...(props.localModelNames ?? []),
+                  ...(account.models ?? []).map((model) => model.name),
+                ]);
+                return (
+                  <OAuthModelProbeSection
+                    key={moduleID}
+                    accountID={account.id}
+                    accountLabel={account.displayName}
+                    modelOptions={modelOptions}
+                    defaultModel={modelOptions[0] || 'gpt-5.4-mini'}
+                    disabled={!canProbeOAuthAccount || !props.onOAuthModelProbe}
+                    disabledReason={
+                      canProbeOAuthAccount
+                        ? '当前运行环境不可执行模型测试'
+                        : '仅支持统一账号库 acct_ OAuth 账号模型测试'
+                    }
+                    probeState={props.oauthModelProbeState}
+                    onProbe={props.onOAuthModelProbe}
+                  />
+                );
+              }
               case 'rate-limit':
                 return (
                   <RateLimitSection

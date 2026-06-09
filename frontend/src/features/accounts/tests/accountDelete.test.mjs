@@ -3,26 +3,9 @@ import assert from 'node:assert/strict';
 
 import {
   removeDeletedAPIKeyRecord,
-  removeDeletedAuthFile,
   resolveAccountDeleteRequest,
   shouldClearDeletedSelectedAccount,
 } from '../model/accountDelete.ts';
-
-test('removeDeletedAuthFile removes only the deleted auth-file asset', () => {
-  const files = [
-    { name: 'codex-a.json' },
-    { name: 'codex-b.json' },
-  ];
-
-  assert.deepEqual(
-    removeDeletedAuthFile(files, {
-      id: 'auth-file:codex-a.json',
-      credentialSource: 'auth-file',
-      name: 'codex-a.json',
-    }),
-    [{ name: 'codex-b.json' }]
-  );
-});
 
 test('removeDeletedAPIKeyRecord removes only the deleted api-key asset', () => {
   const records = [
@@ -75,24 +58,24 @@ test('resolveAccountDeleteRequest keeps codex api key assets on codex delete pat
 
 test('shouldClearDeletedSelectedAccount clears matching selected account only', () => {
   const selected = {
-    id: 'auth-file:codex-a.json',
+    id: 'acct_codex_a',
     credentialSource: 'auth-file',
     name: 'codex-a.json',
   };
 
   assert.equal(
     shouldClearDeletedSelectedAccount(selected, {
-      id: 'auth-file:codex-a.json',
+      id: 'acct_codex_a',
       credentialSource: 'auth-file',
-      name: 'codex-a.json',
+      name: 'renamed-codex-a.json',
     }),
     true
   );
   assert.equal(
     shouldClearDeletedSelectedAccount(selected, {
-      id: 'auth-file:codex-b.json',
+      id: 'acct_codex_b',
       credentialSource: 'auth-file',
-      name: 'codex-b.json',
+      name: 'codex-a.json',
     }),
     false
   );
