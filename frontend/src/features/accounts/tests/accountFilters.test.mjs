@@ -5,8 +5,10 @@ import { readFile } from 'node:fs/promises';
 import {
   ACCOUNTS_FILTERS_STORAGE_KEY,
   applyAccountsFilterState,
+  buildAccountsFilterPresetState,
   buildAccountsRiskFilterState,
   defaultAccountsFilterState,
+  removeAccountsFilterSummaryPart,
   normalizeAccountsFilterState,
   persistAccountsFilterState,
   readStoredAccountsFilterState,
@@ -228,6 +230,77 @@ test('summarizeAccountsFilterState omits fully selected groups', () => {
   assert.deepEqual(summarizeAccountsFilterState((key) => key, defaultAccountsFilterState), []);
 });
 
+test('buildAccountsFilterPresetState maps common toolbar presets to concrete filters', () => {
+  assert.deepEqual(
+    buildAccountsFilterPresetState('available', defaultAccountsFilterState, ['401', '402']),
+    {
+      ...defaultAccountsFilterState,
+      status: { error: false, disabled: false, requestable: true, requestStatusCodes: {} },
+    },
+  );
+
+  assert.deepEqual(
+    buildAccountsFilterPresetState('attention', defaultAccountsFilterState, ['401', '402']),
+    {
+      ...defaultAccountsFilterState,
+      status: { error: true, disabled: true, requestable: false, requestStatusCodes: { 401: true, 402: true } },
+    },
+  );
+
+  assert.deepEqual(
+    buildAccountsFilterPresetState('http-errors', defaultAccountsFilterState, ['401', '402']),
+    {
+      ...defaultAccountsFilterState,
+      status: { error: true, disabled: false, requestable: false, requestStatusCodes: { 401: true, 402: true } },
+    },
+  );
+
+  assert.deepEqual(
+    buildAccountsFilterPresetState('with-quota', defaultAccountsFilterState, []),
+    {
+      ...defaultAccountsFilterState,
+      resource: { ...defaultAccountsFilterState.resource, hasQuota: true, noQuota: false },
+    },
+  );
+
+  assert.deepEqual(
+    buildAccountsFilterPresetState('api-key', defaultAccountsFilterState, []),
+    {
+      ...defaultAccountsFilterState,
+      source: { authFile: false, apiKey: true },
+    },
+  );
+});
+
+test('removeAccountsFilterSummaryPart clears a single active filter chip back to broad matching', () => {
+  const filtered = {
+    source: { authFile: false, apiKey: true },
+    resource: { hasQuota: true, noQuota: false, hasBalance: false, noBalance: true, hasUsageToday: false, noUsageToday: true },
+    status: { error: true, disabled: false, requestable: false, requestStatusCodes: { 401: true, 402: true } },
+    plan: { plus: false, team: true },
+  };
+
+  assert.deepEqual(
+    removeAccountsFilterSummaryPart(filtered, { kind: 'status', label: 'HTTP 401' }, ['pro', 'team', 'plus'], ['401', '402']).status,
+    { error: true, disabled: false, requestable: false, requestStatusCodes: { 402: true } },
+  );
+
+  assert.deepEqual(
+    removeAccountsFilterSummaryPart(filtered, { kind: 'resource', label: 'accounts.filter_has_quota_match' }, ['pro', 'team', 'plus'], ['401', '402']).resource,
+    { hasQuota: true, noQuota: true, hasBalance: false, noBalance: true, hasUsageToday: false, noUsageToday: true },
+  );
+
+  assert.deepEqual(
+    removeAccountsFilterSummaryPart(filtered, { kind: 'source', label: 'accounts.source_api_key' }, ['pro', 'team', 'plus'], ['401', '402']).source,
+    { authFile: true, apiKey: true },
+  );
+
+  assert.deepEqual(
+    removeAccountsFilterSummaryPart(filtered, { kind: 'plan', label: 'Team' }, ['pro', 'team', 'plus'], ['401', '402']).plan,
+    { plus: false, team: false },
+  );
+});
+
 test('readStoredAccountsFilterState falls back for invalid or missing storage payloads', () => {
   assert.deepEqual(readStoredAccountsFilterState(null), defaultAccountsFilterState);
   assert.deepEqual(
@@ -281,6 +354,8 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assertBefore('accounts.filter_group_plan_source', 'accounts.filter_group_status');
   assertBefore('accounts.filter_group_status', 'accounts.filter_group_other');
   assertBefore('accounts.filter_group_source', 'planOptions.map');
+  assertBefore('accounts.filter_group_presets', 'accounts.filter_group_plan_source');
+  assertBefore('accounts.filter_active_conditions', 'accounts.filter_group_plan_source');
   assert.equal(source.includes('requiresRequestable'), false);
   assert.equal(source.includes('requiresDisabled'), false);
   assert.equal(source.includes('requiresError'), false);
@@ -291,6 +366,10 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.filter_group_balance'), true);
   assert.equal(source.includes('accounts.filter_group_today_usage'), true);
   assert.equal(source.includes('accounts.filter_group_request_status'), true);
+  assert.equal(source.includes('accounts.filter_preset_available'), true);
+  assert.equal(source.includes('accounts.filter_preset_attention'), true);
+  assert.equal(source.includes('accounts.filter_preset_http_errors'), true);
+  assert.equal(source.includes('accounts.filter_remove_condition'), true);
   assert.equal(source.includes('accounts.filter_group_resource'), false);
   assert.equal(source.includes('accounts.filter_has_quota_match'), true);
   assert.equal(source.includes('accounts.filter_no_quota_match'), true);
@@ -302,7 +381,7 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.filter_no_quota_and_balance_match'), false);
   assert.equal(source.includes('accounts.filter_no_quota_no_balance_match'), false);
   assert.equal(source.includes('uppercase={false}'), true);
-  assert.equal(source.includes('accounts.filter_all'), false);
+  assert.equal(source.includes('accounts.filter_option_all'), true);
   assert.equal(source.includes("const DEFAULT_AVAILABLE_PLAN_TYPES: readonly AccountPlanType[] = []"), true);
   assert.equal(source.includes('accounts.group_mode_label'), true);
   assert.equal(source.includes('accounts.group_mode_plan'), true);
@@ -318,14 +397,17 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
 
 test('AccountsToolbar filter menu keeps options in compact list mode', async () => {
   const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
-  const menuPanelClass = 'mt-2 flex min-w-[360px] flex-col gap-3.5';
-  const optionClass = source.slice(source.indexOf('function FilterCheckOption'), source.indexOf('function buildToolbarFilterLabel'));
+  const menuPanelClass = 'mt-2 flex min-w-[460px]';
+  const pillClass = source.slice(source.indexOf('function FilterPillOption'), source.indexOf('function FilterTernaryOptionRow'));
+  const ternaryClass = source.slice(source.indexOf('function FilterTernaryOptionRow'), source.indexOf('function buildToolbarFilterLabel'));
 
   assert.equal(source.includes(menuPanelClass), true);
-  assert.equal(optionClass.includes('min-h-9'), true);
-  assert.equal(optionClass.includes('text-[length:var(--font-size-ui-md-compact)]'), true);
-  assert.equal(optionClass.includes('border-2 border-[var(--border-color)]'), false);
-  assert.equal(source.includes('function FilterBinaryOptionRow'), true);
+  assert.equal(pillClass.includes('h-8 min-w-16'), true);
+  assert.equal(pillClass.includes('aria-pressed={active}'), true);
+  assert.equal(ternaryClass.includes("mode: 'all' | 'positive' | 'negative'"), true);
+  assert.equal(source.includes('function FilterTernaryOptionRow'), true);
+  assert.equal(source.includes('function FilterBinaryOptionRow'), false);
+  assert.equal(source.includes('removeAccountsFilterSummaryPart'), true);
 });
 
 test('AccountsToolbar design-system default story starts with all filters selected', async () => {

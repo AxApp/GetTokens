@@ -8,6 +8,8 @@ export interface AccountsFilterSummaryPart {
   label: string;
 }
 
+export type AccountsFilterPresetID = 'all' | 'available' | 'attention' | 'http-errors' | 'with-quota' | 'api-key';
+
 export interface AccountsEmptyState {
   kind: 'empty' | 'filtered';
   title: string;
@@ -111,6 +113,52 @@ export function buildAccountsRiskFilterState(base: AccountsFilterState = default
   });
 }
 
+export function buildAccountsFilterPresetState(
+  preset: AccountsFilterPresetID,
+  base: AccountsFilterState = defaultAccountsFilterState,
+  availableRequestStatusCodes: readonly string[] = [],
+): AccountsFilterState {
+  if (preset === 'all') {
+    return { ...defaultAccountsFilterState };
+  }
+  if (preset === 'available') {
+    return applyAccountsFilterState(defaultAccountsFilterState, {
+      status: { error: false, disabled: false, requestable: true, requestStatusCodes: {} },
+    });
+  }
+  if (preset === 'attention') {
+    return applyAccountsFilterState(defaultAccountsFilterState, {
+      status: {
+        error: true,
+        disabled: true,
+        requestable: false,
+        requestStatusCodes: Object.fromEntries(normalizeStatusCodeList(availableRequestStatusCodes).map((code) => [code, true])),
+      },
+    });
+  }
+  if (preset === 'http-errors') {
+    return applyAccountsFilterState(defaultAccountsFilterState, {
+      status: {
+        error: true,
+        disabled: false,
+        requestable: false,
+        requestStatusCodes: Object.fromEntries(normalizeStatusCodeList(availableRequestStatusCodes).map((code) => [code, true])),
+      },
+    });
+  }
+  if (preset === 'with-quota') {
+    return applyAccountsFilterState(base, {
+      resource: { hasQuota: true, noQuota: false },
+    });
+  }
+  if (preset === 'api-key') {
+    return applyAccountsFilterState(base, {
+      source: { authFile: false, apiKey: true },
+    });
+  }
+  return base;
+}
+
 export function resolveAccountsFilterStateFromHash(
   hash: string | null | undefined,
   fallback: AccountsFilterState = defaultAccountsFilterState,
@@ -182,6 +230,61 @@ export function summarizeAccountsFilterState(
   }
 
   return parts;
+}
+
+export function removeAccountsFilterSummaryPart(
+  state: AccountsFilterState,
+  part: AccountsFilterSummaryPart,
+  availablePlanTypes: readonly string[] = Object.keys(state.plan),
+  availableRequestStatusCodes: readonly string[] = Object.keys(state.status.requestStatusCodes || {}),
+): AccountsFilterState {
+  if (part.kind === 'source') {
+    if (part.label === 'accounts.source_auth_file') {
+      return applyAccountsFilterState(state, { source: { authFile: true, apiKey: true } });
+    }
+    if (part.label === 'accounts.source_api_key') {
+      return applyAccountsFilterState(state, { source: { authFile: true, apiKey: true } });
+    }
+  }
+
+  if (part.kind === 'resource') {
+    if (part.label === 'accounts.filter_has_quota_match' || part.label === 'accounts.filter_no_quota_match') {
+      return applyAccountsFilterState(state, { resource: { hasQuota: true, noQuota: true } });
+    }
+    if (part.label === 'accounts.filter_has_balance_match' || part.label === 'accounts.filter_no_balance_match') {
+      return applyAccountsFilterState(state, { resource: { hasBalance: true, noBalance: true } });
+    }
+    if (part.label === 'accounts.filter_usage_today_match' || part.label === 'accounts.filter_no_usage_today_match') {
+      return applyAccountsFilterState(state, { resource: { hasUsageToday: true, noUsageToday: true } });
+    }
+  }
+
+  if (part.kind === 'status') {
+    const requestCode = resolveHTTPStatusCodeLabel(part.label);
+    if (requestCode && normalizeStatusCodeList(availableRequestStatusCodes).includes(requestCode)) {
+      const nextRequestStatusCodes = { ...state.status.requestStatusCodes };
+      delete nextRequestStatusCodes[requestCode];
+      return applyAccountsFilterState(state, { status: { requestStatusCodes: nextRequestStatusCodes } });
+    }
+    if (part.label === 'accounts.filter_error_match') {
+      return applyAccountsFilterState(state, { status: { error: true, disabled: true, requestable: true } });
+    }
+    if (part.label === 'accounts.filter_disabled_match') {
+      return applyAccountsFilterState(state, { status: { error: true, disabled: true, requestable: true } });
+    }
+    if (part.label === 'accounts.filter_requestable_match') {
+      return applyAccountsFilterState(state, { status: { error: true, disabled: true, requestable: true } });
+    }
+  }
+
+  if (part.kind === 'plan') {
+    const planType = availablePlanTypes.find((candidate) => formatAccountPlanLabel(candidate) === part.label);
+    if (planType) {
+      return applyAccountsFilterState(state, { plan: { [planType]: false } });
+    }
+  }
+
+  return state;
 }
 
 export function resolveAccountsEmptyState(
@@ -426,6 +529,11 @@ function normalizeStatusCodeList(values: readonly string[]) {
 function normalizeStatusCode(value: unknown) {
   const normalized = String(value || '').trim();
   return /^[1-5]\d{2}$/.test(normalized) ? normalized : '';
+}
+
+function resolveHTTPStatusCodeLabel(value: string) {
+  const match = value.match(/^HTTP\s+([1-5]\d{2})$/i);
+  return match ? match[1] : '';
 }
 
 function formatAccountPlanLabel(planType: string) {

@@ -1,7 +1,14 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Download, MoreVertical, Power, RefreshCw, Trash2 } from 'lucide-react';
+import { Download, MoreVertical, Power, RefreshCw, Trash2, X } from 'lucide-react';
 import SearchInput from '../../../components/ui/SearchInput';
-import { applyAccountsFilterState, defaultAccountsFilterState, summarizeAccountsFilterState } from '../model/accountFilters';
+import {
+  applyAccountsFilterState,
+  buildAccountsFilterPresetState,
+  defaultAccountsFilterState,
+  removeAccountsFilterSummaryPart,
+  summarizeAccountsFilterState,
+  type AccountsFilterPresetID,
+} from '../model/accountFilters';
 import type { AccountPlanType } from '../../../types';
 import {
   shouldUseAccountsSelectionActionMenu,
@@ -93,6 +100,8 @@ export default function AccountsToolbar({
   const [isMenuOpen, setIsMenuOpen] = useState(initialFiltersMenuOpen);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const planOptions = availablePlanTypes;
+  const filterSummaryParts = summarizeAccountsFilterState(t, filters, planOptions, availableRequestStatusCodes);
+  const filterControlParts = summarizeAccountsFilterState((key) => key, filters, planOptions, availableRequestStatusCodes);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -111,23 +120,39 @@ export default function AccountsToolbar({
     };
   }, [isMenuOpen]);
 
-  function setSourceOption(key: keyof AccountsFilterState['source']) {
+  function setFilterPreset(preset: AccountsFilterPresetID) {
+    onFiltersChange(buildAccountsFilterPresetState(preset, filters, availableRequestStatusCodes));
+  }
+
+  function removeFilterPart(index: number) {
+    const controlPart = filterControlParts[index];
+    if (!controlPart) {
+      return;
+    }
+    onFiltersChange(removeAccountsFilterSummaryPart(filters, controlPart, planOptions, availableRequestStatusCodes));
+  }
+
+  function setSourceMode(mode: 'all' | keyof AccountsFilterState['source']) {
     onFiltersChange(
       applyAccountsFilterState(filters, {
         source: {
-          ...filters.source,
-          [key]: !filters.source[key],
+          authFile: mode === 'all' || mode === 'authFile',
+          apiKey: mode === 'all' || mode === 'apiKey',
         },
       }),
     );
   }
 
-  function setResourceOption(key: keyof AccountsFilterState['resource']) {
+  function setResourceFacetMode(
+    positiveKey: keyof AccountsFilterState['resource'],
+    negativeKey: keyof AccountsFilterState['resource'],
+    mode: 'all' | 'positive' | 'negative',
+  ) {
     onFiltersChange(
       applyAccountsFilterState(filters, {
         resource: {
-          ...filters.resource,
-          [key]: !filters.resource[key],
+          [positiveKey]: mode === 'all' || mode === 'positive',
+          [negativeKey]: mode === 'all' || mode === 'negative',
         },
       }),
     );
@@ -185,25 +210,74 @@ export default function AccountsToolbar({
               onClick={() => setIsMenuOpen((prev) => !prev)}
               className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
             >
-              {buildToolbarFilterLabel(t, filters, planOptions, availableRequestStatusCodes)}
+              {buildToolbarFilterLabel(t, filterSummaryParts)}
             </button>
             {isMenuOpen ? (
-              <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[360px] flex-col gap-3.5 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
+              <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
+                <div className="grid gap-2">
+                  <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                    {t('accounts.filter_group_presets')}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <FilterPillOption active={filterSummaryParts.length === 0} onClick={() => setFilterPreset('all')}>
+                      {t('accounts.filter_preset_all')}
+                    </FilterPillOption>
+                    <FilterPillOption active={isAvailablePresetActive(filters)} onClick={() => setFilterPreset('available')}>
+                      {t('accounts.filter_preset_available')}
+                    </FilterPillOption>
+                    <FilterPillOption active={isAttentionPresetActive(filters, availableRequestStatusCodes)} onClick={() => setFilterPreset('attention')}>
+                      {t('accounts.filter_preset_attention')}
+                    </FilterPillOption>
+                    <FilterPillOption active={isHTTPErrorPresetActive(filters, availableRequestStatusCodes)} onClick={() => setFilterPreset('http-errors')}>
+                      {t('accounts.filter_preset_http_errors')}
+                    </FilterPillOption>
+                    <FilterPillOption active={filters.resource.hasQuota && !filters.resource.noQuota} onClick={() => setFilterPreset('with-quota')}>
+                      {t('accounts.filter_preset_with_quota')}
+                    </FilterPillOption>
+                    <FilterPillOption active={!filters.source.authFile && filters.source.apiKey} onClick={() => setFilterPreset('api-key')}>
+                      {t('accounts.filter_preset_api_key')}
+                    </FilterPillOption>
+                  </div>
+                </div>
+                {filterSummaryParts.length > 0 ? (
+                  <div className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2">
+                    <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                      {t('accounts.filter_active_conditions')}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {filterSummaryParts.map((part, index) => (
+                        <button
+                          key={`${part.kind}-${part.label}-${index}`}
+                          type="button"
+                          onClick={() => removeFilterPart(index)}
+                          className="inline-flex h-8 max-w-[220px] items-center gap-1.5 border-2 border-[var(--border-color)] bg-[var(--text-primary)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--bg-main)]"
+                          title={t('accounts.filter_remove_condition')}
+                        >
+                          <span className="truncate">{part.label}</span>
+                          <X className="h-3.5 w-3.5 shrink-0" strokeWidth={3} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
                 <div className="space-y-2">
                   <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_plan_source')}
                   </p>
                   <div className="grid gap-2">
-                    <div className="grid grid-cols-2 gap-1">
-                      <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                    <div className="grid grid-cols-3 gap-1">
+                      <p className="col-span-3 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
                         {t('accounts.filter_group_source')}
                       </p>
-                      <FilterCheckOption active={filters.source.authFile} onClick={() => setSourceOption('authFile')}>
+                      <FilterPillOption active={filters.source.authFile && filters.source.apiKey} onClick={() => setSourceMode('all')}>
+                        {t('accounts.filter_option_all')}
+                      </FilterPillOption>
+                      <FilterPillOption active={filters.source.authFile && !filters.source.apiKey} onClick={() => setSourceMode('authFile')}>
                         {t('accounts.source_auth_file')}
-                      </FilterCheckOption>
-                      <FilterCheckOption active={filters.source.apiKey} onClick={() => setSourceOption('apiKey')}>
+                      </FilterPillOption>
+                      <FilterPillOption active={!filters.source.authFile && filters.source.apiKey} onClick={() => setSourceMode('apiKey')}>
                         {t('accounts.source_api_key')}
-                      </FilterCheckOption>
+                      </FilterPillOption>
                     </div>
                     {planOptions.length > 0 || !planAvailabilityResolved ? (
                       <div className="grid grid-cols-2 gap-1">
@@ -261,32 +335,29 @@ export default function AccountsToolbar({
                   <p className="px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
                     {t('accounts.filter_group_other')}
                   </p>
-                  <FilterBinaryOptionRow
+                  <FilterTernaryOptionRow
                     title={t('accounts.filter_group_quota')}
-                    leftLabel={t('accounts.filter_has_quota_match')}
-                    rightLabel={t('accounts.filter_no_quota_match')}
-                    leftActive={filters.resource.hasQuota}
-                    rightActive={filters.resource.noQuota}
-                    onLeftClick={() => setResourceOption('hasQuota')}
-                    onRightClick={() => setResourceOption('noQuota')}
+                    allLabel={t('accounts.filter_option_all')}
+                    positiveLabel={t('accounts.filter_has_quota_match')}
+                    negativeLabel={t('accounts.filter_no_quota_match')}
+                    mode={resolveBinaryFacetMode(filters.resource.hasQuota, filters.resource.noQuota)}
+                    onChange={(mode) => setResourceFacetMode('hasQuota', 'noQuota', mode)}
                   />
-                  <FilterBinaryOptionRow
+                  <FilterTernaryOptionRow
                     title={t('accounts.filter_group_balance')}
-                    leftLabel={t('accounts.filter_has_balance_match')}
-                    rightLabel={t('accounts.filter_no_balance_match')}
-                    leftActive={filters.resource.hasBalance}
-                    rightActive={filters.resource.noBalance}
-                    onLeftClick={() => setResourceOption('hasBalance')}
-                    onRightClick={() => setResourceOption('noBalance')}
+                    allLabel={t('accounts.filter_option_all')}
+                    positiveLabel={t('accounts.filter_has_balance_match')}
+                    negativeLabel={t('accounts.filter_no_balance_match')}
+                    mode={resolveBinaryFacetMode(filters.resource.hasBalance, filters.resource.noBalance)}
+                    onChange={(mode) => setResourceFacetMode('hasBalance', 'noBalance', mode)}
                   />
-                  <FilterBinaryOptionRow
+                  <FilterTernaryOptionRow
                     title={t('accounts.filter_group_today_usage')}
-                    leftLabel={t('accounts.filter_usage_today_match')}
-                    rightLabel={t('accounts.filter_no_usage_today_match')}
-                    leftActive={filters.resource.hasUsageToday}
-                    rightActive={filters.resource.noUsageToday}
-                    onLeftClick={() => setResourceOption('hasUsageToday')}
-                    onRightClick={() => setResourceOption('noUsageToday')}
+                    allLabel={t('accounts.filter_option_all')}
+                    positiveLabel={t('accounts.filter_usage_today_match')}
+                    negativeLabel={t('accounts.filter_no_usage_today_match')}
+                    mode={resolveBinaryFacetMode(filters.resource.hasUsageToday, filters.resource.noUsageToday)}
+                    onChange={(mode) => setResourceFacetMode('hasUsageToday', 'noUsageToday', mode)}
                   />
                 </div>
                 <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-2">
@@ -301,6 +372,22 @@ export default function AccountsToolbar({
               </div>
             ) : null}
           </div>
+          {filterSummaryParts.length > 0 ? (
+            <div className="flex min-w-[220px] flex-1 flex-wrap items-center gap-1.5">
+              {filterSummaryParts.map((part, index) => (
+                <button
+                  key={`${part.kind}-${part.label}-${index}`}
+                  type="button"
+                  onClick={() => removeFilterPart(index)}
+                  className="inline-flex h-9 max-w-[210px] items-center gap-1.5 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-main)]"
+                  title={t('accounts.filter_remove_condition')}
+                >
+                  <span className="truncate">{part.label}</span>
+                  <X className="h-3.5 w-3.5 shrink-0" strokeWidth={3} />
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-stretch justify-end gap-2">
             <ToolbarModeMenu
               label={t('accounts.group_mode_label')}
@@ -853,50 +940,74 @@ function FilterCheckOption({
   );
 }
 
-function FilterBinaryOptionRow({
-  title,
-  leftLabel,
-  rightLabel,
-  leftActive,
-  rightActive,
-  onLeftClick,
-  onRightClick,
+function FilterPillOption({
+  active,
+  children,
+  disabled = false,
+  onClick,
 }: {
-  title: string;
-  leftLabel: string;
-  rightLabel: string;
-  leftActive: boolean;
-  rightActive: boolean;
-  onLeftClick: () => void;
-  onRightClick: () => void;
+  active: boolean;
+  children: ReactNode;
+  disabled?: boolean;
+  onClick: () => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-1">
-      <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+    <button
+      type="button"
+      aria-pressed={active}
+      disabled={disabled}
+      onClick={onClick}
+      className={`h-8 min-w-16 border-2 border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.08em] disabled:cursor-not-allowed disabled:opacity-50 ${
+        active
+          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
+          : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+      }`}
+    >
+      <span className="block truncate">{children}</span>
+    </button>
+  );
+}
+
+function FilterTernaryOptionRow({
+  title,
+  allLabel,
+  positiveLabel,
+  negativeLabel,
+  mode,
+  onChange,
+}: {
+  title: string;
+  allLabel: string;
+  positiveLabel: string;
+  negativeLabel: string;
+  mode: 'all' | 'positive' | 'negative';
+  onChange: (mode: 'all' | 'positive' | 'negative') => void;
+}) {
+  return (
+    <div className="grid gap-1">
+      <p className="px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
         {title}
       </p>
-      <FilterCheckOption active={leftActive} onClick={onLeftClick}>
-        {leftLabel}
-      </FilterCheckOption>
-      <FilterCheckOption active={rightActive} onClick={onRightClick}>
-        {rightLabel}
-      </FilterCheckOption>
+      <div className="grid grid-cols-3 gap-1">
+        <FilterPillOption active={mode === 'all'} onClick={() => onChange('all')}>
+          {allLabel}
+        </FilterPillOption>
+        <FilterPillOption active={mode === 'positive'} onClick={() => onChange('positive')}>
+          {positiveLabel}
+        </FilterPillOption>
+        <FilterPillOption active={mode === 'negative'} onClick={() => onChange('negative')}>
+          {negativeLabel}
+        </FilterPillOption>
+      </div>
     </div>
   );
 }
 
-function buildToolbarFilterLabel(
-  t: Translator,
-  filters: AccountsFilterState,
-  availablePlanTypes: readonly AccountPlanType[],
-  availableRequestStatusCodes: readonly string[],
-) {
-  const parts = summarizeAccountsFilterState(t, filters, availablePlanTypes, availableRequestStatusCodes);
-
+function buildToolbarFilterLabel(t: Translator, parts: readonly unknown[]) {
   if (parts.length === 0) {
     return t('accounts.display_filters');
   }
-  return `${t('accounts.display_filters')} · ${parts.map((part) => part.label).join(' · ')}`;
+  return `${t('accounts.display_filters')} · ${parts.length}`;
 }
 
 function isPlanOptionSelected(selection: AccountsFilterState['plan'], planType: AccountPlanType) {
@@ -909,4 +1020,45 @@ function formatAccountPlanLabel(planType: AccountPlanType) {
     .filter(Boolean)
     .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
     .join(' ');
+}
+
+function resolveBinaryFacetMode(positiveSelected: boolean, negativeSelected: boolean): 'all' | 'positive' | 'negative' {
+  if (positiveSelected && !negativeSelected) {
+    return 'positive';
+  }
+  if (!positiveSelected && negativeSelected) {
+    return 'negative';
+  }
+  return 'all';
+}
+
+function isAvailablePresetActive(filters: AccountsFilterState) {
+  return !filters.status.error && !filters.status.disabled && filters.status.requestable && Object.keys(filters.status.requestStatusCodes).length === 0;
+}
+
+function isAttentionPresetActive(filters: AccountsFilterState, availableRequestStatusCodes: readonly string[]) {
+  return (
+    filters.status.error &&
+    filters.status.disabled &&
+    !filters.status.requestable &&
+    selectedRequestStatusCodesMatch(filters, availableRequestStatusCodes)
+  );
+}
+
+function isHTTPErrorPresetActive(filters: AccountsFilterState, availableRequestStatusCodes: readonly string[]) {
+  return (
+    filters.status.error &&
+    !filters.status.disabled &&
+    !filters.status.requestable &&
+    selectedRequestStatusCodesMatch(filters, availableRequestStatusCodes)
+  );
+}
+
+function selectedRequestStatusCodesMatch(filters: AccountsFilterState, availableRequestStatusCodes: readonly string[]) {
+  const selected = Object.keys(filters.status.requestStatusCodes).sort();
+  const available = Array.from(new Set(availableRequestStatusCodes)).sort();
+  if (available.length === 0) {
+    return selected.length === 0;
+  }
+  return selected.length === available.length && selected.every((code, index) => code === available[index]);
 }

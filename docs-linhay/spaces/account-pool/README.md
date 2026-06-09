@@ -78,6 +78,29 @@
    - 浏览器预览打开 `#frame=accounts`，先选中 `HTTP 401 / HTTP 402`，再逐个取消，确认两个 checkbox 均为未选中且摘要恢复为 `显示`
    - 验收截图：`screenshots/20260609/accounts/20260609-accounts-filter-http-status-cancel-after-v01.png`
 
+### 2026-06-09 筛选交互可用性改造证据
+
+1. 问题来源：用户在浏览器评论中框选筛选面板下半区，反馈“还是觉得难用”，要求给出更好的交互并授权修改。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/components/AccountsToolbar.tsx`
+   - `frontend/src/features/accounts/model/accountFilters.ts`
+   - `frontend/src/features/accounts/tests/accountFilters.test.mjs`
+3. 当前现象：筛选面板默认显示大量已勾选 checkbox，用户很难判断“已勾选”代表默认不过滤还是正在生效；`有额度/无额度`、`有余额/无余额`、`今日有使用/今日无使用` 是二元业务维度，却被呈现为两列 checkbox，操作成本和心智负担都偏高。
+4. 预期改动：
+   - 顶部增加常用快捷筛选：`全部 / 可用 / 需处理 / HTTP 错误 / 有额度 / API Key`
+   - 筛选摘要改为只展示当前真正启用的条件 chips，并支持逐个移除
+   - 来源、额度、余额、今日使用改为 `全部 / 有 / 无` 三段式或同类 chip 语义，默认态不再展示为“全勾选”
+   - HTTP 状态码改成 chips，显示当前选中状态，后续可扩展数量标签
+   - 高级筛选面板保留中高密度桌面工作台风格，但减少默认噪音
+5. 验收方式：
+   - 单测覆盖快捷筛选 preset、摘要 chips 可移除、工具栏源码结构
+   - `#frame=accounts` 浏览器预览确认默认只显示 `显示`，选择 `HTTP 401 / HTTP 402` 后以 chips 呈现，可单个移除
+   - `npm --prefix frontend run typecheck`、`docs-linhay/scripts/check-docs.sh` 通过
+6. 实现结果：
+   - 2026-06-09 已将筛选摘要改为短按钮 + 条件 chips，移除 `显示 · HTTP 401 · HTTP 402` 长文本摘要。
+   - 高级筛选面板新增快捷筛选、当前条件区；来源与资源维度改为 `全部 / 有 / 无` 或同类三段式 chip。
+   - 桌面浏览器验收截图：`screenshots/20260609/accounts/20260609-accounts-filter-chips-desktop-after-v01.png`。
+
 ### 分组模式规划
 
 1. 账号池主列表需要支持可切换分组模式和排序模式，二者只改变列表组织方式，不改变筛选、选择、路由、轮动、禁用或导出语义。

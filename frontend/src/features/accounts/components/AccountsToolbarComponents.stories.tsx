@@ -75,6 +75,7 @@ function AccountsToolbarSample({
   initialDisplayMode = 'full',
   initialFiltersMenuOpen = false,
   availablePlanTypes = ALL_PLAN_TYPES,
+  availableRequestStatusCodes = ['401', '402'],
 }: {
   label: string;
   initialSearchTerm?: string;
@@ -85,6 +86,7 @@ function AccountsToolbarSample({
   initialDisplayMode?: AccountListDisplayMode;
   initialFiltersMenuOpen?: boolean;
   availablePlanTypes?: readonly AccountPlanType[];
+  availableRequestStatusCodes?: readonly string[];
 }) {
   const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
@@ -109,6 +111,7 @@ function AccountsToolbarSample({
         groupMode={groupMode}
         sortMode={sortMode}
         availablePlanTypes={availablePlanTypes}
+        availableRequestStatusCodes={availableRequestStatusCodes}
         onSearchChange={setSearchTerm}
         onFiltersChange={setFilters}
         onDisplayModeChange={setDisplayMode}
