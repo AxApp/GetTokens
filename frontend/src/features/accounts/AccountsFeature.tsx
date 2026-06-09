@@ -78,6 +78,7 @@ import {
   defaultAccountsFilterState,
   resolveAccountsFilterStateFromHash,
   resolveAccountsEmptyState,
+  summarizeAccountsFilterState,
 } from "./model/accountFilters";
 import { shouldShowAccountSkeletons } from "./model/accountSnapshot";
 import { toggleAccountGroupSelection } from "./model/accountSelection";
@@ -179,6 +180,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     toggleSelectionMode,
     toggleAccountDisabled,
     bulkActionPending,
+    runAccountsBulkDelete,
     runSelectedBulkDelete,
     runSelectedBulkRefresh,
     runAccountsBulkSetDisabled,
@@ -202,6 +204,12 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         availablePlanTypes,
       }),
     [accounts.length, availablePlanTypes, filteredAccounts.length, filters, searchTerm, t],
+  );
+  const isAccountListFiltered = useMemo(
+    () =>
+      searchTerm.trim().length > 0 ||
+      summarizeAccountsFilterState(t, filters, availablePlanTypes).length > 0,
+    [availablePlanTypes, filters, searchTerm, t],
   );
 
   const [isUnifiedComposeOpen, setIsUnifiedComposeOpen] = useState(false);
@@ -593,6 +601,16 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       void runAccountsBulkSetDisabled(groupAccounts, nextDisabled);
     },
     [runAccountsBulkSetDisabled],
+  );
+
+  const deleteGroup = useCallback(
+    (groupAccounts: AccountRecord[]) => {
+      const label = isAccountListFiltered
+        ? t('accounts.delete_group_visible')
+        : t('accounts.delete_group');
+      void runAccountsBulkDelete(groupAccounts, label);
+    },
+    [isAccountListFiltered, runAccountsBulkDelete, t],
   );
 
   const markAccountDetailInHash = useCallback((detailID: string) => {
@@ -1257,6 +1275,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                 allFilteredSelected={allFilteredSelected}
                 selectedAccountCount={selectedAccountIDs.length}
                 bulkActionPending={bulkActionPending}
+                onCancelSelection={toggleSelectionMode}
                 onToggleSelectAllFiltered={toggleSelectAllFiltered}
                 onClearSelection={() => setSelectedAccountIDs([])}
                 onExportSelected={() => void exportSelectedAccounts()}
@@ -1372,10 +1391,12 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   oauthPendingAccountID={oauthPendingAccountID}
                   pendingStatusAccountID={pendingStatusAccountID}
                   displayMode={displayMode}
+                  isFilteredView={isAccountListFiltered}
                   onToggleSelection={toggleAccountSelection}
                   onToggleGroupSelection={toggleGroupSelection}
                   onRefreshGroup={refreshGroupQuota}
                   onSetGroupDisabled={setGroupDisabled}
+                  onDeleteGroup={deleteGroup}
                   onOpenDetails={openAccountDetail}
                   onRefreshQuota={(account) => {
                     void refreshCodexQuota(account);

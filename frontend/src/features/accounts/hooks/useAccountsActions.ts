@@ -602,8 +602,8 @@ export default function useAccountsActions({
     [t],
   );
 
-  const runSelectedBulkDelete = useCallback(async () => {
-    if (selectedAccounts.length === 0) {
+  const runAccountsBulkDelete = useCallback(async (targetAccounts: AccountRecord[], label = t('accounts.bulk_delete_selected')) => {
+    if (targetAccounts.length === 0) {
       setAccountActionNotice({
         tone: 'warning',
         message: t('accounts.bulk_action_no_selection'),
@@ -615,11 +615,11 @@ export default function useAccountsActions({
     setAccountActionNotice(null);
     setBulkActionPending('delete');
 
-    const resolution = resolveBulkDeleteTargets(selectedAccounts);
+    const resolution = resolveBulkDeleteTargets(targetAccounts);
     if (resolution.targets.length === 0) {
       setAccountActionNotice({
         tone: 'warning',
-        message: `${t('accounts.bulk_delete_selected')}：${t('accounts.bulk_action_no_targets')}`,
+        message: `${label}：${t('accounts.bulk_action_no_targets')}`,
       });
       setBulkActionPending(null);
       return;
@@ -654,7 +654,7 @@ export default function useAccountsActions({
 
       setAccountActionNotice({
         tone: failed > 0 ? 'error' : resolution.skipped.length > 0 ? 'warning' : 'success',
-        message: formatBulkActionMessage(t('accounts.bulk_delete_selected'), {
+        message: formatBulkActionMessage(label, {
           succeeded,
           skipped: resolution.skipped.length,
           failed,
@@ -664,7 +664,7 @@ export default function useAccountsActions({
       console.error(error);
       setAccountActionNotice({
         tone: 'error',
-        message: `${t('accounts.bulk_delete_selected')}：${toErrorMessage(error)}`,
+        message: `${label}：${toErrorMessage(error)}`,
       });
     } finally {
       setBulkActionPending(null);
@@ -673,12 +673,15 @@ export default function useAccountsActions({
     formatBulkActionMessage,
     loadAccounts,
     removeDeletedAccountLocally,
-    selectedAccounts,
     setAccountActionNotice,
     setDeleteError,
     t,
     trackRequest,
   ]);
+
+  const runSelectedBulkDelete = useCallback(async () => {
+    await runAccountsBulkDelete(selectedAccounts, t('accounts.bulk_delete_selected'));
+  }, [runAccountsBulkDelete, selectedAccounts, t]);
 
   const runSelectedBulkRefresh = useCallback(async () => {
     if (selectedAccounts.length === 0) {
@@ -818,6 +821,7 @@ export default function useAccountsActions({
     toggleAccountDisabled,
     deleteAccount,
     bulkActionPending,
+    runAccountsBulkDelete,
     runSelectedBulkDelete,
     runSelectedBulkRefresh,
     runAccountsBulkSetDisabled,

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { MoreVertical, Power, RefreshCw, SquareCheckBig } from 'lucide-react';
+import { MoreVertical, Power, RefreshCw, SquareCheckBig, Trash2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountGroup, AccountRecord, Translator } from '../model/types';
-import { resolveBulkQuotaRefreshTargets, resolveBulkSetDisabledTargets } from '../model/accountSelection';
+import { resolveBulkDeleteTargets, resolveBulkQuotaRefreshTargets, resolveBulkSetDisabledTargets } from '../model/accountSelection';
 import { countRenderedGridColumns } from '../model/accountCardLayout';
 import {
   ACCOUNT_GROUP_FULL_ROW_ESTIMATE,
@@ -17,10 +17,12 @@ interface AccountGroupSectionViewProps {
   group: AccountGroup;
   displayMode: AccountListDisplayMode;
   isSelectionMode?: boolean;
+  isFilteredView?: boolean;
   selectedAccountIDSet?: ReadonlySet<string>;
   onToggleGroupSelection?: (accounts: AccountRecord[]) => void;
   onRefreshGroup?: (accounts: AccountRecord[]) => void;
   onSetGroupDisabled?: (accounts: AccountRecord[], nextDisabled: boolean) => void;
+  onDeleteGroup?: (accounts: AccountRecord[]) => void;
   renderAccount: (account: AccountRecord) => ReactNode;
   emptyContent?: ReactNode;
 }
@@ -30,14 +32,17 @@ export default function AccountGroupSectionView({
   group,
   displayMode,
   isSelectionMode = false,
+  isFilteredView = false,
   selectedAccountIDSet,
   onToggleGroupSelection,
   onRefreshGroup,
   onSetGroupDisabled,
+  onDeleteGroup,
   renderAccount,
   emptyContent = null,
 }: AccountGroupSectionViewProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isGroupDeleteConfirming, setIsGroupDeleteConfirming] = useState(false);
   const [renderMetrics, setRenderMetrics] = useState(() => ({
     columns: 1,
     viewportStart: 0,
@@ -51,7 +56,16 @@ export default function AccountGroupSectionView({
   const canRefreshGroup = resolveBulkQuotaRefreshTargets(group.accounts).targets.length > 0;
   const canEnableGroup = resolveBulkSetDisabledTargets(group.accounts, false).targets.length > 0;
   const canDisableGroup = resolveBulkSetDisabledTargets(group.accounts, true).targets.length > 0;
+  const deleteGroupResolution = resolveBulkDeleteTargets(group.accounts);
+  const canDeleteGroup = deleteGroupResolution.targets.length > 0;
+  const deleteGroupLabel = isFilteredView
+    ? t('accounts.delete_group_visible')
+    : t('accounts.delete_group');
+  const deleteGroupConfirmLabel = isFilteredView
+    ? t('accounts.group_remove_visible_confirm')
+    : t('accounts.group_remove_confirm');
   const groupSelectionAction = isSelectionMode ? onToggleGroupSelection : undefined;
+  const showGroupActionsMenu = Boolean(onSetGroupDisabled || onDeleteGroup);
   const shouldVirtualize = group.accounts.length > ACCOUNT_GROUP_VIRTUALIZATION_THRESHOLD;
   const renderWindow = shouldVirtualize
     ? resolveAccountGroupRenderWindow({
@@ -79,17 +93,42 @@ export default function AccountGroupSectionView({
       return;
     }
 
+    function closeGroupActionsMenu() {
+      setIsMenuOpen(false);
+      setIsGroupDeleteConfirming(false);
+    }
+
     function handlePointerDown(event: MouseEvent) {
       if (!menuRef.current?.contains(event.target as Node)) {
-        setIsMenuOpen(false);
+        closeGroupActionsMenu();
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        closeGroupActionsMenu();
       }
     }
 
     window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
     return () => {
       window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleEscape);
     };
   }, [isMenuOpen]);
+
+  function closeGroupActionsMenu() {
+    setIsMenuOpen(false);
+    setIsGroupDeleteConfirming(false);
+  }
+
+  function toggleGroupActionsMenu() {
+    if (isMenuOpen) {
+      setIsGroupDeleteConfirming(false);
+    }
+    setIsMenuOpen((prev) => !prev);
+  }
 
   useLayoutEffect(() => {
     setRenderMetrics((current) => ({
@@ -200,14 +239,14 @@ export default function AccountGroupSectionView({
               {t('accounts.refresh_group')}
             </button>
           ) : null}
-          {onSetGroupDisabled ? (
+          {showGroupActionsMenu ? (
             <div ref={menuRef} className="relative">
               <button
                 type="button"
                 aria-label={t('accounts.group_actions')}
                 aria-haspopup="menu"
                 aria-expanded={isMenuOpen}
-                onClick={() => setIsMenuOpen((prev) => !prev)}
+                onClick={toggleGroupActionsMenu}
                 className="btn-swiss flex h-8 w-8 items-center justify-center !px-0 !py-0"
                 title={t('accounts.group_actions')}
               >
@@ -216,34 +255,79 @@ export default function AccountGroupSectionView({
               {isMenuOpen ? (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full z-30 mt-2 w-44 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
+                  className="absolute right-0 top-full z-30 mt-2 w-56 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
                 >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    disabled={!canEnableGroup}
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      onSetGroupDisabled(group.accounts, false);
-                    }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Power size={14} strokeWidth={3} />
-                    {t('accounts.enable_group')}
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    disabled={!canDisableGroup}
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      onSetGroupDisabled(group.accounts, true);
-                    }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Power size={14} strokeWidth={3} />
-                    {t('accounts.disable_group')}
-                  </button>
+                  {onSetGroupDisabled ? (
+                    <>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={!canEnableGroup}
+                        onClick={() => {
+                          closeGroupActionsMenu();
+                          onSetGroupDisabled(group.accounts, false);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Power size={14} strokeWidth={3} />
+                        {t('accounts.enable_group')}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={!canDisableGroup}
+                        onClick={() => {
+                          closeGroupActionsMenu();
+                          onSetGroupDisabled(group.accounts, true);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Power size={14} strokeWidth={3} />
+                        {t('accounts.disable_group')}
+                      </button>
+                    </>
+                  ) : null}
+                  {onDeleteGroup ? (
+                    <>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={!canDeleteGroup}
+                        onClick={() => setIsGroupDeleteConfirming(true)}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Trash2 size={14} strokeWidth={3} />
+                        {deleteGroupLabel}
+                      </button>
+                      {isGroupDeleteConfirming ? (
+                        <div className="mt-1 grid gap-2 border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] p-2">
+                          <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
+                            {deleteGroupConfirmLabel} · {deleteGroupResolution.targets.length}/{group.accounts.length}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsGroupDeleteConfirming(false)}
+                              className="btn-swiss !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)]"
+                            >
+                              {t('common.cancel')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                closeGroupActionsMenu();
+                                onDeleteGroup(group.accounts);
+                              }}
+                              disabled={!canDeleteGroup}
+                              className="btn-swiss !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)] !text-[var(--color-status-danger)]"
+                            >
+                              {t('accounts.group_remove_confirm_action')}
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
                 </div>
               ) : null}
             </div>

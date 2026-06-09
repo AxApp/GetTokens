@@ -25,10 +25,12 @@ interface AccountGroupSectionProps {
   oauthPendingAccountID: string | null;
   pendingStatusAccountID: string | null;
   displayMode: AccountListDisplayMode;
+  isFilteredView?: boolean;
   onToggleSelection: (accountID: string) => void;
   onToggleGroupSelection?: (accounts: AccountRecord[]) => void;
   onRefreshGroup?: (accounts: AccountRecord[]) => void;
   onSetGroupDisabled?: (accounts: AccountRecord[], nextDisabled: boolean) => void;
+  onDeleteGroup?: (accounts: AccountRecord[]) => void;
   onOpenDetails: (account: AccountRecord) => void;
   onRefreshQuota: (account: AccountRecord) => void;
   onStartReauth: (account: AccountRecord) => void;
@@ -56,10 +58,12 @@ export default function AccountGroupSection({
   oauthPendingAccountID,
   pendingStatusAccountID,
   displayMode,
+  isFilteredView = false,
   onToggleSelection,
   onToggleGroupSelection,
   onRefreshGroup,
   onSetGroupDisabled,
+  onDeleteGroup,
   onOpenDetails,
   onRefreshQuota,
   onStartReauth,
@@ -76,10 +80,12 @@ export default function AccountGroupSection({
       group={group}
       displayMode={displayMode}
       isSelectionMode={isSelectionMode}
+      isFilteredView={isFilteredView}
       selectedAccountIDSet={selectedAccountIDSet}
       onToggleGroupSelection={onToggleGroupSelection}
       onRefreshGroup={onRefreshGroup}
       onSetGroupDisabled={onSetGroupDisabled}
+      onDeleteGroup={onDeleteGroup}
       renderAccount={(account) => (
         <AccountCard
           key={account.id}

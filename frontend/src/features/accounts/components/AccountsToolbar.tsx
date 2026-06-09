@@ -49,6 +49,7 @@ interface AccountsSelectionActionsProps {
   allFilteredSelected: boolean;
   selectedAccountCount: number;
   bulkActionPending?: AccountBulkActionID | null;
+  onCancelSelection?: () => void;
   onToggleSelectAllFiltered: () => void;
   onClearSelection: () => void;
   onExportSelected: () => void;
@@ -291,7 +292,7 @@ export default function AccountsToolbar({
               </DisplayModeButton>
             </div>
             <button onClick={onToggleSelectionMode} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]">
-              {isSelectionMode ? t('accounts.unselect_all') : t('accounts.selection_mode')}
+              {isSelectionMode ? t('accounts.cancel_selection') : t('accounts.selection_mode')}
             </button>
           </div>
         </div>
@@ -301,6 +302,7 @@ export default function AccountsToolbar({
             allFilteredSelected={allFilteredSelected}
             selectedAccountCount={selectedAccountCount}
             bulkActionPending={bulkActionPending}
+            onCancelSelection={onToggleSelectionMode}
             onToggleSelectAllFiltered={onToggleSelectAllFiltered}
             onClearSelection={onClearSelection}
             onExportSelected={onExportSelected}
@@ -320,6 +322,7 @@ export function AccountsSelectionActions({
   allFilteredSelected,
   selectedAccountCount,
   bulkActionPending = null,
+  onCancelSelection,
   onToggleSelectAllFiltered,
   onClearSelection,
   onExportSelected,
@@ -404,6 +407,12 @@ export function AccountsSelectionActions({
   function handleRefreshSelected() {
     setIsBulkDeleteConfirming(false);
     onRefreshSelected?.();
+  }
+
+  function handleCancelSelection() {
+    setIsBulkMenuOpen(false);
+    setIsBulkDeleteConfirming(false);
+    onCancelSelection?.();
   }
 
   function handleExportSelected() {
@@ -547,9 +556,12 @@ export function AccountsSelectionActions({
         className="pointer-events-none absolute left-0 top-0 -z-10 flex w-max items-center gap-2 opacity-0"
         style={{ visibility: 'hidden' }}
       >
-        <span className="mr-1 flex h-10 shrink-0 items-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.1em] text-[var(--text-primary)]">
+        <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.1em] text-[var(--text-primary)]">
           {selectedAccountCount} {t('accounts.selected_count')}
         </span>
+        <button type="button" className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+          {t('accounts.cancel_selection')}
+        </button>
         <button type="button" className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
           {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
         </button>
@@ -558,10 +570,13 @@ export function AccountsSelectionActions({
         </button>
         {renderInlineBulkActions()}
       </div>
-      <span className="mr-1 flex h-10 shrink-0 items-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.1em] text-[var(--text-primary)]">
+      <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.1em] text-[var(--text-primary)]">
         {selectedAccountCount} {t('accounts.selected_count')}
       </span>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <button onClick={handleCancelSelection} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+          {t('accounts.cancel_selection')}
+        </button>
         <button onClick={onToggleSelectAllFiltered} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
           {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
         </button>

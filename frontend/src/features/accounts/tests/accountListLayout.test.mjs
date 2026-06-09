@@ -78,6 +78,7 @@ test('accounts selection toolbar stays sticky while scrolling selected accounts'
 
   assert.match(source, /data-account-selection-toolbar-sticky/);
   assert.match(source, /renderSelectionActions=\{false\}/);
+  assert.match(source, /onCancelSelection=\{toggleSelectionMode\}/);
   assert.match(
     source,
     /className="sticky -top-12 z-40 -mx-12 !mt-4 bg-\[var\(--bg-surface\)\] px-12 py-1\.5"/,
@@ -94,6 +95,8 @@ test('accounts selection actions render as one adaptive toolbar with overflow fa
   assert.match(source, /ResizeObserver/);
   assert.match(source, /useBulkActionMenu/);
   assert.match(source, /shouldUseAccountsSelectionActionMenu/);
+  assert.match(source, /onCancelSelection\?: \(\) => void/);
+  assert.match(source, /t\('accounts\.cancel_selection'\)/);
   assert.match(source, /ref=\{inlineActionsMeasureRef\}/);
   assert.match(source, /<BulkInlineAction/);
   assert.match(source, /<MoreVertical size=\{18\} strokeWidth=\{3\} \/>/);
@@ -102,6 +105,20 @@ test('accounts selection actions render as one adaptive toolbar with overflow fa
   assert.match(source, /label=\{t\('accounts\.export_selected'\)\}/);
   assert.doesNotMatch(source, /className="border-t border-dashed border-\[var\(--border-color\)\] pt-4"/);
   assert.doesNotMatch(source, /className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed/);
+});
+
+test('account group menu exposes destructive delete behind a confirmation state', async () => {
+  const source = await readFile(new URL('../components/AccountGroupSectionView.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /onDeleteGroup\?: \(accounts: AccountRecord\[\]\) => void/);
+  assert.match(source, /isFilteredView\?: boolean/);
+  assert.match(source, /isGroupDeleteConfirming/);
+  assert.match(source, /t\('accounts\.delete_group'\)/);
+  assert.match(source, /t\('accounts\.delete_group_visible'\)/);
+  assert.match(source, /t\('accounts\.group_remove_confirm'\)/);
+  assert.match(source, /t\('accounts\.group_remove_visible_confirm'\)/);
+  assert.match(source, /onDeleteGroup\(group\.accounts\)/);
+  assert.match(source, /resolveBulkDeleteTargets\(group\.accounts\)/);
 });
 
 test('accounts toolbar display mode switch only offers full and list views', async () => {

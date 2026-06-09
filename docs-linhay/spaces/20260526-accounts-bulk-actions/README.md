@@ -16,6 +16,7 @@
   - 刷新本组。
   - 激活本组。
   - 禁用本组。
+  - 删除本组，且必须二次确认后才执行。
 - 操作结果需要更新当前账号列表与选中态，并通过现有消息 / 错误区域反馈失败。
 - 保持 `#frame=accounts` 浏览器预览可用，避免依赖桌面窗口才能验证基本交互。
 
@@ -47,6 +48,19 @@
 13. Given 用户打开账号卡更多菜单，When 查看危险禁用项，Then “禁用账户”使用红色危险态样式。
 14. Given 用户进入批量选择后的选择控制行，When 查看“全选 / 清空选择 / 导出选中 / N 已选”，Then 字号不低于账号页常规 UI 控件字号。
 15. 相关前端单元测试、类型检查、构建与浏览器预览验收通过，或明确说明未运行原因与风险。
+16. Given 用户打开分组更多菜单，When 查看危险操作，Then 菜单提供“删除本组”，且不可删除的 legacy/非 unified 账号会被跳过。
+17. Given 用户点击“删除本组”，When 未点击二次确认，Then 不调用删除；When 点击确认，Then 复用账号批量删除端点删除本组可删除账号，并刷新列表与结果摘要。
+18. Given 用户处于搜索或筛选状态，When 打开分组更多菜单，Then 删除入口显示为“移除本组当前显示账号”，确认文案也明确只处理当前显示账号。
+
+## 2026-06-09 追加：整组删除证据门禁
+
+| 项目 | 证据 |
+| --- | --- |
+| 问题来源 | 用户在 `http://localhost:5173/#frame=accounts&detail=codex-plus-nightly.json` 选中分组菜单“激活本组 / 禁用本组”并留言“支持整组删除”。 |
+| 当前代码/UI 事实位置 | `frontend/src/features/accounts/components/AccountGroupSectionView.tsx` 的分组更多菜单只渲染 `enable_group` 与 `disable_group`；`frontend/src/features/accounts/AccountsFeature.tsx` 只传入 `onSetGroupDisabled`。 |
+| 现象/缺失证明 | 已有 `runSelectedBulkDelete` 与 `DeleteAccountsBatch` 批量删除链路，但分组菜单无法把 `group.accounts` 作为删除目标，也没有分组级二次确认。 |
+| 预期验收方式 | 增加分组删除入口、危险确认 UI、复用批量删除 action；跑账号选择/列表布局/运行时同步相关单测、前端 typecheck，并用无头浏览器或 DOM 检查验证菜单可见。 |
+| 反证条件 | 若菜单未出现“删除本组”、点击首次删除即调用删除、或删除逻辑绕过 `DeleteAccountsBatch` 逐个删账号，均视为未满足。 |
 
 ## 设计稿入口
 
