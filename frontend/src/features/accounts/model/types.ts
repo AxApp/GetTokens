@@ -90,8 +90,11 @@ export interface AccountsFilterState {
     apiKey: boolean;
   };
   resource: {
-    hasLongestQuota: boolean;
-    hasBalance: boolean;
+    quotaAndBalance: boolean;
+    noQuotaAndBalance: boolean;
+    noQuotaNoBalance: boolean;
+    hasUsageToday: boolean;
+    noUsageToday: boolean;
   };
   status: {
     error: boolean;

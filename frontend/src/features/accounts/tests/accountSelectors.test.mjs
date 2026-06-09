@@ -306,7 +306,7 @@ test('filterAccounts can select requestable accounts from the status group', () 
   );
 });
 
-test('filterAccounts can select accounts with displayable balance from the resource group', () => {
+test('filterAccounts can select accounts with balance and no quota from the other group', () => {
   const accounts = [
     {
       id: 'api-key:balance',
@@ -333,7 +333,7 @@ test('filterAccounts can select accounts with displayable balance from the resou
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        resource: { hasLongestQuota: false, hasBalance: true },
+        resource: { quotaAndBalance: false, noQuotaAndBalance: true, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: false },
       },
       codexQuotaByName: {
         'api-key:balance': {
@@ -366,7 +366,65 @@ test('filterAccounts can select accounts with displayable balance from the resou
   );
 });
 
-test('filterAccounts can select auth-file codex accounts with positive longest-window quota', () => {
+test('filterAccounts can select accounts with no quota and no balance from the other group', () => {
+  const accounts = [
+    {
+      id: 'api-key:empty',
+      provider: 'openai',
+      credentialSource: 'api-key',
+      displayName: 'Empty Key',
+      status: 'CONFIGURED',
+      quotaKey: 'api-key:empty',
+    },
+    {
+      id: 'api-key:balance',
+      provider: 'openai',
+      credentialSource: 'api-key',
+      displayName: 'Balance Key',
+      status: 'CONFIGURED',
+      quotaKey: 'api-key:balance',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        resource: { quotaAndBalance: false, noQuotaAndBalance: false, noQuotaNoBalance: true, hasUsageToday: false, noUsageToday: false },
+      },
+      codexQuotaByName: {
+        'api-key:empty': {
+          status: 'success',
+          quota: {
+            planType: 'paid',
+            windows: [],
+            billing: {
+              isAvailable: false,
+              balanceInfos: [],
+            },
+          },
+        },
+        'api-key:balance': {
+          status: 'success',
+          quota: {
+            planType: 'paid',
+            windows: [],
+            billing: {
+              isAvailable: true,
+              balanceInfos: [
+                { currency: 'USD', totalBalance: '12.00', grantedBalance: '0', toppedUpBalance: '12.00' },
+              ],
+            },
+          },
+        },
+      },
+    }).map((item) => item.id),
+    ['api-key:empty'],
+  );
+});
+
+test('filterAccounts can select auth-file codex accounts with quota and balance', () => {
   const accounts = [
     {
       id: 'auth-file:weekly-ok',
@@ -410,6 +468,12 @@ test('filterAccounts can select auth-file codex accounts with positive longest-w
           { id: 'five-hour', label: '5H', remainingPercent: 80, resetLabel: '05/01 10:00', resetAtUnix: 1 },
           { id: 'weekly', label: '7D', remainingPercent: 25, resetLabel: '05/07 10:00', resetAtUnix: 2 },
         ],
+        billing: {
+          isAvailable: true,
+          balanceInfos: [
+            { currency: 'USD', totalBalance: '10.00', grantedBalance: '0', toppedUpBalance: '10.00' },
+          ],
+        },
       },
     },
     'weekly-empty': {
@@ -420,6 +484,12 @@ test('filterAccounts can select auth-file codex accounts with positive longest-w
           { id: 'five-hour', label: '5H', remainingPercent: 80, resetLabel: '05/01 10:00', resetAtUnix: 1 },
           { id: 'weekly', label: '7D', remainingPercent: 0, resetLabel: '05/07 10:00', resetAtUnix: 2 },
         ],
+        billing: {
+          isAvailable: true,
+          balanceInfos: [
+            { currency: 'USD', totalBalance: '10.00', grantedBalance: '0', toppedUpBalance: '10.00' },
+          ],
+        },
       },
     },
     'single-ok': {
@@ -427,6 +497,12 @@ test('filterAccounts can select auth-file codex accounts with positive longest-w
       quota: {
         planType: 'free',
         windows: [{ id: 'five-hour', label: '5H', remainingPercent: 10, resetLabel: '05/01 10:00', resetAtUnix: 1 }],
+        billing: {
+          isAvailable: true,
+          balanceInfos: [
+            { currency: 'USD', totalBalance: '10.00', grantedBalance: '0', toppedUpBalance: '10.00' },
+          ],
+        },
       },
     },
   };
@@ -437,7 +513,7 @@ test('filterAccounts can select auth-file codex accounts with positive longest-w
       filters: {
         ...defaultAccountsFilterState,
         source: { authFile: true, apiKey: false },
-        resource: { hasLongestQuota: true, hasBalance: false },
+        resource: { quotaAndBalance: true, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: false },
       },
       codexQuotaByName,
     }).map((item) => item.id),
@@ -445,7 +521,7 @@ test('filterAccounts can select auth-file codex accounts with positive longest-w
   );
 });
 
-test('filterAccounts includes codex api keys with configured positive longest quota', () => {
+test('filterAccounts includes codex api keys with configured quota and balance', () => {
   const accounts = [
     {
       id: 'codex-api-key:ready',
@@ -472,7 +548,7 @@ test('filterAccounts includes codex api keys with configured positive longest qu
       filters: {
         ...defaultAccountsFilterState,
         source: { authFile: false, apiKey: true },
-        resource: { hasLongestQuota: true, hasBalance: false },
+        resource: { quotaAndBalance: true, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: false },
       },
       codexQuotaByName: {
         'codex-api-key:ready': {
@@ -483,11 +559,68 @@ test('filterAccounts includes codex api keys with configured positive longest qu
               { id: 'five-hour', label: '5H', remainingPercent: 12, resetLabel: 'later', resetAtUnix: 1 },
               { id: 'weekly', label: '7D', remainingPercent: 88, resetLabel: 'later', resetAtUnix: 1 },
             ],
+            billing: {
+              isAvailable: true,
+              balanceInfos: [
+                { currency: 'USD', totalBalance: '20.00', grantedBalance: '0', toppedUpBalance: '20.00' },
+              ],
+            },
           },
         },
       },
     }).map((item) => item.id),
     ['codex-api-key:ready']
+  );
+});
+
+test('filterAccounts can select accounts by today request data from the other group', () => {
+  const accounts = [
+    {
+      id: 'auth-file:used',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Used Today',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'auth-file:unused',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Unused Today',
+      status: 'ACTIVE',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        resource: { quotaAndBalance: false, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: true, noUsageToday: false },
+      },
+      codexQuotaByName: {},
+      accountUsageByID: {
+        'auth-file:used': { requestCount: 3 },
+        'auth-file:unused': { requestCount: 0 },
+      },
+    }).map((item) => item.id),
+    ['auth-file:used'],
+  );
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        resource: { quotaAndBalance: false, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: true },
+      },
+      codexQuotaByName: {},
+      accountUsageByID: {
+        'auth-file:used': { requestCount: 3 },
+        'auth-file:unused': { requestCount: 0 },
+      },
+    }).map((item) => item.id),
+    ['auth-file:unused'],
   );
 });
 
@@ -753,7 +886,7 @@ test('filterAccounts risk preset keeps resource filters unrestricted while selec
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        resource: { hasLongestQuota: true, hasBalance: true },
+        resource: { quotaAndBalance: true, noQuotaAndBalance: true, noQuotaNoBalance: true, hasUsageToday: true, noUsageToday: true },
         status: { error: true, disabled: true, requestable: false },
       },
       codexQuotaByName: {},

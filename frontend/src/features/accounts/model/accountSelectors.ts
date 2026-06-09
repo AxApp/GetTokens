@@ -1,6 +1,7 @@
 import type { AccountPlanType, AccountRecord } from '../../../types';
 import type { AccountGroup, AccountsFilterState, CodexQuotaState, Translator } from './types';
 import type { AccountGroupMode, AccountSortMode } from './accountListLayout';
+import type { AccountUsageSummary } from './accountUsage';
 import { buildQuotaDisplay, extractBilling, hasDisplayableBilling, hasPositiveLongestQuota, selectLongestQuotaWindow } from './accountQuota.ts';
 import {
   compareAccountRecords,
@@ -11,12 +12,14 @@ interface FilterAccountsArgs {
   searchTerm: string;
   filters: AccountsFilterState;
   codexQuotaByName: Record<string, CodexQuotaState>;
+  accountUsageByID?: Record<string, AccountUsageSummary>;
 }
 
 interface BuildAccountsViewArgs {
   authFileRecords: AccountRecord[];
   apiKeyRecords: AccountRecord[];
   codexQuotaByName: Record<string, CodexQuotaState>;
+  accountUsageByID?: Record<string, AccountUsageSummary>;
   filters: AccountsFilterState;
   groupMode?: AccountGroupMode;
   sortMode?: AccountSortMode;
@@ -41,7 +44,7 @@ interface AccountGroupDescriptor {
 
 type AccountStatusBucket = 'requestable' | 'disabled' | 'error' | 'unknown';
 
-export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters, codexQuotaByName }: FilterAccountsArgs) {
+export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters, codexQuotaByName, accountUsageByID = {} }: FilterAccountsArgs) {
   const query = searchTerm.trim().toLowerCase();
   return accounts.filter((account) => {
     if (!matchesSourceSelection(filters.source, account.credentialSource)) {
@@ -49,7 +52,7 @@ export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters,
     }
 
     const quotaState = codexQuotaByName[account.quotaKey || ''];
-    if (!matchesResourceSelection(filters.resource, account, quotaState)) {
+    if (!matchesResourceSelection(filters.resource, account, quotaState, accountUsageByID[account.id])) {
       return false;
     }
 
@@ -100,14 +103,29 @@ function matchesResourceSelection(
   selection: AccountsFilterState['resource'],
   account: AccountRecord,
   state?: CodexQuotaState,
+  usageSummary?: AccountUsageSummary,
 ) {
   if (isSelectionComplete(selection)) {
     return true;
   }
-  if (selection.hasLongestQuota && hasPositiveLongestQuota(account, state)) {
+
+  const hasQuota = hasPositiveLongestQuota(account, state);
+  const hasBalance = hasAccountDisplayableBalance(state);
+  const hasUsageToday = (usageSummary?.requestCount ?? 0) > 0;
+
+  if (selection.quotaAndBalance && hasQuota && hasBalance) {
     return true;
   }
-  if (selection.hasBalance && hasAccountDisplayableBalance(state)) {
+  if (selection.noQuotaAndBalance && !hasQuota && hasBalance) {
+    return true;
+  }
+  if (selection.noQuotaNoBalance && !hasQuota && !hasBalance) {
+    return true;
+  }
+  if (selection.hasUsageToday && hasUsageToday) {
+    return true;
+  }
+  if (selection.noUsageToday && !hasUsageToday) {
     return true;
   }
   return false;
@@ -544,6 +562,7 @@ export function buildAccountsView({
   authFileRecords,
   apiKeyRecords,
   codexQuotaByName,
+  accountUsageByID,
   searchTerm,
   filters,
   groupMode = 'plan',
@@ -554,7 +573,7 @@ export function buildAccountsView({
   const accounts = [...authFileRecords, ...apiKeyRecords].sort((left, right) =>
     compareAccountsBySortMode(left, right, sortMode, codexQuotaByName),
   );
-  const filteredAccounts = filterAccounts(accounts, { searchTerm, filters, codexQuotaByName });
+  const filteredAccounts = filterAccounts(accounts, { searchTerm, filters, codexQuotaByName, accountUsageByID });
   const groupedAccounts = groupAccounts({ accounts: filteredAccounts, groupMode, sortMode, codexQuotaByName, t });
   const availablePlanTypes = collectAvailableAccountPlanTypes(accounts, codexQuotaByName);
   const selectedAccountIDSet = new Set(selectedAccountIDs);

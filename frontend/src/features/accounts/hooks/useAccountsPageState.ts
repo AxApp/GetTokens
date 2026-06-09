@@ -205,6 +205,7 @@ export default function useAccountsPageState({
         authFileRecords,
         apiKeyRecords,
         codexQuotaByName,
+        accountUsageByID,
         searchTerm,
         filters,
         groupMode,
@@ -212,7 +213,7 @@ export default function useAccountsPageState({
         selectedAccountIDs,
         t,
       }),
-    [apiKeyRecords, authFileRecords, codexQuotaByName, filters, groupMode, searchTerm, selectedAccountIDs, sortMode, t]
+    [accountUsageByID, apiKeyRecords, authFileRecords, codexQuotaByName, filters, groupMode, searchTerm, selectedAccountIDs, sortMode, t]
   );
 
   useEffect(() => {

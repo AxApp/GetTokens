@@ -89,11 +89,7 @@ export default function AccountsToolbar({
 }: AccountsToolbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(initialFiltersMenuOpen);
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const sourceAllSelected = filters.source.authFile && filters.source.apiKey;
-  const resourceAllSelected = filters.resource.hasLongestQuota && filters.resource.hasBalance;
-  const statusAllSelected = filters.status.error && filters.status.disabled && filters.status.requestable;
   const planOptions = availablePlanTypes;
-  const planAllSelected = areAllPlanOptionsSelected(filters.plan, planOptions);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -156,60 +152,6 @@ export default function AccountsToolbar({
     );
   }
 
-  function enableAllSourceOptions() {
-    if (sourceAllSelected) {
-      return;
-    }
-    onFiltersChange(
-      applyAccountsFilterState(filters, {
-        source: {
-          authFile: true,
-          apiKey: true,
-        },
-      }),
-    );
-  }
-
-  function enableAllResourceOptions() {
-    if (resourceAllSelected) {
-      return;
-    }
-    onFiltersChange(
-      applyAccountsFilterState(filters, {
-        resource: {
-          hasLongestQuota: true,
-          hasBalance: true,
-        },
-      }),
-    );
-  }
-
-  function enableAllStatusOptions() {
-    if (statusAllSelected) {
-      return;
-    }
-    onFiltersChange(
-      applyAccountsFilterState(filters, {
-        status: {
-          error: true,
-          disabled: true,
-          requestable: true,
-        },
-      }),
-    );
-  }
-
-  function enableAllPlanOptions() {
-    if (planAllSelected) {
-      return;
-    }
-    onFiltersChange(
-      applyAccountsFilterState(filters, {
-        plan: Object.fromEntries(planOptions.map((planType) => [planType, true])),
-      }),
-    );
-  }
-
   return (
     <section className="space-y-4">
       <div className="grid grid-cols-1 gap-4">
@@ -229,44 +171,44 @@ export default function AccountsToolbar({
               <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[360px] flex-col gap-3.5 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
                 <div className="space-y-2">
                   <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
-                    {t('accounts.filter_group_source')}
+                    {t('accounts.filter_group_plan_source')}
                   </p>
-                  <div className="grid gap-1">
-                    <FilterCheckOption active={sourceAllSelected} onClick={enableAllSourceOptions}>
-                      {t('accounts.filter_all')}
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.source.authFile} onClick={() => setSourceOption('authFile')}>
-                      {t('accounts.source_auth_file')}
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.source.apiKey} onClick={() => setSourceOption('apiKey')}>
-                      {t('accounts.source_api_key')}
-                    </FilterCheckOption>
+                  <div className="grid gap-2">
+                    <div className="grid grid-cols-2 gap-1">
+                      <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                        {t('accounts.filter_group_source')}
+                      </p>
+                      <FilterCheckOption active={filters.source.authFile} onClick={() => setSourceOption('authFile')}>
+                        {t('accounts.source_auth_file')}
+                      </FilterCheckOption>
+                      <FilterCheckOption active={filters.source.apiKey} onClick={() => setSourceOption('apiKey')}>
+                        {t('accounts.source_api_key')}
+                      </FilterCheckOption>
+                    </div>
+                    {planOptions.length > 0 || !planAvailabilityResolved ? (
+                      <div className="grid grid-cols-2 gap-1">
+                        <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                          {t('accounts.filter_group_plan')}
+                        </p>
+                        {planOptions.map((planType) => (
+                          <FilterCheckOption
+                            key={planType}
+                            active={isPlanOptionSelected(filters.plan, planType)}
+                            uppercase={false}
+                            onClick={() => setPlanOption(planType)}
+                          >
+                            {formatAccountPlanLabel(planType)}
+                          </FilterCheckOption>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
-                    {t('accounts.filter_group_resource')}
-                  </p>
-                  <div className="grid gap-1">
-                    <FilterCheckOption active={resourceAllSelected} onClick={enableAllResourceOptions}>
-                      {t('accounts.filter_all')}
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.resource.hasLongestQuota} onClick={() => setResourceOption('hasLongestQuota')}>
-                      {t('accounts.filter_longest_quota_match')}
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.resource.hasBalance} onClick={() => setResourceOption('hasBalance')}>
-                      {t('accounts.filter_balance_match')}
-                    </FilterCheckOption>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
-                    {t('accounts.filter_group_status')}
-                  </p>
-                  <div className="grid gap-1">
-                    <FilterCheckOption active={statusAllSelected} onClick={enableAllStatusOptions}>
-                      {t('accounts.filter_all')}
-                    </FilterCheckOption>
+                  <div className="grid grid-cols-2 gap-1">
+                    <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                      {t('accounts.filter_group_status')}
+                    </p>
                     <FilterCheckOption active={filters.status.error} onClick={() => setStatusOption('error')}>
                       {t('accounts.filter_error_match')}
                     </FilterCheckOption>
@@ -279,23 +221,25 @@ export default function AccountsToolbar({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
-                    {t('accounts.filter_group_plan')}
-                  </p>
-                  <div className="grid gap-1">
-                    <FilterCheckOption active={planAllSelected} disabled={planOptions.length === 0 && !planAvailabilityResolved} onClick={enableAllPlanOptions}>
-                      {t('accounts.filter_all')}
+                  <div className="grid grid-cols-2 gap-1">
+                    <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                      {t('accounts.filter_group_other')}
+                    </p>
+                    <FilterCheckOption active={filters.resource.quotaAndBalance} onClick={() => setResourceOption('quotaAndBalance')}>
+                      {t('accounts.filter_quota_and_balance_match')}
                     </FilterCheckOption>
-                    {planOptions.map((planType) => (
-                      <FilterCheckOption
-                        key={planType}
-                        active={isPlanOptionSelected(filters.plan, planType)}
-                        uppercase={false}
-                        onClick={() => setPlanOption(planType)}
-                      >
-                        {formatAccountPlanLabel(planType)}
-                      </FilterCheckOption>
-                    ))}
+                    <FilterCheckOption active={filters.resource.noQuotaAndBalance} onClick={() => setResourceOption('noQuotaAndBalance')}>
+                      {t('accounts.filter_no_quota_and_balance_match')}
+                    </FilterCheckOption>
+                    <FilterCheckOption active={filters.resource.noQuotaNoBalance} onClick={() => setResourceOption('noQuotaNoBalance')}>
+                      {t('accounts.filter_no_quota_no_balance_match')}
+                    </FilterCheckOption>
+                    <FilterCheckOption active={filters.resource.hasUsageToday} onClick={() => setResourceOption('hasUsageToday')}>
+                      {t('accounts.filter_usage_today_match')}
+                    </FilterCheckOption>
+                    <FilterCheckOption active={filters.resource.noUsageToday} onClick={() => setResourceOption('noUsageToday')}>
+                      {t('accounts.filter_no_usage_today_match')}
+                    </FilterCheckOption>
                   </div>
                 </div>
                 <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-2">
@@ -859,13 +803,6 @@ function buildToolbarFilterLabel(t: Translator, filters: AccountsFilterState, av
 
 function isPlanOptionSelected(selection: AccountsFilterState['plan'], planType: AccountPlanType) {
   return selection[planType] !== false;
-}
-
-function areAllPlanOptionsSelected(selection: AccountsFilterState['plan'], availablePlanTypes: readonly AccountPlanType[]) {
-  if (availablePlanTypes.length === 0) {
-    return true;
-  }
-  return availablePlanTypes.every((planType) => isPlanOptionSelected(selection, planType));
 }
 
 function formatAccountPlanLabel(planType: AccountPlanType) {

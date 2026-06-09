@@ -24,7 +24,7 @@ test('readStoredAccountsFilterState restores a valid grouped filter state', () =
       assert.equal(key, ACCOUNTS_FILTERS_STORAGE_KEY);
       return JSON.stringify({
         source: { authFile: true, apiKey: false },
-        resource: { hasLongestQuota: false, hasBalance: true },
+        resource: { quotaAndBalance: false, noQuotaAndBalance: true, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: true },
         status: { error: true, disabled: false, requestable: false },
         plan: { free: true, plus: false, team: true },
       });
@@ -33,7 +33,7 @@ test('readStoredAccountsFilterState restores a valid grouped filter state', () =
 
   assert.deepEqual(readStoredAccountsFilterState(storage), {
     source: { authFile: true, apiKey: false },
-    resource: { hasLongestQuota: false, hasBalance: true },
+    resource: { quotaAndBalance: false, noQuotaAndBalance: true, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: true },
     status: { error: true, disabled: false, requestable: false },
     plan: { free: true, plus: false, team: true },
   });
@@ -53,7 +53,7 @@ test('normalizeAccountsFilterState migrates the legacy flat filter payload', () 
     {
       ...defaultAccountsFilterState,
       source: { authFile: false, apiKey: true },
-      resource: { hasLongestQuota: false, hasBalance: true },
+      resource: { quotaAndBalance: false, noQuotaAndBalance: true, noQuotaNoBalance: false, hasUsageToday: true, noUsageToday: true },
       status: { error: false, disabled: true, requestable: true },
       plan: {},
     },
@@ -65,13 +65,13 @@ test('resolveAccountsFilterStateFromHash maps accounts risk filter to diagnostic
     resolveAccountsFilterStateFromHash('#frame=accounts&workspace=all&filter=risk', {
       ...defaultAccountsFilterState,
       source: { authFile: false, apiKey: true },
-      resource: { hasLongestQuota: false, hasBalance: true },
+      resource: { quotaAndBalance: false, noQuotaAndBalance: true, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: true },
       status: { error: false, disabled: false, requestable: true },
       plan: { plus: false, team: true },
     }),
     {
       source: { authFile: true, apiKey: true },
-      resource: { hasLongestQuota: true, hasBalance: true },
+      resource: { quotaAndBalance: true, noQuotaAndBalance: true, noQuotaNoBalance: true, hasUsageToday: true, noUsageToday: true },
       status: { error: true, disabled: true, requestable: false },
       plan: {},
     },
@@ -82,7 +82,7 @@ test('resolveAccountsFilterStateFromHash falls back to stored filters outside ac
   const stored = {
     ...defaultAccountsFilterState,
     source: { authFile: false, apiKey: true },
-    resource: { hasLongestQuota: false, hasBalance: true },
+    resource: { quotaAndBalance: false, noQuotaAndBalance: true, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: true },
     status: { error: false, disabled: false, requestable: true },
     plan: { plus: false },
   };
@@ -98,20 +98,20 @@ test('applyAccountsFilterState deep merges nested patch objects', () => {
       {
         ...defaultAccountsFilterState,
         source: { authFile: true, apiKey: false },
-        resource: { hasLongestQuota: true, hasBalance: false },
+        resource: { quotaAndBalance: true, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: true, noUsageToday: false },
         status: { error: true, disabled: false, requestable: true },
         plan: { free: true, plus: false, team: true },
       },
       {
         source: { apiKey: true },
-        resource: { hasBalance: true },
+        resource: { noQuotaAndBalance: true, noQuotaNoBalance: true, noUsageToday: true },
         status: { error: false },
         plan: { plus: true, team: false },
       },
     ),
     {
       source: { authFile: true, apiKey: true },
-      resource: { hasLongestQuota: true, hasBalance: true },
+      resource: { quotaAndBalance: true, noQuotaAndBalance: true, noQuotaNoBalance: true, hasUsageToday: true, noUsageToday: true },
       status: { error: false, disabled: false, requestable: true },
       plan: { free: true, plus: true, team: false },
     },
@@ -146,13 +146,15 @@ test('summarizeAccountsFilterState keeps source, resource, status, and plan part
   assert.deepEqual(
     summarizeAccountsFilterState((key) => key, {
       source: { authFile: false, apiKey: true },
-      resource: { hasLongestQuota: false, hasBalance: true },
+      resource: { quotaAndBalance: false, noQuotaAndBalance: true, noQuotaNoBalance: true, hasUsageToday: false, noUsageToday: true },
       status: { error: true, disabled: true, requestable: false },
       plan: { plus: false },
     }, ['pro', 'team', 'plus', 'free']).map((part) => [part.kind, part.label]),
     [
       ['source', 'accounts.source_api_key'],
-      ['resource', 'accounts.filter_balance_match'],
+      ['resource', 'accounts.filter_no_quota_and_balance_match'],
+      ['resource', 'accounts.filter_no_quota_no_balance_match'],
+      ['resource', 'accounts.filter_no_usage_today_match'],
       ['status', 'accounts.filter_error_match'],
       ['status', 'accounts.filter_disabled_match'],
       ['plan', 'Pro'],
@@ -191,7 +193,7 @@ test('persistAccountsFilterState serializes the full grouped filter state', () =
 
   persistAccountsFilterState(storage, {
     source: { authFile: false, apiKey: true },
-    resource: { hasLongestQuota: true, hasBalance: false },
+    resource: { quotaAndBalance: true, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: true, noUsageToday: false },
     status: { error: true, disabled: false, requestable: true },
     plan: { plus: false, team: true },
   });
@@ -201,7 +203,7 @@ test('persistAccountsFilterState serializes the full grouped filter state', () =
       ACCOUNTS_FILTERS_STORAGE_KEY,
       JSON.stringify({
         source: { authFile: false, apiKey: true },
-        resource: { hasLongestQuota: true, hasBalance: false },
+        resource: { quotaAndBalance: true, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: true, noUsageToday: false },
         status: { error: true, disabled: false, requestable: true },
         plan: { plus: false, team: true },
       }),
@@ -219,17 +221,26 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
     assert.ok(leftIndex < rightIndex, `${left} should appear before ${right}`);
   };
 
-  assertBefore('accounts.filter_group_source', 'accounts.filter_group_resource');
-  assertBefore('accounts.filter_group_resource', 'accounts.filter_group_status');
-  assertBefore('accounts.filter_group_status', 'accounts.filter_group_plan');
+  assertBefore('accounts.filter_group_plan_source', 'accounts.filter_group_status');
+  assertBefore('accounts.filter_group_status', 'accounts.filter_group_other');
+  assertBefore('accounts.filter_group_source', 'planOptions.map');
   assertBefore('planOptions.map', 'formatAccountPlanLabel(planType)');
   assert.equal(source.includes('requiresRequestable'), false);
   assert.equal(source.includes('requiresDisabled'), false);
   assert.equal(source.includes('requiresError'), false);
-  assert.equal(source.includes('hasLongestQuota'), true);
+  assert.equal(source.includes('hasLongestQuota'), false);
+  assert.equal(source.includes('hasBalance'), false);
   assert.equal(source.includes('accounts.filter_group_plan'), true);
+  assert.equal(source.match(/grid grid-cols-2 gap-1/g)?.length >= 4, true);
+  assert.equal(source.match(/col-span-2 px-2.5/g)?.length >= 4, true);
+  assert.equal(source.includes('accounts.filter_group_resource'), false);
+  assert.equal(source.includes('accounts.filter_quota_and_balance_match'), true);
+  assert.equal(source.includes('accounts.filter_no_quota_and_balance_match'), true);
+  assert.equal(source.includes('accounts.filter_no_quota_no_balance_match'), true);
+  assert.equal(source.includes('accounts.filter_usage_today_match'), true);
+  assert.equal(source.includes('accounts.filter_no_usage_today_match'), true);
   assert.equal(source.includes('uppercase={false}'), true);
-  assert.equal(source.includes('accounts.filter_all'), true);
+  assert.equal(source.includes('accounts.filter_all'), false);
   assert.equal(source.includes("const DEFAULT_AVAILABLE_PLAN_TYPES: readonly AccountPlanType[] = []"), true);
   assert.equal(source.includes('accounts.group_mode_label'), true);
   assert.equal(source.includes('accounts.group_mode_plan'), true);

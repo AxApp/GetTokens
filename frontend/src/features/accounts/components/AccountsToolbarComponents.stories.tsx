@@ -23,7 +23,7 @@ const emptyFilters: AccountsFilterState = {
   ...defaultAccountsFilterState,
   resource: {
     ...defaultAccountsFilterState.resource,
-    hasLongestQuota: false,
+    quotaAndBalance: false,
   },
 };
 
@@ -35,7 +35,7 @@ const activeFilters: AccountsFilterState = {
   },
   resource: {
     ...defaultAccountsFilterState.resource,
-    hasBalance: false,
+    noQuotaAndBalance: false,
   },
   status: {
     ...defaultAccountsFilterState.status,

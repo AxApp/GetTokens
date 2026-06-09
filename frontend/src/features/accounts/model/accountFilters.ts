@@ -34,7 +34,7 @@ type AccountsFilterStatePatch = {
 };
 
 const SOURCE_KEYS = ['authFile', 'apiKey'] as const;
-const RESOURCE_KEYS = ['hasLongestQuota', 'hasBalance'] as const;
+const RESOURCE_KEYS = ['quotaAndBalance', 'noQuotaAndBalance', 'noQuotaNoBalance', 'hasUsageToday', 'noUsageToday'] as const;
 const STATUS_KEYS = ['error', 'disabled', 'requestable'] as const;
 
 export const defaultAccountsFilterState: AccountsFilterState = {
@@ -43,8 +43,11 @@ export const defaultAccountsFilterState: AccountsFilterState = {
     apiKey: true,
   },
   resource: {
-    hasLongestQuota: true,
-    hasBalance: true,
+    quotaAndBalance: true,
+    noQuotaAndBalance: true,
+    noQuotaNoBalance: true,
+    hasUsageToday: true,
+    noUsageToday: true,
   },
   status: {
     error: true,
@@ -103,8 +106,11 @@ export function buildAccountsRiskFilterState(base: AccountsFilterState = default
       apiKey: true,
     },
     resource: {
-      hasLongestQuota: true,
-      hasBalance: true,
+      quotaAndBalance: true,
+      noQuotaAndBalance: true,
+      noQuotaNoBalance: true,
+      hasUsageToday: true,
+      noUsageToday: true,
     },
     status: {
       error: true,
@@ -145,11 +151,20 @@ export function summarizeAccountsFilterState(
   }
 
   if (!isSelectionComplete(state.resource, RESOURCE_KEYS)) {
-    if (state.resource.hasLongestQuota) {
-      parts.push({ kind: 'resource', label: t('accounts.filter_longest_quota_match') });
+    if (state.resource.quotaAndBalance) {
+      parts.push({ kind: 'resource', label: t('accounts.filter_quota_and_balance_match') });
     }
-    if (state.resource.hasBalance) {
-      parts.push({ kind: 'resource', label: t('accounts.filter_balance_match') });
+    if (state.resource.noQuotaAndBalance) {
+      parts.push({ kind: 'resource', label: t('accounts.filter_no_quota_and_balance_match') });
+    }
+    if (state.resource.noQuotaNoBalance) {
+      parts.push({ kind: 'resource', label: t('accounts.filter_no_quota_no_balance_match') });
+    }
+    if (state.resource.hasUsageToday) {
+      parts.push({ kind: 'resource', label: t('accounts.filter_usage_today_match') });
+    }
+    if (state.resource.noUsageToday) {
+      parts.push({ kind: 'resource', label: t('accounts.filter_no_usage_today_match') });
     }
   }
 
@@ -258,9 +273,15 @@ function normalizeResourceSelection(value: unknown): AccountsFilterState['resour
   if (!candidate || (!('hasLongestQuota' in candidate) && !('hasBalance' in candidate))) {
     return { ...defaultAccountsFilterState.resource };
   }
+
+  const hasLongestQuota = resolveBoolean(candidate?.hasLongestQuota);
+  const hasBalance = resolveBoolean(candidate?.hasBalance);
   return {
-    hasLongestQuota: resolveBoolean(candidate?.hasLongestQuota),
-    hasBalance: resolveBoolean(candidate?.hasBalance),
+    quotaAndBalance: hasLongestQuota && hasBalance,
+    noQuotaAndBalance: !hasLongestQuota && hasBalance,
+    noQuotaNoBalance: !hasLongestQuota && !hasBalance,
+    hasUsageToday: true,
+    noUsageToday: true,
   };
 }
 
