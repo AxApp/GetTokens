@@ -114,10 +114,12 @@ run_wails() {
   local -a wails_cmd=("$@")
   if [[ "${COMMAND}" == "dev" ]]; then
     normalize_wailsjs
+    install_sidecar_into_app_bundle >/dev/null 2>&1 || true
     (
       while true; do
         sleep 2
         normalize_wailsjs
+        install_sidecar_into_app_bundle >/dev/null 2>&1 || true
       done
     ) &
     local normalizer_pid="$!"

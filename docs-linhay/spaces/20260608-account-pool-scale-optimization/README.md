@@ -220,6 +220,7 @@
 - `Server.Stop` 会调用 `CancelQuotaRefreshBatchJobs("server shutdown", ...)` 取消所有 pending/running job，避免关闭 App 时 sidecar 被后台刷新请求拖住。
 - `refreshAccountQuotaBatch` 在每个账号发起真实刷新前会重新读取 account store，确认账号仍存在且未 soft delete；已删除账号会变成 per-account error，不再继续请求上游。
 - 前端 `isQuotaBatchRefreshJobComplete` 把 `canceled` 视为终态，轮询不会卡在已取消任务上。
+- 2026-06-09 dev 验收追加发现：`wails dev` 会重新打包 `build/bin/GetTokens.app`，但原脚本只在 `build` 命令后安装 sidecar，可能导致 dev bundle 内 `cli-proxy-api` 与 `build/bin/cli-proxy-api` 不一致。已在 `scripts/wails-cli.sh` 的 dev watcher 中同步安装 sidecar，避免本仓 dev App 误加载旧 sidecar。
 
 ### Phase 4.1 已验证
 
@@ -232,3 +233,6 @@
 - `go test ./internal/wailsapp -run 'Test.*Quota|TestDeleteAccountsBatchUsesBatchManagementAPI' -count=1`
 - `npm --prefix frontend run typecheck`
 - `npm --prefix frontend run build`
+- 2026-06-09 追加：`./scripts/ensure-sidecar.sh darwin arm64` 确认 `build/bin/cli-proxy-api` 为 `6cb40578`；手动同步 dev bundle 后 `shasum` 一致；重启 dev 后 `~/.config/gettokens-dev/sidecar.log` 显示 `CLIProxyAPI Version: v7.1.28-98-g6cb40578, Commit: 6cb40578`。
+- 2026-06-09 追加：`bash -n scripts/wails-cli.sh scripts/ensure-sidecar.sh scripts/build-sidecar.sh`、`go test ./internal/sidecar -run 'TestResolveBinaryCandidatesPrefersFreshBuildBinInDev|TestReadBinaryGitHashReadsAdjacentMetadata'`、`go test ./internal/api/handlers/management -run 'TestQuotaRefreshBatchJobCancelsWhenTargetAccountIsDeleted|TestQuotaRefreshBatchJobStoreCancelAllStopsRunningJobs'` 均通过。
+- 2026-06-09 追加：Browser/Playwright 打开 `http://localhost:34115/#frame=accounts`，账号页渲染 `226 UNITS`，DOM 中 `data-account-card=20`，窗口化渲染仍生效；console 仍有一个 usage sync `404`，已记录为非本轮问题。
