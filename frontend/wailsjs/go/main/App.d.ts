@@ -175,9 +175,9 @@ export function ImportCodexBinary(arg1:codexbinary.ImportLocalInput):Promise<cod
 
 export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
-export function ListCachedAccounts():Promise<Array<main.AccountRecord>>;
-
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
+
+export function ListCachedAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListChannelRouteEvents(arg1:main.ChannelRouteEventsInput):Promise<Array<main.ChannelRouteEvent>>;
 

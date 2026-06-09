@@ -98,6 +98,8 @@
 
 风险记录：
 1. 直接启动 dev sidecar 读取正式 OAuth 数据快照会触发 core auth auto-refresh；本轮观察到拷贝数据内的部分 token refresh 返回 `refresh_token_reused`。后续用正式数据做 OAuth UI 验收时，应避免让 sidecar 自动刷新真实 token，优先做 SQLite/management 只读验证，或先提供可关闭 auto-refresh 的 dev 启动方式。
+2. 本轮真实 sidecar 探测曾误把 dev sidecar 指向正式 `/Users/linhey/.config/gettokens/accounts-v1.sqlite`，随后正式库出现 `database disk image is malformed`。已使用 SQLite `.recover` 恢复，并在 `2026-06-09` 清理恢复后多出的 18 条 active `auth-file` orphan card。修复前备份位于 `/Users/linhey/.config/gettokens-dev-backups/formal-orphan-clean-20260609T101733Z/`，修复后 `integrity_check=ok`、`foreign_key_check` 通过、orphan count 为 0。
+3. 正式 App 重启后 sidecar 日志显示 `/v0/management/accounts` 从连续 500 恢复为 200，账号页骨架屏的直接触发条件已解除。
 
 ## 当前状态
 - 状态：implemented

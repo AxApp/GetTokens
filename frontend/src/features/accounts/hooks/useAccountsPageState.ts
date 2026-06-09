@@ -305,6 +305,7 @@ export default function useAccountsPageState({
       );
       const nextAuthFileRecords = previewAccounts.filter((account) => account.credentialSource === 'auth-file');
       const apiKeyAccounts = previewAccounts.filter((account) => account.credentialSource === 'api-key');
+      accountRecordsRef.current = [...nextAuthFileRecords, ...apiKeyAccounts];
       setAuthFileRecords(nextAuthFileRecords);
       setApiKeyRecords(apiKeyAccounts);
       persistAccountRecordsCache([...nextAuthFileRecords, ...apiKeyAccounts]);
@@ -334,6 +335,7 @@ export default function useAccountsPageState({
       const apiKeyAccounts = mappedAccounts.filter((account) => account.credentialSource === 'api-key');
       const nextAuthFileRecords = mappedAccounts.filter((account) => account.credentialSource === 'auth-file');
       liveAccountsLoadedRef.current = true;
+      accountRecordsRef.current = mappedAccounts;
       setAuthFileRecords(nextAuthFileRecords);
       setApiKeyRecords(apiKeyAccounts);
       persistAccountRecordsCache(mappedAccounts);
@@ -380,6 +382,7 @@ export default function useAccountsPageState({
         }
         const nextAuthFileRecords = mappedAccounts.filter((account) => account.credentialSource === 'auth-file');
         const apiKeyAccounts = mappedAccounts.filter((account) => account.credentialSource === 'api-key');
+        accountRecordsRef.current = mappedAccounts;
         setAuthFileRecords(nextAuthFileRecords);
         setApiKeyRecords(apiKeyAccounts);
         persistAccountRecordsCache(mappedAccounts);

@@ -98,8 +98,16 @@ test('useAccountsPageState seeds first paint from account list cache and refresh
   const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
 
   assert.match(source, /readInitialAccountRecordsCache\(\)/);
+  assert.match(source, /ListCachedAccounts/);
+  assert.match(source, /sqliteSnapshotRequestedRef/);
+  assert.match(source, /liveAccountsLoadedRef\.current/);
   assert.match(source, /initialCachedAccounts\.filter\(\(account\) => account\.credentialSource === 'auth-file'\)/);
   assert.match(source, /initialCachedAccounts\.filter\(\(account\) => account\.credentialSource === 'api-key'\)/);
   assert.match(source, /persistAccountRecordsCache\(mappedAccounts\)/);
   assert.match(source, /persistAccountRecordsCache\(\[\.\.\.nextAuthFileRecords, \.\.\.apiKeyAccounts\]\)/);
+  const snapshotBlock = source.slice(
+    source.indexOf('async function loadSQLiteSnapshot'),
+    source.indexOf('void loadSQLiteSnapshot'),
+  );
+  assert.doesNotMatch(snapshotBlock, /setAccountsLoaded\(true\)/);
 });
