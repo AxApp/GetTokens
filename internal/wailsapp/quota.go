@@ -364,6 +364,9 @@ func quotaUpstreamFailureReason(statusCode int, body string) string {
 	prefix := fmt.Sprintf("ChatGPT usage request failed (%d)", statusCode)
 	message, code := quotaUpstreamErrorMessage(body)
 	if message == "" {
+		if code != "" {
+			return fmt.Sprintf("%s (%s)", prefix, code)
+		}
 		return prefix
 	}
 	if code != "" {
@@ -376,7 +379,12 @@ func quotaUpstreamErrorMessage(body string) (string, string) {
 	var payload struct {
 		Message string `json:"message"`
 		Code    string `json:"code"`
-		Error   struct {
+		Detail  struct {
+			Message string `json:"message"`
+			Code    string `json:"code"`
+			Type    string `json:"type"`
+		} `json:"detail"`
+		Error struct {
 			Message string `json:"message"`
 			Code    string `json:"code"`
 			Type    string `json:"type"`
@@ -387,14 +395,23 @@ func quotaUpstreamErrorMessage(body string) (string, string) {
 	}
 	message := strings.TrimSpace(payload.Error.Message)
 	if message == "" {
+		message = strings.TrimSpace(payload.Detail.Message)
+	}
+	if message == "" {
 		message = strings.TrimSpace(payload.Message)
 	}
 	code := strings.TrimSpace(payload.Error.Code)
+	if code == "" {
+		code = strings.TrimSpace(payload.Detail.Code)
+	}
 	if code == "" {
 		code = strings.TrimSpace(payload.Code)
 	}
 	if code == "" {
 		code = strings.TrimSpace(payload.Error.Type)
+	}
+	if code == "" {
+		code = strings.TrimSpace(payload.Detail.Type)
 	}
 	return message, code
 }

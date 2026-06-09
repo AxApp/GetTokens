@@ -660,6 +660,138 @@ test('resolveAccountOperationalState treats oauth accounts with quota data as av
   );
 });
 
+test('resolveAccountOperationalState treats oauth quota auth failures as error instead of waiting-check', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_available': '可用',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_error_display': '异常',
+      'accounts.status_local': '本地草稿',
+    })[key] || key;
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'auth-file:codex',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'codex.json',
+        status: 'ACTIVE',
+      },
+      undefined,
+      {
+        status: 'success',
+        stale: true,
+        degradedReason: 'ChatGPT usage request failed (401): token_invalidated',
+        planType: 'PLUS',
+        windows: [{ id: 'weekly', label: 'WEEKLY', remainingPercent: 80, usedLabel: '20%', resetLabel: 'soon' }],
+      },
+      t,
+    ),
+    { tone: 'danger', label: '异常' },
+  );
+});
+
+test('resolveAccountOperationalState treats oauth workspace deactivation failures as error', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_available': '可用',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_error_display': '异常',
+      'accounts.status_local': '本地草稿',
+    })[key] || key;
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'auth-file:codex',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'codex.json',
+        status: 'ACTIVE',
+      },
+      undefined,
+      {
+        status: 'success',
+        stale: true,
+        degradedReason: 'ChatGPT usage request failed (402) (deactivated_workspace)',
+        planType: 'PLUS',
+        windows: [{ id: 'weekly', label: 'WEEKLY', remainingPercent: 80, usedLabel: '20%', resetLabel: 'soon' }],
+      },
+      t,
+    ),
+    { tone: 'danger', label: '异常' },
+  );
+});
+
+test('resolveAccountOperationalState treats generic stale quota refresh errors as error', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_available': '可用',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_error_display': '异常',
+      'accounts.status_local': '本地草稿',
+    })[key] || key;
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'auth-file:codex',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'codex.json',
+        status: 'ACTIVE',
+      },
+      undefined,
+      {
+        status: 'success',
+        stale: true,
+        degradedReason: 'management api-call failed',
+        planType: 'PLUS',
+        windows: [{ id: 'weekly', label: 'WEEKLY', remainingPercent: 80, usedLabel: '20%', resetLabel: 'soon' }],
+      },
+      t,
+    ),
+    { tone: 'danger', label: '异常' },
+  );
+});
+
+test('resolveAccountOperationalState keeps unobserved quota runtime as waiting-check', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_available': '可用',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_error_display': '异常',
+      'accounts.status_local': '本地草稿',
+    })[key] || key;
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'auth-file:codex',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'codex.json',
+        status: 'ACTIVE',
+      },
+      undefined,
+      {
+        status: 'empty',
+        stale: true,
+        degradedReason: 'Quota runtime status has not been observed yet.',
+        planType: 'PLUS',
+        windows: [],
+      },
+      t,
+    ),
+    { tone: 'warning', label: '等待检测' },
+  );
+});
+
 test('resolveAccountOperationalState keeps error cards visible even when usage looks healthy', () => {
   const t = (key) =>
     ({

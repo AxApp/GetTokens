@@ -40,6 +40,17 @@ func TestManagementAPICallResponseStatusCode(t *testing.T) {
 	}
 }
 
+func TestQuotaUpstreamFailureReasonIncludesDetailCodeWhenMessageMissing(t *testing.T) {
+	reason := quotaUpstreamFailureReason(http.StatusPaymentRequired, `{
+		"detail": {
+			"code": "deactivated_workspace"
+		}
+	}`)
+	if !strings.Contains(reason, "402") || !strings.Contains(reason, "deactivated_workspace") {
+		t.Fatalf("quotaUpstreamFailureReason = %q, want status code and detail.code", reason)
+	}
+}
+
 func TestTestCodexAPIKeyQuotaCurlUsesDraftInput(t *testing.T) {
 	var gotDraft map[string]any
 	app := &App{

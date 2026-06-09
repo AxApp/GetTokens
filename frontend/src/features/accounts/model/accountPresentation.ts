@@ -219,6 +219,13 @@ export function resolveAccountOperationalState(
     };
   }
 
+  if (account.credentialSource === 'auth-file' && isQuotaRefreshFailure(quotaDisplay)) {
+    return {
+      tone: 'danger' as const,
+      label: t('accounts.status_error_display'),
+    };
+  }
+
   if (account.credentialSource === 'auth-file' && quotaDisplay?.status === 'success') {
     return {
       tone: 'positive' as const,
@@ -237,6 +244,24 @@ export function resolveAccountOperationalState(
     tone: 'warning' as const,
     label: t('accounts.status_waiting_check'),
   };
+}
+
+function isQuotaRefreshFailure(quotaDisplay: QuotaDisplay | undefined) {
+  if (!quotaDisplay?.stale) {
+    return false;
+  }
+  const rawReason = String(quotaDisplay.degradedReason || '').trim();
+  if (!rawReason) {
+    return false;
+  }
+  const reason = rawReason.toLowerCase();
+  if (
+    reason === 'quota runtime status has not been observed yet.'
+    || reason === 'quota runtime status has not been observed yet'
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export function isAccountUnavailable(account: AccountRecord) {
