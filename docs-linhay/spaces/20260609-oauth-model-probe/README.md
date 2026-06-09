@@ -101,6 +101,25 @@
 2. 本轮真实 sidecar 探测曾误把 dev sidecar 指向正式 `/Users/linhey/.config/gettokens/accounts-v1.sqlite`，随后正式库出现 `database disk image is malformed`。已使用 SQLite `.recover` 恢复，并在 `2026-06-09` 清理恢复后多出的 18 条 active `auth-file` orphan card。修复前备份位于 `/Users/linhey/.config/gettokens-dev-backups/formal-orphan-clean-20260609T101733Z/`，修复后 `integrity_check=ok`、`foreign_key_check` 通过、orphan count 为 0。
 3. 正式 App 重启后 sidecar 日志显示 `/v0/management/accounts` 从连续 500 恢复为 200，账号页骨架屏的直接触发条件已解除。
 
+## OAuth refresh storm hardening
+
+2026-06-09 用户追问 `https://auth.openai.com/oauth/token` 为什么同一个账号/同组织会调用多次，并强调“刷新需要可以重置状态”。
+
+排查证据：
+1. 正式 `accounts-v1.sqlite` 只读统计显示 active 账号 `846`，其中 `842` 为 `auth-file`；active `refresh_token` 无重复，但 `account_id` 有两个重复组，其中一个组有 `735` 张 active card，另一个组有 `100` 张。
+2. 按 Codex refresh lead 估算，`735` 组内约 `520` 张会被 auto-refresh 判定为 due now。
+3. 正式 `sidecar.log` 出现大量 `Token refresh attempt`，其中 `app_session_terminated` 和 `refresh_token_reused` 是终态 OAuth 错误；旧实现只把 `refresh_token_reused` 视为不可重试，`app_session_terminated` 会走 3 次重试并在 5 分钟后继续调度。
+
+修复：
+1. Codex OAuth `RefreshTokensWithRetry` 将 `refresh_token_reused`、`app_session_terminated`、`invalid_grant`、`session has ended`、`please log in again` 归类为不可重试。
+2. core auth manager 将上述终态 OAuth 错误映射为 `unauthorized`/reauth-required，清空 `NextRefreshAfter` 并移出 auto-refresh schedule。
+3. `Service.applyCoreAuthAddOrUpdate` 在同一 runtime auth 的 refresh/access/id token、过期时间、`last_refresh` 或 API key 类字段变化时，视为新凭证，重置 `LastError`、`Unavailable`、`NextRefreshAfter`、旧 `ModelStates` 和 quota runtime cooldown，避免重登或刷新成功后仍被旧状态卡住。
+
+验证：
+1. `go test ./internal/auth/codex`
+2. `go test ./sdk/cliproxy/auth`
+3. `go test ./sdk/cliproxy`
+
 ## 当前状态
 - 状态：implemented
 - 最近更新：2026-06-09
