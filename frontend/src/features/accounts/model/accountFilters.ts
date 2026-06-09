@@ -78,6 +78,7 @@ export function normalizeAccountsFilterState(value: unknown): AccountsFilterStat
 export const resolveAccountsFilterState = normalizeAccountsFilterState;
 
 export function applyAccountsFilterState(base: AccountsFilterState, patch: AccountsFilterStatePatch): AccountsFilterState {
+  const patchStatusIncludesRequestCodes = Object.prototype.hasOwnProperty.call(patch.status || {}, 'requestStatusCodes');
   return normalizeAccountsFilterState({
     source: {
       ...base.source,
@@ -90,10 +91,7 @@ export function applyAccountsFilterState(base: AccountsFilterState, patch: Accou
     status: {
       ...base.status,
       ...patch.status,
-      requestStatusCodes: {
-        ...base.status.requestStatusCodes,
-        ...patch.status?.requestStatusCodes,
-      },
+      requestStatusCodes: patchStatusIncludesRequestCodes ? patch.status?.requestStatusCodes || {} : base.status.requestStatusCodes,
     },
     plan: {
       ...base.plan,

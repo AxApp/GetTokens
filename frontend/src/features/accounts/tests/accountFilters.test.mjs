@@ -114,7 +114,7 @@ test('resolveAccountsFilterStateFromHash falls back to stored filters outside ac
   assert.deepEqual(resolveAccountsFilterStateFromHash('#frame=codex&filter=risk', stored), stored);
 });
 
-test('applyAccountsFilterState deep merges nested patch objects including request status codes', () => {
+test('applyAccountsFilterState merges filter facets and replaces request status code selection', () => {
   assert.deepEqual(
     applyAccountsFilterState(
       {
@@ -134,9 +134,41 @@ test('applyAccountsFilterState deep merges nested patch objects including reques
     {
       source: { authFile: true, apiKey: true },
       resource: { hasQuota: true, noQuota: true, hasBalance: true, noBalance: true, hasUsageToday: true, noUsageToday: true },
-      status: { error: false, disabled: false, requestable: true, requestStatusCodes: { 401: true, 402: true } },
+      status: { error: false, disabled: false, requestable: true, requestStatusCodes: { 402: true } },
       plan: { free: true, plus: true, team: false },
     },
+  );
+});
+
+test('applyAccountsFilterState replaces request status code selection so dynamic codes can be cleared', () => {
+  assert.deepEqual(
+    applyAccountsFilterState(
+      {
+        ...defaultAccountsFilterState,
+        status: { error: true, disabled: true, requestable: true, requestStatusCodes: { 401: true, 402: true } },
+      },
+      {
+        status: {
+          requestStatusCodes: { 402: true },
+        },
+      },
+    ).status.requestStatusCodes,
+    { 402: true },
+  );
+
+  assert.deepEqual(
+    applyAccountsFilterState(
+      {
+        ...defaultAccountsFilterState,
+        status: { error: true, disabled: true, requestable: true, requestStatusCodes: { 401: true } },
+      },
+      {
+        status: {
+          requestStatusCodes: {},
+        },
+      },
+    ).status.requestStatusCodes,
+    {},
   );
 });
 

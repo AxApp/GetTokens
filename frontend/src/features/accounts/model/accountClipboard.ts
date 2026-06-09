@@ -7,6 +7,14 @@ export interface ClipboardWriteOptions {
   storageRef?: ClipboardStorageRef;
 }
 
+export interface ClipboardReadOptions {
+  navigatorClipboard?: {
+    readText?: () => Promise<string>;
+  };
+  runtimeClipboardGetText?: () => Promise<string>;
+  storageRef?: ClipboardStorageRef;
+}
+
 type ClipboardDocumentRef = Pick<Document, 'addEventListener' | 'removeEventListener'> & {
   execCommand?: (command: string) => boolean;
   createElement?: Document['createElement'];
@@ -65,6 +73,41 @@ export function readAccountClipboardFallback(storageRef: ClipboardStorageRef | u
   } catch {
     return '';
   }
+}
+
+export async function readAccountClipboardText(options: ClipboardReadOptions = {}): Promise<string> {
+  const navigatorClipboard =
+    options.navigatorClipboard ?? (typeof navigator !== 'undefined' ? navigator.clipboard : undefined);
+  if (navigatorClipboard?.readText) {
+    try {
+      const text = await navigatorClipboard.readText();
+      if (text) {
+        return text;
+      }
+    } catch {
+      // Browser previews often deny readText(); fall through to app/runtime fallbacks.
+    }
+  }
+
+  const runtimeClipboardGetText =
+    options.runtimeClipboardGetText ??
+    (typeof window !== 'undefined' ? (window as unknown as { runtime?: { ClipboardGetText?: () => Promise<string> } }).runtime?.ClipboardGetText : undefined);
+  if (runtimeClipboardGetText) {
+    try {
+      const text = await runtimeClipboardGetText();
+      if (text) {
+        return text;
+      }
+    } catch {
+      // Keep paste UI actionable even if a runtime bridge is unavailable.
+    }
+  }
+
+  const fallbackText = readAccountClipboardFallback(options.storageRef);
+  if (fallbackText) {
+    return fallbackText;
+  }
+  return '';
 }
 
 function tryDocumentClipboardCopy(documentRef: ClipboardDocumentRef, text: string, errors: unknown[]): boolean {

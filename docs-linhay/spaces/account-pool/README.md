@@ -63,6 +63,21 @@
    - 前端单测覆盖筛选状态迁移、摘要顺序、过滤命中与工具栏源码结构
    - 无头浏览器打开 `#frame=accounts`，确认筛选面板展示为三组独立成对选项，并归档截图到 `screenshots/20260609/accounts/`
 
+### 2026-06-09 HTTP 状态码取消修复证据
+
+1. 问题来源：用户在浏览器评论中指出账号池筛选面板的 `请求状态 HTTP 401 / HTTP 402` 无法取消点击。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/components/AccountsToolbar.tsx`
+   - `frontend/src/features/accounts/model/accountFilters.ts`
+3. 当前现象：`AccountsToolbar` 取消状态码时会从 `requestStatusCodes` 对象删除对应 key，但 `applyAccountsFilterState()` 对 `requestStatusCodes` 做旧值深合并，旧 key 被重新合回，导致 checkbox 与摘要仍保持选中。
+4. 预期改动：
+   - `requestStatusCodes` 作为动态集合，在 patch 显式包含该字段时整体替换
+   - 其他筛选维度继续按原来的局部 patch 合并
+5. 验收方式：
+   - 单测覆盖 `HTTP 401 / HTTP 402` 从选中集合中移除与清空
+   - 浏览器预览打开 `#frame=accounts`，先选中 `HTTP 401 / HTTP 402`，再逐个取消，确认两个 checkbox 均为未选中且摘要恢复为 `显示`
+   - 验收截图：`screenshots/20260609/accounts/20260609-accounts-filter-http-status-cancel-after-v01.png`
+
 ### 分组模式规划
 
 1. 账号池主列表需要支持可切换分组模式和排序模式，二者只改变列表组织方式，不改变筛选、选择、路由、轮动、禁用或导出语义。

@@ -3,6 +3,7 @@ import { ArrowLeft, ClipboardPaste, FilePlus, Loader2, Upload } from 'lucide-rea
 import { useI18n } from '../context/I18nContext';
 import { useAccountsPageStateContext } from '../features/accounts/AccountsPageStateContext';
 import AccountImportQueueList, { type AccountImportQueueItem } from '../features/accounts/components/AccountImportQueueList';
+import { readAccountClipboardText } from '../features/accounts/model/accountClipboard';
 import {
   parseAccountImportPayloads,
   readUploadFiles,
@@ -21,6 +22,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
   const { t } = useI18n();
   const { submitAccountImport } = useAccountsPageStateContext();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pasteInputRef = useRef<HTMLTextAreaElement | null>(null);
   const nextIDRef = useRef(0);
   const [queueItems, setQueueItems] = useState<AccountImportQueueItem[]>([]);
   const [pasteContent, setPasteContent] = useState('');
@@ -110,6 +112,21 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
     setQueueItems((prev) => [...prev, ...items.map((item) => createQueueItem(nextIDRef, 'paste', item))]);
     setPasteContent('');
     setError('');
+  }
+
+  async function handlePasteFromClipboard() {
+    setError('');
+    try {
+      const content = await readAccountClipboardText();
+      if (!content.trim()) {
+        pasteInputRef.current?.focus();
+        setError(t('accounts.import_account_paste_clipboard_unavailable'));
+        return;
+      }
+      setPasteContent(content);
+    } catch (err) {
+      setError(toErrorMessage(err));
+    }
   }
 
   async function handleSubmit() {
@@ -241,6 +258,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                 </span>
               </div>
               <textarea
+                ref={pasteInputRef}
                 value={pasteContent}
                 onChange={(event: TextInputEvent) => {
                   setPasteContent(event.target.value);
@@ -256,8 +274,8 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setPasteContent(''); setError(''); }}
-                  disabled={submitting || pasteContent.length === 0}
+                  onClick={() => void handlePasteFromClipboard()}
+                  disabled={submitting}
                   className="btn-swiss"
                 >
                   {t('accounts.import_account_clear_paste')}

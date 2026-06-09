@@ -7,6 +7,7 @@ import {
   readUploadFiles,
   type AccountImportPayloadItem,
 } from '../model/accountTransfer';
+import { readAccountClipboardText } from '../model/accountClipboard';
 import type { TextInputEvent, Translator } from '../model/types';
 import AccountImportQueueList, { type AccountImportQueueItem } from './AccountImportQueueList';
 
@@ -28,6 +29,7 @@ export default function AccountImportModal({
   onSubmit,
 }: AccountImportModalProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const pasteInputRef = useRef<HTMLTextAreaElement | null>(null);
   const nextIDRef = useRef(0);
   const [queueItems, setQueueItems] = useState<AccountImportQueueItem[]>(() =>
     initialItems.map((payload) => createQueueItem(nextIDRef, 'paste', payload))
@@ -124,6 +126,21 @@ export default function AccountImportModal({
     setQueueItems((prev) => [...prev, ...items.map((item) => createQueueItem(nextIDRef, 'paste', item))]);
     setPasteContent('');
     setError('');
+  }
+
+  async function handlePasteFromClipboard() {
+    setError('');
+    try {
+      const content = await readAccountClipboardText();
+      if (!content.trim()) {
+        pasteInputRef.current?.focus();
+        setError(t('accounts.import_account_paste_clipboard_unavailable'));
+        return;
+      }
+      setPasteContent(content);
+    } catch (err) {
+      setError(toErrorMessage(err));
+    }
   }
 
   async function handleSubmit() {
@@ -273,6 +290,7 @@ export default function AccountImportModal({
               </span>
             </div>
             <textarea
+              ref={pasteInputRef}
               value={pasteContent}
               onChange={(event: TextInputEvent) => {
                 setPasteContent(event.target.value);
@@ -288,11 +306,8 @@ export default function AccountImportModal({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setPasteContent('');
-                  setError('');
-                }}
-                disabled={submitting || pasteContent.length === 0}
+                onClick={() => void handlePasteFromClipboard()}
+                disabled={submitting}
                 className="btn-swiss"
               >
                 {t('accounts.import_account_clear_paste')}

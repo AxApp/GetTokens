@@ -139,6 +139,10 @@ test('account import modal uses merged input panel beside account preview', asyn
   assert.ok(pasteIndex < queueIndex);
   assert.match(source, /onDrop=\{handleFileDrop\}/);
   assert.match(pageSource, /onDrop=\{handleFileDrop\}/);
+  assert.match(source, /readAccountClipboardText/);
+  assert.match(pageSource, /readAccountClipboardText/);
+  assert.match(source, /onClick=\{\(\) => void handlePasteFromClipboard\(\)\}/);
+  assert.match(pageSource, /onClick=\{\(\) => void handlePasteFromClipboard\(\)\}/);
   assert.match(source, /data-account-import-dropzone/);
   assert.match(pageSource, /data-account-import-dropzone/);
   assert.match(source, /accept="\.json,\.zip,\.tar,\.tar\.gz,\.tgz,\.gz,\.gzip,application\/json,application\/zip,application\/gzip,application\/x-tar"/);

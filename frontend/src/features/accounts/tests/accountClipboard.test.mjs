@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { readAccountClipboardFallback, writeAccountClipboardText } from '../model/accountClipboard.ts';
+import { readAccountClipboardFallback, readAccountClipboardText, writeAccountClipboardText } from '../model/accountClipboard.ts';
 
 test('writeAccountClipboardText uses navigator clipboard when available', async () => {
   const writes = [];
@@ -162,4 +162,68 @@ test('writeAccountClipboardText stores an app-local fallback when clipboard adap
   });
 
   assert.equal(readAccountClipboardFallback(storageRef), 'local-copy');
+});
+
+test('readAccountClipboardText uses navigator clipboard when available', async () => {
+  const text = await readAccountClipboardText({
+    navigatorClipboard: {
+      readText: async () => 'navigator-paste',
+    },
+  });
+
+  assert.equal(text, 'navigator-paste');
+});
+
+test('readAccountClipboardText falls back to Wails runtime clipboard when navigator rejects', async () => {
+  const text = await readAccountClipboardText({
+    navigatorClipboard: {
+      readText: async () => {
+        throw new Error('browser denied clipboard');
+      },
+    },
+    runtimeClipboardGetText: async () => 'runtime-paste',
+  });
+
+  assert.equal(text, 'runtime-paste');
+});
+
+test('readAccountClipboardText falls back to app-local clipboard storage', async () => {
+  const storage = new Map();
+  const storageRef = {
+    getItem: (key) => storage.get(key) || null,
+    setItem: (key, value) => {
+      storage.set(key, value);
+    },
+  };
+  await writeAccountClipboardText('local-paste', {
+    navigatorClipboard: {
+      writeText: async () => {
+        throw new Error('browser denied clipboard');
+      },
+    },
+    runtimeClipboardSetText: async () => false,
+    storageRef,
+  });
+
+  const text = await readAccountClipboardText({
+    navigatorClipboard: {
+      readText: async () => '',
+    },
+    runtimeClipboardGetText: async () => '',
+    storageRef,
+  });
+
+  assert.equal(text, 'local-paste');
+});
+
+test('readAccountClipboardText hides browser permission denial when no fallback exists', async () => {
+  const text = await readAccountClipboardText({
+    navigatorClipboard: {
+      readText: async () => {
+        throw new Error("Failed to execute 'readText' on 'Clipboard': Read permission denied.");
+      },
+    },
+  });
+
+  assert.equal(text, '');
 });
