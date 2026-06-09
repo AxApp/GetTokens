@@ -90,9 +90,10 @@ export interface AccountsFilterState {
     apiKey: boolean;
   };
   resource: {
-    quotaAndBalance: boolean;
-    noQuotaAndBalance: boolean;
-    noQuotaNoBalance: boolean;
+    hasQuota: boolean;
+    noQuota: boolean;
+    hasBalance: boolean;
+    noBalance: boolean;
     hasUsageToday: boolean;
     noUsageToday: boolean;
   };
@@ -100,6 +101,9 @@ export interface AccountsFilterState {
     error: boolean;
     disabled: boolean;
     requestable: boolean;
+    requestStatusCodes: {
+      [statusCode: string]: boolean;
+    };
   };
   plan: {
     [planType: string]: boolean;

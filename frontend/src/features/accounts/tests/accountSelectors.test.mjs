@@ -333,7 +333,7 @@ test('filterAccounts can select accounts with balance and no quota from the othe
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        resource: { quotaAndBalance: false, noQuotaAndBalance: true, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: false },
+        resource: { hasQuota: false, noQuota: true, hasBalance: true, noBalance: false, hasUsageToday: true, noUsageToday: true },
       },
       codexQuotaByName: {
         'api-key:balance': {
@@ -391,7 +391,7 @@ test('filterAccounts can select accounts with no quota and no balance from the o
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        resource: { quotaAndBalance: false, noQuotaAndBalance: false, noQuotaNoBalance: true, hasUsageToday: false, noUsageToday: false },
+        resource: { hasQuota: false, noQuota: true, hasBalance: false, noBalance: true, hasUsageToday: true, noUsageToday: true },
       },
       codexQuotaByName: {
         'api-key:empty': {
@@ -513,7 +513,7 @@ test('filterAccounts can select auth-file codex accounts with quota and balance'
       filters: {
         ...defaultAccountsFilterState,
         source: { authFile: true, apiKey: false },
-        resource: { quotaAndBalance: true, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: false },
+        resource: { hasQuota: true, noQuota: false, hasBalance: true, noBalance: false, hasUsageToday: true, noUsageToday: true },
       },
       codexQuotaByName,
     }).map((item) => item.id),
@@ -548,7 +548,7 @@ test('filterAccounts includes codex api keys with configured quota and balance',
       filters: {
         ...defaultAccountsFilterState,
         source: { authFile: false, apiKey: true },
-        resource: { quotaAndBalance: true, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: false },
+        resource: { hasQuota: true, noQuota: false, hasBalance: true, noBalance: false, hasUsageToday: true, noUsageToday: true },
       },
       codexQuotaByName: {
         'codex-api-key:ready': {
@@ -596,7 +596,7 @@ test('filterAccounts can select accounts by today request data from the other gr
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        resource: { quotaAndBalance: false, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: true, noUsageToday: false },
+        resource: { hasQuota: true, noQuota: true, hasBalance: true, noBalance: true, hasUsageToday: true, noUsageToday: false },
       },
       codexQuotaByName: {},
       accountUsageByID: {
@@ -612,7 +612,7 @@ test('filterAccounts can select accounts by today request data from the other gr
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        resource: { quotaAndBalance: false, noQuotaAndBalance: false, noQuotaNoBalance: false, hasUsageToday: false, noUsageToday: true },
+        resource: { hasQuota: true, noQuota: true, hasBalance: true, noBalance: true, hasUsageToday: false, noUsageToday: true },
       },
       codexQuotaByName: {},
       accountUsageByID: {
@@ -886,7 +886,7 @@ test('filterAccounts risk preset keeps resource filters unrestricted while selec
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        resource: { quotaAndBalance: true, noQuotaAndBalance: true, noQuotaNoBalance: true, hasUsageToday: true, noUsageToday: true },
+        resource: { hasQuota: true, noQuota: true, hasBalance: true, noBalance: true, hasUsageToday: true, noUsageToday: true },
         status: { error: true, disabled: true, requestable: false },
       },
       codexQuotaByName: {},

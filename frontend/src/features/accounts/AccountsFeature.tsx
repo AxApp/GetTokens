@@ -144,6 +144,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     filteredAccounts,
     groupedAccounts,
     availablePlanTypes,
+    availableRequestStatusCodes,
     selectedAccountIDSet,
     allFilteredSelected,
     loadAccounts,
@@ -204,14 +205,15 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         searchTerm,
         filters,
         availablePlanTypes,
+        availableRequestStatusCodes,
       }),
-    [accounts.length, availablePlanTypes, filteredAccounts.length, filters, searchTerm, t],
+    [accounts.length, availablePlanTypes, availableRequestStatusCodes, filteredAccounts.length, filters, searchTerm, t],
   );
   const isAccountListFiltered = useMemo(
     () =>
       searchTerm.trim().length > 0 ||
-      summarizeAccountsFilterState(t, filters, availablePlanTypes).length > 0,
-    [availablePlanTypes, filters, searchTerm, t],
+      summarizeAccountsFilterState(t, filters, availablePlanTypes, availableRequestStatusCodes).length > 0,
+    [availablePlanTypes, availableRequestStatusCodes, filters, searchTerm, t],
   );
 
   const [isUnifiedComposeOpen, setIsUnifiedComposeOpen] = useState(false);
@@ -1342,6 +1344,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             groupMode={groupMode}
             sortMode={sortMode}
             availablePlanTypes={availablePlanTypes}
+            availableRequestStatusCodes={availableRequestStatusCodes}
             planAvailabilityResolved={accountsLoaded}
             renderSelectionActions={false}
             onSearchChange={(value) => {

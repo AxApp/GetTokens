@@ -56,7 +56,7 @@ export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters,
       return false;
     }
 
-    if (!matchesStatusSelection(filters.status, account)) {
+    if (!matchesStatusSelection(filters.status, account, quotaState)) {
       return false;
     }
 
@@ -105,7 +105,7 @@ function matchesResourceSelection(
   state?: CodexQuotaState,
   usageSummary?: AccountUsageSummary,
 ) {
-  if (isSelectionComplete(selection)) {
+  if (isResourceSelectionComplete(selection)) {
     return true;
   }
 
@@ -113,38 +113,18 @@ function matchesResourceSelection(
   const hasBalance = hasAccountDisplayableBalance(state);
   const hasUsageToday = (usageSummary?.requestCount ?? 0) > 0;
 
-  if (selection.quotaAndBalance && hasQuota && hasBalance) {
-    return true;
-  }
-  if (selection.noQuotaAndBalance && !hasQuota && hasBalance) {
-    return true;
-  }
-  if (selection.noQuotaNoBalance && !hasQuota && !hasBalance) {
-    return true;
-  }
-  if (selection.hasUsageToday && hasUsageToday) {
-    return true;
-  }
-  if (selection.noUsageToday && !hasUsageToday) {
-    return true;
-  }
-  return false;
+  return (
+    matchesBinaryFacetSelection(hasQuota, selection.hasQuota, selection.noQuota) &&
+    matchesBinaryFacetSelection(hasBalance, selection.hasBalance, selection.noBalance) &&
+    matchesBinaryFacetSelection(hasUsageToday, selection.hasUsageToday, selection.noUsageToday)
+  );
 }
 
-function matchesStatusSelection(selection: AccountsFilterState['status'], account: AccountRecord) {
-  if (isSelectionComplete(selection)) {
-    return true;
+function matchesStatusSelection(selection: AccountsFilterState['status'], account: AccountRecord, quotaState?: CodexQuotaState) {
+  if (!matchesBaseStatusSelection(selection, account)) {
+    return false;
   }
-  if (selection.error && isAccountError(account)) {
-    return true;
-  }
-  if (selection.disabled && isAccountDisabled(account)) {
-    return true;
-  }
-  if (selection.requestable && isAccountRequestable(account)) {
-    return true;
-  }
-  return false;
+  return matchesRequestStatusCodeSelection(selection.requestStatusCodes || {}, resolveAccountRequestStatusCodes(account, quotaState));
 }
 
 function matchesPlanSelection(selection: AccountsFilterState['plan'], planType: AccountPlanType | null) {
@@ -217,6 +197,17 @@ function normalizeAccountPlanType(value: string | undefined): AccountPlanType | 
 
 function isSelectionComplete(selection: Record<string, boolean>) {
   return Object.values(selection).every(Boolean);
+}
+
+function isResourceSelectionComplete(selection: AccountsFilterState['resource']) {
+  return (
+    selection.hasQuota &&
+    selection.noQuota &&
+    selection.hasBalance &&
+    selection.noBalance &&
+    selection.hasUsageToday &&
+    selection.noUsageToday
+  );
 }
 
 function isPlanSelectionUnrestricted(selection: AccountsFilterState['plan']) {
@@ -576,6 +567,7 @@ export function buildAccountsView({
   const filteredAccounts = filterAccounts(accounts, { searchTerm, filters, codexQuotaByName, accountUsageByID });
   const groupedAccounts = groupAccounts({ accounts: filteredAccounts, groupMode, sortMode, codexQuotaByName, t });
   const availablePlanTypes = collectAvailableAccountPlanTypes(accounts, codexQuotaByName);
+  const availableRequestStatusCodes = collectAvailableRequestStatusCodes(accounts, codexQuotaByName);
   const selectedAccountIDSet = new Set(selectedAccountIDs);
   const selectedAccounts = accounts.filter((account) => selectedAccountIDSet.has(account.id));
   const allFilteredSelected =
@@ -586,8 +578,78 @@ export function buildAccountsView({
     filteredAccounts,
     groupedAccounts,
     availablePlanTypes,
+    availableRequestStatusCodes,
     selectedAccountIDSet,
     selectedAccounts,
     allFilteredSelected,
   };
+}
+
+function matchesBinaryFacetSelection(value: boolean, positiveSelected: boolean, negativeSelected: boolean) {
+  if (positiveSelected && negativeSelected) {
+    return true;
+  }
+  return value ? positiveSelected : negativeSelected;
+}
+
+function matchesBaseStatusSelection(selection: AccountsFilterState['status'], account: AccountRecord) {
+  const baseSelection = {
+    error: selection.error,
+    disabled: selection.disabled,
+    requestable: selection.requestable,
+  };
+  if (isSelectionComplete(baseSelection)) {
+    return true;
+  }
+  if (selection.error && isAccountError(account)) {
+    return true;
+  }
+  if (selection.disabled && isAccountDisabled(account)) {
+    return true;
+  }
+  if (selection.requestable && isAccountRequestable(account)) {
+    return true;
+  }
+  return false;
+}
+
+function matchesRequestStatusCodeSelection(selection: AccountsFilterState['status']['requestStatusCodes'], accountStatusCodes: readonly string[]) {
+  const selectedCodes = Object.entries(selection)
+    .filter(([, selected]) => selected === true)
+    .map(([statusCode]) => statusCode);
+  if (selectedCodes.length === 0) {
+    return true;
+  }
+  return accountStatusCodes.some((statusCode) => selectedCodes.includes(statusCode));
+}
+
+function collectAvailableRequestStatusCodes(accounts: AccountRecord[], codexQuotaByName: Record<string, CodexQuotaState>) {
+  return Array.from(
+    new Set(
+      accounts.flatMap((account) => resolveAccountRequestStatusCodes(account, getQuotaStateForAccount(account, codexQuotaByName))),
+    ),
+  ).sort();
+}
+
+function resolveAccountRequestStatusCodes(account: AccountRecord, quotaState?: CodexQuotaState) {
+  const diagnosticTexts = [
+    account.statusMessage,
+    account.rawAuthFile?.statusMessage,
+    ...(account.requestability?.evidence || []),
+    quotaState?.quota?.degradedReason,
+    quotaState?.quota?.blockReason,
+    ...(quotaState?.quota?.sources || []).map((source) => source.reason),
+  ];
+
+  return Array.from(
+    new Set(
+      diagnosticTexts
+        .flatMap((text) => extractStatusCodes(text))
+        .filter((statusCode) => /^[1-5]\d{2}$/.test(statusCode)),
+    ),
+  ).sort();
+}
+
+function extractStatusCodes(value: unknown) {
+  return String(value || '').match(/\b([1-5]\d{2})\b/g) || [];
 }

@@ -22,6 +22,7 @@ interface ResolveAccountsEmptyStateArgs {
   searchTerm: string;
   filters: AccountsFilterState;
   availablePlanTypes?: readonly string[];
+  availableRequestStatusCodes?: readonly string[];
 }
 
 type AccountsFilterGroupSelection<T extends string> = Record<T, boolean>;
@@ -34,7 +35,7 @@ type AccountsFilterStatePatch = {
 };
 
 const SOURCE_KEYS = ['authFile', 'apiKey'] as const;
-const RESOURCE_KEYS = ['quotaAndBalance', 'noQuotaAndBalance', 'noQuotaNoBalance', 'hasUsageToday', 'noUsageToday'] as const;
+const RESOURCE_KEYS = ['hasQuota', 'noQuota', 'hasBalance', 'noBalance', 'hasUsageToday', 'noUsageToday'] as const;
 const STATUS_KEYS = ['error', 'disabled', 'requestable'] as const;
 
 export const defaultAccountsFilterState: AccountsFilterState = {
@@ -43,9 +44,10 @@ export const defaultAccountsFilterState: AccountsFilterState = {
     apiKey: true,
   },
   resource: {
-    quotaAndBalance: true,
-    noQuotaAndBalance: true,
-    noQuotaNoBalance: true,
+    hasQuota: true,
+    noQuota: true,
+    hasBalance: true,
+    noBalance: true,
     hasUsageToday: true,
     noUsageToday: true,
   },
@@ -53,9 +55,9 @@ export const defaultAccountsFilterState: AccountsFilterState = {
     error: true,
     disabled: true,
     requestable: true,
+    requestStatusCodes: {},
   },
-  plan: {
-  },
+  plan: {},
 };
 
 export function normalizeAccountsFilterState(value: unknown): AccountsFilterState {
@@ -75,10 +77,7 @@ export function normalizeAccountsFilterState(value: unknown): AccountsFilterStat
 
 export const resolveAccountsFilterState = normalizeAccountsFilterState;
 
-export function applyAccountsFilterState(
-  base: AccountsFilterState,
-  patch: AccountsFilterStatePatch,
-): AccountsFilterState {
+export function applyAccountsFilterState(base: AccountsFilterState, patch: AccountsFilterStatePatch): AccountsFilterState {
   return normalizeAccountsFilterState({
     source: {
       ...base.source,
@@ -91,6 +90,10 @@ export function applyAccountsFilterState(
     status: {
       ...base.status,
       ...patch.status,
+      requestStatusCodes: {
+        ...base.status.requestStatusCodes,
+        ...patch.status?.requestStatusCodes,
+      },
     },
     plan: {
       ...base.plan,
@@ -100,24 +103,13 @@ export function applyAccountsFilterState(
 }
 
 export function buildAccountsRiskFilterState(base: AccountsFilterState = defaultAccountsFilterState): AccountsFilterState {
-  return applyAccountsFilterState(defaultAccountsFilterState, {
-    source: {
-      authFile: true,
-      apiKey: true,
-    },
-    resource: {
-      quotaAndBalance: true,
-      noQuotaAndBalance: true,
-      noQuotaNoBalance: true,
-      hasUsageToday: true,
-      noUsageToday: true,
-    },
+  return applyAccountsFilterState(base, {
     status: {
       error: true,
       disabled: true,
       requestable: false,
+      requestStatusCodes: {},
     },
-    plan: {},
   });
 }
 
@@ -138,6 +130,7 @@ export function summarizeAccountsFilterState(
   t: (key: string) => string,
   state: AccountsFilterState,
   availablePlanTypes: readonly string[] = Object.keys(state.plan),
+  availableRequestStatusCodes: readonly string[] = Object.keys(state.status.requestStatusCodes || {}),
 ): AccountsFilterSummaryPart[] {
   const parts: AccountsFilterSummaryPart[] = [];
 
@@ -150,23 +143,18 @@ export function summarizeAccountsFilterState(
     }
   }
 
-  if (!isSelectionComplete(state.resource, RESOURCE_KEYS)) {
-    if (state.resource.quotaAndBalance) {
-      parts.push({ kind: 'resource', label: t('accounts.filter_quota_and_balance_match') });
-    }
-    if (state.resource.noQuotaAndBalance) {
-      parts.push({ kind: 'resource', label: t('accounts.filter_no_quota_and_balance_match') });
-    }
-    if (state.resource.noQuotaNoBalance) {
-      parts.push({ kind: 'resource', label: t('accounts.filter_no_quota_no_balance_match') });
-    }
-    if (state.resource.hasUsageToday) {
-      parts.push({ kind: 'resource', label: t('accounts.filter_usage_today_match') });
-    }
-    if (state.resource.noUsageToday) {
-      parts.push({ kind: 'resource', label: t('accounts.filter_no_usage_today_match') });
-    }
-  }
+  appendBinaryFacetSummary(parts, [state.resource.hasQuota, state.resource.noQuota], [
+    t('accounts.filter_has_quota_match'),
+    t('accounts.filter_no_quota_match'),
+  ]);
+  appendBinaryFacetSummary(parts, [state.resource.hasBalance, state.resource.noBalance], [
+    t('accounts.filter_has_balance_match'),
+    t('accounts.filter_no_balance_match'),
+  ]);
+  appendBinaryFacetSummary(parts, [state.resource.hasUsageToday, state.resource.noUsageToday], [
+    t('accounts.filter_usage_today_match'),
+    t('accounts.filter_no_usage_today_match'),
+  ]);
 
   if (!isSelectionComplete(state.status, STATUS_KEYS)) {
     if (state.status.error) {
@@ -177,6 +165,13 @@ export function summarizeAccountsFilterState(
     }
     if (state.status.requestable) {
       parts.push({ kind: 'status', label: t('accounts.filter_requestable_match') });
+    }
+  }
+
+  const requestStatusCodes = state.status.requestStatusCodes || {};
+  for (const statusCode of normalizeStatusCodeList(availableRequestStatusCodes)) {
+    if (requestStatusCodes[statusCode] === true) {
+      parts.push({ kind: 'status', label: `HTTP ${statusCode}` });
     }
   }
 
@@ -199,6 +194,7 @@ export function resolveAccountsEmptyState(
     searchTerm,
     filters,
     availablePlanTypes = Object.keys(filters.plan),
+    availableRequestStatusCodes = Object.keys(filters.status.requestStatusCodes || {}),
   }: ResolveAccountsEmptyStateArgs,
 ): AccountsEmptyState | null {
   if (filteredAccountCount > 0) {
@@ -220,7 +216,7 @@ export function resolveAccountsEmptyState(
     title: t('accounts.filter_empty_title'),
     body: t('accounts.filter_empty_hint'),
     showClearSearch: searchTerm.trim().length > 0,
-    showResetFilters: summarizeAccountsFilterState(t, filters, availablePlanTypes).length > 0,
+    showResetFilters: summarizeAccountsFilterState(t, filters, availablePlanTypes, availableRequestStatusCodes).length > 0,
   };
 }
 
@@ -236,10 +232,7 @@ export function readStoredAccountsFilterState(storage: Pick<Storage, 'getItem'> 
   }
 }
 
-export function persistAccountsFilterState(
-  storage: Pick<Storage, 'setItem'> | null | undefined,
-  state: AccountsFilterState,
-): void {
+export function persistAccountsFilterState(storage: Pick<Storage, 'setItem'> | null | undefined, state: AccountsFilterState): void {
   storage?.setItem(ACCOUNTS_FILTERS_STORAGE_KEY, JSON.stringify(state));
 }
 
@@ -266,38 +259,63 @@ function normalizeSourceSelection(value: unknown): AccountsFilterState['source']
 
 function normalizeResourceSelection(value: unknown): AccountsFilterState['resource'] {
   if (isSelectionObject(value, RESOURCE_KEYS)) {
-    return normalizeSelectionObject(value, RESOURCE_KEYS, defaultAccountsFilterState.resource);
+    return normalizeResourceFacetSelection(normalizeSelectionObject(value, RESOURCE_KEYS, defaultAccountsFilterState.resource));
   }
 
   const candidate = isPlainObject(value) ? value : null;
+  if (
+    candidate &&
+    ('quotaAndBalance' in candidate || 'noQuotaAndBalance' in candidate || 'noQuotaNoBalance' in candidate)
+  ) {
+    return normalizeResourceFacetSelection({
+      hasQuota: resolveBoolean(candidate.quotaAndBalance),
+      noQuota: resolveBoolean(candidate.noQuotaAndBalance) || resolveBoolean(candidate.noQuotaNoBalance),
+      hasBalance: resolveBoolean(candidate.quotaAndBalance) || resolveBoolean(candidate.noQuotaAndBalance),
+      noBalance: resolveBoolean(candidate.noQuotaNoBalance),
+      hasUsageToday: !('hasUsageToday' in candidate) || resolveBoolean(candidate.hasUsageToday),
+      noUsageToday: !('noUsageToday' in candidate) || resolveBoolean(candidate.noUsageToday),
+    });
+  }
+
   if (!candidate || (!('hasLongestQuota' in candidate) && !('hasBalance' in candidate))) {
     return { ...defaultAccountsFilterState.resource };
   }
 
-  const hasLongestQuota = resolveBoolean(candidate?.hasLongestQuota);
-  const hasBalance = resolveBoolean(candidate?.hasBalance);
-  return {
-    quotaAndBalance: hasLongestQuota && hasBalance,
-    noQuotaAndBalance: !hasLongestQuota && hasBalance,
-    noQuotaNoBalance: !hasLongestQuota && !hasBalance,
+  const hasLongestQuota = resolveBoolean(candidate.hasLongestQuota);
+  const hasBalance = resolveBoolean(candidate.hasBalance);
+  return normalizeResourceFacetSelection({
+    hasQuota: hasLongestQuota,
+    noQuota: !hasLongestQuota,
+    hasBalance,
+    noBalance: !hasBalance,
     hasUsageToday: true,
     noUsageToday: true,
-  };
+  });
 }
 
 function normalizeStatusSelection(value: unknown): AccountsFilterState['status'] {
+  const candidate = isPlainObject(value) ? value : null;
+  const requestStatusCodes = normalizeRequestStatusCodeSelection(candidate?.requestStatusCodes);
+
   if (isSelectionObject(value, STATUS_KEYS)) {
-    return normalizeSelectionObject(value, STATUS_KEYS, defaultAccountsFilterState.status);
+    return {
+      ...normalizeSelectionObject(value, STATUS_KEYS, defaultAccountsFilterState.status),
+      requestStatusCodes,
+    };
   }
 
-  const candidate = isPlainObject(value) ? value : null;
   if (!candidate || (!('requiresError' in candidate) && !('requiresDisabled' in candidate) && !('requiresRequestable' in candidate))) {
-    return { ...defaultAccountsFilterState.status };
+    return {
+      ...defaultAccountsFilterState.status,
+      requestStatusCodes,
+    };
   }
+
   return {
-    error: resolveBoolean(candidate?.requiresError),
-    disabled: resolveBoolean(candidate?.requiresDisabled),
-    requestable: resolveBoolean(candidate?.requiresRequestable),
+    error: resolveBoolean(candidate.requiresError),
+    disabled: resolveBoolean(candidate.requiresDisabled),
+    requestable: resolveBoolean(candidate.requiresRequestable),
+    requestStatusCodes,
   };
 }
 
@@ -345,9 +363,71 @@ function isPlanSelectionComplete(selection: AccountsFilterState['plan'], availab
   return availablePlanTypes.every((planType) => selection[planType] !== false);
 }
 
+function appendBinaryFacetSummary(
+  parts: AccountsFilterSummaryPart[],
+  selection: [boolean, boolean],
+  labels: [string, string],
+) {
+  const [positiveSelected, negativeSelected] = selection;
+  const [positiveLabel, negativeLabel] = labels;
+  if (positiveSelected && negativeSelected) {
+    return;
+  }
+  if (positiveSelected) {
+    parts.push({ kind: 'resource', label: positiveLabel });
+  }
+  if (negativeSelected) {
+    parts.push({ kind: 'resource', label: negativeLabel });
+  }
+}
+
 function normalizePlanFilterKey(value: string) {
   const normalized = value.trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '');
   return normalized.replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+function normalizeResourceFacetSelection(value: AccountsFilterState['resource']): AccountsFilterState['resource'] {
+  const [hasQuota, noQuota] = normalizeBinaryFacet(value.hasQuota, value.noQuota);
+  const [hasBalance, noBalance] = normalizeBinaryFacet(value.hasBalance, value.noBalance);
+  const [hasUsageToday, noUsageToday] = normalizeBinaryFacet(value.hasUsageToday, value.noUsageToday);
+  return {
+    hasQuota,
+    noQuota,
+    hasBalance,
+    noBalance,
+    hasUsageToday,
+    noUsageToday,
+  };
+}
+
+function normalizeBinaryFacet(positiveSelected: boolean, negativeSelected: boolean): [boolean, boolean] {
+  if (!positiveSelected && !negativeSelected) {
+    return [true, true];
+  }
+  return [positiveSelected, negativeSelected];
+}
+
+function normalizeRequestStatusCodeSelection(value: unknown): AccountsFilterState['status']['requestStatusCodes'] {
+  if (!isPlainObject(value)) {
+    return {};
+  }
+
+  return Object.entries(value).reduce<AccountsFilterState['status']['requestStatusCodes']>((selection, [rawCode, rawSelected]) => {
+    const statusCode = normalizeStatusCode(rawCode);
+    if (statusCode && rawSelected === true) {
+      selection[statusCode] = true;
+    }
+    return selection;
+  }, {});
+}
+
+function normalizeStatusCodeList(values: readonly string[]) {
+  return Array.from(new Set(values.map((value) => normalizeStatusCode(value)).filter(Boolean) as string[])).sort();
+}
+
+function normalizeStatusCode(value: unknown) {
+  const normalized = String(value || '').trim();
+  return /^[1-5]\d{2}$/.test(normalized) ? normalized : '';
 }
 
 function formatAccountPlanLabel(planType: string) {

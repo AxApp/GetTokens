@@ -26,6 +26,7 @@ interface AccountsToolbarProps {
   groupMode: AccountGroupMode;
   sortMode: AccountSortMode;
   availablePlanTypes?: readonly AccountPlanType[];
+  availableRequestStatusCodes?: readonly string[];
   planAvailabilityResolved?: boolean;
   onSearchChange: (value: string) => void;
   onFiltersChange: (value: AccountsFilterState) => void;
@@ -71,6 +72,7 @@ export default function AccountsToolbar({
   groupMode,
   sortMode,
   availablePlanTypes = DEFAULT_AVAILABLE_PLAN_TYPES,
+  availableRequestStatusCodes = [],
   planAvailabilityResolved = true,
   onSearchChange,
   onFiltersChange,
@@ -131,12 +133,29 @@ export default function AccountsToolbar({
     );
   }
 
-  function setStatusOption(key: keyof AccountsFilterState['status']) {
+  function setStatusOption(key: 'error' | 'disabled' | 'requestable') {
     onFiltersChange(
       applyAccountsFilterState(filters, {
         status: {
           ...filters.status,
           [key]: !filters.status[key],
+        },
+      }),
+    );
+  }
+
+  function setStatusRequestCodeOption(statusCode: string) {
+    const nextRequestStatusCodes = { ...filters.status.requestStatusCodes };
+    if (nextRequestStatusCodes[statusCode] === true) {
+      delete nextRequestStatusCodes[statusCode];
+    } else {
+      nextRequestStatusCodes[statusCode] = true;
+    }
+
+    onFiltersChange(
+      applyAccountsFilterState(filters, {
+        status: {
+          requestStatusCodes: nextRequestStatusCodes,
         },
       }),
     );
@@ -166,7 +185,7 @@ export default function AccountsToolbar({
               onClick={() => setIsMenuOpen((prev) => !prev)}
               className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
             >
-              {buildToolbarFilterLabel(t, filters, planOptions)}
+              {buildToolbarFilterLabel(t, filters, planOptions, availableRequestStatusCodes)}
             </button>
             {isMenuOpen ? (
               <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[360px] flex-col gap-3.5 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
@@ -220,28 +239,55 @@ export default function AccountsToolbar({
                       {t('accounts.filter_requestable_match')}
                     </FilterCheckOption>
                   </div>
+                  {availableRequestStatusCodes.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-1">
+                      <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                        {t('accounts.filter_group_request_status')}
+                      </p>
+                      {availableRequestStatusCodes.map((statusCode) => (
+                        <FilterCheckOption
+                          key={statusCode}
+                          active={filters.status.requestStatusCodes[statusCode] === true}
+                          uppercase={false}
+                          onClick={() => setStatusRequestCodeOption(statusCode)}
+                        >
+                          {`HTTP ${statusCode}`}
+                        </FilterCheckOption>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-1">
-                    <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
-                      {t('accounts.filter_group_other')}
-                    </p>
-                    <FilterCheckOption active={filters.resource.quotaAndBalance} onClick={() => setResourceOption('quotaAndBalance')}>
-                      {t('accounts.filter_quota_and_balance_match')}
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.resource.noQuotaAndBalance} onClick={() => setResourceOption('noQuotaAndBalance')}>
-                      {t('accounts.filter_no_quota_and_balance_match')}
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.resource.noQuotaNoBalance} onClick={() => setResourceOption('noQuotaNoBalance')}>
-                      {t('accounts.filter_no_quota_no_balance_match')}
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.resource.hasUsageToday} onClick={() => setResourceOption('hasUsageToday')}>
-                      {t('accounts.filter_usage_today_match')}
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.resource.noUsageToday} onClick={() => setResourceOption('noUsageToday')}>
-                      {t('accounts.filter_no_usage_today_match')}
-                    </FilterCheckOption>
-                  </div>
+                  <p className="px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                    {t('accounts.filter_group_other')}
+                  </p>
+                  <FilterBinaryOptionRow
+                    title={t('accounts.filter_group_quota')}
+                    leftLabel={t('accounts.filter_has_quota_match')}
+                    rightLabel={t('accounts.filter_no_quota_match')}
+                    leftActive={filters.resource.hasQuota}
+                    rightActive={filters.resource.noQuota}
+                    onLeftClick={() => setResourceOption('hasQuota')}
+                    onRightClick={() => setResourceOption('noQuota')}
+                  />
+                  <FilterBinaryOptionRow
+                    title={t('accounts.filter_group_balance')}
+                    leftLabel={t('accounts.filter_has_balance_match')}
+                    rightLabel={t('accounts.filter_no_balance_match')}
+                    leftActive={filters.resource.hasBalance}
+                    rightActive={filters.resource.noBalance}
+                    onLeftClick={() => setResourceOption('hasBalance')}
+                    onRightClick={() => setResourceOption('noBalance')}
+                  />
+                  <FilterBinaryOptionRow
+                    title={t('accounts.filter_group_today_usage')}
+                    leftLabel={t('accounts.filter_usage_today_match')}
+                    rightLabel={t('accounts.filter_no_usage_today_match')}
+                    leftActive={filters.resource.hasUsageToday}
+                    rightActive={filters.resource.noUsageToday}
+                    onLeftClick={() => setResourceOption('hasUsageToday')}
+                    onRightClick={() => setResourceOption('noUsageToday')}
+                  />
                 </div>
                 <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-2">
                   <button
@@ -807,8 +853,45 @@ function FilterCheckOption({
   );
 }
 
-function buildToolbarFilterLabel(t: Translator, filters: AccountsFilterState, availablePlanTypes: readonly AccountPlanType[]) {
-  const parts = summarizeAccountsFilterState(t, filters, availablePlanTypes);
+function FilterBinaryOptionRow({
+  title,
+  leftLabel,
+  rightLabel,
+  leftActive,
+  rightActive,
+  onLeftClick,
+  onRightClick,
+}: {
+  title: string;
+  leftLabel: string;
+  rightLabel: string;
+  leftActive: boolean;
+  rightActive: boolean;
+  onLeftClick: () => void;
+  onRightClick: () => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-1">
+      <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+        {title}
+      </p>
+      <FilterCheckOption active={leftActive} onClick={onLeftClick}>
+        {leftLabel}
+      </FilterCheckOption>
+      <FilterCheckOption active={rightActive} onClick={onRightClick}>
+        {rightLabel}
+      </FilterCheckOption>
+    </div>
+  );
+}
+
+function buildToolbarFilterLabel(
+  t: Translator,
+  filters: AccountsFilterState,
+  availablePlanTypes: readonly AccountPlanType[],
+  availableRequestStatusCodes: readonly string[],
+) {
+  const parts = summarizeAccountsFilterState(t, filters, availablePlanTypes, availableRequestStatusCodes);
 
   if (parts.length === 0) {
     return t('accounts.display_filters');
