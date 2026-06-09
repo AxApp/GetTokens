@@ -232,6 +232,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(() =>
     readInitialDisplayMode(),
   );
+  const [collapsedAccountGroupIDs, setCollapsedAccountGroupIDs] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [relayKeyItems, setRelayKeyItems] = useState<
     main.RelayServiceAPIKeyItem[]
   >([]);
@@ -427,6 +430,37 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     selectedAccountIDs,
     displayMode,
   );
+  const toggleAccountGroupCollapsed = useCallback((groupID: string) => {
+    setCollapsedAccountGroupIDs((current) => {
+      const next = new Set(current);
+      if (next.has(groupID)) {
+        next.delete(groupID);
+      } else {
+        next.add(groupID);
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    setCollapsedAccountGroupIDs((current) => {
+      if (current.size === 0) {
+        return current;
+      }
+      const visibleGroupIDs = new Set(groupedAccounts.map((group) => group.id));
+      let changed = false;
+      const next = new Set<string>();
+      current.forEach((groupID) => {
+        if (visibleGroupIDs.has(groupID)) {
+          next.add(groupID);
+        } else {
+          changed = true;
+        }
+      });
+      return changed ? next : current;
+    });
+  }, [groupedAccounts]);
+
   const isAggregateWorkspace = true;
   const usageAccounts = useMemo(() => accounts, [accounts]);
   const previewMode = !hasWailsAppBindings();
@@ -1491,8 +1525,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   oauthPendingAccountID={oauthPendingAccountID}
                   pendingStatusAccountID={pendingStatusAccountID}
                   displayMode={displayMode}
+                  isCollapsed={collapsedAccountGroupIDs.has(group.id)}
                   isFilteredView={isAccountListFiltered}
                   onToggleSelection={toggleAccountSelection}
+                  onToggleCollapsed={toggleAccountGroupCollapsed}
                   onToggleGroupSelection={toggleGroupSelection}
                   onRefreshGroup={refreshGroupQuota}
                   onSetGroupDisabled={setGroupDisabled}

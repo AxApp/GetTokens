@@ -25,8 +25,10 @@ interface AccountGroupSectionProps {
   oauthPendingAccountID: string | null;
   pendingStatusAccountID: string | null;
   displayMode: AccountListDisplayMode;
+  isCollapsed?: boolean;
   isFilteredView?: boolean;
   onToggleSelection: (accountID: string) => void;
+  onToggleCollapsed?: (groupID: string) => void;
   onToggleGroupSelection?: (accounts: AccountRecord[]) => void;
   onRefreshGroup?: (accounts: AccountRecord[]) => void;
   onSetGroupDisabled?: (accounts: AccountRecord[], nextDisabled: boolean) => void;
@@ -58,8 +60,10 @@ export default function AccountGroupSection({
   oauthPendingAccountID,
   pendingStatusAccountID,
   displayMode,
+  isCollapsed = false,
   isFilteredView = false,
   onToggleSelection,
+  onToggleCollapsed,
   onToggleGroupSelection,
   onRefreshGroup,
   onSetGroupDisabled,
@@ -79,9 +83,11 @@ export default function AccountGroupSection({
       t={t}
       group={group}
       displayMode={displayMode}
+      isCollapsed={isCollapsed}
       isSelectionMode={isSelectionMode}
       isFilteredView={isFilteredView}
       selectedAccountIDSet={selectedAccountIDSet}
+      onToggleCollapsed={onToggleCollapsed}
       onToggleGroupSelection={onToggleGroupSelection}
       onRefreshGroup={onRefreshGroup}
       onSetGroupDisabled={onSetGroupDisabled}

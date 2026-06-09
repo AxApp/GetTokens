@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { MoreVertical, Power, RefreshCw, SquareCheckBig, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreVertical, Power, RefreshCw, SquareCheckBig, Trash2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountGroup, AccountRecord, Translator } from '../model/types';
@@ -16,9 +16,11 @@ interface AccountGroupSectionViewProps {
   t: Translator;
   group: AccountGroup;
   displayMode: AccountListDisplayMode;
+  isCollapsed?: boolean;
   isSelectionMode?: boolean;
   isFilteredView?: boolean;
   selectedAccountIDSet?: ReadonlySet<string>;
+  onToggleCollapsed?: (groupID: string) => void;
   onToggleGroupSelection?: (accounts: AccountRecord[]) => void;
   onRefreshGroup?: (accounts: AccountRecord[]) => void;
   onSetGroupDisabled?: (accounts: AccountRecord[], nextDisabled: boolean) => void;
@@ -31,9 +33,11 @@ export default function AccountGroupSectionView({
   t,
   group,
   displayMode,
+  isCollapsed = false,
   isSelectionMode = false,
   isFilteredView = false,
   selectedAccountIDSet,
+  onToggleCollapsed,
   onToggleGroupSelection,
   onRefreshGroup,
   onSetGroupDisabled,
@@ -58,6 +62,10 @@ export default function AccountGroupSectionView({
   const canDisableGroup = resolveBulkSetDisabledTargets(group.accounts, true).targets.length > 0;
   const deleteGroupResolution = resolveBulkDeleteTargets(group.accounts);
   const canDeleteGroup = deleteGroupResolution.targets.length > 0;
+  const groupBodyID = `account-group-body-${group.id}`;
+  const collapseLabel = isCollapsed
+    ? t('accounts.group_expand')
+    : t('accounts.group_collapse');
   const deleteGroupLabel = isFilteredView
     ? t('accounts.delete_group_visible')
     : t('accounts.delete_group');
@@ -207,12 +215,31 @@ export default function AccountGroupSectionView({
   }, [displayMode, group.accounts.length, shouldVirtualize]);
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-end justify-between gap-4 border-b-2 border-[var(--border-color)] pb-4">
-        <h3 className="text-[length:var(--font-size-ui-6xl)] font-black uppercase leading-none tracking-[-0.04em] text-[var(--text-primary)]">
-          {group.label}
-        </h3>
-        <div className="mb-1 flex flex-wrap items-center justify-end gap-2">
+    <section className="space-y-4" data-account-group-collapsed={isCollapsed ? 'true' : 'false'}>
+      <div className="flex items-center justify-between gap-4 border-b-2 border-[var(--border-color)] pb-4">
+        <div className="flex min-w-0 items-center gap-3">
+          {onToggleCollapsed ? (
+            <button
+              type="button"
+              aria-label={collapseLabel}
+              aria-controls={groupBodyID}
+              aria-expanded={!isCollapsed}
+              onClick={() => onToggleCollapsed(group.id)}
+              className="btn-swiss flex h-8 w-8 shrink-0 items-center justify-center !px-0 !py-0"
+              title={collapseLabel}
+            >
+              {isCollapsed ? (
+                <ChevronRight size={16} strokeWidth={3} />
+              ) : (
+                <ChevronDown size={16} strokeWidth={3} />
+              )}
+            </button>
+          ) : null}
+          <h3 className="min-w-0 truncate text-[length:var(--font-size-ui-6xl)] font-black uppercase leading-none tracking-[-0.04em] text-[var(--text-primary)]">
+            {group.label}
+          </h3>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <p className="text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {group.accounts.length} {t('accounts.plan_group_meta')}
           </p>
@@ -335,38 +362,41 @@ export default function AccountGroupSectionView({
         </div>
       </div>
 
-      {group.accounts.length === 0 && emptyContent ? (
-        emptyContent
-      ) : (
-        <div
-          ref={gridRef}
-          className={
-            displayMode === 'list'
-              ? 'grid grid-cols-1 gap-3'
-              : 'account-card-grid-full grid gap-8'
-          }
-          data-plan-group-grid={group.id}
-          data-account-group-virtualized={shouldVirtualize ? 'true' : undefined}
-          data-account-group-render-window={shouldVirtualize ? `${renderWindow.startIndex}:${renderWindow.endIndex}` : undefined}
-        >
-          {shouldVirtualize && renderWindow.topSpacerHeight > 0 ? (
-            <div
-              aria-hidden="true"
-              className="col-span-full"
-              data-account-group-virtual-spacer="top"
-              style={{ height: renderWindow.topSpacerHeight }}
-            />
-          ) : null}
-          {visibleAccounts.map((account) => renderAccount(account))}
-          {shouldVirtualize && renderWindow.bottomSpacerHeight > 0 ? (
-            <div
-              aria-hidden="true"
-              className="col-span-full"
-              data-account-group-virtual-spacer="bottom"
-              style={{ height: renderWindow.bottomSpacerHeight }}
-            />
-          ) : null}
-        </div>
+      {isCollapsed ? null : (
+        group.accounts.length === 0 && emptyContent ? (
+          emptyContent
+        ) : (
+          <div
+            id={groupBodyID}
+            ref={gridRef}
+            className={
+              displayMode === 'list'
+                ? 'grid grid-cols-1 gap-3'
+                : 'account-card-grid-full grid gap-8'
+            }
+            data-plan-group-grid={group.id}
+            data-account-group-virtualized={shouldVirtualize ? 'true' : undefined}
+            data-account-group-render-window={shouldVirtualize ? `${renderWindow.startIndex}:${renderWindow.endIndex}` : undefined}
+          >
+            {shouldVirtualize && renderWindow.topSpacerHeight > 0 ? (
+              <div
+                aria-hidden="true"
+                className="col-span-full"
+                data-account-group-virtual-spacer="top"
+                style={{ height: renderWindow.topSpacerHeight }}
+              />
+            ) : null}
+            {visibleAccounts.map((account) => renderAccount(account))}
+            {shouldVirtualize && renderWindow.bottomSpacerHeight > 0 ? (
+              <div
+                aria-hidden="true"
+                className="col-span-full"
+                data-account-group-virtual-spacer="bottom"
+                style={{ height: renderWindow.bottomSpacerHeight }}
+              />
+            ) : null}
+          </div>
+        )
       )}
     </section>
   );

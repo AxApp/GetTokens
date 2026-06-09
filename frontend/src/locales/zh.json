@@ -1503,6 +1503,8 @@
     "select_account": "选中",
     "select_group": "选择",
     "unselect_group": "取消选择",
+    "group_collapse": "收起分组",
+    "group_expand": "展开分组",
     "refresh_group": "刷新",
     "group_actions": "更多操作",
     "enable_group": "激活本组",

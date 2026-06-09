@@ -101,6 +101,30 @@
    - 高级筛选面板新增快捷筛选、当前条件区；来源与资源维度改为 `全部 / 有 / 无` 或同类三段式 chip。
    - 桌面浏览器验收截图：`screenshots/20260609/accounts/20260609-accounts-filter-chips-desktop-after-v01.png`。
 
+### 2026-06-09 分组展开收起证据
+
+1. 问题来源：用户在浏览器评论中框选账号池列表分组头 `PRO 3 项资产 刷新`，要求“这里支持展开收起”。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/AccountsFeature.tsx`
+   - `frontend/src/features/accounts/components/AccountGroupSection.tsx`
+   - `frontend/src/features/accounts/components/AccountGroupSectionView.tsx`
+3. 当前现象：分组头只保留标题、资产数、批量选择、刷新和更多操作；账号较多时用户只能连续滚动，没有按套餐/来源/状态分组临时收起的能力。
+4. 预期改动：
+   - 每个分组头提供展开/收起按钮，并用图标表达状态
+   - 收起后只隐藏该分组账号卡片区，分组标题、资产数、刷新、选择和更多操作仍可见
+   - 收起状态只影响当前页面展示，不改变筛选结果、批量选择、刷新、禁用或删除的账号作用域
+   - 分组变化时清理已经不存在的折叠 key，避免切换分组模式后残留无效状态
+5. 验收方式：
+   - 单测/源码断言覆盖分组折叠 props、DOM 标记、图标/文案和 `AccountsFeature` 状态传递
+   - `npm --prefix frontend run typecheck`、`docs-linhay/scripts/check-docs.sh` 通过
+   - 无头浏览器打开 `#frame=accounts`，确认点击 `PRO` 分组头按钮后卡片区隐藏，再次点击恢复
+6. 实现结果：
+   - 2026-06-09 已在分组头左侧增加图标按钮，展开态显示 `收起分组`，收起态显示 `展开分组`。
+   - 收起状态由账号页容器按 `group.id` 维护；分组消失时自动清理无效 key。
+   - 收起只隐藏分组卡片区，标题、资产数、刷新、选择和更多操作仍按完整 `group.accounts` 作用。
+   - 追加修正分组头左侧标题组垂直居中：折叠按钮与 `KEY` 等短标题中心线对齐，不再用 `mb-1` 偏移补偿。
+   - 无头浏览器验收截图：`screenshots/20260609/accounts/20260609-accounts-group-collapse-after-v01.png`。
+
 ### 分组模式规划
 
 1. 账号池主列表需要支持可切换分组模式和排序模式，二者只改变列表组织方式，不改变筛选、选择、路由、轮动、禁用或导出语义。

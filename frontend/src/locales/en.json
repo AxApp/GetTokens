@@ -1503,6 +1503,8 @@
     "select_account": "Select",
     "select_group": "Select",
     "unselect_group": "Unselect",
+    "group_collapse": "Collapse Group",
+    "group_expand": "Expand Group",
     "refresh_group": "Refresh",
     "group_actions": "More Actions",
     "enable_group": "Enable Group",

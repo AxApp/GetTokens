@@ -73,6 +73,41 @@ test('AccountGroupSectionView virtualizes large account groups instead of mappin
   assert.doesNotMatch(source, /group\.accounts\.map\(\(account\) => renderAccount\(account\)\)/);
 });
 
+test('account plan groups can collapse without changing group actions scope', async () => {
+  const viewSource = await readFile(new URL('../components/AccountGroupSectionView.tsx', import.meta.url), 'utf8');
+  const wrapperSource = await readFile(new URL('../components/AccountGroupSection.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const zhLocale = await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8');
+  const enLocale = await readFile(new URL('../../../locales/en.json', import.meta.url), 'utf8');
+
+  assert.match(viewSource, /isCollapsed\?: boolean/);
+  assert.match(viewSource, /onToggleCollapsed\?: \(groupID: string\) => void/);
+  assert.match(viewSource, /data-account-group-collapsed=\{isCollapsed \? 'true' : 'false'\}/);
+  assert.match(viewSource, /className="flex min-w-0 items-center gap-3"/);
+  assert.match(viewSource, /className="btn-swiss flex h-8 w-8 shrink-0 items-center justify-center !px-0 !py-0"/);
+  assert.doesNotMatch(viewSource, /className="btn-swiss mb-1 flex h-8 w-8/);
+  assert.match(viewSource, /aria-expanded=\{!isCollapsed\}/);
+  assert.match(viewSource, /onToggleCollapsed\(group\.id\)/);
+  assert.match(viewSource, /isCollapsed \? null : \(/);
+  assert.match(viewSource, /onRefreshGroup\(group\.accounts\)/);
+  assert.match(viewSource, /groupSelectionAction\(group\.accounts\)/);
+
+  assert.match(wrapperSource, /isCollapsed\?: boolean/);
+  assert.match(wrapperSource, /onToggleCollapsed\?: \(groupID: string\) => void/);
+  assert.match(wrapperSource, /isCollapsed=\{isCollapsed\}/);
+  assert.match(wrapperSource, /onToggleCollapsed=\{onToggleCollapsed\}/);
+
+  assert.match(featureSource, /collapsedAccountGroupIDs/);
+  assert.match(featureSource, /toggleAccountGroupCollapsed/);
+  assert.match(featureSource, /isCollapsed=\{collapsedAccountGroupIDs\.has\(group\.id\)\}/);
+  assert.match(featureSource, /onToggleCollapsed=\{toggleAccountGroupCollapsed\}/);
+
+  assert.match(zhLocale, /"group_collapse": "收起分组"/);
+  assert.match(zhLocale, /"group_expand": "展开分组"/);
+  assert.match(enLocale, /"group_collapse": "Collapse Group"/);
+  assert.match(enLocale, /"group_expand": "Expand Group"/);
+});
+
 test('accounts selection toolbar stays sticky while scrolling selected accounts', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 
