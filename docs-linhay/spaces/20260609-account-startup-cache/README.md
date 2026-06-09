@@ -54,6 +54,7 @@
 - `accountSnapshot.shouldShowAccountSkeletons` 改为只有 `accountCount=0` 且未 ready/未 loaded 时显示整页 skeleton；已有缓存账号时不再被 `ready=false` 遮住。
 - 快照缓存只保留显示字段，剔除 API key、headers、cookie、raw auth、quota/billing curl 和管理专用密钥。
 - sidecar management `/accounts` 在 `Store.ListAccounts()` 失败时尝试 `ListAccountCards()`；如果 card 表仍可读，则返回 `200`、`degraded=true`、`warning=<原错误>` 和 card-only accounts。运行时合成路径仍使用严格 `ListAccounts()`。
+- sidecar 账号删除请求路径继续使用 soft-delete，先写 `account_cards.deleted_at_unix_ms` 并触发 runtime apply；物理删除改由后台空闲清理 worker 处理。worker 启动后延迟 `10m`，之后每 `1h` 尝试一次，使用 `2s` timeout，每批最多硬删除 `500` 条超过 `24h` 保留期的 soft-deleted `account_cards`，credential/runtime 子表依赖 SQLite `ON DELETE CASCADE` 清理。
 
 ## 验收记录
 
@@ -66,6 +67,9 @@
 - `go test ./internal/wailsapp`：通过。
 - `cd docs-linhay/references/CLIProxyAPI && go test ./internal/gettokens/accountstore ./internal/api/handlers/management -run 'TestListAccountsFallsBackToCardsWhenCredentialReadFails|TestListAccountsReopensCachedStoreAfterRecoverableReadFailure|TestCommitImportWritesAccountsAndIsIdempotentByMigrationSource|TestStoreEnsureSchema'`：通过。
 - `cd docs-linhay/references/CLIProxyAPI && go test ./internal/gettokens/accountstore ./internal/api/handlers/management ./internal/watcher/synthesizer`：通过。
+- `cd docs-linhay/references/CLIProxyAPI && go test ./internal/gettokens/accountstore -run TestPurgeSoftDeletedAccountsHardDeletesExpiredRowsWithCascade`：通过，覆盖超过 cutoff 的 soft-deleted card 被硬删，credential 级联删除，active/recent soft-deleted 账号保留。
+- `cd docs-linhay/references/CLIProxyAPI && go test ./internal/api/handlers/management -run TestPurgeSoftDeletedAccountsOnceHardDeletesExpiredRows`：通过，覆盖 management handler 的一次 idle cleanup。
+- `cd docs-linhay/references/CLIProxyAPI && go test ./internal/gettokens/accountstore ./internal/api/handlers/management ./internal/api`：通过。
 - `./scripts/wails-cli.sh build`：通过，并确认 `CLIProxyAPI binary out of date, rebuilding` 后重新构建 sidecar 进 app bundle。
 
 ## 正式数据恢复记录
