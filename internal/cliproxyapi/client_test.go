@@ -75,6 +75,9 @@ func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","priority":9}`), 200, nil
 		case method == "DELETE" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001":
 			return []byte(`{"ok":true}`), 200, nil
+		case method == "POST" && path == "/v0/management/accounts/batch-delete":
+			assertJSONContains(t, body, `"account_keys":["acct_00000000-0000-4000-8000-000000000001","acct_00000000-0000-4000-8000-000000000002"]`)
+			return []byte(`{"deleted_account_keys":["acct_00000000-0000-4000-8000-000000000001"],"errors":[{"account_key":"acct_00000000-0000-4000-8000-000000000002","error":"account not found"}],"succeeded":1,"failed":1}`), 200, nil
 		default:
 			t.Fatalf("unexpected request: %s %s", method, path)
 		}
@@ -102,6 +105,10 @@ func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 	}
 	if err := client.DeleteAccount("acct_00000000-0000-4000-8000-000000000001"); err != nil {
 		t.Fatalf("DeleteAccount returned error: %v", err)
+	}
+	deleted, err := client.DeleteAccountsBatch(AccountBatchDeleteInput{AccountKeys: []string{"acct_00000000-0000-4000-8000-000000000001", "acct_00000000-0000-4000-8000-000000000002"}})
+	if err != nil || deleted == nil || deleted.Succeeded != 1 || deleted.Failed != 1 || len(deleted.DeletedAccountKeys) != 1 || len(deleted.Errors) != 1 {
+		t.Fatalf("DeleteAccountsBatch = %#v, err = %v", deleted, err)
 	}
 }
 
@@ -346,8 +353,51 @@ func TestQuotaRuntimeClientStatus(t *testing.T) {
 	}
 }
 
+func TestQuotaRuntimeClientStatusesUsesSingleBatchRead(t *testing.T) {
+	var requestCount int
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		requestCount++
+		if method != "GET" || path != "/v0/management/gettokens/quota-status" {
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		want := "acct_00000000-0000-4000-8000-000000000001,acct_00000000-0000-4000-8000-000000000002"
+		if got := query.Get("account_keys"); got != want {
+			t.Fatalf("account_keys query = %q, want %q", got, want)
+		}
+		return []byte(`{"items":[{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"pro","windows":[],"sources":[]},{"account_key":"acct_00000000-0000-4000-8000-000000000002","status":"stale","windows":[],"sources":[]}]}`), 200, nil
+	})
+
+	statuses, err := client.GetQuotaStatuses([]string{
+		"acct_00000000-0000-4000-8000-000000000001",
+		"",
+		"acct_00000000-0000-4000-8000-000000000002",
+	})
+	if err != nil {
+		t.Fatalf("GetQuotaStatuses: %v", err)
+	}
+	if requestCount != 1 {
+		t.Fatalf("requestCount = %d, want 1", requestCount)
+	}
+	if len(statuses) != 2 || statuses[0].PlanType != "pro" || statuses[1].Status != "stale" {
+		t.Fatalf("statuses = %#v", statuses)
+	}
+
+	empty, err := client.GetQuotaStatuses([]string{"", "  "})
+	if err != nil {
+		t.Fatalf("GetQuotaStatuses empty: %v", err)
+	}
+	if len(empty) != 0 {
+		t.Fatalf("empty statuses = %#v, want empty slice", empty)
+	}
+	if requestCount != 1 {
+		t.Fatalf("empty input should not call sidecar, requestCount = %d", requestCount)
+	}
+}
+
 func TestQuotaRefreshClientEndpoints(t *testing.T) {
 	var gotRefreshPayload string
+	var gotBatchPayload string
+	var gotJobPayload string
 	var gotQuotaTestPayload string
 	var gotBillingTestPayload string
 	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
@@ -356,6 +406,16 @@ func TestQuotaRefreshClientEndpoints(t *testing.T) {
 			payload, _ := io.ReadAll(body)
 			gotRefreshPayload = string(payload)
 			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"pro","windows":[],"sources":[]}`), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/quota-refresh-batch":
+			payload, _ := io.ReadAll(body)
+			gotBatchPayload = string(payload)
+			return []byte(`{"items":[{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"pro","windows":[],"sources":[]}],"errors":[{"account_key":"acct_00000000-0000-4000-8000-000000000002","error":"quota curl missing"}],"succeeded":1,"failed":1}`), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/quota-refresh-batch/jobs":
+			payload, _ := io.ReadAll(body)
+			gotJobPayload = string(payload)
+			return []byte(`{"job_id":"job_1","status":"running","total":2,"pending":0,"running":2,"succeeded":0,"failed":0,"items":[],"errors":[]}`), 202, nil
+		case method == "GET" && path == "/v0/management/gettokens/quota-refresh-batch/jobs/job_1":
+			return []byte(`{"job_id":"job_1","status":"succeeded","total":2,"pending":0,"running":0,"succeeded":1,"failed":0,"items":[{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"pro","windows":[],"sources":[]}],"errors":[]}`), 200, nil
 		case method == "POST" && path == "/v0/management/gettokens/quota-test":
 			payload, _ := io.ReadAll(body)
 			gotQuotaTestPayload = string(payload)
@@ -376,6 +436,38 @@ func TestQuotaRefreshClientEndpoints(t *testing.T) {
 	}
 	if !strings.Contains(gotRefreshPayload, `"include_billing":true`) {
 		t.Fatalf("refresh payload = %s, want include_billing", gotRefreshPayload)
+	}
+
+	batch, err := client.RefreshQuotaBatch(QuotaRefreshBatchInput{
+		AccountKeys:    []string{"acct_00000000-0000-4000-8000-000000000001", "acct_00000000-0000-4000-8000-000000000002"},
+		IncludeBilling: true,
+		Concurrency:    4,
+	})
+	if err != nil || batch == nil || batch.Succeeded != 1 || batch.Failed != 1 || len(batch.Items) != 1 || len(batch.Errors) != 1 {
+		t.Fatalf("RefreshQuotaBatch = %#v, err = %v", batch, err)
+	}
+	if !strings.Contains(gotBatchPayload, `"account_keys":["acct_00000000-0000-4000-8000-000000000001","acct_00000000-0000-4000-8000-000000000002"]`) ||
+		!strings.Contains(gotBatchPayload, `"include_billing":true`) ||
+		!strings.Contains(gotBatchPayload, `"concurrency":4`) {
+		t.Fatalf("batch refresh payload = %s", gotBatchPayload)
+	}
+
+	job, err := client.StartQuotaRefreshBatchJob(QuotaRefreshBatchInput{
+		AccountKeys:    []string{"acct_00000000-0000-4000-8000-000000000001", "acct_00000000-0000-4000-8000-000000000002"},
+		IncludeBilling: true,
+		Concurrency:    4,
+	})
+	if err != nil || job == nil || job.JobID != "job_1" || job.Status != "running" {
+		t.Fatalf("StartQuotaRefreshBatchJob = %#v, err = %v", job, err)
+	}
+	if !strings.Contains(gotJobPayload, `"account_keys":["acct_00000000-0000-4000-8000-000000000001","acct_00000000-0000-4000-8000-000000000002"]`) ||
+		!strings.Contains(gotJobPayload, `"include_billing":true`) ||
+		!strings.Contains(gotJobPayload, `"concurrency":4`) {
+		t.Fatalf("job payload = %s", gotJobPayload)
+	}
+	job, err = client.GetQuotaRefreshBatchJob("job_1")
+	if err != nil || job == nil || job.Status != "succeeded" || job.Succeeded != 1 || len(job.Items) != 1 {
+		t.Fatalf("GetQuotaRefreshBatchJob = %#v, err = %v", job, err)
 	}
 
 	status, err = client.TestQuotaCurl(QuotaCurlTestInput{

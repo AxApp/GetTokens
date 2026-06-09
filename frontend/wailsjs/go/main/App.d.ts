@@ -35,6 +35,8 @@ export function CreateProjectCandidatePoolRule(arg1:main.ProjectCandidatePoolRul
 
 export function CreateRateLimitRule(arg1:main.RateLimitRule):Promise<Array<main.RateLimitRule>>;
 
+export function DeleteAccountsBatch(arg1:main.DeleteAccountsBatchInput):Promise<main.DeleteAccountsBatchResult>;
+
 export function DeleteAuthFiles(arg1:Array<string>):Promise<void>;
 
 export function DeleteClaudeCodeSubagent(arg1:main.DeleteClaudeCodeSubagentInputDTO):Promise<void>;
@@ -125,6 +127,8 @@ export function GetCodexModelCatalogDiagnostics():Promise<main.CodexModelCatalog
 
 export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
 
+export function GetCodexQuotaBatchRefreshJob(arg1:string):Promise<main.CodexQuotaBatchRefreshJob>;
+
 export function GetCodexSessionDetail(arg1:string):Promise<main.SessionManagementSessionDetail>;
 
 export function GetCodexSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
@@ -146,6 +150,8 @@ export function GetLocalProjectedUsageSettings():Promise<main.LocalProjectedUsag
 export function GetOAuthStatus(arg1:string):Promise<main.OAuthStatusResult>;
 
 export function GetQuotaStatus(arg1:string):Promise<main.CodexQuotaResponse>;
+
+export function GetQuotaStatuses(arg1:Array<string>):Promise<Array<main.CodexQuotaResponse>>;
 
 export function GetRateLimitStatus(arg1:main.RateLimitStatusInput):Promise<main.RateLimitState>;
 
@@ -229,6 +235,8 @@ export function RefreshCodexBinaryAvailable():Promise<codexbinary.Snapshot>;
 
 export function RefreshCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
+export function RefreshCodexQuotasBatch(arg1:main.CodexQuotaBatchRefreshInput):Promise<main.CodexQuotaBatchRefreshResult>;
+
 export function RefreshCodexSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
 
 export function RemoveCodexSkill(arg1:main.RemoveCodexSkillInput):Promise<main.RemoveCodexSkillResult>;
@@ -258,6 +266,8 @@ export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 export function SetCodexModelCatalogSyncEnabled(arg1:boolean):Promise<main.AppRuntimeSettings>;
 
 export function StartCodexOAuth():Promise<main.OAuthStartResult>;
+
+export function StartCodexQuotasBatchRefreshJob(arg1:main.CodexQuotaBatchRefreshInput):Promise<main.CodexQuotaBatchRefreshJob>;
 
 export function TestCodexAPIKeyBillingCurl(arg1:main.TestCodexAPIKeyQuotaCurlInput):Promise<main.CodexQuotaBillingInfo>;
 

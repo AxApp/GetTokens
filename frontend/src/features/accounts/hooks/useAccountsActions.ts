@@ -2,6 +2,7 @@ import { useCallback, useState, type Dispatch, type SetStateAction } from 'react
 import {
   CreateCodexAPIKey,
   CreateOpenAICompatibleProvider,
+  DeleteAccountsBatch,
   DeleteAuthFiles,
   DeleteCodexAPIKey,
   DeleteOpenAICompatibleProvider,
@@ -42,6 +43,7 @@ import { publishAccountDisabledChange } from '../model/accountDisabledSync';
 import { buildAccountDisabledActionNotice } from '../model/accountActionErrors';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import {
+  resolveBulkDeleteTargets,
   resolveBulkQuotaRefreshTargets,
   resolveBulkSetDisabledTargets,
   type AccountBulkActionID,
@@ -67,7 +69,7 @@ interface UseAccountsActionsArgs {
   removeDeletedAccountLocally: (account: AccountRecord) => void;
   patchAccountLocally: (accountID: string, patch: Partial<AccountRecord>) => void;
   patchAccountDisabledLocally: (account: AccountRecord, disabled: boolean) => void;
-  refreshAccountQuota: (account: AccountRecord) => Promise<void>;
+  refreshAccountQuotasBatch: (accounts: AccountRecord[]) => Promise<{ succeeded: number; failed: number }>;
   loadAccounts: (options?: { showLoading?: boolean; refreshSupplementalData?: boolean }) => Promise<void>;
 }
 
@@ -90,7 +92,7 @@ export default function useAccountsActions({
   removeDeletedAccountLocally,
   patchAccountLocally,
   patchAccountDisabledLocally,
-  refreshAccountQuota,
+  refreshAccountQuotasBatch,
   loadAccounts,
 }: UseAccountsActionsArgs) {
   const [bulkActionPending, setBulkActionPending] = useState<AccountBulkActionID | null>(null);
@@ -613,24 +615,37 @@ export default function useAccountsActions({
     setAccountActionNotice(null);
     setBulkActionPending('delete');
 
-    let succeeded = 0;
-    let skipped = 0;
-    let failed = 0;
-    try {
-      for (const account of selectedAccounts) {
-        const deleteRequest = resolveAccountDeleteRequest(account);
-        if (deleteRequest.type === 'missing-auth-file-name' || deleteRequest.type === 'missing-openai-compatible-name') {
-          skipped += 1;
-          continue;
-        }
+    const resolution = resolveBulkDeleteTargets(selectedAccounts);
+    if (resolution.targets.length === 0) {
+      setAccountActionNotice({
+        tone: 'warning',
+        message: `${t('accounts.bulk_delete_selected')}：${t('accounts.bulk_action_no_targets')}`,
+      });
+      setBulkActionPending(null);
+      return;
+    }
 
-        try {
-          await executeDeleteAccount(account, { reload: false });
-          succeeded += 1;
-        } catch (error) {
-          console.error(error);
-          failed += 1;
-        }
+    try {
+      let succeeded = 0;
+      let failed = 0;
+      const accountIDs = resolution.targets.map((account) => account.id);
+
+      if (hasWailsAppBindings()) {
+        const result = await trackRequest('DeleteAccountsBatch', { accountIDs }, () =>
+          DeleteAccountsBatch(main.DeleteAccountsBatchInput.createFrom({ accountIDs }))
+        );
+        succeeded = Number(result?.succeeded || 0);
+        failed = Number(result?.failed || 0);
+
+        const deletedAccountIDs = new Set(result?.deletedAccountIDs || []);
+        resolution.targets.forEach((account) => {
+          if (deletedAccountIDs.has(account.id)) {
+            removeDeletedAccountLocally(account);
+          }
+        });
+      } else {
+        resolution.targets.forEach((account) => removeDeletedAccountLocally(account));
+        succeeded = resolution.targets.length;
       }
 
       if (hasWailsAppBindings()) {
@@ -638,8 +653,12 @@ export default function useAccountsActions({
       }
 
       setAccountActionNotice({
-        tone: failed > 0 ? 'error' : skipped > 0 ? 'warning' : 'success',
-        message: formatBulkActionMessage(t('accounts.bulk_delete_selected'), { succeeded, skipped, failed }),
+        tone: failed > 0 ? 'error' : resolution.skipped.length > 0 ? 'warning' : 'success',
+        message: formatBulkActionMessage(t('accounts.bulk_delete_selected'), {
+          succeeded,
+          skipped: resolution.skipped.length,
+          failed,
+        }),
       });
     } catch (error) {
       console.error(error);
@@ -651,13 +670,14 @@ export default function useAccountsActions({
       setBulkActionPending(null);
     }
   }, [
-    executeDeleteAccount,
     formatBulkActionMessage,
     loadAccounts,
+    removeDeletedAccountLocally,
     selectedAccounts,
     setAccountActionNotice,
     setDeleteError,
     t,
+    trackRequest,
   ]);
 
   const runSelectedBulkRefresh = useCallback(async () => {
@@ -682,18 +702,10 @@ export default function useAccountsActions({
     setAccountActionNotice(null);
     setBulkActionPending('refresh');
 
-    let succeeded = 0;
-    let failed = 0;
     try {
-      for (const account of resolution.targets) {
-        try {
-          await refreshAccountQuota(account);
-          succeeded += 1;
-        } catch (error) {
-          console.error(error);
-          failed += 1;
-        }
-      }
+      const result = await refreshAccountQuotasBatch(resolution.targets);
+      const succeeded = result.succeeded;
+      const failed = result.failed;
 
       if (hasWailsAppBindings()) {
         await loadAccounts({ showLoading: false, refreshSupplementalData: false });
@@ -719,7 +731,7 @@ export default function useAccountsActions({
   }, [
     formatBulkActionMessage,
     loadAccounts,
-    refreshAccountQuota,
+    refreshAccountQuotasBatch,
     selectedAccounts,
     setAccountActionNotice,
     setDeleteError,

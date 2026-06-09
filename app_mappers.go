@@ -428,6 +428,40 @@ func mapCodexQuotaResponse(result *wailsapp.CodexQuotaResponse) *CodexQuotaRespo
 	}
 }
 
+func mapCodexQuotaBatchRefreshJob(result *wailsapp.CodexQuotaBatchRefreshJob) *CodexQuotaBatchRefreshJob {
+	if result == nil {
+		return &CodexQuotaBatchRefreshJob{
+			Items:  []CodexQuotaResponse{},
+			Errors: []CodexQuotaBatchRefreshError{},
+		}
+	}
+	items := make([]CodexQuotaResponse, 0, len(result.Items))
+	for _, item := range result.Items {
+		items = append(items, *mapCodexQuotaResponse(&item))
+	}
+	errors := make([]CodexQuotaBatchRefreshError, 0, len(result.Errors))
+	for _, item := range result.Errors {
+		errors = append(errors, CodexQuotaBatchRefreshError{
+			AccountKey: item.AccountKey,
+			Error:      item.Error,
+		})
+	}
+	return &CodexQuotaBatchRefreshJob{
+		JobID:       result.JobID,
+		Status:      result.Status,
+		Total:       result.Total,
+		Pending:     result.Pending,
+		Running:     result.Running,
+		Succeeded:   result.Succeeded,
+		Failed:      result.Failed,
+		Items:       items,
+		Errors:      errors,
+		CreatedAt:   result.CreatedAt,
+		UpdatedAt:   result.UpdatedAt,
+		CompletedAt: result.CompletedAt,
+	}
+}
+
 func mapQuotaRuntimeStates(items []cliproxyapi.QuotaRuntimeState) []CodexQuotaResponse {
 	out := make([]CodexQuotaResponse, 0, len(items))
 	for index := range items {

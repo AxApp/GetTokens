@@ -381,6 +381,46 @@ func TestUnifiedCodexAPIKeyMutationsDoNotFallbackToLegacyOnAccountStoreErrors(t 
 	}
 }
 
+func TestDeleteAccountsBatchUsesBatchManagementAPI(t *testing.T) {
+	app := &App{
+		authFileMetadataCache: map[string]authFileMetadataCacheEntry{
+			"codex.json": {},
+		},
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "DELETE" && strings.HasPrefix(path, "/v0/management/accounts/") {
+					t.Fatalf("batch delete must not call single account delete: %s", path)
+				}
+				if method != "POST" || path != "/v0/management/accounts/batch-delete" {
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read body: %v", err)
+				}
+				if !strings.Contains(string(payload), `"account_keys":["acct_a","acct_b"]`) {
+					t.Fatalf("unexpected payload: %s", payload)
+				}
+				return []byte(`{"deleted_account_keys":["acct_a"],"errors":[{"account_key":"acct_b","error":"account not found"}],"succeeded":1,"failed":1}`), 200, nil
+			})
+		},
+	}
+
+	result, err := app.DeleteAccountsBatch(DeleteAccountsBatchInput{AccountIDs: []string{"acct_a", "acct_a", "acct_b"}})
+	if err != nil || result == nil {
+		t.Fatalf("DeleteAccountsBatch = %#v, err = %v", result, err)
+	}
+	if result.Succeeded != 1 || result.Failed != 1 || strings.Join(result.DeletedAccountIDs, ",") != "acct_a" {
+		t.Fatalf("result = %#v", result)
+	}
+	if len(result.Errors) != 1 || result.Errors[0].AccountID != "acct_b" {
+		t.Fatalf("errors = %#v", result.Errors)
+	}
+	if len(app.authFileMetadataCache) != 0 {
+		t.Fatalf("auth metadata cache was not cleared: %#v", app.authFileMetadataCache)
+	}
+}
+
 func TestLegacyCodexAPIKeyIDsRejectedOutsideMigration(t *testing.T) {
 	app := &App{}
 	legacyID := "codex-api-key:stable-001"

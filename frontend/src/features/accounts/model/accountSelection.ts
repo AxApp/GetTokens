@@ -82,6 +82,22 @@ export function resolveBulkSetDisabledTargets(
   return { targets, skipped };
 }
 
+export function resolveBulkDeleteTargets(selectedAccounts: AccountRecord[]): BulkAccountTargetResolution {
+  const targets: AccountRecord[] = [];
+  const skipped: AccountRecord[] = [];
+
+  selectedAccounts.forEach((account) => {
+    const accountID = String(account.id || '').trim();
+    if (accountID.startsWith('acct_')) {
+      targets.push(account);
+      return;
+    }
+    skipped.push(account);
+  });
+
+  return { targets, skipped };
+}
+
 export function useAccountSelectionState() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedAccountIDs, setSelectedAccountIDs] = useState<string[]>([]);

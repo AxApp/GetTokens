@@ -152,6 +152,22 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Preserve unrelated settings such as permissions, hooks, status line, MCP, and unknown fields.
 - **Rendering Rule**:
   - Account groups should render available local data first. Do not block the full account list on slower per-account enrichment; update enrichment-dependent fields incrementally.
+  - Runtime quota sync must separate batch reads from active refresh writes:
+    - page entry, visibility restore, interval sync, and global "refresh runtime" actions read sidecar runtime snapshots through `GetQuotaStatuses(accountKeys)` / `/v0/management/gettokens/quota-status?account_keys=...` when the target keys are known, with `GetAllQuotaStatuses` retained only as compatibility fallback; they must not loop over account cards and call single-account `GetCodexQuota`
+    - sidecar quota-status batch reads must return ordered `items`, include stale empty states for missing requested keys, and keep the single `account_key` response shape compatible for old callers
+    - user-intent active refresh for multiple selected accounts should use the batch job flow first: `StartCodexQuotasBatchRefreshJob` / `POST /v0/management/gettokens/quota-refresh-batch/jobs`, then poll `GetCodexQuotaBatchRefreshJob` / `GET /v0/management/gettokens/quota-refresh-batch/jobs/:job_id`; the old synchronous `RefreshCodexQuotasBatch` path is compatibility fallback only
+    - batch quota refresh jobs should deduplicate `account_keys`, return immediate `job_id`, expose `pending/running/succeeded/failed` plus per-account `items/errors`, and make restart semantics explicit as in-memory runtime state
+    - background quota refresh jobs must be tied to account and sidecar lifecycles: each job needs a cancelable context, account deletion must cancel matching pending/running jobs, sidecar shutdown must cancel all pending/running jobs, and workers must re-check account existence before each outbound quota request
+    - single-card refresh may keep using single-account refresh, but list-level and selected-bulk paths must not emit one Wails/management request per account
+    - when batch refresh partially fails, keep successful quota items, mark failed targets stale/degraded, and preserve existing quota windows where possible
+  - Account-list bulk mutations must be real batch operations:
+    - selected bulk delete uses `DeleteAccountsBatch` / `POST /v0/management/accounts/batch-delete` with unified `acct_*` account ids, not a frontend loop over `executeDeleteAccount`
+    - batch mutation handlers should deduplicate keys, return per-account success/error summaries, and trigger expensive follow-up work such as account-store apply or list reload once per batch
+    - single-card delete/status paths may keep their focused single-account APIs; selected-bulk paths must not emit one Wails/management request per selected account
+  - Account-list large-scale rendering must stay windowed:
+    - 1600+ account previews must not render one `data-account-card` DOM node per account
+    - layout changes to `AccountGroupSectionView` / `accountListLayout` must preserve virtual window behavior across search, grouping, selection, detail hash restoration, and internal scroll
+    - acceptance for large-list UI work should run `docs-linhay/scripts/accounts-scale-browser-check.mjs` or an equivalent headless scale check that records total accounts, rendered card count, scrolled virtual window, internal scroll position, and screenshots under the matching `space`
 
 ## 3.2 Codex Workspace & Local Config Surfaces
 - **Codex Binary**: For Codex CLI binary version/source management, use the dedicated `gettokens-codex-binary-management` skill. Keep it as an independent binary-management business; do not merge it into account pool, local apply, usage, session, or routing flows.

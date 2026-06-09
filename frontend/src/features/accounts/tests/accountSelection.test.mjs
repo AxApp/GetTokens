@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   areAllAccountIDsSelected,
   filterSelectedAccountIDs,
+  resolveBulkDeleteTargets,
   resolveBulkQuotaRefreshTargets,
   resolveBulkSetDisabledTargets,
   toggleAccountGroupSelection,
@@ -126,5 +127,45 @@ test('resolveBulkSetDisabledTargets skips unsupported or already matching accoun
     'auth-file:missing-name',
     'acct_codex_key_legacy_named',
     'acct_codex_key',
+  ]);
+});
+
+test('resolveBulkDeleteTargets only includes unified account ids', () => {
+  const selectedAccounts = [
+    {
+      id: 'acct_12345678-1234-4234-9234-123456789abc',
+      accountKind: 'auth-file',
+      credentialSource: 'auth-file',
+      provider: 'codex',
+    },
+    {
+      id: 'auth-file:legacy.json',
+      accountKind: 'auth-file',
+      credentialSource: 'auth-file',
+      provider: 'codex',
+    },
+    {
+      id: 'codex-api-key:legacy',
+      accountKind: 'codex-api-key',
+      credentialSource: 'api-key',
+      provider: 'codex',
+    },
+    {
+      id: 'acct_abcdefab-1234-4234-9234-abcdefabcdef',
+      accountKind: 'openai-compatible',
+      credentialSource: 'api-key',
+      provider: 'deepseek',
+    },
+  ];
+
+  const result = resolveBulkDeleteTargets(selectedAccounts);
+
+  assert.deepEqual(result.targets.map((account) => account.id), [
+    'acct_12345678-1234-4234-9234-123456789abc',
+    'acct_abcdefab-1234-4234-9234-abcdefabcdef',
+  ]);
+  assert.deepEqual(result.skipped.map((account) => account.id), [
+    'auth-file:legacy.json',
+    'codex-api-key:legacy',
   ]);
 });

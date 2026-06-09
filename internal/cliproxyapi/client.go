@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 type OAuthStartResponse struct {
@@ -157,6 +158,31 @@ func (c *Client) PatchAccount(accountKey string, input AccountWriteRequest) (*Un
 func (c *Client) DeleteAccount(accountKey string) error {
 	_, _, err := c.request("DELETE", "/v0/management/accounts/"+url.PathEscape(accountKey), nil, nil, "")
 	return err
+}
+
+func (c *Client) DeleteAccountsBatch(input AccountBatchDeleteInput) (*AccountBatchDeleteResult, error) {
+	if input.AccountKeys == nil {
+		input.AccountKeys = []string{}
+	}
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/accounts/batch-delete", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response AccountBatchDeleteResult
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.DeletedAccountKeys == nil {
+		response.DeletedAccountKeys = []string{}
+	}
+	if response.Errors == nil {
+		response.Errors = []AccountBatchDeleteError{}
+	}
+	return &response, nil
 }
 
 func (c *Client) GetAccountModels(accountKey string) ([]map[string]interface{}, error) {
@@ -489,6 +515,39 @@ func (c *Client) GetAllQuotaStatuses() ([]QuotaRuntimeState, error) {
 	return response.Items, nil
 }
 
+func (c *Client) GetQuotaStatuses(accountKeys []string) ([]QuotaRuntimeState, error) {
+	keys := make([]string, 0, len(accountKeys))
+	for _, accountKey := range accountKeys {
+		accountKey = strings.TrimSpace(accountKey)
+		if accountKey == "" {
+			continue
+		}
+		keys = append(keys, accountKey)
+	}
+	if len(keys) == 0 {
+		return []QuotaRuntimeState{}, nil
+	}
+	query := url.Values{}
+	query.Set("account_keys", strings.Join(keys, ","))
+	body, _, err := c.request("GET", "/v0/management/gettokens/quota-status", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []QuotaRuntimeState `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []QuotaRuntimeState{}, nil
+	}
+	for index := range response.Items {
+		normalizeQuotaRuntimeStateSlices(&response.Items[index])
+	}
+	return response.Items, nil
+}
+
 func (c *Client) GetQuotaStatus(accountKey string) (*QuotaRuntimeState, error) {
 	query := url.Values{}
 	query.Set("account_key", accountKey)
@@ -551,6 +610,67 @@ func (c *Client) RefreshQuota(accountKey string, includeBilling bool, force bool
 		return nil, err
 	}
 	normalizeQuotaRuntimeStateSlices(&response)
+	return &response, nil
+}
+
+func (c *Client) RefreshQuotaBatch(input QuotaRefreshBatchInput) (*QuotaRefreshBatchResult, error) {
+	if input.AccountKeys == nil {
+		input.AccountKeys = []string{}
+	}
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/gettokens/quota-refresh-batch", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response QuotaRefreshBatchResult
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		response.Items = []QuotaRuntimeState{}
+	}
+	if response.Errors == nil {
+		response.Errors = []QuotaRefreshBatchError{}
+	}
+	for index := range response.Items {
+		normalizeQuotaRuntimeStateSlices(&response.Items[index])
+	}
+	return &response, nil
+}
+
+func (c *Client) StartQuotaRefreshBatchJob(input QuotaRefreshBatchInput) (*QuotaRefreshBatchJob, error) {
+	if input.AccountKeys == nil {
+		input.AccountKeys = []string{}
+	}
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/gettokens/quota-refresh-batch/jobs", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response QuotaRefreshBatchJob
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	normalizeQuotaRefreshBatchJob(&response)
+	return &response, nil
+}
+
+func (c *Client) GetQuotaRefreshBatchJob(jobID string) (*QuotaRefreshBatchJob, error) {
+	body, _, err := c.request("GET", "/v0/management/gettokens/quota-refresh-batch/jobs/"+url.PathEscape(strings.TrimSpace(jobID)), nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response QuotaRefreshBatchJob
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	normalizeQuotaRefreshBatchJob(&response)
 	return &response, nil
 }
 
@@ -617,5 +737,20 @@ func normalizeQuotaRuntimeStateSlices(state *QuotaRuntimeState) {
 	}
 	if state.Billing != nil && state.Billing.BalanceInfos == nil {
 		state.Billing.BalanceInfos = []QuotaRuntimeBalanceInfo{}
+	}
+}
+
+func normalizeQuotaRefreshBatchJob(job *QuotaRefreshBatchJob) {
+	if job == nil {
+		return
+	}
+	if job.Items == nil {
+		job.Items = []QuotaRuntimeState{}
+	}
+	if job.Errors == nil {
+		job.Errors = []QuotaRefreshBatchError{}
+	}
+	for index := range job.Items {
+		normalizeQuotaRuntimeStateSlices(&job.Items[index])
 	}
 }

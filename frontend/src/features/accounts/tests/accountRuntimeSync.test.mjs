@@ -136,11 +136,15 @@ test('quota runtime sync reads sidecar status without triggering active quota re
   assert.notEqual(syncEnd, -1);
   const syncSource = source.slice(syncStart, syncEnd);
 
+  assert.match(syncSource, /GetQuotaStatuses/);
+  assert.match(syncSource, /accountKeys: quotaKeys/);
   assert.match(syncSource, /GetAllQuotaStatuses/);
+  assert.match(syncSource, /fallback: true/);
   assert.doesNotMatch(syncSource, /GetCodexQuota/);
 
   const refreshSource = source.slice(syncEnd);
   assert.match(refreshSource, /GetCodexQuota/);
+  assert.match(refreshSource, /RefreshCodexQuotasBatch/);
 });
 
 test('accounts feature owns the unified account runtime sync loop', async () => {
@@ -151,13 +155,49 @@ test('accounts feature owns the unified account runtime sync loop', async () => 
   assert.match(source, /normalizeRuntimeSyncDocumentHidden/);
   assert.match(source, /runtimeSyncAccounts/);
   assert.match(source, /syncCodexQuotaStatuses\(runtimeSyncAccounts, \{ replace: false \}\)/);
-  assert.match(source, /runAccountRuntimeRequestPool\(runtimeSyncAccounts,\s*refreshCodexQuota/);
+  assert.doesNotMatch(source, /runAccountRuntimeRequestPool\(runtimeSyncAccounts,\s*refreshCodexQuota/);
+  assert.doesNotMatch(source, /ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY/);
   assert.doesNotMatch(source, /Promise\.all\(runtimeSyncAccounts\.map\(\(account\) => refreshCodexQuota\(account\)\)\)/);
   assert.match(source, /resolveAccountKeys: false/);
   assert.match(source, /fallbackUsageStatistics: false/);
   assert.match(source, /loadAccountRateLimits\(runtimeSyncAccounts\)/);
   assert.match(source, /visibilitychange/);
   assert.doesNotMatch(hookSource, /setInterval/);
+});
+
+test('selected bulk quota refresh uses the sidecar batch job endpoint with sync fallback', async () => {
+  const actionsSource = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const quotaHookSource = await readFile(new URL('../hooks/useAccountsQuotaState.ts', import.meta.url), 'utf8');
+  const bulkRefreshStart = actionsSource.indexOf('const runSelectedBulkRefresh = useCallback');
+  assert.notEqual(bulkRefreshStart, -1);
+  const bulkRefreshEnd = actionsSource.indexOf('const runAccountsBulkSetDisabled = useCallback', bulkRefreshStart);
+  assert.notEqual(bulkRefreshEnd, -1);
+  const bulkRefreshSource = actionsSource.slice(bulkRefreshStart, bulkRefreshEnd);
+
+  assert.match(bulkRefreshSource, /refreshAccountQuotasBatch\(resolution\.targets\)/);
+  assert.doesNotMatch(bulkRefreshSource, /for \(const account of resolution\.targets\)/);
+  assert.match(quotaHookSource, /StartCodexQuotasBatchRefreshJob/);
+  assert.match(quotaHookSource, /GetCodexQuotaBatchRefreshJob/);
+  assert.match(quotaHookSource, /RefreshCodexQuotasBatch/);
+  assert.match(quotaHookSource, /fallback: true/);
+  assert.match(quotaHookSource, /main\.CodexQuotaBatchRefreshInput\.createFrom/);
+  assert.match(quotaHookSource, /errors \|\| \[\]/);
+  assert.match(quotaHookSource, /status === 'canceled'/);
+});
+
+test('selected bulk delete uses the sidecar batch endpoint', async () => {
+  const actionsSource = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const bulkDeleteStart = actionsSource.indexOf('const runSelectedBulkDelete = useCallback');
+  assert.notEqual(bulkDeleteStart, -1);
+  const bulkDeleteEnd = actionsSource.indexOf('const runSelectedBulkRefresh = useCallback', bulkDeleteStart);
+  assert.notEqual(bulkDeleteEnd, -1);
+  const bulkDeleteSource = actionsSource.slice(bulkDeleteStart, bulkDeleteEnd);
+
+  assert.match(bulkDeleteSource, /resolveBulkDeleteTargets\(selectedAccounts\)/);
+  assert.match(bulkDeleteSource, /DeleteAccountsBatch/);
+  assert.match(bulkDeleteSource, /main\.DeleteAccountsBatchInput\.createFrom/);
+  assert.doesNotMatch(bulkDeleteSource, /executeDeleteAccount/);
+  assert.doesNotMatch(bulkDeleteSource, /for \(const account of selectedAccounts\)/);
 });
 
 test('background usage sync skips backend account resolution', async () => {

@@ -74,6 +74,56 @@ type CodexQuotaResponse struct {
 	Sources         []CodexQuotaSourceState `json:"sources"`
 }
 
+type CodexQuotaBatchRefreshInput struct {
+	AccountKeys    []string `json:"accountKeys"`
+	IncludeBilling bool     `json:"includeBilling"`
+	Force          bool     `json:"force"`
+	Concurrency    int      `json:"concurrency,omitempty"`
+}
+
+type CodexQuotaBatchRefreshError struct {
+	AccountKey string `json:"accountKey"`
+	Error      string `json:"error"`
+}
+
+type CodexQuotaBatchRefreshResult struct {
+	Items     []CodexQuotaResponse          `json:"items"`
+	Errors    []CodexQuotaBatchRefreshError `json:"errors"`
+	Succeeded int                           `json:"succeeded"`
+	Failed    int                           `json:"failed"`
+}
+
+type CodexQuotaBatchRefreshJob struct {
+	JobID       string                        `json:"jobID"`
+	Status      string                        `json:"status"`
+	Total       int                           `json:"total"`
+	Pending     int                           `json:"pending"`
+	Running     int                           `json:"running"`
+	Succeeded   int                           `json:"succeeded"`
+	Failed      int                           `json:"failed"`
+	Items       []CodexQuotaResponse          `json:"items"`
+	Errors      []CodexQuotaBatchRefreshError `json:"errors"`
+	CreatedAt   string                        `json:"createdAt"`
+	UpdatedAt   string                        `json:"updatedAt"`
+	CompletedAt string                        `json:"completedAt,omitempty"`
+}
+
+type DeleteAccountsBatchInput struct {
+	AccountIDs []string `json:"accountIDs"`
+}
+
+type DeleteAccountsBatchError struct {
+	AccountID string `json:"accountID"`
+	Error     string `json:"error"`
+}
+
+type DeleteAccountsBatchResult struct {
+	DeletedAccountIDs []string                   `json:"deletedAccountIDs"`
+	Errors            []DeleteAccountsBatchError `json:"errors"`
+	Succeeded         int                        `json:"succeeded"`
+	Failed            int                        `json:"failed"`
+}
+
 type CodexQuotaSourceState struct {
 	Source    string `json:"source"`
 	Reason    string `json:"reason,omitempty"`

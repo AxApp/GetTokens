@@ -62,6 +62,10 @@ export function CreateRateLimitRule(arg1) {
   return window['go']['main']['App']['CreateRateLimitRule'](arg1);
 }
 
+export function DeleteAccountsBatch(arg1) {
+  return window['go']['main']['App']['DeleteAccountsBatch'](arg1);
+}
+
 export function DeleteAuthFiles(arg1) {
   return window['go']['main']['App']['DeleteAuthFiles'](arg1);
 }
@@ -242,6 +246,10 @@ export function GetCodexQuota(arg1) {
   return window['go']['main']['App']['GetCodexQuota'](arg1);
 }
 
+export function GetCodexQuotaBatchRefreshJob(arg1) {
+  return window['go']['main']['App']['GetCodexQuotaBatchRefreshJob'](arg1);
+}
+
 export function GetCodexSessionDetail(arg1) {
   return window['go']['main']['App']['GetCodexSessionDetail'](arg1);
 }
@@ -284,6 +292,10 @@ export function GetOAuthStatus(arg1) {
 
 export function GetQuotaStatus(arg1) {
   return window['go']['main']['App']['GetQuotaStatus'](arg1);
+}
+
+export function GetQuotaStatuses(arg1) {
+  return window['go']['main']['App']['GetQuotaStatuses'](arg1);
 }
 
 export function GetRateLimitStatus(arg1) {
@@ -450,6 +462,10 @@ export function RefreshCodexLocalUsage() {
   return window['go']['main']['App']['RefreshCodexLocalUsage']();
 }
 
+export function RefreshCodexQuotasBatch(arg1) {
+  return window['go']['main']['App']['RefreshCodexQuotasBatch'](arg1);
+}
+
 export function RefreshCodexSessionManagementSnapshot() {
   return window['go']['main']['App']['RefreshCodexSessionManagementSnapshot']();
 }
@@ -508,6 +524,10 @@ export function SetCodexModelCatalogSyncEnabled(arg1) {
 
 export function StartCodexOAuth() {
   return window['go']['main']['App']['StartCodexOAuth']();
+}
+
+export function StartCodexQuotasBatchRefreshJob(arg1) {
+  return window['go']['main']['App']['StartCodexQuotasBatchRefreshJob'](arg1);
 }
 
 export function TestCodexAPIKeyBillingCurl(arg1) {

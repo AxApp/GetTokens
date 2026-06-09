@@ -2949,6 +2949,56 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class CodexQuotaBatchRefreshError {
+	    accountKey: string;
+	    error: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexQuotaBatchRefreshError(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	        this.error = source["error"];
+	    }
+	}
+	export class CodexQuotaBatchRefreshInput {
+	    accountKeys: string[];
+	    includeBilling: boolean;
+	    force: boolean;
+	    concurrency?: number;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexQuotaBatchRefreshInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKeys = source["accountKeys"];
+	        this.includeBilling = source["includeBilling"];
+	        this.force = source["force"];
+	        this.concurrency = source["concurrency"];
+	    }
+	}
+	export class CodexQuotaSourceState {
+	    source: string;
+	    reason?: string;
+	    expiresAt?: string;
+	    nextReset?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexQuotaSourceState(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.source = source["source"];
+	        this.reason = source["reason"];
+	        this.expiresAt = source["expiresAt"];
+	        this.nextReset = source["nextReset"];
+	    }
+	}
 	export class CodexQuotaBillingBalanceInfo {
 	    currency: string;
 	    totalBalance: string;
@@ -2998,24 +3048,6 @@ export namespace main {
 		    }
 		    return a;
 		}
-	}
-	export class CodexQuotaSourceState {
-	    source: string;
-	    reason?: string;
-	    expiresAt?: string;
-	    nextReset?: string;
-
-	    static createFrom(source: any = {}) {
-	        return new CodexQuotaSourceState(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.source = source["source"];
-	        this.reason = source["reason"];
-	        this.expiresAt = source["expiresAt"];
-	        this.nextReset = source["nextReset"];
-	    }
 	}
 	export class CodexQuotaWindow {
 	    id: string;
@@ -3097,6 +3129,97 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class CodexQuotaBatchRefreshJob {
+	    jobID: string;
+	    status: string;
+	    total: number;
+	    pending: number;
+	    running: number;
+	    succeeded: number;
+	    failed: number;
+	    items: CodexQuotaResponse[];
+	    errors: CodexQuotaBatchRefreshError[];
+	    createdAt: string;
+	    updatedAt: string;
+	    completedAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexQuotaBatchRefreshJob(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.jobID = source["jobID"];
+	        this.status = source["status"];
+	        this.total = source["total"];
+	        this.pending = source["pending"];
+	        this.running = source["running"];
+	        this.succeeded = source["succeeded"];
+	        this.failed = source["failed"];
+	        this.items = this.convertValues(source["items"], CodexQuotaResponse);
+	        this.errors = this.convertValues(source["errors"], CodexQuotaBatchRefreshError);
+	        this.createdAt = source["createdAt"];
+	        this.updatedAt = source["updatedAt"];
+	        this.completedAt = source["completedAt"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CodexQuotaBatchRefreshResult {
+	    items: CodexQuotaResponse[];
+	    errors: CodexQuotaBatchRefreshError[];
+	    succeeded: number;
+	    failed: number;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexQuotaBatchRefreshResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.items = this.convertValues(source["items"], CodexQuotaResponse);
+	        this.errors = this.convertValues(source["errors"], CodexQuotaBatchRefreshError);
+	        this.succeeded = source["succeeded"];
+	        this.failed = source["failed"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
+
 
 
 	export class CodexSkillFile {
@@ -3562,6 +3685,68 @@ export namespace main {
 		}
 	}
 
+	export class DeleteAccountsBatchError {
+	    accountID: string;
+	    error: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DeleteAccountsBatchError(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountID = source["accountID"];
+	        this.error = source["error"];
+	    }
+	}
+	export class DeleteAccountsBatchInput {
+	    accountIDs: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new DeleteAccountsBatchInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountIDs = source["accountIDs"];
+	    }
+	}
+	export class DeleteAccountsBatchResult {
+	    deletedAccountIDs: string[];
+	    errors: DeleteAccountsBatchError[];
+	    succeeded: number;
+	    failed: number;
+
+	    static createFrom(source: any = {}) {
+	        return new DeleteAccountsBatchResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.deletedAccountIDs = source["deletedAccountIDs"];
+	        this.errors = this.convertValues(source["errors"], DeleteAccountsBatchError);
+	        this.succeeded = source["succeeded"];
+	        this.failed = source["failed"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class DeleteClaudeCodeSubagentInputDTO {
 	    scope: string;
 	    path: string;

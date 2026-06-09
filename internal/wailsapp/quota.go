@@ -53,8 +53,79 @@ func (a *App) GetAllQuotaStatuses() ([]cliproxyapi.QuotaRuntimeState, error) {
 	return a.managementClient().GetAllQuotaStatuses()
 }
 
+func (a *App) GetQuotaStatuses(accountKeys []string) ([]cliproxyapi.QuotaRuntimeState, error) {
+	return a.managementClient().GetQuotaStatuses(normalizeQuotaBatchAccountKeys(accountKeys))
+}
+
 func (a *App) GetQuotaStatus(accountKey string) (*cliproxyapi.QuotaRuntimeState, error) {
 	return a.managementClient().GetQuotaStatus(accountKey)
+}
+
+func (a *App) RefreshCodexQuotasBatch(input CodexQuotaBatchRefreshInput) (*CodexQuotaBatchRefreshResult, error) {
+	result, err := a.managementClient().RefreshQuotaBatch(cliproxyapi.QuotaRefreshBatchInput{
+		AccountKeys:    normalizeQuotaBatchAccountKeys(input.AccountKeys),
+		IncludeBilling: input.IncludeBilling,
+		Force:          input.Force,
+		Concurrency:    input.Concurrency,
+	})
+	if err != nil {
+		return nil, err
+	}
+	items := make([]CodexQuotaResponse, 0, len(result.Items))
+	for index := range result.Items {
+		items = append(items, *mapQuotaRuntimeStateToCodexQuotaResponse(&result.Items[index]))
+	}
+	errors := make([]CodexQuotaBatchRefreshError, 0, len(result.Errors))
+	for _, item := range result.Errors {
+		errors = append(errors, CodexQuotaBatchRefreshError{
+			AccountKey: item.AccountKey,
+			Error:      item.Error,
+		})
+	}
+	return &CodexQuotaBatchRefreshResult{
+		Items:     items,
+		Errors:    errors,
+		Succeeded: result.Succeeded,
+		Failed:    result.Failed,
+	}, nil
+}
+
+func (a *App) StartCodexQuotasBatchRefreshJob(input CodexQuotaBatchRefreshInput) (*CodexQuotaBatchRefreshJob, error) {
+	result, err := a.managementClient().StartQuotaRefreshBatchJob(cliproxyapi.QuotaRefreshBatchInput{
+		AccountKeys:    normalizeQuotaBatchAccountKeys(input.AccountKeys),
+		IncludeBilling: input.IncludeBilling,
+		Force:          input.Force,
+		Concurrency:    input.Concurrency,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaRefreshBatchJobToCodex(result), nil
+}
+
+func (a *App) GetCodexQuotaBatchRefreshJob(jobID string) (*CodexQuotaBatchRefreshJob, error) {
+	result, err := a.managementClient().GetQuotaRefreshBatchJob(jobID)
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaRefreshBatchJobToCodex(result), nil
+}
+
+func normalizeQuotaBatchAccountKeys(values []string) []string {
+	keys := make([]string, 0, len(values))
+	seen := map[string]struct{}{}
+	for _, value := range values {
+		key := strings.TrimSpace(value)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		keys = append(keys, key)
+	}
+	return keys
 }
 
 func (a *App) getCodexAuthFileQuota(authIndex string, body []byte) (*CodexQuotaResponse, error) {
@@ -378,6 +449,40 @@ func mapQuotaRuntimeStateToCodexQuotaResponse(state *cliproxyapi.QuotaRuntimeSta
 		Blocked:         state.Blocked,
 		BlockReason:     state.BlockReason,
 		Sources:         mapQuotaRuntimeSourcesToCodexQuotaResponse(state.Sources),
+	}
+}
+
+func mapQuotaRefreshBatchJobToCodex(job *cliproxyapi.QuotaRefreshBatchJob) *CodexQuotaBatchRefreshJob {
+	if job == nil {
+		return &CodexQuotaBatchRefreshJob{
+			Items:  []CodexQuotaResponse{},
+			Errors: []CodexQuotaBatchRefreshError{},
+		}
+	}
+	items := make([]CodexQuotaResponse, 0, len(job.Items))
+	for index := range job.Items {
+		items = append(items, *mapQuotaRuntimeStateToCodexQuotaResponse(&job.Items[index]))
+	}
+	errors := make([]CodexQuotaBatchRefreshError, 0, len(job.Errors))
+	for _, item := range job.Errors {
+		errors = append(errors, CodexQuotaBatchRefreshError{
+			AccountKey: item.AccountKey,
+			Error:      item.Error,
+		})
+	}
+	return &CodexQuotaBatchRefreshJob{
+		JobID:       job.JobID,
+		Status:      job.Status,
+		Total:       job.Total,
+		Pending:     job.Pending,
+		Running:     job.Running,
+		Succeeded:   job.Succeeded,
+		Failed:      job.Failed,
+		Items:       items,
+		Errors:      errors,
+		CreatedAt:   job.CreatedAt,
+		UpdatedAt:   job.UpdatedAt,
+		CompletedAt: job.CompletedAt,
 	}
 }
 

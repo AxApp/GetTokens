@@ -398,6 +398,56 @@ type QuotaRuntimeState struct {
 	Sources         []QuotaRuntimeSourceState `json:"sources"`
 }
 
+type QuotaRefreshBatchInput struct {
+	AccountKeys    []string `json:"account_keys"`
+	IncludeBilling bool     `json:"include_billing"`
+	Force          bool     `json:"force"`
+	Concurrency    int      `json:"concurrency,omitempty"`
+}
+
+type QuotaRefreshBatchError struct {
+	AccountKey string `json:"account_key"`
+	Error      string `json:"error"`
+}
+
+type QuotaRefreshBatchResult struct {
+	Items     []QuotaRuntimeState      `json:"items"`
+	Errors    []QuotaRefreshBatchError `json:"errors"`
+	Succeeded int                      `json:"succeeded"`
+	Failed    int                      `json:"failed"`
+}
+
+type QuotaRefreshBatchJob struct {
+	JobID       string                   `json:"job_id"`
+	Status      string                   `json:"status"`
+	Total       int                      `json:"total"`
+	Pending     int                      `json:"pending"`
+	Running     int                      `json:"running"`
+	Succeeded   int                      `json:"succeeded"`
+	Failed      int                      `json:"failed"`
+	Items       []QuotaRuntimeState      `json:"items"`
+	Errors      []QuotaRefreshBatchError `json:"errors"`
+	CreatedAt   string                   `json:"created_at"`
+	UpdatedAt   string                   `json:"updated_at"`
+	CompletedAt string                   `json:"completed_at,omitempty"`
+}
+
+type AccountBatchDeleteInput struct {
+	AccountKeys []string `json:"account_keys"`
+}
+
+type AccountBatchDeleteError struct {
+	AccountKey string `json:"account_key"`
+	Error      string `json:"error"`
+}
+
+type AccountBatchDeleteResult struct {
+	DeletedAccountKeys []string                  `json:"deleted_account_keys"`
+	Errors             []AccountBatchDeleteError `json:"errors"`
+	Succeeded          int                       `json:"succeeded"`
+	Failed             int                       `json:"failed"`
+}
+
 type QuotaCurlTestInput struct {
 	APIKey         string            `json:"api_key"`
 	BaseURL        string            `json:"base_url"`

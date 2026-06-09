@@ -79,10 +79,8 @@ import type {
 } from '../model/types';
 import { shouldEnsureAccountSnapshot } from '../model/accountSnapshot';
 import {
-  ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY,
   ACCOUNT_RUNTIME_SYNC_INTERVAL_MS,
   normalizeRuntimeSyncDocumentHidden,
-  runAccountRuntimeRequestPool,
   shouldRunRuntimeSyncOnVisibilityRestore,
   shouldScheduleAccountRuntimeSync,
 } from '../model/accountRuntimeSync';
@@ -168,7 +166,13 @@ export default function useAccountsPageState({
     toggleSelectAllFiltered: applyToggleSelectAllFiltered,
     toggleSelectionMode,
   } = useAccountSelectionState();
-  const { codexQuotaByName, loadCodexQuotas, syncCodexQuotaStatuses, refreshCodexQuota } = useAccountsQuotaState(trackRequest);
+  const {
+    codexQuotaByName,
+    loadCodexQuotas,
+    syncCodexQuotaStatuses,
+    refreshCodexQuota,
+    refreshCodexQuotasBatch,
+  } = useAccountsQuotaState(trackRequest);
   const { accountUsageByID, usageRefreshingAccountIDSet, loadAccountUsage, refreshAccountUsage } = useAccountsUsageState(trackRequest);
   const {
     accountRateLimitByID,
@@ -464,13 +468,11 @@ export default function useAccountsPageState({
     }
 
     await Promise.all([
-      runAccountRuntimeRequestPool(runtimeSyncAccounts, refreshCodexQuota, {
-        concurrency: ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY,
-      }),
+      syncCodexQuotaStatuses(runtimeSyncAccounts, { replace: false }),
       refreshAccountUsage(runtimeSyncAccounts),
       refreshAccountRateLimits(runtimeSyncAccounts),
     ]);
-  }, [ready, refreshAccountRateLimits, refreshAccountUsage, refreshCodexQuota, runtimeSyncAccounts]);
+  }, [ready, refreshAccountRateLimits, refreshAccountUsage, runtimeSyncAccounts, syncCodexQuotaStatuses]);
 
   useEffect(() => {
     if (
@@ -799,7 +801,7 @@ export default function useAccountsPageState({
     removeDeletedAccountLocally,
     patchAccountLocally,
     patchAccountDisabledLocally,
-    refreshAccountQuota: refreshCodexQuota,
+    refreshAccountQuotasBatch: refreshCodexQuotasBatch,
     loadAccounts,
   });
 

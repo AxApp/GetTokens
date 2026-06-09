@@ -1139,12 +1139,70 @@ func (a *App) GetAllQuotaStatuses() ([]CodexQuotaResponse, error) {
 	return mapQuotaRuntimeStates(result), nil
 }
 
+func (a *App) GetQuotaStatuses(accountKeys []string) ([]CodexQuotaResponse, error) {
+	result, err := a.core.GetQuotaStatuses(accountKeys)
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaRuntimeStates(result), nil
+}
+
 func (a *App) GetQuotaStatus(accountKey string) (*CodexQuotaResponse, error) {
 	result, err := a.core.GetQuotaStatus(accountKey)
 	if err != nil {
 		return nil, err
 	}
 	return mapQuotaRuntimeState(result), nil
+}
+
+func (a *App) RefreshCodexQuotasBatch(input CodexQuotaBatchRefreshInput) (*CodexQuotaBatchRefreshResult, error) {
+	result, err := a.core.RefreshCodexQuotasBatch(wailsapp.CodexQuotaBatchRefreshInput{
+		AccountKeys:    input.AccountKeys,
+		IncludeBilling: input.IncludeBilling,
+		Force:          input.Force,
+		Concurrency:    input.Concurrency,
+	})
+	if err != nil {
+		return nil, err
+	}
+	items := make([]CodexQuotaResponse, 0, len(result.Items))
+	for _, item := range result.Items {
+		items = append(items, *mapCodexQuotaResponse(&item))
+	}
+	errors := make([]CodexQuotaBatchRefreshError, 0, len(result.Errors))
+	for _, item := range result.Errors {
+		errors = append(errors, CodexQuotaBatchRefreshError{
+			AccountKey: item.AccountKey,
+			Error:      item.Error,
+		})
+	}
+	return &CodexQuotaBatchRefreshResult{
+		Items:     items,
+		Errors:    errors,
+		Succeeded: result.Succeeded,
+		Failed:    result.Failed,
+	}, nil
+}
+
+func (a *App) StartCodexQuotasBatchRefreshJob(input CodexQuotaBatchRefreshInput) (*CodexQuotaBatchRefreshJob, error) {
+	result, err := a.core.StartCodexQuotasBatchRefreshJob(wailsapp.CodexQuotaBatchRefreshInput{
+		AccountKeys:    input.AccountKeys,
+		IncludeBilling: input.IncludeBilling,
+		Force:          input.Force,
+		Concurrency:    input.Concurrency,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexQuotaBatchRefreshJob(result), nil
+}
+
+func (a *App) GetCodexQuotaBatchRefreshJob(jobID string) (*CodexQuotaBatchRefreshJob, error) {
+	result, err := a.core.GetCodexQuotaBatchRefreshJob(jobID)
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexQuotaBatchRefreshJob(result), nil
 }
 
 func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaResponse, error) {
@@ -1931,4 +1989,24 @@ func cloneIntPtrMain(input *int) *int {
 
 func (a *App) DeleteCodexAPIKey(id string) error {
 	return a.core.DeleteCodexAPIKey(id)
+}
+
+func (a *App) DeleteAccountsBatch(input DeleteAccountsBatchInput) (*DeleteAccountsBatchResult, error) {
+	result, err := a.core.DeleteAccountsBatch(wailsapp.DeleteAccountsBatchInput{AccountIDs: input.AccountIDs})
+	if err != nil {
+		return nil, err
+	}
+	errors := make([]DeleteAccountsBatchError, 0, len(result.Errors))
+	for _, item := range result.Errors {
+		errors = append(errors, DeleteAccountsBatchError{
+			AccountID: item.AccountID,
+			Error:     item.Error,
+		})
+	}
+	return &DeleteAccountsBatchResult{
+		DeletedAccountIDs: result.DeletedAccountIDs,
+		Errors:            errors,
+		Succeeded:         result.Succeeded,
+		Failed:            result.Failed,
+	}, nil
 }

@@ -200,6 +200,59 @@ func (a *App) DeleteCodexAPIKey(id string) error {
 	return err
 }
 
+func (a *App) DeleteAccountsBatch(input DeleteAccountsBatchInput) (*DeleteAccountsBatchResult, error) {
+	if !a.hasManagementClient() {
+		return nil, errors.New("account-store management client 未就绪")
+	}
+	accountIDs := normalizeBatchDeleteAccountIDs(input.AccountIDs)
+	if len(accountIDs) == 0 {
+		return nil, errors.New("未选择账号")
+	}
+	result, err := a.managementClient().DeleteAccountsBatch(cliproxyapi.AccountBatchDeleteInput{AccountKeys: accountIDs})
+	if err != nil {
+		return nil, err
+	}
+	for _, accountID := range result.DeletedAccountKeys {
+		if pruneErr := pruneRelayModelAccountCacheEntries(accountID); pruneErr != nil {
+			log.Printf("prune relay model account cache for %s failed: %v", accountID, pruneErr)
+		}
+	}
+	if len(result.DeletedAccountKeys) > 0 {
+		a.invalidateAuthFileMetadataCache()
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
+	errors := make([]DeleteAccountsBatchError, 0, len(result.Errors))
+	for _, item := range result.Errors {
+		errors = append(errors, DeleteAccountsBatchError{
+			AccountID: item.AccountKey,
+			Error:     item.Error,
+		})
+	}
+	return &DeleteAccountsBatchResult{
+		DeletedAccountIDs: result.DeletedAccountKeys,
+		Errors:            errors,
+		Succeeded:         result.Succeeded,
+		Failed:            result.Failed,
+	}, nil
+}
+
+func normalizeBatchDeleteAccountIDs(values []string) []string {
+	ids := make([]string, 0, len(values))
+	seen := map[string]struct{}{}
+	for _, value := range values {
+		id := strings.TrimSpace(value)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
 func (a *App) UpdateCodexAPIKeyPriority(id string, priority int) error {
 	targetID := strings.TrimSpace(id)
 	if !isUnifiedAccountID(targetID) {
