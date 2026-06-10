@@ -33,8 +33,15 @@ ensure_source_dir() {
 
   TEMP_SOURCE_DIR="$(mktemp -d)"
 
-  echo "→ CLIProxyAPI source missing locally, cloning ${SOURCE_REPO}#${SOURCE_REF}" >&2
-  git clone --depth 1 --branch "${SOURCE_REF}" "${SOURCE_REPO}" "${TEMP_SOURCE_DIR}/CLIProxyAPI" >&2
+  echo "→ CLIProxyAPI source missing locally, fetching ${SOURCE_REPO}#${SOURCE_REF}" >&2
+  mkdir -p "${TEMP_SOURCE_DIR}/CLIProxyAPI"
+  (
+    cd "${TEMP_SOURCE_DIR}/CLIProxyAPI"
+    git init -q
+    git remote add origin "${SOURCE_REPO}"
+    git fetch --depth 1 origin "${SOURCE_REF}" >&2
+    git checkout -q --detach FETCH_HEAD
+  )
   SOURCE_DIR="${TEMP_SOURCE_DIR}/CLIProxyAPI"
 
   if [[ ! -f "${SOURCE_DIR}/go.mod" ]]; then

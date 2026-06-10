@@ -11,14 +11,47 @@ GOARCH="$2"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SOURCE_DIR="${CLI_PROXY_SOURCE_DIR:-${ROOT_DIR}/docs-linhay/references/CLIProxyAPI}"
+SOURCE_REPO="${CLI_PROXY_SOURCE_REPO:-https://github.com/AxApp/CLIProxyAPI.git}"
+SOURCE_REF="${CLI_PROXY_SOURCE_REF:-gettokens/sidecar}"
 OUTPUT_DIR="${CLI_PROXY_OUTPUT_DIR:-${ROOT_DIR}/build/bin}"
 META_FILE="${OUTPUT_DIR}/cli-proxy-api.meta.json"
 BUILD_SCRIPT="${CLI_PROXY_BUILD_SCRIPT:-${SCRIPT_DIR}/build-sidecar.sh}"
 BINARY_NAME="cli-proxy-api"
+TEMP_SOURCE_DIR=""
+
+cleanup() {
+  rm -rf "${TEMP_SOURCE_DIR}"
+}
+trap cleanup EXIT
 
 if [[ "$GOOS" == "windows" ]]; then
   BINARY_NAME="${BINARY_NAME}.exe"
 fi
+
+ensure_source_dir() {
+  if [[ -f "${SOURCE_DIR}/go.mod" ]]; then
+    return 0
+  fi
+
+  TEMP_SOURCE_DIR="$(mktemp -d)"
+  echo "→ CLIProxyAPI source missing locally, fetching ${SOURCE_REPO}#${SOURCE_REF}" >&2
+  mkdir -p "${TEMP_SOURCE_DIR}/CLIProxyAPI"
+  (
+    cd "${TEMP_SOURCE_DIR}/CLIProxyAPI"
+    git init -q
+    git remote add origin "${SOURCE_REPO}"
+    git fetch --depth 1 origin "${SOURCE_REF}" >&2
+    git checkout -q --detach FETCH_HEAD
+  )
+  SOURCE_DIR="${TEMP_SOURCE_DIR}/CLIProxyAPI"
+
+  if [[ ! -f "${SOURCE_DIR}/go.mod" ]]; then
+    echo "CLIProxyAPI source dir is missing go.mod after fetch: ${SOURCE_DIR}" >&2
+    exit 1
+  fi
+}
+
+ensure_source_dir
 
 resolve_commit() {
   if [[ -n "${CLI_PROXY_COMMIT:-}" ]]; then
@@ -122,7 +155,8 @@ EOF
 if needs_rebuild; then
   echo "→ CLIProxyAPI binary out of date, rebuilding (${current_fingerprint})" >&2
   rm -f "${OUTPUT_DIR}/${BINARY_NAME}"
-  "${BUILD_SCRIPT}" "${GOOS}" "${GOARCH}" "${OUTPUT_DIR}"
+  CLI_PROXY_SOURCE_DIR="${SOURCE_DIR}" \
+    "${BUILD_SCRIPT}" "${GOOS}" "${GOARCH}" "${OUTPUT_DIR}"
   write_meta
 else
   echo "→ CLIProxyAPI binary is up to date (${current_fingerprint})" >&2

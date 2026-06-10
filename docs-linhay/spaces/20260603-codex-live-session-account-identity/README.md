@@ -134,3 +134,34 @@
 ### 状态
 - 状态：sidecar-root-fix-and-frontend-guard-verified
 - 最近更新：2026-06-04
+
+## 2026-06-10 正式版 v1.2.2 回归核验：安装包 sidecar 未带投影字段
+
+### 现场现象
+- 用户反馈本地最新正式版 `GetTokens 1.2.2` 的 `Codex -> 运行会话` 仍显示 `jasonnike26-8ct1mmvx@yahoo.com`。
+- 用户确认该邮箱账号不在当前账号池中；截图显示同一会话列表中该账号仍作为 `Dxyer / WS` 行出现。
+
+### 只读证据
+- 正式版进程：`/Applications/GetTokens.app/Contents/MacOS/GetTokens` 与 `/Applications/GetTokens.app/Contents/MacOS/cli-proxy-api` 正在运行，sidecar 使用正式 profile `/Users/linhey/.config/gettokens/config.yaml`。
+- 正式版 bundle：`CFBundleShortVersionString=1.2.2`，`/Applications/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json` 为 `commit=539567d`，二进制中搜不到 `accountCoarseAvailable` / `RuntimeAccountProjection` / `PruneCodexLiveSessionsForAccount` 特征。
+- 正式版只读 API：
+  - `GET /v0/management/accounts` 中该邮箱匹配数为 `0`。
+  - `GET /v0/management/gettokens/live-sessions` 仍返回 `authLabel=jasonnike26-8ct1mmvx@yahoo.com`、`authID=jasonnike26-8ct1mmvx-auth-2.json`，且缺少 `accountPresent/accountCoarseAvailable/accountFilteredReasons` 字段。
+  - `GET /v0/management/gettokens/live-sessions/history?limit=80&window=all` 中也存在该邮箱历史请求记录，字段同样缺失账号投影。
+- 当前开发构建：`build/bin/cli-proxy-api.meta.json` 为 sidecar commit `2acd6ec0`，二进制中存在 `json:"accountCoarseAvailable"`，说明当前开发产物已包含 2026-06-03/04 的投影过滤修复。
+
+### 根因结论
+- 这不是账号池仍然持有该账号；当前账号池 API 已证明匹配数为 `0`。
+- 根因是本机安装的正式版 `1.2.2` bundle 内置 sidecar 仍是旧 live-session 管理接口，未包含 `RuntimeAccountProjection` / detached account filter / live tracker prune 字段与逻辑。
+- 因此旧 runtime `authID` 或历史 ledger 行会继续从 sidecar 返回，前端只能按旧字段展示成账号名，造成“账号池没有该账号但运行会话仍显示”的假象。
+
+### 后续处理口径
+- 不直接替换 `/Applications/GetTokens.app` 正式版 sidecar，不 kill 正式版进程。
+- 修复发布需要重新打包正式版，使 bundled sidecar metadata 指向 `docs-linhay/references/CLIProxyAPI` 当前提交，并在官方 DMG 验收时校验 sidecar metadata 与 live-session 投影特征。
+- 已把该验收缺口沉淀到 `.agents/skills/gettokens-release-governance/SKILL.md`。
+
+### 2026-06-10 发布流程修复
+- Release workflow 的 sidecar commit 解析从 `git -C docs-linhay/references/CLIProxyAPI rev-parse HEAD` 改为 `git ls-tree HEAD docs-linhay/references/CLIProxyAPI`。前者在 CI 未 checkout gitlink 时会向上读到主仓 HEAD，导致 metadata 误写主仓 tag commit。
+- workflow 将 gitlink commit 同时写入 `CLI_PROXY_COMMIT` 与 `CLI_PROXY_SOURCE_REF`，要求 sidecar 按这个精确提交构建。
+- `scripts/ensure-sidecar.sh` 与 `scripts/build-sidecar.sh` 在 source 目录缺失时改为 `git fetch --depth 1 origin <ref>` + detached checkout，支持精确 commit；若 sidecar 提交没推到远端，CI 会失败而不是 fallback 到旧 `gettokens/sidecar`。
+- `scripts/ensure-sidecar.test.sh` 增加缺失 source 目录场景，覆盖按指定 commit 拉取并写入 metadata 的行为。

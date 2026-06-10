@@ -87,10 +87,18 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Resolve CLIProxyAPI commit
+      - name: Resolve CLIProxyAPI source commit
         shell: bash
         run: |
-          echo "CLI_PROXY_COMMIT=$(git -C docs-linhay/references/CLIProxyAPI rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          set -euo pipefail
+          sidecar_path="docs-linhay/references/CLIProxyAPI"
+          sidecar_commit="$(git ls-tree HEAD "${sidecar_path}" | awk '$2 == "commit" {print $3}')"
+          if [[ -z "${sidecar_commit}" ]]; then
+            echo "Missing gitlink commit for ${sidecar_path}" >&2
+            exit 1
+          fi
+          echo "CLI_PROXY_COMMIT=${sidecar_commit}" >> "$GITHUB_ENV"
+          echo "CLI_PROXY_SOURCE_REF=${sidecar_commit}" >> "$GITHUB_ENV"
 
       # ── Restore built frontend ────────────────────────────────────────────
       - uses: actions/download-artifact@v5

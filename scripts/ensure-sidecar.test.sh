@@ -77,7 +77,9 @@ EOF
 chmod +x "${FAKE_BUILD_SCRIPT}"
 
 run_ensure() {
-  CLI_PROXY_SOURCE_DIR="${SOURCE_DIR}" \
+  CLI_PROXY_SOURCE_DIR="${CLI_PROXY_TEST_SOURCE_DIR:-${SOURCE_DIR}}" \
+  CLI_PROXY_SOURCE_REPO="${CLI_PROXY_TEST_SOURCE_REPO:-https://github.com/AxApp/CLIProxyAPI.git}" \
+  CLI_PROXY_SOURCE_REF="${CLI_PROXY_TEST_SOURCE_REF:-gettokens/sidecar}" \
   CLI_PROXY_OUTPUT_DIR="${OUTPUT_DIR}" \
   CLI_PROXY_BUILD_SCRIPT="${FAKE_BUILD_SCRIPT}" \
   CLI_PROXY_COMMIT="${CLI_PROXY_COMMIT:-}" \
@@ -127,5 +129,36 @@ assert_eq "$(cat "${COUNT_FILE}")" "3" "dirty 内容再次变化后必须再次�
 CLI_PROXY_COMMIT="release-explicit-hash" run_ensure
 assert_eq "$(cat "${COUNT_FILE}")" "4" "显式发布 commit 变化后必须重新生成 sidecar metadata"
 assert_eq "$(read_commit)" "release-explicit-hash" "meta.json 必须优先记录显式 CLI_PROXY_COMMIT"
+
+REMOTE_SOURCE_DIR="${TEST_ROOT}/remote-source"
+REMOTE_BARE_DIR="${TEST_ROOT}/remote-source.git"
+MISSING_SOURCE_DIR="${TEST_ROOT}/missing-source-dir"
+mkdir -p "${REMOTE_SOURCE_DIR}"
+cd "${REMOTE_SOURCE_DIR}"
+git init -q
+git config user.email "codex@example.com"
+git config user.name "Codex"
+cat > go.mod <<'EOF'
+module example.com/remote-cliproxyapi
+
+go 1.24
+EOF
+cat > main.go <<'EOF'
+package main
+
+func main() {}
+EOF
+git add go.mod main.go
+git commit -qm "remote init"
+REMOTE_COMMIT="$(git rev-parse HEAD)"
+git clone --bare -q "${REMOTE_SOURCE_DIR}" "${REMOTE_BARE_DIR}"
+
+CLI_PROXY_TEST_SOURCE_DIR="${MISSING_SOURCE_DIR}" \
+CLI_PROXY_TEST_SOURCE_REPO="${REMOTE_BARE_DIR}" \
+CLI_PROXY_TEST_SOURCE_REF="${REMOTE_COMMIT}" \
+CLI_PROXY_COMMIT="${REMOTE_COMMIT}" \
+run_ensure
+assert_eq "$(cat "${COUNT_FILE}")" "5" "source 目录缺失时必须按指定 commit 拉取并构建"
+assert_eq "$(read_commit)" "${REMOTE_COMMIT}" "缺失 source 场景 meta.json 必须记录发布指定的 sidecar commit"
 
 echo "ensure-sidecar test passed"

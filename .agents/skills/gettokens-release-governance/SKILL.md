@@ -156,6 +156,8 @@ curl --max-time 15 -fsSL https://raw.githubusercontent.com/AxApp/GetTokens/spark
 
 ```bash
 VERIFY_DIR="$(mktemp -d /tmp/gettokens-vX.Y.Z-verify.XXXXXX)"
+EXPECTED_CLI_PROXY_COMMIT="$(git ls-tree HEAD docs-linhay/references/CLIProxyAPI | awk '$2 == "commit" {print $3}')"
+test -n "$EXPECTED_CLI_PROXY_COMMIT"
 gh release download vX.Y.Z --dir "$VERIFY_DIR"
 cd "$VERIFY_DIR"
 shasum -a 256 -c checksums.txt
@@ -183,6 +185,24 @@ file /tmp/gettokens-vX.Y.Z-arm64/GetTokens.app/Contents/MacOS/GetTokens
 file /tmp/gettokens-vX.Y.Z-amd64/GetTokens.app/Contents/MacOS/GetTokens
 /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" -c "Print :CFBundleVersion" -c "Print :SUFeedURL" /tmp/gettokens-vX.Y.Z-arm64/GetTokens.app/Contents/Info.plist
 /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" -c "Print :CFBundleVersion" -c "Print :SUFeedURL" /tmp/gettokens-vX.Y.Z-amd64/GetTokens.app/Contents/Info.plist
+cat /tmp/gettokens-vX.Y.Z-arm64/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json
+cat /tmp/gettokens-vX.Y.Z-amd64/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json
+EXPECTED_CLI_PROXY_COMMIT="$EXPECTED_CLI_PROXY_COMMIT" \
+python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+expected = os.environ["EXPECTED_CLI_PROXY_COMMIT"].strip()
+for label, meta_path in {
+    "arm64": Path("/tmp/gettokens-vX.Y.Z-arm64/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json"),
+    "amd64": Path("/tmp/gettokens-vX.Y.Z-amd64/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json"),
+}.items():
+    meta = json.loads(meta_path.read_text())
+    actual = str(meta.get("commit", "")).strip()
+    if actual != expected:
+        raise SystemExit(f"{label} sidecar metadata mismatch: {actual!r} != {expected!r}")
+PY
 
 hdiutil detach /tmp/gettokens-vX.Y.Z-arm64
 hdiutil detach /tmp/gettokens-vX.Y.Z-amd64
@@ -196,6 +216,7 @@ hdiutil detach /tmp/gettokens-vX.Y.Z-amd64
 - Apple Silicon 可执行文件为 `arm64`，Intel 可执行文件为 `x86_64`。
 - `CFBundleShortVersionString` 与 `CFBundleVersion` 等于目标版本。
 - `SUFeedURL` 分别指向 `appcast-arm64.xml` 和 `appcast-amd64.xml`。
+- 两个 `.app` 内置 `cli-proxy-api.meta.json` 的 `commit` 必须等于 `docs-linhay/references/CLIProxyAPI` 当前提交；如果 release 修复依赖某个 sidecar 热路径字段、endpoint 或 JSON 字段，还必须用 `strings` 或只读 management API 验证该特征确实存在。只验证主程序版本、签名和 DMG 公证不足以声明 sidecar 修复已进入正式包。
 
 ## 10. 文档与 memory
 发布结论必须写入 `docs-linhay/memory/YYYY-MM-DD.md`，至少包含：
@@ -203,7 +224,7 @@ hdiutil detach /tmp/gettokens-vX.Y.Z-amd64
 - 本地预检命令和结果。
 - commit、tag、workflow run、Release URL。
 - 五个 Release assets。
-- checksum、Gatekeeper、stapler、codesign、架构、bundle version、Sparkle feed 验收结论。
+- checksum、Gatekeeper、stapler、codesign、架构、bundle version、bundled sidecar metadata、Sparkle feed 验收结论。
 - 最终状态：`CI 发布完成`、`可分发 DMG 验收完成` 或具体阻塞。
 
 写回后运行：
