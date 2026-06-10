@@ -148,7 +148,7 @@ func (a *App) CanApplyUpdate() bool {
 	if usesNativeUpdaterUI() {
 		return true
 	}
-	return updater.SupportsInPlaceApply()
+	return supportsInPlaceApplyFunc()
 }
 
 func (a *App) UsesNativeUpdaterUI() bool {

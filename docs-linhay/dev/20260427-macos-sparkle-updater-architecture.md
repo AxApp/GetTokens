@@ -128,3 +128,17 @@ Sparkle 至少需要：
 2. 分架构 appcast 生成与 `sparkle-appcast` 分支发布链路已在真实 release `v0.1.10` 上验证通过
 3. 前端设置页已切到“原生更新 UI”识别模式，但仍缺少 Sparkle 状态反馈
 4. 真实的 Sparkle 自动升级安装回归还没有做，只验证到了 release / appcast 发布闭环
+
+## 2026-06-10 兼容边界更新
+
+线上 `v1.2.1` 暴露出一个新的运行时边界：
+
+1. 正式 release 的 DMG、签名、公证、Sparkle feed 都校验通过，不是分发链失效。
+2. 用户在 macOS `26.4`（Apple Silicon）通过 app 内在线更新后，系统弹出“GetTokens.app 已损坏，无法打开”。
+3. 静态校验仍通过，但 GUI 启动会被 AppleSystemPolicy 拦截；对照副本显示 `com.apple.provenance` / runtime policy 更接近根因。
+
+因此当前产品策略收窄为：
+
+1. Sparkle 继续保留为已集成能力，但不再默认等同于“当前机器可安全启用原生在线更新”。
+2. `wailsapp` 需要把“Sparkle framework 可用”与“当前 macOS 版本允许开启原生更新 UI”分开判断。
+3. 在 macOS major version `>= 26` 时，原生更新入口强制降级为 GitHub Release 下载页，直到完成真实在线升级回归并确认不再触发 provenance/runtime policy 拦截。

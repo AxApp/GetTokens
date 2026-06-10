@@ -4,6 +4,10 @@ import (
 	"context"
 	"io"
 	"net/url"
+	"os/exec"
+	"runtime"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +18,11 @@ import (
 	"github.com/linhay/gettokens/internal/sparkle"
 	"github.com/linhay/gettokens/internal/updater"
 )
+
+const nativeUpdaterDisabledDarwinMajor = 26
+
+var usesNativeUpdaterUIFunc = defaultUsesNativeUpdaterUI
+var supportsInPlaceApplyFunc = updater.SupportsInPlaceApply
 
 type App struct {
 	ctx                              context.Context
@@ -75,5 +84,40 @@ func New(version string, releaseLabel string, repo string) *App {
 }
 
 func usesNativeUpdaterUI() bool {
-	return sparkle.Available()
+	return usesNativeUpdaterUIFunc()
+}
+
+func defaultUsesNativeUpdaterUI() bool {
+	return shouldUseNativeUpdaterUI(runtime.GOOS, sparkle.Available(), currentDarwinProductVersion())
+}
+
+func shouldUseNativeUpdaterUI(goos string, sparkleAvailable bool, darwinProductVersion string) bool {
+	if !sparkleAvailable || goos != "darwin" {
+		return false
+	}
+
+	major, err := parseDarwinProductMajorVersion(darwinProductVersion)
+	if err != nil {
+		return false
+	}
+
+	return major < nativeUpdaterDisabledDarwinMajor
+}
+
+func currentDarwinProductVersion() string {
+	if runtime.GOOS != "darwin" {
+		return ""
+	}
+
+	output, err := exec.Command("sw_vers", "-productVersion").Output()
+	if err != nil {
+		return ""
+	}
+
+	return strings.TrimSpace(string(output))
+}
+
+func parseDarwinProductMajorVersion(version string) (int, error) {
+	majorText, _, _ := strings.Cut(strings.TrimSpace(version), ".")
+	return strconv.Atoi(majorText)
 }
