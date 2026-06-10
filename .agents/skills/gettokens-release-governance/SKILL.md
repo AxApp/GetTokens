@@ -151,6 +151,8 @@ curl --max-time 15 -fsSL https://raw.githubusercontent.com/AxApp/GetTokens/spark
 - `GitHub Release 已发布`：官方 DMG 可手动下载安装。
 - `Sparkle rollout 已 hold`：appcast 故意不暴露该版本，避免旧客户端继续触发已知坏更新链路。
 
+如果用户明确要求“检查更新能检测到新版”、或最终交付口径包含“在线更新 / 检查更新可用”，不得静默执行 Sparkle hold。此时必须让远端 appcast 顶部保留目标版本，或在 hold 前先明确说明“检查更新不会看到这个版本”并获得用户确认。
+
 ## 9. 官方 DMG 分发验收
 必须下载 GitHub Release 上的正式资产，不使用本地 `dist/` 替代：
 
