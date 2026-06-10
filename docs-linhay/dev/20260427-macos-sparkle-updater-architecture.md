@@ -142,3 +142,4 @@ Sparkle 至少需要：
 1. Sparkle 继续保留为已集成能力，但不再默认等同于“当前机器可安全启用原生在线更新”。
 2. `wailsapp` 需要把“Sparkle framework 可用”与“当前 macOS 版本允许开启原生更新 UI”分开判断。
 3. 在 macOS major version `>= 26` 时，原生更新入口强制降级为 GitHub Release 下载页，直到完成真实在线升级回归并确认不再触发 provenance/runtime policy 拦截。
+4. 若线上已有旧版本仍会通过 Sparkle 收到这个新版本，则客户端代码修复还不够，必须同步 hold `sparkle-appcast` 上的新版本条目，避免旧客户端继续走同一条坏安装链路。

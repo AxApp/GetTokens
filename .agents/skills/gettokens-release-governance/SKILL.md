@@ -139,6 +139,18 @@ curl --max-time 15 -fsSL https://raw.githubusercontent.com/AxApp/GetTokens/spark
 - 如果 GitHub Release 页面没有 `appcast-*.xml`，这是当前流程的正常状态，不代表 Sparkle 没发。
 - 如果 `raw.githubusercontent.com` 超时，改用 `git fetch` + `git show origin/sparkle-appcast:<file>` 作为权威确认。
 
+### 8.1 Sparkle 运行时回归止血
+如果线上已经出现“Sparkle 在线更新后 app 签名、公证静态校验都通过，但 GUI 启动被 AppleSystemPolicy / provenance runtime policy 拦截”的真实用户故障，必须额外执行一轮 server-side 止血判断：
+
+1. 不要把“新版本代码里禁用了原生更新入口”直接当作线上已修复。
+2. 先判断现网用户从旧版本升级到新版本时，是否仍会经过同一条 Sparkle 安装链路。
+3. 若答案是会，则必须先 hold 新版本 appcast 条目，让 `sparkle-appcast` 继续停留在上一安全版本；必要时把新版本视为“仅 GitHub Release 手动安装可用”。
+4. 只有在真实端到端 Sparkle 升级回归通过后，才恢复 appcast 推送该版本。
+
+结论口径也要区分：
+- `GitHub Release 已发布`：官方 DMG 可手动下载安装。
+- `Sparkle rollout 已 hold`：appcast 故意不暴露该版本，避免旧客户端继续触发已知坏更新链路。
+
 ## 9. 官方 DMG 分发验收
 必须下载 GitHub Release 上的正式资产，不使用本地 `dist/` 替代：
 

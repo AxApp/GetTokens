@@ -93,5 +93,6 @@ Sparkle 是 macOS 上成熟的原生更新框架，更适合 GetTokens 当前的
   - `v1.2.1` release / DMG / appcast 本身校验通过，但用户在 macOS `26.4` Apple Silicon 上通过 app 内在线更新后，`/Applications/GetTokens.app` 出现“已损坏，无法打开”。
   - 现场证据：`codesign --verify --deep --strict`、`spctl -a -t exec -vv`、`syspolicy_check distribution` 对正式版 app 均通过；但 GUI 启动日志出现 `ASP: Security policy would not allow process`。
   - 对照实验：保留 `com.apple.provenance` 的 app 副本无法稳定启动；移除 `com.apple.provenance` / `com.apple.macl` 的副本可正常启动，说明问题更像 Sparkle 更新后触发的 macOS 26.x provenance/runtime policy 拦截，而不是 release 签名、公证或 DMG 分发错误。
-  - 当前兼容策略：在 macOS `26.x` 上即使 Sparkle framework 可用，也不再暴露原生更新 UI，直接回退到现有 GitHub Release 下载页链路，避免用户再次落入系统拦截后的坏状态。
+  - `v1.2.2` 已发布到 GitHub Release，正式 DMG 校验通过；客户端代码在 macOS `26.x` 上已禁用原生更新 UI，改走手动下载页。
+  - 由于 `1.2.1 -> 1.2.2` 仍会经过同一条 Sparkle 安装链路，`sparkle-appcast` 已主动 hold 在 `1.2.1`，避免旧客户端继续触发已知坏在线更新。
 - 归档判定：本 space 原已归档；因 macOS 26.x 在线更新运行时策略回归暂时 reopen。待后续确认 Sparkle / 系统策略兼容解法后，再决定是否重新启用原生更新入口。
