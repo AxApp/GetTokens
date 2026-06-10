@@ -137,9 +137,9 @@ Sparkle 至少需要：
 2. 用户在 macOS `26.4`（Apple Silicon）通过 app 内在线更新后，系统弹出“GetTokens.app 已损坏，无法打开”。
 3. 静态校验仍通过，但 GUI 启动会被 AppleSystemPolicy 拦截；对照副本显示 `com.apple.provenance` / runtime policy 更接近根因。
 
-因此当前产品策略收窄为：
+后续修正后的产品策略为：
 
-1. Sparkle 继续保留为已集成能力，但不再默认等同于“当前机器可安全启用原生在线更新”。
-2. `wailsapp` 需要把“Sparkle framework 可用”与“当前 macOS 版本允许开启原生更新 UI”分开判断。
-3. 在 macOS major version `>= 26` 时，原生更新入口强制降级为 GitHub Release 下载页，直到完成真实在线升级回归并确认不再触发 provenance/runtime policy 拦截。
-4. 若线上已有旧版本仍会通过 Sparkle 收到这个新版本，则客户端代码修复还不够，必须同步 hold `sparkle-appcast` 上的新版本条目，避免旧客户端继续走同一条坏安装链路。
+1. Sparkle 继续保留为 macOS 默认在线更新入口；只要 app bundle 内 Sparkle 可用，`wailsapp` 就应返回原生更新 UI 可用。
+2. 不再按 macOS major version `>= 26` 默认禁用 Sparkle。用户历史使用证明该链路并非稳定不可用，单次“损坏”现象只能作为风险证据继续排查。
+3. 若再次出现 Sparkle 在线更新后的 provenance/runtime policy 拦截，应保留当次升级路径、隔离属性、日志与 appcast 证据，必要时临时 hold 对应版本 appcast。
+4. 临时 hold 必须是 server-side 止血动作，并且最终交付要明确“检查更新不会看到该版本”；不得把客户端长期禁用 Sparkle 当作默认修复。

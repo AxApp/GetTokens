@@ -111,7 +111,7 @@ gh release view vX.Y.Z --json url,assets,publishedAt,tagName
 - `GetTokens_darwin_amd64.tar.gz`
 - `checksums.txt`
 
-其中 `GetTokens_macOS_*` 是用户可读资产名，`GetTokens_darwin_*` 是 `go-selfupdate` 检测兼容资产名。macOS 26 上虽然不会原地替换 bundle，但“检查更新”仍依赖 `go-selfupdate DetectLatest` 判断是否有新版；缺少 `darwin_<arch>` 兼容资产时，旧客户端会把已发布版本误判为“当前已是最新版本”。
+其中 `GetTokens_macOS_*` 是用户可读资产名，`GetTokens_darwin_*` 是 `go-selfupdate` 检测兼容资产名。若某个已安装旧版本因本地策略没有进入 Sparkle 原生 UI，它仍会依赖 `go-selfupdate DetectLatest` 判断是否有新版；缺少 `darwin_<arch>` 兼容资产时，旧客户端会把已发布版本误判为“当前已是最新版本”。
 
 注意：Sparkle appcast 默认不是 GitHub Release asset，它发布到 `sparkle-appcast` 分支。
 
@@ -156,6 +156,8 @@ curl --max-time 15 -fsSL https://raw.githubusercontent.com/AxApp/GetTokens/spark
 - `Sparkle rollout 已 hold`：appcast 故意不暴露该版本，避免旧客户端继续触发已知坏更新链路。
 
 如果用户明确要求“检查更新能检测到新版”、或最终交付口径包含“在线更新 / 检查更新可用”，不得静默执行 Sparkle hold。此时必须让远端 appcast 顶部保留目标版本，或在 hold 前先明确说明“检查更新不会看到这个版本”并获得用户确认。
+
+不要因为单次 macOS provenance/runtime policy 故障就在客户端永久禁用 Sparkle。默认策略是：macOS bundle 内 Sparkle 可用时，检查更新走 Sparkle 原生 UI；疑似系统策略拦截按独立故障保留证据、临时 hold appcast 或做端到端升级回归。
 
 ## 9. 官方 DMG 分发验收
 必须下载 GitHub Release 上的正式资产，不使用本地 `dist/` 替代：

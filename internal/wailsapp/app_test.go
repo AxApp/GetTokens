@@ -2,115 +2,37 @@ package wailsapp
 
 import "testing"
 
-func TestParseDarwinProductMajorVersion(t *testing.T) {
-	tests := []struct {
-		name    string
-		version string
-		want    int
-		wantErr bool
-	}{
-		{
-			name:    "major minor",
-			version: "26.4",
-			want:    26,
-		},
-		{
-			name:    "major only",
-			version: "15",
-			want:    15,
-		},
-		{
-			name:    "trim spaces",
-			version: " 14.7.1 \n",
-			want:    14,
-		},
-		{
-			name:    "invalid version",
-			version: "sonoma",
-			wantErr: true,
-		},
-		{
-			name:    "empty version",
-			version: "",
-			wantErr: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseDarwinProductMajorVersion(tt.version)
-			if tt.wantErr {
-				if err == nil {
-					t.Fatal("parseDarwinProductMajorVersion() expected error, got nil")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("parseDarwinProductMajorVersion() error = %v", err)
-			}
-			if got != tt.want {
-				t.Fatalf("parseDarwinProductMajorVersion() = %d, want %d", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestShouldUseNativeUpdaterUI(t *testing.T) {
 	tests := []struct {
-		name                 string
-		goos                 string
-		sparkleAvailable     bool
-		darwinProductVersion string
-		want                 bool
+		name             string
+		goos             string
+		sparkleAvailable bool
+		want             bool
 	}{
 		{
-			name:                 "sparkle disabled",
-			goos:                 "darwin",
-			sparkleAvailable:     false,
-			darwinProductVersion: "15.5",
-			want:                 false,
+			name:             "sparkle disabled",
+			goos:             "darwin",
+			sparkleAvailable: false,
+			want:             false,
 		},
 		{
-			name:                 "non darwin",
-			goos:                 "linux",
-			sparkleAvailable:     true,
-			darwinProductVersion: "26.4",
-			want:                 false,
+			name:             "non darwin",
+			goos:             "linux",
+			sparkleAvailable: true,
+			want:             false,
 		},
 		{
-			name:                 "darwin before cutoff",
-			goos:                 "darwin",
-			sparkleAvailable:     true,
-			darwinProductVersion: "15.5",
-			want:                 true,
-		},
-		{
-			name:                 "darwin at cutoff",
-			goos:                 "darwin",
-			sparkleAvailable:     true,
-			darwinProductVersion: "26.0",
-			want:                 false,
-		},
-		{
-			name:                 "darwin after cutoff",
-			goos:                 "darwin",
-			sparkleAvailable:     true,
-			darwinProductVersion: "26.4",
-			want:                 false,
-		},
-		{
-			name:                 "invalid darwin version",
-			goos:                 "darwin",
-			sparkleAvailable:     true,
-			darwinProductVersion: "sonoma",
-			want:                 false,
+			name:             "darwin sparkle available",
+			goos:             "darwin",
+			sparkleAvailable: true,
+			want:             true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := shouldUseNativeUpdaterUI(tt.goos, tt.sparkleAvailable, tt.darwinProductVersion); got != tt.want {
-				t.Fatalf("shouldUseNativeUpdaterUI(%q, %v, %q) = %v, want %v", tt.goos, tt.sparkleAvailable, tt.darwinProductVersion, got, tt.want)
+			if got := shouldUseNativeUpdaterUI(tt.goos, tt.sparkleAvailable); got != tt.want {
+				t.Fatalf("shouldUseNativeUpdaterUI(%q, %v) = %v, want %v", tt.goos, tt.sparkleAvailable, got, tt.want)
 			}
 		})
 	}
