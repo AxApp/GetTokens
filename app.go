@@ -1245,6 +1245,19 @@ func (a *App) ListAccounts() ([]AccountRecord, error) {
 	return records, nil
 }
 
+func (a *App) ListCodexAccountInventory() ([]AccountRecord, error) {
+	result, err := a.core.ListCodexAccountInventory()
+	if err != nil {
+		return nil, err
+	}
+
+	records := make([]AccountRecord, 0, len(result))
+	for _, record := range result {
+		records = append(records, mapAccountRecord(record))
+	}
+	return records, nil
+}
+
 func (a *App) ListCachedAccounts() ([]AccountRecord, error) {
 	result, err := a.core.ListCachedAccounts()
 	if err != nil {

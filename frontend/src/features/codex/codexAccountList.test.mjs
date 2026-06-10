@@ -122,6 +122,33 @@ test('buildCodexAccountRows keeps codex api key model mappings from stored accou
   ]);
 });
 
+test('buildCodexAccountRows accepts openai-compatible records from unified Codex inventory', () => {
+  const rows = buildCodexAccountRows({
+    accounts: [
+      {
+        id: 'acct_openrouter',
+        accountKind: 'openai-compatible',
+        provider: 'openrouter',
+        credentialSource: 'api-key',
+        displayName: 'OpenRouter',
+        status: 'active',
+        priority: 8,
+        baseUrl: 'https://openrouter.ai/api/v1',
+        apiKeys: ['sk-or'],
+        models: [{ name: 'deepseek-chat', alias: 'deepseek' }],
+      },
+    ],
+    providers: [],
+  });
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].id, 'acct_openrouter');
+  assert.equal(rows[0].sourceKind, 'openai-compatible');
+  assert.equal(rows[0].provider, 'openrouter');
+  assert.equal(rows[0].requestable, true);
+  assert.deepEqual(rows[0].modelMappings, [{ realModel: 'deepseek-chat', codexModel: 'deepseek' }]);
+});
+
 test('canEditCodexModelMappings allows codex api key mappings in detail modal editor', () => {
   assert.equal(canEditCodexModelMappings('openai-compatible'), true);
   assert.equal(canEditCodexModelMappings('codex-auth-file'), true);
@@ -218,6 +245,16 @@ test('codex account list modals are hash-routed', async () => {
   assert.match(source, /hashState\?\.page === 'codex' && hashState\.codexWorkspace === 'account-list'/);
   assert.match(source, /accountListModal === 'route-probe'/);
   assert.match(source, /accountListModal === 'project-config'/);
+});
+
+test('codex account list loads real accounts from unified Codex inventory API', async () => {
+  const source = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
+  const importBlock = source.match(/from '\.\.\/\.\.\/\.\.\/wailsjs\/go\/main\/App';/)?.input ?? source;
+
+  assert.match(source, /ListCodexAccountInventory/);
+  assert.match(source, /trackRequest\('ListCodexAccountInventory'/);
+  assert.doesNotMatch(importBlock, /\bListAccounts\b/);
+  assert.doesNotMatch(importBlock, /\bListOpenAICompatibleProviders\b/);
 });
 
 test('buildCodexAccountRows keeps disabled or errored accounts in order but marks them not requestable', () => {

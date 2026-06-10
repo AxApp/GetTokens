@@ -181,6 +181,8 @@ export function ListCachedAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListChannelRouteEvents(arg1:main.ChannelRouteEventsInput):Promise<Array<main.ChannelRouteEvent>>;
 
+export function ListCodexAccountInventory():Promise<Array<main.AccountRecord>>;
+
 export function ListLocalCodexProviderViews():Promise<Array<main.LocalCodexModelProviderView>>;
 
 export function ListOAuthModelAliases(arg1:string):Promise<Array<main.OpenAICompatibleModel>>;

@@ -13,8 +13,7 @@ import {
   GetCodexSessionManagementSnapshot,
   ListChannelRouteEvents,
   ListOAuthModelAliases,
-  ListAccounts,
-  ListOpenAICompatibleProviders,
+  ListCodexAccountInventory,
   ListProjectCandidatePoolRules,
   ListRateLimitRules,
   ListRelaySupportedModels,
@@ -279,20 +278,18 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
 
     setLoading(true);
     try {
-      const [accountResponse, providerResponse, routingConfig, projectRulesResponse] = await Promise.all([
-        trackRequest('ListAccounts', { args: [] }, () => ListAccounts()),
-        trackRequest('ListOpenAICompatibleProviders', { args: [] }, () => ListOpenAICompatibleProviders()),
+      const [accountResponse, routingConfig, projectRulesResponse] = await Promise.all([
+        trackRequest('ListCodexAccountInventory', { args: [] }, () => ListCodexAccountInventory()),
         trackRequest('GetChannelRoutingConfig', { channel: 'codex' }, () => GetChannelRoutingConfig('codex')),
         trackRequest('ListProjectCandidatePoolRules', { channel: 'codex' }, () =>
           ListProjectCandidatePoolRules(main.ProjectCandidatePoolRulesInput.createFrom({ channel: 'codex' })),
         ),
       ]);
       const accountRows = (accountResponse || []).map((account) => mapBackendAccountRecord(account));
-      const nextProviders = providerResponse || [];
       const normalizedConfig = mapWailsChannelRoutingConfig(routingConfig, 'codex');
       const nextRows = applyChannelOrderToRows(buildCodexAccountRows({
         accounts: accountRows,
-        providers: nextProviders,
+        providers: [],
         manualRequestableAccountIDs: normalizedConfig.manualRequestableAccountIDs,
       }), normalizedConfig.orderedAccountIDs);
       const nextUsageAccounts = nextRows.map((row) => codexRowToAccountRecord(row));

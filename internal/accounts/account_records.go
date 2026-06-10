@@ -356,9 +356,10 @@ func BuildUnifiedAccountRecords(accounts []cliproxyapi.UnifiedAccount) []Account
 
 func buildUnifiedAuthFileAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
 	credential := account.AuthFile
+	provider := strings.TrimSpace(account.Provider)
 	file := AuthFileRecord{
 		Name:     strings.TrimSpace(account.Title),
-		Provider: strings.TrimSpace(account.Provider),
+		Provider: provider,
 		Priority: account.Priority,
 		Disabled: account.Disabled,
 		Status:   unifiedStatus(account),
@@ -368,7 +369,13 @@ func buildUnifiedAuthFileAccountRecord(account cliproxyapi.UnifiedAccount) Accou
 			file.Name = name
 		}
 		file.Type = strings.TrimSpace(credential.AuthType)
-		file.Email = strings.TrimSpace(credential.Email)
+		if isUnknownUnifiedAuthFileProvider(provider) {
+			if inferred := InferAuthFileKind([]byte(strings.TrimSpace(credential.AuthJSON))); inferred != "" {
+				file.Provider = inferred
+			}
+		}
+		profile := ExtractAuthFileProfile([]byte(strings.TrimSpace(credential.AuthJSON)))
+		file.Email = firstNonEmpty(strings.TrimSpace(credential.Email), profile.Email)
 		file.PlanType = inferUnifiedAuthFilePlanType(credential)
 		file.Modified = credential.ModifiedUnixMs
 		file.Size = credential.SizeBytes
@@ -380,6 +387,11 @@ func buildUnifiedAuthFileAccountRecord(account cliproxyapi.UnifiedAccount) Accou
 	record.QuotaKey = strings.TrimSpace(account.AccountKey)
 	record.LocalOnly = false
 	return record
+}
+
+func isUnknownUnifiedAuthFileProvider(value string) bool {
+	trimmed := strings.TrimSpace(strings.ToLower(value))
+	return trimmed == "" || trimmed == "unknown"
 }
 
 func inferUnifiedAuthFilePlanType(credential *cliproxyapi.AuthFileAccountCredential) string {

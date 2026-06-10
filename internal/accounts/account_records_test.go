@@ -41,6 +41,24 @@ func TestBuildUnifiedAuthFileAccountRecordFallsBackToSourceNamePlanType(t *testi
 	}
 }
 
+func TestBuildUnifiedAuthFileAccountRecordInfersCodexProviderFromAuthJSONWhenStoreMetadataUnknown(t *testing.T) {
+	record := BuildUnifiedAccountRecord(cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_00000000-0000-4000-8000-000000000009",
+		Kind:       cliproxyapi.AccountKindAuthFile,
+		Title:      "codex-unknown.json",
+		Provider:   "unknown",
+		AuthFile: &cliproxyapi.AuthFileAccountCredential{
+			SourceFileName: "codex-unknown.json",
+			AuthJSON:       `{"type":"codex","email":"ops@example.com","plan_type":"pro"}`,
+			AuthType:       "unknown",
+		},
+	})
+
+	if got := record.Provider; got != "codex" {
+		t.Fatalf("Provider = %q, want codex", got)
+	}
+}
+
 func TestBuildCodexAPIKeyAccountRecordPrefersPersistedLabel(t *testing.T) {
 	record := BuildCodexAPIKeyAccountRecord(cliproxyapi.CodexAPIKey{
 		APIKey:  "sk-test-123456",

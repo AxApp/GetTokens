@@ -32,6 +32,31 @@ func (a *App) ListAccounts() ([]accountsdomain.AccountRecord, error) {
 	return accountsdomain.BuildUnifiedAccountRecords(accounts), nil
 }
 
+func (a *App) ListCodexAccountInventory() ([]accountsdomain.AccountRecord, error) {
+	accounts, err := a.ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+	inventory := make([]accountsdomain.AccountRecord, 0, len(accounts))
+	for _, account := range accounts {
+		if isCodexAccountInventoryRecord(account) {
+			inventory = append(inventory, account)
+		}
+	}
+	return inventory, nil
+}
+
+func isCodexAccountInventoryRecord(account accountsdomain.AccountRecord) bool {
+	switch account.AccountKind {
+	case accountsdomain.AccountKindCodexAPIKey, accountsdomain.AccountKindOpenAICompatible:
+		return true
+	case accountsdomain.AccountKindAuthFile:
+		return strings.EqualFold(strings.TrimSpace(account.Provider), "codex")
+	default:
+		return false
+	}
+}
+
 type CreateCodexAPIKeyInput struct {
 	APIKey         string                  `json:"apiKey"`
 	Label          string                  `json:"label,omitempty"`

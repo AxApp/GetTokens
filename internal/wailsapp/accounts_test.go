@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
@@ -290,6 +291,70 @@ func TestListAccountsDoesNotFallbackToLegacyWhenAccountStoreErrors(t *testing.T)
 	}
 	if !strings.Contains(err.Error(), "account store unavailable") {
 		t.Fatalf("ListAccounts error = %v, want account store error", err)
+	}
+}
+
+func TestListAccountsInfersCodexAuthFileProviderFromUnifiedAuthJSON(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "GET" && path == "/v0/management/accounts" {
+					return []byte(`{"accounts":[{"account_key":"acct_codex_auth","kind":"auth-file","title":"codex-auth.json","provider":"unknown","auth_file":{"source_file_name":"codex-auth.json","auth_json":"{\"type\":\"codex\",\"email\":\"ops@example.com\",\"plan_type\":\"pro\"}","auth_type":"unknown"}}]}`), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	accounts, err := app.ListAccounts()
+	if err != nil {
+		t.Fatalf("ListAccounts: %v", err)
+	}
+	if len(accounts) != 1 {
+		t.Fatalf("account count = %d, want 1", len(accounts))
+	}
+	if got := accounts[0].Provider; got != "codex" {
+		t.Fatalf("Provider = %q, want codex", got)
+	}
+}
+
+func TestListCodexAccountInventoryProjectsAllCodexRoutableAccountKinds(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "GET" && path == "/v0/management/accounts" {
+					return []byte(`{"accounts":[{"account_key":"acct_codex_auth","kind":"auth-file","title":"codex-auth.json","provider":"unknown","priority":3,"auth_file":{"source_file_name":"codex-auth.json","auth_json":"{\"type\":\"codex\",\"email\":\"ops@example.com\",\"plan_type\":\"pro\"}","auth_type":"unknown"}},{"account_key":"acct_claude_auth","kind":"auth-file","title":"claude.json","provider":"claude","auth_file":{"source_file_name":"claude.json","auth_json":"{\"auth_mode\":\"claude\"}","auth_type":"claude"}},{"account_key":"acct_codex_key","kind":"codex-api-key","title":"Codex Relay","provider":"codex","priority":2,"codex_api_key":{"api_key":"sk-test","base_url":"https://api.openai.com/v1","models_json":"[{\"name\":\"gpt-5.4\",\"alias\":\"gpt-5\"}]"}},{"account_key":"acct_openrouter","kind":"openai-compatible","title":"OpenRouter","provider":"openrouter","priority":1,"openai_compatible":{"provider_name":"openrouter","base_url":"https://openrouter.ai/api/v1","api_key_entries_json":"[{\"api-key\":\"sk-or\"}]","models_json":"[{\"name\":\"deepseek-chat\",\"alias\":\"deepseek\"}]"}}]}`), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	accounts, err := app.ListCodexAccountInventory()
+	if err != nil {
+		t.Fatalf("ListCodexAccountInventory: %v", err)
+	}
+	if got, want := len(accounts), 3; got != want {
+		t.Fatalf("account count = %d, want %d: %#v", got, want, accounts)
+	}
+
+	byID := map[string]accountsdomain.AccountRecord{}
+	for _, account := range accounts {
+		byID[account.ID] = account
+	}
+	if got := byID["acct_codex_auth"].Provider; got != "codex" {
+		t.Fatalf("codex auth provider = %q, want codex", got)
+	}
+	if _, ok := byID["acct_claude_auth"]; ok {
+		t.Fatalf("claude auth-file should not be in Codex inventory: %#v", byID["acct_claude_auth"])
+	}
+	if got := byID["acct_codex_key"].AccountKind; got != accountsdomain.AccountKindCodexAPIKey {
+		t.Fatalf("codex api key kind = %q", got)
+	}
+	if got := byID["acct_openrouter"].AccountKind; got != accountsdomain.AccountKindOpenAICompatible {
+		t.Fatalf("openai-compatible kind = %q", got)
 	}
 }
 

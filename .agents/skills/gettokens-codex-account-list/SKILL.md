@@ -142,6 +142,11 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - 桌面宽度下至少让常见 5 个候选完整可见；窄屏下改为纵向滚动，而不是把控件压扁。
 
 ## 7. 后端 / Wails 边界
+- Codex 账号列表真实 Wails 数据入口必须优先使用 `ListCodexAccountInventory`：
+  - `internal/wailsapp.ListCodexAccountInventory()` 从统一 `ListAccounts()` / `AccountRecord` 映射结果中过滤 Codex 路由相关账号。
+  - 前端 `CodexAccountListFeature.tsx` 不应再用 `ListAccounts + ListOpenAICompatibleProviders` 自行拼装真实 Codex rows；浏览器 preview 可继续使用本地 preview data。
+  - auth-file provider/type 推断必须留在 `internal/accounts` 统一账号映射层，不在 Codex 页面、账号池页面或 Wails feature 各自解析 `auth_json`。
+  - openai-compatible 应作为 `accountKind=openai-compatible` 的统一账号记录进入 Codex inventory；页面模型层只做 presentation row 转换，不拥有“哪些账号属于 Codex 路由链路”的最终判定。
 - 新增 Wails-facing 方法时必须同时检查：
   - `internal/wailsapp`
   - root `app.go`

@@ -354,6 +354,10 @@ export function ListChannelRouteEvents(arg1) {
   return window['go']['main']['App']['ListChannelRouteEvents'](arg1);
 }
 
+export function ListCodexAccountInventory() {
+  return window['go']['main']['App']['ListCodexAccountInventory']();
+}
+
 export function ListLocalCodexProviderViews() {
   return window['go']['main']['App']['ListLocalCodexProviderViews']();
 }

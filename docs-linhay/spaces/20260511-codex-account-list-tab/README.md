@@ -172,4 +172,33 @@
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-06-06
+- 最近更新：2026-06-10
+
+## 2026-06-10 线上 bug：Codex 账号列表显示为空
+
+### 问题来源
+- 用户反馈：线上 `Codex -> 账号列表` 页面显示为空。
+
+### 证据门禁
+- 当前代码位置：
+  - `frontend/src/features/codex/model/codexAccountList.ts` 中 `isCodexRequestAccount()` 只接受 `provider === "codex"` 或 `accountKind === "codex-api-key"`。
+  - `internal/accounts/account_records.go` 中 `buildUnifiedAuthFileAccountRecord()` 直接使用 account-store 返回的 `provider/auth_type`，未在 `unknown` 时从 `auth_json` 反推 provider。
+  - `internal/wailsapp/auth_files.go` 中 `authFileItemFromUnifiedAccount()` 已存在从 `auth_json` 推断 `codex` 的逻辑，说明账号池与 Codex 账号列表链路当前行为不一致。
+- 当前现象：
+  - 当 account-store 中 auth-file 账号的 `provider` 与 `auth_type` 为 `unknown`，但 `auth_json` 实际是 Codex OAuth/auth-file 时，账号池 `ListAuthFiles` 仍可显示为 Codex。
+  - 同一批账号进入 `ListAccounts -> buildCodexAccountRows()` 时会因为 provider 仍是 `unknown` 被过滤，导致 Codex 账号列表可能显示为空。
+- 可证伪条件：
+  - 如果 `ListAccounts` 返回的 auth-file 账号已经稳定带 `provider=codex`，则本问题不是由统一账号映射缺少推断导致，需要继续排查前端加载/过滤链路。
+- 预期验收方式：
+  - 新增回归测试，覆盖 account-store 返回 `provider=unknown`、`auth_type=unknown`、`auth_json.type=codex` 的 unified auth-file 记录，断言统一账号映射后 `provider=codex`。
+  - 跑通相关 Go 单测后，Codex 账号列表链路在拿到同类数据时不再被前端过滤为空。
+
+### 实施结果
+- 修复位置：`internal/accounts/account_records.go`
+- 修复方式：将 auth-file 的 provider 推断下沉到统一账号映射层；当 account-store 返回的 `provider` 为 `unknown` 且 `auth_json` 可识别为 Codex 时，`BuildUnifiedAccountRecord -> buildUnifiedAuthFileAccountRecord()` 统一产出 `provider=codex`，让账号池与 Codex 账号列表共用同一识别结果。
+- 回归测试：
+  - `internal/accounts/account_records_test.go` 新增 `TestBuildUnifiedAuthFileAccountRecordInfersCodexProviderFromAuthJSONWhenStoreMetadataUnknown`
+  - `internal/wailsapp/accounts_test.go` 新增 `TestListAccountsInfersCodexAuthFileProviderFromUnifiedAuthJSON`
+- 验证：
+  - `go test ./internal/accounts -run 'TestBuildUnifiedAuthFileAccountRecord(Infer|FallsBack)'`
+  - `go test ./internal/wailsapp -run 'TestListAccounts(Infer|DoesNotFallback)|TestListAuthFiles(Read|Infers)Metadata'`

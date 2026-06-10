@@ -111,8 +111,8 @@ export function buildCodexAccountRows(input: BuildCodexAccountRowsInput): CodexA
   const manualRequestableAccountIDs = new Set(normalizeIDList(input.manualRequestableAccountIDs));
   const rows = [
     ...input.accounts
-      .filter(isCodexRequestAccount)
-      .map((account) => mapAccountRecordToCodexRow(account, manualRequestableAccountIDs)),
+      .filter(isCodexInventoryAccount)
+      .map((account) => mapInventoryAccountRecordToCodexRow(account, manualRequestableAccountIDs)),
     ...input.providers.map((provider) => mapOpenAICompatibleProviderToCodexRow(provider)),
   ];
 
@@ -271,9 +271,19 @@ function isApiFormat(format: string): format is ApiFormat {
   return format === 'anthropic' || format === 'openai_chat' || format === 'openai_responses' || format === 'gemini_native';
 }
 
-function isCodexRequestAccount(account: AccountRecord) {
+function isCodexInventoryAccount(account: AccountRecord) {
+  if (account.accountKind === 'openai-compatible') {
+    return true;
+  }
   const provider = String(account.provider || '').trim().toLowerCase();
   return provider === 'codex' || account.accountKind === 'codex-api-key';
+}
+
+function mapInventoryAccountRecordToCodexRow(account: AccountRecord, manualRequestableAccountIDs: Set<string>): CodexAccountRow {
+  if (account.accountKind === 'openai-compatible') {
+    return mapOpenAICompatibleAccountRecordToCodexRow(account);
+  }
+  return mapAccountRecordToCodexRow(account, manualRequestableAccountIDs);
 }
 
 function mapAccountRecordToCodexRow(account: AccountRecord, manualRequestableAccountIDs: Set<string>): CodexAccountRow {
@@ -321,6 +331,53 @@ function mapAccountRecordToCodexRow(account: AccountRecord, manualRequestableAcc
     modelMappings: sourceKind === 'codex-api-key'
       ? buildOpenAICompatibleModelMappings({ models: readAccountModels(account) })
       : [],
+  };
+}
+
+function mapOpenAICompatibleAccountRecordToCodexRow(account: AccountRecord): CodexAccountRow {
+  const name = String(account.provider || account.name || account.displayName || '').trim();
+  const status = String(account.status || '').trim();
+  const disabled = Boolean(account.disabled) || status.toUpperCase() === 'DISABLED';
+  const requestability = resolveCodexAccountRequestability({
+    status: disabled ? 'disabled' : status || 'configured',
+    disabled,
+    sourceKind: 'openai-compatible',
+    accountKind: 'openai-compatible',
+    evidence: account.requestability?.evidence,
+    manualRequestable: account.requestability?.manual === true,
+    statusMessage: account.statusMessage,
+  });
+  return {
+    id: account.id,
+    label: String(account.displayName || name || account.id).trim(),
+    sourceKind: 'openai-compatible',
+    provider: name || 'openai-compatible',
+    quotaKey: account.quotaKey,
+    priority: account.priority,
+    requestable: requestability.requestable,
+    blockReason: requestability.blockReason,
+    requestabilityEvidence: requestability.evidence,
+    manualRequestable: requestability.manualRequestable,
+    status: disabled ? 'disabled' : status || 'configured',
+    baseUrl: String(account.baseUrl || '').trim(),
+    prefix: String(account.prefix || '').trim(),
+    keySuffix: String(account.keySuffix || '').trim(),
+    disabled,
+    apiKey: account.apiKey,
+    apiKeys: account.apiKeys,
+    headers: account.headers,
+    quotaCurl: account.quotaCurl,
+    quotaEnabled: account.quotaEnabled,
+    billingCurl: account.billingCurl,
+    billingEnabled: account.billingEnabled,
+    name: account.name,
+    email: account.email,
+    planType: account.planType,
+    proxyUrl: account.proxyUrl,
+    supportedFormats: account.supportedFormats,
+    formatBaseUrls: account.formatBaseUrls,
+    models: account.models,
+    modelMappings: buildOpenAICompatibleModelMappings({ models: readAccountModels(account) }),
   };
 }
 
