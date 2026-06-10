@@ -8,9 +8,11 @@
 
 1. Apple Silicon 安装包：`GetTokens_macOS_AppleSilicon.dmg`
 2. Apple Silicon updater asset：`GetTokens_macOS_AppleSilicon.tar.gz`
-3. Intel 安装包：`GetTokens_macOS_Intel.dmg`
-4. Intel updater asset：`GetTokens_macOS_Intel.tar.gz`
-5. 校验文件：`checksums.txt`
+3. Apple Silicon go-selfupdate compatibility asset：`GetTokens_darwin_arm64.tar.gz`
+4. Intel 安装包：`GetTokens_macOS_Intel.dmg`
+5. Intel updater asset：`GetTokens_macOS_Intel.tar.gz`
+6. Intel go-selfupdate compatibility asset：`GetTokens_darwin_amd64.tar.gz`
+7. 校验文件：`checksums.txt`
 
 `tar.gz` 资产用于更新检测和 Sparkle 实验链路；用户可分发安装物以 DMG 为准。
 
@@ -91,7 +93,7 @@ gh run view <run-id> --log-failed
 
 发布状态分两层记录，不能混用：
 
-1. `CI 发布完成`：目标 tag 触发的 release workflow 已成功结束，GitHub Release 已创建，五类资产已挂载。此时可以说“版本已发布到 GitHub Release”。
+1. `CI 发布完成`：目标 tag 触发的 release workflow 已成功结束，GitHub Release 已创建，七类资产已挂载。此时可以说“版本已发布到 GitHub Release”。
 2. `可分发 DMG 验收完成`：从 GitHub Release 下载正式资产后，完成 checksum、Gatekeeper、stapler、app 签名、架构、bundle 版本和 Sparkle feed 校验。此时才可以说“可分发 DMG 已验收完成”。
 
 如果 CI 已绿但本地正式资产下载慢、下载方式异常或 post-release 验收未完成，状态应写为“已发布，分发验收待完成/被阻塞”，不要回退成“未发布”或误以为需要手工重新发版。
@@ -145,13 +147,15 @@ CI release workflow 需要以下 secrets / variables：
 gh release view vX.Y.Z --json url,assets,publishedAt
 ```
 
-必须看到五类资产均存在：
+必须看到七类资产均存在：
 
 1. `GetTokens_macOS_AppleSilicon.dmg`
 2. `GetTokens_macOS_AppleSilicon.tar.gz`
-3. `GetTokens_macOS_Intel.dmg`
-4. `GetTokens_macOS_Intel.tar.gz`
-5. `checksums.txt`
+3. `GetTokens_darwin_arm64.tar.gz`
+4. `GetTokens_macOS_Intel.dmg`
+5. `GetTokens_macOS_Intel.tar.gz`
+6. `GetTokens_darwin_amd64.tar.gz`
+7. `checksums.txt`
 
 ### 2. 下载并校验 checksum
 

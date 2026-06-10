@@ -30,13 +30,41 @@ type Updater struct {
 }
 
 func updaterConfig() selfupdate.Config {
+	return updaterConfigFor(runtime.GOOS, runtime.GOARCH)
+}
+
+func updaterConfigFor(goos string, goarch string) selfupdate.Config {
 	return selfupdate.Config{
 		Validator: &selfupdate.ChecksumValidator{UniqueFilename: "checksums.txt"},
+		Filters:   updaterAssetFilters(goos, goarch),
+		OS:        goos,
+		Arch:      goarch,
 	}
 }
 
 func newSelfUpdater() (*selfupdate.Updater, error) {
 	return selfupdate.NewUpdater(updaterConfig())
+}
+
+func updaterAssetFilters(goos string, goarch string) []string {
+	if goos != "darwin" {
+		return nil
+	}
+
+	switch goarch {
+	case "arm64":
+		return []string{
+			`(^|/)gettokens_macos_applesilicon\.tar\.gz$`,
+			`(^|/)gettokens_darwin_arm64\.tar\.gz$`,
+		}
+	case "amd64":
+		return []string{
+			`(^|/)gettokens_macos_intel\.tar\.gz$`,
+			`(^|/)gettokens_darwin_amd64\.tar\.gz$`,
+		}
+	default:
+		return nil
+	}
 }
 
 func hasNewerVersion(currentVersion, latestVersion string) (bool, error) {

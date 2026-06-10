@@ -269,6 +269,7 @@ jobs:
           path: |
             dist/release/${{ matrix.asset-name }}
             dist/release/${{ matrix.updater-asset-name }}
+            dist/release/GetTokens_${{ matrix.goos }}_${{ matrix.goarch }}.tar.gz
       - name: Cleanup macOS signing materials
         if: runner.os == 'macOS' && always()
         run: |
@@ -385,7 +386,9 @@ jobs:
           files: |
             dist/release/GetTokens_macOS_AppleSilicon.dmg
             dist/release/GetTokens_macOS_AppleSilicon.tar.gz
+            dist/release/GetTokens_darwin_arm64.tar.gz
             dist/release/GetTokens_macOS_Intel.dmg
             dist/release/GetTokens_macOS_Intel.tar.gz
+            dist/release/GetTokens_darwin_amd64.tar.gz
             dist/release/checksums.txt
           generate_release_notes: true

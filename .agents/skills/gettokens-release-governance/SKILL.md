@@ -102,12 +102,16 @@ Release workflow 成功后读取官方 Release：
 gh release view vX.Y.Z --json url,assets,publishedAt,tagName
 ```
 
-必须存在五个资产：
+必须存在七个资产：
 - `GetTokens_macOS_AppleSilicon.dmg`
 - `GetTokens_macOS_AppleSilicon.tar.gz`
+- `GetTokens_darwin_arm64.tar.gz`
 - `GetTokens_macOS_Intel.dmg`
 - `GetTokens_macOS_Intel.tar.gz`
+- `GetTokens_darwin_amd64.tar.gz`
 - `checksums.txt`
+
+其中 `GetTokens_macOS_*` 是用户可读资产名，`GetTokens_darwin_*` 是 `go-selfupdate` 检测兼容资产名。macOS 26 上虽然不会原地替换 bundle，但“检查更新”仍依赖 `go-selfupdate DetectLatest` 判断是否有新版；缺少 `darwin_<arch>` 兼容资产时，旧客户端会把已发布版本误判为“当前已是最新版本”。
 
 注意：Sparkle appcast 默认不是 GitHub Release asset，它发布到 `sparkle-appcast` 分支。
 
@@ -241,7 +245,7 @@ qmd update && qmd embed
 ## 11. 最终回报口径
 区分三种状态：
 - `已推 tag，CI 进行中`：还不能说 Release 已发布。
-- `CI 发布完成`：workflow 成功，GitHub Release 和五个资产存在。
+- `CI 发布完成`：workflow 成功，GitHub Release 和七个资产存在。
 - `可分发 DMG 验收完成`：官方资产下载后，checksum、DMG Gatekeeper/stapler、app 签名/架构/版本/Sparkle 全部通过。
 
 最终回复应给出：
