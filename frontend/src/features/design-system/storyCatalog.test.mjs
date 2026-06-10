@@ -362,13 +362,18 @@ test('settings release panel exposes current project git hash metadata', async (
   const source = await readFile(new URL('../../features/settings/components/SettingsReleasePanel.tsx', import.meta.url), 'utf8');
   const featureSource = await readFile(new URL('../../features/settings/SettingsFeature.tsx', import.meta.url), 'utf8');
   const storySource = await readFile(new URL('../../features/settings/components/SettingsReleasePanel.stories.tsx', import.meta.url), 'utf8');
+  const viteConfigSource = await readFile(new URL('../../../vite.config.js', import.meta.url), 'utf8');
 
   assert.match(source, /data-design-system-component-name="SettingsReleasePanel"/);
   assert.match(source, /data-design-system-git-hash=\{gitHashLabel\}/);
   assert.match(source, /lg:grid-cols-4/);
   assert.match(featureSource, /gitHashLabel=\{buildGitHashLabel\}/);
+  assert.match(featureSource, /gitHashGitHubURL = buildGitHubCommitURL\(getTokensGitHubRepositoryURL, buildGitHashCommit\)/);
   assert.match(featureSource, /const cliProxyApiGitHashLabel = formatBuildGitHash\(sidecarStatus\.gitHash\);/);
+  assert.match(featureSource, /cliProxyApiGitHashGitHubURL = buildGitHubCommitURL\(cliProxyApiGitHubRepositoryURL, sidecarStatus\.gitHash \?\? ''\)/);
   assert.match(featureSource, /cliProxyApiGitHashLabel=\{cliProxyApiGitHashLabel\}/);
+  assert.match(viteConfigSource, /git rev-parse HEAD/);
+  assert.doesNotMatch(viteConfigSource, /git rev-parse --short/);
   assert.match(storySource, /cliProxyApiGitHashTitle: 'CLIProxyAPI Git Hash'/);
   assert.match(storySource, /cliProxyApiGitHashLabel: '7f1c2d9'/);
 });

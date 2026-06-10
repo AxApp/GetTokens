@@ -18,7 +18,7 @@ function resolveBuildGitHash() {
   }
 
   try {
-    return execSync('git rev-parse --short=12 HEAD', {
+    return execSync('git rev-parse HEAD', {
       cwd: process.cwd(),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],

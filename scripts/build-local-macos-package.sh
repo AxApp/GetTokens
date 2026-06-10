@@ -119,7 +119,7 @@ PLATFORM="darwin/${ARCH}"
 APP_PATH="${ROOT_DIR}/build/bin/GetTokens.app"
 DMG_PATH="${OUTPUT_DIR}/${ASSET_NAME}"
 RELEASE_LABEL="${LOCAL_RELEASE_LABEL:-$(TZ=Asia/Shanghai date +'%Y.%m.%d.%H')}"
-GIT_HASH="$(git -C "${ROOT_DIR}" rev-parse --short HEAD 2>/dev/null || echo local)"
+GIT_HASH="$(git -C "${ROOT_DIR}" rev-parse HEAD 2>/dev/null || echo local)"
 
 if [[ "${LOCAL_MACOS_PACKAGE_PRINT_PLAN:-0}" == "1" ]]; then
   cat <<EOF

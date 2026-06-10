@@ -61,7 +61,7 @@ resolve_git_value() {
 }
 
 VERSION="${CLI_PROXY_VERSION:-$(resolve_git_value "describe --tags --always --dirty")}"
-COMMIT="${CLI_PROXY_COMMIT:-$(resolve_git_value "rev-parse --short HEAD")}"
+COMMIT="${CLI_PROXY_COMMIT:-$(resolve_git_value "rev-parse HEAD")}"
 BUILD_DATE="${CLI_PROXY_BUILD_DATE:-$(date -u +'%Y-%m-%dT%H:%M:%SZ')}"
 
 VERSION="${VERSION:-fork-source}"

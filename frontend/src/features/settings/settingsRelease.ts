@@ -21,6 +21,9 @@ export function buildGitHubCommitURL(repositoryURL: string, gitHash: string): st
   if (!normalizedHash || normalizedHash === 'DEV' || normalizedHash === '—') {
     return '';
   }
+  if (!/^[0-9a-f]{7,40}$/i.test(normalizedHash)) {
+    return '';
+  }
 
   return `${repositoryURL.replace(/\/$/, '')}/commit/${encodeURIComponent(normalizedHash)}`;
 }

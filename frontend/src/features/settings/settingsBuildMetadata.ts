@@ -1,7 +1,7 @@
 const defaultBuildGitHashFallback = 'DEV';
 
 export function formatBuildGitHash(value: unknown, fallback = defaultBuildGitHashFallback): string {
-  const normalized = typeof value === 'string' ? value.trim() : '';
+  const normalized = normalizeBuildGitHash(value);
   if (!normalized) {
     return fallback;
   }
@@ -9,6 +9,11 @@ export function formatBuildGitHash(value: unknown, fallback = defaultBuildGitHas
   return normalized.length > 12 ? normalized.slice(0, 12) : normalized;
 }
 
+export function normalizeBuildGitHash(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 const buildEnv = (import.meta as ImportMeta & { env?: { VITE_GIT_HASH?: string } }).env;
 
-export const buildGitHashLabel = formatBuildGitHash(buildEnv?.VITE_GIT_HASH);
+export const buildGitHashCommit = normalizeBuildGitHash(buildEnv?.VITE_GIT_HASH);
+export const buildGitHashLabel = formatBuildGitHash(buildGitHashCommit);

@@ -58,7 +58,7 @@ resolve_commit() {
     echo "${CLI_PROXY_COMMIT}"
     return
   fi
-  git -C "${SOURCE_DIR}" rev-parse --short HEAD 2>/dev/null || echo "unknown"
+  git -C "${SOURCE_DIR}" rev-parse HEAD 2>/dev/null || echo "unknown"
 }
 
 resolve_dirty() {

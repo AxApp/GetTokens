@@ -18,7 +18,7 @@ import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import { useTextScale } from '../../context/TextScaleContext';
 import { useTheme } from '../../context/ThemeContext';
-import { buildGitHashLabel, formatBuildGitHash } from './settingsBuildMetadata';
+import { buildGitHashCommit, buildGitHashLabel, formatBuildGitHash } from './settingsBuildMetadata';
 import {
   buildGetTokensReleaseURL,
   buildGitHubCommitURL,
@@ -119,8 +119,8 @@ export default function SettingsFeature({
   const cliProxyApiGitHashLabel = formatBuildGitHash(sidecarStatus.gitHash);
   const currentReleaseGitHubURL = buildGetTokensReleaseURL(currentVersionLabel);
   const latestReleaseGitHubURL = availableRelease?.releaseUrl ?? '';
-  const gitHashGitHubURL = buildGitHubCommitURL(getTokensGitHubRepositoryURL, buildGitHashLabel);
-  const cliProxyApiGitHashGitHubURL = buildGitHubCommitURL(cliProxyApiGitHubRepositoryURL, cliProxyApiGitHashLabel);
+  const gitHashGitHubURL = buildGitHubCommitURL(getTokensGitHubRepositoryURL, buildGitHashCommit);
+  const cliProxyApiGitHashGitHubURL = buildGitHubCommitURL(cliProxyApiGitHubRepositoryURL, sidecarStatus.gitHash ?? '');
   const textScaleOptions: ReadonlyArray<SegmentedOption<typeof textScale>> = [
     { id: 'default', label: t('settings.text_scale_default') },
     { id: 'large', label: t('settings.text_scale_large') },

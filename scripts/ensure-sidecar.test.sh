@@ -90,7 +90,7 @@ run_ensure() {
 run_ensure
 assert_eq "$(cat "${COUNT_FILE}")" "1" "首次运行必须构建 sidecar"
 fingerprint_v1="$(read_fingerprint)"
-assert_eq "$(read_commit)" "$(git -C "${SOURCE_DIR}" rev-parse --short HEAD)" "meta.json 必须记录 source commit"
+assert_eq "$(read_commit)" "$(git -C "${SOURCE_DIR}" rev-parse HEAD)" "meta.json 必须记录完整 source commit"
 
 run_ensure
 assert_eq "$(cat "${COUNT_FILE}")" "1" "源码未变化时不应重复构建"
@@ -160,5 +160,13 @@ CLI_PROXY_COMMIT="${REMOTE_COMMIT}" \
 run_ensure
 assert_eq "$(cat "${COUNT_FILE}")" "5" "source 目录缺失时必须按指定 commit 拉取并构建"
 assert_eq "$(read_commit)" "${REMOTE_COMMIT}" "缺失 source 场景 meta.json 必须记录发布指定的 sidecar commit"
+
+if grep -R "rev-parse --short" \
+  "${ROOT_DIR}/scripts/ensure-sidecar.sh" \
+  "${ROOT_DIR}/scripts/build-sidecar.sh" \
+  "${ROOT_DIR}/scripts/build-local-macos-package.sh" >/dev/null; then
+  echo "ASSERT FAILED: build metadata must preserve full git commits, not short hashes" >&2
+  exit 1
+fi
 
 echo "ensure-sidecar test passed"

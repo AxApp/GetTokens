@@ -30,12 +30,12 @@ test('mapCheckedRelease returns null when updater has no newer release', () => {
 
 test('buildGitHubCommitURL links valid hashes to the selected repository', () => {
   assert.equal(
-    buildGitHubCommitURL('https://github.com/AxApp/GetTokens', '960ebd9fd83f'),
-    'https://github.com/AxApp/GetTokens/commit/960ebd9fd83f',
+    buildGitHubCommitURL('https://github.com/AxApp/GetTokens', '960ebd9fd83f5168e2f67b9d3c0b2d7a12345'),
+    'https://github.com/AxApp/GetTokens/commit/960ebd9fd83f5168e2f67b9d3c0b2d7a12345',
   );
   assert.equal(
-    buildGitHubCommitURL('https://github.com/AxApp/CLIProxyAPI', ' e5bcdfb6 '),
-    'https://github.com/AxApp/CLIProxyAPI/commit/e5bcdfb6',
+    buildGitHubCommitURL('https://github.com/AxApp/CLIProxyAPI', ' 6cb405781439879387f9a6e06eb1d6796ef63b7f '),
+    'https://github.com/AxApp/CLIProxyAPI/commit/6cb405781439879387f9a6e06eb1d6796ef63b7f',
   );
 });
 
@@ -43,6 +43,7 @@ test('buildGitHubCommitURL ignores placeholder build hashes', () => {
   assert.equal(buildGitHubCommitURL('https://github.com/AxApp/GetTokens', 'DEV'), '');
   assert.equal(buildGitHubCommitURL('https://github.com/AxApp/GetTokens', '—'), '');
   assert.equal(buildGitHubCommitURL('https://github.com/AxApp/GetTokens', ''), '');
+  assert.equal(buildGitHubCommitURL('https://github.com/AxApp/GetTokens', 'BROWSER'), '');
 });
 
 test('buildGetTokensReleaseURL prefers checked release url and falls back to current version tag', () => {
