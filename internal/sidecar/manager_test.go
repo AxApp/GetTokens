@@ -221,6 +221,7 @@ func TestWriteConfigCreatesMinimalConfig(t *testing.T) {
 	assertContains(t, content, "host: \"\"")
 	assertContains(t, content, "port: 9317")
 	assertContains(t, content, "auth-dir: "+dir)
+	assertContains(t, content, "account-store-db: "+filepath.Join(dir, "accounts-v1.sqlite"))
 	assertContains(t, content, "use-system-proxy: false")
 	assertContains(t, content, "usage-statistics-enabled: true")
 	assertContains(t, content, "request-retry: 3")
@@ -418,6 +419,7 @@ api-keys:
 	assertContains(t, content, "prefix: team-a")
 	assertContains(t, content, "port: 9417")
 	assertContains(t, content, "auth-dir: "+dir)
+	assertContains(t, content, "account-store-db: "+filepath.Join(dir, "accounts-v1.sqlite"))
 	assertContains(t, content, "usage-statistics-enabled: true")
 	assertContains(t, content, "allow-remote: false")
 	assertContains(t, content, "disable-control-panel: true")
@@ -426,6 +428,36 @@ api-keys:
 	assertContains(t, content, "api-keys:")
 	assertContains(t, content, "- relay-key-1")
 	assertContains(t, content, "- relay-key-2")
+}
+
+func TestWriteConfigRewritesAccountStoreDBToCurrentAuthDir(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	original := `host: ""
+port: 8317
+auth-dir: /Users/example/.config/gettokens
+account-store-db: ~/.config/gettokens/accounts-v1.sqlite
+api-keys:
+  - relay-key
+`
+	if err := os.WriteFile(path, []byte(original), 0600); err != nil {
+		t.Fatalf("seed config: %v", err)
+	}
+
+	if _, err := writeConfig(path, 18317, dir); err != nil {
+		t.Fatalf("writeConfig returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read config: %v", err)
+	}
+	content := string(data)
+	assertContains(t, content, "auth-dir: "+dir)
+	assertContains(t, content, "account-store-db: "+filepath.Join(dir, "accounts-v1.sqlite"))
+	if strings.Contains(content, "~/.config/gettokens/accounts-v1.sqlite") {
+		t.Fatalf("config still points at production account store: %s", content)
+	}
 }
 
 func TestNormalizeLegacyAuthFilesAddsCodexCompatibilityFields(t *testing.T) {

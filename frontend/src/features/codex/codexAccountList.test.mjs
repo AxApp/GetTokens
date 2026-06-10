@@ -14,6 +14,7 @@ import {
   buildCodexRoutingProbeModelOptions,
   buildCodexRoutingProbeStreamLines,
   canEditCodexModelMappings,
+  buildCodexRoutePolicyExplainPreview,
   buildCodexRoutePolicyPreview,
   buildCodexRoutePolicyRowStates,
   buildCodexRoutePolicySummary,
@@ -1176,6 +1177,60 @@ test('buildCodexRoutePolicyPreview applies deny, custom order, and strict fallba
     }).map((row) => row.id),
     ['openai-compatible:mi', 'auth-file:a.json'],
   );
+});
+
+test('buildCodexRoutePolicyExplainPreview uses route policy preview as the candidate pool', () => {
+  const rows = [
+    { id: 'codex-api-key:company', label: '公司 1', provider: 'codex', requestable: true },
+    { id: 'auth-file:checker.json', label: 'checker', provider: 'codex', requestable: true },
+    { id: 'openai-compatible:deepseek', label: 'DeepSeek', provider: 'deepseek', requestable: true },
+    {
+      id: 'openai-compatible:disabled',
+      label: 'Disabled',
+      provider: 'openrouter',
+      requestable: false,
+      disabled: true,
+      blockReason: 'account-disabled',
+    },
+  ];
+
+  const preview = buildCodexRoutePolicyExplainPreview(
+    rows,
+    {
+      allowAccountIDs: [],
+      denyAccountIDs: ['auth-file:checker.json'],
+      orderAccountIDs: ['openai-compatible:deepseek', 'codex-api-key:company'],
+      allowFallback: true,
+    },
+    {
+      id: 'rule-1',
+      projectKey: 'project/a',
+      projectName: 'Project A',
+      allowAccountIDs: ['codex-api-key:company'],
+    },
+  );
+
+  assert.deepEqual(
+    preview.baseCandidates.map((candidate) => [candidate.id, candidate.routeOrder, candidate.channelOrder]),
+    [
+      ['openai-compatible:deepseek', 0, 2],
+      ['codex-api-key:company', 1, 0],
+    ],
+  );
+  assert.deepEqual(
+    preview.candidates.map((candidate) => candidate.id),
+    ['codex-api-key:company'],
+  );
+  assert.deepEqual(
+    preview.filtered.map((item) => [item.id, item.reason]),
+    [
+      ['auth-file:checker.json', 'route-policy-excluded'],
+      ['openai-compatible:disabled', 'account-disabled'],
+      ['openai-compatible:deepseek', 'project-candidate-pool'],
+    ],
+  );
+  assert.equal(preview.projectCandidatePool?.beforeCandidateCount, 2);
+  assert.equal(preview.projectCandidatePool?.afterCandidateCount, 1);
 });
 
 test('buildCodexRoutePolicyRowStates gives each account one policy mode and preview rank', () => {

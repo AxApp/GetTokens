@@ -579,6 +579,7 @@ func saveChannelRoutingStore(store channelRoutingStore) error {
 	if store.Channels == nil {
 		store.Channels = map[string]ChannelRoutingConfig{}
 	}
+	pruneManualDisabledRuntimeStates(store.RuntimeStates)
 	for _, channel := range []string{"codex", "claude"} {
 		if cfg, ok := store.Channels[channel]; ok {
 			normalized, _ := normalizeChannelRoutingConfig(cfg, channel)
@@ -602,6 +603,56 @@ func channelRoutingStorePath() (string, error) {
 		return "", err
 	}
 	return filepath.Join(dir, "config.json"), nil
+}
+
+func clearManualDisabledRuntimeState(accountID string) error {
+	accountID = strings.TrimSpace(accountID)
+	if accountID == "" {
+		return nil
+	}
+	store, err := loadChannelRoutingStore()
+	if err != nil {
+		return err
+	}
+	if store.RuntimeStates == nil {
+		store.RuntimeStates = map[string]ChannelAccountRuntimeState{}
+	}
+	state, ok := store.RuntimeStates[accountID]
+	if ok && len(state.Sources) > 0 {
+		delete(state.Sources, "manual-disabled")
+		if len(state.Sources) == 0 {
+			delete(store.RuntimeStates, accountID)
+		} else {
+			state.UpdatedAt = latestChannelRuntimeStateUpdatedAt(state.Sources)
+			store.RuntimeStates[accountID] = state
+		}
+	}
+	return saveChannelRoutingStore(store)
+}
+
+func pruneManualDisabledRuntimeStates(states map[string]ChannelAccountRuntimeState) {
+	for accountID, state := range states {
+		if len(state.Sources) == 0 {
+			continue
+		}
+		delete(state.Sources, "manual-disabled")
+		if len(state.Sources) == 0 {
+			delete(states, accountID)
+			continue
+		}
+		state.UpdatedAt = latestChannelRuntimeStateUpdatedAt(state.Sources)
+		states[accountID] = state
+	}
+}
+
+func latestChannelRuntimeStateUpdatedAt(sources map[string]ChannelRuntimeStateSource) string {
+	latest := ""
+	for _, source := range sources {
+		if strings.TrimSpace(source.UpdatedAt) > latest {
+			latest = strings.TrimSpace(source.UpdatedAt)
+		}
+	}
+	return latest
 }
 
 func defaultChannelRoutingStore() channelRoutingStore {
@@ -871,7 +922,7 @@ func activeRuntimeBlockReason(state ChannelAccountRuntimeState, now time.Time) (
 	if len(state.Sources) == 0 {
 		return "", false
 	}
-	for _, source := range []string{"manual-disabled", "auth-error", "rate-limit", "cooldown", "model-unavailable", "upstream-error"} {
+	for _, source := range []string{"auth-error", "quota-empty", "rate-limit", "cooldown", "model-unavailable", "upstream-error"} {
 		entry, ok := state.Sources[source]
 		if !ok {
 			continue

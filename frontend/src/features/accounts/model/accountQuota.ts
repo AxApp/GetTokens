@@ -48,38 +48,42 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
 
   const refreshing = state.refreshing || state.status === 'loading';
   const runtimeState = quotaRuntimeDisplayState(state.quota);
-  const windows = selectQuotaWindows(state.quota).map((window) => {
-    const remainingPercent = normalizePercent(window.remainingPercent);
+  const windows = selectQuotaWindows(state.quota).map((window: unknown) => {
+    const remainingPercent = normalizePercent(readQuotaRuntimeField(window, 'remainingPercent', 'remaining_percent'));
     const usedPercent = remainingPercent === null ? null : Math.max(0, 100 - remainingPercent);
 
     return {
-      id: window.id,
-      label: window.label,
+      id: readQuotaRuntimeString(window, 'id', 'id'),
+      label: readQuotaRuntimeString(window, 'label', 'label'),
       remainingPercent,
       usedLabel: usedPercent === null ? '--' : `${usedPercent}%`,
-      usedTokens: normalizeQuotaTokenCount(window.usedTokens),
-      limitTokens: normalizeQuotaTokenCount(window.limitTokens),
-      remainingTokens: normalizeQuotaTokenCount(window.remainingTokens),
-      resetLabel: window.resetLabel || '--',
-      resetAtUnix: typeof window.resetAtUnix === 'number' ? window.resetAtUnix : undefined,
+      usedTokens: normalizeQuotaTokenCount(readQuotaRuntimeField(window, 'usedTokens', 'used_tokens')),
+      limitTokens: normalizeQuotaTokenCount(readQuotaRuntimeField(window, 'limitTokens', 'limit_tokens')),
+      remainingTokens: normalizeQuotaTokenCount(readQuotaRuntimeField(window, 'remainingTokens', 'remaining_tokens')),
+      resetLabel: readQuotaRuntimeString(window, 'resetLabel', 'reset_label') || '--',
+      resetAtUnix: normalizeQuotaResetUnix(readQuotaRuntimeField(window, 'resetAtUnix', 'reset_at_unix')),
     };
   });
 
   if (windows.length === 0) {
     return {
       status: 'empty',
-      planType: state.quota.planType || '',
+      planType: readQuotaRuntimeString(state.quota, 'planType', 'plan_type'),
       windows: [],
       refreshing,
+      updatedAt: readQuotaRuntimeString(state.quota, 'updatedAt', 'updated_at') || undefined,
+      lastEvaluatedAt: readQuotaRuntimeString(state.quota, 'lastEvaluatedAt', 'last_evaluated_at') || undefined,
       ...runtimeState,
     };
   }
 
   return {
     status: 'success',
-    planType: state.quota.planType || '',
+    planType: readQuotaRuntimeString(state.quota, 'planType', 'plan_type'),
     windows,
     refreshing,
+    updatedAt: readQuotaRuntimeString(state.quota, 'updatedAt', 'updated_at') || undefined,
+    lastEvaluatedAt: readQuotaRuntimeString(state.quota, 'lastEvaluatedAt', 'last_evaluated_at') || undefined,
     ...runtimeState,
   };
 }
@@ -213,20 +217,32 @@ function normalizeQuotaResetUnix(value: unknown) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+function readQuotaRuntimeField(record: unknown, camelKey: string, snakeKey: string) {
+  if (!record || typeof record !== 'object') {
+    return undefined;
+  }
+  const item = record as Record<string, unknown>;
+  return item[camelKey] ?? item[snakeKey];
+}
+
+function readQuotaRuntimeString(record: unknown, camelKey: string, snakeKey: string) {
+  return String(readQuotaRuntimeField(record, camelKey, snakeKey) || '').trim();
+}
+
 function quotaRuntimeDisplayState(quota: CodexQuota) {
   const sources = Array.isArray((quota as any).sources)
     ? (quota as any).sources.map((source: any) => ({
         source: String(source?.source || '').trim(),
         reason: String(source?.reason || '').trim() || undefined,
-        expiresAt: String(source?.expiresAt || '').trim() || undefined,
-        nextReset: String(source?.nextReset || '').trim() || undefined,
+        expiresAt: readQuotaRuntimeString(source, 'expiresAt', 'expires_at') || undefined,
+        nextReset: readQuotaRuntimeString(source, 'nextReset', 'next_reset') || undefined,
       })).filter((source: { source: string }) => source.source)
     : [];
   return {
-    blocked: Boolean((quota as any).blocked),
-    blockReason: String((quota as any).blockReason || '').trim() || undefined,
-    stale: Boolean((quota as any).stale),
-    degradedReason: String((quota as any).degradedReason || '').trim() || undefined,
+    blocked: Boolean(readQuotaRuntimeField(quota, 'blocked', 'blocked')),
+    blockReason: readQuotaRuntimeString(quota, 'blockReason', 'block_reason') || undefined,
+    stale: Boolean(readQuotaRuntimeField(quota, 'stale', 'stale')),
+    degradedReason: readQuotaRuntimeString(quota, 'degradedReason', 'degraded_reason') || undefined,
     sources,
   };
 }
@@ -281,15 +297,20 @@ function quotaRefreshFailureReason(error: unknown) {
   return '';
 }
 
-export function selectQuotaWindows(quota: CodexQuota) {
-  const preferredWindows = quota.windows.filter(
-    (window) =>
-      window.id === 'five-hour' ||
-      window.id === 'weekly' ||
-      window.id.endsWith('-five-hour') ||
-      window.id.endsWith('-weekly')
+export function selectQuotaWindows(quota: CodexQuota): unknown[] {
+  const windows = Array.isArray((quota as any).windows) ? (quota as any).windows : [];
+  const preferredWindows = windows.filter(
+    (window: unknown) =>
+      quotaRuntimeWindowID(window) === 'five-hour' ||
+      quotaRuntimeWindowID(window) === 'weekly' ||
+      quotaRuntimeWindowID(window).endsWith('-five-hour') ||
+      quotaRuntimeWindowID(window).endsWith('-weekly')
   );
-  return preferredWindows.length > 0 ? preferredWindows : quota.windows.slice(0, 2);
+  return preferredWindows.length > 0 ? preferredWindows : windows.slice(0, 2);
+}
+
+function quotaRuntimeWindowID(window: unknown) {
+  return readQuotaRuntimeString(window, 'id', 'id').toLowerCase();
 }
 
 export function selectLongestQuotaWindow(windows: QuotaWindowDisplay[]) {
@@ -334,18 +355,20 @@ export function hasDisplayableBilling(billing?: BillingDisplay) {
   return Boolean(billing?.isAvailable && billing.balances?.length);
 }
 
-export function normalizePercent(value: number | null | undefined) {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
+export function normalizePercent(value: unknown) {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(parsed)) {
     return null;
   }
-  return Math.max(0, Math.min(100, Math.round(value)));
+  return Math.max(0, Math.min(100, Math.round(parsed)));
 }
 
-export function normalizeQuotaTokenCount(value: number | null | undefined) {
-  if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
+export function normalizeQuotaTokenCount(value: unknown) {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
     return undefined;
   }
-  return Math.round(value);
+  return Math.round(parsed);
 }
 
 export function createPlaceholderWindows(): QuotaWindowDisplay[] {
@@ -401,6 +424,24 @@ export function formatQuotaResetDisplayWithUnix(value: string, resetAtUnix?: num
   }
 
   return trimmed.replace(/^重置于\s*/u, '').replace(/^reset\s*/iu, '').trim();
+}
+
+export function formatQuotaRuntimeTimestampDisplay(value?: string) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) {
+    return '';
+  }
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return trimmed;
+  }
+
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const hour = String(parsed.getHours()).padStart(2, '0');
+  const minute = String(parsed.getMinutes()).padStart(2, '0');
+  const second = String(parsed.getSeconds()).padStart(2, '0');
+  return `${month}/${day} ${hour}:${minute}:${second}`;
 }
 
 export function resolveQuotaResetDate(value: string, resetAtUnix?: number) {

@@ -135,6 +135,48 @@ func TestExplainChannelRoutingSequentialFiltersDisabledAndUnsupportedAccounts(t 
 	assertFilteredReason(t, result.Filtered, "openai-compatible:anthropic", "missing_format:openai_responses")
 }
 
+func TestExplainChannelRoutingIgnoresLegacyManualDisabledRuntimeState(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{
+			ID:               "acct_codex_key",
+			AccountKind:      accountsdomain.AccountKindCodexAPIKey,
+			Provider:         "codex",
+			CredentialSource: accountsdomain.CredentialSourceAPIKey,
+			DisplayName:      "公司 1",
+			Status:           "active",
+			Priority:         1,
+			SupportedFormats: []string{"codex"},
+		},
+	}
+
+	result := explainChannelRoutingWithRuntime(accounts, ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"acct_codex_key"},
+	}, ChannelRoutingExplainInput{}, map[string]ChannelAccountRuntimeState{
+		"acct_codex_key": {
+			AccountID: "acct_codex_key",
+			Sources: map[string]ChannelRuntimeStateSource{
+				"manual-disabled": {
+					Source:    "manual-disabled",
+					Reason:    "account disabled",
+					UpdatedAt: "2026-06-10T02:00:56Z",
+				},
+			},
+		},
+	})
+
+	if result.SelectedAccountID != "acct_codex_key" {
+		t.Fatalf("SelectedAccountID = %q, want acct_codex_key", result.SelectedAccountID)
+	}
+	if len(result.Candidates) != 1 || result.Candidates[0].ID != "acct_codex_key" {
+		t.Fatalf("Candidates = %#v, want enabled account candidate", result.Candidates)
+	}
+	if _, ok := findChannelFilteredReason(result.Filtered, "acct_codex_key"); ok {
+		t.Fatalf("enabled account was filtered by legacy manual-disabled: %#v", result.Filtered)
+	}
+}
+
 func TestExplainChannelRoutingCodexRequiresResponsesFormat(t *testing.T) {
 	accounts := []accountsdomain.AccountRecord{
 		{
@@ -163,6 +205,59 @@ func TestExplainChannelRoutingCodexRequiresResponsesFormat(t *testing.T) {
 	}
 	assertCandidateIDs(t, result.Candidates, []string{"openai-compatible:responses"})
 	assertFilteredReason(t, result.Filtered, "openai-compatible:chat-only", "missing_format:openai_responses")
+}
+
+func TestSaveChannelRoutingStorePrunesManualDisabledRuntimeStates(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("GETTOKENS_APP_PROFILE", "dev")
+
+	err := saveChannelRoutingStore(channelRoutingStore{
+		Channels: map[string]ChannelRoutingConfig{
+			"codex": defaultChannelRoutingConfig("codex"),
+		},
+		RuntimeStates: map[string]ChannelAccountRuntimeState{
+			"acct_codex_key": {
+				AccountID: "acct_codex_key",
+				Sources: map[string]ChannelRuntimeStateSource{
+					"manual-disabled": {
+						Source: "manual-disabled",
+						Reason: "account disabled",
+					},
+					"quota-empty": {
+						Source: "quota-empty",
+						Reason: "requests exhausted",
+					},
+				},
+			},
+			"acct_only_manual": {
+				AccountID: "acct_only_manual",
+				Sources: map[string]ChannelRuntimeStateSource{
+					"manual-disabled": {
+						Source: "manual-disabled",
+						Reason: "account disabled",
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("saveChannelRoutingStore: %v", err)
+	}
+
+	store, err := loadChannelRoutingStore()
+	if err != nil {
+		t.Fatalf("loadChannelRoutingStore: %v", err)
+	}
+	if _, ok := store.RuntimeStates["acct_only_manual"]; ok {
+		t.Fatalf("manual-only runtime state should be pruned: %#v", store.RuntimeStates)
+	}
+	state := store.RuntimeStates["acct_codex_key"]
+	if _, ok := state.Sources["manual-disabled"]; ok {
+		t.Fatalf("manual-disabled source should be pruned: %#v", state.Sources)
+	}
+	if source := state.Sources["quota-empty"]; source.Source != "quota-empty" {
+		t.Fatalf("quota-empty source = %#v, want preserved", source)
+	}
 }
 
 func TestExplainChannelRoutingClaudeReportsMissingAnthropicFormat(t *testing.T) {

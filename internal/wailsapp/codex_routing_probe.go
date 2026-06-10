@@ -188,7 +188,56 @@ func (a *App) loadCodexRoutingProbeCandidates() ([]codexRoutingProbeCandidate, e
 		}
 		return candidates[i].ID < candidates[j].ID
 	})
-	return candidates, nil
+	return a.filterCodexRoutingProbeRuntimeBlockedCandidates(candidates), nil
+}
+
+func (a *App) filterCodexRoutingProbeRuntimeBlockedCandidates(candidates []codexRoutingProbeCandidate) []codexRoutingProbeCandidate {
+	if len(candidates) == 0 {
+		return candidates
+	}
+	blocked := make(map[string]struct{})
+	if store, err := loadChannelRoutingStore(); err == nil && len(store.RuntimeStates) > 0 {
+		now := time.Now().UTC()
+		for _, candidate := range candidates {
+			id := strings.TrimSpace(candidate.ID)
+			if id == "" {
+				continue
+			}
+			if _, blockedByRuntime := activeRuntimeBlockReason(store.RuntimeStates[id], now); blockedByRuntime {
+				blocked[id] = struct{}{}
+			}
+		}
+	}
+	accountIDs := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		if id := strings.TrimSpace(candidate.ID); id != "" {
+			accountIDs = append(accountIDs, id)
+		}
+	}
+	if len(accountIDs) == 0 {
+		return candidates
+	}
+	if statuses, err := a.managementClient().GetQuotaStatuses(accountIDs); err == nil {
+		for _, status := range statuses {
+			if !status.Blocked {
+				continue
+			}
+			if id := strings.TrimSpace(status.AccountKey); id != "" {
+				blocked[id] = struct{}{}
+			}
+		}
+	}
+	if len(blocked) == 0 {
+		return candidates
+	}
+	filtered := candidates[:0]
+	for _, candidate := range candidates {
+		if _, ok := blocked[strings.TrimSpace(candidate.ID)]; ok {
+			continue
+		}
+		filtered = append(filtered, candidate)
+	}
+	return filtered
 }
 
 func buildCodexRoutingRouteHeaders(input ProbeCodexAccountRoutingInput, candidates []codexRoutingProbeCandidate) map[string]string {

@@ -18,6 +18,7 @@ type sidecarConfig struct {
 	Host                   string   `yaml:"host"`
 	Port                   int      `yaml:"port"`
 	AuthDir                string   `yaml:"auth-dir"`
+	AccountStoreDB         string   `yaml:"account-store-db"`
 	APIKeys                []string `yaml:"api-keys"`
 	UseSystemProxy         bool     `yaml:"use-system-proxy"`
 	UsageStatisticsEnabled bool     `yaml:"usage-statistics-enabled"`
@@ -39,6 +40,10 @@ const (
 	retryDefaultsMarkerName    = ".gettokens-retry-defaults-v1"
 )
 
+func defaultAccountStoreDBPath(authDir string) string {
+	return filepath.Join(strings.TrimSpace(authDir), "accounts-v1.sqlite")
+}
+
 // writeConfig serialises a minimal YAML config for CLIProxyAPI.
 func writeConfig(path string, port int, authDir string) (string, error) {
 	if err := migrateLegacyChannelRoutingConfig(path); err != nil {
@@ -49,6 +54,7 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 		Host:                   "",
 		Port:                   port,
 		AuthDir:                authDir,
+		AccountStoreDB:         defaultAccountStoreDBPath(authDir),
 		APIKeys:                []string{mustGenerateServiceAPIKey()},
 		UsageStatisticsEnabled: true,
 		RequestRetry:           defaultRequestRetry,
@@ -72,6 +78,7 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 			upsertMappingScalar(root, "host", cfg.Host, "!!str")
 			upsertMappingScalar(root, "port", fmt.Sprintf("%d", cfg.Port), "!!int")
 			upsertMappingScalar(root, "auth-dir", cfg.AuthDir, "!!str")
+			upsertMappingScalar(root, "account-store-db", cfg.AccountStoreDB, "!!str")
 			upsertMappingScalar(root, "usage-statistics-enabled", "true", "!!bool")
 			apiKeys := existingAPIKeys(root)
 			if len(apiKeys) == 0 {

@@ -81,6 +81,7 @@ import {
   buildCodexAuthFileModelMappings,
   buildCodexAccountRows,
   buildCodexQuotaSummaryAccount,
+  buildCodexRoutePolicyExplainPreviewFromCandidates,
   buildCodexRoutePolicyPreview,
   buildCodexRoutePolicyRowStates,
   buildCodexRoutingProbeModelOptions,
@@ -192,6 +193,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const routePolicyPreviewRows = useMemo(
     () => buildCodexRoutePolicyPreview(orderedRows, routePolicyDraft),
     [orderedRows, routePolicyDraft],
+  );
+  const routePolicyPreviewSignature = useMemo(
+    () => routePolicyPreviewRows.map((row) => row.id).join('\n'),
+    [routePolicyPreviewRows],
   );
   const routePolicyRowStates = useMemo(
     () => buildCodexRoutePolicyRowStates(orderedRows, routePolicyDraft),
@@ -366,6 +371,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     }
     setRoutingProbeModel(resolveCodexRoutingProbeDefaultModel(orderedRows, codexModelCatalogOptions));
   }, [codexModelCatalogOptions, orderedRows, routingProbeModel]);
+
+  useEffect(() => {
+    setChannelExplain(null);
+  }, [routePolicyPreviewSignature]);
 
   useEffect(() => {
     if (!ready) {
@@ -833,52 +842,19 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     const nextConfig = withCurrentChannelOrder(channelConfig, orderedRows.map((row) => row.id));
     setChannelConfig(nextConfig);
     if (browserMode) {
-      const baseCandidates = orderedRows
-        .filter((row) => row.requestable)
-        .map((row, index) => ({
-          id: row.id,
-          displayName: row.label,
-          provider: row.provider,
-          routeOrder: index,
-          channelOrder: index,
-        }));
       const normalizedRule = rule ? normalizeProjectCandidatePoolRuleDraft(rule, 'codex') : null;
       const projectKey = String(normalizedRule?.projectKey || '').trim();
-      const projectAllowIDs = new Set(normalizedRule?.allowAccountIDs || []);
-      const projectFiltered = projectKey
-        ? baseCandidates
-            .filter((candidate) => !projectAllowIDs.has(candidate.id))
-            .map((candidate) => ({ id: candidate.id, reason: 'project-candidate-pool' }))
-        : [];
-      const candidates = projectKey ? baseCandidates.filter((candidate) => projectAllowIDs.has(candidate.id)) : baseCandidates;
-      const projectCandidatePool = projectKey
-        ? {
-            evaluated: true,
-            activated: true,
-            reason:
-              candidates.length > 0
-                ? 'project-candidate-pool:matched'
-                : 'project-candidate-pool:no-routeable-account',
-            ruleID: normalizedRule?.id || '',
-            projectKey,
-            projectName: normalizedRule?.projectName || '',
-            projectKeySource: normalizedRule?.projectKeySource || '',
-            projectKeyConfidence: normalizedRule?.projectKeyConfidence || '',
-            allowAccountIDs: [...projectAllowIDs],
-            filteredAccountIDs: projectFiltered.map((item) => item.id),
-            beforeCandidateCount: baseCandidates.length,
-            afterCandidateCount: candidates.length,
-          }
-        : undefined;
+      const { candidates, filtered, projectCandidatePool } = buildCodexRoutePolicyExplainPreviewFromCandidates(
+        orderedRows,
+        routePolicyPreviewRows,
+        normalizedRule,
+      );
       const result = main.ChannelRoutingExplainResult.createFrom({
         channel: 'codex',
         routeMode: nextConfig.routeMode,
         selectedAccountID: candidates[0]?.id || '',
         candidates,
-        filtered: orderedRows
-          .filter((row) => !row.requestable)
-          .map((row) => ({ id: row.id, reason: row.disabled ? 'account-disabled' : row.blockReason || 'account-unrequestable' }))
-          .concat(projectFiltered),
+        filtered,
         steps: [
           ...(projectKey ? [projectCandidatePool?.reason || 'project-candidate-pool:matched'] : []),
           `mode:${nextConfig.routeMode}`,

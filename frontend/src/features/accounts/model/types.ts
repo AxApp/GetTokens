@@ -36,6 +36,8 @@ export interface QuotaDisplay {
   planType: string;
   windows: QuotaWindowDisplay[];
   refreshing?: boolean;
+  updatedAt?: string;
+  lastEvaluatedAt?: string;
   blocked?: boolean;
   blockReason?: string;
   stale?: boolean;

@@ -45,6 +45,50 @@ export interface CodexRoutePolicySummary {
   fallbackEnabled: boolean;
 }
 
+export interface CodexRoutePolicyExplainPreviewCandidate {
+  id: string;
+  displayName: string;
+  provider: string;
+  routeOrder: number;
+  channelOrder: number;
+}
+
+export interface CodexRoutePolicyExplainPreviewFiltered {
+  id: string;
+  reason: string;
+}
+
+export interface CodexRoutePolicyProjectRuleLike {
+  id?: string;
+  projectKey?: string;
+  projectName?: string;
+  projectKeySource?: string;
+  projectKeyConfidence?: string;
+  allowAccountIDs?: string[];
+}
+
+export interface CodexRoutePolicyExplainProjectCandidatePool {
+  evaluated: boolean;
+  activated: boolean;
+  reason: string;
+  ruleID: string;
+  projectKey: string;
+  projectName: string;
+  projectKeySource: string;
+  projectKeyConfidence: string;
+  allowAccountIDs: string[];
+  filteredAccountIDs: string[];
+  beforeCandidateCount: number;
+  afterCandidateCount: number;
+}
+
+export interface CodexRoutePolicyExplainPreview {
+  baseCandidates: CodexRoutePolicyExplainPreviewCandidate[];
+  candidates: CodexRoutePolicyExplainPreviewCandidate[];
+  filtered: CodexRoutePolicyExplainPreviewFiltered[];
+  projectCandidatePool?: CodexRoutePolicyExplainProjectCandidatePool;
+}
+
 export type CodexRoutingProbeStreamLineStatus = 'command' | 'queued' | 'running' | 'hit' | 'passed' | 'miss' | 'empty';
 
 export interface CodexRoutingProbeStreamLine {
@@ -240,6 +284,111 @@ export function buildCodexRoutePolicyPreview<T extends { id: string; requestable
     }
   }
   return out;
+}
+
+export function buildCodexRoutePolicyExplainPreview<
+  T extends {
+    id: string;
+    label?: string;
+    provider?: string;
+    requestable?: boolean;
+    disabled?: boolean;
+    blockReason?: string;
+  },
+>(
+  rows: T[],
+  policy: CodexRoutePolicyDraft,
+  projectRule?: CodexRoutePolicyProjectRuleLike | null,
+): CodexRoutePolicyExplainPreview {
+  const allRows = rows || [];
+  return buildCodexRoutePolicyExplainPreviewFromCandidates(allRows, buildCodexRoutePolicyPreview(allRows, policy), projectRule);
+}
+
+export function buildCodexRoutePolicyExplainPreviewFromCandidates<
+  T extends {
+    id: string;
+    label?: string;
+    provider?: string;
+    requestable?: boolean;
+    disabled?: boolean;
+    blockReason?: string;
+  },
+>(
+  rows: T[],
+  policyPreview: T[],
+  projectRule?: CodexRoutePolicyProjectRuleLike | null,
+): CodexRoutePolicyExplainPreview {
+  return buildCodexRoutePolicyExplainPreviewFromPolicyCandidates(rows, policyPreview, projectRule);
+}
+
+function buildCodexRoutePolicyExplainPreviewFromPolicyCandidates<
+  T extends {
+    id: string;
+    label?: string;
+    provider?: string;
+    requestable?: boolean;
+    disabled?: boolean;
+    blockReason?: string;
+  },
+>(
+  rows: T[],
+  policyPreview: T[],
+  projectRule?: CodexRoutePolicyProjectRuleLike | null,
+): CodexRoutePolicyExplainPreview {
+  const allRows = rows || [];
+  const previewRows = policyPreview || [];
+  const policyCandidateIDs = new Set(previewRows.map((row) => row.id));
+  const channelOrderByID = new Map(allRows.map((row, index) => [row.id, index]));
+  const baseCandidates = previewRows.map((row, index) => ({
+    id: row.id,
+    displayName: String(row.label || row.id),
+    provider: String(row.provider || ''),
+    routeOrder: index,
+    channelOrder: channelOrderByID.get(row.id) ?? index,
+  }));
+  const projectKey = String(projectRule?.projectKey || '').trim();
+  const projectAllowIDs = new Set(normalizeCodexAccountIDList(projectRule?.allowAccountIDs || []));
+  const projectFiltered = projectKey
+    ? baseCandidates
+        .filter((candidate) => !projectAllowIDs.has(candidate.id))
+        .map((candidate) => ({ id: candidate.id, reason: 'project-candidate-pool' }))
+    : [];
+  const candidates = projectKey ? baseCandidates.filter((candidate) => projectAllowIDs.has(candidate.id)) : baseCandidates;
+  const filtered = allRows
+    .filter((row) => !policyCandidateIDs.has(row.id))
+    .map((row) => ({
+      id: row.id,
+      reason:
+        row.requestable === false
+          ? row.disabled
+            ? 'account-disabled'
+            : row.blockReason || 'account-unrequestable'
+          : 'route-policy-excluded',
+    }))
+    .concat(projectFiltered);
+  const projectCandidatePool = projectKey
+    ? {
+        evaluated: true,
+        activated: true,
+        reason:
+          candidates.length > 0 ? 'project-candidate-pool:matched' : 'project-candidate-pool:no-routeable-account',
+        ruleID: String(projectRule?.id || ''),
+        projectKey,
+        projectName: String(projectRule?.projectName || ''),
+        projectKeySource: String(projectRule?.projectKeySource || ''),
+        projectKeyConfidence: String(projectRule?.projectKeyConfidence || ''),
+        allowAccountIDs: [...projectAllowIDs],
+        filteredAccountIDs: projectFiltered.map((item) => item.id),
+        beforeCandidateCount: baseCandidates.length,
+        afterCandidateCount: candidates.length,
+      }
+    : undefined;
+  return {
+    baseCandidates,
+    candidates,
+    filtered,
+    projectCandidatePool,
+  };
 }
 
 export function buildCodexRoutePolicyRowStates<T extends { id: string; requestable?: boolean }>(

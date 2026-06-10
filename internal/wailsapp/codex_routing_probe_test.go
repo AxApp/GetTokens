@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
@@ -234,6 +235,131 @@ func TestProbeCodexAccountRoutingSendsAuthFileAllowHeaderFromUnifiedAccountID(t 
 	}
 }
 
+func TestLoadCodexRoutingProbeCandidatesFiltersRuntimeBlockedAccounts(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	app := New("dev", "", "AxApp/GetTokens")
+	blocked := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_blocked",
+		Kind:       cliproxyapi.AccountKindAuthFile,
+		Title:      "Blocked Codex",
+		Provider:   "codex",
+		Priority:   10,
+		AuthFile: &cliproxyapi.AuthFileAccountCredential{
+			SourceFileName: "blocked-codex.json",
+			AuthType:       "codex",
+		},
+	}
+	available := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_available",
+		Kind:       cliproxyapi.AccountKindAuthFile,
+		Title:      "Available Codex",
+		Provider:   "codex",
+		Priority:   1,
+		AuthFile: &cliproxyapi.AuthFileAccountCredential{
+			SourceFileName: "available-codex.json",
+			AuthType:       "codex",
+		},
+	}
+	app.managementAPI = func() *cliproxyapi.Client {
+		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			_ = method
+			_ = body
+			_ = contentType
+			switch path {
+			case "/v0/management/accounts":
+				return testAccountsResponse(t, blocked, available), 200, nil
+			case "/v0/management/gettokens/quota-status":
+				if got := query.Get("account_keys"); got != "acct_blocked,acct_available" {
+					t.Fatalf("quota account_keys = %q, want blocked and available ids", got)
+				}
+				return []byte(`{"items":[{"account_key":"acct_blocked","status":"success","blocked":true,"sources":[{"source":"quota-empty","reason":"quota empty: weekly"}]},{"account_key":"acct_available","status":"success","blocked":false,"sources":[]}]}`), 200, nil
+			default:
+				return nil, 404, nil
+			}
+		})
+	}
+
+	candidates, err := app.loadCodexRoutingProbeCandidates()
+	if err != nil {
+		t.Fatalf("loadCodexRoutingProbeCandidates returned error: %v", err)
+	}
+	if len(candidates) != 1 || candidates[0].ID != "acct_available" {
+		t.Fatalf("candidates = %#v, want only available account", candidates)
+	}
+}
+
+func TestLoadCodexRoutingProbeCandidatesFiltersPersistedQuotaEmptyRuntimeState(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	blocked := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_blocked",
+		Kind:       cliproxyapi.AccountKindAuthFile,
+		Title:      "Blocked Codex",
+		Provider:   "codex",
+		Priority:   10,
+		AuthFile: &cliproxyapi.AuthFileAccountCredential{
+			SourceFileName: "blocked-codex.json",
+			AuthType:       "codex",
+		},
+	}
+	available := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_available",
+		Kind:       cliproxyapi.AccountKindAuthFile,
+		Title:      "Available Codex",
+		Provider:   "codex",
+		Priority:   1,
+		AuthFile: &cliproxyapi.AuthFileAccountCredential{
+			SourceFileName: "available-codex.json",
+			AuthType:       "codex",
+		},
+	}
+
+	now := time.Now().UTC()
+	store := defaultChannelRoutingStore()
+	store.RuntimeStates["acct_blocked"] = ChannelAccountRuntimeState{
+		AccountID: "acct_blocked",
+		UpdatedAt: now.Format(time.RFC3339Nano),
+		Sources: map[string]ChannelRuntimeStateSource{
+			"quota-empty": {
+				Source:    "quota-empty",
+				Reason:    "quota empty: weekly",
+				ExpiresAt: now.Add(24 * time.Hour).Format(time.RFC3339Nano),
+				UpdatedAt: now.Format(time.RFC3339Nano),
+			},
+		},
+	}
+	if err := saveChannelRoutingStore(store); err != nil {
+		t.Fatalf("saveChannelRoutingStore: %v", err)
+	}
+
+	app := New("dev", "", "AxApp/GetTokens")
+	app.managementAPI = func() *cliproxyapi.Client {
+		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			_ = method
+			_ = query
+			_ = body
+			_ = contentType
+			switch path {
+			case "/v0/management/accounts":
+				return testAccountsResponse(t, blocked, available), 200, nil
+			case "/v0/management/gettokens/quota-status":
+				return []byte(`{"items":[{"account_key":"acct_blocked","status":"stale","blocked":false,"sources":[]},{"account_key":"acct_available","status":"stale","blocked":false,"sources":[]}]}`), 200, nil
+			default:
+				return nil, 404, nil
+			}
+		})
+	}
+
+	candidates, err := app.loadCodexRoutingProbeCandidates()
+	if err != nil {
+		t.Fatalf("loadCodexRoutingProbeCandidates returned error: %v", err)
+	}
+	if len(candidates) != 1 || candidates[0].ID != "acct_available" {
+		t.Fatalf("candidates = %#v, want persisted quota-empty account filtered out", candidates)
+	}
+}
+
 func TestDetectCodexRoutingProbeHitPrefersCandidateWithUsageIncrease(t *testing.T) {
 	candidates := []codexRoutingProbeCandidate{
 		{ID: "acct_auth_a", Label: "A"},
@@ -241,11 +367,11 @@ func TestDetectCodexRoutingProbeHitPrefersCandidateWithUsageIncrease(t *testing.
 	}
 	before := codexRoutingUsageSnapshot{
 		"acct_auth_a": 1,
-		"acct_mi":    10,
+		"acct_mi":     10,
 	}
 	after := codexRoutingUsageSnapshot{
 		"acct_auth_a": 1,
-		"acct_mi":    11,
+		"acct_mi":     11,
 	}
 
 	selected, delta, ok := detectCodexRoutingProbeHit(before, after, candidates)

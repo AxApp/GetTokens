@@ -86,6 +86,9 @@ func (a *App) SetAccountDisabled(id string, disabled bool) error {
 	if isUnifiedAccountID(targetID) {
 		_, err := a.managementClient().PatchAccountStatus(targetID, disabled)
 		if err == nil {
+			if syncErr := clearManualDisabledRuntimeState(targetID); syncErr != nil {
+				return syncErr
+			}
 			if disabled {
 				if pruneErr := pruneRelayModelAccountCacheEntries(targetID); pruneErr != nil {
 					log.Printf("prune relay model account cache for %s failed: %v", targetID, pruneErr)
@@ -334,6 +337,9 @@ func (a *App) SetCodexAPIKeyStatus(id string, disabled bool) error {
 	}
 	_, err := a.managementClient().PatchAccountStatus(targetID, disabled)
 	if err == nil {
+		if syncErr := clearManualDisabledRuntimeState(targetID); syncErr != nil {
+			return syncErr
+		}
 		if disabled {
 			if pruneErr := pruneRelayModelAccountCacheEntries(targetID); pruneErr != nil {
 				log.Printf("prune relay model account cache for %s failed: %v", targetID, pruneErr)

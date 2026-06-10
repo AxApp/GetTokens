@@ -206,6 +206,122 @@ func TestSetAccountDisabledSupportsUnifiedCodexAPIKey(t *testing.T) {
 	}
 }
 
+func TestSetAccountDisabledClearsLegacyManualDisabledRuntimeState(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("GETTOKENS_APP_PROFILE", "dev")
+
+	if err := saveChannelRoutingStore(channelRoutingStore{
+		RuntimeStates: map[string]ChannelAccountRuntimeState{
+			"acct_codex_key": {
+				AccountID: "acct_codex_key",
+				Sources: map[string]ChannelRuntimeStateSource{
+					"manual-disabled": {
+						Source: "manual-disabled",
+						Reason: "account disabled",
+					},
+					"quota-empty": {
+						Source: "quota-empty",
+						Reason: "requests exhausted",
+					},
+				},
+			},
+		},
+	}); err != nil {
+		t.Fatalf("saveChannelRoutingStore: %v", err)
+	}
+
+	account := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_codex_key",
+		Kind:       cliproxyapi.AccountKindCodexAPIKey,
+		Title:      "Codex Key",
+		Provider:   "codex",
+		CodexAPIKey: &cliproxyapi.CodexAPIKeyAccountCredential{
+			APIKey:  "sk-test-1111",
+			BaseURL: "https://api.openai.com/v1",
+		},
+	}
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "PATCH" && path == "/v0/management/accounts/acct_codex_key/status" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					if !strings.Contains(string(payload), `"disabled":false`) {
+						t.Fatalf("unexpected payload: %s", payload)
+					}
+					return testAccountResponse(t, account), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	if err := app.SetAccountDisabled("acct_codex_key", false); err != nil {
+		t.Fatalf("SetAccountDisabled: %v", err)
+	}
+	store, err := loadChannelRoutingStore()
+	if err != nil {
+		t.Fatalf("loadChannelRoutingStore: %v", err)
+	}
+	state := store.RuntimeStates["acct_codex_key"]
+	if _, ok := state.Sources["manual-disabled"]; ok {
+		t.Fatalf("manual-disabled source should be cleared: %#v", state.Sources)
+	}
+	if source := state.Sources["quota-empty"]; source.Source != "quota-empty" {
+		t.Fatalf("quota-empty source = %#v, want preserved", source)
+	}
+}
+
+func TestSetAccountDisabledDoesNotPersistManualDisabledRuntimeState(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("GETTOKENS_APP_PROFILE", "dev")
+
+	account := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_codex_key",
+		Kind:       cliproxyapi.AccountKindCodexAPIKey,
+		Title:      "Codex Key",
+		Provider:   "codex",
+		CodexAPIKey: &cliproxyapi.CodexAPIKeyAccountCredential{
+			APIKey:  "sk-test-1111",
+			BaseURL: "https://api.openai.com/v1",
+		},
+	}
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "PATCH" && path == "/v0/management/accounts/acct_codex_key/status" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					if !strings.Contains(string(payload), `"disabled":true`) {
+						t.Fatalf("unexpected payload: %s", payload)
+					}
+					return testAccountResponse(t, account), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	if err := app.SetAccountDisabled("acct_codex_key", true); err != nil {
+		t.Fatalf("SetAccountDisabled: %v", err)
+	}
+	store, err := loadChannelRoutingStore()
+	if err != nil {
+		t.Fatalf("loadChannelRoutingStore: %v", err)
+	}
+	if state, ok := store.RuntimeStates["acct_codex_key"]; ok {
+		if _, ok := state.Sources["manual-disabled"]; ok {
+			t.Fatalf("manual-disabled source should not be persisted: %#v", state.Sources)
+		}
+	}
+}
+
 func TestSetAccountDisabledRejectsLegacyPrefixedRuntimeIDs(t *testing.T) {
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {

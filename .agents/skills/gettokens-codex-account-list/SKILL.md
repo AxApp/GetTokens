@@ -28,10 +28,10 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - openai-compatible provider 使用 `configured-provider` 证据，不应因为没有 usage/quota 成功记录被误判为待检测。
   - 用户手动确认“我知道能用”应保存到 Codex `ChannelRoutingConfig.manualRequestableAccountIDs`，只作为 requestability evidence，不写入账号凭证本体。
   - 手动确认不得绕过 disabled、runtime guard、quota-empty、cooldown、auth-error、model-unavailable 等硬阻塞。
-- 对 `codex-api-key`，禁用不能只停留在 GetTokens 本地 store：sidecar `codex-api-key` 配置必须保存 `disabled:true`，CLIProxyAPI synthesizer 必须生成 disabled runtime auth，之后由 `manual-disabled` route guard 排除候选。
+- 对 `codex-api-key`，禁用不能只停留在前端状态：账号池 SQLite / management account status 必须保存 `disabled:true`，CLIProxyAPI synthesizer 必须生成 disabled runtime auth；`manual-disabled` 只能作为当前进程内存 guard 辅助，不能写成持久 `runtimeStates` 事实。
 - 禁用优先级高于 session sticky、失败降级和 retry；Codex WebSocket pinned auth 命中禁用后必须释放 pin、断开旧 upstream，并在下一请求边界重新进入 route engine。
 - 激活账号只重新进入可路由账号池，等待下一轮 route / retry，不抢占当前 stream / sticky。
-- 失败冷却状态必须持久化到运行态或 guard source；401/429/5xx/model-unavailable 后续请求和 explain 都应读取同一冷却状态，自动恢复不能清 `manual-disabled`。
+- 失败冷却状态必须持久化到运行态或 guard source；401/429/5xx/model-unavailable 后续请求和 explain 都应读取同一冷却状态。账号禁用/启用事实来自账号池 DB，历史 `runtimeStates.manual-disabled` 必须忽略并在保存时清理。
 
 ## 2. 前端结构
 - `CodexAccountListFeature.tsx` 保持为 controller：
@@ -75,6 +75,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - 进阶用法：账号卡模型映射把特殊 Codex 模型名暴露为 alias，例如 `models[].name = deepseek-chat`、`models[].alias = deepseek`；路由侧按 `deepseek` 选账号，执行侧发给上游 `deepseek-chat`。
 - 多个真实模型可以映射到同一个 Codex alias；openai-compatible 账号内会形成 alias pool，并在支持的错误边界内做同账号内轮转或失败切换。
 - SQLite account-store 启用后，openai-compatible runtime auth 必须自描述可注册模型，例如通过非敏感 `openai_compat_models` attribute 携带模型声明。旧 `config.OpenAICompatibility` 只作为迁移输入，不能在运行时 synthesis 或 `sdk/cliproxy` 模型注册阶段作为 fallback；缺少自描述模型时应暴露为回归，而不是反查旧 config 补洞。
+- SQLite account-store 中的 `codex-api-key.models_json=[]` 表示未声明自定义模型，应按 Codex API key 的默认 Codex 模型集注册和查询，不能投影成“无可路由模型”。管理接口 `/v0/management/accounts/:account_key/models`、route explain/probe 候选池和真实请求调度必须保持一致。
 
 ## 3.2 Codex /model 本地目录投影语义
 - Codex `/model` 展示与 GetTokens runtime route 是两条边界：runtime 真源仍是 sidecar / account store / channel routing；`model_catalog_json` 只是让本地 Codex TUI 稳定展示可选模型的 projection。
@@ -89,6 +90,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 ## 4. 路由探测语义
 - `ProbeCodexAccountRouting` 使用页面传入的候选约束发起最小 relay 请求。
 - 新主路径应优先使用 Codex channel config + dry-run/explain，展示候选池、过滤原因、排序步骤和最终选择。
+- 路由探测发真实 relay 请求前必须读取 runtime quota / route guard 状态；`quota-empty`、rate-limit、auth-error 等 transient blocked 账号不得进入 probe candidates，避免“已知不可用账号”被 probe 再次命中或消耗额度。`manual-disabled` 不从持久 `runtimeStates` 判定，禁用状态应直接来自账号池 DB / runtime auth disabled。
 - 旧 `orderAccountIDs / allowAccountIDs / denyAccountIDs / allowFallback` 仅作为请求级兼容探测输入，不能回写为 Codex channel config。
 - 探测结果需要同时展示：
   - 终端式流输出
@@ -101,6 +103,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - `#frame=codex&workspace=account-list` 必须可在普通浏览器预览。
 - 缺少 `window.go.main.App` 时使用 `previewData.ts`，不能让页面空白。
 - 浏览器预览中的渠道配置、排序、启停、模型映射保存是本地状态更新，并需要给出 preview-only 提示。
+- 浏览器预览的高级诊断 explain、请求顺序列表和路由探测必须复用同一套 route policy preview 候选池；不要在 `runChannelExplain`、probe、row badge 里分别用 `orderedRows.filter(row.requestable)` 临时重算，否则会出现列表显示“候选”但高级诊断显示“候选 0 / 未命中”的同屏矛盾。
 - 视觉或交互调整要优先用浏览器预览快速验证；涉及真实 sidecar、Wails 绑定或账号命中时，再用桌面环境补验。
 
 ## 6. UI 规则

@@ -16,6 +16,8 @@ export {
 } from './codexModelMappings.ts';
 export {
   buildCodexRoutePolicyPreview,
+  buildCodexRoutePolicyExplainPreview,
+  buildCodexRoutePolicyExplainPreviewFromCandidates,
   buildCodexRoutePolicyRowStates,
   buildCodexRoutePolicySummary,
   buildCodexRoutingProbeRequestInput,
@@ -26,6 +28,11 @@ export {
   resolveCodexRoutingProbeDefaultModel,
   summarizeCodexRoutingProbeAttempt,
   type CodexRoutePolicyDraft,
+  type CodexRoutePolicyExplainPreview,
+  type CodexRoutePolicyExplainPreviewCandidate,
+  type CodexRoutePolicyExplainPreviewFiltered,
+  type CodexRoutePolicyExplainProjectCandidatePool,
+  type CodexRoutePolicyProjectRuleLike,
   type CodexRoutePolicyRowMode,
   type CodexRoutePolicyRowState,
   type CodexRoutePolicySummary,
