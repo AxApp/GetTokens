@@ -169,6 +169,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
     - when batch refresh partially fails, keep successful quota items, mark failed targets stale/degraded, and preserve existing quota windows where possible
   - Account-list bulk mutations must be real batch operations:
     - selected bulk delete uses `DeleteAccountsBatch` / `POST /v0/management/accounts/batch-delete` with unified `acct_*` account ids, not a frontend loop over `executeDeleteAccount`
+    - when a new sidecar management endpoint is introduced on an existing hot account path, keep a Wails/root compatibility fallback for release bundles that may still carry the previous sidecar; a missing route `404` on the new endpoint should downgrade at the management boundary instead of surfacing a hard UI failure
     - batch mutation handlers should deduplicate keys, return per-account success/error summaries, and trigger expensive follow-up work such as account-store apply or list reload once per batch
     - single-card delete/status paths may keep their focused single-account APIs; selected-bulk paths must not emit one Wails/management request per selected account
   - Account-list large-scale rendering must stay windowed:

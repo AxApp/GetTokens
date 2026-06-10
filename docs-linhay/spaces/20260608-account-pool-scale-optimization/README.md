@@ -61,6 +61,17 @@
 - 验收路径：新增 sidecar batch delete endpoint、父仓 client、Wails/root 绑定和前端 batch delete 接入；源码守护验证 `runSelectedBulkDelete` 不再遍历目标逐个删除。
 - 反证条件：如果批量删除路径仍出现 `for selectedAccounts -> executeDeleteAccount`，或 batch delete 只是在 Wails 层循环调用单删管理接口，均视为未完成。
 
+### 2026-06-10 线上 sidecar 缺批量删除路由导致分组删除 404
+
+- 问题来源：用户在正式版账号池点击“移除本组”后反馈“组和账号都没消失”，并提供错误截图：`SIDECAR 请求失败 (404): 404 NOT FOUND`。
+- 当前事实位置：
+  - 前端分组删除与 selected bulk delete 统一走 `frontend/src/features/accounts/hooks/useAccountsActions.ts` 的 `runAccountsBulkDelete()`。
+  - Wails `internal/wailsapp/accounts.go` 的 `DeleteAccountsBatch()` 直接调用 `managementClient().DeleteAccountsBatch(...)`。
+  - `internal/cliproxyapi/client.go` 将批量删除固定发到 `POST /v0/management/accounts/batch-delete`。
+- 当前现象：若正式版 bundle 中 sidecar 仍是旧版本、没有 `batch-delete` 路由，则分组删除和批量删除都会直接报 404，既不会删除账号，也不会清理分组本地状态。
+- 验收路径：在 Wails/management client 边界为 `DeleteAccountsBatch` 增加旧 sidecar 404 降级，自动回退到逐账号 `DELETE /v0/management/accounts/:id`，并补回归测试锁定“新 sidecar 走 batch、旧 sidecar 404 走 fallback”。
+- 反证条件：若 404 时仍直接把错误透传给前端、没有删除任何账号，或 fallback 误吞非 404 错误并继续执行，均视为未完成。
+
 ### 2026-06-09 删除账号后刷新任务仍继续请求
 
 - 问题来源：用户反馈“点全部刷 1000+ 账号，但已经删除账号后，被删除账号还是会发送请求；关闭 app 因为请求还在 sidecar 没有退出”。

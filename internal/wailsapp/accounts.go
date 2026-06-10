@@ -210,7 +210,10 @@ func (a *App) DeleteAccountsBatch(input DeleteAccountsBatchInput) (*DeleteAccoun
 	}
 	result, err := a.managementClient().DeleteAccountsBatch(cliproxyapi.AccountBatchDeleteInput{AccountKeys: accountIDs})
 	if err != nil {
-		return nil, err
+		if !isSidecarNotFoundError(err) {
+			return nil, err
+		}
+		result = deleteAccountsBatchWithSingleDeleteFallback(a.managementClient(), accountIDs)
 	}
 	for _, accountID := range result.DeletedAccountKeys {
 		if pruneErr := pruneRelayModelAccountCacheEntries(accountID); pruneErr != nil {
@@ -234,6 +237,34 @@ func (a *App) DeleteAccountsBatch(input DeleteAccountsBatchInput) (*DeleteAccoun
 		Succeeded:         result.Succeeded,
 		Failed:            result.Failed,
 	}, nil
+}
+
+func deleteAccountsBatchWithSingleDeleteFallback(client *cliproxyapi.Client, accountIDs []string) *cliproxyapi.AccountBatchDeleteResult {
+	result := &cliproxyapi.AccountBatchDeleteResult{
+		DeletedAccountKeys: make([]string, 0, len(accountIDs)),
+		Errors:             make([]cliproxyapi.AccountBatchDeleteError, 0),
+	}
+	for _, accountID := range accountIDs {
+		if err := client.DeleteAccount(accountID); err != nil {
+			result.Errors = append(result.Errors, cliproxyapi.AccountBatchDeleteError{
+				AccountKey: accountID,
+				Error:      err.Error(),
+			})
+			result.Failed++
+			continue
+		}
+		result.DeletedAccountKeys = append(result.DeletedAccountKeys, accountID)
+		result.Succeeded++
+	}
+	return result
+}
+
+func isSidecarNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	message := strings.ToUpper(strings.TrimSpace(err.Error()))
+	return strings.Contains(message, "请求失败 (404)") || strings.Contains(message, "404 NOT FOUND")
 }
 
 func normalizeBatchDeleteAccountIDs(values []string) []string {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -418,6 +419,51 @@ func TestDeleteAccountsBatchUsesBatchManagementAPI(t *testing.T) {
 	}
 	if len(app.authFileMetadataCache) != 0 {
 		t.Fatalf("auth metadata cache was not cleared: %#v", app.authFileMetadataCache)
+	}
+}
+
+func TestDeleteAccountsBatchFallsBackToSingleDeleteWhenBatchRouteMissing(t *testing.T) {
+	var requests []string
+	app := &App{
+		authFileMetadataCache: map[string]authFileMetadataCacheEntry{
+			"codex.json": {},
+		},
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				requests = append(requests, method+" "+path)
+				if method == "POST" && path == "/v0/management/accounts/batch-delete" {
+					return nil, http.StatusNotFound, errors.New("sidecar 请求失败 (404): 404 NOT FOUND")
+				}
+				if method == "DELETE" && path == "/v0/management/accounts/acct_a" {
+					return nil, http.StatusNoContent, nil
+				}
+				if method == "DELETE" && path == "/v0/management/accounts/acct_b" {
+					return nil, http.StatusNotFound, errors.New("sidecar 请求失败 (404): account not found")
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	result, err := app.DeleteAccountsBatch(DeleteAccountsBatchInput{AccountIDs: []string{"acct_a", "acct_b"}})
+	if err != nil || result == nil {
+		t.Fatalf("DeleteAccountsBatch fallback = %#v, err = %v", result, err)
+	}
+	if got := strings.Join(requests, " | "); got != "POST /v0/management/accounts/batch-delete | DELETE /v0/management/accounts/acct_a | DELETE /v0/management/accounts/acct_b" {
+		t.Fatalf("unexpected request sequence: %s", got)
+	}
+	if result.Succeeded != 1 || result.Failed != 1 {
+		t.Fatalf("result counts = %#v", result)
+	}
+	if strings.Join(result.DeletedAccountIDs, ",") != "acct_a" {
+		t.Fatalf("deleted ids = %#v", result.DeletedAccountIDs)
+	}
+	if len(result.Errors) != 1 || result.Errors[0].AccountID != "acct_b" {
+		t.Fatalf("errors = %#v", result.Errors)
+	}
+	if len(app.authFileMetadataCache) != 0 {
+		t.Fatalf("auth metadata cache was not cleared after fallback: %#v", app.authFileMetadataCache)
 	}
 }
 
