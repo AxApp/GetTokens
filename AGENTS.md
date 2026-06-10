@@ -41,22 +41,23 @@
 8. 前端改动若影响后端接口、领域模型或关键交互闭环，必须先由 Codex 明确边界，再交给 Gemini 落地，避免只改视觉不改业务完成度。
 9. 当一次会话中出现“有用且重复出现”的行为模式、排障路径或交付动作时，必须先识别复用边界，再优先新增或更新项目级 `skills`；只有当规则已经上升为 repo-wide、长期稳定的约束时，才同步更新 `AGENTS.md`。
 10. 当用户明确说“整理”、暂停当前修复、要求剩余项进入下期，或一轮长会话/重要修复/subagent 交付即将收尾时，默认自动触发一次会话沉淀审计：先按 `gettokens-session-skill-distill` 提炼可复用模式，再按是否属于领域 skill、跨领域 workflow、repo-wide 规则或 memory-only 记录，决定是否同步更新 `.agents/skills/`、`docs-linhay/dev/`、`AGENTS.md`、`docs-linhay/memory/`；不需要等用户额外追问“有什么可以沉淀”。
-11. 多份独立需求稿并行推进时，默认按“一个需求单元一个 `space`，必要时再配一个同 key 的 branch 与 `worktree`”组织，不按个人姓名或临时阶段单独命名工作目录。
-12. 当用户明确要求“由 subagent 去做、主控 agent 负责监督”时，主控 agent 必须承担需求边界、任务拆分、集成、验收、文档与最终完成判断，不得在“代码已改完”但截图、实机验证、文档写回等验收环节仍未完成时提前停止。
-13. 当某个 `space` 的需求施工结束并进入整理期时，默认执行一次行为保持的收尾整理：识别大文件和大数据结构，优先按稳定边界拆分文件；同步提取可复用流程到项目级 `skills`，仅把 repo-wide 且长期稳定的规则写入 `AGENTS.md`；最后更新 space、dev 文档与 memory。
-14. 本地 Web / Wails 预览验收默认使用无头浏览器、DOM 断言和文件截图；除非用户明确要求可见窗口，否则不得把 Playwright、Chrome 或其他浏览器验收窗口打开到用户当前激活显示器。确需可见窗口时必须先询问，或放到非激活副屏。
-15. 通用看板产品线按固定节奏推进：新建 `space` -> 设计需求 -> 技术细节补充 -> 回到需求调整 -> 调整设计系统的稿子 -> 执行开发 -> 冒烟测试 -> 交付用户测试。
-16. sidecar 是 GetTokens 运行态自治层。账号选择、rate-limit、route guard、live sessions、usage attribution、system proxy、Codex WebSocket 等热路径状态优先在 `CLIProxyAPI#gettokens/sidecar` 内闭环，不通过前端或 Wails 临时补偿来伪造 sidecar 已处理状态。
-17. 从账号与凭证 SQLite 统一存储版本开始，GetTokens sidecar 不再跟随 CLIProxyAPI 上游做合并式同步。上游提交和功能只能作为参考输入；需要的能力必须在 GetTokens sidecar 边界内重新设计、实现、补窄测试并重建 sidecar。management API 可以按 GetTokens 需求破坏性调整，不为了上游兼容保留旧合约。
-18. GetTokens 是 macOS/Wails 桌面工作台产品，默认不做移动端适配、移动端截图或 375/390px 宽度验收。前端与视觉改动默认按桌面窗口、Wails 容器和可用的桌面浏览器预览验收；只有用户在当前需求中明确提出移动端目标时，才增加移动端布局与截图门禁。
-19. 项目级 Codex subagent 配置统一放在 `.codex/agents/`，默认命名为 `gettokens_*`；除非正在验证模型路由能力，否则 agent 默认继承父会话模型，只用职责、sandbox 和 reasoning effort 区分任务面。
-20. 主控 agent 可根据任务判断自主新增、删除或修改 `.codex/agents/*.toml`，不需要逐次请求授权；但必须说明判断依据，验证 TOML 可解析，并更新 `docs-linhay/dev/20260530-codex-project-subagents.md` 与 memory。
-21. 工作台内详情类或调试类 modal 默认必须使用覆盖整个应用窗口视口（包括 sidebar 区域）的遮罩层，面板四周保留可见遮罩与投影间距，并具备可恢复的独立 hash 路由。打开 modal 时写入 `detail=<id>` 或 `modal=<route>`，关闭时只移除对应标记；全局 hash canonicalizer 不得丢弃仍属于当前 frame/workspace 的 modal/detail 参数。
-22. 上下游自身限制不由 GetTokens 默认兜底：若根因属于 Codex CLI / Codex upstream 的协议行为、请求体限制或服务端限制，而非 GetTokens sidecar 引入的重复、放大、错误转换或本地限制，默认只做定位、证据保留和规避建议；只有确认是 GetTokens 转发层自身 bug，或用户明确授权做兼容层，才进入 GetTokens 侧实现。
-23. 未经用户明确授权，不得触碰正式版 GetTokens：修复与验证默认只在 dev 环境、本仓库构建产物或明确指定的测试环境中进行；禁止擅自修改 `/Applications/GetTokens.app` 正式版二进制、重启/kill 正式版进程、替换正式版 sidecar 或改动正式版配置。
-24. 正式版数据可拷贝到 dev 环境用于复现问题：允许从 `/Users/linhey/.config/gettokens/` 拷贝 SQLite 数据库、配置文件等数据到 `/Users/linhey/.config/gettokens-dev/` 进行测试，但必须先在 dev 目录备份原有数据，验证完成后恢复。
-25. 真实 dev App 手点验收不再作为每轮功能修复硬门槛：只有涉及 macOS 菜单栏、窗口生命周期、status item、LaunchServices、native runtime、Wails 绑定可见性，或用户在当前轮明确要求时，才启动本仓 dev App 做真实桌面手点。普通前端/后端/sidecar 修复优先使用自动化测试、Wails build、无头浏览器/DOM 断言、dev bridge 或接口状态证据；避免把每轮验收拖入低收益的桌面点击排障。
-26. 每个候选问题进入修复前必须先有确凿证据：至少包含 backlog/体验报告/用户反馈等问题来源、当前代码或 UI 的事实位置、可复现现象或缺失证明、预期验收方式。只有猜测、直觉优先级或未复核的 backlog 条目不得直接进入代码修改；证据不足时只能进入调研、方案或标记为待证实。
+11. 自动触发不以用户口令为唯一条件：只要当前轮已经形成稳定边界、重要失败模式、重复执行步骤、发版/验收/止血流程，主控 agent 在最终回复前就必须主动执行一次沉淀审计，并在交付说明中明确“已沉淀什么”或“为什么这轮不沉淀”。
+12. 多份独立需求稿并行推进时，默认按“一个需求单元一个 `space`，必要时再配一个同 key 的 branch 与 `worktree`”组织，不按个人姓名或临时阶段单独命名工作目录。
+13. 当用户明确要求“由 subagent 去做、主控 agent 负责监督”时，主控 agent 必须承担需求边界、任务拆分、集成、验收、文档与最终完成判断，不得在“代码已改完”但截图、实机验证、文档写回等验收环节仍未完成时提前停止。
+14. 当某个 `space` 的需求施工结束并进入整理期时，默认执行一次行为保持的收尾整理：识别大文件和大数据结构，优先按稳定边界拆分文件；同步提取可复用流程到项目级 `skills`，仅把 repo-wide 且长期稳定的规则写入 `AGENTS.md`；最后更新 space、dev 文档与 memory。
+15. 本地 Web / Wails 预览验收默认使用无头浏览器、DOM 断言和文件截图；除非用户明确要求可见窗口，否则不得把 Playwright、Chrome 或其他浏览器验收窗口打开到用户当前激活显示器。确需可见窗口时必须先询问，或放到非激活副屏。
+16. 通用看板产品线按固定节奏推进：新建 `space` -> 设计需求 -> 技术细节补充 -> 回到需求调整 -> 调整设计系统的稿子 -> 执行开发 -> 冒烟测试 -> 交付用户测试。
+17. sidecar 是 GetTokens 运行态自治层。账号选择、rate-limit、route guard、live sessions、usage attribution、system proxy、Codex WebSocket 等热路径状态优先在 `CLIProxyAPI#gettokens/sidecar` 内闭环，不通过前端或 Wails 临时补偿来伪造 sidecar 已处理状态。
+18. 从账号与凭证 SQLite 统一存储版本开始，GetTokens sidecar 不再跟随 CLIProxyAPI 上游做合并式同步。上游提交和功能只能作为参考输入；需要的能力必须在 GetTokens sidecar 边界内重新设计、实现、补窄测试并重建 sidecar。management API 可以按 GetTokens 需求破坏性调整，不为了上游兼容保留旧合约。
+19. GetTokens 是 macOS/Wails 桌面工作台产品，默认不做移动端适配、移动端截图或 375/390px 宽度验收。前端与视觉改动默认按桌面窗口、Wails 容器和可用的桌面浏览器预览验收；只有用户在当前需求中明确提出移动端目标时，才增加移动端布局与截图门禁。
+20. 项目级 Codex subagent 配置统一放在 `.codex/agents/`，默认命名为 `gettokens_*`；除非正在验证模型路由能力，否则 agent 默认继承父会话模型，只用职责、sandbox 和 reasoning effort 区分任务面。
+21. 主控 agent 可根据任务判断自主新增、删除或修改 `.codex/agents/*.toml`，不需要逐次请求授权；但必须说明判断依据，验证 TOML 可解析，并更新 `docs-linhay/dev/20260530-codex-project-subagents.md` 与 memory。
+22. 工作台内详情类或调试类 modal 默认必须使用覆盖整个应用窗口视口（包括 sidebar 区域）的遮罩层，面板四周保留可见遮罩与投影间距，并具备可恢复的独立 hash 路由。打开 modal 时写入 `detail=<id>` 或 `modal=<route>`，关闭时只移除对应标记；全局 hash canonicalizer 不得丢弃仍属于当前 frame/workspace 的 modal/detail 参数。
+23. 上下游自身限制不由 GetTokens 默认兜底：若根因属于 Codex CLI / Codex upstream 的协议行为、请求体限制或服务端限制，而非 GetTokens sidecar 引入的重复、放大、错误转换或本地限制，默认只做定位、证据保留和规避建议；只有确认是 GetTokens 转发层自身 bug，或用户明确授权做兼容层，才进入 GetTokens 侧实现。
+24. 未经用户明确授权，不得触碰正式版 GetTokens：修复与验证默认只在 dev 环境、本仓库构建产物或明确指定的测试环境中进行；禁止擅自修改 `/Applications/GetTokens.app` 正式版二进制、重启/kill 正式版进程、替换正式版 sidecar 或改动正式版配置。
+25. 正式版数据可拷贝到 dev 环境用于复现问题：允许从 `/Users/linhey/.config/gettokens/` 拷贝 SQLite 数据库、配置文件等数据到 `/Users/linhey/.config/gettokens-dev/` 进行测试，但必须先在 dev 目录备份原有数据，验证完成后恢复。
+26. 真实 dev App 手点验收不再作为每轮功能修复硬门槛：只有涉及 macOS 菜单栏、窗口生命周期、status item、LaunchServices、native runtime、Wails 绑定可见性，或用户在当前轮明确要求时，才启动本仓 dev App 做真实桌面手点。普通前端/后端/sidecar 修复优先使用自动化测试、Wails build、无头浏览器/DOM 断言、dev bridge 或接口状态证据；避免把每轮验收拖入低收益的桌面点击排障。
+27. 每个候选问题进入修复前必须先有确凿证据：至少包含 backlog/体验报告/用户反馈等问题来源、当前代码或 UI 的事实位置、可复现现象或缺失证明、预期验收方式。只有猜测、直觉优先级或未复核的 backlog 条目不得直接进入代码修改；证据不足时只能进入调研、方案或标记为待证实。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。
@@ -71,6 +72,28 @@
 10. 若需求采用 `subagent` 交付，标准完成顺序必须覆盖：需求边界确认、subagent 分工、主控集成、自动化验证、Wails/桌面验收（如适用）、截图或其他验收产物、文档与记忆写回；未跑完这一整链，不得宣称需求完成。
 11. 通用看板产品线每轮都必须先更新对应 `space` 的需求与验收，再补技术细节；技术约束反推需求后，需要回到 `space` 调整需求，再进入设计系统稿、开发、冒烟和用户测试。
 12. 验收文档按本轮风险选择证据形式：涉及 native/Wails 桌面行为时单列真实 dev App 验收结果；其他修复记录自动化测试、Wails build、浏览器/DOM、dev bridge 或接口状态证据即可。
+
+## 2.1 自动整理 / 沉淀流程（必须）
+以下任一条件满足时，主控 agent 必须在最终回复前自动触发一次整理 / 沉淀流程，不需要等待用户再次提醒：
+1. 用户明确说“整理”。
+2. 当前修复被暂停、改下期、转 backlog 或拆成后续需求。
+3. 一轮长会话、重要修复、发版、线上止血、subagent 交付进入收尾。
+4. 当前轮出现了新的稳定边界、重复失败模式、重复验证步骤、可复用交付动作或明确的“不该再踩”的坑。
+
+标准动作顺序固定为：
+1. 先用 `gettokens-session-skill-distill` 审计本轮候选模式。
+2. 判断每个候选应落在哪一层：
+   - 临时现象：不沉淀，但要在最终说明或 memory 里写明原因。
+   - 单领域复用：更新对应 `.agents/skills/`。
+   - 跨领域流程：写入 `docs-linhay/dev/`。
+   - repo-wide 长期硬约束：更新 `AGENTS.md`。
+   - 关键决策、里程碑、风险、止血结论：写入 `docs-linhay/memory/YYYY-MM-DD.md`。
+3. 若本轮有半成品中断或剩余项转下期，必须把证据、范围、验收和下期计划写回，而不是只在聊天里口头说明。
+4. 纯治理/文档沉淀至少运行 `docs-linhay/scripts/check-docs.sh` 与 `git diff --check`。
+5. 最终回复必须明确：
+   - 这次沉淀了什么；
+   - 落在哪些文件；
+   - 若没有沉淀，为什么不沉淀。
 
 ## 3. 测试门禁（必须）
 1. 任何功能改动都要有对应测试（新增或更新）。
