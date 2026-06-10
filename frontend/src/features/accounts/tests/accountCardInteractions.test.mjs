@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import { buildAccountCardContentText } from '../model/accountCardActions.ts';
+import { buildAccountCardRefreshAction } from '../model/accountCardRefresh.ts';
 import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions.ts';
 
 function node(tagName, parentElement = null, dataset) {
@@ -100,6 +101,49 @@ test('account card action menu includes reauth for every codex auth-file account
   assert.match(source, /onStartReauth\(account\)/);
   assert.match(source, /isOAuthPending \? t\('accounts\.reauth_pending'\) : t\('accounts\.reauth'\)/);
   assert.match(source, /disabled=\{isOAuthPending\}/);
+});
+
+test('account card refresh action stays visible for openai-compatible runtime-only cards', () => {
+  const action = buildAccountCardRefreshAction({
+    account: {
+      id: 'openai-compatible:together',
+      accountKind: 'openai-compatible',
+      provider: 'together',
+      credentialSource: 'api-key',
+      displayName: 'OPENAI-COMPATIBLE · TOGETHER',
+      status: 'configured',
+      baseUrl: 'https://api.together.xyz/v1',
+      supportedFormats: ['openai_chat', 'openai_responses'],
+    },
+  });
+
+  assert.deepEqual(action, {
+    visible: true,
+    labelKey: 'accounts.refresh_runtime',
+    disabled: false,
+  });
+});
+
+test('account card refresh action keeps quota label for quota-capable accounts', () => {
+  const action = buildAccountCardRefreshAction({
+    account: {
+      id: 'codex-api-key:stable',
+      accountKind: 'codex-api-key',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'Stable Codex Key',
+      status: 'configured',
+      quotaKey: 'codex-api-key:stable',
+      quotaCurl: 'curl https://quota.example.test',
+      quotaEnabled: true,
+    },
+  });
+
+  assert.deepEqual(action, {
+    visible: true,
+    labelKey: 'accounts.refresh_quota',
+    disabled: false,
+  });
 });
 
 test('accounts import modal opens with app-local copied account payload when available', async () => {

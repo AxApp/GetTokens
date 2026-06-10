@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { FileText, MoreVertical, Power, RotateCw, Terminal, Trash2 } from 'lucide-react';
-import { buildQuotaBlockBadgeLabel, buildQuotaDisplay, extractBilling, supportsQuota } from '../model/accountQuota';
+import { buildQuotaBlockBadgeLabel, buildQuotaDisplay, extractBilling } from '../model/accountQuota';
 import { buildAccountCardContentText } from '../model/accountCardActions';
 import { writeAccountClipboardText } from '../model/accountClipboard';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
+import { buildAccountCardRefreshAction } from '../model/accountCardRefresh';
 import {
   buildAccountAttributionBadges,
   isCodexAuthFile,
@@ -101,6 +102,12 @@ export default function AccountCard({
   const copyResetTimerRef = useRef<number | null>(null);
   const quotaDisplay = buildQuotaDisplay(account, quotaState);
   const billing = quotaState?.quota ? extractBilling(quotaState.quota) : undefined;
+  const refreshAction = buildAccountCardRefreshAction({
+    account,
+    quotaState,
+    usageRefreshing,
+    rateLimitRefreshing,
+  });
   const primaryLabel = resolveAccountPrimaryLabel(account);
   const failureReason = resolveAccountFailureReason(account);
   const canReauth = isCodexReauthEligible(account);
@@ -379,14 +386,14 @@ export default function AccountCard({
             <button type="button" onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]">
               {t('common.details')}
             </button>
-            {supportsQuota(account) ? (
+            {refreshAction.visible ? (
               <button
                 type="button"
                 onClick={() => onRefreshQuota(account)}
                 className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-                disabled={!ready || quotaState?.status === 'loading'}
+                disabled={!ready || refreshAction.disabled}
               >
-                {t('accounts.refresh_quota')}
+                {t(refreshAction.labelKey)}
               </button>
             ) : null}
             {canReauth ? (

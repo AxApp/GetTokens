@@ -166,6 +166,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
     - batch quota refresh jobs should deduplicate `account_keys`, return immediate `job_id`, expose `pending/running/succeeded/failed` plus per-account `items/errors`, and make restart semantics explicit as in-memory runtime state
     - background quota refresh jobs must be tied to account and sidecar lifecycles: each job needs a cancelable context, account deletion must cancel matching pending/running jobs, sidecar shutdown must cancel all pending/running jobs, and workers must re-check account existence before each outbound quota request
     - single-card refresh may keep using single-account refresh, but list-level and selected-bulk paths must not emit one Wails/management request per account
+    - account-card footer refresh is a runtime sync action, not only a quota-script action. Cards without quota/billing curl support, such as OpenAI-compatible providers with only usage attribution, should still expose a per-card runtime sync affordance and label it as runtime sync instead of hiding the button.
     - when batch refresh partially fails, keep successful quota items, mark failed targets stale/degraded, and preserve existing quota windows where possible
   - Account-list bulk mutations must be real batch operations:
     - selected bulk delete uses `DeleteAccountsBatch` / `POST /v0/management/accounts/batch-delete` with unified `acct_*` account ids, not a frontend loop over `executeDeleteAccount`
