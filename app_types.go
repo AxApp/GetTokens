@@ -321,6 +321,7 @@ type ChannelRoutingConfigMeta struct {
 
 type ChannelRoutingExplainInput struct {
 	Channel              string         `json:"channel,omitempty"`
+	RequestedModel       string         `json:"requestedModel,omitempty"`
 	TriedAccountIDs      []string       `json:"triedAccountIDs,omitempty"`
 	ActiveSessions       map[string]int `json:"activeSessions,omitempty"`
 	StickyAccountID      string         `json:"stickyAccountID,omitempty"`
@@ -334,6 +335,7 @@ type ChannelRoutingExplainInput struct {
 type ChannelRoutingExplainResult struct {
 	Channel              string                                  `json:"channel"`
 	RouteMode            string                                  `json:"routeMode"`
+	RequestedModel       string                                  `json:"requestedModel,omitempty"`
 	SelectedAccountID    string                                  `json:"selectedAccountID,omitempty"`
 	Candidates           []ChannelRoutingCandidate               `json:"candidates"`
 	Filtered             []ChannelRoutingFilteredAccount         `json:"filtered"`
@@ -361,11 +363,12 @@ type ChannelRoutingProjectCandidatePoolInfo struct {
 }
 
 type ChannelRoutingShadowDecision struct {
-	Enabled           bool     `json:"enabled"`
-	RouteMode         string   `json:"routeMode,omitempty"`
-	SelectedAccountID string   `json:"selectedAccountID,omitempty"`
-	Diff              bool     `json:"diff"`
-	Steps             []string `json:"steps,omitempty"`
+	Enabled           bool                      `json:"enabled"`
+	RouteMode         string                    `json:"routeMode,omitempty"`
+	SelectedAccountID string                    `json:"selectedAccountID,omitempty"`
+	Candidates        []ChannelRoutingCandidate `json:"candidates,omitempty"`
+	Diff              bool                      `json:"diff"`
+	Steps             []string                  `json:"steps,omitempty"`
 }
 
 type ChannelRoutingCandidate struct {

@@ -73,6 +73,7 @@ import {
   type ChannelRouteMode,
   type ChannelRoutingConfig,
   type ProjectCandidatePoolObservedProjectLike,
+  type ProjectCandidatePoolProjectOption,
   type ProjectCandidatePoolRuleLike,
 } from '../channel-routing/model/channelRouting';
 import { CodexAccountDetailModal, CodexAccountOrderSection, RouteProbeCard } from './components/CodexAccountListView';
@@ -143,8 +144,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   );
   const [channelExplain, setChannelExplain] = useState<main.ChannelRoutingExplainResult | null>(null);
   const [channelRouteEvents, setChannelRouteEvents] = useState<ChannelRouteAuditEvent[]>([]);
-  const [channelRouteEventsLoading, setChannelRouteEventsLoading] = useState(false);
   const [projectCandidatePoolRules, setProjectCandidatePoolRules] = useState<ProjectCandidatePoolRuleLike[]>([]);
+  const [selectedProjectCandidatePoolKey, setSelectedProjectCandidatePoolKey] = useState('');
   const [projectCandidatePoolObservedProjects, setProjectCandidatePoolObservedProjects] = useState<
     ProjectCandidatePoolObservedProjectLike[]
   >([]);
@@ -180,6 +181,15 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         routeEvents: channelRouteEvents,
       }),
     [channelRouteEvents, projectCandidatePoolObservedProjects, projectCandidatePoolRules],
+  );
+  const selectedProjectCandidatePoolRule = useMemo(
+    () =>
+      buildSelectedProjectCandidatePoolRule(
+        selectedProjectCandidatePoolKey,
+        projectCandidatePoolRules,
+        projectCandidatePoolProjectOptions,
+      ),
+    [projectCandidatePoolProjectOptions, projectCandidatePoolRules, selectedProjectCandidatePoolKey],
   );
   const routePolicyDraft = useMemo(
     () => ({
@@ -218,6 +228,17 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const latestRoutingProbeAttempt = routingProbeAttempts[routingProbeAttempts.length - 1] || null;
   const latestRoutingProbeAccountID = latestRoutingProbeAttempt?.accountID || '';
   const routingProbeDisabled = !ready || saving || routingProbeRunning || !routingProbeModel.trim();
+
+  useEffect(() => {
+    if (!selectedProjectCandidatePoolKey) {
+      return;
+    }
+    if (projectCandidatePoolProjectOptions.some((option) => option.projectKey === selectedProjectCandidatePoolKey)) {
+      return;
+    }
+    setSelectedProjectCandidatePoolKey('');
+    setChannelExplain(null);
+  }, [projectCandidatePoolProjectOptions, selectedProjectCandidatePoolKey]);
 
   async function reload(messageOverride?: string) {
     if (browserMode) {
@@ -820,15 +841,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     void persistChannelRoutingConfig(nextConfig);
   }
 
-  function updateShadowEnabled(enabled: boolean) {
-    const nextConfig = withCurrentChannelOrder(
-      updateChannelRoutingConfig(channelConfig, { shadowEnabled: enabled }),
-      orderedRows.map((row) => row.id),
-    );
-    setChannelExplain(null);
-    void persistChannelRoutingConfig(nextConfig);
-  }
-
   function updateShadowMode(mode: ChannelRouteMode) {
     const nextConfig = withCurrentChannelOrder(
       updateChannelRoutingConfig(channelConfig, { shadowRouteMode: mode }),
@@ -838,11 +850,13 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     void persistChannelRoutingConfig(nextConfig);
   }
 
-  async function runChannelExplain(rule?: ProjectCandidatePoolRuleLike) {
+  async function runChannelExplain(rule?: ProjectCandidatePoolRuleLike | null) {
     const nextConfig = withCurrentChannelOrder(channelConfig, orderedRows.map((row) => row.id));
     setChannelConfig(nextConfig);
+    const requestedModel = routingProbeModel.trim();
+    const explainRule = rule === undefined ? selectedProjectCandidatePoolRule : rule;
     if (browserMode) {
-      const normalizedRule = rule ? normalizeProjectCandidatePoolRuleDraft(rule, 'codex') : null;
+      const normalizedRule = explainRule ? normalizeProjectCandidatePoolRuleDraft(explainRule, 'codex') : null;
       const projectKey = String(normalizedRule?.projectKey || '').trim();
       const { candidates, filtered, projectCandidatePool } = buildCodexRoutePolicyExplainPreviewFromCandidates(
         orderedRows,
@@ -852,6 +866,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       const result = main.ChannelRoutingExplainResult.createFrom({
         channel: 'codex',
         routeMode: nextConfig.routeMode,
+        requestedModel,
         selectedAccountID: candidates[0]?.id || '',
         candidates,
         filtered,
@@ -864,15 +879,14 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         snapshotVersion: 'preview',
         policyVersion: 'channel-routing-v1',
         projectCandidatePool,
-        shadow: nextConfig.shadowEnabled
-          ? {
-              enabled: true,
-              routeMode: nextConfig.shadowRouteMode,
-              selectedAccountID: candidates[candidates.length - 1]?.id || candidates[0]?.id || '',
-              diff: Boolean(candidates.length > 1),
-              steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
-            }
-          : undefined,
+        shadow: {
+          enabled: true,
+          routeMode: nextConfig.shadowRouteMode,
+          selectedAccountID: candidates[0]?.id || '',
+          candidates,
+          diff: false,
+          steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
+        },
       });
       setChannelExplain(result);
       const event = buildPreviewChannelRouteAuditEvent({ channel: 'codex', explain: result });
@@ -880,12 +894,13 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       return;
     }
     try {
-      const normalizedRule = rule ? normalizeProjectCandidatePoolRuleDraft(rule, 'codex') : null;
+      const normalizedRule = explainRule ? normalizeProjectCandidatePoolRuleDraft(explainRule, 'codex') : null;
       const projectKey = String(normalizedRule?.projectKey || '').trim();
       const result = await trackRequest('ExplainChannelRouting', { channel: 'codex', projectKey }, () =>
         ExplainChannelRouting(
           main.ChannelRoutingExplainInput.createFrom({
             channel: 'codex',
+            requestedModel,
             projectKey,
             projectName: normalizedRule?.projectName || '',
             projectKeySource: normalizedRule?.projectKeySource || '',
@@ -906,7 +921,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     if (browserMode) {
       return;
     }
-    setChannelRouteEventsLoading(true);
     try {
       const result = await trackRequest('ListChannelRouteEvents', { channel: 'codex', limit: 5 }, () =>
         ListChannelRouteEvents(main.ChannelRouteEventsInput.createFrom({ channel: 'codex', limit: 5 })),
@@ -915,8 +929,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     } catch (error) {
       console.error(error);
       setMessage(`${t('codex.account_list_probe_failed')}: ${toErrorMessage(error)}`);
-    } finally {
-      setChannelRouteEventsLoading(false);
     }
   }
 
@@ -1378,6 +1390,16 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     setChannelExplain(null);
   }
 
+  function handleDiagnosticModelChange(model: string) {
+    setRoutingProbeModel(model);
+    setChannelExplain(null);
+  }
+
+  function handleDiagnosticProjectChange(projectKey: string) {
+    setSelectedProjectCandidatePoolKey(projectKey);
+    setChannelExplain(null);
+  }
+
   return (
     <div className="h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_CODEX_ACCOUNT_LIST">
       <div className="mx-auto w-full max-w-6xl min-w-0 space-y-8">
@@ -1404,15 +1426,17 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           disabled={!ready || saving}
           saving={saving}
           message={orderChanged ? t('codex.account_list_unsaved') : ''}
-          routeEvents={channelRouteEvents}
-          routeEventsLoading={channelRouteEventsLoading}
           accounts={orderedRows}
+          modelOptions={routingProbeModelOptions}
+          modelValue={routingProbeModel}
+          projectOptions={projectCandidatePoolProjectOptions}
+          projectValue={selectedProjectCandidatePoolKey}
           onModeChange={updateChannelMode}
           onOpenProjectConfig={openProjectConfigModal}
-          onShadowEnabledChange={updateShadowEnabled}
+          onModelChange={handleDiagnosticModelChange}
+          onProjectChange={handleDiagnosticProjectChange}
           onShadowModeChange={updateShadowMode}
           onExplain={() => void runChannelExplain()}
-          onRefreshEvents={() => void loadChannelRouteEvents()}
         />
 
         <CodexAccountOrderSection
@@ -1577,4 +1601,32 @@ function applyChannelOrderToRows<T extends { id: string }>(rows: T[], orderedAcc
 
 function codexRowToAccountRecord(row: CodexAccountRow): AccountRecord {
   return buildCodexQuotaSummaryAccount(row);
+}
+
+function buildSelectedProjectCandidatePoolRule(
+  projectKey: string,
+  rules: ProjectCandidatePoolRuleLike[],
+  projectOptions: ProjectCandidatePoolProjectOption[],
+): ProjectCandidatePoolRuleLike | null {
+  const selectedKey = String(projectKey || '').trim();
+  if (!selectedKey) {
+    return null;
+  }
+  const existingRule = rules.find((rule) => String(rule.projectKey || '').trim() === selectedKey);
+  if (existingRule) {
+    return existingRule;
+  }
+  const option = projectOptions.find((item) => item.projectKey === selectedKey);
+  if (!option) {
+    return null;
+  }
+  return {
+    channel: 'codex',
+    projectKey: option.projectKey,
+    projectName: option.projectName,
+    projectKeySource: option.projectKeySource,
+    projectKeyConfidence: option.projectKeyConfidence,
+    enabled: true,
+    allowAccountIDs: [],
+  };
 }

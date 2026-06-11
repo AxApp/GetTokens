@@ -2,28 +2,23 @@ import {
   BookOpenText,
   ChevronDown,
   CircleHelp,
-  History,
   Play,
   Settings2,
-  ShieldCheck,
   Shuffle,
   Split,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
-import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import type { main } from '../../../../wailsjs/go/models';
 import {
   CHANNEL_ROUTE_MODE_HELP_SECTIONS,
-  buildChannelRouteAuditEventSummary,
   buildChannelRoutingExplainDigest,
   type ChannelID,
-  type ChannelRouteAuditEvent,
   type ChannelRouteMode,
   type ChannelRoutingConfig,
-  type ChannelRoutingExplainStepRow,
   type ChannelRoutingParticipantAccountLike,
+  type ProjectCandidatePoolProjectOption,
 } from '../model/channelRouting';
 
 interface ChannelRoutingWorkbenchProps {
@@ -33,15 +28,17 @@ interface ChannelRoutingWorkbenchProps {
   disabled?: boolean;
   saving?: boolean;
   message?: string;
-  routeEvents?: ChannelRouteAuditEvent[];
-  routeEventsLoading?: boolean;
   accounts?: ChannelRoutingParticipantAccountLike[];
+  modelOptions?: string[];
+  modelValue?: string;
+  projectOptions?: ProjectCandidatePoolProjectOption[];
+  projectValue?: string;
   onModeChange: (mode: ChannelRouteMode) => void;
   onOpenProjectConfig?: () => void;
-  onShadowEnabledChange: (enabled: boolean) => void;
+  onModelChange?: (model: string) => void;
+  onProjectChange?: (projectKey: string) => void;
   onShadowModeChange: (mode: ChannelRouteMode) => void;
   onExplain: () => void;
-  onRefreshEvents?: () => void;
 }
 
 type LucideIcon = typeof Split;
@@ -63,23 +60,24 @@ export default function ChannelRoutingWorkbench({
   disabled = false,
   saving = false,
   message = '',
-  routeEvents = [],
-  routeEventsLoading = false,
+  modelOptions = [],
+  modelValue = '',
+  projectOptions = [],
+  projectValue = '',
   onModeChange,
   onOpenProjectConfig,
-  onShadowEnabledChange,
+  onModelChange,
+  onProjectChange,
   onShadowModeChange,
   onExplain,
-  onRefreshEvents,
 }: ChannelRoutingWorkbenchProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const explainView = buildChannelRoutingExplainDigest(explain);
-  const eventSummaries = routeEvents.slice(0, 5).map((event) => buildChannelRouteAuditEventSummary(event));
   const hasExplain = explainView.hasExplain;
-  const shadowPanelLabel = config.shadowEnabled ? (hasExplain ? explainView.shadowLabel : '开启') : '关闭';
-  const shadowPanelMeta = config.shadowEnabled && hasExplain ? explainView.shadowMeta : '';
   const candidateCount = explainView.candidateRows.length;
   const filteredCount = explainView.filteredRows.reduce((total, item) => total + item.count, 0);
+  const shadowCandidateCount = explainView.shadowCandidateRows.length;
+  const normalizedModelOptions = normalizeDiagnosticModelOptions(modelOptions, modelValue);
 
   useEffect(() => {
     if (!helpOpen) {
@@ -176,100 +174,183 @@ export default function ChannelRoutingWorkbench({
           </span>
         </summary>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.75fr)]">
-          <section className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={onExplain}
-                disabled={disabled}
-                className="btn-swiss flex min-h-9 items-center gap-2 !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]"
-              >
-                <Play className="h-3.5 w-3.5" strokeWidth={4} />
-                预演
-              </button>
-              <DiagnosticPill label="命中" value={hasExplain ? explainView.selectedTitle : '—'} />
-              <DiagnosticPill label="候选" value={hasExplain ? String(candidateCount) : '—'} />
-              <DiagnosticPill label="过滤" value={hasExplain ? String(filteredCount) : '—'} />
-              <DiagnosticPill label="项目池" value={hasExplain ? explainView.projectCandidatePoolLabel : '—'} />
-            </div>
-            {hasExplain && explainView.selectedMeta ? (
-              <p className="mt-3 break-words text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
-                {explainView.selectedMeta}
-              </p>
-            ) : null}
-
-            <details className="group/steps mt-4 border-t border-[var(--border-color)] pt-3">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)] [&::-webkit-details-marker]:hidden">
-                <span>链路</span>
-                <span className="flex items-center gap-2">
-                  <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                    {hasExplain ? explainView.snapshotLabel : '—'}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open/steps:rotate-180" strokeWidth={4} />
+        <div className="mt-4 space-y-4">
+          <section className="grid gap-4 lg:grid-cols-[minmax(14rem,0.72fr)_minmax(0,1.7fr)]">
+            <aside className="min-w-0 py-1">
+              <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
+                <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">条件列表</span>
+                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  INPUT
                 </span>
-              </summary>
-              <div className="mt-2">
-                {hasExplain && explainView.stepRows.length > 0 ? (
-                  explainView.stepRows.map((step, index) => <StepRow key={`${step.label}-${index}`} step={step} />)
-                ) : (
-                  <Placeholder text="—" />
-                )}
               </div>
-            </details>
-          </section>
+              <div className="grid gap-3">
+                <button
+                  type="button"
+                  onClick={onExplain}
+                  disabled={disabled}
+                  className="btn-swiss min-h-11 w-full justify-start bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-md)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Play className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
+                  <span className="min-w-0 flex-1 truncate text-left font-black">运行预演</span>
+                  <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide opacity-70">
+                    RUN
+                  </span>
+                </button>
+                {onModelChange && normalizedModelOptions.length > 0 ? (
+                  <DiagnosticSelect
+                    label="请求模型"
+                    value={modelValue}
+                    disabled={disabled}
+                    onChange={onModelChange}
+                    options={normalizedModelOptions.map((model) => ({ value: model, label: model }))}
+                  />
+                ) : null}
+                {onProjectChange && projectOptions.length > 0 ? (
+                  <DiagnosticSelect
+                    label="项目"
+                    value={projectValue}
+                    disabled={disabled}
+                    onChange={onProjectChange}
+                    options={[
+                      { value: '', label: '不限项目' },
+                      ...projectOptions.map((option) => ({
+                        value: option.projectKey,
+                        label: formatDiagnosticProjectOptionLabel(option),
+                      })),
+                    ]}
+                  />
+                ) : null}
+              </div>
+            </aside>
 
-          <section className="min-w-0 border-t border-[var(--border-color)] pt-3 lg:border-t-0 lg:border-l lg:pl-4 lg:pt-0">
-            <label className="flex min-w-0 items-center justify-between gap-3">
-              <span className="text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">对照测试</span>
-              <input
-                type="checkbox"
-                checked={config.shadowEnabled}
-                disabled={disabled}
-                onChange={(event) => onShadowEnabledChange(event.currentTarget.checked)}
-                className="h-4 w-4 shrink-0 accent-[var(--text-primary)]"
-              />
-            </label>
+            <section className="grid min-w-0 gap-4 lg:grid-cols-2">
+              <div className="min-w-0 border-l-2 border-[var(--border-color)] py-1 pl-4 lg:pr-3">
+                <DiagnosticRouteColumn
+                  title="当前模式"
+                  modeLabel={explainView.modeLabel}
+                  selectedTitle={hasExplain ? explainView.selectedTitle : '尚未运行'}
+                  summaryLabel={hasExplain ? `${candidateCount} 个候选 / ${filteredCount} 个过滤` : '等待预演'}
+                  rows={explainView.candidateRows}
+                  emptyText="点击预演后显示当前模式账号顺序"
+                  emphasis
+                />
+              </div>
 
-            <label className="mt-3 block min-w-0">
-              <span className="mb-1 block text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                对照模式
-              </span>
-              <select
-                value={config.shadowRouteMode}
-                disabled={disabled || !config.shadowEnabled}
-                onChange={(event) => onShadowModeChange(event.currentTarget.value as ChannelRouteMode)}
-                className="input-swiss h-10 w-full font-mono text-[length:var(--font-size-ui-sm)]"
-              >
-                {routeModes.map((item) => (
-                  <option key={item.mode} value={item.mode}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="mt-3 grid gap-2">
-              <DiagnosticLine label="对照结果" value={shadowPanelLabel} />
-              {shadowPanelMeta ? <DiagnosticLine label="差异" value={shadowPanelMeta} /> : null}
-              {hasExplain ? <DiagnosticLine label="项目池" value={explainView.projectCandidatePoolMeta || explainView.projectCandidatePoolLabel} /> : null}
-              {hasExplain ? <DiagnosticLine label="规则" value={explainView.policyLabel} /> : null}
-            </div>
+              <div className="min-w-0 border-l-2 border-[var(--border-color)] py-1 pl-4">
+                <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
+                  <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">对比模式</span>
+                  <select
+                    value={config.shadowRouteMode}
+                    disabled={disabled}
+                    onChange={(event) => onShadowModeChange(event.currentTarget.value as ChannelRouteMode)}
+                    className="select-swiss h-[1.625rem] w-[4.25rem] font-mono !px-2 !py-1 text-center !text-[length:var(--font-size-ui-sm)] [text-align-last:center] !shadow-none hover:!translate-x-0 hover:!translate-y-0 hover:!shadow-none disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {routeModes.map((item) => (
+                      <option key={item.mode} value={item.mode}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <DiagnosticRouteColumn
+                  title=""
+                  modeLabel={resolveRouteModeLabel(config.shadowRouteMode)}
+                  selectedTitle={hasExplain ? explainView.shadowSelectedTitle : '尚未运行'}
+                  summaryLabel={hasExplain ? `${shadowCandidateCount} 个候选` : '等待预演'}
+                  rows={explainView.shadowCandidateRows}
+                  emptyText="点击预演后显示对比模式账号顺序"
+                />
+              </div>
+            </section>
           </section>
         </div>
-
-        <RouteEventLedger
-          events={eventSummaries}
-          disabled={disabled}
-          loading={routeEventsLoading}
-          onRefreshEvents={onRefreshEvents}
-        />
       </details>
 
       {helpOpen ? (
         <RouteModeHelpModal onClose={() => setHelpOpen(false)} />
       ) : null}
     </section>
+  );
+}
+
+function DiagnosticRouteColumn({
+  title,
+  modeLabel,
+  selectedTitle,
+  summaryLabel,
+  rows,
+  emptyText,
+  emphasis = false,
+}: {
+  title: string;
+  modeLabel: string;
+  selectedTitle: string;
+  summaryLabel: string;
+  rows: Array<{ rank: number; id: string; title: string; meta: string }>;
+  emptyText: string;
+  emphasis?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      {title ? (
+        <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
+          <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">{title}</span>
+          <span className="input-swiss max-w-[9rem] truncate !px-2 !py-1 text-right font-mono !text-[length:var(--font-size-ui-sm)] !font-black uppercase tracking-wide !text-[var(--text-secondary)]">
+            {modeLabel || '未知'}
+          </span>
+        </div>
+      ) : null}
+      <div
+        className={[
+          'input-swiss min-w-0 !px-3 !py-2',
+          emphasis ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : 'bg-[var(--bg-main)] !text-[var(--text-primary)]',
+        ].join(' ')}
+      >
+        <span
+          className={[
+            'block font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide',
+            emphasis ? 'text-[var(--bg-main)] opacity-70' : 'text-[var(--text-muted)]',
+          ].join(' ')}
+        >
+          命中
+        </span>
+        <span className="mt-1 block min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black">
+          {selectedTitle || '—'}
+        </span>
+      </div>
+      <div className="mt-3 flex min-w-0 items-center justify-between gap-3">
+        <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+          账号顺序
+        </span>
+        <span className="min-w-0 truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-secondary)]">
+          {summaryLabel}
+        </span>
+      </div>
+      <div className="mt-2 grid gap-2">
+        {rows.length > 0 ? (
+          rows.map((row) => (
+            <div
+              key={`${row.rank}-${row.id}`}
+              className="input-swiss grid min-h-[3.25rem] min-w-0 grid-cols-[2.5rem_minmax(0,1fr)] items-center !px-0 !py-0"
+            >
+              <span className="flex h-full items-center justify-center border-r-2 border-[var(--border-color)] font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-muted)]">
+                {String(row.rank).padStart(2, '0')}
+              </span>
+              <span className="min-w-0 px-2 py-1.5">
+                <span className="block min-w-0 truncate text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
+                  {row.title}
+                </span>
+                <span className="mt-0.5 block min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  {row.meta}
+                </span>
+              </span>
+            </div>
+          ))
+        ) : (
+          <Placeholder text={emptyText} />
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -363,89 +444,57 @@ function StrategyButton({
   );
 }
 
-function RouteEventLedger({
-  events,
+function DiagnosticSelect({
+  label,
+  value,
   disabled,
-  loading,
-  onRefreshEvents,
+  options,
+  onChange,
 }: {
-  events: Array<ReturnType<typeof buildChannelRouteAuditEventSummary>>;
+  label: string;
+  value: string;
   disabled: boolean;
-  loading: boolean;
-  onRefreshEvents?: () => void;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
 }) {
   return (
-    <section className="min-w-0 border-t-2 border-[var(--border-color)] p-4">
-      <div className="flex items-center justify-between gap-2">
-        <SectionHeading icon={History} label="最近路由" />
-        <RefreshActionButton
-          onClick={onRefreshEvents}
-          disabled={disabled || loading || !onRefreshEvents}
-          label="刷新"
-          loading={loading}
-          loadingLabel="加载中"
-          size="sm"
-          iconStrokeWidth={4}
-          className="min-h-8 gap-1"
-        />
-      </div>
-
-      <div className="mt-3 border-t border-[var(--border-color)]">
-        {events.length === 0 ? (
-          <Placeholder text="暂无记录" />
-        ) : (
-          <div className="divide-y divide-[var(--border-color)]">
-            {events.map((event) => (
-              <details key={event.id} className="group min-w-0 py-2">
-                <summary className="grid cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 [&::-webkit-details-marker]:hidden">
-                  <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
-                    {event.title}
-                  </span>
-                  {event.redacted ? (
-                    <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
-                  ) : null}
-                  <ChevronDown
-                    className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)] transition-transform group-open:rotate-180"
-                    strokeWidth={4}
-                  />
-                </summary>
-                <div className="mt-2 min-w-0 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                  <div className="truncate">{event.meta}</div>
-                  {event.shadow ? <div className="mt-1 truncate text-[var(--text-secondary)]">{event.shadow}</div> : null}
-                </div>
-              </details>
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
+    <label className="grid min-w-0 gap-1">
+      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+        {label}
+      </span>
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.currentTarget.value)}
+        className="select-swiss h-11 min-w-0 font-mono !px-3 !py-2 !pr-8 !text-[length:var(--font-size-ui-md)] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {options.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
-function DiagnosticPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 border border-[var(--border-color)] px-2 py-1.5">
-      <span className="mr-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-        {label}
-      </span>
-      <span className="break-words text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
-        {value || '—'}
-      </span>
-    </div>
-  );
+function normalizeDiagnosticModelOptions(options: string[], selected: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const value of [selected, ...options]) {
+    const model = String(value || '').trim();
+    if (!model || seen.has(model)) {
+      continue;
+    }
+    seen.add(model);
+    out.push(model);
+  }
+  return out;
 }
 
-function DiagnosticLine({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="grid grid-cols-[5rem_minmax(0,1fr)] gap-2 border-t border-[var(--border-color)] pt-2">
-      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-        {label}
-      </div>
-      <div className="min-w-0 truncate text-right text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
-        {value || '—'}
-      </div>
-    </div>
-  );
+function formatDiagnosticProjectOptionLabel(option: ProjectCandidatePoolProjectOption): string {
+  const title = String(option.projectName || option.projectKey || '').trim() || '未命名项目';
+  return option.configured ? `${title} · 已配置` : title;
 }
 
 function SectionHeading({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
@@ -454,23 +503,6 @@ function SectionHeading({ icon: Icon, label }: { icon: LucideIcon; label: string
       <Icon className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={3} />
       <div className="min-w-0 text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
         {label}
-      </div>
-    </div>
-  );
-}
-
-function StepRow({
-  step,
-}: {
-  step: ChannelRoutingExplainStepRow;
-}) {
-  return (
-    <div className="border-t border-[var(--border-color)] px-2 py-2">
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-        {step.label}
-      </div>
-      <div className="mt-1 break-words text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
-        {step.detail || '已记录'}
       </div>
     </div>
   );

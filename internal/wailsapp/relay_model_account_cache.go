@@ -159,7 +159,7 @@ func saveRelayModelCatalogTrace(models []OpenAICompatibleModel, snapshots []rela
 		diagnostic := index[slug]
 		traceModels = append(traceModels, relayModelCatalogTraceModel{
 			Slug:           slug,
-			DisplayName:    strings.TrimSpace(model.Alias),
+			DisplayName:    resolveCodexModelCatalogDisplayName(model, slug),
 			SourceAccounts: append([]string(nil), diagnostic.SourceAccounts...),
 			SourceKinds:    append([]string(nil), diagnostic.SourceKinds...),
 			ProviderNames:  append([]string(nil), diagnostic.ProviderNames...),

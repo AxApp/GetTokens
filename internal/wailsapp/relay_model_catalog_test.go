@@ -247,7 +247,7 @@ func TestLoadLocalCodexModelsCacheReadsModelsCacheJSON(t *testing.T) {
 	if models[0].Name != "gpt-5.4" || models[0].DefaultReasoningEffort != "medium" {
 		t.Fatalf("unexpected first local codex model: %#v", models[0])
 	}
-	if models[1].Name != "gpt-5.4-mini" || models[1].Alias != "GPT 5.4 Mini" || models[1].DefaultReasoningEffort != "high" {
+	if models[1].Name != "gpt-5.4-mini" || models[1].Alias != "" || models[1].DefaultReasoningEffort != "high" {
 		t.Fatalf("unexpected second local codex model: %#v", models[1])
 	}
 }
@@ -285,8 +285,8 @@ func TestParseSidecarModelDefinitions(t *testing.T) {
 	if gpt54.Name != "gpt-5.4" {
 		t.Fatalf("unexpected name: %#v", gpt54)
 	}
-	if gpt54.Alias != "GPT 5.4" {
-		t.Fatalf("expected alias 'GPT 5.4', got %#v", gpt54.Alias)
+	if gpt54.Alias != "" {
+		t.Fatalf("sidecar display_name must not be exposed as alias, got %#v", gpt54.Alias)
 	}
 	if len(gpt54.SupportedReasoningEfforts) != 4 {
 		t.Fatalf("expected 4 reasoning efforts, got %d: %#v", len(gpt54.SupportedReasoningEfforts), gpt54.SupportedReasoningEfforts)

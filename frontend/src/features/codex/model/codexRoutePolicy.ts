@@ -348,12 +348,13 @@ function buildCodexRoutePolicyExplainPreviewFromPolicyCandidates<
   }));
   const projectKey = String(projectRule?.projectKey || '').trim();
   const projectAllowIDs = new Set(normalizeCodexAccountIDList(projectRule?.allowAccountIDs || []));
-  const projectFiltered = projectKey
+  const projectRuleMatched = Boolean(projectKey && projectAllowIDs.size > 0);
+  const projectFiltered = projectRuleMatched
     ? baseCandidates
         .filter((candidate) => !projectAllowIDs.has(candidate.id))
         .map((candidate) => ({ id: candidate.id, reason: 'project-candidate-pool' }))
     : [];
-  const candidates = projectKey ? baseCandidates.filter((candidate) => projectAllowIDs.has(candidate.id)) : baseCandidates;
+  const candidates = projectRuleMatched ? baseCandidates.filter((candidate) => projectAllowIDs.has(candidate.id)) : baseCandidates;
   const filtered = allRows
     .filter((row) => !policyCandidateIDs.has(row.id))
     .map((row) => ({
@@ -369,9 +370,13 @@ function buildCodexRoutePolicyExplainPreviewFromPolicyCandidates<
   const projectCandidatePool = projectKey
     ? {
         evaluated: true,
-        activated: true,
+        activated: projectRuleMatched,
         reason:
-          candidates.length > 0 ? 'project-candidate-pool:matched' : 'project-candidate-pool:no-routeable-account',
+          projectRuleMatched
+            ? candidates.length > 0
+              ? 'project-candidate-pool:matched'
+              : 'project-candidate-pool:no-routeable-account'
+            : 'project-candidate-pool:not-matched',
         ruleID: String(projectRule?.id || ''),
         projectKey,
         projectName: String(projectRule?.projectName || ''),

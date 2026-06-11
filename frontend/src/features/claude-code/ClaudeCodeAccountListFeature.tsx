@@ -117,7 +117,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   );
   const [channelExplain, setChannelExplain] = useState<main.ChannelRoutingExplainResult | null>(null);
   const [channelRouteEvents, setChannelRouteEvents] = useState<ChannelRouteAuditEvent[]>([]);
-  const [channelRouteEventsLoading, setChannelRouteEventsLoading] = useState(false);
   const [projectCandidatePoolRules, setProjectCandidatePoolRules] = useState<ProjectCandidatePoolRuleLike[]>([]);
   const [projectCandidatePoolObservedProjects, setProjectCandidatePoolObservedProjects] = useState<
     ProjectCandidatePoolObservedProjectLike[]
@@ -589,15 +588,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     void persistChannelRoutingConfig(nextConfig);
   }
 
-  function updateShadowEnabled(enabled: boolean) {
-    const nextConfig = withCurrentChannelOrder(
-      updateChannelRoutingConfig(channelConfig, { shadowEnabled: enabled }),
-      orderedRows.map((row) => row.id),
-    );
-    setChannelExplain(null);
-    void persistChannelRoutingConfig(nextConfig);
-  }
-
   function updateShadowMode(mode: ChannelRouteMode) {
     const nextConfig = withCurrentChannelOrder(
       updateChannelRoutingConfig(channelConfig, { shadowRouteMode: mode }),
@@ -666,15 +656,14 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
         snapshotVersion: 'preview',
         policyVersion: 'channel-routing-v1',
         projectCandidatePool,
-        shadow: nextConfig.shadowEnabled
-          ? {
-              enabled: true,
-              routeMode: nextConfig.shadowRouteMode,
-              selectedAccountID: candidates[candidates.length - 1]?.id || candidates[0]?.id || '',
-              diff: Boolean(candidates.length > 1),
-              steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
-            }
-          : undefined,
+        shadow: {
+          enabled: true,
+          routeMode: nextConfig.shadowRouteMode,
+          selectedAccountID: candidates[0]?.id || '',
+          candidates,
+          diff: false,
+          steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
+        },
       });
       setChannelExplain(result);
       const event = buildPreviewChannelRouteAuditEvent({ channel: 'claude', explain: result });
@@ -708,7 +697,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     if (browserMode) {
       return;
     }
-    setChannelRouteEventsLoading(true);
     try {
       const result = await trackRequest('ListChannelRouteEvents', { channel: 'claude', limit: 5 }, () =>
         ListChannelRouteEvents(main.ChannelRouteEventsInput.createFrom({ channel: 'claude', limit: 5 })),
@@ -717,8 +705,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     } catch (error) {
       console.error(error);
       setMessage(`${t('claude_code.account_list_probe_failed')}: ${toErrorMessage(error)}`);
-    } finally {
-      setChannelRouteEventsLoading(false);
     }
   }
 
@@ -996,15 +982,11 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           disabled={!ready || saving}
           saving={saving}
           message={orderDirty ? t('claude_code.account_list_unsaved') : ''}
-          routeEvents={channelRouteEvents}
-          routeEventsLoading={channelRouteEventsLoading}
           accounts={orderedRows}
           onModeChange={updateChannelMode}
           onOpenProjectConfig={openProjectConfigModal}
-          onShadowEnabledChange={updateShadowEnabled}
           onShadowModeChange={updateShadowMode}
           onExplain={() => void runChannelExplain()}
-          onRefreshEvents={() => void loadChannelRouteEvents()}
         />
 
         <CodexAccountOrderSection

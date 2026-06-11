@@ -978,9 +978,16 @@ test('Codex account order cards reuse the account pool card and drag the whole c
   assert.match(source, /eyebrowPrefix=\{`#\$\{index \+ 1\}`\}/);
   assert.match(source, /showDeleteAction=\{false\}/);
   assert.match(source, /showFooterActions=\{false\}/);
+  assert.match(source, /localCliActions=\{manualActions\}/);
+  assert.match(source, /type AccountCardLocalCliAction/);
   assert.doesNotMatch(source, /fillHeight=\{false\}/);
   assert.match(source, /draggable/);
   assert.match(source, /onDragStart=\{\(\) => onDragStart\(row\.id\)\}/);
+  assert.doesNotMatch(source, /if \(density === 'list'\)/);
+  assert.doesNotMatch(source, /GripVertical/);
+  assert.doesNotMatch(source, /ShieldCheck/);
+  assert.doesNotMatch(source, /absolute bottom-2 right-2/);
+  assert.doesNotMatch(source, /grid min-h-\[4\.25rem\] w-full grid-cols-\[5\.25rem_minmax\(0,1fr\)_9rem\]/);
   assert.doesNotMatch(source, /<AttributionCard/);
   assert.doesNotMatch(source, /customBody=\{/);
   assert.doesNotMatch(source, /footerPlacement="flow"/);

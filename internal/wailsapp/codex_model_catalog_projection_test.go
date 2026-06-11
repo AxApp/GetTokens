@@ -166,6 +166,10 @@ func TestBuildGetTokensCodexModelCatalogUsesModelIDForDisplayAliases(t *testing.
 			Alias: "GPT-5.4-Mini",
 		},
 		{
+			Name:  "mimo-v2.5",
+			Alias: "GPT 5.4",
+		},
+		{
 			Name:  "deepseek-chat",
 			Alias: "deepseek",
 		},
@@ -180,8 +184,8 @@ func TestBuildGetTokensCodexModelCatalogUsesModelIDForDisplayAliases(t *testing.
 	if err := json.Unmarshal(body, &payload); err != nil {
 		t.Fatalf("catalog is not valid JSON: %v\n%s", err, string(body))
 	}
-	if len(payload.Models) != 3 {
-		t.Fatalf("models length = %d, want 3: %s", len(payload.Models), string(body))
+	if len(payload.Models) != 4 {
+		t.Fatalf("models length = %d, want 4: %s", len(payload.Models), string(body))
 	}
 
 	got := make(map[string]string, len(payload.Models))
@@ -190,11 +194,14 @@ func TestBuildGetTokensCodexModelCatalogUsesModelIDForDisplayAliases(t *testing.
 		displayName, _ := model["display_name"].(string)
 		got[slug] = displayName
 	}
-	if got["gpt-5.5"] != "GPT 5.5" {
-		t.Fatalf("gpt-5.5 should use model id as slug and display alias as display name: %#v", got)
+	if got["gpt-5.5"] != "gpt-5.5" {
+		t.Fatalf("gpt-5.5 should use model id as slug and display name: %#v", got)
 	}
-	if got["gpt-5.4-mini"] != "GPT 5.4 Mini" {
-		t.Fatalf("gpt-5.4-mini should use model id as slug and display alias as display name: %#v", got)
+	if got["gpt-5.4-mini"] != "gpt-5.4-mini" {
+		t.Fatalf("gpt-5.4-mini should use model id as slug and display name: %#v", got)
+	}
+	if got["mimo-v2.5"] != "mimo-v2.5" {
+		t.Fatalf("mimo display alias should not replace catalog display name: %#v", got)
 	}
 	if got["deepseek"] != "deepseek" {
 		t.Fatalf("route alias should remain usable as catalog slug: %#v", got)

@@ -157,14 +157,8 @@ func parseSidecarModelDefinitions(body string) ([]OpenAICompatibleModel, error) 
 			continue
 		}
 
-		alias := strings.TrimSpace(item.DisplayName)
-		if alias == name {
-			alias = ""
-		}
-
 		models = append(models, OpenAICompatibleModel{
 			Name:                      name,
-			Alias:                     alias,
 			SupportedReasoningEfforts: normalizeReasoningEfforts(item.Thinking.Levels),
 		})
 	}
@@ -507,11 +501,6 @@ func parseLocalCodexModelsCache(body string) ([]OpenAICompatibleModel, error) {
 			continue
 		}
 
-		alias := strings.TrimSpace(item.DisplayName)
-		if alias == name {
-			alias = ""
-		}
-
 		reasoningEfforts := make([]string, 0, len(item.SupportedReasoningLevels))
 		for _, level := range item.SupportedReasoningLevels {
 			reasoningEfforts = append(reasoningEfforts, level.Effort)
@@ -519,7 +508,6 @@ func parseLocalCodexModelsCache(body string) ([]OpenAICompatibleModel, error) {
 
 		models = append(models, OpenAICompatibleModel{
 			Name:                      name,
-			Alias:                     alias,
 			SupportedReasoningEfforts: normalizeReasoningEfforts(reasoningEfforts),
 			DefaultReasoningEffort:    normalizeReasoningEffort(item.DefaultReasoningLevel),
 		})

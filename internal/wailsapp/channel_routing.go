@@ -55,6 +55,7 @@ type ChannelRoutingConfigMeta struct {
 
 type ChannelRoutingExplainInput struct {
 	Channel              string         `json:"channel,omitempty"`
+	RequestedModel       string         `json:"requestedModel,omitempty"`
 	TriedAccountIDs      []string       `json:"triedAccountIDs,omitempty"`
 	ActiveSessions       map[string]int `json:"activeSessions,omitempty"`
 	StickyAccountID      string         `json:"stickyAccountID,omitempty"`
@@ -68,6 +69,7 @@ type ChannelRoutingExplainInput struct {
 type ChannelRoutingExplainResult struct {
 	Channel              string                                  `json:"channel"`
 	RouteMode            ChannelRouteMode                        `json:"routeMode"`
+	RequestedModel       string                                  `json:"requestedModel,omitempty"`
 	SelectedAccountID    string                                  `json:"selectedAccountID,omitempty"`
 	Candidates           []ChannelRoutingCandidate               `json:"candidates"`
 	Filtered             []ChannelRoutingFilteredAccount         `json:"filtered"`
@@ -95,11 +97,12 @@ type ChannelRoutingProjectCandidatePoolInfo struct {
 }
 
 type ChannelRoutingShadowDecision struct {
-	Enabled           bool             `json:"enabled"`
-	RouteMode         ChannelRouteMode `json:"routeMode,omitempty"`
-	SelectedAccountID string           `json:"selectedAccountID,omitempty"`
-	Diff              bool             `json:"diff"`
-	Steps             []string         `json:"steps,omitempty"`
+	Enabled           bool                      `json:"enabled"`
+	RouteMode         ChannelRouteMode          `json:"routeMode,omitempty"`
+	SelectedAccountID string                    `json:"selectedAccountID,omitempty"`
+	Candidates        []ChannelRoutingCandidate `json:"candidates,omitempty"`
+	Diff              bool                      `json:"diff"`
+	Steps             []string                  `json:"steps,omitempty"`
 }
 
 type ChannelRoutingCandidate struct {
@@ -299,18 +302,17 @@ func explainChannelRoutingWithProjectCandidatePool(accounts []accountsdomain.Acc
 	result := explainNormalizedChannelRouting(accounts, normalized, input, meta, runtimeStates, projectRules)
 	result.SnapshotVersion = channelRoutingSnapshotVersion(normalized)
 	result.PolicyVersion = "channel-routing-v1"
-	if normalized.ShadowEnabled {
-		shadowConfig := normalized
-		shadowConfig.RouteMode = normalizeShadowRouteMode(normalized.ShadowRouteMode, normalized.RouteMode)
-		shadowConfig.ShadowEnabled = false
-		shadow := explainNormalizedChannelRouting(accounts, shadowConfig, input, ChannelRoutingConfigMeta{}, runtimeStates, projectRules)
-		result.Shadow = &ChannelRoutingShadowDecision{
-			Enabled:           true,
-			RouteMode:         shadow.RouteMode,
-			SelectedAccountID: shadow.SelectedAccountID,
-			Diff:              shadow.SelectedAccountID != result.SelectedAccountID,
-			Steps:             append([]string(nil), shadow.Steps...),
-		}
+	shadowConfig := normalized
+	shadowConfig.RouteMode = normalizeShadowRouteMode(normalized.ShadowRouteMode, normalized.RouteMode)
+	shadowConfig.ShadowEnabled = false
+	shadow := explainNormalizedChannelRouting(accounts, shadowConfig, input, ChannelRoutingConfigMeta{}, runtimeStates, projectRules)
+	result.Shadow = &ChannelRoutingShadowDecision{
+		Enabled:           true,
+		RouteMode:         shadow.RouteMode,
+		SelectedAccountID: shadow.SelectedAccountID,
+		Candidates:        append([]ChannelRoutingCandidate(nil), shadow.Candidates...),
+		Diff:              shadow.SelectedAccountID != result.SelectedAccountID,
+		Steps:             append([]string(nil), shadow.Steps...),
 	}
 	return result
 }
@@ -323,11 +325,17 @@ func explainNormalizedChannelRouting(accounts []accountsdomain.AccountRecord, no
 
 func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, mode ChannelRouteMode, steps []string, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState, projectRules []ProjectCandidatePoolRule) ChannelRoutingExplainResult {
 	candidates, filtered := buildChannelRouteablePool(accounts, cfg, input, runtimeStates)
+	requestedModel := strings.TrimSpace(input.RequestedModel)
+	if requestedModel != "" {
+		candidates, filtered = applyRequestedModelExplain(candidates, filtered, requestedModel)
+		steps = append(steps, "model:"+requestedModel)
+	}
 	projectCandidatePool := (*ChannelRoutingProjectCandidatePoolInfo)(nil)
 	candidates, filtered, projectCandidatePool = applyProjectCandidatePoolExplain(candidates, filtered, cfg.Channel, input, projectRules)
 	if projectCandidatePool != nil && projectCandidatePool.Reason != "" {
 		steps = append(steps, projectCandidatePool.Reason)
 	}
+	candidates = orderChannelRouteCandidatesForMode(candidates, mode)
 	steps = append(steps, "candidates:"+intString(len(candidates)))
 	selected := ""
 	stickyAccountID := strings.TrimSpace(input.StickyAccountID)
@@ -342,15 +350,12 @@ func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRout
 		}
 	}
 	if selected == "" && len(candidates) > 0 {
-		if mode == ChannelRouteModeBalanced {
-			selected = selectBalancedChannelCandidate(candidates).Account.ID
-		} else {
-			selected = candidates[0].Account.ID
-		}
+		selected = candidates[0].Account.ID
 	}
 	return ChannelRoutingExplainResult{
 		Channel:              cfg.Channel,
 		RouteMode:            mode,
+		RequestedModel:       requestedModel,
 		SelectedAccountID:    selected,
 		Candidates:           mapChannelRouteCandidates(candidates),
 		Filtered:             filtered,
@@ -358,6 +363,55 @@ func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRout
 		Meta:                 meta,
 		ProjectCandidatePool: projectCandidatePool,
 	}
+}
+
+func orderChannelRouteCandidatesForMode(candidates []channelRouteCandidate, mode ChannelRouteMode) []channelRouteCandidate {
+	if mode != ChannelRouteModeBalanced || len(candidates) < 2 {
+		return candidates
+	}
+	out := append([]channelRouteCandidate(nil), candidates...)
+	sort.SliceStable(out, func(i, j int) bool {
+		if out[i].Sessions != out[j].Sessions {
+			return out[i].Sessions < out[j].Sessions
+		}
+		return lessChannelRouteSortKey(out[i].Key, out[j].Key)
+	})
+	return out
+}
+
+func applyRequestedModelExplain(candidates []channelRouteCandidate, filtered []ChannelRoutingFilteredAccount, requestedModel string) ([]channelRouteCandidate, []ChannelRoutingFilteredAccount) {
+	requestedModel = strings.TrimSpace(requestedModel)
+	if requestedModel == "" {
+		return candidates, filtered
+	}
+	kept := make([]channelRouteCandidate, 0, len(candidates))
+	for _, candidate := range candidates {
+		if channelRouteCandidateSupportsRequestedModel(candidate, requestedModel) {
+			kept = append(kept, candidate)
+			continue
+		}
+		filtered = append(filtered, ChannelRoutingFilteredAccount{ID: candidate.Account.ID, Reason: "runtime-model-unavailable"})
+	}
+	return kept, filtered
+}
+
+func channelRouteCandidateSupportsRequestedModel(candidate channelRouteCandidate, requestedModel string) bool {
+	requestedModel = strings.TrimSpace(requestedModel)
+	if requestedModel == "" {
+		return true
+	}
+	models := candidate.Account.Models
+	if len(models) == 0 {
+		return true
+	}
+	for _, model := range models {
+		name := strings.TrimSpace(model.Name)
+		alias := strings.TrimSpace(model.Alias)
+		if name == requestedModel || alias == requestedModel {
+			return true
+		}
+	}
+	return false
 }
 
 func applyProjectCandidatePoolExplain(candidates []channelRouteCandidate, filtered []ChannelRoutingFilteredAccount, channel string, input ChannelRoutingExplainInput, rules []ProjectCandidatePoolRule) ([]channelRouteCandidate, []ChannelRoutingFilteredAccount, *ChannelRoutingProjectCandidatePoolInfo) {

@@ -92,6 +92,7 @@ export interface ChannelRouteAuditEventSummary {
 
 export interface ChannelRoutingExplainLike {
   routeMode?: string;
+  requestedModel?: string;
   selectedAccountID?: string;
   candidates?: Array<{
     id?: string;
@@ -128,6 +129,16 @@ export interface ChannelRoutingExplainLike {
     enabled?: boolean;
     routeMode?: string;
     selectedAccountID?: string;
+    candidates?: Array<{
+      id?: string;
+      displayName?: string;
+      provider?: string;
+      routeOrder?: number;
+      channelOrder?: number;
+      groupID?: string;
+      groupOrder?: number;
+      activeSessions?: number;
+    }>;
     diff?: boolean;
     steps?: string[];
   };
@@ -258,7 +269,10 @@ export interface ChannelRoutingParticipantRow {
 export interface ChannelRoutingExplainDigest {
   hasExplain: boolean;
   modeLabel: string;
+  requestedModelLabel: string;
+  projectLabel: string;
   selectedTitle: string;
+  shadowSelectedTitle: string;
   selectedMeta: string;
   summaryLabel: string;
   snapshotLabel: string;
@@ -268,6 +282,7 @@ export interface ChannelRoutingExplainDigest {
   projectCandidatePoolLabel: string;
   projectCandidatePoolMeta: string;
   candidateRows: ChannelRoutingExplainCandidateRow[];
+  shadowCandidateRows: ChannelRoutingExplainCandidateRow[];
   filteredRows: ChannelRoutingExplainReasonRow[];
   stepRows: ChannelRoutingExplainStepRow[];
 }
@@ -472,7 +487,10 @@ export function buildChannelRoutingExplainDigest(
     return {
       hasExplain: false,
       modeLabel: '未运行',
+      requestedModelLabel: '模型未指定',
+      projectLabel: '项目未指定',
       selectedTitle: '尚未运行预演',
+      shadowSelectedTitle: '尚未运行预演',
       selectedMeta: '点击“运行预演”后会显示候选、过滤原因和最终命中。',
       summaryLabel: '尚未运行',
       snapshotLabel: '快照未生成',
@@ -482,23 +500,13 @@ export function buildChannelRoutingExplainDigest(
       projectCandidatePoolLabel: '项目池未评估',
       projectCandidatePoolMeta: '',
       candidateRows: [],
+      shadowCandidateRows: [],
       filteredRows: [],
       stepRows: [],
     };
   }
 
-  const candidateRows = (input.candidates || []).map((candidate, index) => {
-    const rank = index + 1;
-    const title = String(candidate.displayName || candidate.id || `候选 ${rank}`).trim() || `候选 ${rank}`;
-    const metaParts = [String(candidate.provider || '').trim(), buildChannelRoutingActiveSessionMeta(candidate.activeSessions)];
-    const meta = metaParts.filter(Boolean).join(' · ') || '无附加信息';
-    return {
-      rank,
-      id: String(candidate.id || '').trim(),
-      title,
-      meta,
-    };
-  });
+  const candidateRows = buildChannelRoutingExplainCandidateRows(input.candidates || []);
 
   const selectedAccountID = String(input.selectedAccountID || '').trim();
   const selectedCandidate = candidateRows.find((candidate) => candidate.id === selectedAccountID);
@@ -516,6 +524,10 @@ export function buildChannelRoutingExplainDigest(
 
   const shadow = input.shadow;
   const shadowEnabled = shadow?.enabled === true;
+  const shadowCandidateRows = buildChannelRoutingExplainCandidateRows(shadow?.candidates || []);
+  const shadowSelectedAccountID = String(shadow?.selectedAccountID || '').trim();
+  const shadowSelectedCandidate = shadowCandidateRows.find((candidate) => candidate.id === shadowSelectedAccountID);
+  const shadowSelectedTitle = shadowSelectedCandidate?.title || shadowSelectedAccountID || '未命中';
   const shadowLabel = shadowEnabled ? 'Shadow 开启' : 'Shadow 关闭';
   const shadowMeta = shadowEnabled
     ? `${formatChannelRouteModeLabel(shadow.routeMode) || 'Shadow'} · ${shadow.selectedAccountID || '未命中'} · 差异:${
@@ -523,11 +535,16 @@ export function buildChannelRoutingExplainDigest(
       }`
     : '';
   const projectCandidatePool = buildProjectCandidatePoolDigest(input.projectCandidatePool);
+  const requestedModel = String(input.requestedModel || '').trim();
+  const projectLabel = projectCandidatePool.projectName || projectCandidatePool.projectKey || '项目未指定';
 
   return {
     hasExplain: true,
     modeLabel: formatChannelRouteModeLabel(input.routeMode) || '未知',
+    requestedModelLabel: requestedModel || '模型未指定',
+    projectLabel,
     selectedTitle,
+    shadowSelectedTitle,
     selectedMeta,
     summaryLabel: `${candidateRows.length} 个候选 / ${filteredRows.reduce((total, item) => total + item.count, 0)} 个过滤`,
     snapshotLabel: `快照 ${String(input.snapshotVersion || '未生成').trim() || '未生成'}`,
@@ -537,9 +554,32 @@ export function buildChannelRoutingExplainDigest(
     projectCandidatePoolLabel: projectCandidatePool.label,
     projectCandidatePoolMeta: projectCandidatePool.meta,
     candidateRows,
+    shadowCandidateRows,
     filteredRows,
     stepRows,
   };
+}
+
+function buildChannelRoutingExplainCandidateRows(
+  candidates: Array<{
+    id?: string;
+    displayName?: string;
+    provider?: string;
+    activeSessions?: number;
+  }>,
+): ChannelRoutingExplainCandidateRow[] {
+  return (candidates || []).map((candidate, index) => {
+    const rank = index + 1;
+    const title = String(candidate.displayName || candidate.id || `候选 ${rank}`).trim() || `候选 ${rank}`;
+    const metaParts = [String(candidate.provider || '').trim(), buildChannelRoutingActiveSessionMeta(candidate.activeSessions)];
+    const meta = metaParts.filter(Boolean).join(' · ') || '无附加信息';
+    return {
+      rank,
+      id: String(candidate.id || '').trim(),
+      title,
+      meta,
+    };
+  });
 }
 
 export function buildChannelRoutingParticipantRows(
@@ -1083,13 +1123,14 @@ function formatChannelRoutingFilteredReason(reason: string): string {
 
 function buildProjectCandidatePoolDigest(
   projectCandidatePool: ChannelRoutingExplainLike['projectCandidatePool'],
-): { label: string; meta: string } {
+): { label: string; meta: string; projectName: string; projectKey: string } {
   if (!projectCandidatePool) {
-    return { label: '项目池未评估', meta: '' };
+    return { label: '项目池未评估', meta: '', projectName: '', projectKey: '' };
   }
 
   const reason = String(projectCandidatePool.reason || '').trim();
   const label = formatProjectCandidatePoolReason(reason) || '项目池已记录';
+  const projectKey = String(projectCandidatePool.projectKey || '').trim();
   const projectName = String(projectCandidatePool.projectName || '').trim();
   const ruleID = String(projectCandidatePool.ruleID || '').trim();
   const before = Number(projectCandidatePool.beforeCandidateCount);
@@ -1097,7 +1138,7 @@ function buildProjectCandidatePoolDigest(
   const countMeta =
     Number.isFinite(before) && Number.isFinite(after) && (before > 0 || after > 0) ? `${before} → ${after} 个候选` : '';
   const meta = [projectName ? `项目:${projectName}` : '', ruleID ? `规则:${ruleID}` : '', countMeta].filter(Boolean).join(' · ');
-  return { label, meta };
+  return { label, meta, projectName, projectKey };
 }
 
 function formatProjectCandidatePoolReason(reason: string): string {

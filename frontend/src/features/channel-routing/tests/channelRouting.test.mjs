@@ -250,13 +250,29 @@ test('buildChannelRoutingExplainDigest turns raw explain data into readable sect
         enabled: true,
         routeMode: 'sequential',
         selectedAccountID: 'auth-file:backup.json',
+        candidates: [
+          {
+            id: 'auth-file:backup.json',
+            displayName: 'Backup',
+            provider: 'auth-file',
+          },
+          {
+            id: 'codex-api-key:stable',
+            displayName: 'Stable',
+            provider: 'openai-compatible',
+            activeSessions: 2,
+          },
+        ],
         diff: true,
       },
     }),
     {
       hasExplain: true,
       modeLabel: '均衡',
+      requestedModelLabel: '模型未指定',
+      projectLabel: '项目未指定',
       selectedTitle: 'Stable',
+      shadowSelectedTitle: 'Backup',
       selectedMeta: '命中候选 #1 · openai-compatible · 2 个活跃会话',
       summaryLabel: '2 个候选 / 3 个过滤',
       snapshotLabel: '快照 preview',
@@ -277,6 +293,20 @@ test('buildChannelRoutingExplainDigest turns raw explain data into readable sect
           id: 'auth-file:backup.json',
           title: 'Backup',
           meta: 'auth-file',
+        },
+      ],
+      shadowCandidateRows: [
+        {
+          rank: 1,
+          id: 'auth-file:backup.json',
+          title: 'Backup',
+          meta: 'auth-file',
+        },
+        {
+          rank: 2,
+          id: 'codex-api-key:stable',
+          title: 'Stable',
+          meta: 'openai-compatible · 2 个活跃会话',
         },
       ],
       filteredRows: [
@@ -325,7 +355,10 @@ test('buildChannelRoutingExplainDigest surfaces project candidate pool explain s
     {
       hasExplain: true,
       modeLabel: '顺序',
+      requestedModelLabel: '模型未指定',
+      projectLabel: 'GetTokens',
       selectedTitle: 'Allowed',
+      shadowSelectedTitle: '未命中',
       selectedMeta: '命中候选 #1 · auth-file',
       summaryLabel: '1 个候选 / 3 个过滤',
       snapshotLabel: '快照 snapshot-project',
@@ -342,6 +375,7 @@ test('buildChannelRoutingExplainDigest surfaces project candidate pool explain s
           meta: 'auth-file',
         },
       ],
+      shadowCandidateRows: [],
       filteredRows: [
         { label: '项目候选池规则', count: 1 },
         { label: '项目候选池无可路由账号', count: 1 },
@@ -818,6 +852,47 @@ test('ChannelRoutingWorkbench leaves participant account filtering to the accoun
   assert.doesNotMatch(source, /ParticipantList/);
   assert.doesNotMatch(source, /buildChannelRoutingParticipantRows/);
   assert.doesNotMatch(source, /label="参与账号"/);
+});
+
+test('ChannelRoutingWorkbench uses left conditions and right diagnostic result layout', async () => {
+  const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, />\s*条件列表\s*</);
+  assert.match(source, />\s*运行预演\s*</);
+  assert.doesNotMatch(source, /<DiagnosticStaticCondition/);
+  assert.doesNotMatch(source, /function DiagnosticStaticCondition/);
+  assert.match(source, /title="当前模式"/);
+  assert.match(source, />\s*对比模式\s*</);
+  assert.match(source, />\s*账号顺序\s*</);
+  assert.match(source, /<DiagnosticSelect[\s\S]*label="请求模型"[\s\S]*<DiagnosticSelect[\s\S]*label="项目"/);
+  assert.match(source, /rows=\{explainView\.candidateRows\}/);
+  assert.match(source, /rows=\{explainView\.shadowCandidateRows\}/);
+  assert.match(source, /lg:grid-cols-\[minmax\(14rem,0\.72fr\)_minmax\(0,1\.7fr\)\]/);
+  assert.match(source, /lg:grid-cols-2/);
+  assert.match(source, /input-swiss grid min-h-\[3\.25rem\] min-w-0 grid-cols-\[2\.5rem_minmax\(0,1fr\)\]/);
+  assert.match(source, /btn-swiss min-h-11 w-full justify-start/);
+  assert.match(source, /input-swiss min-w-0 !px-3 !py-2/);
+  assert.match(source, /input-swiss max-w-\[9rem\] truncate/);
+  assert.equal((source.match(/select-swiss h-11 min-w-0/g) || []).length, 1);
+  assert.equal((source.match(/select-swiss h-\[1\.625rem\] w-\[4\.25rem\]/g) || []).length, 1);
+  assert.match(source, /text-center !text-\[length:var\(--font-size-ui-sm\)\] \[text-align-last:center\]/);
+  assert.match(source, />\s*条件列表\s*<\/span>/);
+  assert.match(source, /text-\[length:var\(--font-size-ui-md\)\][^"]*">\s*条件列表\s*<\/span>/);
+  assert.match(source, /<aside className="min-w-0 py-1">/);
+  assert.equal((source.match(/border-l-2 border-\[var\(--border-color\)\]/g) || []).length, 2);
+  assert.doesNotMatch(source, /border-y border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /lg:border-r/);
+  assert.doesNotMatch(source, /border-l border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /onShadowEnabledChange/);
+  assert.doesNotMatch(source, />\s*最近路由\s*</);
+  assert.doesNotMatch(source, /RouteEventLedger/);
+  assert.doesNotMatch(source, /onRefreshEvents/);
+  assert.doesNotMatch(source, />\s*链路\s*</);
+  assert.doesNotMatch(source, /<StepRow/);
+  assert.doesNotMatch(source, /function StepRow/);
+  assert.doesNotMatch(source, /<DiagnosticMetric/);
+  assert.doesNotMatch(source, /function DiagnosticPill/);
+  assert.doesNotMatch(source, /<DiagnosticPill/);
 });
 
 test('channel route mode help explains sequential fallback without claiming account exclusivity', () => {

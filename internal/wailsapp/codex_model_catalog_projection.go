@@ -298,8 +298,9 @@ func isCodexModelDisplayAliasForName(name string, alias string) bool {
 }
 
 func resolveCodexModelCatalogDisplayName(model OpenAICompatibleModel, slug string) string {
+	name := strings.TrimSpace(model.Name)
 	alias := strings.TrimSpace(model.Alias)
-	if alias != "" {
+	if isCodexRouteModelAlias(alias) && !isCodexModelDisplayAliasForName(name, alias) {
 		return alias
 	}
 	return strings.TrimSpace(slug)

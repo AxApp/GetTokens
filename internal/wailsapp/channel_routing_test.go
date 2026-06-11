@@ -10,6 +10,7 @@ import (
 	"time"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
 func TestChannelRoutingStorePathUsesProfileConfigDir(t *testing.T) {
@@ -133,6 +134,52 @@ func TestExplainChannelRoutingSequentialFiltersDisabledAndUnsupportedAccounts(t 
 	}
 	assertFilteredReason(t, result.Filtered, "auth-file:codex-b.json", "account-disabled")
 	assertFilteredReason(t, result.Filtered, "openai-compatible:anthropic", "missing_format:openai_responses")
+}
+
+func TestExplainChannelRoutingRequestedModelFiltersDeclaredModelAccounts(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{
+			ID:               "openai-compatible:deepseek",
+			DisplayName:      "DeepSeek",
+			Status:           "active",
+			Priority:         1,
+			SupportedFormats: []string{"codex"},
+			Models:           []cliproxyapi.CodexModel{{Name: "deepseek-chat", Alias: "deepseek"}},
+		},
+		{
+			ID:               "openai-compatible:openai",
+			DisplayName:      "OpenAI",
+			Status:           "active",
+			Priority:         2,
+			SupportedFormats: []string{"codex"},
+			Models:           []cliproxyapi.CodexModel{{Name: "gpt-5.4"}},
+		},
+		{
+			ID:               "auth-file:codex.json",
+			DisplayName:      "OAuth",
+			Status:           "active",
+			Priority:         3,
+			SupportedFormats: []string{"codex"},
+		},
+	}
+
+	result := explainChannelRoutingWithAccounts(accounts, ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"openai-compatible:deepseek", "openai-compatible:openai", "auth-file:codex.json"},
+	}, ChannelRoutingExplainInput{RequestedModel: "deepseek"})
+
+	if result.RequestedModel != "deepseek" {
+		t.Fatalf("RequestedModel = %q, want deepseek", result.RequestedModel)
+	}
+	if got := len(result.Candidates); got != 2 {
+		t.Fatalf("Candidates length = %d, want 2: %#v", got, result.Candidates)
+	}
+	if result.Candidates[0].ID != "openai-compatible:deepseek" || result.Candidates[1].ID != "auth-file:codex.json" {
+		t.Fatalf("Candidates = %#v", result.Candidates)
+	}
+	assertFilteredReason(t, result.Filtered, "openai-compatible:openai", "runtime-model-unavailable")
+	assertStepContains(t, result.Steps, "model:deepseek")
 }
 
 func TestExplainChannelRoutingIgnoresLegacyManualDisabledRuntimeState(t *testing.T) {
@@ -740,6 +787,9 @@ func TestExplainChannelRoutingShadowComputesDiffWithoutChangingProductionDecisio
 	}
 	if result.Shadow.RouteMode != "balanced" || result.Shadow.SelectedAccountID != "auth-file:b.json" || !result.Shadow.Diff {
 		t.Fatalf("Shadow = %#v, want balanced diff to auth-file:b.json", result.Shadow)
+	}
+	if len(result.Shadow.Candidates) != 2 || result.Shadow.Candidates[0].ID != "auth-file:b.json" || result.Shadow.Candidates[1].ID != "auth-file:a.json" {
+		t.Fatalf("Shadow.Candidates = %#v, want balanced candidate order b then a", result.Shadow.Candidates)
 	}
 	if result.SnapshotVersion == "" || result.PolicyVersion != "channel-routing-v1" {
 		t.Fatalf("versions missing: snapshot=%q policy=%q", result.SnapshotVersion, result.PolicyVersion)
