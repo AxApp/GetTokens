@@ -74,6 +74,15 @@ git push origin vX.Y.Z
 推 tag 前再次确认：
 - `git rev-parse HEAD` 等于 `git rev-parse origin/<branch>`。
 - `git ls-remote --tags origin "refs/tags/vX.Y.Z"` 为空。
+- 如果 release 会从 `docs-linhay/references/CLIProxyAPI` gitlink 构建 sidecar，先确认该 gitlink commit 已经在 `AxApp/CLIProxyAPI#gettokens/sidecar` 远端可达；不要只看本地 reference repo。推荐门禁：
+
+```bash
+EXPECTED_CLI_PROXY_COMMIT="$(git ls-tree HEAD docs-linhay/references/CLIProxyAPI | awk '$2 == "commit" {print $3}')"
+test -n "$EXPECTED_CLI_PROXY_COMMIT"
+git ls-remote https://github.com/AxApp/CLIProxyAPI.git refs/heads/gettokens/sidecar | rg "$EXPECTED_CLI_PROXY_COMMIT"
+```
+
+若远端没有该 commit，先在 `docs-linhay/references/CLIProxyAPI` 内推送 `gettokens/sidecar`，再重新执行本地门禁和版本提交；不要推一个必然会在 CI 中 `upload-pack: not our ref` 的 tag。
 
 ## 6. CI 发布监控
 tag 推送后监控 Release workflow：
