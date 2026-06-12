@@ -551,7 +551,7 @@ export function SessionAnalysisScopeModal({
                   className="block w-full border-b border-[var(--border-color)] px-4 py-3 text-left transition-colors hover:bg-[var(--bg-surface)] active:opacity-70"
                 >
                   <div className="truncate text-[length:var(--font-size-ui-md)] font-black uppercase tracking-tight">
-                    {session.title || getFileName(session.fileLabel, session.id)}
+                    {session.displayTitle || session.title || getFileName(session.fileLabel, session.id)}
                   </div>
                   <div className="mt-1 flex min-w-0 items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
                     <span>{session.messageCount} {copy.metaMessages}</span>
@@ -1002,9 +1002,9 @@ export function SessionsPanel({
                   onClick={() => onSelectSession(session.id)}
                   className="group block w-full rounded-sm border-l-4 border-l-transparent border-b border-b-[var(--border-color)] px-6 py-4 text-left transition-colors hover:border-l-[var(--text-muted)]/45 hover:bg-[var(--bg-surface)] active:bg-[var(--bg-muted)]"
                 >
-                  <div className="flex items-baseline justify-between gap-4">
-                    <div className="min-w-0 flex-1 truncate text-[length:var(--font-size-ui-lg)] font-black uppercase tracking-tight leading-none text-[var(--text-primary)]">
-                      {session.title || 'UNTITLED SESSION'}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="line-clamp-2 min-w-0 flex-1 break-words text-[length:var(--font-size-ui-lg)] font-black uppercase tracking-tight leading-tight text-[var(--text-primary)]">
+                      {session.displayTitle || session.title || 'UNTITLED SESSION'}
                     </div>
                     <span className={`shrink-0 border px-2 py-0.5 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.22em] leading-none ${
                       session.status === 'active'
@@ -1014,12 +1014,6 @@ export function SessionsPanel({
                       {session.status}
                     </span>
                   </div>
-
-                  {session.summary ? (
-                    <div className="mt-2 max-w-[min(56rem,68vw)] truncate text-[length:var(--font-size-ui-md-compact)] leading-snug text-[var(--text-muted)]">
-                      {session.summary}
-                    </div>
-                  ) : null}
 
                   <div
                     className={`mt-3 flex items-center border-t border-dashed border-[var(--border-color)]/45 pt-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]/60 ${
@@ -1271,7 +1265,11 @@ export function SessionDetailModal({
               {copy.modalTitle}
             </div>
             <h3 id="session-management-dialog-title" className="mt-1 truncate text-xl font-black uppercase tracking-tight">
-              {getFileName(selectedSessionDetail?.fileLabel ?? selectedSessionSummary?.fileLabel, copy.unavailable)}
+              {selectedSessionDetail?.displayTitle ??
+                selectedSessionSummary?.displayTitle ??
+                selectedSessionDetail?.title ??
+                selectedSessionSummary?.title ??
+                getFileName(selectedSessionDetail?.fileLabel ?? selectedSessionSummary?.fileLabel, copy.unavailable)}
             </h3>
             <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
               <span>{modalProjectName}</span>
@@ -1419,7 +1417,7 @@ export function SessionDetailModal({
           ) : detailState.error ? (
             <StatePanel title={copy.loadFailed} description={detailState.error} actionLabel={copy.retry} onAction={onRetry} />
           ) : (
-            <StatePanel title={copy.noMessages} description={selectedSessionSummary?.title ?? copy.unavailable} />
+            <StatePanel title={copy.noMessages} description={selectedSessionSummary?.displayTitle ?? selectedSessionSummary?.title ?? copy.unavailable} />
           )}
         </div>
       </div>

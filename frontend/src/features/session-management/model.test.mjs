@@ -264,7 +264,8 @@ test('session management workbench keeps brutalist hierarchy readable', async ()
   assert.doesNotMatch(viewSource, /data-session-management-search-frame="true" className="[^"]*border-b-4/, 'search rail must not compete with the main workbench border');
   assert.match(viewSource, /rounded-sm border-l-4 border-l-transparent/, 'session rows must have a subtle active affordance without another heavy box');
   assert.match(viewSource, /border-t border-dashed border-\[var\(--border-color\)\]\/45/, 'session metadata must sit in a quiet footer rail');
-  assert.match(viewSource, /max-w-\[min\(56rem,68vw\)\]/, 'long session summaries must cap line length for scanning');
+  assert.match(viewSource, /line-clamp-2 min-w-0 flex-1 break-words/, 'session titles must allow two readable lines before truncating');
+  assert.doesNotMatch(viewSource, /session\.summary \? \(/, 'session list rows must not repeat the derived title again as a summary line');
 });
 
 test('dev bridge session analysis keeps word cloud and common phrase fields', async () => {
@@ -297,6 +298,9 @@ test('mapSessionManagementSnapshotResponse builds provider summary and does not 
           {
             id: 'session-1',
             title: 'session-1',
+            displayTitle: '优化会话标题',
+            titleSource: 'first_user',
+            titleConfidence: 'high',
             status: 'active',
             messageCount: 4,
             provider: 'openai',
@@ -308,6 +312,9 @@ test('mapSessionManagementSnapshotResponse builds provider summary and does not 
             updatedAt: '2026-04-30 11:20',
             fileLabel: 'session-1.jsonl',
             summary: 'summary-1',
+            primaryIntent: '优化会话标题',
+            lastOutcome: '已完成',
+            hasInstructionPreamble: true,
           },
         ],
       },
@@ -319,6 +326,16 @@ test('mapSessionManagementSnapshotResponse builds provider summary and does not 
   assert.equal(Object.hasOwn(snapshot.projects[0], 'rewriteSummary'), false);
   assert.equal(snapshot.projects[0].sessions[0].roleSummary, 'user 1 / assistant 2 / system 1');
   assert.equal(snapshot.projects[0].sessions[0].provider, 'openai');
+  assert.equal(snapshot.projects[0].sessions[0].displayTitle, '优化会话标题');
+  assert.equal(snapshot.projects[0].sessions[0].titleSource, 'first_user');
+  assert.equal(snapshot.projects[0].sessions[0].titleConfidence, 'high');
+  assert.equal(snapshot.projects[0].sessions[0].primaryIntent, '优化会话标题');
+  assert.equal(snapshot.projects[0].sessions[0].lastOutcome, '已完成');
+  assert.equal(snapshot.projects[0].sessions[0].hasInstructionPreamble, true);
+  assert.deepEqual(
+    filterSessionManagementSessions(snapshot.projects[0], 'first_user').map((session) => session.id),
+    ['session-1'],
+  );
 });
 
 test('mapSessionDetailResponse keeps message ordering and fallback labels stable', () => {
@@ -326,6 +343,9 @@ test('mapSessionDetailResponse keeps message ordering and fallback labels stable
     sessionID: 'session-1',
     projectID: 'project-a',
     title: 'Session A',
+    displayTitle: '会话 A 展示标题',
+    titleSource: 'thread_title',
+    titleConfidence: 'high',
     status: 'archived',
     fileLabel: 'session-a.jsonl',
     messageCount: 2,
@@ -335,6 +355,9 @@ test('mapSessionDetailResponse keeps message ordering and fallback labels stable
       assistant: 1,
     },
     topic: 'quota',
+    primaryIntent: '查看 quota',
+    lastOutcome: 'quota 已同步',
+    hasInstructionPreamble: false,
     currentMessageLabel: '02 / assistant',
     messages: [
       { id: 'm-1', role: 'user', timeLabel: '11:00', title: 'ask', summary: 'hello' },
@@ -344,6 +367,10 @@ test('mapSessionDetailResponse keeps message ordering and fallback labels stable
 
   assert.equal(detail.id, 'session-1');
   assert.equal(detail.status, 'archived');
+  assert.equal(detail.displayTitle, '会话 A 展示标题');
+  assert.equal(detail.titleSource, 'thread_title');
+  assert.equal(detail.primaryIntent, '查看 quota');
+  assert.equal(detail.lastOutcome, 'quota 已同步');
   assert.equal(detail.roleSummary, 'user 1 / assistant 1');
   assert.equal(detail.provider, 'gemini');
   assert.equal(detail.messages[1].summary, 'world');

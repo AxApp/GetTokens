@@ -65,51 +65,63 @@ type SessionManagementProjectRecord struct {
 }
 
 type SessionManagementSessionRecord struct {
-	ID                   string `json:"id"`
-	SessionID            string `json:"sessionID"`
-	ProjectID            string `json:"projectID"`
-	ProjectName          string `json:"projectName"`
-	ProjectKey           string `json:"projectKey,omitempty"`
-	ProjectKeySource     string `json:"projectKeySource,omitempty"`
-	ProjectKeyConfidence string `json:"projectKeyConfidence,omitempty"`
-	Title                string `json:"title"`
-	Status               string `json:"status"`
-	Archived             bool   `json:"archived"`
-	MessageCount         int    `json:"messageCount"`
-	RoleSummary          string `json:"roleSummary"`
-	StartedAt            string `json:"startedAt"`
-	UpdatedAt            string `json:"updatedAt"`
-	FileLabel            string `json:"fileLabel"`
-	Summary              string `json:"summary"`
-	Preview              string `json:"preview"`
-	Topic                string `json:"topic"`
-	CurrentMessageLabel  string `json:"currentMessageLabel"`
-	Provider             string `json:"provider"`
-	Model                string `json:"model,omitempty"`
+	ID                     string `json:"id"`
+	SessionID              string `json:"sessionID"`
+	ProjectID              string `json:"projectID"`
+	ProjectName            string `json:"projectName"`
+	ProjectKey             string `json:"projectKey,omitempty"`
+	ProjectKeySource       string `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence   string `json:"projectKeyConfidence,omitempty"`
+	Title                  string `json:"title"`
+	DisplayTitle           string `json:"displayTitle,omitempty"`
+	TitleSource            string `json:"titleSource,omitempty"`
+	TitleConfidence        string `json:"titleConfidence,omitempty"`
+	Status                 string `json:"status"`
+	Archived               bool   `json:"archived"`
+	MessageCount           int    `json:"messageCount"`
+	RoleSummary            string `json:"roleSummary"`
+	StartedAt              string `json:"startedAt"`
+	UpdatedAt              string `json:"updatedAt"`
+	FileLabel              string `json:"fileLabel"`
+	Summary                string `json:"summary"`
+	Preview                string `json:"preview"`
+	Topic                  string `json:"topic"`
+	PrimaryIntent          string `json:"primaryIntent,omitempty"`
+	LastOutcome            string `json:"lastOutcome,omitempty"`
+	HasInstructionPreamble bool   `json:"hasInstructionPreamble,omitempty"`
+	CurrentMessageLabel    string `json:"currentMessageLabel"`
+	Provider               string `json:"provider"`
+	Model                  string `json:"model,omitempty"`
 }
 
 type SessionManagementSessionDetail struct {
-	SessionID            string                           `json:"sessionID"`
-	ProjectID            string                           `json:"projectID"`
-	ProjectName          string                           `json:"projectName"`
-	ProjectKey           string                           `json:"projectKey,omitempty"`
-	ProjectKeySource     string                           `json:"projectKeySource,omitempty"`
-	ProjectKeyConfidence string                           `json:"projectKeyConfidence,omitempty"`
-	Title                string                           `json:"title"`
-	Status               string                           `json:"status"`
-	Archived             bool                             `json:"archived"`
-	FileLabel            string                           `json:"fileLabel"`
-	MessageCount         int                              `json:"messageCount"`
-	Masked               bool                             `json:"masked"`
-	CurrentMessageLabel  string                           `json:"currentMessageLabel"`
-	RoleSummary          string                           `json:"roleSummary"`
-	Topic                string                           `json:"topic"`
-	Preview              string                           `json:"preview"`
-	Provider             string                           `json:"provider"`
-	Model                string                           `json:"model,omitempty"`
-	StartedAt            string                           `json:"startedAt"`
-	UpdatedAt            string                           `json:"updatedAt"`
-	Messages             []SessionManagementMessageRecord `json:"messages"`
+	SessionID              string                           `json:"sessionID"`
+	ProjectID              string                           `json:"projectID"`
+	ProjectName            string                           `json:"projectName"`
+	ProjectKey             string                           `json:"projectKey,omitempty"`
+	ProjectKeySource       string                           `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence   string                           `json:"projectKeyConfidence,omitempty"`
+	Title                  string                           `json:"title"`
+	DisplayTitle           string                           `json:"displayTitle,omitempty"`
+	TitleSource            string                           `json:"titleSource,omitempty"`
+	TitleConfidence        string                           `json:"titleConfidence,omitempty"`
+	Status                 string                           `json:"status"`
+	Archived               bool                             `json:"archived"`
+	FileLabel              string                           `json:"fileLabel"`
+	MessageCount           int                              `json:"messageCount"`
+	Masked                 bool                             `json:"masked"`
+	CurrentMessageLabel    string                           `json:"currentMessageLabel"`
+	RoleSummary            string                           `json:"roleSummary"`
+	Topic                  string                           `json:"topic"`
+	Preview                string                           `json:"preview"`
+	PrimaryIntent          string                           `json:"primaryIntent,omitempty"`
+	LastOutcome            string                           `json:"lastOutcome,omitempty"`
+	HasInstructionPreamble bool                             `json:"hasInstructionPreamble,omitempty"`
+	Provider               string                           `json:"provider"`
+	Model                  string                           `json:"model,omitempty"`
+	StartedAt              string                           `json:"startedAt"`
+	UpdatedAt              string                           `json:"updatedAt"`
+	Messages               []SessionManagementMessageRecord `json:"messages"`
 }
 
 type SessionManagementMessageRecord struct {
@@ -122,6 +134,25 @@ type SessionManagementMessageRecord struct {
 	Summary    string `json:"summary"`
 	Content    string `json:"content"`
 	Truncated  bool   `json:"truncated,omitempty"`
+}
+
+type sessionTitleSignals struct {
+	firstUser              string
+	recentUser             string
+	lastAssistant          string
+	lastOutcome            string
+	lastPrimary            string
+	lastAny                string
+	hasInstructionPreamble bool
+}
+
+type sessionDisplayMetadata struct {
+	displayTitle           string
+	titleSource            string
+	titleConfidence        string
+	primaryIntent          string
+	lastOutcome            string
+	hasInstructionPreamble bool
 }
 
 type SessionManagementMessageRawJSONInput struct {
@@ -754,7 +785,72 @@ func readSessionManagementSnapshotDiskCache(codexHome string) (*SessionManagemen
 	if snapshot.ProviderCounts == nil {
 		snapshot.ProviderCounts = map[string]int{}
 	}
+	normalizeSessionManagementSnapshotDisplayFields(&snapshot)
 	return cloneSessionManagementSnapshot(&snapshot), nil
+}
+
+func normalizeSessionManagementSnapshotDisplayFields(snapshot *SessionManagementSnapshot) {
+	if snapshot == nil {
+		return
+	}
+	for projectIndex := range snapshot.Projects {
+		for sessionIndex := range snapshot.Projects[projectIndex].Sessions {
+			session := &snapshot.Projects[projectIndex].Sessions[sessionIndex]
+			hadInstructionPreamble := looksLikeInstructionPreamble(session.Title) ||
+				looksLikeInstructionPreamble(session.Summary) ||
+				looksLikeInstructionPreamble(session.Preview)
+			displayMetadata := deriveCachedSessionDisplayMetadata(
+				session.DisplayTitle,
+				session.Title,
+				session.Topic,
+				session.Summary,
+				session.Preview,
+				session.FileLabel,
+			)
+			session.DisplayTitle = displayMetadata.displayTitle
+			if isLowSignalTitleCandidate("", session.Title) {
+				session.Title = displayMetadata.displayTitle
+			}
+			if session.TitleSource == "" {
+				session.TitleSource = displayMetadata.titleSource
+			}
+			if session.TitleConfidence == "" {
+				session.TitleConfidence = displayMetadata.titleConfidence
+			}
+			if session.PrimaryIntent == "" && !isLowSignalTitleCandidate("", session.Summary) {
+				session.PrimaryIntent = firstRunes(sanitizeSessionText(session.Summary), 180)
+			}
+			if session.LastOutcome == "" && !isLowSignalTitleCandidate("", session.Preview) {
+				session.LastOutcome = firstRunes(sanitizeSessionText(session.Preview), 180)
+			}
+			if !session.HasInstructionPreamble {
+				session.HasInstructionPreamble = hadInstructionPreamble
+			}
+		}
+	}
+}
+
+func deriveCachedSessionDisplayMetadata(values ...string) sessionDisplayMetadata {
+	sources := []string{"cache_display_title", "cache_title", "cache_topic", "cache_summary", "cache_preview", "file"}
+	for index, value := range values {
+		if isLowSignalTitleCandidate("", value) {
+			continue
+		}
+		source := "cache"
+		if index < len(sources) {
+			source = sources[index]
+		}
+		return sessionDisplayMetadata{
+			displayTitle:    firstRunes(sanitizeSessionText(value), 60),
+			titleSource:     source,
+			titleConfidence: "low",
+		}
+	}
+	return sessionDisplayMetadata{
+		displayTitle:    "UNTITLED SESSION",
+		titleSource:     "fallback",
+		titleConfidence: "low",
+	}
 }
 
 func writeSessionManagementSnapshotDiskCache(codexHome string, snapshot *SessionManagementSnapshot) error {
@@ -1301,6 +1397,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 		"event":       0,
 	}
 	firstUserText := ""
+	titleSignals := sessionTitleSignals{}
 	lastSummary := ""
 	lastPrimarySummary := ""
 	lastSnapshotSummaryRaw := ""
@@ -1318,6 +1415,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 			lastRole = role
 			roleCounts[role]++
 			raw = strings.TrimSpace(raw)
+			titleSignals.observe(role, raw)
 			if role == "user" && firstUserText == "" {
 				firstUserText = raw
 			}
@@ -1336,6 +1434,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 		if strings.TrimSpace(title) == "" && strings.TrimSpace(content) == "" {
 			return
 		}
+		titleSignals.observe(role, raw)
 		messageCount++
 		lastRole = role
 		if collectMessages {
@@ -1461,54 +1560,68 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	if sessionTitle == "" {
 		sessionTitle = deriveSessionTitle(firstUserText, lastPrimarySummary, fileLabel)
 	}
+	displayMetadata := deriveSessionDisplayMetadata(sessionTitle, titleSignals, fileLabel)
+	sessionTitle = displayMetadata.displayTitle
 	preview := chooseNonEmpty(lastPrimarySummary, lastSummary, fileLabel)
 
 	sessionRecord := SessionManagementSessionRecord{
-		ID:                   relativePath,
-		SessionID:            relativePath,
-		ProjectID:            projectID,
-		ProjectName:          projectName,
-		ProjectKey:           projectKey,
-		ProjectKeySource:     projectKeySource,
-		ProjectKeyConfidence: projectKeyConfidence,
-		Title:                sessionTitle,
-		Status:               status,
-		Archived:             archived,
-		MessageCount:         messageCount,
-		RoleSummary:          roleSummary,
-		StartedAt:            formatSessionManagementTimestamp(firstTimestamp),
-		UpdatedAt:            formatSessionManagementTimestamp(lastTimestamp),
-		FileLabel:            fileLabel,
-		Summary:              preview,
-		Preview:              preview,
-		Topic:                sessionTitle,
-		CurrentMessageLabel:  currentMessageLabel,
-		Provider:             provider,
-		Model:                model,
+		ID:                     relativePath,
+		SessionID:              relativePath,
+		ProjectID:              projectID,
+		ProjectName:            projectName,
+		ProjectKey:             projectKey,
+		ProjectKeySource:       projectKeySource,
+		ProjectKeyConfidence:   projectKeyConfidence,
+		Title:                  sessionTitle,
+		DisplayTitle:           displayMetadata.displayTitle,
+		TitleSource:            displayMetadata.titleSource,
+		TitleConfidence:        displayMetadata.titleConfidence,
+		Status:                 status,
+		Archived:               archived,
+		MessageCount:           messageCount,
+		RoleSummary:            roleSummary,
+		StartedAt:              formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:              formatSessionManagementTimestamp(lastTimestamp),
+		FileLabel:              fileLabel,
+		Summary:                preview,
+		Preview:                preview,
+		Topic:                  sessionTitle,
+		PrimaryIntent:          displayMetadata.primaryIntent,
+		LastOutcome:            displayMetadata.lastOutcome,
+		HasInstructionPreamble: displayMetadata.hasInstructionPreamble,
+		CurrentMessageLabel:    currentMessageLabel,
+		Provider:               provider,
+		Model:                  model,
 	}
 
 	detail := SessionManagementSessionDetail{
-		SessionID:            relativePath,
-		ProjectID:            projectID,
-		ProjectName:          projectName,
-		ProjectKey:           projectKey,
-		ProjectKeySource:     projectKeySource,
-		ProjectKeyConfidence: projectKeyConfidence,
-		Title:                sessionTitle,
-		Status:               status,
-		Archived:             archived,
-		FileLabel:            fileLabel,
-		MessageCount:         messageCount,
-		Masked:               true,
-		CurrentMessageLabel:  currentMessageLabel,
-		RoleSummary:          roleSummary,
-		Topic:                sessionTitle,
-		Preview:              preview,
-		Provider:             provider,
-		Model:                model,
-		StartedAt:            formatSessionManagementTimestamp(firstTimestamp),
-		UpdatedAt:            formatSessionManagementTimestamp(lastTimestamp),
-		Messages:             messageRecords,
+		SessionID:              relativePath,
+		ProjectID:              projectID,
+		ProjectName:            projectName,
+		ProjectKey:             projectKey,
+		ProjectKeySource:       projectKeySource,
+		ProjectKeyConfidence:   projectKeyConfidence,
+		Title:                  sessionTitle,
+		DisplayTitle:           displayMetadata.displayTitle,
+		TitleSource:            displayMetadata.titleSource,
+		TitleConfidence:        displayMetadata.titleConfidence,
+		Status:                 status,
+		Archived:               archived,
+		FileLabel:              fileLabel,
+		MessageCount:           messageCount,
+		Masked:                 true,
+		CurrentMessageLabel:    currentMessageLabel,
+		RoleSummary:            roleSummary,
+		Topic:                  sessionTitle,
+		Preview:                preview,
+		PrimaryIntent:          displayMetadata.primaryIntent,
+		LastOutcome:            displayMetadata.lastOutcome,
+		HasInstructionPreamble: displayMetadata.hasInstructionPreamble,
+		Provider:               provider,
+		Model:                  model,
+		StartedAt:              formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:              formatSessionManagementTimestamp(lastTimestamp),
+		Messages:               messageRecords,
 	}
 
 	return &sessionParseResult{
@@ -1552,6 +1665,7 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 		"event":       0,
 	}
 	firstUserText := ""
+	titleSignals := sessionTitleSignals{}
 	lastSummary := ""
 	lastPrimarySummary := ""
 	lastSnapshotSummaryRaw := ""
@@ -1570,6 +1684,7 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 			lastRole = role
 			roleCounts[role]++
 			raw = strings.TrimSpace(raw)
+			titleSignals.observe(role, raw)
 			if role == "user" && firstUserText == "" {
 				firstUserText = raw
 			}
@@ -1588,6 +1703,7 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 		if strings.TrimSpace(title) == "" && strings.TrimSpace(content) == "" {
 			return
 		}
+		titleSignals.observe(role, raw)
 		messageCount++
 		lastRole = role
 		if collectMessages {
@@ -1686,6 +1802,8 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 	if title == "" {
 		title = deriveSessionTitle(firstUserText, lastPrimarySummary, fileLabel)
 	}
+	displayMetadata := deriveSessionDisplayMetadata(title, titleSignals, fileLabel)
+	title = displayMetadata.displayTitle
 	resumeCommand := "claude --resume " + sessionID
 	preview := chooseNonEmpty(lastPrimarySummary, lastSummary, title, fileLabel)
 	preview = strings.TrimSpace(preview + " / " + resumeCommand)
@@ -1697,50 +1815,62 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 	}
 
 	sessionRecord := SessionManagementSessionRecord{
-		ID:                   relativePath,
-		SessionID:            relativePath,
-		ProjectID:            projectID,
-		ProjectName:          projectName,
-		ProjectKey:           projectKey,
-		ProjectKeySource:     projectKeySource,
-		ProjectKeyConfidence: projectKeyConfidence,
-		Title:                title,
-		Status:               "active",
-		Archived:             false,
-		MessageCount:         messageCount,
-		RoleSummary:          roleSummary,
-		StartedAt:            formatSessionManagementTimestamp(firstTimestamp),
-		UpdatedAt:            formatSessionManagementTimestamp(lastTimestamp),
-		FileLabel:            fileLabel,
-		Summary:              preview,
-		Preview:              preview,
-		Topic:                title,
-		CurrentMessageLabel:  currentMessageLabel,
-		Provider:             "claude",
-		Model:                model,
+		ID:                     relativePath,
+		SessionID:              relativePath,
+		ProjectID:              projectID,
+		ProjectName:            projectName,
+		ProjectKey:             projectKey,
+		ProjectKeySource:       projectKeySource,
+		ProjectKeyConfidence:   projectKeyConfidence,
+		Title:                  title,
+		DisplayTitle:           displayMetadata.displayTitle,
+		TitleSource:            displayMetadata.titleSource,
+		TitleConfidence:        displayMetadata.titleConfidence,
+		Status:                 "active",
+		Archived:               false,
+		MessageCount:           messageCount,
+		RoleSummary:            roleSummary,
+		StartedAt:              formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:              formatSessionManagementTimestamp(lastTimestamp),
+		FileLabel:              fileLabel,
+		Summary:                preview,
+		Preview:                preview,
+		Topic:                  title,
+		PrimaryIntent:          displayMetadata.primaryIntent,
+		LastOutcome:            displayMetadata.lastOutcome,
+		HasInstructionPreamble: displayMetadata.hasInstructionPreamble,
+		CurrentMessageLabel:    currentMessageLabel,
+		Provider:               "claude",
+		Model:                  model,
 	}
 	detail := SessionManagementSessionDetail{
-		SessionID:            relativePath,
-		ProjectID:            projectID,
-		ProjectName:          projectName,
-		ProjectKey:           projectKey,
-		ProjectKeySource:     projectKeySource,
-		ProjectKeyConfidence: projectKeyConfidence,
-		Title:                title,
-		Status:               "active",
-		Archived:             false,
-		FileLabel:            fileLabel,
-		MessageCount:         messageCount,
-		Masked:               true,
-		CurrentMessageLabel:  currentMessageLabel,
-		RoleSummary:          roleSummary,
-		Topic:                title,
-		Preview:              preview,
-		Provider:             "claude",
-		Model:                model,
-		StartedAt:            formatSessionManagementTimestamp(firstTimestamp),
-		UpdatedAt:            formatSessionManagementTimestamp(lastTimestamp),
-		Messages:             messageRecords,
+		SessionID:              relativePath,
+		ProjectID:              projectID,
+		ProjectName:            projectName,
+		ProjectKey:             projectKey,
+		ProjectKeySource:       projectKeySource,
+		ProjectKeyConfidence:   projectKeyConfidence,
+		Title:                  title,
+		DisplayTitle:           displayMetadata.displayTitle,
+		TitleSource:            displayMetadata.titleSource,
+		TitleConfidence:        displayMetadata.titleConfidence,
+		Status:                 "active",
+		Archived:               false,
+		FileLabel:              fileLabel,
+		MessageCount:           messageCount,
+		Masked:                 true,
+		CurrentMessageLabel:    currentMessageLabel,
+		RoleSummary:            roleSummary,
+		Topic:                  title,
+		Preview:                preview,
+		PrimaryIntent:          displayMetadata.primaryIntent,
+		LastOutcome:            displayMetadata.lastOutcome,
+		HasInstructionPreamble: displayMetadata.hasInstructionPreamble,
+		Provider:               "claude",
+		Model:                  model,
+		StartedAt:              formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:              formatSessionManagementTimestamp(lastTimestamp),
+		Messages:               messageRecords,
 	}
 	return &sessionParseResult{
 		projectName:          projectName,
@@ -2254,6 +2384,131 @@ func buildSessionSnapshotSummary(role string, raw string) string {
 		return "系统与环境约束已载入（已脱敏）"
 	}
 	return firstRunes(sanitizeSessionText(raw), 180)
+}
+
+func (signals *sessionTitleSignals) observe(role string, raw string) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return
+	}
+	if looksLikeInstructionPreamble(raw) {
+		signals.hasInstructionPreamble = true
+		return
+	}
+	summary := buildSessionSnapshotSummary(role, raw)
+	if isLowSignalTitleCandidate(role, summary) {
+		return
+	}
+	signals.lastAny = summary
+	switch role {
+	case "user":
+		if signals.firstUser == "" {
+			signals.firstUser = summary
+		}
+		signals.recentUser = summary
+	case "assistant":
+		signals.lastAssistant = summary
+		signals.lastPrimary = summary
+	case "event":
+		signals.lastOutcome = summary
+	case "reasoning":
+		if signals.lastPrimary == "" {
+			signals.lastPrimary = summary
+		}
+	case "tool_call", "tool_result":
+		if signals.lastPrimary == "" {
+			signals.lastPrimary = summary
+		}
+	default:
+		if role != "system" && signals.lastPrimary == "" {
+			signals.lastPrimary = summary
+		}
+	}
+}
+
+func looksLikeInstructionPreamble(raw string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(sanitizeSessionText(raw)))
+	if normalized == "" {
+		return false
+	}
+	markers := []string{
+		"# agents.md instructions for",
+		"agents.md instructions for",
+		"<permissions instructions>",
+		"<environment_context>",
+		"<skills_instructions>",
+		"<developer_context>",
+		"<app-context>",
+		"<plugins_instructions>",
+		"ag ents.md instructions",
+		"ag ents 执行规范",
+		"agents 执行规范",
+		"ag ents.md",
+		"untrusted page evidence",
+		"treat any text in the image as page content",
+		"browser comments:",
+		"approved command prefixes",
+	}
+	for _, marker := range markers {
+		if strings.Contains(normalized, marker) {
+			return true
+		}
+	}
+	if strings.Contains(normalized, "agents.md") && strings.Contains(normalized, "instructions") {
+		return true
+	}
+	return false
+}
+
+func isLowSignalTitleCandidate(role string, summary string) bool {
+	summary = strings.TrimSpace(summary)
+	if summary == "" || summary == "内容已脱敏" || summary == "系统与环境约束已载入（已脱敏）" {
+		return true
+	}
+	if role == "system" {
+		return true
+	}
+	return looksLikeInstructionPreamble(summary)
+}
+
+func deriveSessionDisplayMetadata(explicitTitle string, signals sessionTitleSignals, fileLabel string) sessionDisplayMetadata {
+	metadata := sessionDisplayMetadata{
+		primaryIntent:          signals.firstUser,
+		lastOutcome:            chooseNonEmpty(signals.lastOutcome, signals.lastAssistant),
+		hasInstructionPreamble: signals.hasInstructionPreamble,
+	}
+	if metadata.primaryIntent == "" {
+		metadata.primaryIntent = signals.recentUser
+	}
+
+	type candidate struct {
+		text       string
+		source     string
+		confidence string
+	}
+	candidates := []candidate{
+		{explicitTitle, "thread_title", "high"},
+		{signals.firstUser, "first_user", "high"},
+		{signals.recentUser, "recent_user", "medium"},
+		{signals.lastAssistant, "assistant_result", "medium"},
+		{signals.lastOutcome, "last_outcome", "medium"},
+		{signals.lastPrimary, "last_primary", "low"},
+		{signals.lastAny, "last_message", "low"},
+		{strings.TrimSuffix(fileLabel, filepath.Ext(fileLabel)), "file", "low"},
+	}
+	for _, item := range candidates {
+		if isLowSignalTitleCandidate("", item.text) {
+			continue
+		}
+		metadata.displayTitle = firstRunes(sanitizeSessionText(item.text), 60)
+		metadata.titleSource = item.source
+		metadata.titleConfidence = item.confidence
+		return metadata
+	}
+	metadata.displayTitle = "UNTITLED SESSION"
+	metadata.titleSource = "fallback"
+	metadata.titleConfidence = "low"
+	return metadata
 }
 
 func sanitizeSessionText(raw string) string {

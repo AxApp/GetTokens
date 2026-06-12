@@ -5591,6 +5591,9 @@ export namespace main {
 	    projectKeySource?: string;
 	    projectKeyConfidence?: string;
 	    title: string;
+	    displayTitle?: string;
+	    titleSource?: string;
+	    titleConfidence?: string;
 	    status: string;
 	    archived: boolean;
 	    messageCount: number;
@@ -5601,6 +5604,9 @@ export namespace main {
 	    summary: string;
 	    preview: string;
 	    topic: string;
+	    primaryIntent?: string;
+	    lastOutcome?: string;
+	    hasInstructionPreamble?: boolean;
 	    currentMessageLabel: string;
 	    provider: string;
 	    model?: string;
@@ -5619,6 +5625,9 @@ export namespace main {
 	        this.projectKeySource = source["projectKeySource"];
 	        this.projectKeyConfidence = source["projectKeyConfidence"];
 	        this.title = source["title"];
+	        this.displayTitle = source["displayTitle"];
+	        this.titleSource = source["titleSource"];
+	        this.titleConfidence = source["titleConfidence"];
 	        this.status = source["status"];
 	        this.archived = source["archived"];
 	        this.messageCount = source["messageCount"];
@@ -5629,6 +5638,9 @@ export namespace main {
 	        this.summary = source["summary"];
 	        this.preview = source["preview"];
 	        this.topic = source["topic"];
+	        this.primaryIntent = source["primaryIntent"];
+	        this.lastOutcome = source["lastOutcome"];
+	        this.hasInstructionPreamble = source["hasInstructionPreamble"];
 	        this.currentMessageLabel = source["currentMessageLabel"];
 	        this.provider = source["provider"];
 	        this.model = source["model"];
@@ -5694,6 +5706,9 @@ export namespace main {
 	    projectKeySource?: string;
 	    projectKeyConfidence?: string;
 	    title: string;
+	    displayTitle?: string;
+	    titleSource?: string;
+	    titleConfidence?: string;
 	    status: string;
 	    archived: boolean;
 	    fileLabel: string;
@@ -5703,6 +5718,9 @@ export namespace main {
 	    roleSummary: string;
 	    topic: string;
 	    preview: string;
+	    primaryIntent?: string;
+	    lastOutcome?: string;
+	    hasInstructionPreamble?: boolean;
 	    provider: string;
 	    model?: string;
 	    startedAt: string;
@@ -5722,6 +5740,9 @@ export namespace main {
 	        this.projectKeySource = source["projectKeySource"];
 	        this.projectKeyConfidence = source["projectKeyConfidence"];
 	        this.title = source["title"];
+	        this.displayTitle = source["displayTitle"];
+	        this.titleSource = source["titleSource"];
+	        this.titleConfidence = source["titleConfidence"];
 	        this.status = source["status"];
 	        this.archived = source["archived"];
 	        this.fileLabel = source["fileLabel"];
@@ -5731,6 +5752,9 @@ export namespace main {
 	        this.roleSummary = source["roleSummary"];
 	        this.topic = source["topic"];
 	        this.preview = source["preview"];
+	        this.primaryIntent = source["primaryIntent"];
+	        this.lastOutcome = source["lastOutcome"];
+	        this.hasInstructionPreamble = source["hasInstructionPreamble"];
 	        this.provider = source["provider"];
 	        this.model = source["model"];
 	        this.startedAt = source["startedAt"];

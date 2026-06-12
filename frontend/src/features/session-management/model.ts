@@ -29,12 +29,18 @@ export interface SessionMessageRawJSON {
 export interface SessionSummary {
   id: string;
   title: string;
+  displayTitle?: string;
+  titleSource?: string;
+  titleConfidence?: string;
   status: SessionStatus;
   messageCount: number;
   roleSummary: string;
   updatedAt: string;
   fileLabel: string;
   summary: string;
+  primaryIntent?: string;
+  lastOutcome?: string;
+  hasInstructionPreamble?: boolean;
   provider: string;
 }
 
@@ -67,11 +73,17 @@ export interface SessionDetail {
   id: string;
   projectID: string;
   title: string;
+  displayTitle?: string;
+  titleSource?: string;
+  titleConfidence?: string;
   status: SessionStatus;
   fileLabel: string;
   messageCount: number;
   roleSummary: string;
   topic: string;
+  primaryIntent?: string;
+  lastOutcome?: string;
+  hasInstructionPreamble?: boolean;
   currentMessageLabel: string;
   provider: string;
   messages: SessionMessage[];
@@ -365,6 +377,13 @@ function mapSessionSummary(raw: unknown): SessionSummary {
   const id = getText(source.id ?? source.sessionID);
   const topic = getOptionalText(source.topic);
   const fileLabel = getText(source.fileLabel);
+  const title = getOptionalText(source.title);
+  const displayTitle =
+    getOptionalText(source.displayTitle) ||
+    title ||
+    topic ||
+    (fileLabel === EMPTY_VALUE ? '' : fileLabel) ||
+    EMPTY_VALUE;
   const summary =
     getOptionalText(source.summary) ||
     topic ||
@@ -373,13 +392,19 @@ function mapSessionSummary(raw: unknown): SessionSummary {
 
   return {
     id,
-    title: getOptionalText(source.title),
+    title,
+    displayTitle,
+    titleSource: getOptionalText(source.titleSource),
+    titleConfidence: getOptionalText(source.titleConfidence),
     status: getStatus(source.status),
     messageCount: getCount(source.messageCount),
     roleSummary: getRoleSummaryLabel(source.roleSummary),
     updatedAt: getText(source.updatedAt ?? source.lastActiveAt),
     fileLabel,
     summary,
+    primaryIntent: getOptionalText(source.primaryIntent),
+    lastOutcome: getOptionalText(source.lastOutcome),
+    hasInstructionPreamble: source.hasInstructionPreamble === true,
     provider: getText(source.provider),
   };
 }
@@ -428,8 +453,12 @@ function sessionMatchesQuery(session: SessionSummary, normalizedQuery: string): 
   return [
     session.id,
     session.title,
+    session.displayTitle,
     session.fileLabel,
     session.summary,
+    session.primaryIntent,
+    session.lastOutcome,
+    session.titleSource,
     session.provider,
     session.roleSummary,
   ].some((value) => normalizeSearchText(value).includes(normalizedQuery));
@@ -464,16 +493,24 @@ export function mapSessionDetailResponse(raw: unknown): SessionDetail {
   const messages = Array.isArray(source.messages)
     ? source.messages.map((message, index) => mapSessionMessage(message, index))
     : [];
+  const title = getText(source.title);
+  const displayTitle = getOptionalText(source.displayTitle) || title;
 
   return {
     id: getText(source.sessionID ?? source.id),
     projectID: getText(source.projectID),
-    title: getText(source.title),
+    title,
+    displayTitle,
+    titleSource: getOptionalText(source.titleSource),
+    titleConfidence: getOptionalText(source.titleConfidence),
     status: getStatus(source.status),
     fileLabel: getText(source.fileLabel),
     messageCount: getCount(source.messageCount, messages.length),
     roleSummary: getRoleSummaryLabel(source.roleSummary),
     topic: getText(source.topic),
+    primaryIntent: getOptionalText(source.primaryIntent),
+    lastOutcome: getOptionalText(source.lastOutcome),
+    hasInstructionPreamble: source.hasInstructionPreamble === true,
     currentMessageLabel: getText(source.currentMessageLabel),
     provider: getText(source.provider),
     messages,

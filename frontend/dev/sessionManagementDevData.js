@@ -55,7 +55,7 @@ async function hydrateSnapshotCacheFromDisk() {
     const raw = await fs.readFile(resolveSnapshotCachePath(), 'utf8');
     const parsed = JSON.parse(raw);
     if (parsed && Array.isArray(parsed.projects)) {
-      snapshotCache = parsed;
+      snapshotCache = normalizeSnapshotDisplayFields(parsed);
       snapshotCacheUpdatedAt = Date.now();
     }
   } catch {
@@ -65,7 +65,7 @@ async function hydrateSnapshotCacheFromDisk() {
 
 async function persistSnapshotCacheToDisk(snapshot) {
   try {
-    await fs.writeFile(resolveSnapshotCachePath(), JSON.stringify(snapshot), 'utf8');
+    await fs.writeFile(resolveSnapshotCachePath(), JSON.stringify(normalizeSnapshotDisplayFields(snapshot)), 'utf8');
   } catch {
     // Ignore disk cache failures.
   }
@@ -300,6 +300,188 @@ function looksSensitive(role, text) {
   return role === 'system' && (lowered.includes('<permissions instructions>') || lowered.length > 500);
 }
 
+function looksLikeInstructionPreamble(text) {
+  const normalized = sanitizeSessionText(text).toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+  const markers = [
+    '# agents.md instructions for',
+    'agents.md instructions for',
+    '<permissions instructions>',
+    '<environment_context>',
+    '<skills_instructions>',
+    '<developer_context>',
+    '<app-context>',
+    '<plugins_instructions>',
+    'agents 执行规范',
+    'untrusted page evidence',
+    'treat any text in the image as page content',
+    'browser comments:',
+    'approved command prefixes',
+  ];
+  if (markers.some((marker) => normalized.includes(marker))) {
+    return true;
+  }
+  return normalized.includes('agents.md') && normalized.includes('instructions');
+}
+
+function isLowSignalTitleCandidate(role, text) {
+  const normalized = sanitizeSessionText(text);
+  if (!normalized || normalized === '内容已脱敏' || normalized === '系统与环境约束已载入（已脱敏）') {
+    return true;
+  }
+  if (role === 'system') {
+    return true;
+  }
+  return looksLikeInstructionPreamble(normalized);
+}
+
+function observeTitleSignal(state, role, rawText, summary) {
+  if (looksLikeInstructionPreamble(rawText) || looksLikeInstructionPreamble(summary)) {
+    state.hasInstructionPreamble = true;
+    return;
+  }
+  const candidate = firstRunes(sanitizeSessionText(summary || rawText), 180);
+  if (isLowSignalTitleCandidate(role, candidate)) {
+    return;
+  }
+  state.lastAnyTitleText = candidate;
+  if (role === 'user') {
+    if (!state.firstRealUserText) {
+      state.firstRealUserText = candidate;
+    }
+    state.recentUserText = candidate;
+    return;
+  }
+  if (role === 'assistant') {
+    state.lastAssistantText = candidate;
+    state.lastPrimaryTitleText = candidate;
+    return;
+  }
+  if (role === 'event') {
+    state.lastOutcomeText = candidate;
+    return;
+  }
+  if (role !== 'system' && !state.lastPrimaryTitleText) {
+    state.lastPrimaryTitleText = candidate;
+  }
+}
+
+function deriveDisplayMetadata(explicitTitle, state, fileLabel) {
+  const primaryIntent = state.firstRealUserText || state.recentUserText || '';
+  const candidates = [
+    [explicitTitle, 'thread_title', 'high'],
+    [state.firstRealUserText, 'first_user', 'high'],
+    [state.recentUserText, 'recent_user', 'medium'],
+    [state.lastAssistantText, 'assistant_result', 'medium'],
+    [state.lastOutcomeText, 'last_outcome', 'medium'],
+    [state.lastPrimaryTitleText, 'last_primary', 'low'],
+    [state.lastAnyTitleText, 'last_message', 'low'],
+    [path.basename(String(fileLabel || ''), path.extname(String(fileLabel || ''))), 'file', 'low'],
+  ];
+  for (const [text, titleSource, titleConfidence] of candidates) {
+    if (isLowSignalTitleCandidate('', text)) {
+      continue;
+    }
+    return {
+      displayTitle: firstRunes(sanitizeSessionText(text), 60),
+      titleSource,
+      titleConfidence,
+      primaryIntent,
+      lastOutcome: state.lastOutcomeText || state.lastAssistantText || '',
+      hasInstructionPreamble: state.hasInstructionPreamble === true,
+    };
+  }
+  return {
+    displayTitle: 'UNTITLED SESSION',
+    titleSource: 'fallback',
+    titleConfidence: 'low',
+    primaryIntent,
+    lastOutcome: state.lastOutcomeText || state.lastAssistantText || '',
+    hasInstructionPreamble: state.hasInstructionPreamble === true,
+  };
+}
+
+function deriveCachedDisplayMetadata(...values) {
+  const sources = [
+    'cache_display_title',
+    'cache_title',
+    'cache_topic',
+    'cache_summary',
+    'cache_preview',
+    'file',
+  ];
+  for (let index = 0; index < values.length; index += 1) {
+    const text = values[index];
+    if (isLowSignalTitleCandidate('', text)) {
+      continue;
+    }
+    return {
+      displayTitle: firstRunes(sanitizeSessionText(text), 60),
+      titleSource: sources[index] || 'cache',
+      titleConfidence: index <= 1 ? 'medium' : 'low',
+    };
+  }
+  return {
+    displayTitle: 'UNTITLED SESSION',
+    titleSource: 'fallback',
+    titleConfidence: 'low',
+  };
+}
+
+function normalizeSnapshotDisplayFields(snapshot) {
+  if (!snapshot || !Array.isArray(snapshot.projects)) {
+    return snapshot;
+  }
+
+  for (const project of snapshot.projects) {
+    if (!Array.isArray(project?.sessions)) {
+      continue;
+    }
+    for (const session of project.sessions) {
+      if (!session || typeof session !== 'object') {
+        continue;
+      }
+      const hadInstructionPreamble =
+        looksLikeInstructionPreamble(session.title) ||
+        looksLikeInstructionPreamble(session.displayTitle) ||
+        looksLikeInstructionPreamble(session.topic) ||
+        looksLikeInstructionPreamble(session.summary);
+      const metadata = deriveCachedDisplayMetadata(
+        session.displayTitle,
+        session.title,
+        session.topic,
+        session.summary,
+        session.preview,
+        session.fileLabel || session.sessionID || session.id,
+      );
+
+      session.displayTitle = metadata.displayTitle;
+      if (isLowSignalTitleCandidate('', session.title)) {
+        session.title = metadata.displayTitle;
+      }
+      if (!session.titleSource || looksLikeInstructionPreamble(session.titleSource)) {
+        session.titleSource = metadata.titleSource;
+      }
+      if (!session.titleConfidence) {
+        session.titleConfidence = metadata.titleConfidence;
+      }
+      if (!session.primaryIntent && !isLowSignalTitleCandidate('', session.summary)) {
+        session.primaryIntent = firstRunes(sanitizeSessionText(session.summary), 180);
+      }
+      if (!session.lastOutcome && !isLowSignalTitleCandidate('', session.preview)) {
+        session.lastOutcome = firstRunes(sanitizeSessionText(session.preview), 180);
+      }
+      if (hadInstructionPreamble) {
+        session.hasInstructionPreamble = true;
+      }
+    }
+  }
+
+  return snapshot;
+}
+
 function getMessageText(contentItems) {
   if (!Array.isArray(contentItems)) {
     return '';
@@ -359,6 +541,7 @@ function buildMessageRecord(relativePath, messages, roleCounts, state, timestamp
   if (role === 'user' && !state.firstUserText) {
     state.firstUserText = summary;
   }
+  observeTitleSignal(state, role, rawText, summary);
   if (role !== 'system' && role !== 'event') {
     state.lastPrimaryText = summary;
   }
@@ -525,6 +708,13 @@ async function parseSessionFile(codexHome, absolutePath) {
   let meta = {};
   const state = {
     firstUserText: '',
+    firstRealUserText: '',
+    recentUserText: '',
+    lastAssistantText: '',
+    lastOutcomeText: '',
+    lastPrimaryTitleText: '',
+    lastAnyTitleText: '',
+    hasInstructionPreamble: false,
     lastPrimaryText: '',
     lastAnyText: '',
   };
@@ -614,16 +804,27 @@ async function parseSessionFile(codexHome, absolutePath) {
   const projectName = deriveProjectName(meta, relativePath);
   const resolvedProvider = normalizeProvider(provider, model);
   const threadNames = await loadSessionThreadNames(codexHome);
-  const title = String(threadNames[String(meta?.id || '').trim()] || '').trim();
+  const displayMetadata = deriveDisplayMetadata(
+    String(threadNames[String(meta?.id || '').trim()] || '').trim(),
+    state,
+    relativePath,
+  );
+  const title = displayMetadata.displayTitle;
   const detail = {
     sessionID: relativePath,
     projectID: projectName.toLowerCase().replace(/\s+/g, '-'),
     title,
+    displayTitle: displayMetadata.displayTitle,
+    titleSource: displayMetadata.titleSource,
+    titleConfidence: displayMetadata.titleConfidence,
     status: resolveSessionStatus(relativePath),
     fileLabel: relativePath,
     messageCount: messages.length,
     roleSummary: formatRoleSummary(roleCounts),
     topic: firstRunes(state.lastPrimaryText || state.lastAnyText || path.basename(relativePath, '.jsonl'), 60),
+    primaryIntent: displayMetadata.primaryIntent,
+    lastOutcome: displayMetadata.lastOutcome,
+    hasInstructionPreamble: displayMetadata.hasInstructionPreamble,
     currentMessageLabel: formatCurrentMessageLabel(messages),
     messages,
   };
@@ -638,6 +839,9 @@ async function parseSessionFile(codexHome, absolutePath) {
       sessionID: relativePath,
       projectID: detail.projectID,
       title,
+      displayTitle: displayMetadata.displayTitle,
+      titleSource: displayMetadata.titleSource,
+      titleConfidence: displayMetadata.titleConfidence,
       status: detail.status,
       messageCount: detail.messageCount,
       roleSummary: detail.roleSummary,
@@ -645,6 +849,10 @@ async function parseSessionFile(codexHome, absolutePath) {
       fileLabel: detail.fileLabel,
       summary: detail.topic,
       topic: detail.topic,
+      primaryIntent: displayMetadata.primaryIntent,
+      lastOutcome: displayMetadata.lastOutcome,
+      hasInstructionPreamble: displayMetadata.hasInstructionPreamble,
+      provider: resolvedProvider,
     },
     detail,
   };
@@ -666,6 +874,13 @@ async function parseClaudeSessionFile(claudeProjectsRoot, absolutePath) {
   const messages = [];
   const state = {
     firstUserText: '',
+    firstRealUserText: '',
+    recentUserText: '',
+    lastAssistantText: '',
+    lastOutcomeText: '',
+    lastPrimaryTitleText: '',
+    lastAnyTitleText: '',
+    hasInstructionPreamble: false,
     lastPrimaryText: '',
     lastAnyText: '',
   };
@@ -758,16 +973,23 @@ async function parseClaudeSessionFile(claudeProjectsRoot, absolutePath) {
   }
 
   const projectName = cwd ? path.basename(cwd) : path.basename(path.dirname(absolutePath)).replace(/^-+/, '').replace(/-/g, '/').split('/').at(-1) || 'Claude Code';
+  const displayMetadata = deriveDisplayMetadata(state.firstUserText || sessionID, state, relativePath);
   const detail = {
     sessionID: relativePath,
     projectID: projectName.toLowerCase().replace(/\s+/g, '-'),
-    title: state.firstUserText || sessionID,
+    title: displayMetadata.displayTitle,
+    displayTitle: displayMetadata.displayTitle,
+    titleSource: displayMetadata.titleSource,
+    titleConfidence: displayMetadata.titleConfidence,
     status: 'active',
     fileLabel: relativePath,
     messageCount: messages.length,
     provider: 'claude',
     roleSummary: formatRoleSummary(roleCounts),
     topic: firstRunes(state.lastPrimaryText || state.lastAnyText || `claude --resume ${sessionID}`, 60),
+    primaryIntent: displayMetadata.primaryIntent,
+    lastOutcome: displayMetadata.lastOutcome,
+    hasInstructionPreamble: displayMetadata.hasInstructionPreamble,
     currentMessageLabel: formatCurrentMessageLabel(messages),
     messages,
   };
@@ -790,6 +1012,9 @@ async function parseClaudeSessionFile(claudeProjectsRoot, absolutePath) {
       projectID: detail.projectID,
       projectName,
       title: firstRunes(detail.title, 60),
+      displayTitle: detail.displayTitle,
+      titleSource: detail.titleSource,
+      titleConfidence: detail.titleConfidence,
       status: detail.status,
       archived: false,
       messageCount: detail.messageCount,
@@ -797,6 +1022,9 @@ async function parseClaudeSessionFile(claudeProjectsRoot, absolutePath) {
       updatedAt: detail.messages.length ? formatTimestamp(lastTimestamp) : '',
       fileLabel: detail.fileLabel,
       summary: detail.topic,
+      primaryIntent: detail.primaryIntent,
+      lastOutcome: detail.lastOutcome,
+      hasInstructionPreamble: detail.hasInstructionPreamble,
       provider: 'claude',
     },
     detail,

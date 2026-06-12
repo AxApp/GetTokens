@@ -27,3 +27,25 @@
 
 - 修改前截图：`screenshots/20260602/open-design/20260602-open-design-session-before-v01.png`
 - 修改后截图：`screenshots/20260602/open-design/20260602-open-design-session-after-v01.png`
+
+## 2026-06-12 标题生成策略
+
+### 问题来源
+
+用户在 `#frame=codex&workspace=session-management` 标注会话列表，指出多条会话标题都以 `# AGENTS.MD INSTRUCTIONS FOR <...` 开头，列表扫读价值低。
+
+### 决策
+
+- `AGENTS.md`、权限/环境/skills/plugin 上下文、浏览器 evidence 包装文本属于低信号 preamble，即使以 `user` 角色进入 session，也不能作为列表标题。
+- 会话列表使用派生 `displayTitle`，优先级为：显式 thread/custom title -> 第一条真实用户需求 -> 最近真实用户需求 -> 助手结果 -> 最近 outcome -> 低优先级消息 -> 文件名。
+- 继续保留原始消息内容与搜索能力；本轮只降噪展示标题，不删除原始会话记录。
+- DTO 增加 `displayTitle`、`titleSource`、`titleConfidence`、`primaryIntent`、`lastOutcome`、`hasInstructionPreamble`，用于解释标题来源和后续 UI 调试。
+- 旧 snapshot cache 读取时也按同一规则归一化，避免历史 `AGENTS.MD` 标题在未全量刷新前继续污染列表。
+- 会话列表卡片只展示一个标题文本块，使用两行截断；不再在标题下重复渲染同源 summary。
+
+### 验收
+
+- Codex/Claude Code parser、Wails root DTO、frontend model、localhost dev bridge 必须同步字段。
+- 前端会话列表与详情弹窗主标题优先读 `displayTitle`，旧缓存或静态 preview 缺字段时回退 `title/fileLabel`。
+- 列表卡片标题可读两行，状态与 metadata rail 保持原扫描位置；卡片内不得出现同文案标题 + summary 重复。
+- 回归测试覆盖 `# AGENTS.MD INSTRUCTIONS FOR` 不抢标题，真实用户需求成为 `displayTitle`。

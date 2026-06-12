@@ -112,6 +112,42 @@ func TestGetCodexSessionManagementSnapshotReturnsDiskCache(t *testing.T) {
 	if snapshot.Projects[0].Sessions[0].Title != "Cached Session" {
 		t.Fatalf("cached session title = %q, want Cached Session", snapshot.Projects[0].Sessions[0].Title)
 	}
+	if snapshot.Projects[0].Sessions[0].DisplayTitle != "Cached Session" {
+		t.Fatalf("cached session display title = %q, want Cached Session", snapshot.Projects[0].Sessions[0].DisplayTitle)
+	}
+}
+
+func TestGetCodexSessionManagementSnapshotNormalizesLegacyAgentsTitleCache(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	if err := os.MkdirAll(codexHome, 0755); err != nil {
+		t.Fatalf("mkdir codex home: %v", err)
+	}
+	cached := []byte(`{"projectCount":1,"sessionCount":1,"activeSessionCount":1,"archivedSessionCount":0,"lastScanAt":"2026-06-12 10:28","providerCounts":{"openai":1},"projects":[{"id":"cached-project","name":"Cached Project","providerCounts":{"openai":1},"sessionCount":1,"activeSessionCount":1,"archivedSessionCount":0,"lastActiveAt":"2026-06-12 10:28","providerSummary":"openai 1","sessions":[{"id":"sessions/2026/06/12/legacy.jsonl","sessionID":"sessions/2026/06/12/legacy.jsonl","projectID":"cached-project","projectName":"Cached Project","title":"# AGENTS.MD INSTRUCTIONS FOR /Users/linhey/Desktop/GetTokens","status":"active","archived":false,"messageCount":3,"roleSummary":"用户 1 / 助手 1","updatedAt":"2026-06-12 10:28","fileLabel":"legacy.jsonl","summary":"优化会话标题显示","preview":"优化会话标题显示","provider":"openai"}]}]}`)
+	if err := os.WriteFile(sessionManagementSnapshotCachePath(codexHome), cached, 0600); err != nil {
+		t.Fatalf("write snapshot cache: %v", err)
+	}
+	t.Setenv("CODEX_HOME", codexHome)
+
+	app := &App{}
+	snapshot, err := app.GetCodexSessionManagementSnapshot()
+	if err != nil {
+		t.Fatalf("GetCodexSessionManagementSnapshot returned error: %v", err)
+	}
+	session := snapshot.Projects[0].Sessions[0]
+	if session.DisplayTitle != "优化会话标题显示" {
+		t.Fatalf("legacy cached display title = %q, want summary fallback", session.DisplayTitle)
+	}
+	if strings.Contains(strings.ToLower(session.Title), "agents.md instructions for") {
+		t.Fatalf("legacy cached title still contains AGENTS preamble: %q", session.Title)
+	}
+	if session.TitleSource != "cache_summary" {
+		t.Fatalf("legacy cached title source = %q, want cache_summary", session.TitleSource)
+	}
+	if !session.HasInstructionPreamble {
+		t.Fatal("expected legacy cached preamble flag")
+	}
 }
 
 func TestRefreshCodexSessionManagementSnapshotWritesDiskCache(t *testing.T) {
@@ -306,6 +342,49 @@ func TestCodexSessionSnapshotParsingSanitizesDerivedTitle(t *testing.T) {
 	}
 	if !strings.Contains(result.session.Title, "<redacted-path>") {
 		t.Fatalf("snapshot-derived title missing redacted path placeholder: %q", result.session.Title)
+	}
+}
+
+func TestCodexSessionSnapshotSkipsAgentsPreambleForDisplayTitle(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	sessionsDir := filepath.Join(codexHome, "sessions", "2026", "06", "12")
+	if err := os.MkdirAll(sessionsDir, 0755); err != nil {
+		t.Fatalf("mkdir sessions dir: %v", err)
+	}
+	relativePath := filepath.ToSlash(filepath.Join("sessions", "2026", "06", "12", "rollout-2026-06-12T10-28-00-gettokens.jsonl"))
+	absolutePath := filepath.Join(codexHome, relativePath)
+	payload := "" +
+		"{\"timestamp\":\"2026-06-12T10:28:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"session-preamble\",\"cwd\":\"/Users/linhey/Desktop/GetTokens\",\"model_provider\":\"openai\"}}\n" +
+		"{\"timestamp\":\"2026-06-12T10:28:01.000Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"user\",\"content\":[{\"type\":\"input_text\",\"text\":\"# AGENTS.MD INSTRUCTIONS FOR /Users/linhey/Desktop/GetTokens\\n<permissions instructions> approved command prefixes\"}]}}\n" +
+		"{\"timestamp\":\"2026-06-12T10:28:02.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"user_message\",\"message\":\"每一条开头都是 AGENTS.md，优化会话标题\"}}\n" +
+		"{\"timestamp\":\"2026-06-12T10:28:03.000Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":\"我会改成真实用户意图优先。\"}]}}\n"
+	if err := os.WriteFile(absolutePath, []byte(payload), 0600); err != nil {
+		t.Fatalf("write session file: %v", err)
+	}
+
+	result, err := parseSessionFile(codexHome, absolutePath, relativePath, map[string]string{}, false)
+	if err != nil {
+		t.Fatalf("parseSessionFile returned error: %v", err)
+	}
+	if strings.Contains(strings.ToLower(result.session.DisplayTitle), "agents.md instructions for") {
+		t.Fatalf("display title should skip AGENTS preamble: %q", result.session.DisplayTitle)
+	}
+	if result.session.DisplayTitle != "每一条开头都是 AGENTS.md，优化会话标题" {
+		t.Fatalf("display title = %q, want real user intent", result.session.DisplayTitle)
+	}
+	if result.session.Title != result.session.DisplayTitle {
+		t.Fatalf("title/displayTitle = %q/%q, want compatible display title", result.session.Title, result.session.DisplayTitle)
+	}
+	if result.session.TitleSource != "first_user" || result.session.TitleConfidence != "high" {
+		t.Fatalf("title source/confidence = %q/%q, want first_user/high", result.session.TitleSource, result.session.TitleConfidence)
+	}
+	if result.session.PrimaryIntent != "每一条开头都是 AGENTS.md，优化会话标题" {
+		t.Fatalf("primary intent = %q, want real user intent", result.session.PrimaryIntent)
+	}
+	if !result.session.HasInstructionPreamble {
+		t.Fatal("expected instruction preamble flag")
 	}
 }
 
