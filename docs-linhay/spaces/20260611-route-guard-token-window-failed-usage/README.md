@@ -46,9 +46,19 @@
 
 ## 当前状态
 - 状态：implemented-verified
-- 最近更新：2026-06-11
+- 最近更新：2026-06-12
 
 ## 实施记录
+
+### 2026-06-12
+
+- 追加问题来源：用户在账号池卡片标注“今日请求 / 今日 TOKEN”，指出解除限制后昨日用量仍留在今日统计里。
+- 代码事实：`frontend/src/features/accounts/components/CardSections.tsx` 的 `RateLimitGuard` 在没有限流规则时会进入无限制展示分支；此前直接使用 `usageSummary.requestCount / totalTokens`，而 `useAccountsUsageState` 拉取的是 `GetSidecarUsageAttribution({ window: '24h', bucket: '1h' })`，24h 汇总会包含本地昨日但仍在 24 小时窗口内的 bucket。
+- 修复：新增 `buildAccountTodayUsageTotals()`，按本地日历日过滤 `trafficBuckets` 后汇总“今日请求 / 今日 TOKEN”；无 bucket 的 legacy 数据保持旧 fallback。`RateLimitGuard` 的无限制分支改用该当天汇总，活动条也跟随当天值。
+- 验证：
+  - `node --test src/features/accounts/tests/accountUsage.test.mjs src/features/accounts/tests/rateLimit.test.mjs`
+  - `npm run typecheck`
+- 沉淀判断：这是账号池 route guard 卡片展示口径的局部修复；已用前端模型测试与源码守卫固化，不新增项目级 skill 或 AGENTS 规则。
 
 ### 2026-06-11
 
