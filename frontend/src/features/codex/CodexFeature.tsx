@@ -17,6 +17,7 @@ import StatusCodexRootSettingsSection from '../status/components/StatusCodexRoot
 import {
   buildCodexFeatureChangeInput,
   buildCodexFeatureDraft,
+  removeCodexFeatureDraftValue,
   selectCodexFeatureRows,
   type CodexConfigSection,
   setCodexFeatureDraftValue,
@@ -212,6 +213,18 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
     setNoticeMessage('');
   }
 
+  function removeDraftValue(key: string) {
+    setDraft((prev) => removeCodexFeatureDraftValue(prev, key));
+    setRootPreview(null);
+    setProviderPreview(null);
+    setFeaturePreview(null);
+    setNoticePreview(null);
+    setRootMessage('');
+    setProviderMessage('');
+    setFeatureMessage('');
+    setNoticeMessage('');
+  }
+
   async function previewChanges(sectionFilter: CodexConfigSection) {
     if (!snapshot) {
       return null;
@@ -341,6 +354,7 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
           isSaving={isSaving}
           onReload={() => void reload('root')}
           onChangeSetting={updateDraftValue}
+          onRemoveSetting={removeDraftValue}
           onPreview={() => void previewChanges('root')}
           onSave={() => void saveChanges('root')}
           onReset={resetDraft}
@@ -357,6 +371,7 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
           isSaving={isSaving}
           onReload={() => void reload('model_providers')}
           onChangeSetting={updateDraftValue}
+          onRemoveSetting={removeDraftValue}
           onPreview={() => void previewChanges('model_providers')}
           onSave={() => void saveChanges('model_providers')}
           onReset={resetDraft}
@@ -378,6 +393,7 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
           onChangeStageFilter={setStageFilter}
           showSearch={false}
           onChangeFeature={updateDraftValue}
+          onRemoveFeature={removeDraftValue}
           onPreview={() => void previewChanges('features')}
           onSave={() => void saveChanges('features')}
           onReset={resetDraft}
@@ -394,6 +410,7 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
           isSaving={isSaving}
           onReload={() => void reload('notice')}
           onChangeNotice={updateDraftValue}
+          onRemoveNotice={removeDraftValue}
           onPreview={() => void previewChanges('notice')}
           onSave={() => void saveChanges('notice')}
           onReset={resetDraft}

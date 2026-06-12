@@ -163,6 +163,7 @@ export default function StatusFeature({
   const [localCodexProviderState, setLocalCodexProviderState] = useState<main.LocalCodexModelProviderStateView | null>(
     null
   );
+  const [localCodexProviderStateLoaded, setLocalCodexProviderStateLoaded] = useState(() => !hasWailsAppBindings());
   const [accountStoreDiagnostics, setAccountStoreDiagnostics] = useState<main.AccountStoreDiagnostics | null>(null);
   const [localApplyMessage, setLocalApplyMessage] = useState('');
   const [claudeApplyMessage, setClaudeApplyMessage] = useState('');
@@ -384,17 +385,21 @@ export default function StatusFeature({
         const activeModel = providerState?.hasExplicitCurrentModel ? providerState.currentModel : '';
         setRelayModelOptions((prev) => {
           const next = activeModel ? Array.from(new Set([...prev, activeModel])) : prev;
-          setSelectedRelayModel(
-            resolveInitialRelayModelSelection({
-              modelOptions: next,
-              activeModel: providerState?.currentModel,
-              hasExplicitActiveModel: Boolean(providerState?.hasExplicitCurrentModel),
-            })
-          );
+          const nextSelectedRelayModel = resolveInitialRelayModelSelection({
+            modelOptions: next,
+            activeModel: providerState?.currentModel,
+            hasExplicitActiveModel: Boolean(providerState?.hasExplicitCurrentModel),
+          });
+          setSelectedRelayModel(nextSelectedRelayModel);
+          saveSelectedRelayModel(nextSelectedRelayModel);
           return next;
         });
       } catch (error) {
         console.error(error);
+      } finally {
+        if (!cancelled) {
+          setLocalCodexProviderStateLoaded(true);
+        }
       }
     }
 
@@ -518,6 +523,9 @@ export default function StatusFeature({
 
   useEffect(() => {
     const trimmedSelectedRelayModel = selectedRelayModel.trim();
+    if (!localCodexProviderStateLoaded) {
+      return;
+    }
     if (!trimmedSelectedRelayModel) {
       setSelectedRelayModel(resolvedRelayModelNames[0] || RELAY_CODEX_DEFAULT_MODEL);
       return;
@@ -527,7 +535,7 @@ export default function StatusFeature({
       return;
     }
     saveSelectedRelayModel(trimmedSelectedRelayModel);
-  }, [resolvedRelayModelNames, selectedRelayModel]);
+  }, [localCodexProviderStateLoaded, resolvedRelayModelNames, selectedRelayModel]);
 
   useEffect(() => {
     if (!relayReasoningProfile.options.includes(selectedRelayReasoningEffort)) {
@@ -777,6 +785,10 @@ export default function StatusFeature({
   }
 
   async function applyRelayConfigToLocal() {
+    if (!localCodexProviderStateLoaded) {
+      setLocalApplyMessage(t('status.codex_local_apply_blocked_loading_config'));
+      return;
+    }
     const normalizedKey = selectedKey.trim();
     if (!normalizedKey) {
       setLocalApplyMessage(t('status.apply_local_missing_key'));
@@ -872,13 +884,13 @@ export default function StatusFeature({
         const activeModel = providerState?.hasExplicitCurrentModel ? providerState.currentModel : '';
         setRelayModelOptions((prev) => {
           const next = activeModel ? Array.from(new Set([...prev, activeModel])) : prev;
-          setSelectedRelayModel(
-            resolveInitialRelayModelSelection({
-              modelOptions: next,
-              activeModel: providerState?.currentModel,
-              hasExplicitActiveModel: Boolean(providerState?.hasExplicitCurrentModel),
-            })
-          );
+          const nextSelectedRelayModel = resolveInitialRelayModelSelection({
+            modelOptions: next,
+            activeModel: providerState?.currentModel,
+            hasExplicitActiveModel: Boolean(providerState?.hasExplicitCurrentModel),
+          });
+          setSelectedRelayModel(nextSelectedRelayModel);
+          saveSelectedRelayModel(nextSelectedRelayModel);
           return next;
         });
         const refreshedAuthState = await trackRequest('GetLocalCodexAuthState', { args: [] }, () =>
@@ -1087,6 +1099,7 @@ export default function StatusFeature({
             isApplyingToLocal={isApplyingToLocal}
             isApplyingClaude={isApplyingClaude}
             isReady={sidecarStatus.code === 'ready'}
+            codexLocalConfigLoaded={localCodexProviderStateLoaded}
             relayKeyItems={relayKeyItems}
             selectedKeyIndex={selectedKeyIndex}
             visibleRelayEndpoints={visibleRelayEndpoints}

@@ -53,6 +53,7 @@ interface AccountCardProps {
   eyebrowPrefix?: string;
   showDeleteAction?: boolean;
   showFooterActions?: boolean;
+  showFooterReauthAction?: boolean;
 }
 
 export interface AccountCardLocalCliAction {
@@ -95,6 +96,7 @@ export default function AccountCard({
   eyebrowPrefix = '',
   showDeleteAction = true,
   showFooterActions = true,
+  showFooterReauthAction = true,
 }: AccountCardProps) {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(defaultActionMenuOpen);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
@@ -396,7 +398,7 @@ export default function AccountCard({
                 {t(refreshAction.labelKey)}
               </button>
             ) : null}
-            {canReauth ? (
+            {showFooterReauthAction && canReauth ? (
               <button
                 type="button"
                 onClick={() => onStartReauth(account)}

@@ -24,12 +24,12 @@ const localCodexAuthState = {
   hasTokens: true,
 };
 
-test('unknown templates do not generate local cli actions', () => {
+test('unknown accounts without compatible local CLI formats do not generate local cli actions', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
       provider: 'unknown-vendor',
       baseUrl: 'https://example.invalid/v1',
-      supportedFormats: ['openai_chat'],
+      supportedFormats: ['gemini_native'],
     }),
     relayKeyItems,
     relayEndpoint,
@@ -39,7 +39,63 @@ test('unknown templates do not generate local cli actions', () => {
   assert.deepEqual(actions, []);
 });
 
-test('DeepSeek official template only generates Claude Code action', () => {
+test('custom compatible accounts generate Claude action from anthropic without Codex for openai_chat', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      provider: 'unknown-vendor',
+      displayName: 'Unknown Compatible Relay',
+      credentialSource: 'api-key',
+      apiKey: 'sk-custom-current-account',
+      baseUrl: 'https://example.invalid/v1',
+      supportedFormats: ['openai_chat', 'anthropic'],
+      formatBaseUrls: {
+        anthropic: 'https://example.invalid/anthropic',
+      },
+      models: [{ name: 'custom-model', alias: '' }],
+    }),
+    relayKeyItems,
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.deepEqual(actions.map((item) => item.target), ['claude']);
+  assert.equal(actions[0].templateID, 'unknown-vendor');
+  assert.equal(actions[0].sourceFormatBaseUrl, 'https://example.invalid/anthropic');
+  assert.equal(actions[0].draft.claude.model, 'custom-model');
+});
+
+test('custom compatible accounts generate Codex and Claude actions from openai_responses and anthropic', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      provider: 'unknown-vendor',
+      displayName: 'Unknown Responses Relay',
+      credentialSource: 'api-key',
+      apiKey: 'sk-custom-current-account',
+      baseUrl: 'https://example.invalid/v1',
+      supportedFormats: ['openai_chat', 'openai_responses', 'anthropic'],
+      formatBaseUrls: {
+        openai_chat: 'https://example.invalid/v1',
+        openai_responses: 'https://example.invalid/responses',
+        anthropic: 'https://example.invalid/anthropic',
+      },
+      models: [{ name: 'custom-model', alias: '' }],
+    }),
+    relayKeyItems,
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.deepEqual(actions.map((item) => item.target).sort(), ['claude', 'codex']);
+  assert.equal(actions.find((item) => item.target === 'codex').sourceFormat, 'openai_responses');
+  assert.equal(actions.find((item) => item.target === 'codex').draft.codex.baseUrl, 'https://example.invalid/responses');
+  assert.equal(actions.find((item) => item.target === 'claude').sourceFormat, 'anthropic');
+});
+
+test('DeepSeek official template only generates Claude Code action without openai_responses', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
       id: 'openai-compatible:deepseek',
@@ -62,7 +118,39 @@ test('DeepSeek official template only generates Claude Code action', () => {
   assert.equal(actions[0].draft.target, 'claude');
 });
 
-test('OpenRouter template generates direct Codex and Claude Code drafts', () => {
+test('Xiaomi MiMo Token Plan only generates Claude Code action without openai_responses', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      id: 'openai-compatible:xiaomi-token-plan',
+      provider: 'xiaomimimo-token-plan',
+      displayName: 'Xiaomi MiMo Token Plan',
+      credentialSource: 'api-key',
+      apiKey: 'sk-xiaomi-current-account',
+      baseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
+      supportedFormats: ['openai_chat', 'anthropic'],
+      formatBaseUrls: {
+        openai_chat: 'https://token-plan-cn.xiaomimimo.com/v1',
+        anthropic: 'https://token-plan-cn.xiaomimimo.com/anthropic',
+      },
+      models: [{ name: 'mimo-v2.5-pro', alias: '' }],
+    }),
+    relayKeyItems,
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].target, 'claude');
+  assert.equal(actions[0].templateID, 'xiaomimimo-token-plan');
+  assert.equal(actions[0].sourceFormat, 'anthropic');
+  assert.equal(actions[0].sourceFormatBaseUrl, 'https://token-plan-cn.xiaomimimo.com/anthropic');
+  assert.equal(actions[0].draft.claude.baseUrl, 'http://127.0.0.1:8317/v1');
+  assert.equal(actions[0].draft.claude.model, 'mimo-v2.5-pro');
+});
+
+test('OpenRouter template generates direct Claude Code draft without openai_responses', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
       id: 'openai-compatible:openrouter',
@@ -81,23 +169,14 @@ test('OpenRouter template generates direct Codex and Claude Code drafts', () => 
     sidecarReady: true,
   });
 
-  assert.equal(actions.length, 2);
-  const codex = actions.find((item) => item.target === 'codex');
-  const claude = actions.find((item) => item.target === 'claude');
-
-  assert.equal(codex.enabled, true);
-  assert.equal(codex.sourceFormat, 'openai_chat');
-  assert.equal(codex.sourceFormatBaseUrl, 'https://openrouter.ai/api/v1');
-  assert.equal(codex.draft.codex.apiKey, 'sk-or-current-account');
-  assert.equal(codex.draft.codex.baseUrl, 'https://openrouter.ai/api/v1');
-  assert.equal(codex.draft.codex.model, '~openai/gpt-latest');
-
-  assert.equal(claude.enabled, true);
-  assert.equal(claude.sourceFormat, 'anthropic');
-  assert.equal(claude.sourceFormatBaseUrl, 'https://openrouter.ai/api');
-  assert.equal(claude.draft.claude.apiKey, 'sk-or-current-account');
-  assert.equal(claude.draft.claude.baseUrl, 'https://openrouter.ai/api');
-  assert.equal(claude.draft.claude.authField, 'ANTHROPIC_AUTH_TOKEN');
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].target, 'claude');
+  assert.equal(actions[0].enabled, true);
+  assert.equal(actions[0].sourceFormat, 'anthropic');
+  assert.equal(actions[0].sourceFormatBaseUrl, 'https://openrouter.ai/api');
+  assert.equal(actions[0].draft.claude.apiKey, 'sk-or-current-account');
+  assert.equal(actions[0].draft.claude.baseUrl, 'https://openrouter.ai/api');
+  assert.equal(actions[0].draft.claude.authField, 'ANTHROPIC_AUTH_TOKEN');
 });
 
 test('OpenAI API key account generates Codex API key draft', () => {
@@ -348,9 +427,10 @@ test('Claude draft uses relay endpoint instead of upstream anthropic format URL'
     sidecarReady: true,
   });
 
-  assert.equal(actions[0].draft.target, 'claude');
-  assert.equal(actions[0].sourceFormatBaseUrl, 'https://api.deepseek.com/anthropic');
-  assert.equal(actions[0].draft.claude.baseUrl, 'http://127.0.0.1:8317/v1');
+  const claude = actions.find((item) => item.target === 'claude');
+  assert.equal(claude.draft.target, 'claude');
+  assert.equal(claude.sourceFormatBaseUrl, 'https://api.deepseek.com/anthropic');
+  assert.equal(claude.draft.claude.baseUrl, 'http://127.0.0.1:8317/v1');
 });
 
 test('disabled account keeps verified action visible but not executable', () => {
@@ -366,11 +446,12 @@ test('disabled account keeps verified action visible but not executable', () => 
     sidecarReady: true,
   });
 
-  assert.equal(actions.length, 1);
-  assert.equal(actions[0].target, 'claude');
-  assert.equal(actions[0].enabled, false);
-  assert.equal(actions[0].status, 'disabled-account');
-  assert.match(actions[0].disabledReason, /禁用/);
+  assert.deepEqual(actions.map((item) => item.target), ['claude']);
+  for (const action of actions) {
+    assert.equal(action.enabled, false);
+    assert.equal(action.status, 'disabled-account');
+    assert.match(action.disabledReason, /禁用/);
+  }
 });
 
 test('AccountLocalCliApplyConfirm exposes editable Claude Code draft fields', async () => {

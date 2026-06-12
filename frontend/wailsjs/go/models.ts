@@ -2011,6 +2011,7 @@ export namespace main {
 	    path?: string[];
 	    valueType?: string;
 	    value?: any;
+	    remove?: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new CodexConfigChangeInput(source);
@@ -2024,6 +2025,7 @@ export namespace main {
 	        this.path = source["path"];
 	        this.valueType = source["valueType"];
 	        this.value = source["value"];
+	        this.remove = source["remove"];
 	    }
 	}
 	export class CodexConfigTomlDocument {

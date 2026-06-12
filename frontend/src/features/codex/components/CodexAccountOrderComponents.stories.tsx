@@ -169,7 +169,7 @@ const noopDragEvent = (event: DragEvent) => event.preventDefault();
 function RowSample({
   row = rows[0],
   index = 0,
-  density = 'compact',
+  density = 'full',
   dragged = false,
   pending = false,
   probeHit = false,
@@ -188,7 +188,7 @@ function RowSample({
   const { t } = useI18n();
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className={density === 'list' ? 'grid gap-3' : density === 'full' ? 'max-w-[28rem]' : 'max-w-[24rem]'}>
+      <div className={density === 'list' ? 'grid gap-3' : 'max-w-[28rem]'}>
         <AccountOrderRow
           row={row}
           index={index}
@@ -205,6 +205,7 @@ function RowSample({
           onOpenDetail={() => undefined}
           onToggle={() => undefined}
           onToggleManualRequestable={() => undefined}
+          onRefreshQuota={() => undefined}
           probeHit={probeHit}
           routePolicyState={routePolicyStates[row.id]}
           quotaState={row.quotaKey === 'team-codex' ? quotaState : undefined}
@@ -224,7 +225,7 @@ function SectionSample({
   saving = false,
   routingProbeRunning = false,
   orderChanged = false,
-  density = 'compact',
+  density = 'full',
   message = '',
 }: {
   label: string;
@@ -282,6 +283,7 @@ function SectionSample({
           onOpenDetail={() => undefined}
           onToggle={() => undefined}
           onToggleManualRequestable={() => undefined}
+          onRefreshQuota={() => undefined}
           initialDensity={density}
         />
       </div>
@@ -351,14 +353,14 @@ function CodexAccountOrderOverview() {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
           <RowSample label="DS-FULL" density="full" />
           <div className="grid gap-4">
-            <RowSample label="DS-COMPACT" row={rows[1]} index={1} density="compact" />
-            <RowSample label="DS-DRAG" row={rows[1]} index={1} density="compact" dragged />
+            <RowSample label="DS-FULL-ALT" row={rows[1]} index={1} density="full" />
+            <RowSample label="DS-DRAG" row={rows[1]} index={1} density="full" dragged />
           </div>
           <div className="grid gap-4">
             <RowSample label="DS-LIST" row={rows[0]} density="list" probeHit />
             <RowSample label="DS-SKIPPED" row={rows[2]} index={2} density="list" />
             <RowSample label="DS-BLOCKED" row={rows[3]} index={3} density="list" pending />
-            <RowSample label="DS-RATE" row={rows[1]} index={1} density="compact" rateLimitStatus={rateLimitBlocked} />
+            <RowSample label="DS-RATE" row={rows[1]} index={1} density="list" rateLimitStatus={rateLimitBlocked} />
           </div>
         </div>
       </section>
@@ -366,7 +368,7 @@ function CodexAccountOrderOverview() {
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Section states</h3>
         <div className="grid gap-4">
-          <SectionSample label="DS-SECTION-COMPACT" density="compact" message="policy preview / 4 accounts" />
+          <SectionSample label="DS-SECTION-FULL" density="full" message="policy preview / 4 accounts" />
           <SectionSample label="DS-SECTION-FULL-UNSAVED" density="full" orderChanged message="manual order changed" />
           <SectionSample label="DS-SECTION-LIST-SAVING" density="list" saving routingProbeRunning />
           <div className="grid gap-4 xl:grid-cols-3">
@@ -397,8 +399,8 @@ export const Full: Story = {
   render: () => <RowSample label="DS-FULL" density="full" />,
 };
 
-export const Compact: Story = {
-  render: () => <RowSample label="DS-COMPACT" row={rows[1]} index={1} density="compact" />,
+export const AlternateFull: Story = {
+  render: () => <RowSample label="DS-FULL-ALT" row={rows[1]} index={1} density="full" />,
 };
 
 export const List: Story = {
@@ -406,7 +408,7 @@ export const List: Story = {
 };
 
 export const Section: Story = {
-  render: () => <SectionSample label="DS-SECTION-COMPACT" density="compact" message="policy preview / 4 accounts" />,
+  render: () => <SectionSample label="DS-SECTION-FULL" density="full" message="policy preview / 4 accounts" />,
 };
 
 export const Detail: Story = {

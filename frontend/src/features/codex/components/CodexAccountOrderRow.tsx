@@ -28,11 +28,14 @@ export function AccountOrderRow({
   onOpenDetail,
   onToggle,
   onToggleManualRequestable,
+  onRefreshQuota,
   probeHit,
   routePolicyState,
   quotaState,
   usageSummary,
+  usageRefreshing,
   rateLimitStatus,
+  rateLimitRefreshing,
 }: {
   row: CodexAccountRow;
   index: number;
@@ -53,7 +56,10 @@ export function AccountOrderRow({
   routePolicyState?: CodexRoutePolicyRowState;
   quotaState?: CodexQuotaState;
   usageSummary?: AccountUsageSummary;
+  usageRefreshing?: boolean;
   rateLimitStatus?: RateLimitState;
+  rateLimitRefreshing?: boolean;
+  onRefreshQuota: (row: CodexAccountRow) => void;
 }) {
   const cardDensity = density === 'full' ? 'full' : 'list';
   const policyMuted = Boolean(routePolicyState && !routePolicyState.participates);
@@ -98,7 +104,7 @@ export function AccountOrderRow({
       onDragEnter={() => onDragEnter(row.id)}
       onDrop={onDrop}
       title={t('accounts.rotation_drag_badge')}
-      className={`${density === 'full' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid]' : ''} relative cursor-grab active:cursor-grabbing ${
+      className={`relative cursor-grab active:cursor-grabbing ${
         dragged ? 'opacity-40 grayscale' : probeHit ? 'outline outline-2 outline-offset-2 outline-[var(--text-primary)]' : ''
       } ${policyMuted && !probeHit ? 'opacity-75 grayscale' : ''}`.trim()}
     >
@@ -108,6 +114,8 @@ export function AccountOrderRow({
         usageSummary={usageSummary}
         quotaState={quotaState}
         rateLimitStatus={rateLimitStatus}
+        usageRefreshing={usageRefreshing}
+        rateLimitRefreshing={rateLimitRefreshing}
         density={cardDensity}
         ready={!pending}
         isSelectionMode={false}
@@ -118,11 +126,12 @@ export function AccountOrderRow({
         extraBadges={badges}
         eyebrowPrefix={`#${index + 1}`}
         showDeleteAction={false}
-        showFooterActions={false}
+        showFooterActions
+        showFooterReauthAction={false}
         localCliActions={manualActions}
         onToggleSelection={() => undefined}
         onOpenDetails={onOpenDetail}
-        onRefreshQuota={() => undefined}
+        onRefreshQuota={() => onRefreshQuota(row)}
         onStartReauth={() => undefined}
         onToggleDisabled={onToggle}
         onRequestDelete={() => undefined}

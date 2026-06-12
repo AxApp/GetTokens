@@ -45,6 +45,7 @@ func mapCodexConfigChangeInputs(inputs []CodexConfigChangeInput) []wailsapp.Code
 			Path:      append([]string(nil), input.Path...),
 			ValueType: input.ValueType,
 			Value:     input.Value,
+			Remove:    input.Remove,
 		})
 	}
 	return changes

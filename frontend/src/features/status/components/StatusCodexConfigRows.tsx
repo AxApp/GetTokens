@@ -23,6 +23,7 @@ interface StatusCodexConfigRowsProps {
   parentMode: CodexPathParentMode;
   resolveDescription: (row: CodexFeatureRow) => ReactNode;
   onChangeSetting: (id: string, value: unknown) => void;
+  onRemoveSetting?: (id: string) => void;
 }
 
 function groupRowsByPrimaryPath(rows: CodexFeatureRow[]): CodexPathGroup[] {
@@ -58,6 +59,7 @@ export default function StatusCodexConfigRows({
   parentMode,
   resolveDescription,
   onChangeSetting,
+  onRemoveSetting,
 }: StatusCodexConfigRowsProps) {
   const pathGroups = groupRowsByPrimaryPath(rows);
 
@@ -87,7 +89,7 @@ export default function StatusCodexConfigRows({
         </div>
         <div className="flex min-w-0 w-full justify-start md:justify-end">
           <div className="w-full">
-            {renderCodexValueEditor(row, row.readOnly || isBusy, onChangeSetting)}
+            {renderCodexValueEditor(row, row.readOnly || isBusy, onChangeSetting, onRemoveSetting)}
           </div>
         </div>
       </div>

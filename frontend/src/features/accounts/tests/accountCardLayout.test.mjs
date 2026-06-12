@@ -45,17 +45,16 @@ test('resolveAccountCardColumnHeights equalizes cards by rendered column', () =>
   );
 });
 
-test('account card full grid uses page-level fixed card widths instead of equal-width tracks', async () => {
+test('account card full grid uses elastic tracks that can fit additional cards', async () => {
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
-  assert.match(styleSource, /--account-card-grid-full-width:\s*20rem/);
+  assert.match(styleSource, /--account-card-grid-full-min-width:\s*18rem/);
   assert.match(
     styleSource,
-    /\.account-card-grid-full\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*var\(--account-card-grid-full-width\)\),\s*var\(--account-card-grid-full-width\)\)\)/s,
+    /\.account-card-grid-full\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(min\(100%,\s*var\(--account-card-grid-full-min-width\)\),\s*1fr\)\)/s,
   );
   assert.match(styleSource, /\.account-card-grid-full\s*\{[^}]*justify-content:\s*start/s);
-  assert.doesNotMatch(styleSource, /\.account-card-grid-full\s*\{[^}]*repeat\(auto-fill,/s);
-  assert.doesNotMatch(styleSource, /\.account-card-grid-full\s*\{[^}]*minmax\([^;{]*,\s*1fr\)/s);
+  assert.doesNotMatch(styleSource, /--account-card-grid-full-width:\s*20rem/);
   assert.doesNotMatch(styleSource, /account-card-grid-compact|--account-card-grid-compact-width/);
 });
 

@@ -53,6 +53,7 @@ type CodexConfigChangeInput struct {
 	Path      []string `json:"path,omitempty"`
 	ValueType string   `json:"valueType,omitempty"`
 	Value     any      `json:"value,omitempty"`
+	Remove    bool     `json:"remove,omitempty"`
 }
 
 type CodexFeatureConfigChange struct {
@@ -633,6 +634,32 @@ func previewCodexTypedConfigPatch(configPath string, existing string, exists boo
 			return nil, fmt.Errorf("%s 是只读配置，请使用对应专用编辑器或原始 config.toml 编辑器", normalized.ID)
 		}
 
+		if normalized.Remove {
+			_, previousValue, hadPrevious := readCodexTypedValueFromLines(lines, newline, normalized.Path, normalized.ValueType)
+			changeType := "unchanged"
+			if hadPrevious {
+				changeType = "removed"
+				lines = deleteCodexTypedConfigPath(lines, normalized.Path, normalized.ValueType)
+			}
+			change := CodexFeatureConfigChange{
+				ID:            normalized.ID,
+				Section:       normalized.Section,
+				Key:           normalized.Key,
+				Path:          append([]string(nil), normalized.Path...),
+				ValueType:     normalized.ValueType,
+				Type:          changeType,
+				PreviousValue: previousValue,
+			}
+			if (normalized.ValueType == "boolean" || normalized.ValueType == "bool") && hadPrevious {
+				if previousBool, ok := previousValue.(bool); ok {
+					previousCopy := previousBool
+					change.PreviousEnabled = &previousCopy
+				}
+			}
+			changes = append(changes, change)
+			continue
+		}
+
 		formattedValue, nextValue, err := formatCodexTypedConfigValue(normalized.ValueType, normalized.Value)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", normalized.ID, err)
@@ -771,6 +798,7 @@ func normalizeCodexTypedChangeInput(input CodexConfigChangeInput, definitionsByI
 		Path:      path,
 		ValueType: valueType,
 		Value:     input.Value,
+		Remove:    input.Remove,
 	}, definition, nil
 }
 
@@ -780,6 +808,20 @@ func upsertCodexTypedConfigPath(lines []string, path []string, value string) []s
 	}
 	sectionName := formatTomlPath(path[:len(path)-1])
 	return upsertTomlSectionKey(lines, sectionName, path[len(path)-1], value, true)
+}
+
+func deleteCodexTypedConfigPath(lines []string, path []string, valueType string) []string {
+	if len(path) == 0 {
+		return lines
+	}
+	if isCodexTomlSectionValueType(valueType) {
+		return deleteCodexTomlSectionPath(lines, path)
+	}
+	if len(path) == 1 {
+		return deleteTomlRootKey(lines, path[0])
+	}
+	sectionName := formatTomlPath(path[:len(path)-1])
+	return deleteTomlSectionKey(lines, sectionName, path[len(path)-1])
 }
 
 func isEditableCodexRootTableLeafPath(path []string) bool {
@@ -1287,6 +1329,28 @@ func replaceCodexRawTomlSectionPath(lines []string, newline string, path []strin
 	replacement = append(replacement, rawLines...)
 	replacement = append(replacement, output[insertAt:]...)
 	return replacement, nil
+}
+
+func deleteCodexTomlSectionPath(lines []string, path []string) []string {
+	if len(path) == 0 {
+		return lines
+	}
+	output := make([]string, 0, len(lines))
+	skipping := false
+	for _, line := range lines {
+		if sectionName, ok := parseTomlSectionHeaderName(line); ok {
+			if codexTomlSectionMatchesPath(sectionName, path) {
+				skipping = true
+				continue
+			}
+			skipping = false
+		}
+		if skipping {
+			continue
+		}
+		output = append(output, line)
+	}
+	return output
 }
 
 func validateCodexRawTomlSectionPath(raw string, path []string) error {

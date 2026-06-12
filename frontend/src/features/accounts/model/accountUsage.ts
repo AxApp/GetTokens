@@ -70,6 +70,11 @@ export interface AccountUsageTrafficBucket {
   totalTokens: number;
 }
 
+export interface AccountTodayUsageTotals {
+  requestCount: number;
+  totalTokens: number;
+}
+
 export interface AccountUsageAttributionBucket {
   start: string;
   requestCount: number;
@@ -103,6 +108,46 @@ export function resolveUnboundedTrafficActivityPercent(
 function normalizeTrafficActivityValue(value: number | null | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
   return Math.max(0, value);
+}
+
+function isSameLocalCalendarDay(timestamp: string, nowMs: number) {
+  const time = parseTimestampMs(timestamp);
+  if (!Number.isFinite(time) || !Number.isFinite(nowMs)) {
+    return false;
+  }
+  const bucketDate = new Date(time);
+  const nowDate = new Date(nowMs);
+  return (
+    bucketDate.getFullYear() === nowDate.getFullYear() &&
+    bucketDate.getMonth() === nowDate.getMonth() &&
+    bucketDate.getDate() === nowDate.getDate()
+  );
+}
+
+export function buildAccountTodayUsageTotals(
+  summary: AccountUsageSummary | undefined,
+  nowMs: number = Date.now(),
+): AccountTodayUsageTotals {
+  const buckets = summary?.trafficBuckets ?? [];
+  if (buckets.length === 0) {
+    return {
+      requestCount: Math.max(0, Number(summary?.requestCount ?? 0)),
+      totalTokens: Math.max(0, Number(summary?.totalTokens ?? 0)),
+    };
+  }
+
+  return buckets.reduce<AccountTodayUsageTotals>(
+    (result, bucket) => {
+      if (!isSameLocalCalendarDay(bucket.start, nowMs)) {
+        return result;
+      }
+      return {
+        requestCount: result.requestCount + Math.max(0, Number(bucket.requestCount ?? 0)),
+        totalTokens: result.totalTokens + Math.max(0, Number(bucket.totalTokens ?? 0)),
+      };
+    },
+    { requestCount: 0, totalTokens: 0 },
+  );
 }
 
 export interface AccountUsageAttributionItem {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import type { ApiFormat, BillingDisplay } from '../../../types';
 import type { AccountRecord, QuotaDisplay, QuotaWindowDisplay, Translator } from '../model/types';
-import { resolveUnboundedTrafficActivityPercent, type AccountUsageSummary } from '../model/accountUsage';
+import { buildAccountTodayUsageTotals, resolveUnboundedTrafficActivityPercent, type AccountUsageSummary } from '../model/accountUsage';
 import { buildRateLimitGuardRows, type RateLimitState } from '../model/rateLimit';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import { formatQuotaResetDisplayWithUnix, hasDisplayableBilling } from '../model/accountQuota';
@@ -308,12 +308,13 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
   const hasRows = rows.length > 0;
   const statusLabel = rateLimitStatus?.blocked ? rateLimitStatus.blockReason || 'BLOCKED' : 'PASS';
   const trafficBuckets = usageSummary?.trafficBuckets ?? [];
+  const todayUsage = buildAccountTodayUsageTotals(usageSummary);
   const requestActivityPercent = resolveUnboundedTrafficActivityPercent(
-    usageSummary?.requestCount ?? 0,
+    todayUsage.requestCount,
     trafficBuckets.map((bucket) => bucket.requestCount),
   );
   const tokenActivityPercent = resolveUnboundedTrafficActivityPercent(
-    usageSummary?.totalTokens ?? 0,
+    todayUsage.totalTokens,
     trafficBuckets.map((bucket) => bucket.totalTokens),
   );
 
@@ -342,13 +343,13 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
         <div data-account-card-traffic-statistics="unbounded" className="grid gap-2">
           <TrafficStatisticsRow
             label={t('accounts.today_requests')}
-            value={formatUsageCountMetric(usageSummary?.requestCount ?? 0)}
+            value={formatUsageCountMetric(todayUsage.requestCount)}
             activityPercent={requestActivityPercent}
             refreshing={refreshing}
           />
           <TrafficStatisticsRow
             label={t('accounts.today_tokens')}
-            value={formatUsageTokenMetric(usageSummary?.totalTokens ?? 0)}
+            value={formatUsageTokenMetric(todayUsage.totalTokens)}
             activityPercent={tokenActivityPercent}
             refreshing={refreshing}
           />

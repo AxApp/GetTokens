@@ -213,8 +213,8 @@ export async function previewCodexFeatureConfig(
         changes: input.changes.map((change) => ({
           ...change,
           before: resolvePreviewCodexConfigValue(change.id, change.key),
-          after: change.value,
-          kind: 'modified',
+          after: change.remove ? undefined : change.value,
+          kind: change.remove ? 'removed' : 'modified',
         })),
       },
       input,
@@ -227,10 +227,16 @@ export async function previewCodexFeatureConfig(
 export async function saveCodexFeatureConfig(input: CodexFeatureChangeInput): Promise<void> {
   const saveConfig = resolveRuntimeMethodOrFallback('SaveCodexFeatureConfig');
   if (!saveConfig) {
-    previewCodexConfigOverrides = {
-      ...previewCodexConfigOverrides,
-      ...Object.fromEntries(input.changes.map((change) => [change.id || change.key, change.value])),
-    };
+    const nextOverrides = { ...previewCodexConfigOverrides };
+    for (const change of input.changes) {
+      const overrideKey = change.id || change.key;
+      if (change.remove) {
+        delete nextOverrides[overrideKey];
+      } else {
+        nextOverrides[overrideKey] = change.value;
+      }
+    }
+    previewCodexConfigOverrides = nextOverrides;
     return;
   }
   await saveConfig(input);

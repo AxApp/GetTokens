@@ -26,6 +26,7 @@ interface StatusCodexNoticeSectionProps {
   isSaving: boolean;
   onReload: () => void;
   onChangeNotice: (key: string, value: unknown) => void;
+  onRemoveNotice?: (key: string) => void;
   onPreview: () => void;
   onSave: () => void;
   onReset: () => void;
@@ -42,6 +43,7 @@ export default function StatusCodexNoticeSection({
   isSaving,
   onReload,
   onChangeNotice,
+  onRemoveNotice,
   onPreview,
   onSave,
   onReset,
@@ -120,7 +122,7 @@ export default function StatusCodexNoticeSection({
                   </div>
                   <div className="flex justify-start md:justify-center">
                     <div className="w-full max-w-[22rem]">
-                      {renderCodexValueEditor(row, row.readOnly || isBusy, onChangeNotice)}
+                      {renderCodexValueEditor(row, row.readOnly || isBusy, onChangeNotice, onRemoveNotice)}
                     </div>
                   </div>
                 </div>
@@ -148,7 +150,7 @@ export default function StatusCodexNoticeSection({
               >
                 <span className="font-mono">{change.key}</span>
                 <span className="text-[var(--text-muted)]"> / {change.kind} / </span>
-                <span>{String(change.before ?? '-')} -&gt; {String(change.after)}</span>
+                <span>{String(change.before ?? '-')} -&gt; {String(change.after ?? '-')}</span>
               </div>
             ))}
           </div>

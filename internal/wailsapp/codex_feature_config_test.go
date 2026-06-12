@@ -814,6 +814,140 @@ func TestSaveCodexFeatureConfigWritesTypedRootChanges(t *testing.T) {
 	}
 }
 
+func TestSaveCodexFeatureConfigRemovesTypedRootOverride(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	existing := strings.Join([]string{
+		`model = "gpt-5.4"`,
+		`model_auto_compact_token_limit = 180000`,
+		`model_auto_compact_token_limit_scope = "total"`,
+		``,
+		`[features]`,
+		`goals = false`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(existing), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := &App{}
+	preview, err := app.SaveCodexFeatureConfig(SaveCodexFeatureConfigInput{
+		Changes: []CodexConfigChangeInput{
+			{
+				ID:        "root.model_auto_compact_token_limit",
+				Path:      []string{"model_auto_compact_token_limit"},
+				ValueType: "integer",
+				Remove:    true,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SaveCodexFeatureConfig returned error: %v", err)
+	}
+	if len(preview.Changes) != 1 {
+		t.Fatalf("preview changes = %#v", preview.Changes)
+	}
+	change := preview.Changes[0]
+	if change.Type != "removed" || change.PreviousValue != int64(180000) || change.NextValue != nil {
+		t.Fatalf("unexpected remove preview change: %#v", change)
+	}
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	content := string(body)
+	if strings.Contains(content, `model_auto_compact_token_limit =`) {
+		t.Fatalf("removed root key should be absent: %s", content)
+	}
+	for _, want := range []string{
+		`model = "gpt-5.4"`,
+		`model_auto_compact_token_limit_scope = "total"`,
+		"[features]\ngoals = false",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("existing config fragment %q should remain: %s", want, content)
+		}
+	}
+}
+
+func TestSaveCodexFeatureConfigRemovesTypedNonNumericRootOverrides(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	existing := strings.Join([]string{
+		`model = "gpt-5.4"`,
+		`model_reasoning_effort = "medium"`,
+		`notify = ["terminal-notifier", "-message", "Codex"]`,
+		`profile = "work"`,
+		``,
+		`[experimental_thread_store]`,
+		`enabled = true`,
+		`backend = "sqlite"`,
+		``,
+		`[features]`,
+		`goals = false`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(existing), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := &App{}
+	preview, err := app.SaveCodexFeatureConfig(SaveCodexFeatureConfigInput{
+		Changes: []CodexConfigChangeInput{
+			{ID: "root.model", Path: []string{"model"}, ValueType: "string", Remove: true},
+			{ID: "root.model_reasoning_effort", Path: []string{"model_reasoning_effort"}, ValueType: "enum", Remove: true},
+			{ID: "root.notify", Path: []string{"notify"}, ValueType: "string_array", Remove: true},
+			{ID: "root.experimental_thread_store", Path: []string{"experimental_thread_store"}, ValueType: "toml", Remove: true},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SaveCodexFeatureConfig returned error: %v", err)
+	}
+	if len(preview.Changes) != 4 {
+		t.Fatalf("preview changes = %#v", preview.Changes)
+	}
+	for _, change := range preview.Changes {
+		if change.Type != "removed" || change.NextValue != nil {
+			t.Fatalf("unexpected remove preview change: %#v", change)
+		}
+	}
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	content := string(body)
+	for _, forbidden := range []string{
+		`model = "gpt-5.4"`,
+		`model_reasoning_effort = "medium"`,
+		`notify = ["terminal-notifier", "-message", "Codex"]`,
+		`[experimental_thread_store]`,
+		`enabled = true`,
+		`backend = "sqlite"`,
+	} {
+		if strings.Contains(content, forbidden) {
+			t.Fatalf("removed root fragment %q should be absent: %s", forbidden, content)
+		}
+	}
+	for _, want := range []string{
+		`profile = "work"`,
+		"[features]\ngoals = false",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("existing config fragment %q should remain: %s", want, content)
+		}
+	}
+}
+
 func TestSaveCodexFeatureConfigWritesNestedModelProviderChanges(t *testing.T) {
 	codexHome := filepath.Join(t.TempDir(), ".codex")
 	t.Setenv("CODEX_HOME", codexHome)

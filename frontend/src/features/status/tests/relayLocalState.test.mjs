@@ -406,6 +406,23 @@ test('resolveCodexLocalApplyState returns actionable recovery for disabled Codex
     resolveCodexLocalApplyState({
       isApplyingToLocal: false,
       isReady: true,
+      isCodexConfigLoaded: false,
+      selectedRelayKey: 'sk-relay',
+      selectedProviderID: 'gettokens',
+      providerOptions: [{ id: 'gettokens', name: 'GetTokens' }],
+      preflight: { canApply: true, reason: 'ok' },
+    }),
+    {
+      canApply: false,
+      disabledReason: 'loading_codex_config',
+      recoveryAction: 'none',
+    }
+  );
+
+  assert.deepEqual(
+    resolveCodexLocalApplyState({
+      isApplyingToLocal: false,
+      isReady: true,
       selectedRelayKey: '   ',
       selectedProviderID: 'openai',
       providerOptions: [],

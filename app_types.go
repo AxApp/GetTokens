@@ -1060,6 +1060,7 @@ type CodexConfigChangeInput struct {
 	Path      []string `json:"path,omitempty"`
 	ValueType string   `json:"valueType,omitempty"`
 	Value     any      `json:"value,omitempty"`
+	Remove    bool     `json:"remove,omitempty"`
 }
 
 type CodexFeatureConfigChange struct {

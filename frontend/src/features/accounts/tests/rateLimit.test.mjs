@@ -238,8 +238,11 @@ test('full account cards keep unbounded traffic statistics rows without a headin
   assert.match(sectionsSource, /ROUTE GUARD/);
   assert.match(sectionsSource, /data-account-card-traffic-statistics="unbounded"/);
   assert.match(sectionsSource, /<TrafficStatisticsRow/);
-  assert.match(sectionsSource, /value=\{formatUsageCountMetric\(usageSummary\?\.requestCount \?\? 0\)\}/);
-  assert.match(sectionsSource, /value=\{formatUsageTokenMetric\(usageSummary\?\.totalTokens \?\? 0\)\}/);
+  assert.match(sectionsSource, /buildAccountTodayUsageTotals\(usageSummary\)/);
+  assert.match(sectionsSource, /value=\{formatUsageCountMetric\(todayUsage\.requestCount\)\}/);
+  assert.match(sectionsSource, /value=\{formatUsageTokenMetric\(todayUsage\.totalTokens\)\}/);
+  assert.doesNotMatch(sectionsSource, /value=\{formatUsageCountMetric\(usageSummary\?\.requestCount \?\? 0\)\}/);
+  assert.doesNotMatch(sectionsSource, /value=\{formatUsageTokenMetric\(usageSummary\?\.totalTokens \?\? 0\)\}/);
   assert.match(sectionsSource, /trafficBuckets\.map\(\(bucket\) => bucket\.requestCount\)/);
   assert.match(sectionsSource, /trafficBuckets\.map\(\(bucket\) => bucket\.totalTokens\)/);
   assert.match(sectionsSource, /activityPercent=\{requestActivityPercent\}/);

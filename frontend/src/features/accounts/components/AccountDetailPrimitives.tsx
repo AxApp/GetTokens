@@ -77,17 +77,17 @@ export function AccountDetailSectionHeader({
     >
       <div data-account-detail-section-title-row="compact" className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         {eyebrow ? (
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
             {eyebrow}
           </div>
         ) : null}
         {title ? (
-          <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase italic leading-snug tracking-[0.06em] text-[var(--text-primary)]">
+          <h3 className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase italic leading-snug tracking-[0.04em] text-[var(--text-primary)]">
             {title}
           </h3>
         ) : null}
         {meta ? (
-          <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+          <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.06em] text-[var(--text-muted)]">
             {meta}
           </div>
         ) : null}
@@ -131,12 +131,12 @@ export function AccountDetailSection({
       >
         <aside data-account-detail-band-index="true" className="min-w-0 border-r-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4">
           {eyebrow ? (
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
               {eyebrow}
             </div>
           ) : null}
           {title ? (
-            <h3 className="mt-2 text-[length:var(--font-size-ui-sm)] font-black uppercase italic leading-tight tracking-tight text-[var(--text-primary)]">
+            <h3 className="mt-2 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase italic leading-tight tracking-normal text-[var(--text-primary)]">
               {title}
             </h3>
           ) : null}
@@ -150,7 +150,7 @@ export function AccountDetailSection({
           {meta || actions ? (
             <div className={`mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${bandActionDividerClassName}`}>
               {meta ? (
-                <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.06em] text-[var(--text-muted)]">
                   {meta}
                 </div>
               ) : <span />}
@@ -331,14 +331,14 @@ export function AccountDetailStatCell({
 }) {
   return (
     <div className="min-w-0 border-b border-r border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3">
-      <div className="truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+      <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tabular-nums text-[var(--text-primary)]">
+      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tabular-nums text-[var(--text-primary)]">
         {value}
       </div>
       {meta ? (
-        <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+        <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
           {meta}
         </div>
       ) : null}
@@ -376,11 +376,11 @@ export function AccountDetailField({
 }) {
   return (
     <div className={`min-w-0 space-y-1 ${align === 'right' ? 'text-right' : ''}`}>
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase italic text-[var(--text-muted)]">
+      <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase italic text-[var(--text-muted)]">
         {label}
       </div>
       <div
-        className="break-all text-[length:var(--font-size-ui-md-compact)] font-black uppercase text-[var(--text-primary)]"
+        className="break-all text-[length:var(--font-size-ui-md)] font-black uppercase text-[var(--text-primary)]"
         title={title}
       >
         {value}
@@ -399,7 +399,7 @@ export function AccountDetailPill({
   className?: string;
 }) {
   return (
-    <span className={`inline-flex min-h-7 items-center border px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] ${toneClassNames[tone]} ${className}`}>
+    <span className={`inline-flex min-h-7 items-center border px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${toneClassNames[tone]} ${className}`}>
       {children}
     </span>
   );
@@ -449,11 +449,11 @@ export function AccountDetailEvidenceGrid({
     ? 'grid gap-1 py-1 md:grid-cols-[6rem_minmax(0,1fr)] md:items-start'
     : 'grid gap-2 border-b border-dashed border-[var(--border-color)] px-3 py-2.5 last:border-b-0 md:grid-cols-[8rem_minmax(0,1fr)] md:items-start';
   const labelClassName = compact
-    ? 'font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]'
-    : 'font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]';
+    ? 'font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]'
+    : 'font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]';
   const valueClassName = compact
-    ? 'min-w-0 break-all font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-primary)]'
-    : 'min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]';
+    ? 'min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)]'
+    : 'min-w-0 break-all font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal text-[var(--text-primary)]';
 
   return (
     <div className={outerClassName}>

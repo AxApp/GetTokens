@@ -44,6 +44,7 @@ const copy: Record<string, string> = {
   'status.claude_small_fast_model': 'Small fast 模型',
   'status.codex_local_apply_blocked_missing_key': '缺少 Relay Key，无法写入本地配置',
   'status.codex_local_apply_blocked_not_ready': '服务未 ready',
+  'status.codex_local_apply_blocked_loading_config': '正在读取 Codex 配置',
   'status.codex_local_auth_apikey': '当前 auth.json 使用 API Key',
   'status.codex_local_auth_chatgpt_ready': 'ChatGPT 登录可保留',
   'status.codex_local_auth_chatgpt_tokens': 'ChatGPT tokens 模式',

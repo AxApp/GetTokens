@@ -43,12 +43,14 @@ export interface CodexFeatureConfigSnapshot {
 
 export interface CodexFeatureDraft {
   values: Record<string, unknown>;
+  removed?: Record<string, true>;
 }
 
 export interface CodexFeatureRow extends CodexFeatureConfigItem {
   draftValue: unknown;
   dirty: boolean;
   changeKind: 'none' | 'added' | 'modified';
+  removed: boolean;
 }
 
 export interface CodexFeatureRowGroup {
@@ -72,6 +74,7 @@ export interface CodexFeatureChangeInput {
     path: string[];
     valueType: string;
     value: unknown;
+    remove?: boolean;
   }>;
 }
 
@@ -509,10 +512,25 @@ export function setCodexFeatureDraftValue(
   key: string,
   value: unknown
 ): CodexFeatureDraft {
+  const removed = { ...(draft.removed || {}) };
+  delete removed[key];
   return {
     values: {
       ...draft.values,
       [key]: value,
+    },
+    ...(Object.keys(removed).length > 0 ? { removed } : {}),
+  };
+}
+
+export function removeCodexFeatureDraftValue(draft: CodexFeatureDraft, key: string): CodexFeatureDraft {
+  const values = { ...draft.values };
+  delete values[key];
+  return {
+    values,
+    removed: {
+      ...(draft.removed || {}),
+      [key]: true,
     },
   };
 }
@@ -575,6 +593,9 @@ function areCodexValuesEqual(left: unknown, right: unknown) {
 }
 
 function resolveDraftValue(item: CodexFeatureConfigItem, draft: CodexFeatureDraft) {
+  if (draft.removed?.[item.id] || draft.removed?.[item.key]) {
+    return undefined;
+  }
   if (hasOwn(draft.values, item.id)) {
     return draft.values[item.id];
   }
@@ -599,6 +620,7 @@ export function selectCodexFeatureRows(
     .filter((item) => matchesQuery(item, query))
     .map((item) => {
       const draftValue = resolveDraftValue(item, draft);
+      const removed = Boolean(draft.removed?.[item.id] || draft.removed?.[item.key]);
       const dirty = !item.readOnly && !areCodexValuesEqual(draftValue, item.effectiveValue);
       const changeKind: CodexFeatureRow['changeKind'] = dirty
         ? item.hasLocalValue
@@ -610,6 +632,7 @@ export function selectCodexFeatureRows(
         draftValue,
         dirty,
         changeKind,
+        removed,
       };
     });
 }
@@ -868,7 +891,7 @@ export function buildCodexFeatureChangeInput(
     if (row.readOnly || !row.dirty) {
       continue;
     }
-    if (row.valueType === 'boolean' || row.valueType === 'bool') {
+    if (!row.removed && (row.valueType === 'boolean' || row.valueType === 'bool')) {
       values[row.key] = Boolean(row.draftValue);
     }
     changes.push({
@@ -878,6 +901,7 @@ export function buildCodexFeatureChangeInput(
       path: row.path,
       valueType: row.valueType,
       value: row.draftValue,
+      ...(row.removed ? { remove: true } : {}),
     });
   }
 
@@ -898,8 +922,9 @@ export function normalizeCodexFeaturePreview(
       const id = readString(item, ['id'], key);
       const path = readPathList(item, ['path']);
       const valueType = readString(item, ['valueType', 'value_type'], 'boolean');
+      const kind = readString(item, ['kind', 'type'], 'modified');
       const after = readAny(item, ['after', 'afterValue', 'nextValue', 'nextEnabled', 'value']);
-      if (!key || typeof after === 'undefined') {
+      if (!key || (typeof after === 'undefined' && kind !== 'removed')) {
         return null;
       }
       const before = readAny(item, ['before', 'beforeValue', 'previousValue', 'previousEnabled']);
@@ -911,7 +936,7 @@ export function normalizeCodexFeaturePreview(
         valueType,
         ...(typeof before !== 'undefined' ? { before } : {}),
         after,
-        kind: readString(item, ['kind', 'type'], 'modified'),
+        kind,
       };
     })
     .filter((item): item is CodexFeaturePreviewChange => Boolean(item));
@@ -925,8 +950,8 @@ export function normalizeCodexFeaturePreview(
           path: change.path,
           valueType: change.valueType,
           before: undefined,
-          after: change.value,
-          kind: 'modified',
+          after: change.remove ? undefined : change.value,
+          kind: change.remove ? 'removed' : 'modified',
         }))
       : Object.entries(fallbackInput.values).map(([key, after]) => ({
           id: key,

@@ -7,6 +7,7 @@ import {
   groupCodexFeatureRows,
   normalizeCodexFeatureConfigSnapshot,
   normalizeCodexFeaturePreview,
+  removeCodexFeatureDraftValue,
   resolveCodexFeatureRowPathDisplay,
   selectCodexFeatureRows,
   setCodexFeatureDraftValue,
@@ -101,6 +102,7 @@ function makeRow(overrides) {
     draftValue: false,
     dirty: false,
     changeKind: 'none',
+    removed: false,
     ...overrides,
   };
 }
@@ -341,6 +343,28 @@ test('selectCodexValueEditorKind uses toggles for booleans and segments for fixe
     ),
     'segment'
   );
+  assert.equal(
+    selectCodexValueEditorKind(
+      makeRow({
+        section: 'root',
+        key: 'model_auto_compact_token_limit',
+        valueType: 'integer',
+        draftValue: false,
+      })
+    ),
+    'number'
+  );
+  assert.equal(
+    selectCodexValueEditorKind(
+      makeRow({
+        section: 'root',
+        key: 'tool_output_token_limit',
+        valueType: 'integer',
+        draftValue: 'false',
+      })
+    ),
+    'number'
+  );
 });
 
 test('coerces string booleans for toggle checked state', () => {
@@ -383,6 +407,172 @@ test('dirty state and change input follow edited bool values', () => {
         path: ['tool_search'],
         valueType: 'boolean',
         value: false,
+      },
+    ],
+  });
+});
+
+test('numeric root setting uses explicit remove draft instead of treating zero as removal', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'root',
+        key: 'model_auto_compact_token_limit',
+        valueType: 'integer',
+        stage: 'advanced',
+        path: ['model_auto_compact_token_limit'],
+      },
+    ],
+    typedValues: {
+      'root.model_auto_compact_token_limit': 180000,
+    },
+    rawValues: {
+      'root.model_auto_compact_token_limit': '180000',
+    },
+  });
+
+  const zeroDraft = setCodexFeatureDraftValue(
+    buildCodexFeatureDraft(backendSnapshot),
+    'root.model_auto_compact_token_limit',
+    0
+  );
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, zeroDraft, { sectionFilter: 'root' }), {
+    values: {},
+    changes: [
+      {
+        id: 'root.model_auto_compact_token_limit',
+        section: 'root',
+        key: 'model_auto_compact_token_limit',
+        path: ['model_auto_compact_token_limit'],
+        valueType: 'integer',
+        value: 0,
+      },
+    ],
+  });
+
+  const removeDraft = removeCodexFeatureDraftValue(zeroDraft, 'root.model_auto_compact_token_limit');
+  const row = selectCodexFeatureRows(backendSnapshot, removeDraft, { sectionFilter: 'root' })[0];
+
+  assert.equal(row.removed, true);
+  assert.equal(row.dirty, true);
+  assert.equal(row.draftValue, undefined);
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, removeDraft, { sectionFilter: 'root' }), {
+    values: {},
+    changes: [
+      {
+        id: 'root.model_auto_compact_token_limit',
+        section: 'root',
+        key: 'model_auto_compact_token_limit',
+        path: ['model_auto_compact_token_limit'],
+        valueType: 'integer',
+        value: undefined,
+        remove: true,
+      },
+    ],
+  });
+});
+
+test('non-numeric typed root settings use explicit remove drafts', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'root',
+        key: 'model',
+        valueType: 'string',
+        stage: 'stable',
+        path: ['model'],
+      },
+      {
+        section: 'root',
+        key: 'model_reasoning_effort',
+        valueType: 'enum',
+        options: ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'],
+        stage: 'stable',
+        path: ['model_reasoning_effort'],
+      },
+      {
+        section: 'root',
+        key: 'notify',
+        valueType: 'string_array',
+        stage: 'stable',
+        path: ['notify'],
+      },
+      {
+        section: 'root',
+        key: 'experimental_thread_store',
+        valueType: 'toml',
+        stage: 'advanced',
+        path: ['experimental_thread_store'],
+      },
+    ],
+    typedValues: {
+      'root.model': 'gpt-5.4',
+      'root.model_reasoning_effort': 'medium',
+      'root.notify': ['terminal-notifier', '-message', 'Codex'],
+      'root.experimental_thread_store': '[experimental_thread_store]\nenabled = true\n',
+    },
+    rawValues: {
+      'root.model': '"gpt-5.4"',
+      'root.model_reasoning_effort': '"medium"',
+      'root.notify': '["terminal-notifier", "-message", "Codex"]',
+      'root.experimental_thread_store': '[experimental_thread_store]\nenabled = true\n',
+    },
+  });
+
+  let draft = buildCodexFeatureDraft(backendSnapshot);
+  draft = removeCodexFeatureDraftValue(draft, 'root.model');
+  draft = removeCodexFeatureDraftValue(draft, 'root.model_reasoning_effort');
+  draft = removeCodexFeatureDraftValue(draft, 'root.notify');
+  draft = removeCodexFeatureDraftValue(draft, 'root.experimental_thread_store');
+
+  const rows = selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'root' });
+  assert.deepEqual(
+    rows.map((row) => [row.id, row.removed, row.dirty, row.draftValue]),
+    [
+      ['root.model', true, true, undefined],
+      ['root.model_reasoning_effort', true, true, undefined],
+      ['root.notify', true, true, undefined],
+      ['root.experimental_thread_store', true, true, undefined],
+    ]
+  );
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'root' }), {
+    values: {},
+    changes: [
+      {
+        id: 'root.model',
+        section: 'root',
+        key: 'model',
+        path: ['model'],
+        valueType: 'string',
+        value: undefined,
+        remove: true,
+      },
+      {
+        id: 'root.model_reasoning_effort',
+        section: 'root',
+        key: 'model_reasoning_effort',
+        path: ['model_reasoning_effort'],
+        valueType: 'enum',
+        value: undefined,
+        remove: true,
+      },
+      {
+        id: 'root.notify',
+        section: 'root',
+        key: 'notify',
+        path: ['notify'],
+        valueType: 'string_array',
+        value: undefined,
+        remove: true,
+      },
+      {
+        id: 'root.experimental_thread_store',
+        section: 'root',
+        key: 'experimental_thread_store',
+        path: ['experimental_thread_store'],
+        valueType: 'toml',
+        value: undefined,
+        remove: true,
       },
     ],
   });
@@ -868,6 +1058,52 @@ test('normalizes backend preview previousEnabled and nextEnabled fields', () => 
       before: false,
       after: true,
       kind: 'updated',
+    },
+  ]);
+});
+
+test('normalizes removed preview changes without requiring next value', () => {
+  const preview = normalizeCodexFeaturePreview(
+    {
+      changes: [
+        {
+          id: 'root.model_auto_compact_token_limit',
+          section: 'root',
+          key: 'model_auto_compact_token_limit',
+          path: ['model_auto_compact_token_limit'],
+          valueType: 'integer',
+          type: 'removed',
+          previousValue: 180000,
+        },
+      ],
+    },
+    {
+      values: {},
+      changes: [
+        {
+          id: 'root.model_auto_compact_token_limit',
+          section: 'root',
+          key: 'model_auto_compact_token_limit',
+          path: ['model_auto_compact_token_limit'],
+          valueType: 'integer',
+          value: undefined,
+          remove: true,
+        },
+      ],
+    },
+    '/tmp/config.toml'
+  );
+
+  assert.deepEqual(preview.changes, [
+    {
+      id: 'root.model_auto_compact_token_limit',
+      section: 'root',
+      key: 'model_auto_compact_token_limit',
+      path: ['model_auto_compact_token_limit'],
+      valueType: 'integer',
+      before: 180000,
+      after: undefined,
+      kind: 'removed',
     },
   ]);
 });

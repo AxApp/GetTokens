@@ -47,6 +47,7 @@ interface StatusCodexFeaturesSectionProps {
   onChangeQuery: (value: string) => void;
   onChangeStageFilter: (value: CodexFeatureStageFilter) => void;
   onChangeFeature: (key: string, value: unknown) => void;
+  onRemoveFeature?: (key: string) => void;
   onPreview: () => void;
   onSave: () => void;
   onReset: () => void;
@@ -68,6 +69,7 @@ export default function StatusCodexFeaturesSection({
   onChangeQuery,
   onChangeStageFilter,
   onChangeFeature,
+  onRemoveFeature,
   onPreview,
   onSave,
   onReset,
@@ -200,7 +202,7 @@ export default function StatusCodexFeaturesSection({
                   </div>
                   <div className="flex justify-start md:justify-center">
                     <div className="w-full max-w-[22rem]">
-                      {renderCodexValueEditor(row, row.readOnly || isBusy, onChangeFeature)}
+                      {renderCodexValueEditor(row, row.readOnly || isBusy, onChangeFeature, onRemoveFeature)}
                     </div>
                   </div>
                 </div>
@@ -228,7 +230,7 @@ export default function StatusCodexFeaturesSection({
               >
                 <span className="font-mono">{change.key}</span>
                 <span className="text-[var(--text-muted)]"> / {change.kind} / </span>
-                <span>{String(change.before ?? '-')} -&gt; {String(change.after)}</span>
+                <span>{String(change.before ?? '-')} -&gt; {String(change.after ?? '-')}</span>
               </div>
             ))}
           </div>

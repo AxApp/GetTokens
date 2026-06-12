@@ -82,6 +82,7 @@ export interface CodexAccountRow {
   supportedFormats?: readonly string[];
   formatBaseUrls?: AccountRecord['formatBaseUrls'];
   models?: AccountRecord['models'];
+  sourceAccount?: AccountRecord;
   modelMappings: CodexModelMappingRow[];
 }
 
@@ -236,11 +237,13 @@ export function patchCodexAccountRowManualRequestable(row: CodexAccountRow, manu
 
 export function buildCodexQuotaSummaryAccount(row: CodexAccountRow): AccountRecord {
   return {
+    ...(row.sourceAccount ?? {}),
     id: row.id,
     provider: row.provider,
     credentialSource: row.sourceKind === 'codex-auth-file' ? 'auth-file' : 'api-key',
     displayName: row.label,
     status: row.status,
+    statusMessage: row.sourceAccount?.statusMessage,
     disabled: row.disabled,
     baseUrl: row.baseUrl,
     prefix: row.prefix,
@@ -260,6 +263,7 @@ export function buildCodexQuotaSummaryAccount(row: CodexAccountRow): AccountReco
     supportedFormats: normalizeSupportedFormats(row.supportedFormats),
     formatBaseUrls: row.formatBaseUrls,
     models: row.models,
+    accountKind: row.sourceAccount?.accountKind ?? sourceKindToAccountKind(row.sourceKind),
     requestability: {
       evidence: row.requestabilityEvidence || [],
       manual: row.manualRequestable === true,
@@ -335,6 +339,7 @@ function mapAccountRecordToCodexRow(account: AccountRecord, manualRequestableAcc
     supportedFormats: account.supportedFormats,
     formatBaseUrls: account.formatBaseUrls,
     models: account.models,
+    sourceAccount: account,
     modelMappings: sourceKind === 'codex-api-key'
       ? buildOpenAICompatibleModelMappings({ models: readAccountModels(account) })
       : [],
@@ -384,6 +389,7 @@ function mapOpenAICompatibleAccountRecordToCodexRow(account: AccountRecord): Cod
     supportedFormats: account.supportedFormats,
     formatBaseUrls: account.formatBaseUrls,
     models: account.models,
+    sourceAccount: account,
     modelMappings: buildOpenAICompatibleModelMappings({ models: readAccountModels(account) }),
   };
 }

@@ -37,6 +37,7 @@ interface StatusApplyLocalSectionProps {
   isApplyingToLocal: boolean;
   isApplyingClaude: boolean;
   isReady: boolean;
+  codexLocalConfigLoaded?: boolean;
   relayKeyItems: main.RelayServiceAPIKeyItem[];
   selectedKeyIndex: number;
   visibleRelayEndpoints: main.RelayServiceEndpoint[];
@@ -84,6 +85,7 @@ export function StatusApplyLocalSection({
   isApplyingToLocal,
   isApplyingClaude,
   isReady,
+  codexLocalConfigLoaded = true,
   relayKeyItems,
   selectedKeyIndex,
   visibleRelayEndpoints,
@@ -219,6 +221,7 @@ export function StatusApplyLocalSection({
       resolveCodexLocalApplyState({
         isApplyingToLocal,
         isReady,
+        isCodexConfigLoaded: codexLocalConfigLoaded,
         selectedRelayKey,
         selectedProviderID: selectedRelayProvider.id,
         providerOptions: relayProviderOptions,
@@ -228,6 +231,7 @@ export function StatusApplyLocalSection({
       codexLocalPreflight,
       isApplyingToLocal,
       isReady,
+      codexLocalConfigLoaded,
       relayProviderOptions,
       selectedRelayKey,
       selectedRelayProvider.id,
@@ -305,13 +309,15 @@ export function StatusApplyLocalSection({
   const codexLocalApplyGuidance =
     codexLocalApplyState.disabledReason === 'service_not_ready'
       ? t('status.codex_local_apply_blocked_not_ready')
-      : codexLocalApplyState.disabledReason === 'missing_relay_key'
-        ? t('status.codex_local_apply_blocked_missing_key')
-        : codexLocalApplyState.disabledReason === 'requires_custom_provider'
-          ? codexLocalApplyBlockedMessage || t('status.codex_local_preserve_requires_custom_provider')
-          : codexLocalApplyState.disabledReason === 'missing_chatgpt_auth'
-            ? codexLocalApplyBlockedMessage || t('status.codex_local_preserve_requires_chatgpt')
-            : '';
+      : codexLocalApplyState.disabledReason === 'loading_codex_config'
+        ? t('status.codex_local_apply_blocked_loading_config')
+        : codexLocalApplyState.disabledReason === 'missing_relay_key'
+          ? t('status.codex_local_apply_blocked_missing_key')
+          : codexLocalApplyState.disabledReason === 'requires_custom_provider'
+            ? codexLocalApplyBlockedMessage || t('status.codex_local_preserve_requires_custom_provider')
+            : codexLocalApplyState.disabledReason === 'missing_chatgpt_auth'
+              ? codexLocalApplyBlockedMessage || t('status.codex_local_preserve_requires_chatgpt')
+              : '';
   const codexLocalRecoveryProvider = relayProviderOptions.find(
     (provider) => provider.id === codexLocalApplyState.nextProviderID
   );

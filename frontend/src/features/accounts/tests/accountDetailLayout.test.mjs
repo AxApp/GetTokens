@@ -775,6 +775,16 @@ test('real account detail header uses v09 compact two-column summary', async () 
   assert.match(modalSource, /headerClassName="p-0"/);
 });
 
+test('account detail shared primitives keep the modal readable at desktop density', async () => {
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+
+  assert.match(primitiveSource, /text-\[length:var\(--font-size-ui-lg-compact\)\] font-black uppercase italic/);
+  assert.match(primitiveSource, /text-\[length:var\(--font-size-ui-md-compact\)\] font-black uppercase italic/);
+  assert.match(primitiveSource, /text-\[length:var\(--font-size-ui-md\)\] font-black uppercase text-\[var\(--text-primary\)\]/);
+  assert.match(primitiveSource, /text-\[length:var\(--font-size-ui-xs\)\] font-black uppercase tracking-\[0\.12em\]/);
+  assert.doesNotMatch(primitiveSource, /AccountDetailPill[\s\S]*text-\[length:var\(--font-size-ui-2xs\)\]/);
+});
+
 test('account detail header chips and description are spaced without an internal divider', async () => {
   const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const middleHeaderBlock = sectionSource.match(/<div className="grid min-w-0 content-center gap-1[\s\S]*?<\/div>\n\s*<\/div>\n\s*\);/)?.[0] ?? '';

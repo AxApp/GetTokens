@@ -117,6 +117,7 @@ export type CodexLocalApplyDisabledReason =
   | 'none'
   | 'applying'
   | 'service_not_ready'
+  | 'loading_codex_config'
   | 'missing_relay_key'
   | Exclude<CodexLocalApplyPreflightResult['reason'], 'ok'>;
 
@@ -137,6 +138,7 @@ export interface CodexLocalApplyState {
 export interface CodexLocalApplyStateInput {
   isApplyingToLocal: boolean;
   isReady: boolean;
+  isCodexConfigLoaded?: boolean;
   selectedRelayKey: string;
   selectedProviderID: string;
   providerOptions: RelayProviderOption[];
@@ -348,6 +350,9 @@ export function resolveCodexLocalApplyState(input: CodexLocalApplyStateInput): C
   }
   if (!input.isReady) {
     return { canApply: false, disabledReason: 'service_not_ready', recoveryAction: 'none' };
+  }
+  if (input.isCodexConfigLoaded === false) {
+    return { canApply: false, disabledReason: 'loading_codex_config', recoveryAction: 'none' };
   }
   if (!input.selectedRelayKey.trim()) {
     return { canApply: false, disabledReason: 'missing_relay_key', recoveryAction: 'create_relay_key' };

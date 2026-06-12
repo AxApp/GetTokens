@@ -150,9 +150,15 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     ProjectCandidatePoolObservedProjectLike[]
   >([]);
   const suppressNextDetailClickRef = useRef(false);
-  const { codexQuotaByName, loadCodexQuotas } = useAccountsQuotaState(trackRequest);
-  const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
-  const { accountRateLimitByID, rateLimitStrategies, loadAccountRateLimits } = useAccountsRateLimitState(trackRequest);
+  const { codexQuotaByName, loadCodexQuotas, refreshCodexQuota } = useAccountsQuotaState(trackRequest);
+  const { accountUsageByID, usageRefreshingAccountIDSet, loadAccountUsage, refreshAccountUsage } = useAccountsUsageState(trackRequest);
+  const {
+    accountRateLimitByID,
+    rateLimitRefreshingAccountIDSet,
+    rateLimitStrategies,
+    loadAccountRateLimits,
+    refreshAccountRateLimits,
+  } = useAccountsRateLimitState(trackRequest);
 
   const detailRow = useMemo(
     () => orderedRows.find((row) => row.id === detailRowID) || null,
@@ -688,6 +694,13 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   function closeDetail() {
     setDetailRowID(null);
     clearCodexDetailInHash();
+  }
+
+  function refreshOrderAccount(row: CodexAccountRow) {
+    const account = codexRowToAccountRecord(row);
+    void refreshCodexQuota(account);
+    void refreshAccountUsage([account]);
+    void refreshAccountRateLimits([account]);
   }
 
   function openRouteProbeModal() {
@@ -1456,7 +1469,9 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           routePolicyRowStates={routePolicyRowStates}
           codexQuotaByName={codexQuotaByName}
           accountUsageByID={accountUsageByID}
+          usageRefreshingAccountIDSet={usageRefreshingAccountIDSet}
           accountRateLimitByID={accountRateLimitByID}
+          rateLimitRefreshingAccountIDSet={rateLimitRefreshingAccountIDSet}
           refreshLabel={t('common.refresh')}
           loadingLabel={t('common.loading')}
           savingLabel={t('codex.account_list_saving')}
@@ -1473,6 +1488,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onOpenDetail={openDetail}
           onToggle={(row) => void toggleAccount(row)}
           onToggleManualRequestable={(row) => void toggleManualRequestable(row)}
+          onRefreshQuota={refreshOrderAccount}
         />
       </div>
       {routeProbeOpen ? (

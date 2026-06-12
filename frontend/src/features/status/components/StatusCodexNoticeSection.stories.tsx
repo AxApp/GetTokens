@@ -37,7 +37,7 @@ const copy: Record<string, string> = {
 
 const t = (key: string) => copy[key] ?? key;
 
-function boolRow(row: Omit<CodexFeatureRow, 'id' | 'path' | 'valueType' | 'options' | 'draftValue' | 'dirty' | 'changeKind'> & {
+function boolRow(row: Omit<CodexFeatureRow, 'id' | 'path' | 'valueType' | 'options' | 'draftValue' | 'dirty' | 'changeKind' | 'removed'> & {
   draftValue: boolean;
   dirty: boolean;
   changeKind: CodexFeatureRow['changeKind'];
@@ -47,6 +47,7 @@ function boolRow(row: Omit<CodexFeatureRow, 'id' | 'path' | 'valueType' | 'optio
     path: [row.key],
     valueType: 'boolean',
     options: [],
+    removed: false,
     ...row,
   };
 }

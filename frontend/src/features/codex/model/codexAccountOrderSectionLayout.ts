@@ -5,12 +5,29 @@ import type { CodexQuotaState } from '../../accounts/model/types';
 export const CODEX_ORDER_SECTION_ACTION_MENU_GAP = 24;
 export const CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY = 'gettokens.codex.account-order-display-mode';
 
-export type CodexAccountOrderDisplayMode = 'full' | 'compact' | 'list';
+export type CodexAccountOrderDisplayMode = 'full' | 'list';
 export type CodexOrderSectionActionLayout = 'inline' | 'wrapped' | 'menu';
-export const DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE: CodexAccountOrderDisplayMode = 'compact';
+export const DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE: CodexAccountOrderDisplayMode = 'full';
 export type CodexAccountOrderFilterSource = 'all' | 'codex-auth-file' | 'codex-api-key' | 'openai-compatible';
+export type CodexAccountOrderFilterPresetID =
+  | 'all'
+  | 'participating'
+  | 'requestable'
+  | 'blocked'
+  | 'openai-compatible'
+  | 'with-balance';
 export interface CodexAccountOrderFilterSummaryPart {
   kind: 'route' | 'status' | 'resource' | 'source';
+  id:
+    | 'participating'
+    | 'skipped'
+    | 'requestable'
+    | 'blocked'
+    | 'disabled'
+    | 'error'
+    | 'balance'
+    | 'longest-quota'
+    | CodexAccountOrderFilterSource;
   label: string;
 }
 export interface CodexAccountOrderFilter {
@@ -97,7 +114,7 @@ export function chooseCodexOrderSectionActionLayout({
 }
 
 export function parseCodexAccountOrderDisplayMode(value: string | null | undefined): CodexAccountOrderDisplayMode {
-  if (value === 'compact' || value === 'list') {
+  if (value === 'list') {
     return value;
   }
   if (value === 'full') {
@@ -143,6 +160,80 @@ export function applyCodexAccountOrderFilter(
   });
 }
 
+export function buildCodexAccountOrderFilterPresetState(
+  preset: CodexAccountOrderFilterPresetID,
+  current: CodexAccountOrderFilter = DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+): CodexAccountOrderFilter {
+  const normalizedFilter = normalizeCodexAccountOrderFilter(current);
+  if (preset === 'all') {
+    return { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER };
+  }
+  if (preset === 'participating') {
+    return applyCodexAccountOrderFilter(normalizedFilter, {
+      requiresParticipating: true,
+      requiresSkipped: false,
+    });
+  }
+  if (preset === 'requestable') {
+    return applyCodexAccountOrderFilter(normalizedFilter, {
+      requiresRequestable: true,
+      requiresBlocked: false,
+      requiresDisabled: false,
+      requiresError: false,
+    });
+  }
+  if (preset === 'blocked') {
+    return applyCodexAccountOrderFilter(normalizedFilter, {
+      requiresRequestable: false,
+      requiresBlocked: true,
+    });
+  }
+  if (preset === 'openai-compatible') {
+    return applyCodexAccountOrderFilter(normalizedFilter, {
+      source: 'openai-compatible',
+    });
+  }
+  return applyCodexAccountOrderFilter(normalizedFilter, {
+    hasBalance: true,
+  });
+}
+
+export function removeCodexAccountOrderFilterSummaryPart(
+  filter: CodexAccountOrderFilter,
+  part: CodexAccountOrderFilterSummaryPart,
+): CodexAccountOrderFilter {
+  if (part.kind === 'source') {
+    return applyCodexAccountOrderFilter(filter, { source: 'all' });
+  }
+
+  if (part.id === 'participating') {
+    return applyCodexAccountOrderFilter(filter, { requiresParticipating: false });
+  }
+  if (part.id === 'skipped') {
+    return applyCodexAccountOrderFilter(filter, { requiresSkipped: false });
+  }
+  if (part.id === 'requestable') {
+    return applyCodexAccountOrderFilter(filter, { requiresRequestable: false });
+  }
+  if (part.id === 'blocked') {
+    return applyCodexAccountOrderFilter(filter, { requiresBlocked: false });
+  }
+  if (part.id === 'disabled') {
+    return applyCodexAccountOrderFilter(filter, { requiresDisabled: false });
+  }
+  if (part.id === 'error') {
+    return applyCodexAccountOrderFilter(filter, { requiresError: false });
+  }
+  if (part.id === 'balance') {
+    return applyCodexAccountOrderFilter(filter, { hasBalance: false });
+  }
+  if (part.id === 'longest-quota') {
+    return applyCodexAccountOrderFilter(filter, { hasLongestQuota: false });
+  }
+
+  return normalizeCodexAccountOrderFilter(filter);
+}
+
 export function summarizeCodexAccountOrderFilter(
   t: (key: string) => string,
   filter: CodexAccountOrderFilter,
@@ -151,37 +242,37 @@ export function summarizeCodexAccountOrderFilter(
   const parts: CodexAccountOrderFilterSummaryPart[] = [];
 
   if (normalizedFilter.requiresParticipating) {
-    parts.push({ kind: 'route', label: t('codex.account_list_filter_participating_match') });
+    parts.push({ kind: 'route', id: 'participating', label: t('codex.account_list_filter_participating_match') });
   }
   if (normalizedFilter.requiresSkipped) {
-    parts.push({ kind: 'route', label: t('codex.account_list_filter_skipped_match') });
+    parts.push({ kind: 'route', id: 'skipped', label: t('codex.account_list_filter_skipped_match') });
   }
   if (normalizedFilter.requiresRequestable) {
-    parts.push({ kind: 'status', label: t('codex.account_list_filter_requestable_match') });
+    parts.push({ kind: 'status', id: 'requestable', label: t('codex.account_list_filter_requestable_match') });
   }
   if (normalizedFilter.requiresBlocked) {
-    parts.push({ kind: 'status', label: t('codex.account_list_filter_blocked_match') });
+    parts.push({ kind: 'status', id: 'blocked', label: t('codex.account_list_filter_blocked_match') });
   }
   if (normalizedFilter.requiresDisabled) {
-    parts.push({ kind: 'status', label: t('codex.account_list_filter_disabled_match') });
+    parts.push({ kind: 'status', id: 'disabled', label: t('codex.account_list_filter_disabled_match') });
   }
   if (normalizedFilter.requiresError) {
-    parts.push({ kind: 'status', label: t('codex.account_list_filter_error_match') });
+    parts.push({ kind: 'status', id: 'error', label: t('codex.account_list_filter_error_match') });
   }
   if (normalizedFilter.hasBalance) {
-    parts.push({ kind: 'resource', label: t('codex.account_list_filter_balance_match') });
+    parts.push({ kind: 'resource', id: 'balance', label: t('codex.account_list_filter_balance_match') });
   }
   if (normalizedFilter.hasLongestQuota) {
-    parts.push({ kind: 'resource', label: t('codex.account_list_filter_longest_quota_match') });
+    parts.push({ kind: 'resource', id: 'longest-quota', label: t('codex.account_list_filter_longest_quota_match') });
   }
   if (normalizedFilter.source === 'codex-auth-file') {
-    parts.push({ kind: 'source', label: t('codex.account_list_source_auth_file') });
+    parts.push({ kind: 'source', id: 'codex-auth-file', label: t('codex.account_list_source_auth_file') });
   }
   if (normalizedFilter.source === 'codex-api-key') {
-    parts.push({ kind: 'source', label: t('codex.account_list_source_api_key') });
+    parts.push({ kind: 'source', id: 'codex-api-key', label: t('codex.account_list_source_api_key') });
   }
   if (normalizedFilter.source === 'openai-compatible') {
-    parts.push({ kind: 'source', label: t('codex.account_list_source_openai_compatible') });
+    parts.push({ kind: 'source', id: 'openai-compatible', label: t('codex.account_list_source_openai_compatible') });
   }
 
   return parts;
@@ -233,12 +324,9 @@ export function filterCodexAccountOrderRows<T extends CodexAccountOrderFilterabl
 
 export function getCodexAccountOrderGridClass(density: CodexAccountOrderDisplayMode) {
   if (density === 'list') {
-    return 'grid gap-3 pt-4';
+    return 'grid grid-cols-1 gap-3 pt-4';
   }
-  if (density === 'full') {
-    return 'codex-account-order-card-grid-full grid auto-rows-fr gap-4 pt-4 xl:auto-rows-auto xl:gap-x-4 xl:gap-y-4';
-  }
-  return 'codex-account-order-card-grid-compact grid auto-rows-fr gap-4 pt-4';
+  return 'account-card-grid-full grid gap-8 pt-4';
 }
 
 function hasCodexOrderRowDisplayableBalance(

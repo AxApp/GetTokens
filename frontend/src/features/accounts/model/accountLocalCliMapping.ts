@@ -151,22 +151,6 @@ export type AccountCliApplyDraft =
       };
     };
 
-const verifiedTemplateTargets: Record<string, AccountLocalCliTarget[]> = {
-  anthropic: ['claude'],
-  deepseek: ['claude'],
-  zhipu: ['claude'],
-  stepfun: ['claude'],
-  bailian: ['claude'],
-  siliconflow: ['claude'],
-  aihubmix: ['claude'],
-  shengsuanyun: ['claude'],
-  novita: ['claude'],
-  sub2api: ['codex', 'claude'],
-  'new-api': ['codex', 'claude'],
-  openrouter: ['codex', 'claude'],
-  openai: ['codex'],
-};
-
 const defaultRelayEndpoint: AccountLocalCliRelayEndpointLike = {
   id: 'localhost',
   baseUrl: 'http://127.0.0.1:8317/v1',
@@ -180,7 +164,7 @@ export function resolveAccountLocalCliMappings(input: ResolveAccountLocalCliMapp
     return [];
   }
 
-  const targets = verifiedTemplateTargets[preset.id] || [];
+  const targets = resolveTemplateTargets(input.account, preset);
   if (targets.length === 0) {
     return [];
   }
@@ -232,7 +216,52 @@ export function resolveAccountTemplatePreset(account: AccountRecord, presets: Re
       ...Object.values(preset.formatBaseUrls || {}).map((value) => String(value || '')),
     ].map((value) => normalizeBaseURL(value)).filter(Boolean);
     return presetUrls.some((url) => urls.includes(url));
-  });
+  }) || buildGenericAccountTemplatePreset(account);
+}
+
+function resolveTemplateTargets(account: AccountRecord, preset: VendorPreset): AccountLocalCliTarget[] {
+  const formats = new Set<ApiFormat>([
+    ...normalizeApiFormats(preset.supportedFormats),
+    ...normalizeApiFormats(account.supportedFormats),
+    ...normalizeApiFormats(Object.keys(account.formatBaseUrls || {})),
+  ]);
+  const targets: AccountLocalCliTarget[] = [];
+  if (formats.has('openai_responses')) {
+    targets.push('codex');
+  }
+  if (formats.has('anthropic')) {
+    targets.push('claude');
+  }
+  return targets;
+}
+
+function buildGenericAccountTemplatePreset(account: AccountRecord): VendorPreset | null {
+  const supportedFormats = normalizeApiFormats([
+    ...(account.supportedFormats || []),
+    ...Object.keys(account.formatBaseUrls || {}),
+  ]);
+  const hasLocalCliTarget =
+    supportedFormats.includes('openai_responses') ||
+    supportedFormats.includes('anthropic');
+  const baseUrl = String(account.baseUrl || Object.values(account.formatBaseUrls || {})[0] || '').trim();
+  if (!hasLocalCliTarget || !baseUrl) {
+    return null;
+  }
+
+  const providerID = normalizeProviderID(account.provider) || 'custom-account';
+  return {
+    id: providerID,
+    name: account.displayName || account.provider || 'Custom Account',
+    apiFormat: supportedFormats.includes('openai_responses') ? 'openai_responses' : 'anthropic',
+    supportedFormats,
+    baseUrl,
+    formatBaseUrls: account.formatBaseUrls,
+    apiKeyPlaceholder: 'sk-...',
+    modelSuggestions: (account.models || [])
+      .map((item) => String(item.alias || item.name || '').trim())
+      .filter(Boolean),
+    category: 'third_party',
+  };
 }
 
 function buildMappingForTarget(input: ResolveAccountLocalCliMappingsInput & {
@@ -473,7 +502,7 @@ function resolveSourceFormat(account: AccountRecord, preset: VendorPreset, targe
   if (formats.has('openai_responses')) {
     return 'openai_responses';
   }
-  return formats.has('openai_chat') ? 'openai_chat' : null;
+  return null;
 }
 
 function resolveFormatBaseURL(account: AccountRecord, preset: VendorPreset, format: ApiFormat) {
@@ -551,7 +580,7 @@ function resolveTargetStatus(
   }
   if (target === 'claude' && relayKeyIndex < 0) {
     const preset = resolveAccountTemplatePreset(input.account, input.vendorPresets || getVendorPresets());
-    if (usesDirectAccountKeyForClaude(input.account, preset)) {
+    if (usesDirectAccountKeyForClaude(input.account, preset ?? undefined)) {
       if (!String(input.account.apiKey || '').trim()) {
         return {
           status: 'missing-account-key' as const,
@@ -620,4 +649,19 @@ function normalizeCodexProviderState(state?: LocalCodexModelProviderStateLike | 
 
 function normalizeProviderID(value: string) {
   return String(value || '').trim().toLowerCase();
+}
+
+function normalizeApiFormats(values: unknown[] | undefined): ApiFormat[] {
+  const normalized: ApiFormat[] = [];
+  const seen = new Set<string>();
+  const knownFormats = new Set<ApiFormat>(['anthropic', 'openai_chat', 'openai_responses', 'gemini_native']);
+  for (const value of values || []) {
+    const format = String(value || '').trim() as ApiFormat;
+    if (!knownFormats.has(format) || seen.has(format)) {
+      continue;
+    }
+    seen.add(format);
+    normalized.push(format);
+  }
+  return normalized;
 }

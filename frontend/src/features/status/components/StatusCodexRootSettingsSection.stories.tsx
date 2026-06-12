@@ -38,7 +38,7 @@ const copy: Record<string, string> = {
 const t = (key: string) => copy[key] ?? key;
 
 function rootRow(
-  row: Omit<CodexFeatureRow, 'id' | 'path' | 'draftValue' | 'dirty' | 'changeKind'> & {
+  row: Omit<CodexFeatureRow, 'id' | 'path' | 'draftValue' | 'dirty' | 'changeKind' | 'removed'> & {
     valueType: string;
     options?: string[];
     draftValue: unknown;
@@ -49,6 +49,7 @@ function rootRow(
   return {
     id: `root.${row.key}`,
     path: [row.key],
+    removed: false,
     ...row,
     options: row.options ?? [],
   } as CodexFeatureRow;

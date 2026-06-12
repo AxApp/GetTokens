@@ -26,9 +26,29 @@ export function coerceCodexBooleanEditorValue(value: unknown) {
 }
 
 export function selectCodexValueEditorKind(row: Pick<CodexFeatureRow, 'valueType' | 'options' | 'draftValue'>): CodexValueEditorKind {
+  const valueType = row.valueType.trim().toLowerCase();
+
+  if (valueType === 'boolean' || valueType === 'bool') {
+    return 'toggle';
+  }
+
+  if (valueType === 'integer' || valueType === 'number') {
+    return 'number';
+  }
+
+  if (valueType === 'string_array') {
+    return 'string_array';
+  }
+
+  if (valueType === 'textarea' || valueType === 'text' || valueType === 'toml') {
+    return 'textarea';
+  }
+
+  if (valueType === 'enum') {
+    return hasBooleanOnlyOptions(row.options) ? 'toggle' : 'segment';
+  }
+
   if (
-    row.valueType === 'boolean' ||
-    row.valueType === 'bool' ||
     typeof row.draftValue === 'boolean' ||
     isBooleanStringValue(row.draftValue) ||
     hasBooleanOnlyOptions(row.options)
@@ -36,20 +56,8 @@ export function selectCodexValueEditorKind(row: Pick<CodexFeatureRow, 'valueType
     return 'toggle';
   }
 
-  if (row.options.length > 0 || row.valueType === 'enum') {
+  if (row.options.length > 0) {
     return 'segment';
-  }
-
-  if (row.valueType === 'integer' || row.valueType === 'number') {
-    return 'number';
-  }
-
-  if (row.valueType === 'string_array') {
-    return 'string_array';
-  }
-
-  if (row.valueType === 'textarea' || row.valueType === 'text' || row.valueType === 'toml') {
-    return 'textarea';
   }
 
   return 'text';

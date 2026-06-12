@@ -5,6 +5,7 @@ import {
   buildAccountUsageSummary,
   buildAccountUsageSummaryMap,
   buildCandidateUsageSourceIds,
+  buildAccountTodayUsageTotals,
   buildFailedAccountUsageSummaryMap,
   shouldScheduleAccountUsageRefresh,
   calculateStatusBarData,
@@ -332,6 +333,53 @@ test('buildAccountUsageSummary consumes sidecar attribution items for codex api 
   assert.equal(summary.totalTokens, 1850);
   assert.equal(summary.statusBar.totalSuccess, 9);
   assert.equal(summary.statusBar.totalFailure, 3);
+});
+
+test('buildAccountTodayUsageTotals excludes previous local-day buckets from 24h attribution summaries', () => {
+  const nowMs = new Date(2026, 3, 27, 10, 30, 0).getTime();
+  const previousLocalDayBucket = new Date(2026, 3, 26, 12, 0, 0).toISOString();
+  const todayBucket = new Date(2026, 3, 27, 9, 0, 0).toISOString();
+  const summary = buildAccountUsageSummary(
+    {
+      id: 'codex-api-key:local-1',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'local-1',
+      status: 'ACTIVE',
+    },
+    {
+      items: [
+        {
+          accountKey: 'codex-api-key:local-1',
+          requestCount: 12,
+          totalTokens: 1850,
+          buckets: [
+            {
+              start: previousLocalDayBucket,
+              requestCount: 5,
+              totalTokens: 740,
+            },
+            {
+              start: todayBucket,
+              requestCount: 7,
+              totalTokens: 1110,
+            },
+          ],
+        },
+      ],
+    },
+    nowMs
+  );
+
+  assert.equal(summary.requestCount, 12);
+  assert.equal(summary.totalTokens, 1850);
+  assert.deepEqual(
+    buildAccountTodayUsageTotals(summary, nowMs),
+    {
+      requestCount: 7,
+      totalTokens: 1110,
+    }
+  );
 });
 
 test('buildAccountUsageSummary consumes sidecar attribution items for openai-compatible provider account', () => {

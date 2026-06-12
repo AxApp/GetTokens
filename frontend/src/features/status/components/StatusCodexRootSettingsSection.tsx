@@ -26,6 +26,7 @@ interface StatusCodexRootSettingsSectionProps {
   isSaving: boolean;
   onReload: () => void;
   onChangeSetting: (id: string, value: unknown) => void;
+  onRemoveSetting?: (id: string) => void;
   onPreview: () => void;
   onSave: () => void;
   onReset: () => void;
@@ -42,6 +43,7 @@ export default function StatusCodexRootSettingsSection({
   isSaving,
   onReload,
   onChangeSetting,
+  onRemoveSetting,
   onPreview,
   onSave,
   onReset,
@@ -108,6 +110,7 @@ export default function StatusCodexRootSettingsSection({
               parentMode="section"
               resolveDescription={(row) => resolveCodexRootSettingDescription(t, row)}
               onChangeSetting={onChangeSetting}
+              onRemoveSetting={onRemoveSetting}
             />
           </div>
         ))}
@@ -131,7 +134,7 @@ export default function StatusCodexRootSettingsSection({
               >
                 <span className="font-mono">{change.key}</span>
                 <span className="text-[var(--text-muted)]"> / {change.kind} / </span>
-                <span>{String(change.before ?? '-')} -&gt; {String(change.after)}</span>
+                <span>{String(change.before ?? '-')} -&gt; {String(change.after ?? '-')}</span>
               </div>
             ))}
           </div>

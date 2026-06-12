@@ -34,11 +34,13 @@ import {
   DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE,
   DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
   applyCodexAccountOrderFilter,
+  buildCodexAccountOrderFilterPresetState,
   chooseCodexOrderSectionActionLayout,
   filterCodexAccountOrderRows,
   getCodexAccountOrderGridClass,
   normalizeCodexAccountOrderFilter,
   parseCodexAccountOrderDisplayMode,
+  removeCodexAccountOrderFilterSummaryPart,
   summarizeCodexAccountOrderFilter,
   shouldUseCodexOrderSectionActionMenu,
 } from './model/codexAccountOrderSectionLayout.ts';
@@ -459,6 +461,11 @@ test('buildCodexAccountRows preserves account quota and billing metadata for sha
         quotaEnabled: true,
         billingCurl: 'curl https://billing.example.test',
         billingEnabled: true,
+        statusMessage: 'runtime synced',
+        platformCookie: 'cookie-value',
+        curlVariables: { account_id: 'stable' },
+        modelFetchApiKey: 'model-fetch-key',
+        modelFetchBaseUrl: 'https://models.example.test/v1',
       },
     ],
     providers: [],
@@ -470,6 +477,13 @@ test('buildCodexAccountRows preserves account quota and billing metadata for sha
   assert.equal(account.quotaEnabled, true);
   assert.equal(account.billingCurl, 'curl https://billing.example.test');
   assert.equal(account.billingEnabled, true);
+  assert.equal(account.accountKind, 'codex-api-key');
+  assert.equal(account.statusMessage, 'runtime synced');
+  assert.equal(account.platformCookie, 'cookie-value');
+  assert.deepEqual(account.curlVariables, { account_id: 'stable' });
+  assert.equal(account.modelFetchApiKey, 'model-fetch-key');
+  assert.equal(account.modelFetchBaseUrl, 'https://models.example.test/v1');
+  assert.equal(rows[0].sourceAccount?.id, 'codex-api-key:stable');
   assert.equal(supportsQuota(account), true);
   assert.equal(buildQuotaDisplay(account, { status: 'loading' }).status, 'loading');
 });
@@ -632,12 +646,12 @@ test('chooseCodexOrderSectionActionLayout expands inline, wraps, then falls back
 
 test('parseCodexAccountOrderDisplayMode supports persisted list sorting mode', () => {
   assert.equal(CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY, 'gettokens.codex.account-order-display-mode');
-  assert.equal(DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE, 'compact');
-  assert.equal(parseCodexAccountOrderDisplayMode('compact'), 'compact');
+  assert.equal(DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE, 'full');
+  assert.equal(parseCodexAccountOrderDisplayMode('compact'), 'full');
   assert.equal(parseCodexAccountOrderDisplayMode('list'), 'list');
   assert.equal(parseCodexAccountOrderDisplayMode('full'), 'full');
-  assert.equal(parseCodexAccountOrderDisplayMode('unknown'), 'compact');
-  assert.equal(parseCodexAccountOrderDisplayMode(null), 'compact');
+  assert.equal(parseCodexAccountOrderDisplayMode('unknown'), 'full');
+  assert.equal(parseCodexAccountOrderDisplayMode(null), 'full');
 });
 
 test('filterCodexAccountOrderRows hides blocked accounts without reordering visible rows', () => {
@@ -717,6 +731,46 @@ test('applyCodexAccountOrderFilter normalizes patched filter state', () => {
   );
 });
 
+test('Codex account order filter presets mirror account pool quick filters', () => {
+  assert.deepEqual(
+    buildCodexAccountOrderFilterPresetState('all', {
+      ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+      source: 'openai-compatible',
+      requiresRequestable: true,
+      hasBalance: true,
+    }),
+    DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+  );
+  assert.deepEqual(buildCodexAccountOrderFilterPresetState('participating'), {
+    ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+    requiresParticipating: true,
+  });
+  assert.deepEqual(
+    buildCodexAccountOrderFilterPresetState('requestable', {
+      ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+      requiresBlocked: true,
+      requiresDisabled: true,
+      requiresError: true,
+    }),
+    {
+      ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+      requiresRequestable: true,
+    },
+  );
+  assert.deepEqual(buildCodexAccountOrderFilterPresetState('blocked'), {
+    ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+    requiresBlocked: true,
+  });
+  assert.deepEqual(buildCodexAccountOrderFilterPresetState('openai-compatible'), {
+    ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+    source: 'openai-compatible',
+  });
+  assert.deepEqual(buildCodexAccountOrderFilterPresetState('with-balance'), {
+    ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+    hasBalance: true,
+  });
+});
+
 test('summarizeCodexAccountOrderFilter keeps status, resource, and source parts in a stable order', () => {
   assert.deepEqual(
     summarizeCodexAccountOrderFilter((key) => key, {
@@ -743,6 +797,34 @@ test('summarizeCodexAccountOrderFilter keeps status, resource, and source parts 
       ['source', 'codex.account_list_source_api_key'],
     ],
   );
+});
+
+test('removeCodexAccountOrderFilterSummaryPart removes one active chip at a time', () => {
+  const filter = {
+    ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+    source: 'openai-compatible',
+    requiresParticipating: true,
+    requiresRequestable: true,
+    hasBalance: true,
+  };
+  const parts = summarizeCodexAccountOrderFilter((key) => key, filter);
+
+  assert.deepEqual(removeCodexAccountOrderFilterSummaryPart(filter, parts[0]), {
+    ...filter,
+    requiresParticipating: false,
+  });
+  assert.deepEqual(removeCodexAccountOrderFilterSummaryPart(filter, parts[1]), {
+    ...filter,
+    requiresRequestable: false,
+  });
+  assert.deepEqual(removeCodexAccountOrderFilterSummaryPart(filter, parts[2]), {
+    ...filter,
+    hasBalance: false,
+  });
+  assert.deepEqual(removeCodexAccountOrderFilterSummaryPart(filter, parts[3]), {
+    ...filter,
+    source: 'all',
+  });
 });
 
 test('filterCodexAccountOrderRows syncs source, balance, disabled, error, and longest quota filters', () => {
@@ -934,12 +1016,10 @@ test('filterCodexAccountOrderRows applies text search across account identity an
 });
 
 test('getCodexAccountOrderGridClass keeps list single-column and card modes adaptive', () => {
-  assert.equal(getCodexAccountOrderGridClass('list'), 'grid gap-3 pt-4');
-  assert.match(getCodexAccountOrderGridClass('compact'), /codex-account-order-card-grid-compact/);
-  assert.match(getCodexAccountOrderGridClass('full'), /codex-account-order-card-grid-full/);
-  assert.doesNotMatch(getCodexAccountOrderGridClass('compact'), /\bp-4\b/);
+  assert.equal(getCodexAccountOrderGridClass('list'), 'grid grid-cols-1 gap-3 pt-4');
+  assert.equal(getCodexAccountOrderGridClass('full'), 'account-card-grid-full grid gap-8 pt-4');
   assert.doesNotMatch(getCodexAccountOrderGridClass('full'), /\bp-4\b/);
-  assert.doesNotMatch(getCodexAccountOrderGridClass('compact'), /xl:grid-cols-3/);
+  assert.doesNotMatch(getCodexAccountOrderGridClass('full'), /codex-account-order-card-grid/);
   assert.doesNotMatch(getCodexAccountOrderGridClass('full'), /xl:grid-cols-3/);
 });
 
@@ -977,13 +1057,19 @@ test('Codex account order cards reuse the account pool card and drag the whole c
   assert.match(source, /extraBadges=\{badges\}/);
   assert.match(source, /eyebrowPrefix=\{`#\$\{index \+ 1\}`\}/);
   assert.match(source, /showDeleteAction=\{false\}/);
-  assert.match(source, /showFooterActions=\{false\}/);
+  assert.match(source, /showFooterActions/);
+  assert.match(source, /showFooterReauthAction=\{false\}/);
   assert.match(source, /localCliActions=\{manualActions\}/);
+  assert.match(source, /onRefreshQuota=\{\(\) => onRefreshQuota\(row\)\}/);
+  assert.match(source, /usageRefreshing=\{usageRefreshing\}/);
+  assert.match(source, /rateLimitRefreshing=\{rateLimitRefreshing\}/);
   assert.match(source, /type AccountCardLocalCliAction/);
   assert.doesNotMatch(source, /fillHeight=\{false\}/);
   assert.match(source, /draggable/);
   assert.match(source, /onDragStart=\{\(\) => onDragStart\(row\.id\)\}/);
   assert.doesNotMatch(source, /if \(density === 'list'\)/);
+  assert.doesNotMatch(source, /row-span-6/);
+  assert.doesNotMatch(source, /grid-rows-\[subgrid\]/);
   assert.doesNotMatch(source, /GripVertical/);
   assert.doesNotMatch(source, /ShieldCheck/);
   assert.doesNotMatch(source, /absolute bottom-2 right-2/);
@@ -999,6 +1085,8 @@ test('Codex account order cards reuse the account pool card and drag the whole c
   assert.doesNotMatch(source, /function RegionHead/);
   assert.match(accountCardSource, /showDeleteAction = true/);
   assert.match(accountCardSource, /showFooterActions = true/);
+  assert.match(accountCardSource, /showFooterReauthAction = true/);
+  assert.match(accountCardSource, /showFooterReauthAction && canReauth/);
   assert.match(accountCardSource, /eyebrowPrefix = ''/);
   assert.match(accountCardFrameSource, /flex h-full w-full/);
   assert.match(accountCardSource, /extraBadges = \[\]/);
@@ -1014,20 +1102,42 @@ test('Codex account order section uses a lighter shell instead of a nested card 
   );
   assert.match(
     source,
-    /CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS =\n  'relative flex flex-wrap items-start justify-between gap-3 border-b-2 border-\[var\(--border-color\)\] pb-4';/,
+    /CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS =\n  'pt-4';/,
   );
-  assert.match(source, /chooseCodexOrderSectionActionLayout/);
-  assert.match(source, /actionLayout === 'wrapped'/);
-  assert.match(source, /actionLayout === 'inline'/);
-  assert.match(source, /actionLayout === 'wrapped' \? 'w-full justify-start'/);
-  assert.doesNotMatch(source, /w-full justify-start sm:justify-end/);
-  assert.match(source, /className=\{`min-w-0 \$\{actionLayout === 'wrapped' \? 'w-full' : 'flex-1'\}`\}/);
+  assert.doesNotMatch(source, /chooseCodexOrderSectionActionLayout/);
+  assert.doesNotMatch(source, /actionLayout/);
+  assert.doesNotMatch(source, /CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS/);
+  assert.doesNotMatch(source, /<h2 className=/);
+  assert.doesNotMatch(source, /<p className="mt-2 max-w-3xl/);
   assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\] px-5 py-4/);
   assert.doesNotMatch(source, /CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS/);
   assert.doesNotMatch(
     source,
     /<section className="border-\[3px\] border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] shadow-\[8px_8px_0_var\(--shadow-color\)\]">/,
   );
+});
+
+test('Codex account order card footer refresh uses the account pool refresh strategy', async () => {
+  const featureSource = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
+  const sectionSource = await readFile(new URL('./components/CodexAccountOrderSection.tsx', import.meta.url), 'utf8');
+  const rowSource = await readFile(new URL('./components/CodexAccountOrderRow.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /refreshCodexQuota/);
+  assert.match(featureSource, /refreshAccountUsage/);
+  assert.match(featureSource, /refreshAccountRateLimits/);
+  assert.match(featureSource, /function refreshOrderAccount\(row: CodexAccountRow\)/);
+  assert.match(featureSource, /const account = codexRowToAccountRecord\(row\)/);
+  assert.match(featureSource, /void refreshCodexQuota\(account\)/);
+  assert.match(featureSource, /void refreshAccountUsage\(\[account\]\)/);
+  assert.match(featureSource, /void refreshAccountRateLimits\(\[account\]\)/);
+  assert.match(featureSource, /usageRefreshingAccountIDSet=\{usageRefreshingAccountIDSet\}/);
+  assert.match(featureSource, /rateLimitRefreshingAccountIDSet=\{rateLimitRefreshingAccountIDSet\}/);
+  assert.match(featureSource, /onRefreshQuota=\{refreshOrderAccount\}/);
+  assert.match(sectionSource, /onRefreshQuota\?: \(row: CodexAccountRow\) => void/);
+  assert.match(sectionSource, /usageRefreshingAccountIDSet\?: ReadonlySet<string>/);
+  assert.match(sectionSource, /rateLimitRefreshingAccountIDSet\?: ReadonlySet<string>/);
+  assert.match(rowSource, /onRefreshQuota: \(row: CodexAccountRow\) => void/);
+  assert.match(rowSource, /onRefreshQuota=\{\(\) => onRefreshQuota\(row\)\}/);
 });
 
 test('Codex account order row no longer exposes separate top and bottom card actions', async () => {
@@ -1043,17 +1153,33 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   const source = await readFile(new URL('./components/CodexAccountOrderSection.tsx', import.meta.url), 'utf8');
   const refreshButtonSource = await readFile(new URL('../../components/ui/RefreshActionButton.tsx', import.meta.url), 'utf8');
 
+  assert.match(source, /CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS/);
+  assert.match(source, /'pt-4'/);
   assert.match(source, /flex w-full flex-wrap items-center gap-2/);
-  assert.match(source, /min-w-\[18rem\] flex-\[1_1_18rem\]/);
+  assert.match(source, /className="min-w-\[18rem\] flex-1"/);
+  assert.match(source, /ml-auto flex shrink-0 items-center gap-2/);
   assert.doesNotMatch(source, /max-w-\[24rem\]/);
+  assert.doesNotMatch(source, /grid grid-cols-1 gap-4 pt-4/);
   assert.match(source, /RefreshActionButton/);
-  assert.match(source, /iconOnly=\{!stacked\}/);
+  assert.match(source, /\biconOnly\b/);
   assert.doesNotMatch(source, /loading \? loadingLabel : refreshLabel/);
   assert.match(refreshButtonSource, /RefreshCw/);
   assert.match(refreshButtonSource, /loading \? 'animate-spin' : ''/);
   assert.match(refreshButtonSource, /iconOnly \? null/);
-  assert.match(source, /fitContent=\{!stacked\}/);
+  assert.doesNotMatch(source, /SegmentedControl/);
+  assert.doesNotMatch(source, /fitContent/);
+  assert.match(source, /function DisplayModeButton/);
+  assert.match(source, /grid h-10 shrink-0 grid-cols-2/);
+  assert.doesNotMatch(source, /account_list_density_compact/);
   assert.doesNotMatch(source, /grid-cols-\[minmax\(12rem,17rem\)_5\.75rem_minmax\(12rem,auto\)_12\.5rem\]/);
+  assert.match(source, /accounts\.filter_group_presets/);
+  assert.match(source, /accounts\.filter_active_conditions/);
+  assert.match(source, /removeCodexAccountOrderFilterSummaryPart/);
+  assert.match(source, /onRefreshQuota=\{onRefreshQuota\}/);
+  assert.match(source, /usageRefreshingAccountIDSet\?\.has\(row\.id\)/);
+  assert.match(source, /rateLimitRefreshingAccountIDSet\?\.has\(row\.id\)/);
+  assert.match(source, /buildCodexAccountOrderFilterPresetState/);
+  assert.match(source, /buildToolbarFilterLabel/);
   assert.match(source, /account_list_filter_balance_match/);
   assert.match(source, /account_list_filter_group_route/);
   assert.match(source, /account_list_filter_participating_match/);
@@ -1069,6 +1195,14 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.doesNotMatch(source, /errorsOnly/);
   assert.match(source, /account_list_source_openai_compatible/);
   assert.match(source, /FilterCheckOption/);
+  assert.match(source, /FilterPillOption/);
+  assert.match(source, /accounts\.filter_group_plan_source/);
+  assert.match(source, /accounts\.filter_group_other/);
+  assert.match(source, /function FilterBinaryOptionRow/);
+  assert.match(source, /h-8 min-w-16/);
+  assert.match(source, /aria-pressed=\{active\}/);
+  assert.match(source, /min-h-9 cursor-pointer items-center gap-2\.5/);
+  assert.match(source, /btn-swiss h-9 !px-2\.5 !py-1 !text-\[length:var\(--font-size-ui-md-compact\)\]/);
   assert.doesNotMatch(source, /function SourceFilterButton/);
   assert.doesNotMatch(source, /function ActionControlCluster/);
 });
