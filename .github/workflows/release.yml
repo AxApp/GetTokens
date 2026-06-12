@@ -43,10 +43,58 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
 
+  # ── Build sidecar once per target, share with macOS package jobs ──────────
+  build-sidecar:
+    name: Build CLIProxyAPI sidecar
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: darwin
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      - name: Resolve CLIProxyAPI source commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          sidecar_path="docs-linhay/references/CLIProxyAPI"
+          sidecar_commit="$(git ls-tree HEAD "${sidecar_path}" | awk '$2 == "commit" {print $3}')"
+          if [[ -z "${sidecar_commit}" ]]; then
+            echo "Missing gitlink commit for ${sidecar_path}" >&2
+            exit 1
+          fi
+          echo "CLI_PROXY_COMMIT=${sidecar_commit}" >> "$GITHUB_ENV"
+          echo "CLI_PROXY_SOURCE_REF=${sidecar_commit}" >> "$GITHUB_ENV"
+
+      - name: Build CLIProxyAPI sidecar from source
+        shell: bash
+        run: |
+          chmod +x scripts/ensure-sidecar.sh scripts/build-sidecar.sh
+          CLI_PROXY_OUTPUT_DIR="${GITHUB_WORKSPACE}/build/sidecar" \
+            ./scripts/ensure-sidecar.sh ${{ matrix.goos }} ${{ matrix.goarch }}
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: cli-proxy-api-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            build/sidecar/cli-proxy-api
+            build/sidecar/cli-proxy-api.meta.json
+
   # ── Platform matrix ───────────────────────────────────────────────────────
   build:
     name: Build ${{ matrix.os-name }}
-    needs: build-frontend
+    needs:
+      - build-frontend
+      - build-sidecar
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -57,6 +105,7 @@ jobs:
             goos: darwin
             goarch: arm64
             wails-platform: darwin/arm64
+            wails-extra: ''
             package-ext: dmg
             asset-name: GetTokens_macOS_AppleSilicon.dmg
             updater-asset-name: GetTokens_macOS_AppleSilicon.tar.gz
@@ -68,6 +117,7 @@ jobs:
             goos: darwin
             goarch: amd64
             wails-platform: darwin/amd64
+            wails-extra: ''
             package-ext: dmg
             asset-name: GetTokens_macOS_Intel.dmg
             updater-asset-name: GetTokens_macOS_Intel.tar.gz
@@ -106,6 +156,12 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
 
+      - name: Download CLIProxyAPI sidecar artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: cli-proxy-api-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: build/sidecar/
+
       # ── Wails ────────────────────────────────────────────────────────────
       - name: Install Wails
         shell: bash
@@ -119,13 +175,6 @@ jobs:
             fi
           done
           exit 1
-
-      # ── Build sidecar from fork source ───────────────────────────────────
-      - name: Ensure CLIProxyAPI sidecar from source
-        shell: bash
-        run: |
-          chmod +x scripts/ensure-sidecar.sh scripts/build-sidecar.sh
-          ./scripts/ensure-sidecar.sh ${{ matrix.goos }} ${{ matrix.goarch }}
 
       # ── Platform-specific dependencies ───────────────────────────────────
       - name: Install macOS packaging tools
@@ -201,8 +250,8 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          cp build/bin/cli-proxy-api build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
-          cp build/bin/cli-proxy-api.meta.json build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json
+          cp build/sidecar/cli-proxy-api build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
+          cp build/sidecar/cli-proxy-api.meta.json build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json
           chmod +x build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
           file build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
 
@@ -362,10 +411,8 @@ jobs:
   # ── Publish GitHub Release ────────────────────────────────────────────────
   release:
     name: Publish Release
-    needs:
-      - build
-      - sparkle-appcast
-    if: ${{ always() && needs.build.result == 'success' && (needs.sparkle-appcast.result == 'success' || needs.sparkle-appcast.result == 'skipped') }}
+    needs: build
+    if: ${{ needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
