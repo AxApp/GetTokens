@@ -51,6 +51,13 @@
 docs-linhay/scripts/verify-prod-routeability-readonly.sh
 ```
 
+若要直接归档证据，可指定输出 JSON：
+
+```bash
+GETTOKENS_VERIFY_OUTPUT_JSON=docs-linhay/spaces/20260615-account-store-runtime-routeability/plans/20260615-prod-routeability-evidence.json \
+  docs-linhay/scripts/verify-prod-routeability-readonly.sh
+```
+
 默认参数：
 
 - `GETTOKENS_VERIFY_BASE_URL=http://127.0.0.1:8317`
@@ -60,6 +67,9 @@ docs-linhay/scripts/verify-prod-routeability-readonly.sh
 - `GETTOKENS_VERIFY_EXPECTED_COMMIT=688f29726719e01e1206d23db47017dea8028253`
 - `GETTOKENS_VERIFY_READY_RETRIES=10`
 - `GETTOKENS_VERIFY_RETRY_DELAY_SECONDS=1`
+- `GETTOKENS_VERIFY_CONNECT_TIMEOUT_SECONDS=2`
+- `GETTOKENS_VERIFY_MAX_TIME_SECONDS=10`
+- `GETTOKENS_VERIFY_OUTPUT_JSON` 默认不写文件
 
 脚本只做只读动作：读取 bundle meta、请求 `/healthz`、查询 management 账号列表、调用 `channel-routing/explain`、查询账号 models、检查最近 sidecar log tail 中是否还有本轮已修复的 panic/schema 签名。它不会替换 `/Applications/GetTokens.app`、不会 kill/restart 正式进程，也不会修改正式配置或账号数据。
 

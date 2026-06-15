@@ -22,6 +22,10 @@ Environment:
   GETTOKENS_VERIFY_READY_RETRIES    HTTP retry count for readiness windows. Default: 10
   GETTOKENS_VERIFY_RETRY_DELAY_SECONDS
                                        Delay between retries. Default: 1
+  GETTOKENS_VERIFY_CONNECT_TIMEOUT_SECONDS
+                                       Per-attempt connect timeout. Default: 2
+  GETTOKENS_VERIFY_MAX_TIME_SECONDS   Per-attempt total timeout. Default: 10
+  GETTOKENS_VERIFY_OUTPUT_JSON      Optional path for sanitized verification evidence JSON.
 EOF
 }
 
@@ -63,6 +67,8 @@ curl_json() {
           -H "Authorization: Bearer ${MANAGEMENT_KEY}" \
           -H "Content-Type: application/json" \
           --data "$body" \
+          --connect-timeout "$CONNECT_TIMEOUT_SECONDS" \
+          --max-time "$MAX_TIME_SECONDS" \
           "$url" \
           2>&1
       )"
@@ -72,6 +78,8 @@ curl_json() {
         curl -sS -w $'\n%{http_code}' \
           -X "$method" \
           -H "Authorization: Bearer ${MANAGEMENT_KEY}" \
+          --connect-timeout "$CONNECT_TIMEOUT_SECONDS" \
+          --max-time "$MAX_TIME_SECONDS" \
           "$url" \
           2>&1
       )"
@@ -111,6 +119,70 @@ extract_port() {
   fi
 }
 
+write_summary_json() {
+  [[ -n "$OUTPUT_JSON" ]] || return 0
+  local output_dir
+  local generated_at
+  output_dir="$(dirname "$OUTPUT_JSON")"
+  generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  mkdir -p "$output_dir"
+  jq -n \
+    --arg generatedAt "$generated_at" \
+    --arg result "verified-routeable" \
+    --arg baseUrl "$BASE_URL" \
+    --arg bundleMeta "$BUNDLE_META" \
+    --arg bundleCommit "${meta_commit:-}" \
+    --arg bundleDirty "${meta_dirty:-}" \
+    --arg bundleFingerprint "${meta_fingerprint:-}" \
+    --arg accountKey "$ACCOUNT_KEY" \
+    --arg accountTitle "${account_title:-}" \
+    --arg runtimeApplyStatus "${apply_status:-}" \
+    --arg runtimeRouteabilityStatus "${routeability_status:-}" \
+    --arg runtimeFailureClass "${failure_class:-}" \
+    --arg runtimeRepairOutcome "${repair_outcome:-}" \
+    --arg explainSelectedAccountID "${selected_id:-}" \
+    --arg explainTargetRouteIDs "${route_ids:-}" \
+    --arg modelPrimary "$MODEL_PRIMARY" \
+    --arg modelSecondary "$MODEL_SECONDARY" \
+    --arg logCheck "${log_check:-unknown}" \
+    --argjson runtimeRegisteredModelsCount "${registered_count:-0}" \
+    --argjson explainCandidateCount "${candidate_count:-0}" \
+    --argjson explainFilteredCount "${filtered_count:-0}" \
+    --argjson modelsCount "${model_count:-0}" \
+    '{
+      generatedAt: $generatedAt,
+      result: $result,
+      baseUrl: $baseUrl,
+      bundle: {
+        metaPath: $bundleMeta,
+        commit: $bundleCommit,
+        dirty: $bundleDirty,
+        fingerprint: $bundleFingerprint
+      },
+      account: {
+        key: $accountKey,
+        title: $accountTitle,
+        runtimeApplyStatus: $runtimeApplyStatus,
+        runtimeRouteabilityStatus: $runtimeRouteabilityStatus,
+        runtimeRegisteredModelsCount: $runtimeRegisteredModelsCount,
+        runtimeFailureClass: $runtimeFailureClass,
+        runtimeRepairOutcome: $runtimeRepairOutcome
+      },
+      explain: {
+        selectedAccountID: $explainSelectedAccountID,
+        targetRouteIDs: ($explainTargetRouteIDs | split(",") | map(select(length > 0))),
+        candidateCount: $explainCandidateCount,
+        filteredCount: $explainFilteredCount
+      },
+      models: {
+        expected: [$modelPrimary, $modelSecondary],
+        count: $modelsCount
+      },
+      logCheck: $logCheck
+    }' >"$OUTPUT_JSON"
+  echo "output_json=${OUTPUT_JSON}"
+}
+
 require_tool curl
 require_tool jq
 
@@ -127,6 +199,9 @@ LOG_TAIL_LINES="${GETTOKENS_VERIFY_LOG_TAIL_LINES:-400}"
 SKIP_LOGS="${GETTOKENS_VERIFY_SKIP_LOGS:-0}"
 READY_RETRIES="${GETTOKENS_VERIFY_READY_RETRIES:-10}"
 RETRY_DELAY_SECONDS="${GETTOKENS_VERIFY_RETRY_DELAY_SECONDS:-1}"
+CONNECT_TIMEOUT_SECONDS="${GETTOKENS_VERIFY_CONNECT_TIMEOUT_SECONDS:-2}"
+MAX_TIME_SECONDS="${GETTOKENS_VERIFY_MAX_TIME_SECONDS:-10}"
+OUTPUT_JSON="${GETTOKENS_VERIFY_OUTPUT_JSON:-}"
 
 echo "== GetTokens routeability readonly verification =="
 echo "base_url=${BASE_URL}"
@@ -288,12 +363,16 @@ if [[ "$SKIP_LOGS" != "1" ]]; then
       echo "classification=recent-log-regression-signature" >&2
       exit 1
     fi
+    log_check="absent"
     echo "recent_log_regression_signatures=absent"
   else
+    log_check="skipped-log-not-found"
     echo "recent_log_regression_signatures=skipped-log-not-found"
   fi
 else
+  log_check="skipped-by-env"
   echo "recent_log_regression_signatures=skipped-by-env"
 fi
 
+write_summary_json
 echo "RESULT=verified-routeable"
