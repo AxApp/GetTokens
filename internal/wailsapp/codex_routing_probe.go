@@ -14,6 +14,7 @@ import (
 	"time"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
 type ProbeCodexAccountRoutingInput struct {
@@ -66,9 +67,28 @@ type codexRoutingRecentBucket struct {
 	Failed  int64 `json:"failed"`
 }
 
+type codexRoutingLiveRequestMarker struct {
+	RequestID    string
+	AccountID    string
+	AccountLabel string
+	Provider     string
+	Model        string
+	StartedAt    string
+}
+
+type codexRoutingDecisionMarker struct {
+	DecisionID   string
+	AccountID    string
+	AccountLabel string
+	Provider     string
+	Model        string
+	RecordedAt   string
+}
+
 const (
 	codexRouteAllowHeader    = "X-GetTokens-Route-Allow"
 	codexRouteDenyHeader     = "X-GetTokens-Route-Deny"
+	codexRouteOrderHeader    = "X-GetTokens-Route-Order"
 	codexRouteFallbackHeader = "X-GetTokens-Route-Fallback"
 )
 
@@ -91,7 +111,7 @@ func (a *App) ProbeCodexAccountRouting(input ProbeCodexAccountRoutingInput) (*Co
 		return nil, err
 	}
 
-	candidates, err := a.loadCodexRoutingProbeCandidates()
+	candidates, err := a.loadCodexRoutingProbeCandidates(model)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +144,7 @@ func (a *App) firstRelayAPIKey() (string, error) {
 	return "", errors.New("中转服务 API KEY 未配置")
 }
 
-func (a *App) loadCodexRoutingProbeCandidates() ([]codexRoutingProbeCandidate, error) {
+func (a *App) loadCodexRoutingProbeCandidates(model string) ([]codexRoutingProbeCandidate, error) {
 	accounts, err := a.ListAccounts()
 	if err != nil {
 		return nil, err
@@ -132,7 +152,7 @@ func (a *App) loadCodexRoutingProbeCandidates() ([]codexRoutingProbeCandidate, e
 
 	candidates := make([]codexRoutingProbeCandidate, 0, len(accounts))
 	for _, account := range accounts {
-		if account.Disabled || !codexRoutingRecordRequestable(account.Status) {
+		if account.Disabled || !codexRoutingRecordRequestable(account) {
 			continue
 		}
 		accountID := strings.TrimSpace(account.ID)
@@ -188,6 +208,11 @@ func (a *App) loadCodexRoutingProbeCandidates() ([]codexRoutingProbeCandidate, e
 		}
 		return candidates[i].ID < candidates[j].ID
 	})
+	if routed, supported, err := a.loadChannelRoutingProbeCandidatesFromManagementExplain("codex", model, candidates); err != nil {
+		return nil, err
+	} else if supported {
+		return routed, nil
+	}
 	return a.filterCodexRoutingProbeRuntimeBlockedCandidates(candidates), nil
 }
 
@@ -256,7 +281,8 @@ func buildCodexRoutingRouteHeaders(input ProbeCodexAccountRoutingInput, candidat
 
 	allowIDs := resolveCodexRoutingRouteIDs(input.AllowAccountIDs, routeIDByAccountID)
 	denyIDs := resolveCodexRoutingRouteIDs(input.DenyAccountIDs, routeIDByAccountID)
-	if len(allowIDs) == 0 && len(denyIDs) == 0 {
+	orderIDs := resolveCodexRoutingRouteIDs(input.OrderAccountIDs, routeIDByAccountID)
+	if len(allowIDs) == 0 && len(denyIDs) == 0 && len(orderIDs) == 0 {
 		return nil
 	}
 
@@ -267,7 +293,14 @@ func buildCodexRoutingRouteHeaders(input ProbeCodexAccountRoutingInput, candidat
 	if len(denyIDs) > 0 {
 		headers[codexRouteDenyHeader] = strings.Join(denyIDs, ",")
 	}
-	headers[codexRouteFallbackHeader] = "false"
+	if len(orderIDs) > 0 {
+		headers[codexRouteOrderHeader] = strings.Join(orderIDs, ",")
+	}
+	if input.AllowFallback {
+		headers[codexRouteFallbackHeader] = "true"
+	} else {
+		headers[codexRouteFallbackHeader] = "false"
+	}
 	return headers
 }
 
@@ -315,6 +348,50 @@ func normalizeCodexRouteIDList(ids []string) []string {
 	return out
 }
 
+func (a *App) loadChannelRoutingProbeCandidatesFromManagementExplain(channel string, model string, localCandidates []codexRoutingProbeCandidate) ([]codexRoutingProbeCandidate, bool, error) {
+	response, supported, err := a.managementClient().ExplainChannelRouting(cliproxyapi.ChannelRoutingExplainInput{
+		Channel:        channel,
+		RequestedModel: strings.TrimSpace(model),
+	})
+	if err != nil || !supported || response == nil {
+		return nil, supported, err
+	}
+	if len(response.Candidates) == 0 {
+		return []codexRoutingProbeCandidate{}, true, nil
+	}
+	byAccountID := make(map[string]codexRoutingProbeCandidate, len(localCandidates))
+	for _, candidate := range localCandidates {
+		accountID := strings.TrimSpace(candidate.ID)
+		if accountID == "" {
+			continue
+		}
+		byAccountID[accountID] = candidate
+	}
+	ordered := make([]codexRoutingProbeCandidate, 0, len(response.Candidates))
+	for _, candidate := range response.Candidates {
+		accountID := strings.TrimSpace(candidate.ID)
+		if accountID == "" {
+			continue
+		}
+		localCandidate, ok := byAccountID[accountID]
+		if !ok {
+			continue
+		}
+		if label := strings.TrimSpace(candidate.DisplayName); label != "" {
+			localCandidate.Label = label
+		}
+		if provider := strings.TrimSpace(candidate.Provider); provider != "" {
+			localCandidate.Provider = provider
+		}
+		localCandidate.Priority = candidate.RouteOrder
+		ordered = append(ordered, localCandidate)
+	}
+	if len(ordered) == 0 {
+		return nil, false, nil
+	}
+	return ordered, true, nil
+}
+
 func buildStableRouteAuthID(kind string, parts ...string) string {
 	hasher := sha256.New()
 	hasher.Write([]byte(strings.TrimSpace(kind)))
@@ -336,6 +413,8 @@ func (a *App) runCodexRoutingProbeAttempt(index int, model string, relayKey stri
 		StartedAt: startedAt.Format(time.RFC3339),
 	}
 
+	beforeDecisions := a.captureCodexRoutingDecisionMarkers("codex", candidates)
+	beforeLive := a.captureCodexRoutingLiveRequests(candidates)
 	before := a.captureCodexRoutingUsage(candidates)
 	payloadBody, err := json.Marshal(map[string]any{
 		"model":      model,
@@ -368,8 +447,20 @@ func (a *App) runCodexRoutingProbeAttempt(index int, model string, relayKey stri
 		attempt.Message = fmt.Sprintf("测试请求返回 HTTP %d", statusCode)
 	}
 
+	afterDecisions := a.captureCodexRoutingDecisionMarkers("codex", candidates)
+	afterLive := a.captureCodexRoutingLiveRequests(candidates)
 	after := a.captureCodexRoutingUsage(candidates)
-	if candidate, delta, ok := detectCodexRoutingProbeHit(before, after, candidates); ok {
+	if marker, ok := detectCodexRoutingProbeHitFromRouteDecisions(beforeDecisions, afterDecisions, model, startedAt); ok {
+		attempt.AccountID = marker.AccountID
+		attempt.AccountLabel = marker.AccountLabel
+		attempt.Provider = marker.Provider
+		attempt.Evidence = "route-decision snapshot"
+	} else if marker, ok := detectCodexRoutingProbeHitFromLiveRequests(beforeLive, afterLive, model, startedAt); ok {
+		attempt.AccountID = marker.AccountID
+		attempt.AccountLabel = marker.AccountLabel
+		attempt.Provider = marker.Provider
+		attempt.Evidence = "live-session request"
+	} else if candidate, delta, ok := detectCodexRoutingProbeHit(before, after, candidates); ok {
 		attempt.AccountID = candidate.ID
 		attempt.AccountLabel = candidate.Label
 		attempt.Provider = candidate.Provider
@@ -397,6 +488,58 @@ func detectCodexRoutingProbeHit(before codexRoutingUsageSnapshot, after codexRou
 	return selected, selectedDelta, selectedDelta > 0
 }
 
+func detectCodexRoutingProbeHitFromLiveRequests(before map[string]codexRoutingLiveRequestMarker, after map[string]codexRoutingLiveRequestMarker, model string, startedAt time.Time) (codexRoutingLiveRequestMarker, bool) {
+	var selected codexRoutingLiveRequestMarker
+	var selectedTime time.Time
+	targetModel := strings.TrimSpace(model)
+	for requestID, marker := range after {
+		if _, ok := before[requestID]; ok {
+			continue
+		}
+		if targetModel != "" && strings.TrimSpace(marker.Model) != "" && !strings.EqualFold(strings.TrimSpace(marker.Model), targetModel) {
+			continue
+		}
+		requestStarted := parseRoutingProbeTime(marker.StartedAt)
+		if !requestStarted.IsZero() && requestStarted.Add(-2*time.Second).Before(startedAt) {
+			if selected.RequestID == "" || selectedTime.Before(requestStarted) {
+				selected = marker
+				selectedTime = requestStarted
+			}
+			continue
+		}
+		if selected.RequestID == "" {
+			selected = marker
+		}
+	}
+	return selected, selected.RequestID != ""
+}
+
+func detectCodexRoutingProbeHitFromRouteDecisions(before map[string]codexRoutingDecisionMarker, after map[string]codexRoutingDecisionMarker, model string, startedAt time.Time) (codexRoutingDecisionMarker, bool) {
+	var selected codexRoutingDecisionMarker
+	var selectedTime time.Time
+	targetModel := strings.TrimSpace(model)
+	for decisionID, marker := range after {
+		if _, ok := before[decisionID]; ok {
+			continue
+		}
+		if targetModel != "" && strings.TrimSpace(marker.Model) != "" && !strings.EqualFold(strings.TrimSpace(marker.Model), targetModel) {
+			continue
+		}
+		recordedAt := parseRoutingProbeTime(marker.RecordedAt)
+		if !recordedAt.IsZero() && recordedAt.Add(-2*time.Second).Before(startedAt) {
+			if selected.DecisionID == "" || selectedTime.Before(recordedAt) {
+				selected = marker
+				selectedTime = recordedAt
+			}
+			continue
+		}
+		if selected.DecisionID == "" {
+			selected = marker
+		}
+	}
+	return selected, selected.DecisionID != ""
+}
+
 func (a *App) captureCodexRoutingUsage(candidates []codexRoutingProbeCandidate) codexRoutingUsageSnapshot {
 	snapshot := make(codexRoutingUsageSnapshot, len(candidates))
 	authFileUsage := a.captureCodexRoutingAuthFileUsage()
@@ -413,6 +556,102 @@ func (a *App) captureCodexRoutingUsage(candidates []codexRoutingProbeCandidate) 
 		snapshot[candidate.ID] = total
 	}
 	return snapshot
+}
+
+func (a *App) captureCodexRoutingLiveRequests(candidates []codexRoutingProbeCandidate) map[string]codexRoutingLiveRequestMarker {
+	snapshot, err := a.GetCodexLiveSessionsSnapshot()
+	if err != nil || snapshot == nil {
+		return map[string]codexRoutingLiveRequestMarker{}
+	}
+	candidateIndex := make(map[string]codexRoutingProbeCandidate, len(candidates))
+	for _, candidate := range candidates {
+		accountID := strings.TrimSpace(candidate.ID)
+		if accountID == "" {
+			continue
+		}
+		candidateIndex[accountID] = candidate
+	}
+	out := make(map[string]codexRoutingLiveRequestMarker)
+	for _, session := range snapshot.Sessions {
+		for _, request := range session.Requests {
+			accountID := strings.TrimSpace(request.AccountKey)
+			if accountID == "" {
+				accountID = strings.TrimSpace(session.AccountKey)
+			}
+			candidate, ok := candidateIndex[accountID]
+			if !ok {
+				continue
+			}
+			requestID := strings.TrimSpace(request.RequestID)
+			if requestID == "" {
+				continue
+			}
+			out[requestID] = codexRoutingLiveRequestMarker{
+				RequestID:    requestID,
+				AccountID:    accountID,
+				AccountLabel: candidate.Label,
+				Provider:     firstNonEmptyString(strings.TrimSpace(request.Provider), candidate.Provider),
+				Model:        firstNonEmptyString(strings.TrimSpace(request.Model), strings.TrimSpace(session.Model)),
+				StartedAt:    strings.TrimSpace(request.StartedAt),
+			}
+		}
+	}
+	return out
+}
+
+func (a *App) captureCodexRoutingDecisionMarkers(channel string, candidates []codexRoutingProbeCandidate) map[string]codexRoutingDecisionMarker {
+	items, supported, err := a.managementClient().ListChannelRoutingDecisions(channel, 20)
+	if err != nil || !supported || len(items) == 0 {
+		return map[string]codexRoutingDecisionMarker{}
+	}
+	candidateIndex := make(map[string]codexRoutingProbeCandidate, len(candidates))
+	for _, candidate := range candidates {
+		accountID := strings.TrimSpace(candidate.ID)
+		if accountID == "" {
+			continue
+		}
+		candidateIndex[accountID] = candidate
+	}
+	out := make(map[string]codexRoutingDecisionMarker)
+	for _, item := range items {
+		accountID := strings.TrimSpace(item.SelectedAccountID)
+		if accountID == "" {
+			continue
+		}
+		candidate, ok := candidateIndex[accountID]
+		if !ok {
+			continue
+		}
+		decisionID := strings.TrimSpace(item.ID)
+		if decisionID == "" {
+			continue
+		}
+		out[decisionID] = codexRoutingDecisionMarker{
+			DecisionID:   decisionID,
+			AccountID:    accountID,
+			AccountLabel: candidate.Label,
+			Provider:     firstNonEmptyString(strings.TrimSpace(item.SelectedProvider), candidate.Provider),
+			Model:        strings.TrimSpace(item.Model),
+			RecordedAt:   strings.TrimSpace(item.RecordedAt),
+		}
+	}
+	return out
+}
+
+func parseRoutingProbeTime(value string) time.Time {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return time.Time{}
+	}
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err == nil {
+		return parsed
+	}
+	parsed, err = time.Parse(time.RFC3339Nano, value)
+	if err == nil {
+		return parsed
+	}
+	return time.Time{}
 }
 
 func (a *App) captureCodexRoutingAuthFileUsage() map[string]int64 {
@@ -508,8 +747,15 @@ func normalizeCodexRoutingAPIUsageComposite(value string) string {
 	return baseURL + "|" + apiKey
 }
 
-func codexRoutingRecordRequestable(status string) bool {
-	switch strings.ToUpper(strings.TrimSpace(status)) {
+func codexRoutingRecordRequestable(account accountsdomain.AccountRecord) bool {
+	switch strings.ToLower(strings.TrimSpace(account.RuntimeStatus)) {
+	case "registered_routeable":
+		return true
+	case "pending", "applied_not_registered", "degraded":
+		return false
+	}
+
+	switch strings.ToUpper(strings.TrimSpace(account.Status)) {
 	case "ACTIVE", "CONFIGURED", "LOCAL":
 		return true
 	default:

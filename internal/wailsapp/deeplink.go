@@ -568,6 +568,8 @@ func rejectForbiddenDeepLinkPayloadFields(raw map[string]json.RawMessage) error 
 		normalized := strings.ToLower(strings.TrimSpace(key))
 		switch normalized {
 		case "account_key", "credential_source", "runtime_apply_status", "runtime_apply_error",
+			"runtime_routeability_status", "runtime_routeability_reason",
+			"runtime_registered_models_count", "last_runtime_reconcile_at_unix_ms",
 			"documents", "operations", "codexlocal", "claudelocal", "configurl", "usagescript":
 			return fmt.Errorf("forbidden_field: %s", key)
 		}

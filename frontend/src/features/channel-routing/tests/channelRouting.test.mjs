@@ -6,12 +6,14 @@ import {
   CHANNEL_ROUTE_MODES,
   CHANNEL_ROUTE_MODE_HELP_SECTIONS,
   buildChannelRouteAuditEventSummary,
+  buildChannelRouteDecisionSummary,
   buildChannelRoutingParticipantRows,
   buildChannelRoutingExplainDigest,
   buildProjectCandidatePoolProjectOptions,
   buildProjectCandidatePoolRuleRows,
   buildPreviewProjectCandidatePoolRules,
   buildPreviewChannelRouteAuditEvent,
+  buildPreviewChannelRouteDecision,
   buildProjectCandidatePoolProjectsFromCodexLiveSessions,
   buildProjectCandidatePoolProjectsFromSessionManagementSnapshot,
   classifyChannelRouteMode,
@@ -416,6 +418,74 @@ test('buildPreviewChannelRouteAuditEvent converts explain result into browser-on
   assert.equal(event.shadowDiff, true);
 });
 
+test('buildPreviewChannelRouteDecision converts explain result into browser-only real decision row', () => {
+  const decision = buildPreviewChannelRouteDecision({
+    channel: 'codex',
+    explain: {
+      requestedModel: 'gpt-5',
+      selectedAccountID: 'acct-company-1',
+      candidates: [{ id: 'acct-company-1' }, { id: 'acct-fallback' }],
+      projectCandidatePool: {
+        projectKey: 'workspace:gettokens',
+        projectName: 'GetTokens',
+        projectKeySource: 'browser-preview',
+        projectKeyConfidence: 'strong',
+      },
+    },
+  });
+
+  assert.ok(decision);
+  assert.equal(decision?.channel, 'codex');
+  assert.equal(decision?.model, 'gpt-5');
+  assert.equal(decision?.selectedAccountID, 'acct-company-1');
+  assert.equal(decision?.candidateCount, 2);
+  assert.equal(decision?.source, 'preview');
+  assert.deepEqual(decision?.trace, [{ stage: 'preview', reason: 'browser preview route decision', activated: true }]);
+});
+
+test('buildChannelRouteDecisionSummary prefers selected account, trace and unresolved diagnostics', () => {
+  assert.deepEqual(
+    buildChannelRouteDecisionSummary({
+      id: 'decision-1',
+      recordedAt: '2026-06-15T10:00:00Z',
+      channel: 'codex',
+      model: 'gpt-5',
+      projectName: 'GetTokens',
+      source: 'scheduler',
+      candidateCount: 3,
+      selectedAccountID: 'acct-company-1',
+      selectedProvider: 'codex',
+      trace: [{ stage: 'pool-scope', reason: 'project-candidate-pool matched', activated: true }],
+    }),
+    {
+      id: 'decision-1',
+      title: '命中 acct-company-1',
+      meta: '模型:gpt-5 · 提供方:codex · 项目:GetTokens · 3 个候选 · 来源:scheduler',
+      detail: 'pool-scope: project-candidate-pool matched · 命中凭据 acct-company-1',
+      unresolved: false,
+    },
+  );
+
+  assert.deepEqual(
+    buildChannelRouteDecisionSummary({
+      id: 'decision-2',
+      recordedAt: '2026-06-15T10:05:00Z',
+      channel: 'codex',
+      candidateCount: 0,
+      unavailableCode: 'project-candidate-pool-no-routeable-account',
+      unavailableMessage: 'project candidate pool left no routeable accounts',
+      trace: [{ stage: 'pool-scope', policy: 'ProjectCandidatePoolPolicy' }],
+    }),
+    {
+      id: 'decision-2',
+      title: '未命中 · project-candidate-pool-no-routeable-account',
+      meta: '0 个候选',
+      detail: 'pool-scope: ProjectCandidatePoolPolicy · project candidate pool left no routeable accounts',
+      unresolved: true,
+    },
+  );
+});
+
 test('buildChannelRoutingParticipantRows shows only requestable accounts in channel order', () => {
   assert.deepEqual(
     buildChannelRoutingParticipantRows(
@@ -796,6 +866,9 @@ test('Codex and Claude account list pages expose project candidate pool rule edi
     assert.match(source, /loadProjectCandidatePoolProjectSources/);
     assert.match(source, /Get(Codex|ClaudeCode)SessionManagementSnapshot/);
     assert.match(source, /projectOptions=\{projectCandidatePoolProjectOptions\}/);
+    assert.match(source, /ListChannelRouteDecisions/);
+    assert.match(source, /buildPreviewChannelRouteDecision/);
+    assert.match(source, /routeDecisions=\{channelRouteDecisions\}/);
   }
   assert.match(codexSource, /GetCodexLiveSessionsSnapshot/);
   assert.match(modalSource, /ProjectCandidatePoolRulesPanel/);
@@ -884,9 +957,10 @@ test('ChannelRoutingWorkbench uses left conditions and right diagnostic result l
   assert.doesNotMatch(source, /lg:border-r/);
   assert.doesNotMatch(source, /border-l border-\[var\(--border-color\)\]/);
   assert.doesNotMatch(source, /onShadowEnabledChange/);
-  assert.doesNotMatch(source, />\s*最近路由\s*</);
-  assert.doesNotMatch(source, /RouteEventLedger/);
-  assert.doesNotMatch(source, /onRefreshEvents/);
+  assert.match(source, />\s*最近真实决策\s*</);
+  assert.match(source, /SIDE CAR/);
+  assert.match(source, /buildChannelRouteDecisionSummary/);
+  assert.match(source, /运行预演或探测后，这里会显示 sidecar 最近真实路由决策/);
   assert.doesNotMatch(source, />\s*链路\s*</);
   assert.doesNotMatch(source, /<StepRow/);
   assert.doesNotMatch(source, /function StepRow/);

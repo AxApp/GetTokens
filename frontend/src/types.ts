@@ -77,6 +77,17 @@ export interface AccountRecord {
   displayName: string;
   status: string;
   statusMessage?: string;
+  runtimeStatus?: string;
+  runtimeReason?: string;
+  runtimeFailureClass?: string;
+  routeable?: boolean;
+  registeredModelCount?: number;
+  runtimeRepairOutcome?: string;
+  runtimeRepairAction?: string;
+  runtimeRepairTriggerStatus?: string;
+  runtimeRepairTriggerClass?: string;
+  runtimeRepairTriggerReason?: string;
+  lastRuntimeRepairAtUnixMs?: number;
   priority?: number;
   disabled?: boolean;
   email?: string;

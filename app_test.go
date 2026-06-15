@@ -628,6 +628,34 @@ func TestMapAccountRecordPreservesRequestabilityEvidence(t *testing.T) {
 	}
 }
 
+func TestMapAccountRecordPreservesRuntimeRouteability(t *testing.T) {
+	record := mapAccountRecord(accountsdomain.AccountRecord{
+		ID:                   "acct_codex_key",
+		AccountKind:          accountsdomain.AccountKindCodexAPIKey,
+		Provider:             "codex",
+		CredentialSource:     accountsdomain.CredentialSourceAPIKey,
+		DisplayName:          "Primary Codex",
+		Status:               "configured",
+		RuntimeStatus:        "applied_not_registered",
+		RuntimeReason:        "runtime auth missing from registry",
+		Routeable:            false,
+		RegisteredModelCount: 0,
+	})
+
+	if got := record.RuntimeStatus; got != "applied_not_registered" {
+		t.Fatalf("RuntimeStatus = %q, want applied_not_registered", got)
+	}
+	if got := record.RuntimeReason; got != "runtime auth missing from registry" {
+		t.Fatalf("RuntimeReason = %q, want runtime auth missing from registry", got)
+	}
+	if record.Routeable {
+		t.Fatal("Routeable = true, want false")
+	}
+	if got := record.RegisteredModelCount; got != 0 {
+		t.Fatalf("RegisteredModelCount = %d, want 0", got)
+	}
+}
+
 func findMenuItemByLabel(appMenu *menu.Menu, label string) *menu.MenuItem {
 	for _, item := range appMenu.Items {
 		if found := findMenuItemByLabelInItem(item, label); found != nil {

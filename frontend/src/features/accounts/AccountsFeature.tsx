@@ -12,6 +12,7 @@ import {
   GetLocalCodexAuthState,
   GetLocalCodexModelProviderStateView,
   GetRelayServiceConfig,
+  ListChannelRouteDecisions,
   ListRateLimitRules,
   ListRelaySupportedModels,
   ProbeCodexAccountRouting,
@@ -62,6 +63,7 @@ import {
 } from "../../utils/pagePersistence";
 import { hasWailsAppBindings, hasWailsRuntime } from "../../utils/previewMode";
 import type { AccountRecord } from "./model/types";
+import type { ChannelRouteDecisionSnapshot } from "../channel-routing/model/channelRouting";
 import {
   resolveAccountLocalCliMappings,
   type AccountCliApplyDraft,
@@ -107,6 +109,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const processedDeepLinksRef = useRef<Set<string>>(new Set());
   const [initialImportPasteContent, setInitialImportPasteContent] =
     useState("");
+  const [detailRouteDecisions, setDetailRouteDecisions] = useState<ChannelRouteDecisionSnapshot[]>([]);
   const [initialImportItems, setInitialImportItems] = useState<
     AccountImportPayloadItem[]
   >([]);
@@ -857,6 +860,40 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     selectedAccount?.credentialSource === "auth-file" &&
     selectedAccount.id.startsWith("acct_");
 
+  useEffect(() => {
+    if (!selectedAccount || !ready || previewMode || !hasWailsAppBindings()) {
+      setDetailRouteDecisions([]);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [codexDecisions, claudeDecisions] = await Promise.all([
+          trackRequest('ListChannelRouteDecisions', { channel: 'codex', limit: 8, source: 'account-detail' }, () =>
+            ListChannelRouteDecisions(main.ChannelRouteDecisionsInput.createFrom({ channel: 'codex', limit: 8 })),
+          ),
+          trackRequest('ListChannelRouteDecisions', { channel: 'claude', limit: 8, source: 'account-detail' }, () =>
+            ListChannelRouteDecisions(main.ChannelRouteDecisionsInput.createFrom({ channel: 'claude', limit: 8 })),
+          ),
+        ]);
+        if (cancelled) {
+          return;
+        }
+        setDetailRouteDecisions([...(codexDecisions || []), ...(claudeDecisions || [])] as ChannelRouteDecisionSnapshot[]);
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setDetailRouteDecisions([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [previewMode, ready, selectedAccount, trackRequest]);
+
   const probeSelectedOAuthModel = useCallback(
     async (model: string) => {
       if (!selectedAccount || !selectedAccountCanProbeOAuthModel) {
@@ -1579,6 +1616,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               }
               verifyState={apiKeyVerifyState}
               oauthModelProbeState={oauthModelProbeStateByID[selectedAccount.id]}
+              routeDecisions={detailRouteDecisions}
               modelNames={resolveAccountVerifyModelNames(
                 selectedAccount,
                 relayModelNames,

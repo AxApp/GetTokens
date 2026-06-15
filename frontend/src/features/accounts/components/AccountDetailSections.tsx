@@ -29,7 +29,10 @@ import { formatLabel } from '../model/vendorPresetHelpers';
 import type { VendorCredentialField } from '../model/vendorPresets';
 import { QuotaBars } from './CardSections';
 import {
+  AccountDetailEvidenceGrid,
   AccountDetailEmptyState,
+  AccountDetailStatCell,
+  AccountDetailStatGrid,
   AccountDetailPill,
   AccountDetailSection,
   type AccountDetailSectionSpan,
@@ -173,6 +176,283 @@ function resolveAccountHeaderTypeLabel(account: AccountRecord) {
     return 'CODEX API KEY';
   }
   return 'OPENAI COMPATIBLE';
+}
+
+export function AccountRuntimeRouteSection({
+  account,
+  routeDecisions = [],
+  span,
+}: {
+  account: AccountRecord;
+  routeDecisions?: Array<{
+    id: string;
+    channel: string;
+    matchedAs: 'selected' | 'candidate';
+    title: string;
+    meta: string;
+    detail: string;
+    unresolved: boolean;
+  }>;
+  span?: AccountDetailSectionSpan;
+}) {
+  const runtimeStatus = String(account.runtimeStatus || '').trim().toLowerCase();
+  const runtimeReason = String(account.runtimeReason || '').trim();
+  const runtimeFailureClass = String(account.runtimeFailureClass || '').trim().toLowerCase();
+  const registeredModelCount = Number.isFinite(account.registeredModelCount) ? Number(account.registeredModelCount) : 0;
+  const runtimeRepairOutcome = String(account.runtimeRepairOutcome || '').trim().toLowerCase();
+  const runtimeRepairAction = String(account.runtimeRepairAction || '').trim().toLowerCase();
+  const runtimeRepairTriggerStatus = String(account.runtimeRepairTriggerStatus || '').trim().toLowerCase();
+  const runtimeRepairTriggerClass = String(account.runtimeRepairTriggerClass || '').trim().toLowerCase();
+  const runtimeRepairTriggerReason = String(account.runtimeRepairTriggerReason || '').trim();
+  const lastRuntimeRepairAtUnixMs = Number.isFinite(account.lastRuntimeRepairAtUnixMs)
+    ? Number(account.lastRuntimeRepairAtUnixMs)
+    : 0;
+  const hasRuntimeEvidence = Boolean(
+    runtimeStatus
+    || account.routeable !== undefined
+    || runtimeReason
+    || runtimeFailureClass
+    || account.registeredModelCount !== undefined
+    || runtimeRepairOutcome
+    || runtimeRepairTriggerClass
+    || runtimeRepairTriggerReason,
+  );
+  const routeStatusLabel = resolveRuntimeRouteStatusLabel(runtimeStatus, account.routeable === true);
+  const routeStatusTone = resolveRuntimeRouteStatusTone(runtimeStatus, account.routeable === true);
+  const requestableLabel = account.routeable === true ? 'YES' : runtimeStatus === 'pending' ? 'WAIT' : 'NO';
+  const repairRows = buildRuntimeRepairRows({
+    runtimeRepairOutcome,
+    runtimeRepairAction,
+    runtimeRepairTriggerStatus,
+    runtimeRepairTriggerClass,
+    runtimeRepairTriggerReason,
+    lastRuntimeRepairAtUnixMs,
+  });
+  const detailRows = [
+    {
+      label: 'runtime_status',
+      value: runtimeStatus || 'unknown',
+      title: runtimeStatus || 'unknown',
+    },
+    {
+      label: 'routeable',
+      value: account.routeable === true ? 'true' : account.routeable === false ? 'false' : 'unknown',
+      title: account.routeable === true ? 'true' : account.routeable === false ? 'false' : 'unknown',
+    },
+    ...(runtimeFailureClass
+      ? [{
+          label: 'Failure Class',
+          value: runtimeFailureClass,
+          title: runtimeFailureClass,
+        }]
+      : []),
+    ...(runtimeReason
+      ? [{
+          label: 'runtime_reason',
+          value: runtimeReason,
+          title: runtimeReason,
+        }]
+      : []),
+    {
+      label: 'account_status',
+      value: String(account.status || '').trim().toUpperCase() || 'UNKNOWN',
+      title: String(account.status || '').trim().toUpperCase() || 'UNKNOWN',
+    },
+  ];
+
+  return (
+    <AccountDetailSection
+      componentName="AccountRuntimeRouteSection"
+      eyebrow="Runtime"
+      title="运行态路由"
+      span={span}
+      bandActionDivider={false}
+      actions={<AccountDetailPill tone={routeStatusTone}>{routeStatusLabel}</AccountDetailPill>}
+    >
+      {hasRuntimeEvidence ? (
+        <div data-account-runtime-route-layout="summary" className="grid gap-4">
+          <AccountDetailStatGrid columns={3}>
+            <AccountDetailStatCell
+              label="Routeability"
+              value={routeStatusLabel}
+              meta={runtimeStatus || 'unknown'}
+            />
+            <AccountDetailStatCell
+              label="Registered Models"
+              value={registeredModelCount > 0 ? String(registeredModelCount) : '—'}
+              meta={registeredModelCount > 0 ? `${registeredModelCount} synced` : 'runtime registry empty'}
+            />
+            <AccountDetailStatCell
+              label="Requestable"
+              value={requestableLabel}
+              meta={account.disabled ? 'disabled in store' : 'sidecar candidate eligibility'}
+            />
+          </AccountDetailStatGrid>
+          <div data-account-runtime-route-evidence="detail">
+            <AccountDetailEvidenceGrid rows={detailRows} />
+          </div>
+          {repairRows.length > 0 ? (
+            <div data-account-runtime-route-repair="diagnostics" className="grid gap-2">
+              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                Bounded Reconcile
+              </div>
+              <AccountDetailEvidenceGrid rows={repairRows} />
+            </div>
+          ) : null}
+          {routeDecisions.length > 0 ? (
+            <div data-account-runtime-route-decisions="recent" className="grid gap-2">
+              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                最近真实路由
+              </div>
+              {routeDecisions.map((decision) => (
+                <div
+                  key={decision.id}
+                  data-account-runtime-route-decision={decision.matchedAs}
+                  className={`border-2 px-3 py-2 ${
+                    decision.unresolved
+                      ? 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_6%,var(--bg-surface))]'
+                      : 'border-[var(--border-color)] bg-[var(--bg-surface)]'
+                  }`}
+                >
+                  <div className="flex min-w-0 items-center justify-between gap-3">
+                    <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                      {decision.title}
+                    </div>
+                    <AccountDetailPill tone={decision.unresolved ? 'danger' : 'neutral'} className="!min-h-0 !py-0.5 !text-[length:var(--font-size-ui-2xs)]">
+                      {decision.matchedAs === 'selected' ? '命中' : '候选'}
+                    </AccountDetailPill>
+                  </div>
+                  {decision.meta ? (
+                    <div className="mt-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {decision.meta}
+                    </div>
+                  ) : null}
+                  {decision.detail ? (
+                    <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-secondary)]">
+                      {decision.detail}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <AccountDetailEmptyState>
+          暂无 sidecar 运行态路由诊断
+        </AccountDetailEmptyState>
+      )}
+    </AccountDetailSection>
+  );
+}
+
+function resolveRuntimeRouteStatusLabel(runtimeStatus: string, routeable: boolean) {
+  switch (runtimeStatus) {
+    case 'registered_routeable':
+      return routeable ? 'ROUTEABLE' : 'REGISTERED';
+    case 'pending':
+      return 'PENDING';
+    case 'applied_not_registered':
+      return 'NOT REGISTERED';
+    case 'degraded':
+      return 'DEGRADED';
+    default:
+      return routeable ? 'ROUTEABLE' : 'UNKNOWN';
+  }
+}
+
+function resolveRuntimeRouteStatusTone(runtimeStatus: string, routeable: boolean): 'neutral' | 'success' | 'warning' | 'danger' {
+  switch (runtimeStatus) {
+    case 'registered_routeable':
+      return 'success';
+    case 'pending':
+      return 'warning';
+    case 'applied_not_registered':
+    case 'degraded':
+      return 'danger';
+    default:
+      return routeable ? 'success' : 'neutral';
+  }
+}
+
+function buildRuntimeRepairRows({
+  runtimeRepairOutcome,
+  runtimeRepairAction,
+  runtimeRepairTriggerStatus,
+  runtimeRepairTriggerClass,
+  runtimeRepairTriggerReason,
+  lastRuntimeRepairAtUnixMs,
+}: {
+  runtimeRepairOutcome: string;
+  runtimeRepairAction: string;
+  runtimeRepairTriggerStatus: string;
+  runtimeRepairTriggerClass: string;
+  runtimeRepairTriggerReason: string;
+  lastRuntimeRepairAtUnixMs: number;
+}) {
+  const rows: Array<{ label: string; value: string; title: string }> = [];
+  if (runtimeRepairOutcome) {
+    rows.push({
+      label: 'Repair Outcome',
+      value: runtimeRepairOutcome.toUpperCase(),
+      title: runtimeRepairOutcome,
+    });
+  }
+  if (runtimeRepairAction) {
+    rows.push({
+      label: 'Repair Action',
+      value: runtimeRepairAction,
+      title: runtimeRepairAction,
+    });
+  }
+  if (runtimeRepairTriggerStatus) {
+    rows.push({
+      label: 'Repair Trigger',
+      value: runtimeRepairTriggerStatus,
+      title: runtimeRepairTriggerStatus,
+    });
+  }
+  if (runtimeRepairTriggerClass) {
+    rows.push({
+      label: 'Trigger Class',
+      value: runtimeRepairTriggerClass,
+      title: runtimeRepairTriggerClass,
+    });
+  }
+  if (runtimeRepairTriggerReason) {
+    rows.push({
+      label: 'Trigger Reason',
+      value: runtimeRepairTriggerReason,
+      title: runtimeRepairTriggerReason,
+    });
+  }
+  if (lastRuntimeRepairAtUnixMs > 0) {
+    rows.push({
+      label: 'Repair At',
+      value: formatRuntimeRepairTimestamp(lastRuntimeRepairAtUnixMs),
+      title: String(lastRuntimeRepairAtUnixMs),
+    });
+  }
+  return rows;
+}
+
+function formatRuntimeRepairTimestamp(value: number) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return '—';
+  }
+  try {
+    return new Date(value).toLocaleString('zh-CN', {
+      hour12: false,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+  } catch {
+    return String(value);
+  }
 }
 
 export function AccountCredentialVerifySection({

@@ -34,6 +34,10 @@ test('readStoredAccountRecords restores cached account records for first paint',
           credentialSource: 'api-key',
           displayName: 'Cached API Key',
           status: 'ACTIVE',
+          runtimeStatus: 'registered_routeable',
+          routeable: true,
+          registeredModelCount: 3,
+          runtimeFailureClass: '',
           quotaKey: 'acct_cache_1',
           priority: 9,
           supportedFormats: ['openai_responses'],
@@ -50,6 +54,10 @@ test('readStoredAccountRecords restores cached account records for first paint',
   assert.equal(records[0].credentialSource, 'api-key');
   assert.equal(records[0].displayName, 'Cached API Key');
   assert.equal(records[0].quotaKey, 'acct_cache_1');
+  assert.equal(records[0].runtimeStatus, 'registered_routeable');
+  assert.equal(records[0].routeable, true);
+  assert.equal(records[0].registeredModelCount, 3);
+  assert.equal(records[0].runtimeFailureClass, undefined);
 });
 
 test('persistStoredAccountRecords stores display data without account secrets', () => {
@@ -74,6 +82,12 @@ test('persistStoredAccountRecords stores display data without account secrets', 
       quotaCurl: 'curl https://quota.example.com -b session=hidden',
       quotaEnabled: true,
       quotaKey: 'acct_secret',
+      runtimeStatus: 'applied_not_registered',
+      runtimeReason: 'runtime auth missing from registry',
+      runtimeFailureClass: 'runtime_auth_missing',
+      routeable: false,
+      registeredModelCount: 0,
+      runtimeRepairTriggerClass: 'runtime_auth_missing',
       keySuffix: 'cret',
       baseUrl: 'https://api.openai.com/v1',
     },
@@ -90,6 +104,11 @@ test('persistStoredAccountRecords stores display data without account secrets', 
   assert.equal(records[0].id, 'acct_secret');
   assert.equal(records[0].keySuffix, 'cret');
   assert.equal(records[0].quotaEnabled, true);
+  assert.equal(records[0].runtimeStatus, 'applied_not_registered');
+  assert.equal(records[0].runtimeReason, 'runtime auth missing from registry');
+  assert.equal(records[0].runtimeFailureClass, 'runtime_auth_missing');
+  assert.equal(records[0].runtimeRepairTriggerClass, 'runtime_auth_missing');
+  assert.equal(records[0].routeable, false);
   assert.equal(records[0].apiKey, undefined);
   assert.equal(records[0].rawAuthFile, undefined);
 });

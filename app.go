@@ -381,6 +381,68 @@ func (a *App) ListChannelRouteEvents(input ChannelRouteEventsInput) ([]ChannelRo
 	return out, nil
 }
 
+func (a *App) ListChannelRouteDecisions(input ChannelRouteDecisionsInput) ([]ChannelRouteDecision, error) {
+	result, err := a.core.ListChannelRouteDecisions(wailsapp.ChannelRouteDecisionsInput{
+		Channel: input.Channel,
+		Limit:   input.Limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ChannelRouteDecision, 0, len(result))
+	for _, item := range result {
+		decision := ChannelRouteDecision{
+			ID:                   item.ID,
+			RecordedAt:           item.RecordedAt,
+			Channel:              item.Channel,
+			Providers:            append([]string(nil), item.Providers...),
+			Model:                item.Model,
+			ProjectKey:           item.ProjectKey,
+			ProjectName:          item.ProjectName,
+			ProjectKeySource:     item.ProjectKeySource,
+			ProjectKeyConfidence: item.ProjectKeyConfidence,
+			ProjectMatchKeys:     append([]string(nil), item.ProjectMatchKeys...),
+			Source:               item.Source,
+			CandidateCount:       item.CandidateCount,
+			SelectedAuthID:       item.SelectedAuthID,
+			SelectedAccountID:    item.SelectedAccountID,
+			SelectedProvider:     item.SelectedProvider,
+			UnavailableCode:      item.UnavailableCode,
+			UnavailableMessage:   item.UnavailableMessage,
+			Candidates:           make([]ChannelRouteDecisionAuth, 0, len(item.Candidates)),
+			Trace:                make([]ChannelRouteDecisionStep, 0, len(item.Trace)),
+		}
+		for _, candidate := range item.Candidates {
+			decision.Candidates = append(decision.Candidates, ChannelRouteDecisionAuth{
+				AuthID:    candidate.AuthID,
+				AccountID: candidate.AccountID,
+				Provider:  candidate.Provider,
+			})
+		}
+		for _, step := range item.Trace {
+			var fallback *bool
+			if step.Fallback != nil {
+				value := *step.Fallback
+				fallback = &value
+			}
+			decision.Trace = append(decision.Trace, ChannelRouteDecisionStep{
+				Stage:     step.Stage,
+				Policy:    step.Policy,
+				Reason:    step.Reason,
+				Before:    step.Before,
+				After:     step.After,
+				AllowIDs:  append([]string(nil), step.AllowIDs...),
+				DenyIDs:   append([]string(nil), step.DenyIDs...),
+				OrderIDs:  append([]string(nil), step.OrderIDs...),
+				Fallback:  fallback,
+				Activated: step.Activated,
+			})
+		}
+		out = append(out, decision)
+	}
+	return out, nil
+}
+
 func mapChannelAccountRuntimeState(input *wailsapp.ChannelAccountRuntimeState) *ChannelAccountRuntimeState {
 	if input == nil {
 		return nil

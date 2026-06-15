@@ -106,41 +106,52 @@ type AuthFileRecord struct {
 }
 
 type AccountRecord struct {
-	ID                string                   `json:"id"`
-	AccountKind       string                   `json:"accountKind,omitempty"`
-	Provider          string                   `json:"provider"`
-	CredentialSource  string                   `json:"credentialSource"`
-	DisplayName       string                   `json:"displayName"`
-	Status            string                   `json:"status"`
-	StatusMessage     string                   `json:"statusMessage,omitempty"`
-	Priority          int                      `json:"priority,omitempty"`
-	Disabled          bool                     `json:"disabled,omitempty"`
-	Email             string                   `json:"email,omitempty"`
-	PlanType          string                   `json:"planType,omitempty"`
-	Name              string                   `json:"name,omitempty"`
-	APIKey            string                   `json:"apiKey,omitempty"`
-	APIKeys           []string                 `json:"apiKeys,omitempty"`
-	Headers           map[string]string        `json:"headers,omitempty"`
-	Models            []cliproxyapi.CodexModel `json:"models,omitempty"`
-	KeyFingerprint    string                   `json:"keyFingerprint,omitempty"`
-	KeySuffix         string                   `json:"keySuffix,omitempty"`
-	BaseURL           string                   `json:"baseUrl,omitempty"`
-	Prefix            string                   `json:"prefix,omitempty"`
-	ProxyURL          string                   `json:"proxyUrl,omitempty"`
-	AuthIndex         interface{}              `json:"authIndex,omitempty"`
-	QuotaKey          string                   `json:"quotaKey,omitempty"`
-	QuotaCurl         string                   `json:"quotaCurl,omitempty"`
-	QuotaEnabled      bool                     `json:"quotaEnabled,omitempty"`
-	LocalOnly         bool                     `json:"localOnly,omitempty"`
-	SupportedFormats  []string                 `json:"supportedFormats,omitempty"`
-	FormatBaseURLs    map[string]string        `json:"formatBaseUrls,omitempty"`
-	BillingCurl       string                   `json:"billingCurl,omitempty"`
-	BillingEnabled    bool                     `json:"billingEnabled,omitempty"`
-	PlatformCookie    string                   `json:"platformCookie,omitempty"`
-	CurlVariables     map[string]string        `json:"curlVariables,omitempty"`
-	ModelFetchAPIKey  string                   `json:"modelFetchApiKey,omitempty"`
-	ModelFetchBaseURL string                   `json:"modelFetchBaseUrl,omitempty"`
-	Requestability    AccountRequestability    `json:"requestability,omitempty"`
+	ID                         string                   `json:"id"`
+	AccountKind                string                   `json:"accountKind,omitempty"`
+	Provider                   string                   `json:"provider"`
+	CredentialSource           string                   `json:"credentialSource"`
+	DisplayName                string                   `json:"displayName"`
+	Status                     string                   `json:"status"`
+	StatusMessage              string                   `json:"statusMessage,omitempty"`
+	RuntimeStatus              string                   `json:"runtimeStatus,omitempty"`
+	RuntimeReason              string                   `json:"runtimeReason,omitempty"`
+	RuntimeFailureClass        string                   `json:"runtimeFailureClass,omitempty"`
+	Routeable                  bool                     `json:"routeable,omitempty"`
+	RegisteredModelCount       int                      `json:"registeredModelCount,omitempty"`
+	RuntimeRepairOutcome       string                   `json:"runtimeRepairOutcome,omitempty"`
+	RuntimeRepairAction        string                   `json:"runtimeRepairAction,omitempty"`
+	RuntimeRepairTriggerStatus string                   `json:"runtimeRepairTriggerStatus,omitempty"`
+	RuntimeRepairTriggerClass  string                   `json:"runtimeRepairTriggerClass,omitempty"`
+	RuntimeRepairTriggerReason string                   `json:"runtimeRepairTriggerReason,omitempty"`
+	LastRuntimeRepairAtUnixMs  int64                    `json:"lastRuntimeRepairAtUnixMs,omitempty"`
+	Priority                   int                      `json:"priority,omitempty"`
+	Disabled                   bool                     `json:"disabled,omitempty"`
+	Email                      string                   `json:"email,omitempty"`
+	PlanType                   string                   `json:"planType,omitempty"`
+	Name                       string                   `json:"name,omitempty"`
+	APIKey                     string                   `json:"apiKey,omitempty"`
+	APIKeys                    []string                 `json:"apiKeys,omitempty"`
+	Headers                    map[string]string        `json:"headers,omitempty"`
+	Models                     []cliproxyapi.CodexModel `json:"models,omitempty"`
+	KeyFingerprint             string                   `json:"keyFingerprint,omitempty"`
+	KeySuffix                  string                   `json:"keySuffix,omitempty"`
+	BaseURL                    string                   `json:"baseUrl,omitempty"`
+	Prefix                     string                   `json:"prefix,omitempty"`
+	ProxyURL                   string                   `json:"proxyUrl,omitempty"`
+	AuthIndex                  interface{}              `json:"authIndex,omitempty"`
+	QuotaKey                   string                   `json:"quotaKey,omitempty"`
+	QuotaCurl                  string                   `json:"quotaCurl,omitempty"`
+	QuotaEnabled               bool                     `json:"quotaEnabled,omitempty"`
+	LocalOnly                  bool                     `json:"localOnly,omitempty"`
+	SupportedFormats           []string                 `json:"supportedFormats,omitempty"`
+	FormatBaseURLs             map[string]string        `json:"formatBaseUrls,omitempty"`
+	BillingCurl                string                   `json:"billingCurl,omitempty"`
+	BillingEnabled             bool                     `json:"billingEnabled,omitempty"`
+	PlatformCookie             string                   `json:"platformCookie,omitempty"`
+	CurlVariables              map[string]string        `json:"curlVariables,omitempty"`
+	ModelFetchAPIKey           string                   `json:"modelFetchApiKey,omitempty"`
+	ModelFetchBaseURL          string                   `json:"modelFetchBaseUrl,omitempty"`
+	Requestability             AccountRequestability    `json:"requestability,omitempty"`
 }
 
 type AccountRequestability struct {
@@ -357,6 +368,7 @@ func BuildUnifiedAccountRecords(accounts []cliproxyapi.UnifiedAccount) []Account
 func buildUnifiedAuthFileAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
 	credential := account.AuthFile
 	provider := strings.TrimSpace(account.Provider)
+	runtimeState := resolveUnifiedRuntimeState(account)
 	file := AuthFileRecord{
 		Name:     strings.TrimSpace(account.Title),
 		Provider: provider,
@@ -386,6 +398,7 @@ func buildUnifiedAuthFileAccountRecord(account cliproxyapi.UnifiedAccount) Accou
 	record.AuthIndex = strings.TrimSpace(account.AccountKey)
 	record.QuotaKey = strings.TrimSpace(account.AccountKey)
 	record.LocalOnly = false
+	applyUnifiedRuntimeState(&record, runtimeState)
 	return record
 }
 
@@ -419,6 +432,7 @@ func inferUnifiedAuthFilePlanType(credential *cliproxyapi.AuthFileAccountCredent
 
 func buildUnifiedCodexAPIKeyAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
 	credential := account.CodexAPIKey
+	runtimeState := resolveUnifiedRuntimeState(account)
 	key := cliproxyapi.CodexAPIKey{
 		LocalID:  strings.TrimSpace(account.AccountKey),
 		Label:    strings.TrimSpace(account.Title),
@@ -447,11 +461,13 @@ func buildUnifiedCodexAPIKeyAccountRecord(account cliproxyapi.UnifiedAccount) Ac
 	record.AuthIndex = strings.TrimSpace(account.AccountKey)
 	record.QuotaKey = strings.TrimSpace(account.AccountKey)
 	record.DisplayName = unifiedDisplayName(account, record.DisplayName)
+	applyUnifiedRuntimeState(&record, runtimeState)
 	return record
 }
 
 func buildUnifiedOpenAICompatibleAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
 	credential := account.OpenAICompatible
+	runtimeState := resolveUnifiedRuntimeState(account)
 	provider := cliproxyapi.OpenAICompatibleProvider{
 		Name:     strings.TrimSpace(account.Provider),
 		Priority: account.Priority,
@@ -484,6 +500,7 @@ func buildUnifiedOpenAICompatibleAccountRecord(account cliproxyapi.UnifiedAccoun
 	record.DisplayName = unifiedDisplayName(account, record.DisplayName)
 	record.AuthIndex = strings.TrimSpace(account.AccountKey)
 	record.QuotaKey = strings.TrimSpace(account.AccountKey)
+	applyUnifiedRuntimeState(&record, runtimeState)
 	return record
 }
 
@@ -501,6 +518,16 @@ func unifiedStatus(account cliproxyapi.UnifiedAccount) string {
 	if account.Disabled {
 		return "disabled"
 	}
+	switch strings.TrimSpace(strings.ToLower(account.RuntimeRouteabilityStatus)) {
+	case "registered_routeable":
+		return "active"
+	case "applied_not_registered":
+		return "configured"
+	case "degraded":
+		return "error"
+	case "pending":
+		return "configured"
+	}
 	switch strings.TrimSpace(account.RuntimeApplyStatus) {
 	case "failed":
 		return "error"
@@ -508,6 +535,89 @@ func unifiedStatus(account cliproxyapi.UnifiedAccount) string {
 		return "configured"
 	default:
 		return "active"
+	}
+}
+
+type unifiedRuntimeState struct {
+	Status               string
+	Reason               string
+	FailureClass         string
+	Routeable            bool
+	RegisteredModelCount int
+	RepairOutcome        string
+	RepairAction         string
+	RepairTriggerStatus  string
+	RepairTriggerClass   string
+	RepairTriggerReason  string
+	LastRepairAtUnixMs   int64
+}
+
+func resolveUnifiedRuntimeState(account cliproxyapi.UnifiedAccount) unifiedRuntimeState {
+	state := unifiedRuntimeState{
+		Status:               strings.TrimSpace(strings.ToLower(account.RuntimeRouteabilityStatus)),
+		Reason:               strings.TrimSpace(account.RuntimeRouteabilityReason),
+		FailureClass:         strings.TrimSpace(account.RuntimeFailureClass),
+		RegisteredModelCount: account.RuntimeRegisteredModelsCount,
+		RepairOutcome:        strings.TrimSpace(account.RuntimeRepairOutcome),
+		RepairAction:         strings.TrimSpace(account.RuntimeRepairAction),
+		RepairTriggerStatus:  strings.TrimSpace(account.RuntimeRepairTriggerStatus),
+		RepairTriggerClass:   strings.TrimSpace(account.RuntimeRepairTriggerClass),
+		RepairTriggerReason:  strings.TrimSpace(account.RuntimeRepairTriggerReason),
+		LastRepairAtUnixMs:   account.LastRuntimeRepairAtUnixMs,
+	}
+
+	switch state.Status {
+	case "registered_routeable":
+		state.Routeable = true
+	case "applied_not_registered", "degraded", "pending":
+		state.Routeable = false
+	default:
+		state.Status = ""
+	}
+
+	if state.Status == "" {
+		switch strings.TrimSpace(strings.ToLower(account.RuntimeApplyStatus)) {
+		case "failed":
+			state.Status = "degraded"
+			state.FailureClass = "runtime_apply_failed"
+			if state.Reason == "" {
+				state.Reason = strings.TrimSpace(account.RuntimeApplyError)
+			}
+		case "pending":
+			state.Status = "pending"
+		case "applied":
+			state.Status = "registered_routeable"
+			state.Routeable = true
+		}
+	}
+
+	if state.Status == "registered_routeable" {
+		state.Routeable = true
+	}
+	if state.Status == "degraded" && state.Reason == "" {
+		state.Reason = strings.TrimSpace(account.RuntimeApplyError)
+	}
+
+	return state
+}
+
+func applyUnifiedRuntimeState(record *AccountRecord, state unifiedRuntimeState) {
+	if record == nil {
+		return
+	}
+	record.RuntimeStatus = state.Status
+	record.RuntimeReason = state.Reason
+	record.RuntimeFailureClass = state.FailureClass
+	record.Routeable = state.Routeable
+	record.RegisteredModelCount = state.RegisteredModelCount
+	record.RuntimeRepairOutcome = state.RepairOutcome
+	record.RuntimeRepairAction = state.RepairAction
+	record.RuntimeRepairTriggerStatus = state.RepairTriggerStatus
+	record.RuntimeRepairTriggerClass = state.RepairTriggerClass
+	record.RuntimeRepairTriggerReason = state.RepairTriggerReason
+	record.LastRuntimeRepairAtUnixMs = state.LastRepairAtUnixMs
+	if state.Status == "degraded" && strings.TrimSpace(record.StatusMessage) == "" {
+		record.StatusMessage = state.Reason
 	}
 }
 

@@ -740,6 +740,17 @@ export namespace main {
 	    displayName: string;
 	    status: string;
 	    statusMessage?: string;
+	    runtimeStatus?: string;
+	    runtimeReason?: string;
+	    runtimeFailureClass?: string;
+	    routeable?: boolean;
+	    registeredModelCount?: number;
+	    runtimeRepairOutcome?: string;
+	    runtimeRepairAction?: string;
+	    runtimeRepairTriggerStatus?: string;
+	    runtimeRepairTriggerClass?: string;
+	    runtimeRepairTriggerReason?: string;
+	    lastRuntimeRepairAtUnixMs?: number;
 	    priority?: number;
 	    disabled?: boolean;
 	    email?: string;
@@ -782,6 +793,17 @@ export namespace main {
 	        this.displayName = source["displayName"];
 	        this.status = source["status"];
 	        this.statusMessage = source["statusMessage"];
+	        this.runtimeStatus = source["runtimeStatus"];
+	        this.runtimeReason = source["runtimeReason"];
+	        this.runtimeFailureClass = source["runtimeFailureClass"];
+	        this.routeable = source["routeable"];
+	        this.registeredModelCount = source["registeredModelCount"];
+	        this.runtimeRepairOutcome = source["runtimeRepairOutcome"];
+	        this.runtimeRepairAction = source["runtimeRepairAction"];
+	        this.runtimeRepairTriggerStatus = source["runtimeRepairTriggerStatus"];
+	        this.runtimeRepairTriggerClass = source["runtimeRepairTriggerClass"];
+	        this.runtimeRepairTriggerReason = source["runtimeRepairTriggerReason"];
+	        this.lastRuntimeRepairAtUnixMs = source["lastRuntimeRepairAtUnixMs"];
 	        this.priority = source["priority"];
 	        this.disabled = source["disabled"];
 	        this.email = source["email"];
@@ -1110,6 +1132,134 @@ export namespace main {
 	        this.reason = source["reason"];
 	        this.cooldownSeconds = source["cooldownSeconds"];
 	        this.model = source["model"];
+	    }
+	}
+	export class ChannelRouteDecisionStep {
+	    stage: string;
+	    policy?: string;
+	    reason?: string;
+	    before: number;
+	    after: number;
+	    allowIDs?: string[];
+	    denyIDs?: string[];
+	    orderIDs?: string[];
+	    fallback?: boolean;
+	    activated: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ChannelRouteDecisionStep(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.stage = source["stage"];
+	        this.policy = source["policy"];
+	        this.reason = source["reason"];
+	        this.before = source["before"];
+	        this.after = source["after"];
+	        this.allowIDs = source["allowIDs"];
+	        this.denyIDs = source["denyIDs"];
+	        this.orderIDs = source["orderIDs"];
+	        this.fallback = source["fallback"];
+	        this.activated = source["activated"];
+	    }
+	}
+	export class ChannelRouteDecisionAuth {
+	    authID?: string;
+	    accountID?: string;
+	    provider?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ChannelRouteDecisionAuth(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.authID = source["authID"];
+	        this.accountID = source["accountID"];
+	        this.provider = source["provider"];
+	    }
+	}
+	export class ChannelRouteDecision {
+	    id: string;
+	    recordedAt: string;
+	    channel: string;
+	    providers?: string[];
+	    model?: string;
+	    projectKey?: string;
+	    projectName?: string;
+	    projectKeySource?: string;
+	    projectKeyConfidence?: string;
+	    projectMatchKeys?: string[];
+	    source?: string;
+	    candidateCount: number;
+	    candidates?: ChannelRouteDecisionAuth[];
+	    selectedAuthID?: string;
+	    selectedAccountID?: string;
+	    selectedProvider?: string;
+	    unavailableCode?: string;
+	    unavailableMessage?: string;
+	    trace?: ChannelRouteDecisionStep[];
+
+	    static createFrom(source: any = {}) {
+	        return new ChannelRouteDecision(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.recordedAt = source["recordedAt"];
+	        this.channel = source["channel"];
+	        this.providers = source["providers"];
+	        this.model = source["model"];
+	        this.projectKey = source["projectKey"];
+	        this.projectName = source["projectName"];
+	        this.projectKeySource = source["projectKeySource"];
+	        this.projectKeyConfidence = source["projectKeyConfidence"];
+	        this.projectMatchKeys = source["projectMatchKeys"];
+	        this.source = source["source"];
+	        this.candidateCount = source["candidateCount"];
+	        this.candidates = this.convertValues(source["candidates"], ChannelRouteDecisionAuth);
+	        this.selectedAuthID = source["selectedAuthID"];
+	        this.selectedAccountID = source["selectedAccountID"];
+	        this.selectedProvider = source["selectedProvider"];
+	        this.unavailableCode = source["unavailableCode"];
+	        this.unavailableMessage = source["unavailableMessage"];
+	        this.trace = this.convertValues(source["trace"], ChannelRouteDecisionStep);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
+	export class ChannelRouteDecisionsInput {
+	    channel?: string;
+	    limit?: number;
+
+	    static createFrom(source: any = {}) {
+	        return new ChannelRouteDecisionsInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.channel = source["channel"];
+	        this.limit = source["limit"];
 	    }
 	}
 	export class ChannelRouteEvent {

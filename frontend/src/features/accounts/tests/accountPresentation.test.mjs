@@ -12,11 +12,13 @@ import {
   resolveAccountAPIKeyPlainNotice,
   resolveAccountConfigurationWorkspaceHeading,
   resolveAccountFailureReason,
+  buildAccountRecentRouteDecisionSummaries,
   resolveAccountOperationalState,
   resolveAccountProviderConfigHeading,
   resolveAccountStatusTone,
   resolveAccountSourceHeading,
   buildAccountDetailStatusMessage,
+  isAccountUnavailable,
 } from '../model/accountPresentation.ts';
 import { shouldLoadAccountsData } from '../model/accountRuntime.ts';
 import { buildAccountRuntimeStats, formatRuntimeLatency, formatRuntimeTokens } from '../model/accountDetailRuntime.ts';
@@ -277,6 +279,19 @@ test('auth-file records come from unified account-store records only', () => {
 test('resolveAccountFailureReason only returns message for failed statuses', () => {
   assert.equal(
     resolveAccountFailureReason({
+      id: 'acct_route_split',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'route split',
+      status: 'CONFIGURED',
+      runtimeStatus: 'applied_not_registered',
+      runtimeReason: 'runtime auth missing from registry',
+    }),
+    'runtime auth missing from registry'
+  );
+
+  assert.equal(
+    resolveAccountFailureReason({
       id: 'auth-file:broken',
       provider: 'codex',
       credentialSource: 'auth-file',
@@ -306,6 +321,26 @@ test('buildAccountDetailStatusMessage exposes failed account diagnostics for det
       'accounts.detail_error_title': '账号异常',
       'accounts.detail_error_fallback': '当前账号状态异常，但 sidecar 未返回具体原因。',
     })[key] || key;
+
+  assert.deepEqual(
+    buildAccountDetailStatusMessage(
+      {
+        id: 'acct_route_split',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'route split',
+        status: 'CONFIGURED',
+        runtimeStatus: 'applied_not_registered',
+        runtimeReason: 'runtime auth missing from registry',
+      },
+      t
+    ),
+    {
+      title: '账号异常',
+      body: 'runtime auth missing from registry',
+      tone: 'danger',
+    }
+  );
 
   assert.deepEqual(
     buildAccountDetailStatusMessage(
@@ -494,6 +529,108 @@ test('buildAccountStabilitySummary prefers failure reason and falls back to plac
       tone: 'neutral',
     }
   );
+});
+
+test('runtime routeability state drives account operational tone and availability', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_error_display': '异常',
+      'accounts.status_waiting_check': '待检查',
+      'accounts.status_available': '可用',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_local': '本地',
+    })[key] || key;
+
+  const degraded = {
+    id: 'acct_route_split',
+    provider: 'codex',
+    credentialSource: 'api-key',
+    displayName: 'route split',
+    status: 'CONFIGURED',
+    runtimeStatus: 'applied_not_registered',
+    runtimeReason: 'runtime auth missing from registry',
+  };
+
+  assert.equal(resolveAccountStatusTone(degraded), 'danger');
+  assert.deepEqual(resolveAccountOperationalState(degraded, undefined, undefined, t), {
+    tone: 'danger',
+    label: '异常',
+  });
+  assert.equal(isAccountUnavailable(degraded), true);
+
+  const routeable = {
+    id: 'acct_routeable',
+    provider: 'codex',
+    credentialSource: 'api-key',
+    displayName: 'routeable',
+    status: 'CONFIGURED',
+    runtimeStatus: 'registered_routeable',
+    routeable: true,
+  };
+
+  assert.equal(resolveAccountStatusTone(routeable), 'positive');
+  assert.deepEqual(resolveAccountOperationalState(routeable, undefined, undefined, t), {
+    tone: 'positive',
+    label: '可用',
+  });
+  assert.equal(isAccountUnavailable(routeable), false);
+});
+
+test('account detail recent route decisions keep only decisions that touch the current account', () => {
+  const rows = buildAccountRecentRouteDecisionSummaries(
+    { id: 'acct_company_1' },
+    [
+      {
+        id: 'decision-selected',
+        recordedAt: '2026-06-15T11:00:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        selectedAccountID: 'acct_company_1',
+        selectedProvider: 'codex',
+        trace: [{ stage: 'pool-scope', reason: 'matched', activated: true }],
+      },
+      {
+        id: 'decision-candidate',
+        recordedAt: '2026-06-15T10:00:00Z',
+        channel: 'claude',
+        source: 'scheduler',
+        candidateCount: 3,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        unavailableCode: 'auth-unavailable',
+        trace: [{ stage: 'hard-filter', policy: 'RuntimeGuardPolicy' }],
+      },
+      {
+        id: 'decision-other',
+        recordedAt: '2026-06-15T09:00:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 1,
+        selectedAccountID: 'acct_other',
+      },
+    ],
+  );
+
+  assert.deepEqual(rows, [
+    {
+      id: 'decision-selected',
+      channel: 'codex',
+      matchedAs: 'selected',
+      title: '命中 acct_company_1',
+      meta: 'CODEX · selected · 提供方:codex · 2 个候选 · 来源:scheduler',
+      detail: 'pool-scope: matched · 命中凭据 acct_company_1',
+      unresolved: false,
+    },
+    {
+      id: 'decision-candidate',
+      channel: 'claude',
+      matchedAs: 'candidate',
+      title: '未命中 · auth-unavailable',
+      meta: 'CLAUDE · candidate · 3 个候选 · 来源:scheduler',
+      detail: 'hard-filter: RuntimeGuardPolicy',
+      unresolved: true,
+    },
+  ]);
 });
 
 test('account detail headings keep explicit provider scope', () => {

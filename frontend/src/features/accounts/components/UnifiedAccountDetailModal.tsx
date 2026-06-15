@@ -24,7 +24,10 @@ import {
 import { buildAccountDetailModulePlan } from '../model/accountDetailLayout';
 import { normalizeAPIKeyModelNames } from '../model/apiKeyModelCatalog';
 import { extractBilling, hasDisplayableBilling } from '../model/accountQuota';
-import { buildAccountDetailStatusMessage } from '../model/accountPresentation';
+import {
+  buildAccountDetailStatusMessage,
+  buildAccountRecentRouteDecisionSummaries,
+} from '../model/accountPresentation';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import type { CodexQuotaState } from '../model/types';
 import { getVendorPreset } from '../model/vendorPresets';
@@ -36,6 +39,7 @@ import {
   AccountDetailFooter,
   AccountDetailHeader,
   AccountQuotaSection,
+  AccountRuntimeRouteSection,
   type APIKeyVerifyState,
 } from './AccountDetailSections';
 import {
@@ -49,6 +53,7 @@ import {
 import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
 import { getAccountsPreviewAuthFileContent, getAccountsPreviewAuthFileModels } from '../previewData';
 import { OAuthModelProbeSection, type OAuthModelProbeState } from './OAuthModelProbeSection';
+import type { ChannelRouteDecisionSnapshot } from '../../channel-routing/model/channelRouting';
 
 export type { APIKeyVerifyState } from './AccountDetailSections';
 
@@ -61,6 +66,7 @@ export interface UnifiedAccountDetailProps {
   rateLimitRulesAPI?: RateLimitRulesAPI;
   verifyState?: APIKeyVerifyState;
   oauthModelProbeState?: OAuthModelProbeState;
+  routeDecisions?: ChannelRouteDecisionSnapshot[];
   modelNames?: string[];
   localModelNames?: string[];
   cachedModelNames?: string[];
@@ -146,6 +152,10 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     () => buildAccountDetailStatusMessage(account, t),
     [account, t],
   );
+  const runtimeRouteDecisions = useMemo(
+    () => buildAccountRecentRouteDecisionSummaries(account, props.routeDecisions ?? []),
+    [account, props.routeDecisions],
+  );
   const saveErrorMessage = useMemo(
     () =>
       saveError
@@ -211,6 +221,15 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         <AccountDetailModuleStack layout="bands">
           {buildAccountDetailModulePlan(account).map((moduleID) => {
             switch (moduleID) {
+              case 'runtime':
+                return (
+                  <AccountRuntimeRouteSection
+                    key={moduleID}
+                    account={account}
+                    routeDecisions={runtimeRouteDecisions}
+                    span="wide"
+                  />
+                );
               case 'credentials':
                 return (
                   <AccountCredentialVerifySection

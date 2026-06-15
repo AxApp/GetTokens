@@ -26,6 +26,114 @@ type Client struct {
 	request RequestFunc
 }
 
+type ChannelRoutingExplainInput struct {
+	Channel              string   `json:"channel"`
+	RequestedModel       string   `json:"requestedModel,omitempty"`
+	TriedAccountIDs      []string `json:"triedAccountIDs,omitempty"`
+	StickyAccountID      string   `json:"stickyAccountID,omitempty"`
+	ProjectKey           string   `json:"projectKey,omitempty"`
+	ProjectName          string   `json:"projectName,omitempty"`
+	ProjectKeySource     string   `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string   `json:"projectKeyConfidence,omitempty"`
+	ProjectMatchKeys     []string `json:"projectMatchKeys,omitempty"`
+}
+
+type ChannelRoutingExplainResult struct {
+	Channel              string                             `json:"channel"`
+	RouteMode            string                             `json:"routeMode"`
+	RequestedModel       string                             `json:"requestedModel,omitempty"`
+	SelectedAccountID    string                             `json:"selectedAccountID,omitempty"`
+	Candidates           []ChannelRoutingExplainCandidate   `json:"candidates"`
+	Filtered             []ChannelRoutingExplainFiltered    `json:"filtered"`
+	Steps                []string                           `json:"steps"`
+	SnapshotVersion      string                             `json:"snapshotVersion,omitempty"`
+	PolicyVersion        string                             `json:"policyVersion,omitempty"`
+	ProjectCandidatePool *ChannelRoutingExplainProjectPool  `json:"projectCandidatePool,omitempty"`
+	Shadow               *ChannelRoutingExplainShadowResult `json:"shadow,omitempty"`
+}
+
+type ChannelRoutingExplainCandidate struct {
+	ID             string   `json:"id"`
+	DisplayName    string   `json:"displayName,omitempty"`
+	Provider       string   `json:"provider,omitempty"`
+	RouteOrder     int      `json:"routeOrder,omitempty"`
+	GroupID        string   `json:"groupID,omitempty"`
+	GroupOrder     int      `json:"groupOrder,omitempty"`
+	ChannelOrder   int      `json:"channelOrder,omitempty"`
+	ActiveSessions int      `json:"activeSessions,omitempty"`
+	RouteIDs       []string `json:"routeIDs,omitempty"`
+}
+
+type ChannelRoutingExplainFiltered struct {
+	ID     string `json:"id"`
+	Reason string `json:"reason"`
+}
+
+type ChannelRoutingExplainProjectPool struct {
+	Evaluated            bool     `json:"evaluated"`
+	Activated            bool     `json:"activated"`
+	Reason               string   `json:"reason,omitempty"`
+	RuleID               string   `json:"ruleID,omitempty"`
+	ProjectKey           string   `json:"projectKey,omitempty"`
+	ProjectName          string   `json:"projectName,omitempty"`
+	ProjectKeySource     string   `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string   `json:"projectKeyConfidence,omitempty"`
+	AllowAccountIDs      []string `json:"allowAccountIDs,omitempty"`
+	FilteredAccountIDs   []string `json:"filteredAccountIDs,omitempty"`
+	BeforeCandidateCount int      `json:"beforeCandidateCount,omitempty"`
+	AfterCandidateCount  int      `json:"afterCandidateCount,omitempty"`
+}
+
+type ChannelRoutingExplainShadowResult struct {
+	Enabled           bool                             `json:"enabled"`
+	RouteMode         string                           `json:"routeMode,omitempty"`
+	SelectedAccountID string                           `json:"selectedAccountID,omitempty"`
+	Candidates        []ChannelRoutingExplainCandidate `json:"candidates,omitempty"`
+	Diff              bool                             `json:"diff"`
+	Steps             []string                         `json:"steps,omitempty"`
+}
+
+type ChannelRoutingDecisionSnapshot struct {
+	ID                   string                            `json:"id"`
+	RecordedAt           string                            `json:"recordedAt"`
+	Channel              string                            `json:"channel"`
+	Providers            []string                          `json:"providers,omitempty"`
+	Model                string                            `json:"model,omitempty"`
+	ProjectKey           string                            `json:"projectKey,omitempty"`
+	ProjectName          string                            `json:"projectName,omitempty"`
+	ProjectKeySource     string                            `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string                            `json:"projectKeyConfidence,omitempty"`
+	ProjectMatchKeys     []string                          `json:"projectMatchKeys,omitempty"`
+	Source               string                            `json:"source,omitempty"`
+	CandidateCount       int                               `json:"candidateCount"`
+	Candidates           []ChannelRoutingDecisionCandidate `json:"candidates"`
+	SelectedAuthID       string                            `json:"selectedAuthID,omitempty"`
+	SelectedAccountID    string                            `json:"selectedAccountID,omitempty"`
+	SelectedProvider     string                            `json:"selectedProvider,omitempty"`
+	UnavailableCode      string                            `json:"unavailableCode,omitempty"`
+	UnavailableMessage   string                            `json:"unavailableMessage,omitempty"`
+	Trace                []ChannelRoutingDecisionStep      `json:"trace"`
+}
+
+type ChannelRoutingDecisionCandidate struct {
+	AuthID    string `json:"authID,omitempty"`
+	AccountID string `json:"accountID,omitempty"`
+	Provider  string `json:"provider,omitempty"`
+}
+
+type ChannelRoutingDecisionStep struct {
+	Stage     string   `json:"stage"`
+	Policy    string   `json:"policy,omitempty"`
+	Reason    string   `json:"reason,omitempty"`
+	Before    int      `json:"before"`
+	After     int      `json:"after"`
+	AllowIDs  []string `json:"allowIDs,omitempty"`
+	DenyIDs   []string `json:"denyIDs,omitempty"`
+	OrderIDs  []string `json:"orderIDs,omitempty"`
+	Fallback  *bool    `json:"fallback,omitempty"`
+	Activated bool     `json:"activated"`
+}
+
 func New(request RequestFunc) *Client {
 	return &Client{request: request}
 }
@@ -420,6 +528,75 @@ func (c *Client) UpdateProjectCandidatePoolRule(rule ProjectCandidatePoolRule) (
 func (c *Client) DeleteProjectCandidatePoolRule(id string) error {
 	_, _, err := c.request("DELETE", "/v0/management/gettokens/project-candidate-pool-rules/"+url.PathEscape(id), nil, nil, "")
 	return err
+}
+
+func (c *Client) ExplainChannelRouting(input ChannelRoutingExplainInput) (*ChannelRoutingExplainResult, bool, error) {
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, false, err
+	}
+	body, status, err := c.request("POST", "/v0/management/gettokens/channel-routing/explain", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, false, err
+	}
+	if status == 404 {
+		return nil, false, nil
+	}
+	var response ChannelRoutingExplainResult
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, false, err
+	}
+	if response.Candidates == nil {
+		response.Candidates = []ChannelRoutingExplainCandidate{}
+	}
+	if response.Filtered == nil {
+		response.Filtered = []ChannelRoutingExplainFiltered{}
+	}
+	if response.Steps == nil {
+		response.Steps = []string{}
+	}
+	return &response, true, nil
+}
+
+func (c *Client) ListChannelRoutingDecisions(channel string, limit int) ([]ChannelRoutingDecisionSnapshot, bool, error) {
+	query := url.Values{}
+	if value := strings.TrimSpace(channel); value != "" {
+		query.Set("channel", value)
+	}
+	if limit > 0 {
+		query.Set("limit", strconv.Itoa(limit))
+	}
+	body, status, err := c.request("GET", "/v0/management/gettokens/channel-routing/decisions", query, nil, "")
+	if err != nil {
+		return nil, false, err
+	}
+	if status == 404 {
+		return nil, false, nil
+	}
+	var response struct {
+		Items []ChannelRoutingDecisionSnapshot `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, false, err
+	}
+	if response.Items == nil {
+		response.Items = []ChannelRoutingDecisionSnapshot{}
+	}
+	for index := range response.Items {
+		if response.Items[index].Providers == nil {
+			response.Items[index].Providers = []string{}
+		}
+		if response.Items[index].ProjectMatchKeys == nil {
+			response.Items[index].ProjectMatchKeys = []string{}
+		}
+		if response.Items[index].Candidates == nil {
+			response.Items[index].Candidates = []ChannelRoutingDecisionCandidate{}
+		}
+		if response.Items[index].Trace == nil {
+			response.Items[index].Trace = []ChannelRoutingDecisionStep{}
+		}
+	}
+	return response.Items, true, nil
 }
 
 func (c *Client) GetAccountStoreDiagnostics() (*AccountStoreDiagnostics, error) {

@@ -302,6 +302,9 @@ function mapAccountRecordToCodexRow(account: AccountRecord, manualRequestableAcc
   const sourceKind = account.credentialSource === 'auth-file' ? 'codex-auth-file' : 'codex-api-key';
   const requestability = resolveCodexAccountRequestability({
     status,
+    runtimeStatus: account.runtimeStatus,
+    runtimeReason: account.runtimeReason,
+    routeable: account.routeable,
     disabled: Boolean(account.disabled),
     sourceKind,
     accountKind: account.accountKind,
@@ -352,6 +355,9 @@ function mapOpenAICompatibleAccountRecordToCodexRow(account: AccountRecord): Cod
   const disabled = Boolean(account.disabled) || status.toUpperCase() === 'DISABLED';
   const requestability = resolveCodexAccountRequestability({
     status: disabled ? 'disabled' : status || 'configured',
+    runtimeStatus: account.runtimeStatus,
+    runtimeReason: account.runtimeReason,
+    routeable: account.routeable,
     disabled,
     sourceKind: 'openai-compatible',
     accountKind: 'openai-compatible',
@@ -508,6 +514,9 @@ function hasRequestabilityEvidence(evidence: string[]): boolean {
 
 function resolveCodexAccountRequestability(input: {
   status: string;
+  runtimeStatus?: string;
+  runtimeReason?: string;
+  routeable?: boolean;
   disabled?: boolean;
   sourceKind: CodexAccountSourceKind;
   accountKind?: string;
@@ -522,9 +531,27 @@ function resolveCodexAccountRequestability(input: {
   }
   const status = String(input.status || '').trim();
   const normalizedStatus = status.toUpperCase();
+  const runtimeStatus = String(input.runtimeStatus || '').trim().toLowerCase();
 
   if (input.disabled || normalizedStatus === 'DISABLED') {
     return { requestable: false, blockReason: 'disabled', evidence, manualRequestable };
+  }
+  if (runtimeStatus === 'registered_routeable' || input.routeable === true) {
+    if (!evidence.includes('registered-routeable')) {
+      evidence.push('registered-routeable');
+    }
+    return { requestable: true, blockReason: '', evidence, manualRequestable };
+  }
+  if (runtimeStatus === 'pending') {
+    return { requestable: false, blockReason: 'waiting-check', evidence, manualRequestable };
+  }
+  if (runtimeStatus === 'applied_not_registered' || runtimeStatus === 'degraded') {
+    return {
+      requestable: false,
+      blockReason: String(input.runtimeReason || input.statusMessage || status).trim() || 'unavailable',
+      evidence,
+      manualRequestable,
+    };
   }
   if (isRequestableStatus(status) && !evidence.includes(normalizedStatus.toLowerCase())) {
     evidence.push(normalizedStatus.toLowerCase());

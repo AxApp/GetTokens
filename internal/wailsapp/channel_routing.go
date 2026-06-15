@@ -13,6 +13,7 @@ import (
 	"time"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 	"github.com/linhay/gettokens/internal/sidecar"
 )
 
@@ -147,6 +148,52 @@ type ChannelRouteEvent struct {
 	Redacted                bool             `json:"redacted"`
 }
 
+type ChannelRouteDecisionsInput struct {
+	Channel string `json:"channel,omitempty"`
+	Limit   int    `json:"limit,omitempty"`
+}
+
+type ChannelRouteDecision struct {
+	ID                   string                     `json:"id"`
+	RecordedAt           string                     `json:"recordedAt"`
+	Channel              string                     `json:"channel"`
+	Providers            []string                   `json:"providers,omitempty"`
+	Model                string                     `json:"model,omitempty"`
+	ProjectKey           string                     `json:"projectKey,omitempty"`
+	ProjectName          string                     `json:"projectName,omitempty"`
+	ProjectKeySource     string                     `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string                     `json:"projectKeyConfidence,omitempty"`
+	ProjectMatchKeys     []string                   `json:"projectMatchKeys,omitempty"`
+	Source               string                     `json:"source,omitempty"`
+	CandidateCount       int                        `json:"candidateCount"`
+	Candidates           []ChannelRouteDecisionAuth `json:"candidates,omitempty"`
+	SelectedAuthID       string                     `json:"selectedAuthID,omitempty"`
+	SelectedAccountID    string                     `json:"selectedAccountID,omitempty"`
+	SelectedProvider     string                     `json:"selectedProvider,omitempty"`
+	UnavailableCode      string                     `json:"unavailableCode,omitempty"`
+	UnavailableMessage   string                     `json:"unavailableMessage,omitempty"`
+	Trace                []ChannelRouteDecisionStep `json:"trace,omitempty"`
+}
+
+type ChannelRouteDecisionAuth struct {
+	AuthID    string `json:"authID,omitempty"`
+	AccountID string `json:"accountID,omitempty"`
+	Provider  string `json:"provider,omitempty"`
+}
+
+type ChannelRouteDecisionStep struct {
+	Stage     string   `json:"stage"`
+	Policy    string   `json:"policy,omitempty"`
+	Reason    string   `json:"reason,omitempty"`
+	Before    int      `json:"before"`
+	After     int      `json:"after"`
+	AllowIDs  []string `json:"allowIDs,omitempty"`
+	DenyIDs   []string `json:"denyIDs,omitempty"`
+	OrderIDs  []string `json:"orderIDs,omitempty"`
+	Fallback  *bool    `json:"fallback,omitempty"`
+	Activated bool     `json:"activated"`
+}
+
 type ChannelRouteAccountResultInput struct {
 	AccountID       string `json:"accountID"`
 	StatusCode      int    `json:"statusCode,omitempty"`
@@ -230,6 +277,26 @@ func (a *App) ExplainChannelRouting(input ChannelRoutingExplainInput) (*ChannelR
 	if err != nil {
 		return nil, err
 	}
+	managementInput := cliproxyapi.ChannelRoutingExplainInput{
+		Channel:              channel,
+		RequestedModel:       input.RequestedModel,
+		TriedAccountIDs:      append([]string(nil), input.TriedAccountIDs...),
+		StickyAccountID:      input.StickyAccountID,
+		ProjectKey:           input.ProjectKey,
+		ProjectName:          input.ProjectName,
+		ProjectKeySource:     input.ProjectKeySource,
+		ProjectKeyConfidence: input.ProjectKeyConfidence,
+		ProjectMatchKeys:     append([]string(nil), input.ProjectMatchKeys...),
+	}
+	if response, supported, err := a.managementClient().ExplainChannelRouting(managementInput); err == nil && supported && response != nil {
+		result := mapManagementChannelRoutingExplainResult(*response)
+		if err := appendChannelRouteEvent(input, result); err != nil {
+			return nil, err
+		}
+		return &result, nil
+	} else if err != nil {
+		return nil, err
+	}
 	cfg, err := a.GetChannelRoutingConfig(channel)
 	if err != nil {
 		return nil, err
@@ -255,6 +322,78 @@ func (a *App) ExplainChannelRouting(input ChannelRoutingExplainInput) (*ChannelR
 		return nil, err
 	}
 	return &result, nil
+}
+
+func mapManagementChannelRoutingExplainResult(input cliproxyapi.ChannelRoutingExplainResult) ChannelRoutingExplainResult {
+	result := ChannelRoutingExplainResult{
+		Channel:           input.Channel,
+		RouteMode:         ChannelRouteMode(strings.TrimSpace(input.RouteMode)),
+		RequestedModel:    input.RequestedModel,
+		SelectedAccountID: input.SelectedAccountID,
+		Candidates:        make([]ChannelRoutingCandidate, 0, len(input.Candidates)),
+		Filtered:          make([]ChannelRoutingFilteredAccount, 0, len(input.Filtered)),
+		Steps:             append([]string(nil), input.Steps...),
+		SnapshotVersion:   input.SnapshotVersion,
+		PolicyVersion:     input.PolicyVersion,
+	}
+	for _, candidate := range input.Candidates {
+		result.Candidates = append(result.Candidates, ChannelRoutingCandidate{
+			ID:             candidate.ID,
+			DisplayName:    candidate.DisplayName,
+			Provider:       candidate.Provider,
+			RouteOrder:     candidate.RouteOrder,
+			GroupID:        candidate.GroupID,
+			GroupOrder:     candidate.GroupOrder,
+			ChannelOrder:   candidate.ChannelOrder,
+			ActiveSessions: candidate.ActiveSessions,
+		})
+	}
+	for _, item := range input.Filtered {
+		result.Filtered = append(result.Filtered, ChannelRoutingFilteredAccount{
+			ID:     item.ID,
+			Reason: item.Reason,
+		})
+	}
+	if input.ProjectCandidatePool != nil {
+		result.ProjectCandidatePool = &ChannelRoutingProjectCandidatePoolInfo{
+			Evaluated:            input.ProjectCandidatePool.Evaluated,
+			Activated:            input.ProjectCandidatePool.Activated,
+			Reason:               input.ProjectCandidatePool.Reason,
+			RuleID:               input.ProjectCandidatePool.RuleID,
+			ProjectKey:           input.ProjectCandidatePool.ProjectKey,
+			ProjectName:          input.ProjectCandidatePool.ProjectName,
+			ProjectKeySource:     input.ProjectCandidatePool.ProjectKeySource,
+			ProjectKeyConfidence: input.ProjectCandidatePool.ProjectKeyConfidence,
+			AllowAccountIDs:      append([]string(nil), input.ProjectCandidatePool.AllowAccountIDs...),
+			FilteredAccountIDs:   append([]string(nil), input.ProjectCandidatePool.FilteredAccountIDs...),
+			BeforeCandidateCount: input.ProjectCandidatePool.BeforeCandidateCount,
+			AfterCandidateCount:  input.ProjectCandidatePool.AfterCandidateCount,
+		}
+	}
+	if input.Shadow != nil {
+		shadow := &ChannelRoutingShadowDecision{
+			Enabled:           input.Shadow.Enabled,
+			RouteMode:         ChannelRouteMode(strings.TrimSpace(input.Shadow.RouteMode)),
+			SelectedAccountID: input.Shadow.SelectedAccountID,
+			Candidates:        make([]ChannelRoutingCandidate, 0, len(input.Shadow.Candidates)),
+			Diff:              input.Shadow.Diff,
+			Steps:             append([]string(nil), input.Shadow.Steps...),
+		}
+		for _, candidate := range input.Shadow.Candidates {
+			shadow.Candidates = append(shadow.Candidates, ChannelRoutingCandidate{
+				ID:             candidate.ID,
+				DisplayName:    candidate.DisplayName,
+				Provider:       candidate.Provider,
+				RouteOrder:     candidate.RouteOrder,
+				GroupID:        candidate.GroupID,
+				GroupOrder:     candidate.GroupOrder,
+				ChannelOrder:   candidate.ChannelOrder,
+				ActiveSessions: candidate.ActiveSessions,
+			})
+		}
+		result.Shadow = shadow
+	}
+	return result
 }
 
 func (a *App) MarkChannelRouteAccountResult(input ChannelRouteAccountResultInput) (*ChannelAccountRuntimeState, error) {
@@ -285,6 +424,85 @@ func (a *App) ListChannelRouteEvents(input ChannelRouteEventsInput) ([]ChannelRo
 			continue
 		}
 		out = append(out, event)
+	}
+	return out, nil
+}
+
+func (a *App) ListChannelRouteDecisions(input ChannelRouteDecisionsInput) ([]ChannelRouteDecision, error) {
+	channel := strings.TrimSpace(input.Channel)
+	if channel != "" {
+		normalized, err := normalizeChannelID(channel)
+		if err != nil {
+			if strings.EqualFold(channel, "mixed") {
+				channel = "mixed"
+			} else {
+				return nil, err
+			}
+		} else {
+			channel = normalized
+		}
+	}
+	limit := input.Limit
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+	items, supported, err := a.managementClient().ListChannelRoutingDecisions(channel, limit)
+	if err != nil {
+		return nil, err
+	}
+	if !supported {
+		return []ChannelRouteDecision{}, nil
+	}
+	out := make([]ChannelRouteDecision, 0, len(items))
+	for _, item := range items {
+		decision := ChannelRouteDecision{
+			ID:                   item.ID,
+			RecordedAt:           item.RecordedAt,
+			Channel:              item.Channel,
+			Providers:            append([]string(nil), item.Providers...),
+			Model:                item.Model,
+			ProjectKey:           item.ProjectKey,
+			ProjectName:          item.ProjectName,
+			ProjectKeySource:     item.ProjectKeySource,
+			ProjectKeyConfidence: item.ProjectKeyConfidence,
+			ProjectMatchKeys:     append([]string(nil), item.ProjectMatchKeys...),
+			Source:               item.Source,
+			CandidateCount:       item.CandidateCount,
+			SelectedAuthID:       item.SelectedAuthID,
+			SelectedAccountID:    item.SelectedAccountID,
+			SelectedProvider:     item.SelectedProvider,
+			UnavailableCode:      item.UnavailableCode,
+			UnavailableMessage:   item.UnavailableMessage,
+			Candidates:           make([]ChannelRouteDecisionAuth, 0, len(item.Candidates)),
+			Trace:                make([]ChannelRouteDecisionStep, 0, len(item.Trace)),
+		}
+		for _, candidate := range item.Candidates {
+			decision.Candidates = append(decision.Candidates, ChannelRouteDecisionAuth{
+				AuthID:    candidate.AuthID,
+				AccountID: candidate.AccountID,
+				Provider:  candidate.Provider,
+			})
+		}
+		for _, step := range item.Trace {
+			var fallback *bool
+			if step.Fallback != nil {
+				value := *step.Fallback
+				fallback = &value
+			}
+			decision.Trace = append(decision.Trace, ChannelRouteDecisionStep{
+				Stage:     step.Stage,
+				Policy:    step.Policy,
+				Reason:    step.Reason,
+				Before:    step.Before,
+				After:     step.After,
+				AllowIDs:  append([]string(nil), step.AllowIDs...),
+				DenyIDs:   append([]string(nil), step.DenyIDs...),
+				OrderIDs:  append([]string(nil), step.OrderIDs...),
+				Fallback:  fallback,
+				Activated: step.Activated,
+			})
+		}
+		out = append(out, decision)
 	}
 	return out, nil
 }
@@ -919,6 +1137,16 @@ func accountHasFormat(account accountsdomain.AccountRecord, format string) bool 
 }
 
 func accountRequestable(account accountsdomain.AccountRecord, manualRequestable map[string]struct{}) (string, bool) {
+	runtimeStatus := strings.TrimSpace(strings.ToLower(account.RuntimeStatus))
+	switch runtimeStatus {
+	case "registered_routeable":
+		return "", true
+	case "pending":
+		return "waiting-check", false
+	case "applied_not_registered", "degraded":
+		return "account-unrequestable", false
+	}
+
 	status := strings.TrimSpace(strings.ToLower(account.Status))
 	switch status {
 	case "active", "local", "ok", "ready":

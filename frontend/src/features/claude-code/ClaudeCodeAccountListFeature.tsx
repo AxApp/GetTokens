@@ -8,6 +8,7 @@ import {
   GetAuthFileModels,
   GetChannelRoutingConfig,
   GetClaudeCodeSessionManagementSnapshot,
+  ListChannelRouteDecisions,
   ListChannelRouteEvents,
   ListAccounts,
   ListOAuthModelAliases,
@@ -40,6 +41,7 @@ import ProjectCandidatePoolRulesModal from '../channel-routing/components/Projec
 import {
   buildPreviewProjectCandidatePoolRules,
   buildPreviewChannelRouteAuditEvent,
+  buildPreviewChannelRouteDecision,
   buildProjectCandidatePoolProjectOptions,
   buildProjectCandidatePoolProjectsFromSessionManagementSnapshot,
   normalizeProjectCandidatePoolRuleDraft,
@@ -47,6 +49,7 @@ import {
   normalizeChannelRoutingConfig,
   updateChannelRoutingConfig,
   type ChannelRouteAuditEvent,
+  type ChannelRouteDecisionSnapshot,
   type ChannelRouteMode,
   type ChannelRoutingConfig,
   type ProjectCandidatePoolObservedProjectLike,
@@ -117,6 +120,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   );
   const [channelExplain, setChannelExplain] = useState<main.ChannelRoutingExplainResult | null>(null);
   const [channelRouteEvents, setChannelRouteEvents] = useState<ChannelRouteAuditEvent[]>([]);
+  const [channelRouteDecisions, setChannelRouteDecisions] = useState<ChannelRouteDecisionSnapshot[]>([]);
   const [projectCandidatePoolRules, setProjectCandidatePoolRules] = useState<ProjectCandidatePoolRuleLike[]>([]);
   const [projectCandidatePoolObservedProjects, setProjectCandidatePoolObservedProjects] = useState<
     ProjectCandidatePoolObservedProjectLike[]
@@ -188,6 +192,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       setChannelConfig(previewConfig);
       setChannelExplain(null);
       setChannelRouteEvents([]);
+      setChannelRouteDecisions([]);
       setOrderedRows(applyChannelOrderToRows(previewRows, previewConfig.orderedAccountIDs));
       setProjectCandidatePoolRules(buildPreviewProjectCandidatePoolRules('claude', previewRows));
       setProjectCandidatePoolObservedProjects([
@@ -230,7 +235,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       setOrderedRows(applyChannelOrderToRows(buildClaudeCodeAccountRows(accountRows), normalizedConfig.orderedAccountIDs));
       setProjectCandidatePoolRules(normalizeProjectCandidatePoolRules(projectRulesResponse, 'claude'));
       void loadProjectCandidatePoolProjectSources();
-      void loadChannelRouteEvents();
+      void loadChannelRouteDiagnostics();
       setOrderDirty(false);
       setMessage(messageOverride || t('claude_code.account_list_loaded'));
     } catch (error) {
@@ -668,6 +673,8 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       setChannelExplain(result);
       const event = buildPreviewChannelRouteAuditEvent({ channel: 'claude', explain: result });
       setChannelRouteEvents((prev) => (event ? [event, ...prev].slice(0, 5) : prev));
+      const decision = buildPreviewChannelRouteDecision({ channel: 'claude', explain: result });
+      setChannelRouteDecisions((prev) => (decision ? [decision, ...prev].slice(0, 5) : prev));
       return;
     }
     try {
@@ -686,22 +693,28 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
         ),
       );
       setChannelExplain(result);
-      await loadChannelRouteEvents();
+      await loadChannelRouteDiagnostics();
     } catch (error) {
       console.error(error);
       setMessage(`${t('claude_code.account_list_probe_failed')}: ${toErrorMessage(error)}`);
     }
   }
 
-  async function loadChannelRouteEvents() {
+  async function loadChannelRouteDiagnostics() {
     if (browserMode) {
       return;
     }
     try {
-      const result = await trackRequest('ListChannelRouteEvents', { channel: 'claude', limit: 5 }, () =>
-        ListChannelRouteEvents(main.ChannelRouteEventsInput.createFrom({ channel: 'claude', limit: 5 })),
-      );
-      setChannelRouteEvents((result || []) as ChannelRouteAuditEvent[]);
+      const [events, decisions] = await Promise.all([
+        trackRequest('ListChannelRouteEvents', { channel: 'claude', limit: 5 }, () =>
+          ListChannelRouteEvents(main.ChannelRouteEventsInput.createFrom({ channel: 'claude', limit: 5 })),
+        ),
+        trackRequest('ListChannelRouteDecisions', { channel: 'claude', limit: 5 }, () =>
+          ListChannelRouteDecisions(main.ChannelRouteDecisionsInput.createFrom({ channel: 'claude', limit: 5 })),
+        ),
+      ]);
+      setChannelRouteEvents((events || []) as ChannelRouteAuditEvent[]);
+      setChannelRouteDecisions((decisions || []) as ChannelRouteDecisionSnapshot[]);
     } catch (error) {
       console.error(error);
       setMessage(`${t('claude_code.account_list_probe_failed')}: ${toErrorMessage(error)}`);
@@ -820,6 +833,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
         collectedAttempts.push(...nextAttempts);
         setRoutingProbeAttempts([...collectedAttempts]);
       }
+      await loadChannelRouteDiagnostics();
       setMessage(t('claude_code.account_list_probe_complete'));
     } catch (error) {
       console.error(error);
@@ -979,6 +993,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           channel="claude"
           config={withCurrentChannelOrder(channelConfig, orderedRows.map((row) => row.id))}
           explain={channelExplain}
+          routeDecisions={channelRouteDecisions}
           disabled={!ready || saving}
           saving={saving}
           message={orderDirty ? t('claude_code.account_list_unsaved') : ''}

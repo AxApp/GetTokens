@@ -456,6 +456,11 @@ test('generated Wails account models preserve quota curl fields', () => {
   const source = readFileSync(wailsModelsPath, 'utf8');
 
   assert.match(source, /export class AccountRecord[\s\S]*statusMessage\?: string;/);
+  assert.match(source, /export class AccountRecord[\s\S]*runtimeStatus\?: string;[\s\S]*runtimeReason\?: string;/);
+  assert.match(source, /export class AccountRecord[\s\S]*routeable\?: boolean;[\s\S]*registeredModelCount\?: number;/);
+  assert.match(source, /export class AccountRecord[\s\S]*runtimeRepairOutcome\?: string;[\s\S]*runtimeRepairAction\?: string;/);
+  assert.match(source, /export class AccountRecord[\s\S]*runtimeRepairTriggerStatus\?: string;[\s\S]*lastRuntimeRepairAtUnixMs\?: number;/);
+  assert.match(source, /export class AccountRecord[\s\S]*runtimeFailureClass\?: string;[\s\S]*runtimeRepairTriggerClass\?: string;/);
   assert.match(source, /export class AccountRecord[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
   assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);

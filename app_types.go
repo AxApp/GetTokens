@@ -144,41 +144,52 @@ type CodexQuotaBillingBalanceInfo struct {
 }
 
 type AccountRecord struct {
-	ID                string                  `json:"id"`
-	AccountKind       string                  `json:"accountKind,omitempty"`
-	Provider          string                  `json:"provider"`
-	CredentialSource  string                  `json:"credentialSource"`
-	DisplayName       string                  `json:"displayName"`
-	Status            string                  `json:"status"`
-	StatusMessage     string                  `json:"statusMessage,omitempty"`
-	Priority          int                     `json:"priority,omitempty"`
-	Disabled          bool                    `json:"disabled,omitempty"`
-	Email             string                  `json:"email,omitempty"`
-	PlanType          string                  `json:"planType,omitempty"`
-	Name              string                  `json:"name,omitempty"`
-	APIKey            string                  `json:"apiKey,omitempty"`
-	APIKeys           []string                `json:"apiKeys,omitempty"`
-	Headers           map[string]string       `json:"headers,omitempty"`
-	Models            []OpenAICompatibleModel `json:"models,omitempty"`
-	KeyFingerprint    string                  `json:"keyFingerprint,omitempty"`
-	KeySuffix         string                  `json:"keySuffix,omitempty"`
-	BaseURL           string                  `json:"baseUrl,omitempty"`
-	Prefix            string                  `json:"prefix,omitempty"`
-	ProxyURL          string                  `json:"proxyUrl,omitempty"`
-	AuthIndex         interface{}             `json:"authIndex,omitempty"`
-	QuotaKey          string                  `json:"quotaKey,omitempty"`
-	QuotaCurl         string                  `json:"quotaCurl,omitempty"`
-	QuotaEnabled      bool                    `json:"quotaEnabled,omitempty"`
-	LocalOnly         bool                    `json:"localOnly,omitempty"`
-	SupportedFormats  []string                `json:"supportedFormats,omitempty"`
-	FormatBaseURLs    map[string]string       `json:"formatBaseUrls,omitempty"`
-	BillingCurl       string                  `json:"billingCurl,omitempty"`
-	BillingEnabled    bool                    `json:"billingEnabled,omitempty"`
-	PlatformCookie    string                  `json:"platformCookie,omitempty"`
-	CurlVariables     map[string]string       `json:"curlVariables,omitempty"`
-	ModelFetchAPIKey  string                  `json:"modelFetchApiKey,omitempty"`
-	ModelFetchBaseURL string                  `json:"modelFetchBaseUrl,omitempty"`
-	Requestability    AccountRequestability   `json:"requestability,omitempty"`
+	ID                         string                  `json:"id"`
+	AccountKind                string                  `json:"accountKind,omitempty"`
+	Provider                   string                  `json:"provider"`
+	CredentialSource           string                  `json:"credentialSource"`
+	DisplayName                string                  `json:"displayName"`
+	Status                     string                  `json:"status"`
+	StatusMessage              string                  `json:"statusMessage,omitempty"`
+	RuntimeStatus              string                  `json:"runtimeStatus,omitempty"`
+	RuntimeReason              string                  `json:"runtimeReason,omitempty"`
+	RuntimeFailureClass        string                  `json:"runtimeFailureClass,omitempty"`
+	Routeable                  bool                    `json:"routeable,omitempty"`
+	RegisteredModelCount       int                     `json:"registeredModelCount,omitempty"`
+	RuntimeRepairOutcome       string                  `json:"runtimeRepairOutcome,omitempty"`
+	RuntimeRepairAction        string                  `json:"runtimeRepairAction,omitempty"`
+	RuntimeRepairTriggerStatus string                  `json:"runtimeRepairTriggerStatus,omitempty"`
+	RuntimeRepairTriggerClass  string                  `json:"runtimeRepairTriggerClass,omitempty"`
+	RuntimeRepairTriggerReason string                  `json:"runtimeRepairTriggerReason,omitempty"`
+	LastRuntimeRepairAtUnixMs  int64                   `json:"lastRuntimeRepairAtUnixMs,omitempty"`
+	Priority                   int                     `json:"priority,omitempty"`
+	Disabled                   bool                    `json:"disabled,omitempty"`
+	Email                      string                  `json:"email,omitempty"`
+	PlanType                   string                  `json:"planType,omitempty"`
+	Name                       string                  `json:"name,omitempty"`
+	APIKey                     string                  `json:"apiKey,omitempty"`
+	APIKeys                    []string                `json:"apiKeys,omitempty"`
+	Headers                    map[string]string       `json:"headers,omitempty"`
+	Models                     []OpenAICompatibleModel `json:"models,omitempty"`
+	KeyFingerprint             string                  `json:"keyFingerprint,omitempty"`
+	KeySuffix                  string                  `json:"keySuffix,omitempty"`
+	BaseURL                    string                  `json:"baseUrl,omitempty"`
+	Prefix                     string                  `json:"prefix,omitempty"`
+	ProxyURL                   string                  `json:"proxyUrl,omitempty"`
+	AuthIndex                  interface{}             `json:"authIndex,omitempty"`
+	QuotaKey                   string                  `json:"quotaKey,omitempty"`
+	QuotaCurl                  string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled               bool                    `json:"quotaEnabled,omitempty"`
+	LocalOnly                  bool                    `json:"localOnly,omitempty"`
+	SupportedFormats           []string                `json:"supportedFormats,omitempty"`
+	FormatBaseURLs             map[string]string       `json:"formatBaseUrls,omitempty"`
+	BillingCurl                string                  `json:"billingCurl,omitempty"`
+	BillingEnabled             bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie             string                  `json:"platformCookie,omitempty"`
+	CurlVariables              map[string]string       `json:"curlVariables,omitempty"`
+	ModelFetchAPIKey           string                  `json:"modelFetchApiKey,omitempty"`
+	ModelFetchBaseURL          string                  `json:"modelFetchBaseUrl,omitempty"`
+	Requestability             AccountRequestability   `json:"requestability,omitempty"`
 }
 
 type AccountRequestability struct {
@@ -411,6 +422,52 @@ type ChannelRouteEvent struct {
 	ShadowSelectedAccountID string `json:"shadowSelectedAccountID,omitempty"`
 	ShadowDiff              bool   `json:"shadowDiff,omitempty"`
 	Redacted                bool   `json:"redacted"`
+}
+
+type ChannelRouteDecisionsInput struct {
+	Channel string `json:"channel,omitempty"`
+	Limit   int    `json:"limit,omitempty"`
+}
+
+type ChannelRouteDecision struct {
+	ID                   string                     `json:"id"`
+	RecordedAt           string                     `json:"recordedAt"`
+	Channel              string                     `json:"channel"`
+	Providers            []string                   `json:"providers,omitempty"`
+	Model                string                     `json:"model,omitempty"`
+	ProjectKey           string                     `json:"projectKey,omitempty"`
+	ProjectName          string                     `json:"projectName,omitempty"`
+	ProjectKeySource     string                     `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string                     `json:"projectKeyConfidence,omitempty"`
+	ProjectMatchKeys     []string                   `json:"projectMatchKeys,omitempty"`
+	Source               string                     `json:"source,omitempty"`
+	CandidateCount       int                        `json:"candidateCount"`
+	Candidates           []ChannelRouteDecisionAuth `json:"candidates,omitempty"`
+	SelectedAuthID       string                     `json:"selectedAuthID,omitempty"`
+	SelectedAccountID    string                     `json:"selectedAccountID,omitempty"`
+	SelectedProvider     string                     `json:"selectedProvider,omitempty"`
+	UnavailableCode      string                     `json:"unavailableCode,omitempty"`
+	UnavailableMessage   string                     `json:"unavailableMessage,omitempty"`
+	Trace                []ChannelRouteDecisionStep `json:"trace,omitempty"`
+}
+
+type ChannelRouteDecisionAuth struct {
+	AuthID    string `json:"authID,omitempty"`
+	AccountID string `json:"accountID,omitempty"`
+	Provider  string `json:"provider,omitempty"`
+}
+
+type ChannelRouteDecisionStep struct {
+	Stage     string   `json:"stage"`
+	Policy    string   `json:"policy,omitempty"`
+	Reason    string   `json:"reason,omitempty"`
+	Before    int      `json:"before"`
+	After     int      `json:"after"`
+	AllowIDs  []string `json:"allowIDs,omitempty"`
+	DenyIDs   []string `json:"denyIDs,omitempty"`
+	OrderIDs  []string `json:"orderIDs,omitempty"`
+	Fallback  *bool    `json:"fallback,omitempty"`
+	Activated bool     `json:"activated"`
 }
 
 type ChannelRouteAccountResultInput struct {

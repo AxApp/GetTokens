@@ -13,9 +13,11 @@ import ModalFrame from '../../../components/ui/ModalFrame';
 import type { main } from '../../../../wailsjs/go/models';
 import {
   CHANNEL_ROUTE_MODE_HELP_SECTIONS,
+  buildChannelRouteDecisionSummary,
   buildChannelRoutingExplainDigest,
   type ChannelID,
   type ChannelRouteMode,
+  type ChannelRouteDecisionSnapshot,
   type ChannelRoutingConfig,
   type ChannelRoutingParticipantAccountLike,
   type ProjectCandidatePoolProjectOption,
@@ -25,6 +27,7 @@ interface ChannelRoutingWorkbenchProps {
   channel: ChannelID;
   config: ChannelRoutingConfig;
   explain?: main.ChannelRoutingExplainResult | null;
+  routeDecisions?: ChannelRouteDecisionSnapshot[] | null;
   disabled?: boolean;
   saving?: boolean;
   message?: string;
@@ -57,6 +60,7 @@ export default function ChannelRoutingWorkbench({
   channel,
   config,
   explain,
+  routeDecisions = [],
   disabled = false,
   saving = false,
   message = '',
@@ -73,6 +77,7 @@ export default function ChannelRoutingWorkbench({
 }: ChannelRoutingWorkbenchProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const explainView = buildChannelRoutingExplainDigest(explain);
+  const routeDecisionRows = routeDecisions.map((item) => buildChannelRouteDecisionSummary(item));
   const hasExplain = explainView.hasExplain;
   const candidateCount = explainView.candidateRows.length;
   const filteredCount = explainView.filteredRows.reduce((total, item) => total + item.count, 0);
@@ -262,6 +267,48 @@ export default function ChannelRoutingWorkbench({
                 />
               </div>
             </section>
+          </section>
+
+          <section className="border-t-2 border-[var(--border-color)] pt-4">
+            <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
+              <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">最近真实决策</span>
+              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                SIDE CAR
+              </span>
+            </div>
+            <div className="grid gap-2">
+              {routeDecisionRows.length > 0 ? (
+                routeDecisionRows.map((row) => (
+                  <div
+                    key={row.id}
+                    className={`input-swiss min-w-0 !px-3 !py-2 ${
+                      row.unresolved ? 'border-[var(--color-status-danger)]' : ''
+                    }`}
+                  >
+                    <div className="flex min-w-0 items-center justify-between gap-3">
+                      <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
+                        {row.title}
+                      </span>
+                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                        {row.unresolved ? 'UNRESOLVED' : 'SELECTED'}
+                      </span>
+                    </div>
+                    {row.meta ? (
+                      <div className="mt-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-secondary)]">
+                        {row.meta}
+                      </div>
+                    ) : null}
+                    {row.detail ? (
+                      <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-muted)]">
+                        {row.detail}
+                      </div>
+                    ) : null}
+                  </div>
+                ))
+              ) : (
+                <Placeholder text="运行预演或探测后，这里会显示 sidecar 最近真实路由决策。" />
+              )}
+            </div>
           </section>
         </div>
       </details>

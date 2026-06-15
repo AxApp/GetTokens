@@ -171,20 +171,31 @@ type OpenAICompatibleAccountCredential struct {
 }
 
 type UnifiedAccount struct {
-	AccountKey         string                  `json:"account_key"`
-	Kind               AccountKind             `json:"kind"`
-	Title              string                  `json:"title"`
-	Provider           string                  `json:"provider"`
-	CredentialSource   AccountCredentialSource `json:"credential_source"`
-	Priority           int                     `json:"priority"`
-	Disabled           bool                    `json:"disabled"`
-	Revision           int                     `json:"revision"`
-	MetadataJSON       string                  `json:"metadata_json,omitempty"`
-	CreatedAtUnixMs    int64                   `json:"created_at_unix_ms,omitempty"`
-	UpdatedAtUnixMs    int64                   `json:"updated_at_unix_ms,omitempty"`
-	DeletedAtUnixMs    int64                   `json:"deleted_at_unix_ms,omitempty"`
-	RuntimeApplyStatus string                  `json:"runtime_apply_status,omitempty"`
-	RuntimeApplyError  string                  `json:"runtime_apply_error,omitempty"`
+	AccountKey                   string                  `json:"account_key"`
+	Kind                         AccountKind             `json:"kind"`
+	Title                        string                  `json:"title"`
+	Provider                     string                  `json:"provider"`
+	CredentialSource             AccountCredentialSource `json:"credential_source"`
+	Priority                     int                     `json:"priority"`
+	Disabled                     bool                    `json:"disabled"`
+	Revision                     int                     `json:"revision"`
+	MetadataJSON                 string                  `json:"metadata_json,omitempty"`
+	CreatedAtUnixMs              int64                   `json:"created_at_unix_ms,omitempty"`
+	UpdatedAtUnixMs              int64                   `json:"updated_at_unix_ms,omitempty"`
+	DeletedAtUnixMs              int64                   `json:"deleted_at_unix_ms,omitempty"`
+	RuntimeApplyStatus           string                  `json:"runtime_apply_status,omitempty"`
+	RuntimeApplyError            string                  `json:"runtime_apply_error,omitempty"`
+	RuntimeRouteabilityStatus    string                  `json:"runtime_routeability_status,omitempty"`
+	RuntimeRouteabilityReason    string                  `json:"runtime_routeability_reason,omitempty"`
+	RuntimeRegisteredModelsCount int                     `json:"runtime_registered_models_count,omitempty"`
+	LastRuntimeReconcileAtUnixMs int64                   `json:"last_runtime_reconcile_at_unix_ms,omitempty"`
+	RuntimeFailureClass          string                  `json:"runtime_failure_class,omitempty"`
+	RuntimeRepairOutcome         string                  `json:"runtime_repair_outcome,omitempty"`
+	RuntimeRepairAction          string                  `json:"runtime_repair_action,omitempty"`
+	RuntimeRepairTriggerStatus   string                  `json:"runtime_repair_trigger_status,omitempty"`
+	RuntimeRepairTriggerClass    string                  `json:"runtime_repair_trigger_class,omitempty"`
+	RuntimeRepairTriggerReason   string                  `json:"runtime_repair_trigger_reason,omitempty"`
+	LastRuntimeRepairAtUnixMs    int64                   `json:"last_runtime_repair_at_unix_ms,omitempty"`
 
 	AuthFile         *AuthFileAccountCredential         `json:"auth_file,omitempty"`
 	CodexAPIKey      *CodexAPIKeyAccountCredential      `json:"codex_api_key,omitempty"`

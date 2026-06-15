@@ -497,6 +497,87 @@ func TestQuotaRefreshClientEndpoints(t *testing.T) {
 	}
 }
 
+func TestExplainChannelRoutingClientEndpoints(t *testing.T) {
+	requests := 0
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		if method != "POST" || path != "/v0/management/gettokens/channel-routing/explain" {
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		requests++
+		assertJSONContains(t, body, `"channel":"codex"`)
+		return []byte(`{
+			"channel":"codex",
+			"routeMode":"balanced",
+			"selectedAccountID":"acct_company_1",
+			"candidates":[{"id":"acct_company_1","displayName":"公司 1"}],
+			"filtered":[{"id":"acct_checker","reason":"account-unrequestable"}],
+			"steps":["mode:balanced"],
+			"policyVersion":"channel-routing-sidecar-v1"
+		}`), 200, nil
+	})
+
+	result, supported, err := client.ExplainChannelRouting(ChannelRoutingExplainInput{Channel: "codex"})
+	if err != nil || !supported || result == nil {
+		t.Fatalf("ExplainChannelRouting = %#v, supported=%v, err=%v", result, supported, err)
+	}
+	if requests != 1 || result.SelectedAccountID != "acct_company_1" || len(result.Candidates) != 1 {
+		t.Fatalf("ExplainChannelRouting result = %#v, requests=%d", result, requests)
+	}
+}
+
+func TestExplainChannelRoutingClientReturnsUnsupportedOn404(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		return nil, 404, nil
+	})
+
+	result, supported, err := client.ExplainChannelRouting(ChannelRoutingExplainInput{Channel: "codex"})
+	if err != nil {
+		t.Fatalf("ExplainChannelRouting returned error: %v", err)
+	}
+	if supported || result != nil {
+		t.Fatalf("ExplainChannelRouting = %#v, supported=%v, want unsupported nil", result, supported)
+	}
+}
+
+func TestListChannelRoutingDecisionsClientEndpoints(t *testing.T) {
+	requests := 0
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		if method != "GET" || path != "/v0/management/gettokens/channel-routing/decisions" {
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		requests++
+		if got := query.Get("channel"); got != "codex" {
+			t.Fatalf("channel = %q, want codex", got)
+		}
+		if got := query.Get("limit"); got != "5" {
+			t.Fatalf("limit = %q, want 5", got)
+		}
+		return []byte(`{"items":[{"id":"route-1","channel":"codex","selectedAccountID":"acct_company_1","trace":[{"stage":"request","activated":true}]}]}`), 200, nil
+	})
+
+	items, supported, err := client.ListChannelRoutingDecisions("codex", 5)
+	if err != nil || !supported {
+		t.Fatalf("ListChannelRoutingDecisions err=%v supported=%v", err, supported)
+	}
+	if requests != 1 || len(items) != 1 || items[0].SelectedAccountID != "acct_company_1" || len(items[0].Trace) != 1 {
+		t.Fatalf("items = %#v, requests=%d", items, requests)
+	}
+}
+
+func TestListChannelRoutingDecisionsClientReturnsUnsupportedOn404(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		return nil, 404, nil
+	})
+
+	items, supported, err := client.ListChannelRoutingDecisions("codex", 5)
+	if err != nil {
+		t.Fatalf("ListChannelRoutingDecisions returned error: %v", err)
+	}
+	if supported || items != nil {
+		t.Fatalf("ListChannelRoutingDecisions = %#v, supported=%v, want unsupported nil", items, supported)
+	}
+}
+
 func assertJSONContains(t *testing.T, body io.Reader, want string) {
 	t.Helper()
 	payload, err := io.ReadAll(body)

@@ -350,6 +350,44 @@ test('buildCodexAccountRows separates waiting check from verified requestability
   );
 });
 
+test('buildCodexAccountRows honors runtime routeability before legacy configured status', () => {
+  const rows = buildCodexAccountRows({
+    accounts: [
+      {
+        id: 'acct_split',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Company 1',
+        status: 'configured',
+        runtimeStatus: 'applied_not_registered',
+        runtimeReason: 'runtime auth missing from registry',
+        routeable: false,
+        requestability: {
+          manual: true,
+        },
+      },
+      {
+        id: 'acct_routeable',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Available',
+        status: 'configured',
+        runtimeStatus: 'registered_routeable',
+        routeable: true,
+      },
+    ],
+    providers: [],
+  });
+
+  assert.deepEqual(
+    Object.fromEntries(rows.map((row) => [row.id, [row.requestable, row.blockReason, row.manualRequestable]])),
+    {
+      'acct_split': [false, 'runtime auth missing from registry', true],
+      'acct_routeable': [true, '', false],
+    },
+  );
+});
+
 test('buildCodexAccountRows accepts manual requestable IDs from channel routing config', () => {
   const rows = buildCodexAccountRows({
     accounts: [

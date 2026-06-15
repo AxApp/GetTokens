@@ -1,6 +1,7 @@
 import type { AccountRecord } from './types';
 
 export type AccountDetailModuleID =
+  | 'runtime'
   | 'credentials'
   | 'auth-file-actions'
   | 'models'
@@ -11,12 +12,12 @@ export type AccountDetailModuleID =
 
 export function buildAccountDetailModulePlan(account: Pick<AccountRecord, 'credentialSource'>): AccountDetailModuleID[] {
   if (account.credentialSource === 'api-key') {
-    return ['credentials', 'models', 'rate-limit', 'quota', 'billing'];
+    return ['runtime', 'credentials', 'models', 'rate-limit', 'quota', 'billing'];
   }
 
   if (account.credentialSource === 'auth-file') {
-    return ['auth-file-actions', 'models', 'model-probe', 'rate-limit'];
+    return ['runtime', 'auth-file-actions', 'models', 'model-probe', 'rate-limit'];
   }
 
-  return ['rate-limit'];
+  return ['runtime', 'rate-limit'];
 }

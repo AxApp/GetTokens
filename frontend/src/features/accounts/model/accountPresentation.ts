@@ -2,6 +2,10 @@ import type { main } from '../../../../wailsjs/go/models';
 import type { AccountRecord, ApiFormat, CredentialSource } from '../../../types';
 import type { AccountUsageSummary } from './accountUsage';
 import type { AccountStabilitySummary, QuotaDisplay, Translator } from './types';
+import {
+  buildChannelRouteDecisionSummary,
+  type ChannelRouteDecisionSnapshot,
+} from '../../channel-routing/model/channelRouting.ts';
 import { formatLabel, formatShortLabel } from './vendorPresetHelpers.ts';
 
 export interface AccountAttributionBadge {
@@ -142,6 +146,13 @@ function inferProviderFromBaseURL(baseUrl?: string): string | null {
 }
 
 export function resolveAccountFailureReason(account: AccountRecord) {
+  const runtimeStatus = String(account.runtimeStatus || '')
+    .trim()
+    .toLowerCase();
+  if (runtimeStatus === 'degraded' || runtimeStatus === 'applied_not_registered') {
+    return String(account.runtimeReason || account.statusMessage || account.rawAuthFile?.statusMessage || '')
+      .trim();
+  }
   const status = String(account.status || '')
     .trim()
     .toUpperCase();
@@ -153,6 +164,17 @@ export function resolveAccountFailureReason(account: AccountRecord) {
 }
 
 export function buildAccountDetailStatusMessage(account: AccountRecord, t: Translator) {
+  const runtimeStatus = String(account.runtimeStatus || '')
+    .trim()
+    .toLowerCase();
+  if (runtimeStatus === 'degraded' || runtimeStatus === 'applied_not_registered') {
+    return {
+      title: t('accounts.detail_error_title'),
+      body: resolveAccountFailureReason(account) || t('accounts.detail_error_fallback'),
+      tone: 'danger' as const,
+    };
+  }
+
   const status = String(account.localOnly ? 'LOCAL' : account.status || '')
     .trim()
     .toUpperCase();
@@ -168,6 +190,19 @@ export function buildAccountDetailStatusMessage(account: AccountRecord, t: Trans
 }
 
 export function resolveAccountStatusTone(account: AccountRecord) {
+  const runtimeStatus = String(account.runtimeStatus || '')
+    .trim()
+    .toLowerCase();
+  if (runtimeStatus === 'registered_routeable') {
+    return 'positive';
+  }
+  if (runtimeStatus === 'pending') {
+    return 'warning';
+  }
+  if (runtimeStatus === 'degraded' || runtimeStatus === 'applied_not_registered') {
+    return 'danger';
+  }
+
   const status = String(account.localOnly ? 'LOCAL' : account.status || '')
     .trim()
     .toUpperCase();
@@ -187,6 +222,28 @@ export function resolveAccountOperationalState(
   quotaDisplay: QuotaDisplay | undefined,
   t: Translator,
 ) {
+  const runtimeStatus = String(account.runtimeStatus || '')
+    .trim()
+    .toLowerCase();
+  if (runtimeStatus === 'degraded' || runtimeStatus === 'applied_not_registered') {
+    return {
+      tone: 'danger' as const,
+      label: t('accounts.status_error_display'),
+    };
+  }
+  if (runtimeStatus === 'pending') {
+    return {
+      tone: 'warning' as const,
+      label: t('accounts.status_waiting_check'),
+    };
+  }
+  if (runtimeStatus === 'registered_routeable') {
+    return {
+      tone: 'positive' as const,
+      label: t('accounts.status_available'),
+    };
+  }
+
   const status = String(account.localOnly ? 'LOCAL' : account.status || '')
     .trim()
     .toUpperCase();
@@ -267,6 +324,16 @@ function isQuotaRefreshFailure(quotaDisplay: QuotaDisplay | undefined) {
 export function isAccountUnavailable(account: AccountRecord) {
   if (account.disabled || account.rawAuthFile?.unavailable) {
     return true;
+  }
+
+  const runtimeStatus = String(account.runtimeStatus || '')
+    .trim()
+    .toLowerCase();
+  if (runtimeStatus === 'degraded' || runtimeStatus === 'applied_not_registered') {
+    return true;
+  }
+  if (runtimeStatus === 'registered_routeable') {
+    return false;
   }
 
   const status = String(account.status || '')
@@ -416,4 +483,60 @@ export function planGroupRank(label: string) {
   if (normalized === 'TEAM') return 3;
   if (normalized === 'ENTERPRISE') return 4;
   return 9;
+}
+
+export interface AccountRecentRouteDecisionSummary {
+  id: string;
+  channel: string;
+  matchedAs: 'selected' | 'candidate';
+  title: string;
+  meta: string;
+  detail: string;
+  unresolved: boolean;
+}
+
+export function buildAccountRecentRouteDecisionSummaries(
+  account: Pick<AccountRecord, 'id'>,
+  decisions: ChannelRouteDecisionSnapshot[],
+): AccountRecentRouteDecisionSummary[] {
+  const accountID = String(account.id || '').trim();
+  if (!accountID) {
+    return [];
+  }
+
+  return decisions
+    .filter((decision) => {
+      const selectedAccountID = String(decision.selectedAccountID || '').trim();
+      const selectedAuthID = String(decision.selectedAuthID || '').trim();
+      if (selectedAccountID === accountID || selectedAuthID === accountID) {
+        return true;
+      }
+      return (decision.candidates || []).some((candidate) => {
+        const candidateAccountID = String(candidate.accountID || '').trim();
+        const candidateAuthID = String(candidate.authID || '').trim();
+        return candidateAccountID === accountID || candidateAuthID === accountID;
+      });
+    })
+    .sort((left, right) => String(right.recordedAt || '').localeCompare(String(left.recordedAt || '')))
+    .slice(0, 5)
+    .map((decision) => {
+      const baseSummary = buildChannelRouteDecisionSummary(decision);
+      const matchedAs = String(decision.selectedAccountID || '').trim() === accountID
+        || String(decision.selectedAuthID || '').trim() === accountID
+        ? 'selected'
+        : 'candidate';
+      return {
+        id: baseSummary.id,
+        channel: String(decision.channel || '').trim(),
+        matchedAs,
+        title: baseSummary.title,
+        meta: [
+          String(decision.channel || '').trim().toUpperCase() || '',
+          matchedAs === 'selected' ? 'selected' : 'candidate',
+          baseSummary.meta,
+        ].filter(Boolean).join(' · '),
+        detail: baseSummary.detail,
+        unresolved: baseSummary.unresolved,
+      };
+    });
 }

@@ -90,6 +90,51 @@ export interface ChannelRouteAuditEventSummary {
   redacted: boolean;
 }
 
+export interface ChannelRouteDecisionSnapshot {
+  id: string;
+  recordedAt: string;
+  channel: string;
+  providers?: string[];
+  model?: string;
+  projectKey?: string;
+  projectName?: string;
+  projectKeySource?: string;
+  projectKeyConfidence?: string;
+  projectMatchKeys?: string[];
+  source?: string;
+  candidateCount: number;
+  candidates?: Array<{
+    authID?: string;
+    accountID?: string;
+    provider?: string;
+  }>;
+  selectedAuthID?: string;
+  selectedAccountID?: string;
+  selectedProvider?: string;
+  unavailableCode?: string;
+  unavailableMessage?: string;
+  trace?: Array<{
+    stage?: string;
+    policy?: string;
+    reason?: string;
+    before?: number;
+    after?: number;
+    allowIDs?: string[];
+    denyIDs?: string[];
+    orderIDs?: string[];
+    fallback?: boolean | null;
+    activated?: boolean;
+  }>;
+}
+
+export interface ChannelRouteDecisionSummary {
+  id: string;
+  title: string;
+  meta: string;
+  detail: string;
+  unresolved: boolean;
+}
+
 export interface ChannelRoutingExplainLike {
   routeMode?: string;
   requestedModel?: string;
@@ -478,6 +523,92 @@ export function buildPreviewChannelRouteAuditEvent(input: {
     shadowDiff: input.explain.shadow?.diff === true,
     redacted: true,
   };
+}
+
+export function buildPreviewChannelRouteDecision(input: {
+  channel: ChannelID;
+  explain?: {
+    requestedModel?: string;
+    selectedAccountID?: string;
+    candidates?: unknown[];
+    projectCandidatePool?: {
+      projectKey?: string;
+      projectName?: string;
+      projectKeySource?: string;
+      projectKeyConfidence?: string;
+    } | null;
+  } | null;
+}): ChannelRouteDecisionSnapshot | null {
+  if (!input.explain) {
+    return null;
+  }
+  const now = new Date().toISOString();
+  return {
+    id: `preview-decision:${input.channel}:${now}`,
+    recordedAt: now,
+    channel: input.channel,
+    model: String(input.explain.requestedModel || '').trim(),
+    projectKey: String(input.explain.projectCandidatePool?.projectKey || '').trim(),
+    projectName: String(input.explain.projectCandidatePool?.projectName || '').trim(),
+    projectKeySource: String(input.explain.projectCandidatePool?.projectKeySource || '').trim(),
+    projectKeyConfidence: String(input.explain.projectCandidatePool?.projectKeyConfidence || '').trim(),
+    source: 'preview',
+    candidateCount: input.explain.candidates?.length || 0,
+    selectedAccountID: String(input.explain.selectedAccountID || '').trim(),
+    trace: [{ stage: 'preview', reason: 'browser preview route decision', activated: true }],
+  };
+}
+
+export function buildChannelRouteDecisionSummary(decision: ChannelRouteDecisionSnapshot): ChannelRouteDecisionSummary {
+  const selectedAccountID = String(decision.selectedAccountID || '').trim();
+  const selectedAuthID = String(decision.selectedAuthID || '').trim();
+  const selectedProvider = String(decision.selectedProvider || '').trim();
+  const unavailableCode = String(decision.unavailableCode || '').trim();
+  const title = selectedAccountID
+    ? `命中 ${selectedAccountID}`
+    : unavailableCode
+      ? `未命中 · ${unavailableCode}`
+      : '未命中';
+  const meta = [
+    decision.model ? `模型:${decision.model}` : '',
+    selectedProvider ? `提供方:${selectedProvider}` : '',
+    decision.projectName ? `项目:${decision.projectName}` : '',
+    Number.isFinite(decision.candidateCount) ? `${decision.candidateCount} 个候选` : '',
+    decision.source ? `来源:${decision.source}` : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const detail = [
+    summarizeChannelRouteDecisionTrace(decision),
+    selectedAccountID || selectedAuthID ? `命中凭据 ${selectedAccountID || selectedAuthID}` : '',
+    String(decision.unavailableMessage || '').trim(),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  return {
+    id: String(decision.id || '').trim() || `decision:${decision.channel || 'channel'}:${decision.recordedAt || 'unknown'}`,
+    title,
+    meta,
+    detail,
+    unresolved: !selectedAccountID,
+  };
+}
+
+function summarizeChannelRouteDecisionTrace(decision: ChannelRouteDecisionSnapshot): string {
+  for (const step of decision.trace || []) {
+    if (step?.activated && String(step.reason || '').trim()) {
+      const stage = String(step.stage || '').trim();
+      return stage ? `${stage}: ${String(step.reason || '').trim()}` : String(step.reason || '').trim();
+    }
+  }
+  for (const step of decision.trace || []) {
+    if (String(step?.policy || '').trim()) {
+      const stage = String(step.stage || '').trim();
+      const policy = String(step.policy || '').trim();
+      return stage ? `${stage}: ${policy}` : policy;
+    }
+  }
+  return '';
 }
 
 export function buildChannelRoutingExplainDigest(

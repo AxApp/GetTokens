@@ -32,7 +32,7 @@ test('account detail frame uses the fullscreen detail modal shell', async () => 
 test('account detail keeps auth-file modules lightweight', () => {
   assert.deepEqual(
     buildAccountDetailModulePlan({ credentialSource: 'auth-file' }),
-    ['auth-file-actions', 'models', 'model-probe', 'rate-limit'],
+    ['runtime', 'auth-file-actions', 'models', 'model-probe', 'rate-limit'],
   );
 });
 
@@ -212,8 +212,37 @@ test('browser preview account detail uses local detail data without Wails bindin
 test('account detail preserves api-key edit modules', () => {
   assert.deepEqual(
     buildAccountDetailModulePlan({ credentialSource: 'api-key' }),
-    ['credentials', 'models', 'rate-limit', 'quota', 'billing'],
+    ['runtime', 'credentials', 'models', 'rate-limit', 'quota', 'billing'],
   );
+});
+
+test('account detail surfaces a narrow runtime route section instead of the removed overview wall', async () => {
+  const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(sectionSource, /export function AccountRuntimeRouteSection/);
+  assert.match(sectionSource, /componentName="AccountRuntimeRouteSection"/);
+  assert.match(sectionSource, /title="运行态路由"/);
+  assert.match(sectionSource, /data-account-runtime-route-layout="summary"/);
+  assert.match(sectionSource, /data-account-runtime-route-evidence="detail"/);
+  assert.match(sectionSource, /data-account-runtime-route-repair="diagnostics"/);
+  assert.match(sectionSource, /data-account-runtime-route-decisions="recent"/);
+  assert.match(sectionSource, /最近真实路由/);
+  assert.match(sectionSource, /Bounded Reconcile/);
+  assert.match(sectionSource, /Failure Class/);
+  assert.match(sectionSource, /Repair Outcome/);
+  assert.match(sectionSource, /Repair Action/);
+  assert.match(sectionSource, /Trigger Class/);
+  assert.match(sectionSource, /Routeability/);
+  assert.match(sectionSource, /Registered Models/);
+  assert.match(sectionSource, /Requestable/);
+  assert.match(unifiedSource, /case 'runtime':/);
+  assert.match(unifiedSource, /<AccountRuntimeRouteSection[\s\S]*span="wide"/);
+  assert.match(unifiedSource, /buildAccountRecentRouteDecisionSummaries/);
+  assert.match(featureSource, /ListChannelRouteDecisions/);
+  assert.match(featureSource, /routeDecisions=\{detailRouteDecisions\}/);
+  assert.doesNotMatch(sectionSource, /AccountRuntimeEvidenceSection/);
 });
 
 

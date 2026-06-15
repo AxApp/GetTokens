@@ -350,6 +350,10 @@ export function ListCachedAccounts() {
   return window['go']['main']['App']['ListCachedAccounts']();
 }
 
+export function ListChannelRouteDecisions(arg1) {
+  return window['go']['main']['App']['ListChannelRouteDecisions'](arg1);
+}
+
 export function ListChannelRouteEvents(arg1) {
   return window['go']['main']['App']['ListChannelRouteEvents'](arg1);
 }

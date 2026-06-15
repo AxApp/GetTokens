@@ -179,6 +179,8 @@ export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
 export function ListCachedAccounts():Promise<Array<main.AccountRecord>>;
 
+export function ListChannelRouteDecisions(arg1:main.ChannelRouteDecisionsInput):Promise<Array<main.ChannelRouteDecision>>;
+
 export function ListChannelRouteEvents(arg1:main.ChannelRouteEventsInput):Promise<Array<main.ChannelRouteEvent>>;
 
 export function ListCodexAccountInventory():Promise<Array<main.AccountRecord>>;

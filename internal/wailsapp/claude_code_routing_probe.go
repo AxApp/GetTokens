@@ -60,7 +60,7 @@ func (a *App) ProbeClaudeCodeAccountRouting(input ProbeClaudeCodeAccountRoutingI
 		return nil, err
 	}
 
-	candidates, err := a.loadClaudeCodeRoutingProbeCandidates()
+	candidates, err := a.loadClaudeCodeRoutingProbeCandidates(model)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (a *App) ProbeClaudeCodeAccountRouting(input ProbeClaudeCodeAccountRoutingI
 	return result, nil
 }
 
-func (a *App) loadClaudeCodeRoutingProbeCandidates() ([]codexRoutingProbeCandidate, error) {
+func (a *App) loadClaudeCodeRoutingProbeCandidates(model string) ([]codexRoutingProbeCandidate, error) {
 	accounts, err := a.ListAccounts()
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (a *App) loadClaudeCodeRoutingProbeCandidates() ([]codexRoutingProbeCandida
 
 	candidates := make([]codexRoutingProbeCandidate, 0, len(accounts))
 	for _, account := range accounts {
-		if account.Disabled || !codexRoutingRecordRequestable(account.Status) || !supportsAnthropicFormat(account.SupportedFormats) {
+		if account.Disabled || !codexRoutingRecordRequestable(account) || !supportsAnthropicFormat(account.SupportedFormats) {
 			continue
 		}
 		accountID := strings.TrimSpace(account.ID)
@@ -151,6 +151,11 @@ func (a *App) loadClaudeCodeRoutingProbeCandidates() ([]codexRoutingProbeCandida
 		}
 		return candidates[i].ID < candidates[j].ID
 	})
+	if routed, supported, err := a.loadChannelRoutingProbeCandidatesFromManagementExplain("claude", model, candidates); err != nil {
+		return nil, err
+	} else if supported {
+		return routed, nil
+	}
 	return candidates, nil
 }
 
@@ -189,6 +194,8 @@ func (a *App) runClaudeCodeRoutingProbeAttempt(index int, model string, relayKey
 		StartedAt: startedAt.Format(time.RFC3339),
 	}
 
+	beforeDecisions := a.captureCodexRoutingDecisionMarkers("claude", candidates)
+	beforeLive := a.captureCodexRoutingLiveRequests(candidates)
 	before := a.captureCodexRoutingUsage(candidates)
 	payloadBody, err := json.Marshal(map[string]any{
 		"model":      model,
@@ -220,8 +227,20 @@ func (a *App) runClaudeCodeRoutingProbeAttempt(index int, model string, relayKey
 		attempt.Message = fmt.Sprintf("Claude Code 测试请求返回 HTTP %d", statusCode)
 	}
 
+	afterDecisions := a.captureCodexRoutingDecisionMarkers("claude", candidates)
+	afterLive := a.captureCodexRoutingLiveRequests(candidates)
 	after := a.captureCodexRoutingUsage(candidates)
-	if candidate, delta, ok := detectCodexRoutingProbeHit(before, after, candidates); ok {
+	if marker, ok := detectCodexRoutingProbeHitFromRouteDecisions(beforeDecisions, afterDecisions, model, startedAt); ok {
+		attempt.AccountID = marker.AccountID
+		attempt.AccountLabel = marker.AccountLabel
+		attempt.Provider = marker.Provider
+		attempt.Evidence = "route-decision snapshot"
+	} else if marker, ok := detectCodexRoutingProbeHitFromLiveRequests(beforeLive, afterLive, model, startedAt); ok {
+		attempt.AccountID = marker.AccountID
+		attempt.AccountLabel = marker.AccountLabel
+		attempt.Provider = marker.Provider
+		attempt.Evidence = "live-session request"
+	} else if candidate, delta, ok := detectCodexRoutingProbeHit(before, after, candidates); ok {
 		attempt.AccountID = candidate.ID
 		attempt.AccountLabel = candidate.Label
 		attempt.Provider = candidate.Provider

@@ -3,6 +3,7 @@ package wailsapp
 import (
 	"encoding/json"
 	"io"
+	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -450,6 +451,48 @@ func TestExplainChannelRoutingManualRequestableStillHonorsRuntimeBlocks(t *testi
 	assertCandidateIDs(t, result.Candidates, []string{"auth-file:fallback.json"})
 }
 
+func TestExplainChannelRoutingUsesRuntimeRouteabilityBeforeLegacyConfiguredStatus(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{
+			ID:                   "acct_split",
+			AccountKind:          accountsdomain.AccountKindCodexAPIKey,
+			Provider:             "codex",
+			CredentialSource:     accountsdomain.CredentialSourceAPIKey,
+			DisplayName:          "Split",
+			Status:               "configured",
+			RuntimeStatus:        "applied_not_registered",
+			RuntimeReason:        "runtime auth missing from registry",
+			Priority:             2,
+			SupportedFormats:     []string{"codex"},
+			Requestability:       accountsdomain.AccountRequestability{Manual: true},
+			Routeable:            false,
+			RegisteredModelCount: 0,
+		},
+		{
+			ID:               "auth-file:fallback.json",
+			AccountKind:      accountsdomain.AccountKindAuthFile,
+			Provider:         "codex",
+			CredentialSource: accountsdomain.CredentialSourceAuthFile,
+			DisplayName:      "Fallback",
+			Status:           "active",
+			Priority:         1,
+			SupportedFormats: []string{"codex"},
+		},
+	}
+
+	result := explainChannelRoutingWithAccounts(accounts, ChannelRoutingConfig{
+		Channel:                     "codex",
+		RouteMode:                   "sequential",
+		OrderedAccountIDs:           []string{"acct_split", "auth-file:fallback.json"},
+		ManualRequestableAccountIDs: []string{"acct_split"},
+	}, ChannelRoutingExplainInput{})
+
+	if result.SelectedAccountID != "auth-file:fallback.json" {
+		t.Fatalf("SelectedAccountID = %q, want auth-file:fallback.json", result.SelectedAccountID)
+	}
+	assertFilteredReason(t, result.Filtered, "acct_split", "account-unrequestable")
+}
+
 func TestExplainChannelRoutingDropsLegacyProjectModeAndProjectBindings(t *testing.T) {
 	accounts := []accountsdomain.AccountRecord{
 		{ID: "auth-file:a.json", DisplayName: "A", Status: "active", Priority: 2, SupportedFormats: []string{"codex"}},
@@ -534,6 +577,8 @@ func TestExplainChannelRoutingLoadsProjectCandidatePoolRulesFromManagementAPI(t 
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			switch {
+			case method == "POST" && path == ManagementAPIPrefix+"/gettokens/channel-routing/explain":
+				return nil, 404, nil
 			case method == "GET" && path == ManagementAPIPrefix+"/accounts":
 				return []byte(`{"accounts":[
 					{"account_key":"auth-file:a.json","kind":"auth-file","title":"a.json","provider":"codex","credential_source":"sidecar-management-api","priority":0,"auth_file":{"source_file_name":"a.json","auth_type":"codex"}},
@@ -587,6 +632,45 @@ func TestExplainChannelRoutingLoadsProjectCandidatePoolRulesFromManagementAPI(t 
 		t.Fatalf("project candidate pool explain = %#v", result.ProjectCandidatePool)
 	}
 	assertStepContains(t, result.Steps, "project-candidate-pool:matched")
+}
+
+func TestExplainChannelRoutingPrefersSidecarManagementEndpoint(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	called := 0
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method != "POST" || path != ManagementAPIPrefix+"/gettokens/channel-routing/explain" {
+				t.Fatalf("unexpected sidecar request: %s %s", method, path)
+			}
+			called++
+			return []byte(`{
+				"channel":"codex",
+				"routeMode":"balanced",
+				"selectedAccountID":"acct_company_1",
+				"candidates":[{"id":"acct_company_1","displayName":"公司 1","provider":"codex","routeOrder":1,"groupID":"g1","groupOrder":1,"channelOrder":0,"activeSessions":0}],
+				"filtered":[{"id":"acct_checker","reason":"account-unrequestable"}],
+				"steps":["mode:balanced","candidates:1"],
+				"snapshotVersion":"sidecar-snapshot",
+				"policyVersion":"channel-routing-sidecar-v1"
+			}`), 200, nil
+		},
+	}
+
+	result, err := app.ExplainChannelRouting(ChannelRoutingExplainInput{Channel: "codex"})
+	if err != nil {
+		t.Fatalf("ExplainChannelRouting: %v", err)
+	}
+	if called != 1 {
+		t.Fatalf("sidecar explain calls = %d, want 1", called)
+	}
+	if result.SelectedAccountID != "acct_company_1" || result.RouteMode != "balanced" {
+		t.Fatalf("sidecar explain result = %#v", result)
+	}
+	assertCandidateIDs(t, result.Candidates, []string{"acct_company_1"})
+	assertFilteredReason(t, result.Filtered, "acct_checker", "account-unrequestable")
+	if result.PolicyVersion != "channel-routing-sidecar-v1" {
+		t.Fatalf("PolicyVersion = %q, want channel-routing-sidecar-v1", result.PolicyVersion)
+	}
 }
 
 func TestExplainChannelRoutingProjectCandidatePoolAmbiguousDoesNotFilter(t *testing.T) {
@@ -853,6 +937,62 @@ func TestChannelRouteEventLedgerStoresRedactedShadowSummary(t *testing.T) {
 		if strings.Contains(lower, forbidden) {
 			t.Fatalf("event contains forbidden sensitive marker %q: %s", forbidden, lower)
 		}
+	}
+}
+
+func TestListChannelRouteDecisionsReturnsManagementResults(t *testing.T) {
+	app := New("dev", "", "AxApp/GetTokens")
+	app.managementAPI = func() *cliproxyapi.Client {
+		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method != http.MethodGet {
+				t.Fatalf("expected GET, got %s", method)
+			}
+			if path != "/v0/management/gettokens/channel-routing/decisions" {
+				t.Fatalf("unexpected path: %s", path)
+			}
+			if got := query.Get("channel"); got != "codex" {
+				t.Fatalf("channel = %q, want codex", got)
+			}
+			if got := query.Get("limit"); got != "5" {
+				t.Fatalf("limit = %q, want 5", got)
+			}
+			return []byte(`{"items":[{"id":"decision-1","recordedAt":"2026-06-15T10:00:00Z","channel":"codex","providers":["codex"],"model":"gpt-5","projectKey":"workspace:gettokens","projectName":"GetTokens","projectKeySource":"codex-turn-workspace","projectKeyConfidence":"strong","projectMatchKeys":["workspace:gettokens"],"source":"scheduler","candidateCount":2,"selectedAuthID":"auth-company-1","selectedAccountID":"acct-company-1","selectedProvider":"codex","candidates":[{"authID":"auth-company-1","accountID":"acct-company-1","provider":"codex"}],"trace":[{"stage":"pool-scope","policy":"ProjectCandidatePoolPolicy","reason":"project-candidate-pool matched","before":4,"after":2,"allowIDs":["acct-company-1"],"orderIDs":["acct-company-1"],"fallback":false,"activated":true}]}]}`), 200, nil
+		})
+	}
+
+	decisions, err := app.ListChannelRouteDecisions(ChannelRouteDecisionsInput{Channel: "codex", Limit: 5})
+	if err != nil {
+		t.Fatalf("ListChannelRouteDecisions: %v", err)
+	}
+	if len(decisions) != 1 {
+		t.Fatalf("decisions = %#v, want 1 item", decisions)
+	}
+	decision := decisions[0]
+	if decision.ID != "decision-1" || decision.SelectedAccountID != "acct-company-1" || decision.Model != "gpt-5" {
+		t.Fatalf("decision core fields mismatch: %#v", decision)
+	}
+	if len(decision.Candidates) != 1 || decision.Candidates[0].AccountID != "acct-company-1" {
+		t.Fatalf("decision candidates mismatch: %#v", decision.Candidates)
+	}
+	if len(decision.Trace) != 1 || decision.Trace[0].Policy != "ProjectCandidatePoolPolicy" || decision.Trace[0].Fallback == nil || *decision.Trace[0].Fallback {
+		t.Fatalf("decision trace mismatch: %#v", decision.Trace)
+	}
+}
+
+func TestListChannelRouteDecisionsFallsBackToEmptyWhenUnsupported(t *testing.T) {
+	app := New("dev", "", "AxApp/GetTokens")
+	app.managementAPI = func() *cliproxyapi.Client {
+		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			return []byte(`{"error":"not found"}`), 404, nil
+		})
+	}
+
+	decisions, err := app.ListChannelRouteDecisions(ChannelRouteDecisionsInput{Channel: "codex", Limit: 5})
+	if err != nil {
+		t.Fatalf("ListChannelRouteDecisions: %v", err)
+	}
+	if len(decisions) != 0 {
+		t.Fatalf("decisions = %#v, want empty fallback", decisions)
 	}
 }
 
