@@ -19,6 +19,9 @@ Environment:
   GETTOKENS_VERIFY_LOG_PATH         Sidecar log path. Default: ~/.config/gettokens/sidecar.log
   GETTOKENS_VERIFY_LOG_TAIL_LINES   Recent log tail size. Default: 400
   GETTOKENS_VERIFY_SKIP_LOGS        Set to 1 to skip log tail checks.
+  GETTOKENS_VERIFY_READY_RETRIES    HTTP retry count for readiness windows. Default: 10
+  GETTOKENS_VERIFY_RETRY_DELAY_SECONDS
+                                       Delay between retries. Default: 1
 EOF
 }
 
@@ -48,36 +51,57 @@ curl_json() {
   local url="${BASE_URL}${path}"
   local response
   local status
+  local attempt
+  local curl_exit
 
-  if [[ -n "$body" ]]; then
-    response="$(
-      curl -sS -w $'\n%{http_code}' \
-        -X "$method" \
-        -H "Authorization: Bearer ${MANAGEMENT_KEY}" \
-        -H "Content-Type: application/json" \
-        --data "$body" \
-        "$url"
-    )"
-  else
-    response="$(
-      curl -sS -w $'\n%{http_code}' \
-        -X "$method" \
-        -H "Authorization: Bearer ${MANAGEMENT_KEY}" \
-        "$url"
-    )"
-  fi
-
-  status="$(tail -n 1 <<<"$response")"
-  response="$(sed '$d' <<<"$response")"
-  if [[ "$status" != 2* ]]; then
-    echo "ERROR: ${method} ${path} returned HTTP ${status}" >&2
-    if [[ -n "$response" ]]; then
-      jq -c '{error: (.error // .message // .code // "non-2xx"), status: (.status // empty)}' <<<"$response" 2>/dev/null || true
+  for ((attempt = 1; attempt <= READY_RETRIES; attempt += 1)); do
+    set +e
+    if [[ -n "$body" ]]; then
+      response="$(
+        curl -sS -w $'\n%{http_code}' \
+          -X "$method" \
+          -H "Authorization: Bearer ${MANAGEMENT_KEY}" \
+          -H "Content-Type: application/json" \
+          --data "$body" \
+          "$url" \
+          2>&1
+      )"
+      curl_exit=$?
+    else
+      response="$(
+        curl -sS -w $'\n%{http_code}' \
+          -X "$method" \
+          -H "Authorization: Bearer ${MANAGEMENT_KEY}" \
+          "$url" \
+          2>&1
+      )"
+      curl_exit=$?
     fi
-    exit 1
+    set -e
+
+    status="$(tail -n 1 <<<"$response")"
+    response="$(sed '$d' <<<"$response")"
+    if [[ "$curl_exit" -eq 0 && "$status" == 2* ]]; then
+      jq -e . >/dev/null <<<"$response"
+      printf '%s\n' "$response"
+      return 0
+    fi
+
+    if [[ "$attempt" -lt "$READY_RETRIES" && ( "$curl_exit" -ne 0 || "$status" == "000" || "$status" == 503 ) ]]; then
+      sleep "$RETRY_DELAY_SECONDS"
+      continue
+    fi
+    break
+  done
+
+  echo "ERROR: ${method} ${path} returned HTTP ${status:-unknown}" >&2
+  if [[ "${curl_exit:-0}" -ne 0 ]]; then
+    echo "curl_exit=${curl_exit}" >&2
   fi
-  jq -e . >/dev/null <<<"$response"
-  printf '%s\n' "$response"
+  if [[ -n "${response:-}" ]]; then
+    jq -c '{error: (.error // .message // .code // "non-2xx"), status: (.status // empty)}' <<<"$response" 2>/dev/null || echo "$response" >&2
+  fi
+  exit 1
 }
 
 extract_port() {
@@ -101,6 +125,8 @@ BUNDLE_META="${GETTOKENS_VERIFY_BUNDLE_META:-/Applications/GetTokens.app/Content
 LOG_PATH="${GETTOKENS_VERIFY_LOG_PATH:-$HOME/.config/gettokens/sidecar.log}"
 LOG_TAIL_LINES="${GETTOKENS_VERIFY_LOG_TAIL_LINES:-400}"
 SKIP_LOGS="${GETTOKENS_VERIFY_SKIP_LOGS:-0}"
+READY_RETRIES="${GETTOKENS_VERIFY_READY_RETRIES:-10}"
+RETRY_DELAY_SECONDS="${GETTOKENS_VERIFY_RETRY_DELAY_SECONDS:-1}"
 
 echo "== GetTokens routeability readonly verification =="
 echo "base_url=${BASE_URL}"

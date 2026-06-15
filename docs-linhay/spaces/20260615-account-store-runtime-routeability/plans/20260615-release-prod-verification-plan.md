@@ -58,6 +58,8 @@ docs-linhay/scripts/verify-prod-routeability-readonly.sh
 - `GETTOKENS_VERIFY_MODEL_PRIMARY=gpt-5.4`
 - `GETTOKENS_VERIFY_MODEL_SECONDARY=gpt-5.5`
 - `GETTOKENS_VERIFY_EXPECTED_COMMIT=688f29726719e01e1206d23db47017dea8028253`
+- `GETTOKENS_VERIFY_READY_RETRIES=10`
+- `GETTOKENS_VERIFY_RETRY_DELAY_SECONDS=1`
 
 脚本只做只读动作：读取 bundle meta、请求 `/healthz`、查询 management 账号列表、调用 `channel-routing/explain`、查询账号 models、检查最近 sidecar log tail 中是否还有本轮已修复的 panic/schema 签名。它不会替换 `/Applications/GetTokens.app`、不会 kill/restart 正式进程，也不会修改正式配置或账号数据。
 
