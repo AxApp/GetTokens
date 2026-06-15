@@ -208,18 +208,15 @@
   - 窗口验收截图已归档：
     - 安全裁切版：`screenshots/20260615/dev-app/20260615-dev-app-sidecar-ready-after-v04.png`
   - 说明：首次单窗截图包含 dev 账号邮箱，仅保留为本地临时产物，不作为归档引用；最终使用裁切后的 `v04` 作为可复用验收证据
-- 当前剩余缺口继续收窄为：reference sidecar 代码、主仓集成提交、clean sidecar 重建和真实 dev App 都已闭环；剩余只差后续 release/正式环境复验。
+- 当前剩余缺口继续收窄为：reference sidecar 代码、主仓集成提交、clean sidecar 重建和真实 dev App 都已闭环；2026-06-16 已执行正式环境只读复验，正式 bundle 内 sidecar 仍是旧 commit `fef495dd3f5cd212a0e37f6ef37180492a5056ec`，不是修复 commit `688f29726719e01e1206d23db47017dea8028253`。
 - 已新增正式环境只读复验脚本 `docs-linhay/scripts/verify-prod-routeability-readonly.sh`，用于在用户授权后读取正式 bundle meta、调用 management 只读接口并输出 `公司 1` routeability 证据分类；该脚本不替换、不重启、不修改正式环境。
+- 正式复验证据：`plans/20260615-prod-routeability-evidence.json`。当前结论转为 release / 分发问题：正式环境尚未运行包含 routeability 修复的 sidecar，因此不能把正式 `公司 1` 仍不可用误判为修复回归。
 
 ## 下阶段计划
 
-主修复不再继续改产品代码，后续执行按下述材料推进：
+主修复不再继续改产品代码，后续执行按 release / 分发链路推进：
 
 - [Release / 正式环境复验计划](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260615-account-store-runtime-routeability/plans/20260615-release-prod-verification-plan.md)
 - 只读复验脚本：`docs-linhay/scripts/verify-prod-routeability-readonly.sh`
 
-若正式复验失败，优先区分以下三类情况：
-
-1. 正式版仍是旧构建：转 release / 分发问题
-2. 正式版已是新构建，但 `公司 1` 仍不 routeable：转正式数据差异排查
-3. explain 已恢复但真实请求仍 `auth_unavailable`：转真实请求链路分叉排查
+正式复验已命中第 1 类：正式版仍是旧构建。下一步不再是 routeability 代码排查，而是让正式版升级到包含 `688f2972` sidecar 的发布物，然后重新执行同一个只读 verifier。

@@ -1,0 +1,22 @@
+{
+  "generatedAt": "2026-06-15T16:24:46Z",
+  "result": "old-or-unverified-build",
+  "baseUrl": "http://127.0.0.1:8317",
+  "bundle": {
+    "metaPath": "/Applications/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json",
+    "expectedCommit": "688f29726719e01e1206d23db47017dea8028253",
+    "actualCommit": "fef495dd3f5cd212a0e37f6ef37180492a5056ec",
+    "dirty": "clean",
+    "fingerprint": "fef495dd3f5cd212a0e37f6ef37180492a5056ec:clean:c27a21c1c29751797249a4327b5a328aa2e0be25c485f91a0b25e2c9a492eb9f:darwin:arm64"
+  },
+  "account": {
+    "key": "acct_dd2172ea-9dd9-458a-88bd-590cc55a468c",
+    "title": "公司 1",
+    "runtimeApplyStatus": "not-checked",
+    "runtimeRouteabilityStatus": "not-checked",
+    "runtimeRegisteredModelsCount": 0
+  },
+  "classification": "release-distribution-old-build",
+  "verdict": "Production is still running the old sidecar build, so the production failure cannot be treated as a routeability fix regression yet.",
+  "safeActionsOnly": true
+}

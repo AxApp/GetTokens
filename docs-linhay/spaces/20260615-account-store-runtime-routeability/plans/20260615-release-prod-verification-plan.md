@@ -132,3 +132,15 @@ GETTOKENS_VERIFY_OUTPUT_JSON=docs-linhay/spaces/20260615-account-store-runtime-r
 
 1. 正式环境复验证明修复已生效，并已写回 docs/memory；
 2. 已证明正式环境仍是旧构建，问题明确转化为 release/分发问题，并已写回 docs/memory。
+
+## 当前正式复验结果
+
+2026-06-16 已执行正式环境只读 verifier，命中完成标准第 2 条：
+
+- 正式 bundle meta：`/Applications/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json`
+- 正式 sidecar commit：`fef495dd3f5cd212a0e37f6ef37180492a5056ec`
+- 期望修复 commit：`688f29726719e01e1206d23db47017dea8028253`
+- 分类：`release-distribution-old-build`
+- 证据：`20260615-prod-routeability-evidence.json`
+
+结论：正式环境尚未运行包含本轮 routeability 修复的 sidecar。当前正式 `公司 1` 仍不可用时，优先按 release / 分发链路未升级处理，不按 routeability 修复回归处理。
