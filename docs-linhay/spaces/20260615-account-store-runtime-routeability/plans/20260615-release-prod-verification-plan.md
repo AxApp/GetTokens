@@ -45,6 +45,32 @@
 
 ## 建议执行顺序
 
+优先使用只读复验脚本执行同一组证据门禁：
+
+```bash
+docs-linhay/scripts/verify-prod-routeability-readonly.sh
+```
+
+默认参数：
+
+- `GETTOKENS_VERIFY_BASE_URL=http://127.0.0.1:8317`
+- `GETTOKENS_VERIFY_ACCOUNT_KEY=acct_dd2172ea-9dd9-458a-88bd-590cc55a468c`
+- `GETTOKENS_VERIFY_MODEL_PRIMARY=gpt-5.4`
+- `GETTOKENS_VERIFY_MODEL_SECONDARY=gpt-5.5`
+- `GETTOKENS_VERIFY_EXPECTED_COMMIT=688f29726719e01e1206d23db47017dea8028253`
+
+脚本只做只读动作：读取 bundle meta、请求 `/healthz`、查询 management 账号列表、调用 `channel-routing/explain`、查询账号 models、检查最近 sidecar log tail 中是否还有本轮已修复的 panic/schema 签名。它不会替换 `/Applications/GetTokens.app`、不会 kill/restart 正式进程，也不会修改正式配置或账号数据。
+
+脚本退出码判读：
+
+| 退出码 | 含义 | 后续动作 |
+| --- | --- | --- |
+| `0` | 正式环境已证明 `公司 1` routeable | 写回 README 与 memory，关闭本计划 |
+| `20` | 正式 bundle meta 缺失或 commit 不是目标修复 commit | 转 release / 分发问题，不按 routeability 回归处理 |
+| 其他非零 | 已是可复验环境，但某项 runtime 证据失败 | 按失败分类继续排查正式数据或真实请求链路 |
+
+如需手工复核，按以下顺序执行：
+
 1. 读取正式版 sidecar 元信息：
    - `cli-proxy-api.meta.json`
    - 如无 meta，再看二进制版本头/commit

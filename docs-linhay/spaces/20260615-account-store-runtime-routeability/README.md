@@ -209,12 +209,14 @@
     - 安全裁切版：`screenshots/20260615/dev-app/20260615-dev-app-sidecar-ready-after-v04.png`
   - 说明：首次单窗截图包含 dev 账号邮箱，仅保留为本地临时产物，不作为归档引用；最终使用裁切后的 `v04` 作为可复用验收证据
 - 当前剩余缺口继续收窄为：reference sidecar 代码、主仓集成提交、clean sidecar 重建和真实 dev App 都已闭环；剩余只差后续 release/正式环境复验。
+- 已新增正式环境只读复验脚本 `docs-linhay/scripts/verify-prod-routeability-readonly.sh`，用于在用户授权后读取正式 bundle meta、调用 management 只读接口并输出 `公司 1` routeability 证据分类；该脚本不替换、不重启、不修改正式环境。
 
 ## 下阶段计划
 
-当前轮不再继续改代码，后续执行按下述材料推进：
+主修复不再继续改产品代码，后续执行按下述材料推进：
 
 - [Release / 正式环境复验计划](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260615-account-store-runtime-routeability/plans/20260615-release-prod-verification-plan.md)
+- 只读复验脚本：`docs-linhay/scripts/verify-prod-routeability-readonly.sh`
 
 若正式复验失败，优先区分以下三类情况：
 
