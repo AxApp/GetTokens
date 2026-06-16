@@ -16,6 +16,7 @@ Options:
 
 Env:
   LOCAL_MACOS_PACKAGE_PRINT_PLAN=1 prints the resolved plan and exits.
+  LOCAL_MACOS_PACKAGE_VOLNAME sets the local DMG volume name. Defaults to GetTokensLocal.
 EOF
 }
 
@@ -119,6 +120,7 @@ PLATFORM="darwin/${ARCH}"
 APP_PATH="${ROOT_DIR}/build/bin/GetTokens.app"
 DMG_PATH="${OUTPUT_DIR}/${ASSET_NAME}"
 RELEASE_LABEL="${LOCAL_RELEASE_LABEL:-$(TZ=Asia/Shanghai date +'%Y.%m.%d.%H')}"
+DMG_VOLNAME="${LOCAL_MACOS_PACKAGE_VOLNAME:-GetTokensLocal}"
 GIT_HASH="$(git -C "${ROOT_DIR}" rev-parse HEAD 2>/dev/null || echo local)"
 
 if [[ "${LOCAL_MACOS_PACKAGE_PRINT_PLAN:-0}" == "1" ]]; then
@@ -133,6 +135,7 @@ output_dir=${OUTPUT_DIR}
 asset=${ASSET_NAME}
 app=${APP_PATH}
 dmg=${DMG_PATH}
+volume=${DMG_VOLNAME}
 skip_tests=${SKIP_TESTS}
 notarize=${NOTARIZE}
 EOF
@@ -175,7 +178,7 @@ package_dmg() {
 
   rm -f "${dmg_path}"
   if command -v create-dmg >/dev/null 2>&1; then
-    bash "${SCRIPT_DIR}/package-macos-dmg.sh" "${dmg_path}" "${app_path}"
+    DMG_VOLNAME="${DMG_VOLNAME}" bash "${SCRIPT_DIR}/package-macos-dmg.sh" "${dmg_path}" "${app_path}"
     return
   fi
 
@@ -185,7 +188,7 @@ package_dmg() {
     trap 'rm -rf "${stage_dir}"' EXIT
     cp -R "${app_path}" "${stage_dir}/GetTokens.app"
     ln -s /Applications "${stage_dir}/Applications"
-    hdiutil create -volname "GetTokens" -srcfolder "${stage_dir}" -ov -format UDZO "${dmg_path}"
+    hdiutil create -volname "${DMG_VOLNAME}" -srcfolder "${stage_dir}" -ov -format UDZO "${dmg_path}"
   )
 }
 

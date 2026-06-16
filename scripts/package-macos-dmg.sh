@@ -16,6 +16,7 @@ fi
 DMG_PATH="$1"
 APP_PATH="$2"
 CREATE_DMG_BIN="${CREATE_DMG_BIN:-create-dmg}"
+DMG_VOLNAME="${DMG_VOLNAME:-GetTokens}"
 
 if [[ ! -d "${APP_PATH}" ]]; then
   echo "App bundle not found: ${APP_PATH}" >&2
@@ -24,7 +25,7 @@ fi
 
 cmd=(
   "${CREATE_DMG_BIN}"
-  --volname "GetTokens"
+  --volname "${DMG_VOLNAME}"
   --window-size 660 400
   --icon-size 100
   --icon "GetTokens.app" 180 170

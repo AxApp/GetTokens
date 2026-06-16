@@ -77,7 +77,7 @@ export default function ChannelRoutingWorkbench({
 }: ChannelRoutingWorkbenchProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const explainView = buildChannelRoutingExplainDigest(explain);
-  const routeDecisionRows = routeDecisions.map((item) => buildChannelRouteDecisionSummary(item));
+  const routeDecisionRows = (routeDecisions ?? []).map((item) => buildChannelRouteDecisionSummary(item));
   const hasExplain = explainView.hasExplain;
   const candidateCount = explainView.candidateRows.length;
   const filteredCount = explainView.filteredRows.reduce((total, item) => total + item.count, 0);
