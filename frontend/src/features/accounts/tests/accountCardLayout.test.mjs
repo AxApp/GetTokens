@@ -115,6 +115,15 @@ test('quota bar fill color is derived only from remaining quota value', async ()
   assert.doesNotMatch(source, /QuotaBars\(\{ quotaDisplay,\s*accentFillClass/);
 });
 
+test('quota percentage progress renders used ratio while color still follows remaining quota', async () => {
+  const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /formatQuotaWindowUsageLabel\(window\)/);
+  assert.match(source, /resolveQuotaWindowUsagePercent\(window\)/);
+  assert.match(source, /resolveQuotaRemainingFillClass\(window\.remainingPercent\)/);
+  assert.doesNotMatch(source, /\?\s*window\.remainingPercent;/);
+});
+
 test('quota rows keep label and percentage together above the progress bar', async () => {
   const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');

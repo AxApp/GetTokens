@@ -186,6 +186,22 @@ export function normalizeQuotaTestDisplay(result: unknown): QuotaDisplay | undef
   };
 }
 
+export function resolveQuotaWindowUsagePercent(window: Pick<QuotaWindowDisplay, 'remainingPercent'>) {
+  if (typeof window.remainingPercent !== 'number') {
+    return null;
+  }
+  return Math.max(0, Math.min(100, 100 - window.remainingPercent));
+}
+
+export function formatQuotaWindowUsageLabel(window: Pick<QuotaWindowDisplay, 'remainingPercent' | 'usedLabel'>) {
+  const usedLabel = String(window.usedLabel || '').trim();
+  if (usedLabel && usedLabel !== '--') {
+    return usedLabel;
+  }
+  const usedPercent = resolveQuotaWindowUsagePercent(window);
+  return usedPercent === null ? '--' : `${usedPercent}%`;
+}
+
 function normalizeQuotaTestWindow(window: unknown, index: number): QuotaWindowDisplay | undefined {
   if (!window || typeof window !== 'object') {
     return undefined;

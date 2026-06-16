@@ -5,6 +5,8 @@ import { readFile } from 'node:fs/promises';
 import {
   buildQuotaDisplay,
   formatQuotaRuntimeTimestampDisplay,
+  formatQuotaWindowUsageLabel,
+  resolveQuotaWindowUsagePercent,
 } from '../model/accountQuota.ts';
 
 const quotaCapableAccount = {
@@ -108,6 +110,35 @@ test('buildQuotaDisplay reads snake case quota runtime states from Wails status 
       resetAtUnix: undefined,
     },
   ]);
+});
+
+test('quota percent progress uses used ratio while preserving remaining quota semantics', () => {
+  const display = buildQuotaDisplay(quotaCapableAccount, {
+    status: 'success',
+    quota: {
+      account_key: 'acct_xiaomi_001',
+      status: 'success',
+      plan_type: 'xiaomimimo',
+      windows: [
+        {
+          id: 'mimo-plan-total-token',
+          label: 'PLAN',
+          remaining_percent: 47,
+          used_tokens: 20_037_365_787,
+          limit_tokens: 38_000_000_000,
+          remaining_tokens: 17_962_634_213,
+          reset_label: '-',
+        },
+      ],
+    },
+  });
+
+  assert.equal(display.status, 'success');
+  const [window] = display.windows;
+  assert.equal(window.remainingPercent, 47);
+  assert.equal(window.usedLabel, '53%');
+  assert.equal(resolveQuotaWindowUsagePercent(window), 53);
+  assert.equal(formatQuotaWindowUsageLabel(window), '53%');
 });
 
 test('quota bars keep runtime refresh timestamps out of compact account cards', async () => {
