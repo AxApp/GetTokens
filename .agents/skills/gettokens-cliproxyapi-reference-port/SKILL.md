@@ -73,6 +73,12 @@ Do not implement a candidate just because it looks low-risk. Evidence-lacking ca
 8. Rebuild local sidecar from the clean fork commit:
    - `./scripts/ensure-sidecar.sh darwin arm64`
 9. Confirm `build/bin/cli-proxy-api.meta.json` points to `<fork-commit>:clean`.
+10. If the fork worktree has unrelated dirty files that must be preserved, build from a temporary clean detached worktree instead of accepting a dirty fingerprint:
+   - `commit="$(git -C docs-linhay/references/CLIProxyAPI rev-parse HEAD)"`
+   - `tmp="$(mktemp -d /private/tmp/gettokens-cliproxy-clean.XXXXXX)"`
+   - `git -C docs-linhay/references/CLIProxyAPI worktree add --detach "$tmp/src" "$commit"`
+   - `CLI_PROXY_SOURCE_DIR="$tmp/src" ./scripts/ensure-sidecar.sh darwin arm64`
+   - remove the temporary worktree after the build and confirm meta records `<fork-commit>:clean`.
 
 ## 6. Real Dev App Acceptance
 
@@ -110,6 +116,7 @@ After the fork commit and dev acceptance:
 - If the parent repo has unrelated staged or unstaged changes, do not absorb them into a CLIProxyAPI reference-port commit unless the user explicitly asks to commit that staged work.
 - If another agent or process commits while you are working, re-check `git status --short` and `git log -1 --oneline` before staging your closure.
 - If a required memory file already has unrelated staged changes, prefer committing the existing staged work first or make a separate skill-only commit; do not silently mix unrelated memory edits into a claimed reference-port closure.
+- If `ensure-sidecar.sh` reports `dirty` only because the fork contains unrelated local work, do not rewrite or stash that work. Use `CLI_PROXY_SOURCE_DIR` with a temporary clean worktree for the rebuild, then document the clean fingerprint and the intentionally preserved dirty files.
 
 ## 9. Completion Summary
 
