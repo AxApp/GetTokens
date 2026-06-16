@@ -108,6 +108,7 @@ test('openAICompatibleProviderPresets exposes cherry-studio vendor defaults adap
       baseUrl: 'https://api.deepseek.com/v1',
       apiKeyPlaceholder: 'sk-...',
       models: [
+        { name: 'deepseek-v4-pro[1m]', alias: '' },
         { name: 'deepseek-v4-flash', alias: '' },
         { name: 'deepseek-v4-pro', alias: '' },
       ],
@@ -128,9 +129,11 @@ test('openAICompatibleProviderPresets exposes cherry-studio vendor defaults adap
       baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
       apiKeyPlaceholder: 'sk-...',
       models: [
+        { name: 'glm-5.2[1m]', alias: 'GLM-5.2 1M' },
+        { name: 'glm-5.2', alias: 'GLM-5.2' },
+        { name: 'glm-4.5-air', alias: 'GLM-4.5-Air' },
         { name: 'glm-5', alias: 'GLM-5' },
         { name: 'glm-4.7', alias: 'GLM-4.7' },
-        { name: 'glm-4.5-flash', alias: 'GLM-4.5-Flash' },
       ],
     },
   ]);
@@ -183,12 +186,13 @@ test('resolveOpenAICompatibleProviderPreset returns preset details for matching 
   assert.deepEqual(resolveOpenAICompatibleProviderPreset({ name: 'deepseek' }), {
     id: 'deepseek',
     label: 'DeepSeek',
-    baseUrl: 'https://api.deepseek.com/v1',
-    apiKeyPlaceholder: 'sk-...',
-    models: [
-      { name: 'deepseek-v4-flash', alias: '' },
-      { name: 'deepseek-v4-pro', alias: '' },
-    ],
+      baseUrl: 'https://api.deepseek.com/v1',
+      apiKeyPlaceholder: 'sk-...',
+      models: [
+        { name: 'deepseek-v4-pro[1m]', alias: '' },
+        { name: 'deepseek-v4-flash', alias: '' },
+        { name: 'deepseek-v4-pro', alias: '' },
+      ],
   });
 });
 

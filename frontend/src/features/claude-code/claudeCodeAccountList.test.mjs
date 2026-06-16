@@ -174,6 +174,57 @@ test('Xiaomi MiMo official Claude Code profile includes current switchable chat 
   assert.ok(mimo.officialSwitchableModels.includes('mimo-v2-omni'));
 });
 
+test('Zhipu official Claude Code profile uses Coding Plan model defaults', () => {
+  const zhipu = resolveClaudeCodeProviderProfile('zhipu');
+  assert.ok(zhipu);
+  assert.equal(zhipu.source, 'official');
+  assert.equal(zhipu.baseUrl, 'https://open.bigmodel.cn/api/anthropic');
+  assert.equal(zhipu.defaultModel, 'glm-5.2[1m]');
+  assert.equal(zhipu.haikuModel, 'glm-4.5-air');
+  assert.equal(zhipu.sonnetModel, 'glm-5.2[1m]');
+  assert.equal(zhipu.opusModel, 'glm-5.2[1m]');
+});
+
+test('official direct Claude Code profiles expose remote base urls and family defaults', () => {
+  const expectations = [
+    {
+      provider: 'kimi',
+      baseUrl: 'https://api.moonshot.cn/anthropic',
+      model: 'kimi-k2.7-code',
+      haiku: 'kimi-k2.7-code',
+    },
+    {
+      provider: 'minimax',
+      baseUrl: 'https://api.minimaxi.com/anthropic',
+      model: 'MiniMax-M3',
+      haiku: 'MiniMax-M3',
+    },
+    {
+      provider: 'doubao',
+      baseUrl: 'https://ark.cn-beijing.volces.com/api/coding',
+      model: 'ark-code-latest',
+      haiku: 'ark-code-latest',
+    },
+    {
+      provider: 'stepfun',
+      baseUrl: 'https://api.stepfun.com/step_plan',
+      model: 'step-3.7-flash',
+      haiku: 'step-3.7-flash',
+    },
+  ];
+
+  for (const expected of expectations) {
+    const profile = resolveClaudeCodeProviderProfile(expected.provider);
+    assert.ok(profile, expected.provider);
+    assert.equal(profile.source, 'official', expected.provider);
+    assert.equal(profile.baseUrl, expected.baseUrl, expected.provider);
+    assert.equal(profile.defaultModel, expected.model, expected.provider);
+    assert.equal(profile.haikuModel, expected.haiku, expected.provider);
+    assert.equal(profile.sonnetModel, expected.model, expected.provider);
+    assert.equal(profile.opusModel, expected.model, expected.provider);
+  }
+});
+
 test('Claude Code request order helpers preserve top-to-bottom runtime order', () => {
   const rows = [
     { id: 'a', priority: 3 },

@@ -91,6 +91,7 @@ export const openAICompatibleProviderPresets: OpenAICompatibleProviderPreset[] =
       baseUrl: "https://api.deepseek.com/v1",
       apiKeyPlaceholder: "sk-...",
       models: [
+        { name: "deepseek-v4-pro[1m]", alias: "" },
         { name: "deepseek-v4-flash", alias: "" },
         { name: "deepseek-v4-pro", alias: "" },
       ],
@@ -111,9 +112,11 @@ export const openAICompatibleProviderPresets: OpenAICompatibleProviderPreset[] =
       baseUrl: "https://open.bigmodel.cn/api/paas/v4",
       apiKeyPlaceholder: "sk-...",
       models: [
+        { name: "glm-5.2[1m]", alias: "GLM-5.2 1M" },
+        { name: "glm-5.2", alias: "GLM-5.2" },
+        { name: "glm-4.5-air", alias: "GLM-4.5-Air" },
         { name: "glm-5", alias: "GLM-5" },
         { name: "glm-4.7", alias: "GLM-4.7" },
-        { name: "glm-4.5-flash", alias: "GLM-4.5-Flash" },
       ],
     },
     {
@@ -122,9 +125,10 @@ export const openAICompatibleProviderPresets: OpenAICompatibleProviderPreset[] =
       baseUrl: "https://api.moonshot.cn/v1",
       apiKeyPlaceholder: "sk-...",
       models: [
+        { name: "kimi-k2.7-code", alias: "Kimi K2.7 Code" },
         { name: "moonshot-v1-auto", alias: "Moonshot Auto" },
+        { name: "kimi-k2.6", alias: "Kimi K2.6" },
         { name: "kimi-k2.5", alias: "Kimi K2.5" },
-        { name: "kimi-k2-thinking", alias: "Kimi Thinking" },
       ],
     },
     {
@@ -183,9 +187,10 @@ export const openAICompatibleProviderPresets: OpenAICompatibleProviderPreset[] =
       baseUrl: "https://ark.cn-beijing.volces.com/api/v3",
       apiKeyPlaceholder: "sk-...",
       models: [
+        { name: "ark-code-latest", alias: "Ark Code Latest" },
+        { name: "doubao-seed-2-0-code-preview-latest", alias: "Doubao Seed 2.0 Code" },
         { name: "doubao-seed-1-8-251228", alias: "Doubao Seed 1.8" },
         { name: "doubao-1-5-pro-32k-250115", alias: "Doubao 1.5 Pro 32K" },
-        { name: "deepseek-r1-250120", alias: "DeepSeek R1" },
       ],
     },
 

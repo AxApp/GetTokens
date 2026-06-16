@@ -43,7 +43,7 @@ type ProviderDefaultModelProfile = {
 - 已保存的用户映射优先级最高；profile 更新只能提示，不自动覆盖。
 - `localApplyExtraEnv` 只写 Claude Code 本地 env，不写 relay 模型映射。
 
-## 官方默认值表（2026-05-19）
+## 官方默认值表（2026-06-16）
 
 | providerId | 官方默认值 | 官方来源 | 旧预设差异与处理 |
 |------------|------------|----------|------------------|
@@ -52,12 +52,14 @@ type ProviderDefaultModelProfile = {
 | `bailian-token-plan` | `ANTHROPIC_BASE_URL=https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic`；`main/haiku/sonnet/opus=qwen3.6-plus`。 | https://help.aliyun.com/zh/model-studio/claude-code 与控制台文档 `url=2949529` | 旧预设没有 Token Plan 独立 profile；需新增。 |
 | `bailian-coding-plan` | `ANTHROPIC_BASE_URL=https://coding.dashscope.aliyuncs.com/apps/anthropic`；`main/sonnet/opus=qwen3.6-plus`；`haiku=qwen3.6-flash`。 | https://help.aliyun.com/zh/model-studio/claude-code 与控制台文档 `url=2949529` | `cc-switch` 只填 base URL；GetTokens 旧模型建议为 `qwen3.5-*`，需要迁移提示。 |
 | `bailian-payg` | `ANTHROPIC_BASE_URL=https://dashscope.aliyuncs.com/apps/anthropic`；`main/sonnet/opus=qwen3.6-plus`；`haiku=qwen3.6-flash`。 | https://help.aliyun.com/zh/model-studio/claude-code | 旧模型建议为 `qwen3.5-*`，需要迁移提示。 |
-| `kimi` | `ANTHROPIC_BASE_URL=https://api.moonshot.cn/anthropic`；`main/haiku/sonnet/opus=kimi-k2.5`。 | https://platform.moonshot.cn/docs/guide/agent-support | `cc-switch` / GetTokens 当前为 `kimi-k2.6`，标记 `source-conflict`；默认值以官网 `kimi-k2.5` 为准。 |
-| `minimax` | 国际 `https://api.minimax.io/anthropic`，中国 `https://api.minimaxi.com/anthropic`；`main/haiku/sonnet/opus=MiniMax-M2.7`。 | https://platform.minimax.io/docs/guides/text-ai-coding-tools | 官网与本地预设一致。 |
+| `kimi` | `ANTHROPIC_BASE_URL=https://api.moonshot.cn/anthropic`；`ANTHROPIC_AUTH_TOKEN=${YOUR_MOONSHOT_API_KEY}`；`main/haiku/sonnet/opus=kimi-k2.7-code`；官方额外建议 `ENABLE_TOOL_SEARCH=false`、`CLAUDE_CODE_AUTO_COMPACT_WINDOW=262144`。 | https://platform.moonshot.cn/docs/guide/agent-support | GetTokens 旧值 `kimi-k2.6` / `kimi-k2.5` 只作迁移提示；当前默认值以官网 K2.7 Code 为准。 |
+| `minimax` | 国际 `https://api.minimax.io/anthropic`，中国 `https://api.minimaxi.com/anthropic`；`ANTHROPIC_AUTH_TOKEN=$MiniMax_API_KEY`；`main/haiku/sonnet/opus=MiniMax-M3`；`API_TIMEOUT_MS=3000000`。 | https://platform.minimax.io/docs/token-plan/claude-code | 旧值 `MiniMax-M2.7` 只作迁移提示；中国区账号默认使用 `api.minimaxi.com`。 |
 | `doubao` | `ANTHROPIC_BASE_URL=https://ark.cn-beijing.volces.com/api/coding`；`ANTHROPIC_MODEL` 可填 `ark-code-latest` 或具体 `Model_Name`。 | https://www.volcengine.com/docs/82379/1928262 | 本地 `doubao-seed-2-0-code-preview-latest` 不作为官网默认，只作旧预设迁移提示。 |
 | `xiaomimimo` | `ANTHROPIC_BASE_URL=https://api.xiaomimimo.com/anthropic`，Token Plan 可使用专属 Base URL；`main/haiku/sonnet/opus=mimo-v2.5-pro`。 | https://platform.xiaomimimo.com/docs/zh-CN/integration/claudecode | GetTokens 当前为 `mimo-v2-pro`，需要迁移提示。 |
-| `zhipu` / `z-ai` | 未确认官方 Claude Code env 示例；只确认模型页存在 `glm-5.1`、`glm-5`、`glm-5-turbo` 等模型。 | https://docs.z.ai/guides/llm/glm-5.1 | 继续使用 `glm-5` 作为 `preset-fallback`，直到找到 Claude Code 官方配置或账号 `/models` 验证。 |
-| `stepfun` / `modelscope` / `kat-coder` / `longcat` / `bailing` / `siliconflow` | 未确认到比 `cc-switch` 更权威的 Claude Code env 官方页。 | 本地参考项目 `cc-switch` | 标记 `preset-fallback`，UI 显示“来自参考项目，建议刷新远端模型确认”。 |
+| `zhipu` | `ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic`；`ANTHROPIC_AUTH_TOKEN=your_zhipu_api_key`；推荐 `API_TIMEOUT_MS=3000000`；模型切换示例为 `haiku=glm-4.5-air`、`sonnet/opus=glm-5.2[1m]`，1M 上下文需要 `[1m]` 后缀。 | https://docs.bigmodel.cn/cn/coding-plan/tool/claude | 已从未确认升级为官方 Coding Plan profile；local apply 可直连账号自身 API Key 与 Anthropic Base URL。 |
+| `stepfun` | `ANTHROPIC_BASE_URL=https://api.stepfun.com/step_plan`；`ANTHROPIC_AUTH_TOKEN=<STEPFUN_API_KEY>`；模型填 StepFun 模型 ID，当前默认采用 `step-3.7-flash`。 | https://platform.stepfun.com/docs/llm_tools/claude_code | 已从 `cc-switch` fallback 升级为官方 Step Plan profile；local apply 可直连账号自身 API Key 与 Anthropic Base URL。 |
+| `z-ai` | 未确认官方 Claude Code env 示例；只确认模型页存在 `glm-5.1`、`glm-5`、`glm-5-turbo` 等模型。 | https://docs.z.ai/guides/llm/glm-5.1 | 继续使用 `glm-5` 作为 `preset-fallback`，直到找到 Claude Code 官方配置或账号 `/models` 验证。 |
+| `modelscope` / `kat-coder` / `longcat` / `bailing` / `siliconflow` | 未确认到比 `cc-switch` 更权威的 Claude Code env 官方页。 | 本地参考项目 `cc-switch` | 标记 `preset-fallback`，UI 显示“来自参考项目，建议刷新远端模型确认”。 |
 
 ## 官方可切换模型
 

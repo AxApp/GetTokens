@@ -66,7 +66,7 @@ export const CLAUDE_CODE_PROVIDER_DEFAULT_MODEL_PROFILES: readonly ProviderDefau
     providerId: 'deepseek',
     providerName: 'DeepSeek',
     source: 'official',
-    checkedAt: '2026-05-19',
+    checkedAt: '2026-06-16',
     confidence: 'high',
     defaultModel: 'deepseek-v4-pro[1m]',
     haikuModel: 'deepseek-v4-flash',
@@ -96,6 +96,7 @@ export const CLAUDE_CODE_PROVIDER_DEFAULT_MODEL_PROFILES: readonly ProviderDefau
     checkedAt: '2026-05-19',
     confidence: 'high',
     defaultModel: 'mimo-v2.5-pro',
+    haikuModel: 'mimo-v2.5-pro',
     sonnetModel: 'mimo-v2.5-pro',
     opusModel: 'mimo-v2.5-pro',
     officialSwitchableModels: ['mimo-v2.5-pro[1m]', 'mimo-v2.5-pro', 'mimo-v2-pro', 'mimo-v2.5', 'mimo-v2-omni', 'mimo-v2-flash', 'mimo-v2.5-tts'],
@@ -104,12 +105,73 @@ export const CLAUDE_CODE_PROVIDER_DEFAULT_MODEL_PROFILES: readonly ProviderDefau
     providerId: 'minimax',
     providerName: 'MiniMax',
     source: 'official',
-    checkedAt: '2026-05-19',
+    checkedAt: '2026-06-16',
     confidence: 'high',
-    defaultModel: 'MiniMax-M2.7',
-    sonnetModel: 'MiniMax-M2.7',
-    opusModel: 'MiniMax-M2.7',
-    officialSwitchableModels: ['MiniMax-M2.7'],
+    defaultModel: 'MiniMax-M3',
+    haikuModel: 'MiniMax-M3',
+    sonnetModel: 'MiniMax-M3',
+    opusModel: 'MiniMax-M3',
+    baseUrl: 'https://api.minimaxi.com/anthropic',
+    officialSwitchableModels: ['MiniMax-M3', 'MiniMax-M2.7'],
+    legacyPresetValues: ['MiniMax-M2.7'],
+    notes: ['中国区使用 https://api.minimaxi.com/anthropic；国际区使用 https://api.minimax.io/anthropic；官方要求 API_TIMEOUT_MS=3000000。'],
+  },
+  {
+    providerId: 'kimi',
+    providerName: 'Kimi Moonshot',
+    source: 'official',
+    checkedAt: '2026-06-16',
+    confidence: 'high',
+    defaultModel: 'kimi-k2.7-code',
+    haikuModel: 'kimi-k2.7-code',
+    sonnetModel: 'kimi-k2.7-code',
+    opusModel: 'kimi-k2.7-code',
+    baseUrl: 'https://api.moonshot.cn/anthropic',
+    officialSwitchableModels: ['kimi-k2.7-code', 'kimi-k2.6', 'kimi-k2.5'],
+    legacyPresetValues: ['kimi-k2.6', 'kimi-k2.5'],
+    notes: ['官方文档还建议 ENABLE_TOOL_SEARCH=false 与 CLAUDE_CODE_AUTO_COMPACT_WINDOW=262144；当前 local apply 尚未支持这两个额外字段。'],
+  },
+  {
+    providerId: 'doubao',
+    providerName: 'Doubao Ark Coding',
+    source: 'official',
+    checkedAt: '2026-06-16',
+    confidence: 'high',
+    defaultModel: 'ark-code-latest',
+    haikuModel: 'ark-code-latest',
+    sonnetModel: 'ark-code-latest',
+    opusModel: 'ark-code-latest',
+    baseUrl: 'https://ark.cn-beijing.volces.com/api/coding',
+    officialSwitchableModels: ['ark-code-latest', 'doubao-seed-2-0-code-preview-latest'],
+    legacyPresetValues: ['doubao-seed-2-0-code-preview-latest'],
+    notes: ['官方文档允许写 ark-code-latest 或控制台中的具体 Model_Name。'],
+  },
+  {
+    providerId: 'stepfun',
+    providerName: 'StepFun Step Plan',
+    source: 'official',
+    checkedAt: '2026-06-16',
+    confidence: 'high',
+    defaultModel: 'step-3.7-flash',
+    haikuModel: 'step-3.7-flash',
+    sonnetModel: 'step-3.7-flash',
+    opusModel: 'step-3.7-flash',
+    baseUrl: 'https://api.stepfun.com/step_plan',
+    officialSwitchableModels: ['step-3.7-flash', 'step-3.6', 'step-3.5-flash-2603'],
+  },
+  {
+    providerId: 'zhipu',
+    providerName: 'Zhipu GLM Coding Plan',
+    source: 'official',
+    checkedAt: '2026-06-16',
+    confidence: 'high',
+    defaultModel: 'glm-5.2[1m]',
+    haikuModel: 'glm-4.5-air',
+    sonnetModel: 'glm-5.2[1m]',
+    opusModel: 'glm-5.2[1m]',
+    baseUrl: 'https://open.bigmodel.cn/api/anthropic',
+    officialSwitchableModels: ['glm-5.2[1m]', 'glm-5.2', 'glm-4.5-air'],
+    notes: ['官方 Claude Code 文档要求 API_TIMEOUT_MS=3000000；1M 上下文需模型后缀 [1m] 和 auto compact window。'],
   },
 ];
 
@@ -234,8 +296,15 @@ export function buildClaudeCodeProfileMappingDraft(input: {
 
 export function resolveClaudeCodeProviderProfile(provider: string): ProviderDefaultModelProfile | null {
   const normalized = provider.trim().toLowerCase();
+  const providerAliases: Record<string, string> = {
+    minimaxi: 'minimax',
+    moonshot: 'kimi',
+    xiaomimimo: 'mimo',
+    'xiaomimimo-token-plan': 'mimo',
+  };
+  const providerID = providerAliases[normalized] || normalized;
   return (
-    CLAUDE_CODE_PROVIDER_DEFAULT_MODEL_PROFILES.find((profile) => profile.providerId === normalized) ||
+    CLAUDE_CODE_PROVIDER_DEFAULT_MODEL_PROFILES.find((profile) => profile.providerId === providerID) ||
     null
   );
 }

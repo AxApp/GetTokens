@@ -61,15 +61,18 @@ description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthr
 - 已保存的用户映射优先级最高；profile 更新只能提示，不能自动覆盖。
 - 官方默认值表维护在 `docs-linhay/spaces/20260519-claude-code-account-list/plans/official-model-profiles.md`。
 - 官方模型 profile 和 local apply 不并入共享 channel routing 模型；它们仍属于 Claude Code 领域逻辑。
+- DeepSeek、Kimi、MiniMax、Doubao、StepFun、Xiaomi MiMo API / Token Plan 与 Zhipu GLM Coding Plan 是已验证的 Claude Code 官方直连模板：local apply 写账号自身 API Key 与 `formatBaseUrls.anthropic`，auth field 使用 `ANTHROPIC_AUTH_TOKEN`；不得写 GetTokens 本地 relay URL。Xiaomi Token Plan 默认示例为 `https://token-plan-cn.xiaomimimo.com/anthropic`，但用户订阅页专属 Base URL 优先。Zhipu 默认示例为 `https://open.bigmodel.cn/api/anthropic`，并写 `API_TIMEOUT_MS=3000000`；MiniMax 中国区默认示例为 `https://api.minimaxi.com/anthropic`，并写 `API_TIMEOUT_MS=3000000`。
 
 ## 5. 当前官方校准结论
 
 - DeepSeek：`deepseek-v4-pro[1m]` 为 main/sonnet/opus，`deepseek-v4-flash` 为 haiku；`CLAUDE_CODE_SUBAGENT_MODEL` / `CLAUDE_CODE_EFFORT_LEVEL` 只属于 local apply extra env。
 - 百炼：按 Token Plan / Coding Plan / Pay-as-you-go 分 profile，默认模型为 `qwen3.6-plus`，haiku 视官方场景为 `qwen3.6-plus` 或 `qwen3.6-flash`。
-- MiniMax：`MiniMax-M2.7`。
-- Xiaomi MiMo：默认值为 `mimo-v2.5-pro`；`mimo-v2.5-pro[1m]` 是官方长上下文变体，`mimo-v2.5` / `mimo-v2.5-tts` 是官方可切换模型。
-- Kimi：当前已确认官方 Claude Code env 示例为 `kimi-k2.5`；本地 `kimi-k2.6` 只作旧预设差异提示。
+- MiniMax：`MiniMax-M3`，中国区 Anthropic Base URL 为 `https://api.minimaxi.com/anthropic`，国际区为 `https://api.minimax.io/anthropic`，local apply 需写 `API_TIMEOUT_MS=3000000`。
+- Xiaomi MiMo：默认值为 `mimo-v2.5-pro`，main/haiku/sonnet/opus 都写 `mimo-v2.5-pro`；`mimo-v2.5-pro[1m]` 是官方长上下文变体，`mimo-v2.5` / `mimo-v2.5-tts` 是官方可切换模型。
+- Zhipu GLM Coding Plan：`ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic`，auth field 为 `ANTHROPIC_AUTH_TOKEN`，`API_TIMEOUT_MS=3000000`；默认 profile 按官方模型切换示例使用 `main/sonnet/opus=glm-5.2[1m]`、`haiku=glm-4.5-air`。
+- Kimi：当前已确认官方 Claude Code env 示例为 `kimi-k2.7-code`；本地 `kimi-k2.6` / `kimi-k2.5` 只作旧预设差异提示。
 - Doubao：默认按官网 `ark-code-latest` 或用户选择的具体 `Model_Name`；本地 `doubao-seed-2-0-code-preview-latest` 只作迁移提示。
+- StepFun：当前已确认官方 Step Plan Claude Code env，`ANTHROPIC_BASE_URL=https://api.stepfun.com/step_plan`，默认模型采用 `step-3.7-flash`。
 
 ## 6. 验证
 

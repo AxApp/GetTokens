@@ -1,4 +1,5 @@
 import type { ApiFormat } from '../../../types';
+import { resolveClaudeCodeProviderProfile } from '../../claude-code/model/claudeCodeAccountList.ts';
 import type { LocalCodexAuthStateLike } from '../../status/model/relayLocalState.ts';
 import { CODEX_CHATGPT_BACKEND_BASE_URL } from './accountConfig.ts';
 import type { AccountRecord } from './types.ts';
@@ -463,9 +464,10 @@ function buildClaudeDraft(
   model: string,
   warnings: AccountLocalCliWarning[],
 ): AccountCliApplyDraft {
-  const haikuModel = findModelCandidate(input.account, input.preset, ['haiku']) || '';
-  const sonnetModel = findModelCandidate(input.account, input.preset, ['sonnet']) || model;
-  const opusModel = findModelCandidate(input.account, input.preset, ['opus']) || '';
+  const profile = resolveClaudeCodeProviderProfile(input.preset.id);
+  const haikuModel = findModelCandidate(input.account, input.preset, ['haiku']) || profile?.haikuModel || '';
+  const sonnetModel = findModelCandidate(input.account, input.preset, ['sonnet']) || profile?.sonnetModel || model;
+  const opusModel = findModelCandidate(input.account, input.preset, ['opus']) || profile?.opusModel || '';
   const authField = resolveClaudeAuthField(input.preset);
   const usesDirectAccountKey = usesDirectAccountKeyForClaude(input.account, input.preset);
   const apiKey = usesDirectAccountKey ? String(input.account.apiKey || '').trim() : '';
@@ -497,7 +499,7 @@ function buildClaudeDraft(
       defaultOpusModel: opusModel,
       smallFastModel: haikuModel,
       maxOutputTokens: '',
-      apiTimeoutMs: '',
+      apiTimeoutMs: resolveClaudeAPITimeoutMs(input.preset),
       disableNonEssentialTraffic: true,
       claudeCodeAttributionHeader: false,
       authField,
@@ -506,12 +508,37 @@ function buildClaudeDraft(
 }
 
 function resolveClaudeAuthField(preset: VendorPreset): ClaudeCodeLocalAuthField {
-  return preset.id === 'openrouter' ? 'ANTHROPIC_AUTH_TOKEN' : 'ANTHROPIC_API_KEY';
+  return usesAuthTokenForClaude(preset) ? 'ANTHROPIC_AUTH_TOKEN' : 'ANTHROPIC_API_KEY';
 }
 
 function usesDirectAccountKeyForClaude(account: AccountRecord, preset: VendorPreset | undefined): boolean {
-  return preset?.id === 'openrouter' && account.credentialSource !== 'auth-file';
+  return Boolean(preset && usesAuthTokenForClaude(preset) && account.credentialSource !== 'auth-file');
 }
+
+function usesAuthTokenForClaude(preset: VendorPreset): boolean {
+  return claudeDirectAuthTokenProviderIDs.has(preset.id);
+}
+
+function resolveClaudeAPITimeoutMs(preset: VendorPreset): string {
+  return claudeLongTimeoutProviderIDs.has(preset.id) ? '3000000' : '';
+}
+
+const claudeDirectAuthTokenProviderIDs = new Set([
+  'deepseek',
+  'doubao',
+  'kimi',
+  'minimax',
+  'openrouter',
+  'stepfun',
+  'xiaomimimo',
+  'xiaomimimo-token-plan',
+  'zhipu',
+]);
+
+const claudeLongTimeoutProviderIDs = new Set([
+  'minimax',
+  'zhipu',
+]);
 
 function resolveSourceFormat(account: AccountRecord, preset: VendorPreset, target: AccountLocalCliTarget): ApiFormat | null {
   const formats = new Set<ApiFormat>([

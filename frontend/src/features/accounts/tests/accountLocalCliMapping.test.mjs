@@ -101,6 +101,8 @@ test('DeepSeek official template only generates Claude Code action without opena
       id: 'openai-compatible:deepseek',
       provider: 'deepseek',
       displayName: 'DeepSeek Relay',
+      credentialSource: 'api-key',
+      apiKey: 'sk-deepseek-current-account',
       baseUrl: 'https://api.deepseek.com/v1',
       supportedFormats: ['openai_chat', 'anthropic'],
       formatBaseUrls: {
@@ -116,16 +118,18 @@ test('DeepSeek official template only generates Claude Code action without opena
   assert.equal(actions[0].target, 'claude');
   assert.equal(actions[0].templateID, 'deepseek');
   assert.equal(actions[0].draft.target, 'claude');
+  assert.equal(actions[0].draft.claude.baseUrl, 'https://api.deepseek.com/anthropic');
+  assert.equal(actions[0].draft.claude.authField, 'ANTHROPIC_AUTH_TOKEN');
 });
 
-test('Xiaomi MiMo Token Plan only generates Claude Code action without openai_responses', () => {
+test('Xiaomi MiMo Token Plan applies official Claude Code remote config directly', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
       id: 'openai-compatible:xiaomi-token-plan',
       provider: 'xiaomimimo-token-plan',
       displayName: 'Xiaomi MiMo Token Plan',
       credentialSource: 'api-key',
-      apiKey: 'sk-xiaomi-current-account',
+      apiKey: 'tp-xiaomi-current-account',
       baseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
       supportedFormats: ['openai_chat', 'anthropic'],
       formatBaseUrls: {
@@ -134,7 +138,7 @@ test('Xiaomi MiMo Token Plan only generates Claude Code action without openai_re
       },
       models: [{ name: 'mimo-v2.5-pro', alias: '' }],
     }),
-    relayKeyItems,
+    relayKeyItems: [],
     relayEndpoint,
     currentCodexProviderState: customProviderState,
     localCodexAuthState,
@@ -143,12 +147,160 @@ test('Xiaomi MiMo Token Plan only generates Claude Code action without openai_re
 
   assert.equal(actions.length, 1);
   assert.equal(actions[0].target, 'claude');
+  assert.equal(actions[0].enabled, true);
+  assert.equal(actions[0].status, 'ready');
   assert.equal(actions[0].templateID, 'xiaomimimo-token-plan');
   assert.equal(actions[0].sourceFormat, 'anthropic');
   assert.equal(actions[0].sourceFormatBaseUrl, 'https://token-plan-cn.xiaomimimo.com/anthropic');
-  assert.equal(actions[0].draft.claude.baseUrl, 'http://127.0.0.1:8317/v1');
+  assert.equal(actions[0].draft.claude.apiKey, 'tp-xiaomi-current-account');
+  assert.equal(actions[0].draft.claude.baseUrl, 'https://token-plan-cn.xiaomimimo.com/anthropic');
+  assert.equal(actions[0].draft.claude.authField, 'ANTHROPIC_AUTH_TOKEN');
   assert.equal(actions[0].draft.claude.model, 'mimo-v2.5-pro');
+  assert.equal(actions[0].draft.claude.defaultHaikuModel, 'mimo-v2.5-pro');
+  assert.equal(actions[0].draft.claude.defaultSonnetModel, 'mimo-v2.5-pro');
+  assert.equal(actions[0].draft.claude.defaultOpusModel, 'mimo-v2.5-pro');
 });
+
+test('Zhipu Coding Plan applies official Claude Code remote config directly', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      id: 'openai-compatible:zhipu',
+      provider: 'zhipu',
+      displayName: 'Zhipu GLM Coding Plan',
+      credentialSource: 'api-key',
+      apiKey: 'sk-zhipu-current-account',
+      baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+      supportedFormats: ['openai_chat', 'anthropic'],
+      formatBaseUrls: {
+        openai_chat: 'https://open.bigmodel.cn/api/paas/v4',
+        anthropic: 'https://open.bigmodel.cn/api/anthropic',
+      },
+    }),
+    relayKeyItems: [],
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].target, 'claude');
+  assert.equal(actions[0].enabled, true);
+  assert.equal(actions[0].status, 'ready');
+  assert.equal(actions[0].templateID, 'zhipu');
+  assert.equal(actions[0].sourceFormat, 'anthropic');
+  assert.equal(actions[0].sourceFormatBaseUrl, 'https://open.bigmodel.cn/api/anthropic');
+  assert.equal(actions[0].draft.claude.apiKey, 'sk-zhipu-current-account');
+  assert.equal(actions[0].draft.claude.baseUrl, 'https://open.bigmodel.cn/api/anthropic');
+  assert.equal(actions[0].draft.claude.authField, 'ANTHROPIC_AUTH_TOKEN');
+  assert.equal(actions[0].draft.claude.model, 'glm-5.2[1m]');
+  assert.equal(actions[0].draft.claude.defaultHaikuModel, 'glm-4.5-air');
+  assert.equal(actions[0].draft.claude.defaultSonnetModel, 'glm-5.2[1m]');
+  assert.equal(actions[0].draft.claude.defaultOpusModel, 'glm-5.2[1m]');
+  assert.equal(actions[0].draft.claude.apiTimeoutMs, '3000000');
+});
+
+for (const scenario of [
+  {
+    name: 'DeepSeek',
+    provider: 'deepseek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    anthropicBaseUrl: 'https://api.deepseek.com/anthropic',
+    apiKey: 'sk-deepseek-current-account',
+    model: 'deepseek-v4-pro[1m]',
+    haiku: 'deepseek-v4-flash',
+    sonnet: 'deepseek-v4-pro[1m]',
+    opus: 'deepseek-v4-pro[1m]',
+    apiTimeoutMs: '',
+  },
+  {
+    name: 'Kimi Moonshot',
+    provider: 'kimi',
+    baseUrl: 'https://api.moonshot.cn/v1',
+    anthropicBaseUrl: 'https://api.moonshot.cn/anthropic',
+    apiKey: 'sk-kimi-current-account',
+    model: 'kimi-k2.7-code',
+    haiku: 'kimi-k2.7-code',
+    sonnet: 'kimi-k2.7-code',
+    opus: 'kimi-k2.7-code',
+    apiTimeoutMs: '',
+  },
+  {
+    name: 'MiniMax',
+    provider: 'minimax',
+    baseUrl: 'https://api.minimaxi.com/v1',
+    anthropicBaseUrl: 'https://api.minimaxi.com/anthropic',
+    apiKey: 'sk-minimax-current-account',
+    model: 'MiniMax-M3',
+    haiku: 'MiniMax-M3',
+    sonnet: 'MiniMax-M3',
+    opus: 'MiniMax-M3',
+    apiTimeoutMs: '3000000',
+  },
+  {
+    name: 'Doubao Ark',
+    provider: 'doubao',
+    baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+    anthropicBaseUrl: 'https://ark.cn-beijing.volces.com/api/coding',
+    apiKey: 'sk-doubao-current-account',
+    model: 'ark-code-latest',
+    haiku: 'ark-code-latest',
+    sonnet: 'ark-code-latest',
+    opus: 'ark-code-latest',
+    apiTimeoutMs: '',
+  },
+  {
+    name: 'StepFun',
+    provider: 'stepfun',
+    baseUrl: 'https://api.stepfun.com/v1',
+    anthropicBaseUrl: 'https://api.stepfun.com/step_plan',
+    apiKey: 'sk-stepfun-current-account',
+    model: 'step-3.7-flash',
+    haiku: 'step-3.7-flash',
+    sonnet: 'step-3.7-flash',
+    opus: 'step-3.7-flash',
+    apiTimeoutMs: '',
+  },
+]) {
+  test(`${scenario.name} applies official Claude Code remote config directly`, () => {
+    const actions = resolveAccountLocalCliMappings({
+      account: account({
+        id: `openai-compatible:${scenario.provider}`,
+        provider: scenario.provider,
+        displayName: scenario.name,
+        credentialSource: 'api-key',
+        apiKey: scenario.apiKey,
+        baseUrl: scenario.baseUrl,
+        supportedFormats: ['openai_chat', 'anthropic'],
+        formatBaseUrls: {
+          openai_chat: scenario.baseUrl,
+          anthropic: scenario.anthropicBaseUrl,
+        },
+      }),
+      relayKeyItems: [],
+      relayEndpoint,
+      currentCodexProviderState: customProviderState,
+      localCodexAuthState,
+      sidecarReady: true,
+    });
+
+    assert.equal(actions.length, 1);
+    assert.equal(actions[0].target, 'claude');
+    assert.equal(actions[0].enabled, true);
+    assert.equal(actions[0].status, 'ready');
+    assert.equal(actions[0].templateID, scenario.provider);
+    assert.equal(actions[0].sourceFormat, 'anthropic');
+    assert.equal(actions[0].sourceFormatBaseUrl, scenario.anthropicBaseUrl);
+    assert.equal(actions[0].draft.claude.apiKey, scenario.apiKey);
+    assert.equal(actions[0].draft.claude.baseUrl, scenario.anthropicBaseUrl);
+    assert.equal(actions[0].draft.claude.authField, 'ANTHROPIC_AUTH_TOKEN');
+    assert.equal(actions[0].draft.claude.model, scenario.model);
+    assert.equal(actions[0].draft.claude.defaultHaikuModel, scenario.haiku);
+    assert.equal(actions[0].draft.claude.defaultSonnetModel, scenario.sonnet);
+    assert.equal(actions[0].draft.claude.defaultOpusModel, scenario.opus);
+    assert.equal(actions[0].draft.claude.apiTimeoutMs, scenario.apiTimeoutMs);
+  });
+}
 
 test('OpenRouter template generates direct Claude Code draft without openai_responses', () => {
   const actions = resolveAccountLocalCliMappings({
@@ -433,18 +585,18 @@ test('Codex OAuth auth-file draft blocks when auth-file name cannot be resolved'
   ), true);
 });
 
-test('Claude draft uses relay endpoint instead of upstream anthropic format URL', () => {
+test('Claude draft uses relay endpoint instead of upstream anthropic format URL for non-direct templates', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
-      id: 'openai-compatible:deepseek',
-      provider: 'deepseek',
-      displayName: 'DeepSeek Relay',
-      baseUrl: 'https://api.deepseek.com/v1',
+      id: 'openai-compatible:longcat',
+      provider: 'longcat',
+      displayName: 'Longcat Relay',
+      baseUrl: 'https://api.longcat.chat/anthropic',
       supportedFormats: ['openai_chat', 'anthropic'],
       formatBaseUrls: {
-        anthropic: 'https://api.deepseek.com/anthropic',
+        anthropic: 'https://api.longcat.chat/anthropic',
       },
-      models: [{ name: 'deepseek-chat', alias: 'deepseek-v4-pro' }],
+      models: [{ name: 'LongCat-Flash-Chat', alias: '' }],
     }),
     relayKeyItems,
     relayEndpoint,
@@ -453,7 +605,7 @@ test('Claude draft uses relay endpoint instead of upstream anthropic format URL'
 
   const claude = actions.find((item) => item.target === 'claude');
   assert.equal(claude.draft.target, 'claude');
-  assert.equal(claude.sourceFormatBaseUrl, 'https://api.deepseek.com/anthropic');
+  assert.equal(claude.sourceFormatBaseUrl, 'https://api.longcat.chat/anthropic');
   assert.equal(claude.draft.claude.baseUrl, 'http://127.0.0.1:8317/v1');
 });
 
