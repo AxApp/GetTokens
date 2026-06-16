@@ -196,6 +196,28 @@ runtime candidate snapshot
   2. no-watcher refresh 为 `codex-api-key models_json=[]` 注册默认 Codex 模型后，SQLite 中持久化为 `registered_routeable` 且带 `registered_models_count`。
 - 尚未做的部分是 watcher / ready gating 级别的更强同步语义；当前 management 路径通过短轮询降低 watcher 异步派发造成的旧快照返回风险，但还没有把 “ready 前 reconcile 完成” 变成硬门槛。
 
+2026-06-16 删除触发变体修复：
+
+- 用户现场现象：删除另一个账号后，剩余 Plus 账号卡片报 `list account store accounts for routeability reconcile: query accounts: disk I/O error (522)`，同时所有 Codex 会话请求 `http://127.0.0.1:8317/v1/responses` 返回 `503 auth_unavailable: no auth available (providers=codex, model=gpt-5.5)`；重启 App 后恢复。
+- 根因收敛为 no-watcher 热刷新把“SQLite 读失败”误解释为“账号库已成功读取且为空”。`ConfigSynthesizer.accountStoreAccounts()` 在 `os.Stat/open/EnsureSchema/ListAccounts` 失败时只返回 `active=false`，上层 `refreshAccountStoreAuthsWithoutWatcher()` 拿到空 desired 集合后继续清理所有 `account-store:*` runtime auth，导致 `AuthManager/ModelRegistry/scheduler` 在当前进程内被打空。
+- 修复：`SynthesisContext` 新增 `AccountStoreLoadError`，合成器在账号库缺失、打开失败、schema 失败或 `ListAccounts` 失败时记录错误；no-watcher refresh 检测到该错误后跳过 runtime pruning，只保留并暴露 account-store 读错误。有效空库仍然会在 `ListAccounts` 成功返回空列表时被当作权威空集合处理。
+- 回归：新增 `TestServiceRefreshAccountStoreAuthsWithoutWatcherPreservesRuntimeOnStoreReadError`，先注册一个 account-store Codex API key runtime auth，再把 DB 指向不可读目录，断言刷新报错但现有 auth 不被禁用，`gpt-5.5` 模型注册仍保留。
+- 验证：
+  - `go test ./sdk/cliproxy -run 'TestServiceRefreshAccountStoreAuthsWithoutWatcherRegistersCodexAPIKeyModels|TestServiceRefreshAccountStoreAuthsWithoutWatcherPreservesRuntimeOnStoreReadError|TestServiceReconcileAccountStoreRouteabilityRepairsMissingRegistryModels|TestServiceReconcileAccountStoreRouteabilityRepairsDegradedRuntimeAuth' -count=1`
+  - `go test ./internal/watcher/synthesizer ./internal/gettokens/accountstore ./internal/api/handlers/management -count=1`
+  - `./scripts/ensure-sidecar.sh darwin arm64`
+
+2026-06-16 删除主路径单点化：
+
+- 用户进一步确认产品语义：单个账号删除应是单点操作，不应由同步全量 reconcile 承担即时生效。
+- 修复：management handler 新增 account-store delete targeted hook。`DeleteAccount` 在 SQLite soft-delete 和 quota job cancel 后，会先把被删 `account_key` 传给 runtime；`DeleteAccountsBatch` 只把成功删除的 key 列表传给 runtime。
+- Service 新增 `applyAccountStoreDelete(ctx, accountKeys)`：按 `account_key` 扫当前 account-store runtime auth，只对命中 auth 调用 `applyCoreAuthRemoval`，从而移除其模型注册、Codex live sessions / websocket pin，并推进 session affinity pool epoch；未命中的其他账号不被触碰。
+- 全量 `refreshAccountStoreAuths()` 继续保留在删除后执行，但定位改为一致性校准 / 自愈，不再是单个删除即时生效的唯一机制。
+- 回归：
+  - `TestServiceApplyAccountStoreDeleteRemovesOnlyTargetAccounts` 覆盖删除 A 后 B 仍 active 且保留 `gpt-5.5` registry。
+  - `TestAccountsCRUDEndpointsPreserveAccountKeyOnPatch` 覆盖单删会传递 deleted account key 给 targeted hook。
+  - `TestAccountsBatchDeleteEndpointDeletesMultipleAccountsWithOneApply` 覆盖批量删除只传递成功删除 key，并保持全量 apply 只调用一次。
+
 ### Phase 3: 单一候选池真源
 
 目标：

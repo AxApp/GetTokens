@@ -211,6 +211,11 @@
 - 当前剩余缺口继续收窄为：reference sidecar 代码、主仓集成提交、clean sidecar 重建和真实 dev App 都已闭环；2026-06-16 已执行正式环境只读复验，正式 bundle 内 sidecar 仍是旧 commit `fef495dd3f5cd212a0e37f6ef37180492a5056ec`，不是修复 commit `688f29726719e01e1206d23db47017dea8028253`。
 - 已新增正式环境只读复验脚本 `docs-linhay/scripts/verify-prod-routeability-readonly.sh`，用于在用户授权后读取正式 bundle meta、调用 management 只读接口并输出 `公司 1` routeability 证据分类；该脚本不替换、不重启、不修改正式环境。
 - 正式复验证据：`plans/20260615-prod-routeability-evidence.json`。当前结论转为 release / 分发问题：正式环境尚未运行包含 routeability 修复的 sidecar，因此不能把正式 `公司 1` 仍不可用误判为修复回归。
+- 2026-06-16 新增删除触发变体：
+  - 用户现场删除另一个账号后，剩余 Plus 账号卡片出现 `list account store accounts for routeability reconcile: query accounts: disk I/O error (522)`，同时 Codex relay 对 `gpt-5.5` 返回 `503 auth_unavailable`；重启 App 后恢复。
+  - 新证据表明这不是凭证失效，而是删除触发 account-store 热刷新时，SQLite 短读/IO 错误被误当成“账号库有效为空”，导致当前进程内所有 account-store runtime auth 被清空。
+  - 已在 CLIProxyAPI sidecar 修复：合成器保留 `AccountStoreLoadError`，no-watcher refresh 遇到读库失败时跳过 runtime pruning；只有 `ListAccounts` 成功返回空集合时才按空账号库清理。
+  - 验收重点：删除/批量删除触发读库错误时，现有 Codex runtime auth 与 `gpt-5.5` registry 不应被禁用；错误应保留为 account-store 诊断，而不是放大成全局 `auth_unavailable`。
 
 ## 下阶段计划
 
