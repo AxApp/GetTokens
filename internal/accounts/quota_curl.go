@@ -130,26 +130,38 @@ func xiaomiMiMoItemHasUsage(item xiaomiMiMoUsageItem) bool {
 }
 
 func xiaomiMiMoUsedPercent(item xiaomiMiMoUsageItem, group xiaomiMiMoUsageGroup) *float64 {
-	if percent := numberValue(item.Percent); percent != nil && *percent > 0 {
+	if percent := ratioOrPercentValue(item.Percent); percent != nil {
 		return percent
 	}
-	if percent := numberValue(group.Percent); percent != nil && *percent > 0 {
+	if percent := ratioOrPercentValue(group.Percent); percent != nil {
 		return percent
 	}
 
 	used := numberValue(item.Used)
 	limit := numberValue(item.Limit)
 	if used == nil || limit == nil || *limit <= 0 {
-		if percent := numberValue(item.Percent); percent != nil {
+		if percent := ratioOrPercentValue(item.Percent); percent != nil {
 			return percent
 		}
-		if percent := numberValue(group.Percent); percent != nil {
+		if percent := ratioOrPercentValue(group.Percent); percent != nil {
 			return percent
 		}
 		return nil
 	}
 	calculated := (*used / *limit) * 100
 	return &calculated
+}
+
+func ratioOrPercentValue(value interface{}) *float64 {
+	percent := numberValue(value)
+	if percent == nil {
+		return nil
+	}
+	if *percent >= 0 && *percent <= 1 {
+		normalized := *percent * 100
+		return &normalized
+	}
+	return percent
 }
 
 type deepseekBalancePayload struct {
@@ -163,6 +175,10 @@ type deepseekBalancePayload struct {
 }
 
 func tryBuildBilling(body []byte) *CodexQuotaBilling {
+	if billing := tryBuildNestedBalanceBilling(body); billing != nil {
+		return billing
+	}
+
 	var ds deepseekBalancePayload
 	if err := json.Unmarshal(body, &ds); err != nil || len(ds.BalanceInfos) == 0 {
 		return nil
@@ -180,4 +196,66 @@ func tryBuildBilling(body []byte) *CodexQuotaBilling {
 		IsAvailable:  ds.IsAvailable,
 		BalanceInfos: infos,
 	}
+}
+
+func tryBuildNestedBalanceBilling(body []byte) *CodexQuotaBilling {
+	var payload map[string]interface{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil
+	}
+	data, ok := payload["data"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	currency := firstNonEmpty(
+		stringValue(data, "currency"),
+		stringValue(data, "currency_code"),
+		stringValue(data, "currencyCode"),
+	)
+	total := firstNonEmpty(
+		balanceStringValue(data, "total_balance"),
+		balanceStringValue(data, "totalBalance"),
+		balanceStringValue(data, "balance"),
+		balanceStringValue(data, "remaining_credits"),
+		balanceStringValue(data, "remainingCredits"),
+	)
+	granted := firstNonEmpty(
+		balanceStringValue(data, "granted_balance"),
+		balanceStringValue(data, "grantedBalance"),
+		balanceStringValue(data, "gift_balance"),
+		balanceStringValue(data, "giftBalance"),
+	)
+	toppedUp := firstNonEmpty(
+		balanceStringValue(data, "topped_up_balance"),
+		balanceStringValue(data, "toppedUpBalance"),
+		balanceStringValue(data, "cash_balance"),
+		balanceStringValue(data, "cashBalance"),
+	)
+	if currency == "" && total == "" && granted == "" && toppedUp == "" {
+		return nil
+	}
+	if currency == "" {
+		currency = "CNY"
+	}
+	return &CodexQuotaBilling{
+		IsAvailable: true,
+		BalanceInfos: []CodexQuotaBalanceInfo{{
+			Currency:        currency,
+			TotalBalance:    total,
+			GrantedBalance:  granted,
+			ToppedUpBalance: toppedUp,
+		}},
+	}
+}
+
+func balanceStringValue(root map[string]interface{}, key string) string {
+	if value := stringValue(root, key); value != "" {
+		return value
+	}
+	if value, ok := root[key]; ok {
+		if parsed := numberValue(value); parsed != nil {
+			return fmt.Sprintf("%.2f", *parsed)
+		}
+	}
+	return ""
 }

@@ -88,3 +88,100 @@ func TestBuildCodexQuotaResponseFromUsagePayloadParsesXiaomiMiMoTokenPlanUsage(t
 		t.Fatalf("month remaining = %d, want 60", got)
 	}
 }
+
+func TestBuildCodexQuotaResponseFromUsagePayloadParsesXiaomiMiMoFractionalPercent(t *testing.T) {
+	result, err := BuildCodexQuotaResponseFromUsagePayload([]byte(`{
+		"code": 0,
+		"message": "",
+		"data": {
+			"usage": {
+				"percent": 0.53,
+				"items": [{
+					"name": "plan_total_token",
+					"used": 20037365787,
+					"limit": 38000000000,
+					"percent": 0.53
+				}, {
+					"name": "compensation_total_token",
+					"used": 9762128449,
+					"limit": 9762128449,
+					"percent": 1
+				}]
+			},
+			"monthUsage": {
+				"percent": 0.7842,
+				"items": [{
+					"name": "month_total_token",
+					"used": 29799494236,
+					"limit": 38000000000,
+					"percent": 0.7842
+				}]
+			}
+		}
+	}`), "")
+	if err != nil {
+		t.Fatalf("BuildCodexQuotaResponseFromUsagePayload: %v", err)
+	}
+	if len(result.Windows) != 2 {
+		t.Fatalf("windows = %#v", result.Windows)
+	}
+	if got := *result.Windows[0].RemainingPercent; got != 47 {
+		t.Fatalf("plan remaining = %d, want 47", got)
+	}
+	if got := *result.Windows[1].RemainingPercent; got != 22 {
+		t.Fatalf("month remaining = %d, want 22", got)
+	}
+	if result.Windows[0].RemainingTokens == nil || *result.Windows[0].RemainingTokens != 17962634213 {
+		t.Fatalf("plan remaining tokens = %#v, want 17962634213", result.Windows[0].RemainingTokens)
+	}
+}
+
+func TestBuildCodexQuotaResponseFromUsagePayloadParsesNestedBalanceData(t *testing.T) {
+	result, err := BuildCodexQuotaResponseFromUsagePayload([]byte(`{
+		"code": 0,
+		"message": "",
+		"data": {
+			"balance": "0.00",
+			"frozenBalance": "0.00",
+			"currency": "CNY",
+			"overdraftLimit": "0.00",
+			"remainingOverdraftLimit": "0.00",
+			"giftBalance": "1.25",
+			"cashBalance": "2.50"
+		}
+	}`), "xiaomimimo")
+	if err != nil {
+		t.Fatalf("BuildCodexQuotaResponseFromUsagePayload: %v", err)
+	}
+	if result.Billing == nil || !result.Billing.IsAvailable {
+		t.Fatalf("billing = %#v, want available", result.Billing)
+	}
+	if len(result.Billing.BalanceInfos) != 1 {
+		t.Fatalf("balance infos = %#v, want 1", result.Billing.BalanceInfos)
+	}
+	info := result.Billing.BalanceInfos[0]
+	if info.Currency != "CNY" || info.TotalBalance != "0.00" || info.GrantedBalance != "1.25" || info.ToppedUpBalance != "2.50" {
+		t.Fatalf("balance info = %#v", info)
+	}
+}
+
+func TestBuildCodexQuotaResponseFromUsagePayloadParsesNestedSnakeCaseBalanceData(t *testing.T) {
+	result, err := BuildCodexQuotaResponseFromUsagePayload([]byte(`{
+		"data": {
+			"total_balance": 12.5,
+			"granted_balance": 4,
+			"topped_up_balance": 8.5,
+			"currency_code": "EUR"
+		}
+	}`), "generic")
+	if err != nil {
+		t.Fatalf("BuildCodexQuotaResponseFromUsagePayload: %v", err)
+	}
+	if result.Billing == nil || len(result.Billing.BalanceInfos) != 1 {
+		t.Fatalf("billing = %#v, want one balance", result.Billing)
+	}
+	info := result.Billing.BalanceInfos[0]
+	if info.Currency != "EUR" || info.TotalBalance != "12.50" || info.GrantedBalance != "4.00" || info.ToppedUpBalance != "8.50" {
+		t.Fatalf("balance info = %#v", info)
+	}
+}
