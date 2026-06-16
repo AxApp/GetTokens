@@ -69,10 +69,11 @@ export default function StatusCodexConfigRows({
     return (
       <div
         key={row.id}
+        data-codex-config-table-row={row.id}
         className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] md:items-center"
       >
-        <div className={`min-w-0 select-text ${nested ? 'border-l-4 border-[var(--border-color)] pl-4' : ''}`}>
-          <div className="flex flex-wrap items-center gap-1 font-mono text-[length:var(--font-size-ui-md)] font-black tracking-wide text-[var(--text-primary)]">
+        <div className={`min-w-0 select-text ${nested ? 'pl-3' : ''}`}>
+          <div className="flex flex-wrap items-center gap-1 font-mono text-[length:var(--font-size-ui-md)] font-black tracking-normal text-[var(--text-primary)]">
             {pathLabels.map((label, index) => (
               <span key={`${pathDisplay.fullLabel}-${index}`} className="inline-flex min-w-0 items-center gap-1">
                 {index > 0 ? <span className="text-[var(--text-muted)]">/</span> : null}
@@ -97,7 +98,7 @@ export default function StatusCodexConfigRows({
   }
 
   return (
-    <div className="divide-y-2 divide-[var(--border-color)]">
+    <div data-codex-config-table="settings" className="divide-y-2 divide-[var(--border-color)]">
       {pathGroups.map((pathGroup) => {
         const hasNestedRows = pathGroup.rows.some(({ pathDisplay }) => pathDisplay.childLabels.length > 0);
         if (!hasNestedRows) {

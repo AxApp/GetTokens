@@ -299,3 +299,22 @@ Score: <0-20> / 20
 - 弹窗显示 `provider / model` 的 diff，但没有任何控件可改，用户只能取消后去另一个页面。
 - `supports_websockets` 开关只影响预览文案，不传给 `ApplyRelayServiceConfigToLocalV2`。
 - 快捷入口重新维护一套默认模型列表，和完整工作台读取的本地 Codex 状态不同步。
+
+### 4.11 Reference layout vs visual skin
+
+当用户给出参考截图要求“按这种效果”改 GetTokens 既有页面时，先拆分截图中的信息架构和视觉皮肤；除非用户明确要求迁移配色、材质或品牌语言，否则只借布局和交互模型，保留 GetTokens 当前视觉系统。
+
+适用模块：Codex 配置页、账号池、状态页、调试面板、任何已有 GetTokens 工作台页面的截图驱动重排。
+
+执行顺序：
+1. 先复述参考图中可复用的信息架构，例如顶部筛选条、普通设置表、复合对象 panel、内部分组、主开关位置。
+2. 再明确哪些不迁移：配色、圆角、阴影、浅色 tint、外部品牌 icon 风格、营销式留白。
+3. 实现时优先保留现有 token：`border-color`、`bg-main`、`bg-surface`、`text-primary`、`text-muted`、`btn-swiss`、`input-swiss`、`ToggleSwitch`。
+4. 对复合配置对象，父层用独立 panel 承担身份和主开关，子字段按语义分组；长 textarea 字段使用 label 在上、控件全宽，避免在窄列里强塞固定宽控件导致字段名竖排。
+5. 浏览器验收除了截图，还要做 DOM 断言：目标 panel 存在、真实字段齐全、示例假字段不存在、父级路径不重复、没有新增临时配色 token。
+
+常见反例：
+- 看到浅蓝参考图后新增 `--codex-blue-*` token，把 GetTokens 现有黑白风格一起换掉。
+- 只保留“卡片感”，但没有建立普通设置表和复合对象 panel 的层级。
+- 在两栏复合面板里复用全局长字段宽度，导致 `usage_hint_text` 这类 key 竖排。
+- 把参考图里的假字段名照搬到真实配置页面。

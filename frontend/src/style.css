@@ -764,6 +764,15 @@
     border-color: var(--accent-red);
   }
 
+  [data-design-system-highlight='project'] [data-codex-feature-config-panel='true'] [data-design-system-component='true'] {
+    outline: none;
+  }
+
+  [data-design-system-highlight='project'] [data-codex-feature-config-panel='true'] [data-design-system-component='true'][data-design-system-component-name]::before {
+    content: none;
+    display: none;
+  }
+
   .page-loading-panel {
     min-height: 7rem;
     position: relative;

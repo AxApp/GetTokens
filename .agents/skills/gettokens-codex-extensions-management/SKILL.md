@@ -50,6 +50,12 @@ description: GetTokens Codex Skills / MCP 扩展管理：源码校准解析、�
 - 右侧当前值只展示有用值；空可选项直接忽略。
 - 原始 `config.toml` 编辑器保存后必须重读结构化 snapshot，避免结构化视图用旧数据。
 
+## 3.5 Codex Feature Config Rules
+- 复合 feature 字段化前必须核对上游 schema；不要把“可写 bool 或 table”的字段永久退化成 raw textarea。
+- `features.multi_agent_v2` 已字段化：`enabled` 用开关，`max_concurrent_threads_per_session` / wait timeout 用数字输入，usage hint 文案用 textarea，`tool_namespace` 用文本输入，metadata/code-mode 选项用开关。
+- 兼容上游双形态：旧 `[features] multi_agent_v2 = true/false` 读取时映射为 `features.multi_agent_v2.enabled`；写入任意 `features.multi_agent_v2.*` 子字段前必须移除旧 scalar，再写入 `[features.multi_agent_v2]` table，避免 TOML scalar/table 冲突。
+- 其他仍未字段化的复合 feature（例如 `apps_mcp_path_override`、`network_proxy`）继续走 path-scoped raw TOML，并校验 section header 不越界。
+
 ## 4. UI Preferences
 - 侧边栏内 Skills / MCP 拆成两个 tab/entry。
 - 右侧主体按会话页面的信息层级组织：列表为主，详情/编辑用 modal 或 detail layer。

@@ -17,7 +17,7 @@ GetTokens 已经在状态页支持把本地 relay service 的 `apiKey / baseURL 
 - 读取 root 已存在的 bool、string、enum、integer、string array、text 配置。
 - 展示 Codex 当前源码 schema 支持的 root key；简单类型支持对应控件编辑。
 - 读取 `[features]` 下已存在的 bool key 和复合 feature table。
-- 展示 Codex 当前源码 schema 支持的 feature key；纯 bool 支持开关，`multi_agent_v2`、`apps_mcp_path_override`、`network_proxy` 以 raw TOML textarea 编辑。
+- 展示 Codex 当前源码 schema 支持的 feature key；纯 bool 支持开关，`multi_agent_v2` 按上游 schema 展开为 `enabled` 开关与受控子配置项，`apps_mcp_path_override`、`network_proxy` 仍以 raw TOML textarea 编辑。
 - 支持保存前 preview：新增、修改、未改、可能的 legacy alias 提示。
 - 读取 `[notice]` 下已存在的 bool key 和复合 notice table。
 - 展示 Codex 当前源码支持的 notice key；bool 支持开关，`model_migrations`、`external_config_migration_prompts` 以 raw TOML textarea 编辑。
@@ -29,7 +29,7 @@ GetTokens 已经在状态页支持把本地 relay service 的 `apiKey / baseURL 
 2. 不迁移历史 Codex session 的 `model_provider`。
 3. 不提供通用 TOML 编辑器；root 与 provider 只纳入 schema 中已审查的受控字段。
 4. 不将前端 localStorage 偏好伪装成 Codex 配置事实。
-5. 复合结构统一走 raw TOML 写入，不提供细粒度表单；保存时校验 raw TOML 中的 `[section]` / `[[section]]` 必须匹配当前字段 path 或其子路径。
+5. 除已经字段化的 `multi_agent_v2` 外，复合结构统一走 raw TOML 写入，不提供细粒度表单；保存时校验 raw TOML 中的 `[section]` / `[[section]]` 必须匹配当前字段 path 或其子路径。
 6. 不管理 `mcp_servers`、`skills.config`、`projects."<path>".trust_level` 这类已有专用入口或高风险结构化配置。
 
 ## 验收标准
@@ -63,7 +63,7 @@ GetTokens 已经在状态页支持把本地 relay service 的 `apiKey / baseURL 
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-05-25
+- 最近更新：2026-06-16
 
 ## 实施结果
 1. 后端新增 `GetCodexFeatureConfig`、`PreviewCodexFeatureConfig`、`SaveCodexFeatureConfig`，并通过根层 `main.App` wrapper 暴露到 Wails bindings。
@@ -73,7 +73,7 @@ GetTokens 已经在状态页支持把本地 relay service 的 `apiKey / baseURL 
 5. 状态页不再承载本期配置面板；已移除该页顶部 4 个概览卡片，页面容器不再限制为居中窄画板。
 6. 后端 feature definition 已补充 `description`，优先使用上游 experimental menu 文案和源码注释；legacy alias 自动显示 canonical key 提示，避免 UI 全部落到“暂无描述”兜底。
 7. `model`、`approval_policy`、`sandbox_mode`、`model_reasoning_effort`、`notify` 等 root typed key 已纳入页面；`hide_rate_limit_model_nudge`、`fast_default_opt_out` 等 `notice` bool 已纳入页面；`notice.model_migrations`、`notice.external_config_migration_prompts` 已以 raw TOML 纳入可编辑路径。
-8. `multi_agent_v2`、`apps_mcp_path_override`、`network_proxy` 等复合 feature 已以 raw TOML 纳入可编辑路径；provider schema 的 17 个字段已全部纳入，复杂 provider table 通过 path-scoped raw TOML 保存。
+8. `multi_agent_v2` 已按上游 schema 展开为 `enabled`、并发线程数、wait timeout、usage hint、tool namespace 与 metadata/code-mode 等子配置项；旧的 `[features] multi_agent_v2 = true/false` 读取时映射到 `enabled`，写入任意子字段时自动迁移为 `[features.multi_agent_v2]` table，避免 scalar/table 冲突。`apps_mcp_path_override`、`network_proxy` 等其他复合 feature 仍以 raw TOML 纳入可编辑路径；provider schema 的 17 个字段已全部纳入，复杂 provider table 通过 path-scoped raw TOML 保存。
 9. Codex 参考源码本地仓库已更新到 2026-05-23 `origin/main`：`7d47056ea42636271ac020b86347fbbef49490aa`（`fix: plugin bundle archive handling for upload and install (#23983)`）；本轮以该最新 `main` 的 `config.schema.json` 做覆盖审查。
 10. Gemini 用量入口暂不暴露，后续 Gemini 能力成型后再单独纳入导航。
 11. 旧 `#frame=session-management`、`#frame=vendor-status`、`#frame=usage-desk` 路由和本地存储值保留兼容迁移，统一进入 `Codex` 对应二级项。
@@ -109,3 +109,31 @@ GetTokens 已经在状态页支持把本地 relay service 的 `apiKey / baseURL 
 4. 浏览器重新加载 `http://127.0.0.1:34115/#frame=codex`，页面命中分组标题 `启动与默认`、`模型与输出`、`权限与沙箱`、`工作区与文档`、`工具与集成`、`高级与兼容`、`推荐与稳定`、`实验性`、`兼容与旧项`、`安全提示`、`迁移提示`，确认配置项已从长列表收敛为分组列表；空分组不会渲染。
 5. 追加控件形态验收：同一页面 DOM 命中 `SegmentedControl: 16`、`ToggleSwitch: 79`、`selectCount: 0`，固定枚举已改为 segment，bool 仍为 toggle。
 6. 追加 Codex 源码校准：对照 `docs-linhay/references/codex` 当前 `main`（`7d47056ea4`）的 `codex-rs/core/config.schema.json`，并用 `go test ./internal/wailsapp -run 'TestGetCodexFeatureConfigReturnsTypedRootDefinitionsAndValues|TestGetCodexFeatureConfigReturnsAllModelProviderSchemaFields'` 锁定关键 enum options。
+
+## 2026-06-16 multi_agent_v2 字段化
+
+### 证据门禁
+- 问题来源：用户在 GetTokens `Codex -> 功能开关` 页面指出 `multi_agent_v2` 不应继续以 textarea/raw TOML 方式配置，当前马上需要配置这些值。
+- 当前事实：后端曾把 `multi_agent_v2` 定义为 `ValueType: "toml"`，前端因此统一渲染 textarea；上游 Codex `MultiAgentV2ConfigToml` 支持 `enabled`、`max_concurrent_threads_per_session`、`*_wait_timeout_ms`、`usage_hint_*`、`tool_namespace`、`hide_spawn_agent_metadata`、`non_code_mode_only` 等字段。
+- 预期验收：`multi_agent_v2.enabled` 以开关渲染，其他已知字段按 boolean/integer/string/textarea 渲染；旧 scalar 写法可读；保存子字段时写入 `[features.multi_agent_v2]` table 且移除旧 scalar；不影响 `apps_mcp_path_override`、`network_proxy` raw TOML 路径。
+- 反证条件：页面仍出现 `[features.multi_agent_v2]` raw textarea，或旧 `multi_agent_v2 = false` 与新 `[features.multi_agent_v2]` 同时存在。
+
+### 实施结果
+1. 后端 `CodexFeatureDefinition` 将 `multi_agent_v2` 从 raw TOML 改为 12 个受控子字段。
+2. `readCodexTypedValueFromLines` 支持把旧 `[features] multi_agent_v2 = true/false` 映射到 `features.multi_agent_v2.enabled`。
+3. typed patch 写入任意 `features.multi_agent_v2.*` 子字段前会移除旧 scalar，随后写入 `[features.multi_agent_v2]` table。
+4. 前端 features 行支持 path 分段展示，`multi_agent_v2 / enabled` 等嵌套字段不再显示成长 key；`multi_agent_v2` 字段按上游使用频率排序，`enabled` 位于首位。
+5. 追加 UI 收敛：`multi_agent_v2` 作为独立子组标题只出现一次，子行只显示 `enabled`、`max_concurrent_threads_per_session` 等字段名，避免每行重复父级名称。
+6. 追加 Open Design 重做：用户明确要求使用 `$open-design` 后，按 Open Design `Neutral Modern` 设计系统重做 Codex feature 列表。放弃账号卡外壳拼贴，改为配置对象垂直列表：普通 feature 是一行对象设置，左侧身份/状态、中间说明、右侧控件；`multi_agent_v2` 等复合对象是父对象行加子字段设置列表。局部关闭 dev project highlight 的红色组件标注，避免 `ToggleSwitch` 调试标签干扰真实配置界面。
+7. 追加参考图布局收敛：用户给出 control-plane 配置页参考图后，确认目标是“按图片的信息架构布局”，不是迁移浅灰蓝配色或 chip 风格。最终保留 GetTokens 现有黑白瑞士风格，普通 feature/root/provider rows 使用 settings table 布局；`multi_agent_v2` 成为独立 complex feature panel，header 放 icon、标题、描述与 `Active` 主开关，内部按 `Runtime Capacity`、`Wait Timeouts`、`Usage Hints`、`Tool Metadata` 四组排列真实字段。长 textarea 字段使用 label 在上、控件全宽，避免半栏内字段名竖排。
+
+### 验证记录
+1. `go test ./internal/wailsapp -run 'TestGetCodexFeatureConfigReturnsCompositeFeatureAndNoticeTables|TestGetCodexFeatureConfigMapsMultiAgentV2ScalarToEnabled|TestSaveCodexFeatureConfigWritesMultiAgentV2Fields|TestSaveCodexFeatureConfigWritesRawTomlSections|TestSaveCodexFeatureConfigRejectsRawTomlOutsidePath'`
+2. `go test ./internal/wailsapp -run 'Codex|Mcp|Skill'`
+3. `node --test frontend/src/features/status/tests/codexFeatureConfig.test.mjs`
+4. `npm --prefix frontend run typecheck`
+5. 本地 Vite `http://127.0.0.1:4173/#frame=codex&workspace=feature-config` DOM 验收：命中 `multi_agent_v2 / enabled`、`max_concurrent_threads_per_session`、`usage_hint_text`，且 textarea 中不存在 `[features.multi_agent_v2]`。
+6. 截图：[`20260616-codex-feature-config-multi-agent-v2-after-v01.png`](screenshots/20260616/codex-feature-config/20260616-codex-feature-config-multi-agent-v2-after-v01.png)。
+7. 追加分组截图：[`20260616-codex-feature-config-multi-agent-v2-group-after-v01.png`](screenshots/20260616/codex-feature-config/20260616-codex-feature-config-multi-agent-v2-group-after-v01.png)。
+8. 追加 Open Design 验收：本地 `http://localhost:34115/#frame=codex` DOM 命中 `data-codex-feature-object-list="neutral-vertical"`，对象卡 60 个，`card-swiss` / `account-card-header` 残留数为 0；`multi_agent_v2` 为 12 行子字段设置列表，父标题重复斜杠数为 0；project highlight 在该 panel 内被抑制，`ToggleSwitch` 伪元素 content 为 `none`，输入控件宽度约 216px，字段行列宽约 `516px / 288px`。截图：[`20260616-codex-feature-config-open-design-neutral-after-v02.png`](screenshots/20260616/codex-feature-config/20260616-codex-feature-config-open-design-neutral-after-v02.png)。
+9. 追加参考图布局验收：`node --test frontend/src/features/status/tests/codexFeatureConfig.test.mjs frontend/src/features/status/tests/statusTypography.test.mjs`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run build` 通过。浏览器 DOM 命中 `data-codex-feature-object-list="settings-table"`、`data-codex-complex-feature-panel="multi_agent_v2"`、四个 `data-codex-complex-feature-group`；`max_concurrent_threads_per_session`、`default_wait_timeout_ms`、`subagent_usage_hint_text`、`non_code_mode_only` 真实字段存在，`handshake_ms`、`execution_ttl_sec`、`retry_backoff_factor` 不存在；`multi_agent_v2 /` 重复标题为 0，`codex-blue` / `codex-panel` / `codex-accent` 临时配色 token 残留为 0，复合字段宽度未低于 220px。截图：[`20260616-codex-feature-config-reference-layout-existing-style-header-after-v01.png`](screenshots/20260616/codex-feature-config/20260616-codex-feature-config-reference-layout-existing-style-header-after-v01.png)、[`20260616-codex-feature-config-reference-layout-existing-style-after-v02.png`](screenshots/20260616/codex-feature-config/20260616-codex-feature-config-reference-layout-existing-style-after-v02.png)。

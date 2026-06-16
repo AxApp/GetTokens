@@ -135,7 +135,98 @@ var codexFeatureDefinitions = []CodexFeatureDefinition{
 	{Key: "runtime_metrics", Stage: "under_development", DefaultEnabled: false},
 	{Key: "chronicle", Stage: "under_development", DefaultEnabled: false},
 	{Key: "child_agents_md", Stage: "under_development", DefaultEnabled: false},
-	{Key: "multi_agent_v2", Stage: "advanced", ValueType: "toml"},
+	{
+		Key:          "multi_agent_v2.enabled",
+		Stage:        "advanced",
+		ValueType:    "boolean",
+		DefaultValue: false,
+		Path:         []string{"features", "multi_agent_v2", "enabled"},
+		Description:  "Enable Multi-Agent V2 tools.",
+	},
+	{
+		Key:          "multi_agent_v2.max_concurrent_threads_per_session",
+		Stage:        "advanced",
+		ValueType:    "integer",
+		DefaultValue: int64(4),
+		Path:         []string{"features", "multi_agent_v2", "max_concurrent_threads_per_session"},
+		Description:  "Maximum concurrent Multi-Agent V2 threads per session, including the root thread.",
+	},
+	{
+		Key:          "multi_agent_v2.min_wait_timeout_ms",
+		Stage:        "advanced",
+		ValueType:    "integer",
+		DefaultValue: int64(10000),
+		Path:         []string{"features", "multi_agent_v2", "min_wait_timeout_ms"},
+		Description:  "Minimum wait timeout for Multi-Agent V2 wait operations, in milliseconds.",
+	},
+	{
+		Key:          "multi_agent_v2.max_wait_timeout_ms",
+		Stage:        "advanced",
+		ValueType:    "integer",
+		DefaultValue: int64(3600000),
+		Path:         []string{"features", "multi_agent_v2", "max_wait_timeout_ms"},
+		Description:  "Maximum wait timeout for Multi-Agent V2 wait operations, in milliseconds.",
+	},
+	{
+		Key:          "multi_agent_v2.default_wait_timeout_ms",
+		Stage:        "advanced",
+		ValueType:    "integer",
+		DefaultValue: int64(30000),
+		Path:         []string{"features", "multi_agent_v2", "default_wait_timeout_ms"},
+		Description:  "Default wait timeout for Multi-Agent V2 wait operations, in milliseconds.",
+	},
+	{
+		Key:          "multi_agent_v2.usage_hint_enabled",
+		Stage:        "advanced",
+		ValueType:    "boolean",
+		DefaultValue: true,
+		Path:         []string{"features", "multi_agent_v2", "usage_hint_enabled"},
+		Description:  "Include Multi-Agent V2 usage hints in tool instructions.",
+	},
+	{
+		Key:         "multi_agent_v2.usage_hint_text",
+		Stage:       "advanced",
+		ValueType:   "textarea",
+		Path:        []string{"features", "multi_agent_v2", "usage_hint_text"},
+		Description: "Custom usage hint text for Multi-Agent V2 tools.",
+	},
+	{
+		Key:         "multi_agent_v2.root_agent_usage_hint_text",
+		Stage:       "advanced",
+		ValueType:   "textarea",
+		Path:        []string{"features", "multi_agent_v2", "root_agent_usage_hint_text"},
+		Description: "Custom Multi-Agent V2 usage hint for root agents.",
+	},
+	{
+		Key:         "multi_agent_v2.subagent_usage_hint_text",
+		Stage:       "advanced",
+		ValueType:   "textarea",
+		Path:        []string{"features", "multi_agent_v2", "subagent_usage_hint_text"},
+		Description: "Custom Multi-Agent V2 usage hint for subagents.",
+	},
+	{
+		Key:         "multi_agent_v2.tool_namespace",
+		Stage:       "advanced",
+		ValueType:   "string",
+		Path:        []string{"features", "multi_agent_v2", "tool_namespace"},
+		Description: "Optional namespace override for Multi-Agent V2 tools.",
+	},
+	{
+		Key:          "multi_agent_v2.hide_spawn_agent_metadata",
+		Stage:        "advanced",
+		ValueType:    "boolean",
+		DefaultValue: false,
+		Path:         []string{"features", "multi_agent_v2", "hide_spawn_agent_metadata"},
+		Description:  "Hide spawn-agent metadata from Multi-Agent V2 tool output.",
+	},
+	{
+		Key:          "multi_agent_v2.non_code_mode_only",
+		Stage:        "advanced",
+		ValueType:    "boolean",
+		DefaultValue: false,
+		Path:         []string{"features", "multi_agent_v2", "non_code_mode_only"},
+		Description:  "Expose Multi-Agent V2 tools only outside code-mode-only tool plans.",
+	},
 	{Key: "apply_patch_streaming_events", Stage: "under_development", DefaultEnabled: false},
 	{Key: "exec_permission_approvals", Stage: "under_development", DefaultEnabled: false},
 	{Key: "request_permissions_tool", Stage: "under_development", DefaultEnabled: false},
@@ -806,6 +897,9 @@ func upsertCodexTypedConfigPath(lines []string, path []string, value string) []s
 	if len(path) == 1 {
 		return upsertRootTomlKey(lines, path[0], value, true)
 	}
+	if isCodexCompositeFeatureChildPath(path) {
+		lines = deleteTomlSectionKey(lines, "features", path[1])
+	}
 	sectionName := formatTomlPath(path[:len(path)-1])
 	return upsertTomlSectionKey(lines, sectionName, path[len(path)-1], value, true)
 }
@@ -819,6 +913,9 @@ func deleteCodexTypedConfigPath(lines []string, path []string, valueType string)
 	}
 	if len(path) == 1 {
 		return deleteTomlRootKey(lines, path[0])
+	}
+	if isCodexCompositeFeatureEnabledPath(path) {
+		lines = deleteTomlSectionKey(lines, "features", path[1])
 	}
 	sectionName := formatTomlPath(path[:len(path)-1])
 	return deleteTomlSectionKey(lines, sectionName, path[len(path)-1])
@@ -834,6 +931,18 @@ func isEditableCodexRootTableLeafPath(path []string) bool {
 	default:
 		return false
 	}
+}
+
+func isCodexCompositeFeatureChildPath(path []string) bool {
+	if len(path) < 3 || path[0] != "features" {
+		return false
+	}
+	_, ok := codexCompositeFeatureKeys[path[1]]
+	return ok
+}
+
+func isCodexCompositeFeatureEnabledPath(path []string) bool {
+	return isCodexCompositeFeatureChildPath(path) && path[len(path)-1] == "enabled"
 }
 
 func inferCodexConfigValueType(value any) string {
@@ -1253,6 +1362,11 @@ func readCodexTypedValues(input string, definitions []CodexFeatureDefinition) (m
 func readCodexTypedValueFromLines(lines []string, newline string, path []string, valueType string) (string, any, bool) {
 	raw, ok := findCodexTomlPathRawValue(lines, path)
 	if !ok {
+		if isCodexCompositeFeatureEnabledPath(path) {
+			if parentRaw, ok := findCodexTomlPathRawValue(lines, path[:2]); ok {
+				return parentRaw, parseCodexTomlRawValue(parentRaw, valueType), true
+			}
+		}
 		if isCodexTomlSectionValueType(valueType) {
 			if sectionRaw, ok := findCodexTomlSectionRawValue(lines, newline, path); ok {
 				return sectionRaw, parseCodexTomlRawValue(sectionRaw, valueType), true

@@ -250,7 +250,6 @@ func TestGetCodexFeatureConfigReturnsCompositeFeatureAndNoticeTables(t *testing.
 		t.Fatalf("GetCodexFeatureConfig returned error: %v", err)
 	}
 	for _, key := range []string{
-		"multi_agent_v2",
 		"apps_mcp_path_override",
 		"network_proxy",
 	} {
@@ -269,6 +268,21 @@ func TestGetCodexFeatureConfigReturnsCompositeFeatureAndNoticeTables(t *testing.
 		}
 		if raw := snapshot.RawValues[row.ID]; !strings.Contains(raw, "[features."+key+"]") {
 			t.Fatalf("composite feature %q should include raw section body: %#v", key, raw)
+		}
+	}
+	for _, item := range []struct {
+		id    string
+		value any
+		raw   string
+	}{
+		{id: "features.multi_agent_v2.enabled", value: true, raw: "true"},
+		{id: "features.multi_agent_v2.usage_hint_enabled", value: false, raw: "false"},
+	} {
+		if snapshot.TypedValues[item.id] != item.value {
+			t.Fatalf("%s typed value = %#v, want %#v", item.id, snapshot.TypedValues[item.id], item.value)
+		}
+		if snapshot.RawValues[item.id] != item.raw {
+			t.Fatalf("%s raw value = %#v, want %#v", item.id, snapshot.RawValues[item.id], item.raw)
 		}
 	}
 
@@ -331,6 +345,32 @@ func TestGetCodexFeatureConfigReturnsRootValues(t *testing.T) {
 	}
 	if !foundHideReasoning {
 		t.Fatalf("root definition missing from snapshot: %#v", snapshot.Definitions)
+	}
+}
+
+func TestGetCodexFeatureConfigMapsMultiAgentV2ScalarToEnabled(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err := os.WriteFile(configPath, []byte("[features]\nmulti_agent_v2 = true\n"), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := &App{}
+	snapshot, err := app.GetCodexFeatureConfig()
+	if err != nil {
+		t.Fatalf("GetCodexFeatureConfig returned error: %v", err)
+	}
+
+	if snapshot.TypedValues["features.multi_agent_v2.enabled"] != true {
+		t.Fatalf("scalar multi_agent_v2 should map to enabled typed value: %#v", snapshot.TypedValues)
+	}
+	if snapshot.RawValues["features.multi_agent_v2.enabled"] != "true" {
+		t.Fatalf("scalar multi_agent_v2 raw should map to enabled raw value: %#v", snapshot.RawValues)
 	}
 }
 
@@ -1068,7 +1108,7 @@ func TestSaveCodexFeatureConfigWritesRawTomlSections(t *testing.T) {
 		`[features]`,
 		`goals = true`,
 		``,
-		`[features.multi_agent_v2]`,
+		`[features.network_proxy]`,
 		`enabled = false`,
 		`mode = "old"`,
 		``,
@@ -1090,11 +1130,11 @@ func TestSaveCodexFeatureConfigWritesRawTomlSections(t *testing.T) {
 	_, err := app.SaveCodexFeatureConfig(SaveCodexFeatureConfigInput{
 		Changes: []CodexConfigChangeInput{
 			{
-				ID:        "features.multi_agent_v2",
-				Path:      []string{"features", "multi_agent_v2"},
+				ID:        "features.network_proxy",
+				Path:      []string{"features", "network_proxy"},
 				ValueType: "toml",
 				Value: strings.Join([]string{
-					`[features.multi_agent_v2]`,
+					`[features.network_proxy]`,
 					`enabled = true`,
 					`mode = "review"`,
 				}, "\n"),
@@ -1134,7 +1174,7 @@ func TestSaveCodexFeatureConfigWritesRawTomlSections(t *testing.T) {
 	for _, want := range []string{
 		`model = "gpt-5.4"`,
 		"[features]\ngoals = true",
-		"[features.multi_agent_v2]\nenabled = true\nmode = \"review\"",
+		"[features.network_proxy]\nenabled = true\nmode = \"review\"",
 		"[mcp_servers.new]\ncommand = \"new-server\"",
 		"[mcp_servers.new.env]\nTOKEN = \"redacted\"",
 		"[model_providers.gettokens.auth]\ncommand = \"new-auth\"",
@@ -1155,6 +1195,71 @@ func TestSaveCodexFeatureConfigWritesRawTomlSections(t *testing.T) {
 	}
 }
 
+func TestSaveCodexFeatureConfigWritesMultiAgentV2Fields(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	initial := strings.Join([]string{
+		`[features]`,
+		`multi_agent_v2 = false`,
+		`goals = true`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(initial), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := &App{}
+	preview, err := app.SaveCodexFeatureConfig(SaveCodexFeatureConfigInput{
+		Changes: []CodexConfigChangeInput{
+			{
+				ID:        "features.multi_agent_v2.enabled",
+				Path:      []string{"features", "multi_agent_v2", "enabled"},
+				ValueType: "boolean",
+				Value:     true,
+			},
+			{
+				ID:        "features.multi_agent_v2.max_concurrent_threads_per_session",
+				Path:      []string{"features", "multi_agent_v2", "max_concurrent_threads_per_session"},
+				ValueType: "integer",
+				Value:     float64(5),
+			},
+			{
+				ID:        "features.multi_agent_v2.usage_hint_text",
+				Path:      []string{"features", "multi_agent_v2", "usage_hint_text"},
+				ValueType: "string",
+				Value:     "Use subagents for bounded parallel work.",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SaveCodexFeatureConfig returned error: %v", err)
+	}
+	if len(preview.Changes) != 3 {
+		t.Fatalf("preview changes = %#v", preview.Changes)
+	}
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	content := string(body)
+	for _, want := range []string{
+		"[features]\ngoals = true",
+		"[features.multi_agent_v2]\nenabled = true\nmax_concurrent_threads_per_session = 5\nusage_hint_text = \"Use subagents for bounded parallel work.\"",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("multi_agent_v2 field output missing %q: %s", want, content)
+		}
+	}
+	if strings.Contains(content, "multi_agent_v2 = false") {
+		t.Fatalf("scalar multi_agent_v2 should be removed when writing nested fields: %s", content)
+	}
+}
+
 func TestSaveCodexFeatureConfigRejectsRawTomlOutsidePath(t *testing.T) {
 	codexHome := filepath.Join(t.TempDir(), ".codex")
 	t.Setenv("CODEX_HOME", codexHome)
@@ -1171,8 +1276,8 @@ func TestSaveCodexFeatureConfigRejectsRawTomlOutsidePath(t *testing.T) {
 	_, err := app.SaveCodexFeatureConfig(SaveCodexFeatureConfigInput{
 		Changes: []CodexConfigChangeInput{
 			{
-				ID:        "features.multi_agent_v2",
-				Path:      []string{"features", "multi_agent_v2"},
+				ID:        "features.network_proxy",
+				Path:      []string{"features", "network_proxy"},
 				ValueType: "toml",
 				Value:     "[notice]\nhide_rate_limit_model_nudge = true\n",
 			},
@@ -1181,7 +1286,7 @@ func TestSaveCodexFeatureConfigRejectsRawTomlOutsidePath(t *testing.T) {
 	if err == nil {
 		t.Fatal("SaveCodexFeatureConfig should reject raw TOML outside the target path")
 	}
-	if !strings.Contains(err.Error(), "不属于 features.multi_agent_v2") {
+	if !strings.Contains(err.Error(), "不属于 features.network_proxy") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

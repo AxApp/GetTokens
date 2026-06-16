@@ -194,6 +194,70 @@ test('codex config rows render hierarchical path labels instead of flat dotted t
   assert.doesNotMatch(modelProvidersSource, /\{pathDisplay\.primaryLabel\}/);
 });
 
+test('codex config rows render as a settings table rather than heavy nested cards', async () => {
+  const configRowsSource = await readFile(
+    new URL('../components/StatusCodexConfigRows.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(configRowsSource, /data-codex-config-table="settings"/);
+  assert.match(configRowsSource, /data-codex-config-table-row=\{row\.id\}/);
+  assert.match(configRowsSource, /md:grid-cols-\[minmax\(0,1fr\)_minmax\(16rem,22rem\)\]/);
+  assert.match(configRowsSource, /divide-y-2 divide-\[var\(--border-color\)\]/);
+  assert.match(configRowsSource, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(configRowsSource, /--codex-panel-border/);
+  assert.doesNotMatch(configRowsSource, /border-l-4 border-\[var\(--border-color\)\]/);
+});
+
+test('codex feature rows render a settings table and a grouped multi_agent_v2 complex panel', async () => {
+  const featureSectionSource = await readFile(
+    new URL('../components/StatusCodexFeaturesSection.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(featureSectionSource, /groupFeatureRowsByPrimaryPath\(group\.rows\)/);
+  assert.match(featureSectionSource, /renderFeatureObjectCard\(pathGroup\)/);
+  assert.match(featureSectionSource, /data-codex-feature-object-card=\{pathGroup\.primaryLabel\}/);
+  assert.match(featureSectionSource, /data-codex-feature-object-list="settings-table"/);
+  assert.match(featureSectionSource, /data-codex-feature-config-panel="true"/);
+  assert.match(featureSectionSource, /data-codex-complex-feature-panel="multi_agent_v2"/);
+  assert.match(featureSectionSource, /\{ id: 'runtime-capacity'/);
+  assert.match(featureSectionSource, /\{ id: 'wait-timeouts'/);
+  assert.match(featureSectionSource, /\{ id: 'usage-hints'/);
+  assert.match(featureSectionSource, /\{ id: 'tool-metadata'/);
+  assert.match(featureSectionSource, /data-codex-complex-feature-group=\{section\.id\}/);
+  assert.match(featureSectionSource, /findMultiAgentV2Row\(pathGroup, 'enabled'\)/);
+  assert.match(featureSectionSource, /findMultiAgentV2Row\(pathGroup, 'max_concurrent_threads_per_session'\)/);
+  assert.match(featureSectionSource, /findMultiAgentV2Row\(pathGroup, 'default_wait_timeout_ms'\)/);
+  assert.match(featureSectionSource, /findMultiAgentV2Row\(pathGroup, 'subagent_usage_hint_text'\)/);
+  assert.match(featureSectionSource, /findMultiAgentV2Row\(pathGroup, 'non_code_mode_only'\)/);
+  assert.doesNotMatch(featureSectionSource, /handshake_ms/);
+  assert.doesNotMatch(featureSectionSource, /execution_ttl_sec/);
+  assert.doesNotMatch(featureSectionSource, /retry_backoff_factor/);
+  assert.doesNotMatch(featureSectionSource, /account-card-grid-full grid/);
+  assert.doesNotMatch(featureSectionSource, /card-swiss relative/);
+  assert.doesNotMatch(featureSectionSource, /account-card-header/);
+  assert.doesNotMatch(featureSectionSource, /border-l-\[6px\]/);
+  assert.match(featureSectionSource, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(13rem,18rem\)\]/);
+  assert.match(featureSectionSource, /border-2 border-\[var\(--border-color\)\]/);
+  assert.match(featureSectionSource, /divide-y-2 divide-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(featureSectionSource, /--codex-blue/);
+  assert.doesNotMatch(featureSectionSource, /--codex-panel/);
+  assert.match(featureSectionSource, /data-codex-feature-primary-heading=\{pathGroup\.primaryLabel\}/);
+  assert.match(featureSectionSource, /resolveFeatureRowPathLabels\(pathDisplay, nested\)/);
+  assert.match(featureSectionSource, /pathDisplay\.childLabels/);
+  assert.doesNotMatch(featureSectionSource, /<div className="divide-y-2 divide-\[var\(--border-color\)\]">\s*\{groupFeatureRowsByPrimaryPath/);
+});
+
+test('codex feature panel suppresses project design-system highlight overlays', async () => {
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+
+  assert.match(styleSource, /\[data-design-system-highlight='project'\] \[data-codex-feature-config-panel='true'\] \[data-design-system-component='true'\]/);
+  assert.match(styleSource, /outline:\s*none/);
+  assert.match(styleSource, /\[data-codex-feature-config-panel='true'\] \[data-design-system-component='true'\]\[data-design-system-component-name\]::before/);
+  assert.match(styleSource, /content:\s*none/);
+});
+
 test('status page exposes account-store diagnostics panel with summarized errors', async () => {
   const source = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
 

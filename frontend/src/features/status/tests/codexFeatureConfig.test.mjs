@@ -601,10 +601,10 @@ test('raw TOML definitions are editable and scoped as typed changes', () => {
     definitions: [
       {
         section: 'features',
-        key: 'multi_agent_v2',
+        key: 'network_proxy',
         valueType: 'toml',
         stage: 'advanced',
-        path: ['features', 'multi_agent_v2'],
+        path: ['features', 'network_proxy'],
       },
       {
         section: 'root',
@@ -615,16 +615,16 @@ test('raw TOML definitions are editable and scoped as typed changes', () => {
       },
     ],
     typedValues: {
-      'features.multi_agent_v2': '[features.multi_agent_v2]\nenabled = false\n',
+      'features.network_proxy': '[features.network_proxy]\nenabled = false\n',
     },
     rawValues: {
-      'features.multi_agent_v2': '[features.multi_agent_v2]\nenabled = false\n',
+      'features.network_proxy': '[features.network_proxy]\nenabled = false\n',
     },
   });
   const draft = setCodexFeatureDraftValue(
     buildCodexFeatureDraft(backendSnapshot),
-    'features.multi_agent_v2',
-    '[features.multi_agent_v2]\nenabled = true\n'
+    'features.network_proxy',
+    '[features.network_proxy]\nenabled = true\n'
   );
 
   const rows = selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'features' });
@@ -635,12 +635,122 @@ test('raw TOML definitions are editable and scoped as typed changes', () => {
     values: {},
     changes: [
       {
-        id: 'features.multi_agent_v2',
+        id: 'features.network_proxy',
         section: 'features',
-        key: 'multi_agent_v2',
-        path: ['features', 'multi_agent_v2'],
+        key: 'network_proxy',
+        path: ['features', 'network_proxy'],
         valueType: 'toml',
-        value: '[features.multi_agent_v2]\nenabled = true\n',
+        value: '[features.network_proxy]\nenabled = true\n',
+      },
+    ],
+  });
+});
+
+test('multi_agent_v2 backend definitions render as nested switch and config rows', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'features',
+        key: 'multi_agent_v2.enabled',
+        valueType: 'boolean',
+        stage: 'advanced',
+        path: ['features', 'multi_agent_v2', 'enabled'],
+        defaultValue: false,
+      },
+      {
+        section: 'features',
+        key: 'multi_agent_v2.max_concurrent_threads_per_session',
+        valueType: 'integer',
+        stage: 'advanced',
+        path: ['features', 'multi_agent_v2', 'max_concurrent_threads_per_session'],
+        defaultValue: 4,
+      },
+      {
+        section: 'features',
+        key: 'multi_agent_v2.usage_hint_text',
+        valueType: 'textarea',
+        stage: 'advanced',
+        path: ['features', 'multi_agent_v2', 'usage_hint_text'],
+      },
+    ],
+    typedValues: {
+      'features.multi_agent_v2.enabled': true,
+      'features.multi_agent_v2.max_concurrent_threads_per_session': 5,
+    },
+    rawValues: {
+      'features.multi_agent_v2.enabled': 'true',
+      'features.multi_agent_v2.max_concurrent_threads_per_session': '5',
+    },
+  });
+  const draft = setCodexFeatureDraftValue(
+    buildCodexFeatureDraft(backendSnapshot),
+    'features.multi_agent_v2.default_wait_timeout_ms',
+    30000
+  );
+  const rows = selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'features', query: 'multi_agent_v2' });
+
+  assert.deepEqual(
+    rows.map((row) => [row.id, row.key, row.valueType, row.effectiveValue, row.draftValue, row.dirty]),
+    [
+      ['features.multi_agent_v2.enabled', 'multi_agent_v2.enabled', 'boolean', true, true, false],
+      [
+        'features.multi_agent_v2.max_concurrent_threads_per_session',
+        'multi_agent_v2.max_concurrent_threads_per_session',
+        'integer',
+        5,
+        5,
+        false,
+      ],
+      [
+        'features.multi_agent_v2.usage_hint_text',
+        'multi_agent_v2.usage_hint_text',
+        'textarea',
+        undefined,
+        undefined,
+        false,
+      ],
+    ]
+  );
+  assert.deepEqual(resolveCodexFeatureRowPathDisplay(rows[0]), {
+    primaryLabel: 'multi_agent_v2',
+    childLabels: ['enabled'],
+    fullLabel: 'features.multi_agent_v2.enabled',
+  });
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'features' }), {
+    values: {},
+    changes: [],
+  });
+});
+
+test('multi_agent_v2 nested boolean changes do not fall back to simple feature values', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'features',
+        key: 'multi_agent_v2.enabled',
+        valueType: 'boolean',
+        stage: 'advanced',
+        path: ['features', 'multi_agent_v2', 'enabled'],
+        defaultValue: false,
+      },
+    ],
+  });
+  const draft = setCodexFeatureDraftValue(
+    buildCodexFeatureDraft(backendSnapshot),
+    'features.multi_agent_v2.enabled',
+    true
+  );
+
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'features' }), {
+    values: {},
+    changes: [
+      {
+        id: 'features.multi_agent_v2.enabled',
+        section: 'features',
+        key: 'multi_agent_v2.enabled',
+        path: ['features', 'multi_agent_v2', 'enabled'],
+        valueType: 'boolean',
+        value: true,
       },
     ],
   });

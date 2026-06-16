@@ -114,6 +114,22 @@ const stageRank: Record<CodexFeatureStage, number> = {
 };
 
 const compatibleStages = new Set<CodexFeatureStage>(['legacy', 'deprecated', 'removed']);
+const multiAgentV2PathOrder = new Map(
+  [
+    'enabled',
+    'max_concurrent_threads_per_session',
+    'min_wait_timeout_ms',
+    'max_wait_timeout_ms',
+    'default_wait_timeout_ms',
+    'usage_hint_enabled',
+    'usage_hint_text',
+    'root_agent_usage_hint_text',
+    'subagent_usage_hint_text',
+    'tool_namespace',
+    'hide_spawn_agent_metadata',
+    'non_code_mode_only',
+  ].map((key, index) => [key, index])
+);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -131,6 +147,21 @@ function readString(record: Record<string, unknown>, keys: string[], fallback = 
     }
   }
   return fallback;
+}
+
+function compareCodexConfigItems(left: CodexFeatureConfigItem, right: CodexFeatureConfigItem) {
+  const rankDiff = stageRank[left.stage] - stageRank[right.stage];
+  if (rankDiff !== 0) {
+    return rankDiff;
+  }
+  if (left.path[0] === 'features' && right.path[0] === 'features' && left.path[1] === right.path[1]) {
+    const leftOrder = left.path[1] === 'multi_agent_v2' ? (multiAgentV2PathOrder.get(left.path[2]) ?? 999) : 999;
+    const rightOrder = right.path[1] === 'multi_agent_v2' ? (multiAgentV2PathOrder.get(right.path[2]) ?? 999) : 999;
+    if (leftOrder !== rightOrder) {
+      return leftOrder - rightOrder;
+    }
+  }
+  return left.key.localeCompare(right.key);
 }
 
 function readBoolean(record: Record<string, unknown>, keys: string[]) {
@@ -477,10 +508,7 @@ export function normalizeCodexFeatureConfigSnapshot(raw: unknown): CodexFeatureC
     .map(normalizeItem)
     .filter((item): item is CodexFeatureConfigItem => Boolean(item))
     .flatMap(expandCodexConfigItem)
-    .sort((left, right) => {
-      const rankDiff = stageRank[left.stage] - stageRank[right.stage];
-      return rankDiff === 0 ? left.key.localeCompare(right.key) : rankDiff;
-    });
+    .sort(compareCodexConfigItems);
 
   const warnings = Array.isArray(record.warnings)
     ? record.warnings.filter((item): item is string => typeof item === 'string')
@@ -872,6 +900,14 @@ export function resolveCodexFeatureRowPathDisplay(
     };
   }
 
+  if (row.section === 'features' && path[0] === 'features') {
+    return {
+      primaryLabel: path[1] || row.key,
+      childLabels: path.slice(2),
+      fullLabel,
+    };
+  }
+
   return {
     primaryLabel: row.key,
     childLabels: [],
@@ -891,7 +927,8 @@ export function buildCodexFeatureChangeInput(
     if (row.readOnly || !row.dirty) {
       continue;
     }
-    if (!row.removed && (row.valueType === 'boolean' || row.valueType === 'bool')) {
+    const compositeFeatureChildPath = row.section === 'features' && row.path[0] === 'features' && row.path.length > 2;
+    if (!row.removed && !compositeFeatureChildPath && (row.valueType === 'boolean' || row.valueType === 'bool')) {
       values[row.key] = Boolean(row.draftValue);
     }
     changes.push({
