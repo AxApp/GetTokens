@@ -18,6 +18,7 @@
 | `Cli-Proxy-API-Management-Center` | `docs-linhay/references/Cli-Proxy-API-Management-Center/` | Web 管理中心，Claude provider、模型映射、usage UI 参考。 |
 | `cherry-studio` | `docs-linhay/references/cherry-studio/` | Skills 同步、MCP server、agent/skill 资产组织参考。 |
 | `codex` | `docs-linhay/references/codex/` | Codex CLI 官方源码镜像，已更新到 2026-05-22 `origin/main` HEAD `162a6e746b7b4ef6024ccc819bf8ceaaa5f802f6`，用于行为校准参考。 |
+| `OmniRoute` | `docs-linhay/references/OmniRoute/` | 多 provider AI gateway / OpenAI-compatible endpoint 参考；本地浅克隆更新到 2026-06-15 `origin/main` HEAD `4066a2ca3122f4c81ec17eb2b7b8b3fa0c9c52fc`，可用于路由、fallback、provider 聚合与 CLI 兼容能力调研。 |
 | `taste-skill` | `docs-linhay/references/taste-skill/` | AI 前端设计 skills、反模板化 UI、image-to-code、品牌板和 Web/移动端视觉生成参考；本地镜像更新到 2026-05-26 `3c7017d636c3a4aad378433ea6d0cfa6c921da4a`，摘要见 `20260604-frontend-design-reference-projects.md`，已合并沉淀到统一入口 `.agents/skills/gettokens-frontend-design-quality/`。 |
 | `impeccable` | `docs-linhay/references/impeccable/` | 前端设计质量 skill、23 个命令、anti-pattern 检测、live iteration 与 PRODUCT/DESIGN 文档化参考；本地镜像更新到 2026-06-03 `1d5d745823aae7019044e8b0a621af4366dae224`，摘要见 `20260604-frontend-design-reference-projects.md`，已合并沉淀到统一入口 `.agents/skills/gettokens-frontend-design-quality/`。 |
 | `frontend-system-design` | `docs-linhay/references/frontend-system-design/` | 大型前端系统设计 checklist（PRD、架构、性能、安全、i18n、治理、QA）；本地镜像为 2022-02-24 `ca56b546e5f12c408a2e75b2499264aacba99065`，摘要见 `20260604-frontend-design-reference-projects.md`，已合并沉淀到统一入口 `.agents/skills/gettokens-frontend-design-quality/`。 |
