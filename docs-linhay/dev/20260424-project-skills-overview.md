@@ -75,6 +75,21 @@
 1. `.agents/skills/waza.lock.json`：机器可读的来源、commit、version、安装目录和共享规则目录清单。
 2. `docs-linhay/dev/20260527-waza-project-install.md`：人工可读的安装范围与后续更新流程。
 
+## 20260616 更新：外部 skills 启发的 GetTokens 化落地
+
+本次阅读 `mattpocock/skills` 后，没有直接安装外部 skills；原因是 GetTokens 已有项目级 skills，并且此前已经记录过 skill discovery 预算风险。落地方式改为“吸收方法，翻译为项目语境”：
+
+1. 更新 `.agents/skills/gettokens-ops-governance/SKILL.md`，新增 Agent Context Setup、外部 skill intake、skill admission gate、tracer-bullet delivery 等入口规则。
+2. 新增 `docs-linhay/dev/20260616-agent-skill-operating-model.md`，作为判断 AGENTS / skill / dev doc / glossary / memory / space 落位的工作流。
+3. 新增 `docs-linhay/dev/20260616-gettokens-domain-glossary.md`，把 sidecar、channel routing、route guard、quota fact、live sessions、Wails binding、preview mode、evidence gate 等高频术语收敛为 canonical terms。
+4. 更新 `AGENTS.md`，把“外部 skills 先提炼再 GetTokens 化”“新增项目 skill admission gate”“任务开始前 context setup”“术语表与 tracer-bullet 优先级”写成项目级规则入口。
+
+后续约束：
+
+1. 外部 skills repo 默认先做模式提炼，不直接安装全量。
+2. 新增项目级 skill 必须通过重复性、触发语、执行步骤和验证路径四项门禁。
+3. 术语冲突优先补 glossary；执行细节保留在 `gettokens-ops-governance` 和 dev workflow，`AGENTS.md` 只保留项目级硬入口。
+
 ## 为什么进行整合
 
 1. **解决预算告警**：原先 9 个技能的描述总和超出了 CLI 的上下文配额，导致描述被截断。

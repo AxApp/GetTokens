@@ -7,6 +7,14 @@ description: GetTokens 流程治理：Wails 开发回路、spaces、文档记忆
 
 This skill unifies the procedural rules for working on GetTokens, ensuring consistency in development, documentation, and knowledge management.
 
+## 0. Agent Context Setup & Skill Admission
+- **First pass setup**: Before starting a non-trivial GetTokens task, read the current `AGENTS.md`, inspect `git status --short`, and identify the matching `space`, domain skill, dev doc, and memory entry. Do not rely on memory when current files disagree.
+- **Domain language**: Use `docs-linhay/dev/20260616-gettokens-domain-glossary.md` as the canonical glossary for repeated terms such as sidecar, channel routing, route guard, live sessions, usage attribution, dev bridge, preview mode, and modal hash. Add new terms there when inconsistent names start appearing across code, docs, tests, or agent prompts.
+- **External skill intake**: When an external skills repo or prompt library provides useful patterns, translate the pattern into GetTokens artifacts instead of installing it blindly. Prefer updating an existing project skill and a `docs-linhay/dev/` workflow. Create a new project skill only when there is a durable trigger gap that cannot be expressed through existing skills without making them unclear.
+- **Skill admission gate**: A new or expanded skill needs all four signals: repeated task or failure mode, clear trigger wording, concrete execution steps, and a validation path. One-off advice, temporary vendor findings, and chat-only conclusions go to memory or dev docs, not to a new skill.
+- **Tracer-bullet delivery**: For cross-layer work, prefer one narrow end-to-end behavior that proves the chain from sidecar/Wails/frontend/test evidence before broad implementation. Avoid large batches of disconnected tests or UI changes that do not prove the requested behavior.
+- **Detailed workflow**: Use `docs-linhay/dev/20260616-agent-skill-operating-model.md` when deciding whether to update AGENTS, a skill, dev docs, glossary, memory, or a space.
+
 ## 1. Wails Dev Loop & Restart Rules
 - **Restart**: Always restart the app if Go files, Wails bindings, or sidecar logic change. Restart for Svelte/CSS if HMR shows stale results.
 - **Readiness**: Sidecar `ready` status is required for account data flow. UI mount success does not guarantee data flow.
@@ -175,6 +183,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Output**: Create/update skills in `.agents/skills/` and record the decision in project memory.
 - **Do Not Over-promote**: Feature-domain verification workflows, such as CLIProxyAPI fork checks or Proxyman capture procedures, should normally live in the relevant domain skill and dev docs. Promote to `AGENTS.md` only when the rule becomes repo-wide governance.
 - **Automatic closure rule**: Before the final response of a substantial round, check whether new reusable behavior appeared. If yes, update the right skill/workflow/governance file as part of the round; if no, say it was reviewed and not promoted.
+- **External pattern rule**: For external skills or agent workflow references, distill the underlying workflow first, then decide placement. Do not increase project skill count unless a concise existing skill cannot host the trigger and steps.
 
 ## 6. Release Governance
 - **Scope**: Current release scope is macOS only.

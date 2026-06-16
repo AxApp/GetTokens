@@ -58,6 +58,8 @@
 25. 正式版数据可拷贝到 dev 环境用于复现问题：允许从 `/Users/linhey/.config/gettokens/` 拷贝 SQLite 数据库、配置文件等数据到 `/Users/linhey/.config/gettokens-dev/` 进行测试，但必须先在 dev 目录备份原有数据，验证完成后恢复。
 26. 真实 dev App 手点验收不再作为每轮功能修复硬门槛：只有涉及 macOS 菜单栏、窗口生命周期、status item、LaunchServices、native runtime、Wails 绑定可见性，或用户在当前轮明确要求时，才启动本仓 dev App 做真实桌面手点。普通前端/后端/sidecar 修复优先使用自动化测试、Wails build、无头浏览器/DOM 断言、dev bridge 或接口状态证据；避免把每轮验收拖入低收益的桌面点击排障。
 27. 每个候选问题进入修复前必须先有确凿证据：至少包含 backlog/体验报告/用户反馈等问题来源、当前代码或 UI 的事实位置、可复现现象或缺失证明、预期验收方式。只有猜测、直觉优先级或未复核的 backlog 条目不得直接进入代码修改；证据不足时只能进入调研、方案或标记为待证实。
+28. 外部 skills / prompt library / agent workflow 只能作为参考输入，不默认全量安装或照搬；吸收前必须先通过项目级 skill admission gate，并落到 `AGENTS.md`、项目级 `skills`、`docs-linhay/dev/`、领域词汇表、space 或 memory 的正确层级。
+29. 非平凡 GetTokens 任务开始前必须完成项目级 context setup；跨层需求默认先走一条 tracer-bullet 端到端行为链。细则见 `gettokens-ops-governance` 与 `docs-linhay/dev/20260616-agent-skill-operating-model.md`。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。
@@ -146,6 +148,7 @@ Git `worktree` 治理：
 8. 涉及 Codex Skills / MCP Servers、`[[skills.config]]`、`tk://github.com` / `tk://gitlab.com` Skill source、`~/.codex/config.toml` MCP 解析与保存时，优先使用 `gettokens-codex-extensions-management`。
 9. 涉及项目级 Codex custom agents、`.codex/config.toml`、`.codex/agents/*.toml` 或 subagent 任务分工配置时，优先参考 `docs-linhay/dev/20260530-codex-project-subagents.md`。
 10. 涉及项目级 Codex subagent 的新增、删除、合并、拆分、验证或生命周期治理时，优先使用 `gettokens-subagent-lifecycle`。
+11. 涉及外部 workflow 吸收、skill admission、context setup、领域词汇表或 tracer-bullet 时，优先使用 `gettokens-ops-governance`，并参考 `docs-linhay/dev/20260616-agent-skill-operating-model.md`。
 
 ## 5. 记忆系统规则（必须）
 
