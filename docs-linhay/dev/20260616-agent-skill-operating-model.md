@@ -3,6 +3,8 @@
 日期：2026-06-16
 状态：已落地为 GetTokens agent / skills 治理补充
 
+通用 skill：`.agents/skills/external-workflow-intake/SKILL.md`
+
 ## 背景
 
 本轮阅读 `mattpocock/skills` 后确认，外部 repo 的主要启示不是“安装更多提示词”，而是把高频工程动作拆成小、可组合、可验证的 workflow。GetTokens 已经有项目级 skills、spaces、memory 和 subagent 治理，因此本轮采用“翻译成项目语境”的方式落地，而不是直接安装外部 skills。
@@ -99,7 +101,7 @@ sidecar authority -> internal/cliproxyapi DTO -> internal/wailsapp -> root App b
 本工作流的验收方式：
 
 1. `gettokens-ops-governance` 能指向本文件和领域词汇表。
-2. 新增或更新 skill 时能解释为什么不是 memory-only 或 dev-doc-only。
+2. `external-workflow-intake` 能作为跨项目复用入口；GetTokens 专属落位继续由 `gettokens-ops-governance` 承接。
 3. 纯治理/文档沉淀至少运行：
 
 ```bash

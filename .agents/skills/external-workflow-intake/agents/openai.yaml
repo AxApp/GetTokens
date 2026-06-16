@@ -1,0 +1,4 @@
+interface:
+  display_name: "External Workflow Intake"
+  short_description: "Port outside workflows into project rules"
+  default_prompt: "Use $external-workflow-intake to absorb this external skills repo or workflow into the current project without blindly installing it."

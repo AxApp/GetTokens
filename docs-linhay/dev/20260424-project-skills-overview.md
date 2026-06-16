@@ -83,10 +83,11 @@
 2. 新增 `docs-linhay/dev/20260616-agent-skill-operating-model.md`，作为判断 AGENTS / skill / dev doc / glossary / memory / space 落位的工作流。
 3. 新增 `docs-linhay/dev/20260616-gettokens-domain-glossary.md`，把 sidecar、channel routing、route guard、quota fact、live sessions、Wails binding、preview mode、evidence gate 等高频术语收敛为 canonical terms。
 4. 更新 `AGENTS.md`，把“外部 skills 先提炼再 GetTokens 化”“新增项目 skill admission gate”“任务开始前 context setup”“术语表与 tracer-bullet 优先级”写成项目级规则入口。
+5. 按用户要求新增通用 skill `.agents/skills/external-workflow-intake`，用于跨项目复用外部 workflow intake 流程；GetTokens 专属落位继续由 `gettokens-ops-governance` 承接。
 
 后续约束：
 
-1. 外部 skills repo 默认先做模式提炼，不直接安装全量。
+1. 外部 skills repo 默认先用 `external-workflow-intake` 做模式提炼，不直接安装全量。
 2. 新增项目级 skill 必须通过重复性、触发语、执行步骤和验证路径四项门禁。
 3. 术语冲突优先补 glossary；执行细节保留在 `gettokens-ops-governance` 和 dev workflow，`AGENTS.md` 只保留项目级硬入口。
 
