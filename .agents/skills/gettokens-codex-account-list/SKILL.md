@@ -12,6 +12,8 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - 总账号池只管理 Account Inventory；Codex 账号列表拥有 Codex 渠道顺序、渠道 route mode、渠道组状态、dry-run/explain 和 probe。
 - Codex 渠道配置不得通过全局 `UpdateAccountPriority` 表达；渠道顺序必须保存到 Codex channel config。
 - Codex runtime routing 的唯一主路径是 `channel-routing/config.json`；旧 `routing.strategy` 只保留作 relay / compatibility 边界，不再参与 Codex 候选排序、fallback 或 balanced 计数。balanced 模式应从 live-session tracker 读取活跃会话数，而不是从展示用 snapshot 反推。
+- 排查 `balanced` 多项目不均分时，先区分“配置是否生效”和“均衡口径是否符合预期”：当前生产语义是剩余可路由候选池内按账号 active session 粗粒度均衡，同数时按渠道顺序 tie-break；它不是按 project、历史 request count 或 token usage 做公平分配。项目名属于 live sessions / route decision 观测字段，除非后续引入 `balanced-v2` / project-fair scorer，否则不得把 UI 项目列表解释为项目维度路由键。
+- `balanced` 诊断证据优先读取 sidecar route decision 和 live sessions，而不是只看前端历史请求列表：核对 `routeMode`、trace reason、`candidateCount`、selected account 分布、filtered / guard 原因、账号 requestability / model support / disabled 状态。若多数决策候选池只有 1-2 个账号，先解释候选池收缩，再讨论均衡算法。
 - 新 GetTokens route mode 主路径只允许 `sequential / balanced`。
 - `project`、`projectBindings`、`projectModeFallbackRouteMode`、`fallbackMode` 已从 Codex / Claude Channel Routing 保存、执行、DTO 和 UI 中下线；旧配置读入时直接丢弃这些字段或把非法 route mode 降级为 `sequential`。
 - `dedicated / prefer / ordered / weighted / canary` 不再作为上游兼容输入保留；它们只作为非法 route mode 进入 invalid mode 诊断，不进入 Codex 新 UI / Wails DTO / engine policy。

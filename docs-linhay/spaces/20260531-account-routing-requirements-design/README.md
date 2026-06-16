@@ -58,6 +58,8 @@
 8. Given Codex WebSocket pinned auth 命中 guard，When 下一个 downstream request 到达，Then 释放 pin、关闭旧 upstream，并重新进入 route engine。
 9. Given 用户打开 Codex / Claude 账号列表，When 查看参与账号，Then UI 能区分“禁用 / 阻断 / 无额度展示 / 错误不可用 / 可请求”。
 10. Given 用户运行 dry-run / explain，When 账号被排除，Then trace 不包含 payload、token、cookie 或完整错误体。
+11. Given Codex `balanced` 模式有多个项目同时请求，When 候选池内账号数、活跃 session 数和历史请求数不一致，Then route ledger / live sessions 必须能解释本次均衡依据，并明确它是按账号负载、项目公平性还是请求轮询在计算。
+12. Given 用户期望“多项目均分账号”，When 当前 `balanced` 只按账号活跃 session 数选择，Then UI / explain 不能暗示它已经提供项目维度公平调度；若要提供该语义，需要进入下一期 `balanced-v2` 设计。
 
 ## 设计稿入口
 
@@ -78,10 +80,35 @@
 - [2026-05-31 memory：账号池 quota 与路由热路径边界排查](../../memory/2026-05-31.md)
 
 ## 当前状态
-- 状态：implementation-phase-3b-sidecar-native-quota-refresh-verified
-- 最近更新：2026-05-31
+- 状态：balanced-mode-next-optimization-recorded
+- 最近更新：2026-06-16
 
 ## 实施记录
+
+### 2026-06-16 正式环境 Codex balanced 多项目未均分排查记录
+
+- 问题来源：用户在正式 GetTokens `#frame=codex&workspace=live-sessions` 看到多项目运行时，`balanced` 模式下账号命中没有按项目均分。
+- 只读证据：
+  - 正式运行态 `~/.config/gettokens/channel-routing/config.json` 中 `codex.routeMode=balanced`，所以本次不是配置未生效。
+  - 正式 sidecar route decision 最近 80 条中，72 条 trace reason 为 `channel-routing:codex:balanced`。
+  - 最近 80 条选择分布约为：首位 OAuth 账号 41 次，`公司 1` 34 次，第三账号 1 次，未选中 / 无候选 4 次。
+  - 按项目看：`GetTokens` 62 次中 `公司 1` 32、首位 OAuth 28、无候选 2；`Dxyer` 14 次中首位 OAuth 10、`公司 1` 2、无候选 2。
+  - 多数 `gpt-5.5` 决策的 `candidateCount=2`，不是配置列表里所有账号都参与。
+  - 账号库显示配置顺序里的部分账号处于 disabled、pending / 0 models，或模型不匹配；第三个 OAuth 账号存在 `auth-error` guard，实际只偶发参与。
+- 当前代码事实：
+  - `internal/gettokensrouting/channel.go` 的 `selectBalanced` 只比较 `Account.ActiveSessions`，同数时按有效路由顺序 tie-break。
+  - `internal/gettokenshooks/channel_routing_policy.go` 的 `ActiveSessions` 来自 `currentLiveSessionActiveAuthCounts()`。
+  - `currentLiveSessionActiveAuthCounts()` 按 session 级 `AuthID` 统计活跃 session，不按项目、请求数、token 数或最近窗口负载计算。
+- 初步结论：
+  - 当前 `balanced` 已生效，但语义是“在剩余可路由候选账号中按活跃 session 数粗粒度均衡”，不是“多项目按账号均分”。
+  - 截图中的项目名属于 live sessions 展示 / 观测维度，当前不是路由公平性的输入键。
+  - 这轮不直接修复代码，记录为后续 `balanced-v2` 优化需求。
+- 后续优化方向：
+  - sidecar 内新增 `balanced-v2` 或扩展 balanced scorer，按 `projectKey + model + account` 维护滑动窗口负载。
+  - scorer 至少考虑 active requests、active sessions、最近 N 分钟 request count、可选 token usage、route guard / cooldown 状态和有效排序 tie-break。
+  - route decision ledger 持久化当次候选池、过滤原因、active score、projectKey / projectName、selected account，避免历史页面只能看到 auth 命中而无法解释当时为什么选中。
+  - live sessions 与 route explain 使用同一份 sidecar-owned route decision 数据，UI 明确区分“账号负载均衡”和“项目公平均衡”。
+- 详细证据记录见：[Balanced Mode 正式环境排查 v01](./plans/20260616-balanced-mode-prod-investigation-v01.md)。
 
 ### 2026-05-31 Phase 1 sidecar guard
 
