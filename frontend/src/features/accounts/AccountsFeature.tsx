@@ -9,6 +9,7 @@ import {
   DeleteRateLimitRule,
   DownloadAuthFile,
   FetchOpenAICompatibleProviderModels,
+  GetAppRuntimeSettings,
   GetLocalCodexAuthState,
   GetLocalCodexModelProviderStateView,
   GetRelayServiceConfig,
@@ -248,6 +249,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     useState<main.LocalCodexAuthState | null>(null);
   const [localCodexProviderState, setLocalCodexProviderState] =
     useState<main.LocalCodexModelProviderStateView | null>(null);
+  const [syncCodexModelCatalog, setSyncCodexModelCatalog] = useState(false);
   const [localCliDraft, setLocalCliDraft] =
     useState<AccountCliApplyDraft | null>(null);
   const [localCliApplyMessage, setLocalCliApplyMessage] = useState("");
@@ -359,17 +361,19 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             ],
           }),
         );
+        setSyncCodexModelCatalog(false);
         return;
       }
 
       if (!ready) {
         setRelayKeyItems([]);
         setRelayEndpoints([]);
+        setSyncCodexModelCatalog(false);
         return;
       }
 
       try {
-        const [config, authState, providerState] = await Promise.all([
+        const [config, authState, providerState, runtimeSettings] = await Promise.all([
           trackRequest("GetRelayServiceConfig", { args: [] }, () =>
             GetRelayServiceConfig(),
           ),
@@ -380,6 +384,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             "GetLocalCodexModelProviderStateView",
             { args: [] },
             () => GetLocalCodexModelProviderStateView(),
+          ),
+          trackRequest("GetAppRuntimeSettings", { args: [] }, () =>
+            GetAppRuntimeSettings(),
           ),
         ]);
         if (cancelled) {
@@ -394,6 +401,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         setRelayEndpoints(config.endpoints || []);
         setLocalCodexAuthState(authState);
         setLocalCodexProviderState(providerState);
+        setSyncCodexModelCatalog(Boolean(runtimeSettings?.codexModelCatalogSyncEnabled));
       } catch (error) {
         console.error(error);
         if (!cancelled) {
@@ -401,6 +409,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           setRelayEndpoints([]);
           setLocalCodexAuthState(null);
           setLocalCodexProviderState(null);
+          setSyncCodexModelCatalog(false);
         }
       }
     }
@@ -1102,6 +1111,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         selectedModel: relayModelNames[0] || "GT",
         selectedReasoningEffort: "medium",
         supportsWebsockets: false,
+        modelCatalogProjectionMode: syncCodexModelCatalog ? "gettokens" : "off",
         sidecarReady: previewMode || sidecarStatus.code === "ready",
         previewMode,
         currentCodexProviderState: localCodexProviderState,
@@ -1120,6 +1130,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       relayModelNames,
       selectedRelayEndpoint,
       sidecarStatus.code,
+      syncCodexModelCatalog,
     ],
   );
 
@@ -1221,6 +1232,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             providerID: draft.codex.providerID,
             providerName: draft.codex.providerName,
             authStrategy: draft.codex.authStrategy,
+            modelCatalogProjectionMode: draft.codex.modelCatalogProjectionMode,
             skipRelayKeyMetadata: codexUsesAccountAPIKey,
           },
           () =>
@@ -1251,9 +1263,14 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                 supportsWebsocketsSet:
                   draft.codex.supportsWebsocketsSet ?? true,
                 authStrategy: draft.codex.authStrategy,
+                modelCatalogProjectionMode:
+                  draft.codex.modelCatalogProjectionMode || "off",
                 skipRelayKeyMetadata: codexUsesAccountAPIKey,
               }),
             ),
+        );
+        setSyncCodexModelCatalog(
+          draft.codex.modelCatalogProjectionMode === "gettokens",
         );
         setLocalCliApplyMessage(
           `已写入 Codex：${result.configPath || result.codexHomePath}`,

@@ -279,3 +279,23 @@ Score: <0-20> / 20
 - 折叠后只把内容 `display:none`，但 virtualization 仍在测量大量不可见 DOM。
 - 只有文字按钮，没有图标或 `aria-expanded`，用户难以快速扫描状态。
 - 切换分组模式后旧折叠 key 残留，导致新分组初始状态不可解释。
+
+### 4.10 Multi-entry config parity
+
+当同一项本地配置、运行态设置或 Wails 写入 API 同时存在“完整工作台入口”和“快捷入口 / 账号卡入口 / 确认弹窗入口”时，快捷入口不能只展示 diff 或固定默认值；必须识别完整入口中的关键配置项，并用同一份 draft 驱动预览和最终写入。
+
+适用模块：Status 本地 Codex apply 与账号池 apply、账号详情快捷应用、配置导入确认、任何复用 `Apply*ToLocal*` / `Update*Config*` 的多入口表单。
+
+执行顺序：
+1. 先列出完整入口已经暴露的关键配置：provider、model、auth strategy、transport、catalog sync、feature toggles、local state summary 等。
+2. 快捷入口至少暴露会影响最终写入语义或运行态风险的字段；只读字段要明确标为状态或固定协议，例如 `wire_api=responses`。
+3. 预览 diff 和确认写入必须读取同一份 draft；禁止 UI 开关只改展示、不进入 Wails DTO。
+4. 如果快捷入口不能安全暴露完整配置，必须显示跳转或阻塞说明，而不是静默使用硬编码默认值。
+5. 新增字段时同步检查 root Wails DTO、frontend generated types、draft model、preview diff、apply payload 和单测。
+6. 单测至少覆盖：draft 默认值、可编辑入口存在、关键字段进入 apply payload；UI 截图或 DOM 验收覆盖配置区可见性。
+
+常见反例：
+- Status 页可配置 `sync_model_catalog`，账号卡 apply 却只写默认 `off`。
+- 弹窗显示 `provider / model` 的 diff，但没有任何控件可改，用户只能取消后去另一个页面。
+- `supports_websockets` 开关只影响预览文案，不传给 `ApplyRelayServiceConfigToLocalV2`。
+- 快捷入口重新维护一套默认模型列表，和完整工作台读取的本地 Codex 状态不同步。

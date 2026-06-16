@@ -208,6 +208,30 @@ test('OpenAI API key account generates Codex API key draft', () => {
   assert.equal(actions[0].draft.codex.reasoningEffort, 'xhigh');
   assert.equal(actions[0].draft.codex.supportsWebsockets, false);
   assert.equal(actions[0].draft.codex.supportsWebsocketsSet, true);
+  assert.equal(actions[0].draft.codex.modelCatalogProjectionMode, 'off');
+});
+
+test('Codex API key account can carry model catalog projection mode', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      provider: 'openai',
+      credentialSource: 'api-key',
+      apiKey: 'sk-current-openai-account',
+      baseUrl: 'https://api.openai.com/v1',
+      supportedFormats: ['openai_responses'],
+      models: [{ name: 'gpt-5.5', alias: 'GT' }],
+    }),
+    relayKeyItems,
+    relayEndpoint,
+    modelCatalogProjectionMode: 'gettokens',
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].draft.target, 'codex');
+  assert.equal(actions[0].draft.codex.modelCatalogProjectionMode, 'gettokens');
 });
 
 test('Codex API draft uses configured openai_responses endpoint before primary base url', () => {
@@ -472,6 +496,25 @@ test('AccountLocalCliApplyConfirm exposes editable Claude Code draft fields', as
   assert.match(source, /field="apiTimeoutMs"/);
   assert.match(featureSource, /onDraftChange=\{\(nextDraft\) =>/);
   assert.match(featureSource, /setLocalCliDraft\(nextDraft\)/);
+});
+
+test('AccountLocalCliApplyConfirm exposes editable Codex local apply settings', async () => {
+  const source = await readFile(new URL('../components/AccountLocalCliApplyConfirm.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /Codex 配置/);
+  assert.match(source, /handleCodexTextChange/);
+  assert.match(source, /handleCodexBooleanChange/);
+  assert.match(source, /handleCodexAuthStrategyChange/);
+  assert.match(source, /handleCodexModelCatalogChange/);
+  assert.match(source, /field="providerID"/);
+  assert.match(source, /field="providerName"/);
+  assert.match(source, /field="model"/);
+  assert.match(source, /field="reasoningEffort"/);
+  assert.match(source, /supports_websockets/);
+  assert.match(source, /sync_model_catalog/);
+  assert.match(source, /Wire API/);
+  assert.match(featureSource, /modelCatalogProjectionMode:\s*draft\.codex\.modelCatalogProjectionMode/);
 });
 
 test('deep link account import confirm renders batch account preview and result summary', async () => {

@@ -73,6 +73,7 @@ export interface ResolveAccountLocalCliMappingsInput {
   selectedModel?: string;
   selectedReasoningEffort?: string;
   supportsWebsockets?: boolean;
+  modelCatalogProjectionMode?: 'off' | 'gettokens';
   sidecarReady?: boolean;
   previewMode?: boolean;
   currentCodexProviderState?: LocalCodexModelProviderStateLike | null;
@@ -127,8 +128,10 @@ export type AccountCliApplyDraft =
         wireAPISet?: boolean;
         supportsWebsockets: boolean;
         supportsWebsocketsSet?: boolean;
+        modelCatalogProjectionMode?: 'off' | 'gettokens';
         authStrategy: 'replace_auth_with_apikey' | 'preserve_chatgpt_auth' | 'replace_auth_with_oauth';
         authFileName?: string;
+        localAuthStatus?: string;
       };
     }
   | {
@@ -417,10 +420,29 @@ function buildCodexDraft(
       wireAPISet: true,
       supportsWebsockets: input.supportsWebsockets ?? false,
       supportsWebsocketsSet: true,
+      modelCatalogProjectionMode: input.modelCatalogProjectionMode === 'gettokens' ? 'gettokens' : 'off',
       authStrategy,
       authFileName,
+      localAuthStatus: buildLocalCodexAuthStatus(input.localCodexAuthState),
     },
   };
+}
+
+function buildLocalCodexAuthStatus(authState?: LocalCodexAuthStateLike | null): string {
+  const mode = String(authState?.authMode || '').trim().toLowerCase();
+  if (mode === 'apikey') {
+    return '当前是 API Key 模式';
+  }
+  if (mode === 'chatgpt' || mode === 'oauth') {
+    return '当前是 OAuth / ChatGPT 模式';
+  }
+  if (authState?.hasOpenAIAPIKey) {
+    return '当前检测到 API Key';
+  }
+  if (authState?.hasTokens) {
+    return '当前检测到 OAuth tokens';
+  }
+  return '未检测到本地 auth 状态';
 }
 
 function resolveAuthFileName(account: AccountRecord): string {

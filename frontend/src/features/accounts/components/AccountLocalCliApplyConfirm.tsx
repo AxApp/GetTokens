@@ -9,6 +9,7 @@ import type {
   AccountCliApplyDraft,
   AccountLocalCliRelayKeyLike,
 } from '../model/accountLocalCliMapping';
+import { RELAY_CODEX_REASONING_EFFORT_OPTIONS } from '../model/accountConfig';
 
 interface AccountLocalCliApplyConfirmProps {
   draft: AccountCliApplyDraft;
@@ -28,6 +29,16 @@ interface PreviewFile {
 }
 
 type ClaudeDraft = Extract<AccountCliApplyDraft, { target: 'claude' }>['claude'];
+type CodexDraft = Extract<AccountCliApplyDraft, { target: 'codex' }>['codex'];
+type CodexAuthStrategy = CodexDraft['authStrategy'];
+type CodexModelCatalogProjectionMode = NonNullable<CodexDraft['modelCatalogProjectionMode']>;
+type CodexTextField =
+  | 'apiKey'
+  | 'baseUrl'
+  | 'model'
+  | 'providerID'
+  | 'providerName'
+  | 'reasoningEffort';
 type ClaudeTextField =
   | 'apiKey'
   | 'baseUrl'
@@ -39,6 +50,7 @@ type ClaudeTextField =
   | 'maxOutputTokens'
   | 'apiTimeoutMs';
 type ClaudeBooleanField = 'disableNonEssentialTraffic' | 'claudeCodeAttributionHeader';
+type CodexBooleanField = 'supportsWebsockets';
 
 export default function AccountLocalCliApplyConfirm({
   draft,
@@ -104,6 +116,59 @@ export default function AccountLocalCliApplyConfirm({
       },
     });
   };
+  const handleCodexTextChange = (field: CodexTextField, value: string) => {
+    if (draft.target !== 'codex') {
+      return;
+    }
+    onDraftChange({
+      ...draft,
+      codex: {
+        ...draft.codex,
+        [field]: value,
+        ...(field === 'providerID' ? { providerIDSet: true } : {}),
+        ...(field === 'providerName' ? { providerNameSet: true } : {}),
+        ...(field === 'model' ? { modelSet: true } : {}),
+        ...(field === 'reasoningEffort' ? { reasoningEffortSet: true } : {}),
+      },
+    });
+  };
+  const handleCodexBooleanChange = (field: CodexBooleanField, value: boolean) => {
+    if (draft.target !== 'codex') {
+      return;
+    }
+    onDraftChange({
+      ...draft,
+      codex: {
+        ...draft.codex,
+        [field]: value,
+        ...(field === 'supportsWebsockets' ? { supportsWebsocketsSet: true } : {}),
+      },
+    });
+  };
+  const handleCodexAuthStrategyChange = (value: CodexAuthStrategy) => {
+    if (draft.target !== 'codex') {
+      return;
+    }
+    onDraftChange({
+      ...draft,
+      codex: {
+        ...draft.codex,
+        authStrategy: value,
+      },
+    });
+  };
+  const handleCodexModelCatalogChange = (value: CodexModelCatalogProjectionMode) => {
+    if (draft.target !== 'codex') {
+      return;
+    }
+    onDraftChange({
+      ...draft,
+      codex: {
+        ...draft.codex,
+        modelCatalogProjectionMode: value,
+      },
+    });
+  };
 
   return (
     <ModalFrame
@@ -156,6 +221,79 @@ export default function AccountLocalCliApplyConfirm({
     >
       <div className="grid h-[clamp(24rem,calc(100vh-12rem),38rem)] min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
         <div className="grid min-h-0 content-start gap-3 overflow-auto border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:border-b-0 lg:border-r-2">
+          {draft.target === 'codex' ? (
+            <div className="grid gap-3 border-2 border-[var(--border-muted)] bg-[var(--bg-surface)] p-3">
+              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                Codex 配置
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <CodexSettingsField
+                  label="Provider"
+                  field="providerID"
+                  value={draft.codex.providerID}
+                  onChange={handleCodexTextChange}
+                />
+                <CodexSettingsField
+                  label="Name"
+                  field="providerName"
+                  value={draft.codex.providerName}
+                  onChange={handleCodexTextChange}
+                />
+              </div>
+              <CodexSettingsField
+                label="Model 名称"
+                field="model"
+                value={draft.codex.model}
+                onChange={handleCodexTextChange}
+              />
+              <CodexSettingsField
+                label="Reasoning Effort"
+                field="reasoningEffort"
+                value={draft.codex.reasoningEffort}
+                listID="codex-reasoning-effort-options"
+                onChange={handleCodexTextChange}
+              />
+              <datalist id="codex-reasoning-effort-options">
+                {RELAY_CODEX_REASONING_EFFORT_OPTIONS.map((effort) => (
+                  <option key={effort} value={effort} />
+                ))}
+              </datalist>
+              <label className="grid gap-1">
+                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                  Auth Strategy
+                </span>
+                <select
+                  value={draft.codex.authStrategy}
+                  onChange={(event) => handleCodexAuthStrategyChange(event.target.value as CodexAuthStrategy)}
+                  className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--accent-red)]"
+                >
+                  <option value="replace_auth_with_apikey">覆盖为 API Key</option>
+                  <option value="replace_auth_with_oauth">覆盖为 OAuth</option>
+                  <option value="preserve_chatgpt_auth">保留 ChatGPT Auth</option>
+                </select>
+              </label>
+              <ReadOnlyCodexSetting label="本地 auth 状态" value={draft.codex.localAuthStatus || '未检测到本地 auth 状态'} />
+              <ReadOnlyCodexSetting label="Wire API" value={draft.codex.wireAPI || 'responses'} />
+              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                <span>supports_websockets</span>
+                <input
+                  type="checkbox"
+                  checked={draft.codex.supportsWebsockets}
+                  onChange={(event) => handleCodexBooleanChange('supportsWebsockets', event.target.checked)}
+                  className="h-5 w-5 accent-[var(--accent-red)]"
+                />
+              </label>
+              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                <span>sync_model_catalog</span>
+                <input
+                  type="checkbox"
+                  checked={draft.codex.modelCatalogProjectionMode === 'gettokens'}
+                  onChange={(event) => handleCodexModelCatalogChange(event.target.checked ? 'gettokens' : 'off')}
+                  className="h-5 w-5 accent-[var(--accent-red)]"
+                />
+              </label>
+            </div>
+          ) : null}
           {draft.target === 'claude' ? (
             <div className="grid gap-3 border-2 border-[var(--border-muted)] bg-[var(--bg-surface)] p-3">
               <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -320,6 +458,48 @@ function ClaudeSettingsField({
   );
 }
 
+function CodexSettingsField({
+  label,
+  field,
+  value,
+  listID,
+  onChange,
+}: {
+  label: string;
+  field: CodexTextField;
+  value: string;
+  listID?: string;
+  onChange: (field: CodexTextField, value: string) => void;
+}) {
+  return (
+    <label className="grid min-w-0 gap-1">
+      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        {label}
+      </span>
+      <input
+        type="text"
+        value={value}
+        list={listID}
+        onChange={(event) => onChange(field, event.target.value)}
+        className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-[var(--accent-red)]"
+      />
+    </label>
+  );
+}
+
+function ReadOnlyCodexSetting({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid gap-1">
+      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        {label}
+      </span>
+      <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function SummaryBadge({
   label,
   value,
@@ -396,7 +576,14 @@ function buildPreviewFiles(draft: AccountCliApplyDraft, relayKeyItems: AccountLo
   });
   const configDiffStart = diff.indexOf('--- CODEX_HOME/config.toml');
   const authDiff = configDiffStart >= 0 ? diff.slice(0, configDiffStart).trim() : diff;
-  const configDiff = configDiffStart >= 0 ? diff.slice(configDiffStart).trim() : diff;
+  let configDiff = configDiffStart >= 0 ? diff.slice(configDiffStart).trim() : diff;
+  configDiff = `${configDiff}
+
+@@ model catalog @@
+${draft.codex.modelCatalogProjectionMode === 'gettokens'
+  ? '+model_catalog_json = "gettokens-model-catalog.json"'
+  : '-model_catalog_json = "gettokens-model-catalog.json" # only when currently GetTokens-owned'}
+# sync_model_catalog ${draft.codex.modelCatalogProjectionMode === 'gettokens' ? 'writes' : 'removes'} the GetTokens-owned Codex /model catalog pointer`;
 
   return [
     ...(draft.codex.authStrategy === 'replace_auth_with_apikey' || draft.codex.authStrategy === 'replace_auth_with_oauth'
