@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FileText, MoreVertical, Power, RotateCw, Terminal, Trash2 } from 'lucide-react';
+import { FileText, MoreVertical, Power, RefreshCw, RotateCw, Terminal, Trash2 } from 'lucide-react';
 import { buildQuotaBlockBadgeLabel, buildQuotaDisplay, extractBilling } from '../model/accountQuota';
 import { buildAccountCardContentText } from '../model/accountCardActions';
 import { writeAccountClipboardText } from '../model/accountClipboard';
@@ -249,7 +249,7 @@ export default function AccountCard({
       interactive={!isSelectionMode && !isPendingDelete}
       overlay={deleteOverlay}
       topActions={
-        <div className="flex shrink-0 flex-col items-end gap-2">
+        <div className="flex shrink-0 items-center justify-end gap-2" data-account-card-ignore-click="true">
           {isSelectionMode ? (
             <label className="flex cursor-pointer items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)]">
               <input
@@ -262,118 +262,136 @@ export default function AccountCard({
             </label>
           ) : null}
           {!isSelectionMode && !isPendingDelete ? (
-            <div ref={actionMenuRef} className="relative" data-account-card-ignore-click="true">
-              <button
-                type="button"
-                aria-label={t('accounts.card_actions')}
-                aria-haspopup="menu"
-                aria-expanded={isActionMenuOpen}
-                onClick={() => setIsActionMenuOpen((prev) => !prev)}
-                className="btn-swiss flex h-8 w-8 items-center justify-center !px-0 !py-0"
-                title={t('accounts.card_actions')}
-              >
-                <MoreVertical size={16} strokeWidth={3} />
-              </button>
-              {isActionMenuOpen ? (
-                <div
-                  role="menu"
-                  className="absolute right-0 top-full z-30 mt-2 w-44 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
+            <>
+              {refreshAction.visible ? (
+                <button
+                  type="button"
+                  aria-label={t(refreshAction.labelKey)}
+                  title={t(refreshAction.labelKey)}
+                  onClick={() => onRefreshQuota(account)}
+                  className="btn-swiss flex h-8 w-8 items-center justify-center !px-0 !py-0"
+                  disabled={!ready || refreshAction.disabled}
                 >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => void copyAccountContent()}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
-                  >
-                    <FileText size={14} strokeWidth={3} />
-                    {t('accounts.copy_account_config')}
-                  </button>
-                  {canMenuReauth ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        if (isOAuthPending) {
-                          return;
-                        }
-                        setIsActionMenuOpen(false);
-                        onStartReauth(account);
-                      }}
-                      disabled={isOAuthPending}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50"
-                    >
-                      <RotateCw size={14} strokeWidth={3} />
-                      {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
-                    </button>
-                  ) : null}
-                  {localCliActions.length > 0 ? (
-                    <>
-                      <div className="my-1 border-t-2 border-dashed border-[var(--border-color)]" />
-                      {localCliActions.map((action) => (
-                        <button
-                          key={action.id}
-                          type="button"
-                          role="menuitem"
-                          disabled={action.disabled}
-                          onClick={() => {
-                            if (action.disabled) {
-                              return;
-                            }
-                            setIsActionMenuOpen(false);
-                            action.onSelect(account);
-                          }}
-                          title={action.disabledReason || action.detail || action.label}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Terminal size={14} strokeWidth={3} className="shrink-0" />
-                          <span>{action.label}</span>
-                        </button>
-                      ))}
-                    </>
-                  ) : null}
-                  {canToggleDisabled ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setIsActionMenuOpen(false);
-                        onToggleDisabled(account);
-                      }}
-                      disabled={!ready || isStatusPending}
-                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50 ${
-                        account.disabled ? 'text-[var(--text-primary)]' : 'text-[var(--color-status-danger)]'
-                      }`}
-                    >
-                      <Power size={14} strokeWidth={3} />
-                      {isStatusPending ? t('common.loading') : account.disabled ? t('common.enable') : t('common.disable')}
-                    </button>
-                  ) : null}
-                  {showDeleteAction ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setIsActionMenuOpen(false);
-                        onRequestDelete(account.id);
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)]"
-                    >
-                      <Trash2 size={14} strokeWidth={3} />
-                      {t('accounts.card_delete')}
-                    </button>
-                  ) : null}
-                  {copyState !== 'idle' ? (
-                    <div
-                      className={`border-t border-dashed border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
-                        copyState === 'success' ? 'text-[var(--color-status-success)]' : 'text-[var(--color-status-danger)]'
-                      }`}
-                    >
-                      {copyState === 'success' ? t('accounts.copy_done') : t('accounts.copy_failed')}
-                    </div>
-                  ) : null}
-                </div>
+                  <RefreshCw
+                    size={16}
+                    strokeWidth={3}
+                    className={refreshAction.disabled ? 'animate-spin' : undefined}
+                  />
+                </button>
               ) : null}
-            </div>
+              <div ref={actionMenuRef} className="relative">
+                <button
+                  type="button"
+                  aria-label={t('accounts.card_actions')}
+                  aria-haspopup="menu"
+                  aria-expanded={isActionMenuOpen}
+                  onClick={() => setIsActionMenuOpen((prev) => !prev)}
+                  className="btn-swiss flex h-8 w-8 items-center justify-center !px-0 !py-0"
+                  title={t('accounts.card_actions')}
+                >
+                  <MoreVertical size={16} strokeWidth={3} />
+                </button>
+                {isActionMenuOpen ? (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full z-30 mt-2 w-44 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void copyAccountContent()}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                    >
+                      <FileText size={14} strokeWidth={3} />
+                      {t('accounts.copy_account_config')}
+                    </button>
+                    {canMenuReauth ? (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          if (isOAuthPending) {
+                            return;
+                          }
+                          setIsActionMenuOpen(false);
+                          onStartReauth(account);
+                        }}
+                        disabled={isOAuthPending}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50"
+                      >
+                        <RotateCw size={14} strokeWidth={3} />
+                        {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
+                      </button>
+                    ) : null}
+                    {localCliActions.length > 0 ? (
+                      <>
+                        <div className="my-1 border-t-2 border-dashed border-[var(--border-color)]" />
+                        {localCliActions.map((action) => (
+                          <button
+                            key={action.id}
+                            type="button"
+                            role="menuitem"
+                            disabled={action.disabled}
+                            onClick={() => {
+                              if (action.disabled) {
+                                return;
+                              }
+                              setIsActionMenuOpen(false);
+                              action.onSelect(account);
+                            }}
+                            title={action.disabledReason || action.detail || action.label}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <Terminal size={14} strokeWidth={3} className="shrink-0" />
+                            <span>{action.label}</span>
+                          </button>
+                        ))}
+                      </>
+                    ) : null}
+                    {canToggleDisabled ? (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsActionMenuOpen(false);
+                          onToggleDisabled(account);
+                        }}
+                        disabled={!ready || isStatusPending}
+                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50 ${
+                          account.disabled ? 'text-[var(--text-primary)]' : 'text-[var(--color-status-danger)]'
+                        }`}
+                      >
+                        <Power size={14} strokeWidth={3} />
+                        {isStatusPending ? t('common.loading') : account.disabled ? t('common.enable') : t('common.disable')}
+                      </button>
+                    ) : null}
+                    {showDeleteAction ? (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setIsActionMenuOpen(false);
+                          onRequestDelete(account.id);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)]"
+                      >
+                        <Trash2 size={14} strokeWidth={3} />
+                        {t('accounts.card_delete')}
+                      </button>
+                    ) : null}
+                    {copyState !== 'idle' ? (
+                      <div
+                        className={`border-t border-dashed border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
+                          copyState === 'success' ? 'text-[var(--color-status-success)]' : 'text-[var(--color-status-danger)]'
+                        }`}
+                      >
+                        {copyState === 'success' ? t('accounts.copy_done') : t('accounts.copy_failed')}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </>
           ) : null}
         </div>
       }
@@ -391,11 +409,17 @@ export default function AccountCard({
             {refreshAction.visible ? (
               <button
                 type="button"
+                aria-label={t(refreshAction.labelKey)}
+                title={t(refreshAction.labelKey)}
                 onClick={() => onRefreshQuota(account)}
-                className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                className="btn-swiss account-card-footer-refresh-button flex items-center justify-center !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                 disabled={!ready || refreshAction.disabled}
               >
-                {t(refreshAction.labelKey)}
+                <RefreshCw
+                  size={15}
+                  strokeWidth={3}
+                  className={refreshAction.disabled ? 'animate-spin' : undefined}
+                />
               </button>
             ) : null}
             {showFooterReauthAction && canReauth ? (

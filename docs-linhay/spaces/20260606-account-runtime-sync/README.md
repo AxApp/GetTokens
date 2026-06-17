@@ -117,6 +117,13 @@
 
 ## 实施记录
 
+2026-06-17 追加单卡刷新入口图标化修复：
+
+1. 问题来源：用户截图反馈 DeepSeek 卡片顶部显示“三点菜单”，但处于“等待检测”的单卡预期应有显式刷新/同步入口；随后明确底部也应是刷新按钮，而不是纯文本“同步运行状态”。
+2. 当前事实位置：`frontend/src/features/accounts/components/AccountCard.tsx` 的 `topActions` 固定渲染 `MoreVertical` 账号操作菜单；`buildAccountCardRefreshAction()` 只用于 footer 文本按钮，因此 DeepSeek/openai-compatible runtime-only 卡片右上角不会显示刷新图标。
+3. 修复边界：保留右上角三点菜单承接复制、重登、禁用、删除等账号操作；新增同一 top action rail 内的 `RefreshCw` 快捷按钮；footer 右侧刷新动作也改为 `RefreshCw` 图标按钮；两处都调用既有 `onRefreshQuota(account)`，文案和禁用态复用 `refreshAction.labelKey / disabled`。
+4. 预期验收：source-level 回归测试固定右上角和 footer 都存在 refresh icon button；账号卡布局测试确认 header 预留两个按钮宽度，避免标题与按钮重叠。
+
 2026-06-08 追加导入后手动刷新卡顿修复证据：
 
 1. 问题来源：用户反馈导入 1000 个账号后导入界面与导入后的刷新都很卡，并明确提出“应该建立请求池来控制请求数”。
@@ -143,6 +150,20 @@
 7. 同步调整账号详情 action source-level 断言冲突，保持只读模式不显示脚本 action。
 
 ## 验证记录
+
+2026-06-17 已通过：
+
+```bash
+node --test frontend/src/features/accounts/tests/accountCardInteractions.test.mjs
+node --test frontend/src/features/accounts/tests/accountCardLayout.test.mjs
+npm --prefix frontend run typecheck
+```
+
+无头浏览器预览：
+
+- URL：`http://127.0.0.1:5173/?preview=accounts#frame=accounts`
+- DOM 断言：`accountCardCount=22`、`topActionsCount=22`、`footerRefreshButtonCount=22`、`menuCount=22`、`textSyncRuntimeCount=0`、`textRefreshQuotaCount=0`、`hasDeepSeek=true`
+- 截图：`screenshots/20260617/accounts/20260617-account-card-refresh-icons-after-v02.png`
 
 2026-06-06 已通过：
 

@@ -146,6 +146,19 @@ test('account card refresh action keeps quota label for quota-capable accounts',
   });
 });
 
+test('account card top and footer actions expose refresh icon buttons', async () => {
+  const source = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+  const attributionSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /RefreshCw/);
+  assert.match(source, /aria-label=\{t\(refreshAction\.labelKey\)\}/);
+  assert.match(source, /title=\{t\(refreshAction\.labelKey\)\}/);
+  assert.match(source, /onClick=\{\(\) => onRefreshQuota\(account\)\}/);
+  assert.match(source, /<MoreVertical size=\{16\} strokeWidth=\{3\} \/>/);
+  assert.match(source, /account-card-footer-refresh-button/);
+  assert.match(attributionSource, /topActions \? 'pr-20' : ''/);
+});
+
 test('accounts import modal opens with app-local copied account payload when available', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 

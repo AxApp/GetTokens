@@ -179,7 +179,7 @@ export default function AttributionCard({
     >
       <div className="account-card-header relative flex min-h-[112px] items-start gap-4 border-b-[3px] border-[var(--border-color)] px-4 py-4">
         {leadingAction ? <div className="shrink-0">{leadingAction}</div> : null}
-        <div className={`min-w-0 flex-1 space-y-3 ${topActions ? 'pr-10' : ''}`}>
+        <div className={`min-w-0 flex-1 space-y-3 ${topActions ? 'pr-20' : ''}`}>
           {eyebrow || eyebrowPrefix ? (
             <div className="flex min-w-0 items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {eyebrowPrefix ? (
