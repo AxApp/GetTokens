@@ -89,7 +89,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
 }
 
 export function buildQuotaBlockBadgeLabel(quotaDisplay: QuotaDisplay, t: Translator) {
-  if (!quotaDisplay.blocked) {
+  if (!hasQuotaEmptyBlock(quotaDisplay)) {
     return '';
   }
 
@@ -102,6 +102,34 @@ export function buildQuotaBlockBadgeLabel(quotaDisplay: QuotaDisplay, t: Transla
     : translated.replace('{window}', window?.label || '').trim();
   const reset = resolveBlockedQuotaReset(quotaDisplay, window);
   return reset ? `${baseLabel} · ${reset}` : baseLabel;
+}
+
+export function hasQuotaEmptyBlock(quotaDisplay: QuotaDisplay) {
+  if (!quotaDisplay.blocked) {
+    return false;
+  }
+
+  return readQuotaBlockSources(quotaDisplay).some((source) => {
+    const sourceName = source.source.toLowerCase();
+    const reason = source.reason.toLowerCase();
+    return (
+      sourceName === 'quota-empty' ||
+      reason.includes('quota empty') ||
+      reason.includes('quota exhausted')
+    );
+  });
+}
+
+function readQuotaBlockSources(quotaDisplay: QuotaDisplay) {
+  const sources = (quotaDisplay.sources || []).map((source) => ({
+    source: String(source.source || '').trim(),
+    reason: String(source.reason || '').trim(),
+  }));
+  const blockReason = String(quotaDisplay.blockReason || '').trim();
+  if (blockReason) {
+    sources.push({ source: '', reason: blockReason });
+  }
+  return sources.filter((source) => source.source || source.reason);
 }
 
 function resolveBlockedQuotaWindow(quotaDisplay: QuotaDisplay) {

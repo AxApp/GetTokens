@@ -168,6 +168,35 @@ test('quota blocked badge localizes quota empty reason and reset time', () => {
   }
 });
 
+test('quota blocked badge ignores non quota-empty guard sources', () => {
+  const quotaDisplay = buildQuotaDisplay(quotaAccount, {
+    status: 'success',
+    quota: {
+      ...quotaState.quota,
+      windows: [
+        { id: 'five-hour', label: '5H', remainingPercent: 99, resetLabel: '06/17 22:49', resetAtUnix: 1781707748 },
+        { id: 'weekly', label: '7D', remainingPercent: 75, resetLabel: '06/24 01:54', resetAtUnix: 1782237277 },
+      ],
+      status: 'success',
+      blocked: true,
+      blockReason: 'account disabled',
+      sources: [
+        {
+          source: 'manual-disabled',
+          reason: 'account disabled',
+        },
+      ],
+    },
+  });
+  const zh = (key) =>
+    ({
+      'accounts.quota_empty_badge': '额度已空',
+      'accounts.quota_empty_badge_with_window': '{window} 已空',
+    })[key] || key;
+
+  assert.equal(buildQuotaBlockBadgeLabel(quotaDisplay, zh), '');
+});
+
 test('filterAccounts applies text query across key fields', () => {
   const accounts = [
     {

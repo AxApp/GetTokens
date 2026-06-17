@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FileText, MoreVertical, Power, RefreshCw, RotateCw, Terminal, Trash2 } from 'lucide-react';
-import { buildQuotaBlockBadgeLabel, buildQuotaDisplay, extractBilling } from '../model/accountQuota';
+import { buildQuotaBlockBadgeLabel, buildQuotaDisplay, extractBilling, hasQuotaEmptyBlock } from '../model/accountQuota';
 import { buildAccountCardContentText } from '../model/accountCardActions';
 import { writeAccountClipboardText } from '../model/accountClipboard';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
@@ -122,7 +122,7 @@ export default function AccountCard({
         ? 'warning'
       : resolveAccountStatusTone(account);
   const guardTone = rateLimitStateTone(rateLimitStatus);
-  const quotaBlocked = quotaDisplay.blocked === true;
+  const quotaBlocked = hasQuotaEmptyBlock(quotaDisplay);
   const cardTone =
     guardTone === 'critical' || quotaBlocked
       ? 'critical'
@@ -138,8 +138,9 @@ export default function AccountCard({
   if (rateLimitStatus?.blocked) {
     badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
   }
-  if (quotaBlocked) {
-    badges.push({ label: buildQuotaBlockBadgeLabel(quotaDisplay, t) || t('accounts.quota_empty_badge'), tone: 'critical' });
+  const quotaBlockBadgeLabel = buildQuotaBlockBadgeLabel(quotaDisplay, t);
+  if (quotaBlockBadgeLabel) {
+    badges.push({ label: quotaBlockBadgeLabel, tone: 'critical' });
   }
   const canToggleDisabled = canToggleRotationAccountDisabled(account);
 
