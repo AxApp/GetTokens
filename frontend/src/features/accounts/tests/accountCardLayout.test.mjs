@@ -105,6 +105,18 @@ test('quota bars surface stale runtime error reason on cards and details', async
   assert.match(source, /quotaDisplay\.stale/);
 });
 
+test('quota bars keep sidecar quota fact diagnostics out of normal cards', async () => {
+  const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(source, /QuotaFactEvidenceStrip/);
+  assert.doesNotMatch(source, /data-account-quota-fact-evidence/);
+  assert.doesNotMatch(source, /FACT \{fact\.state\}/);
+  assert.doesNotMatch(source, /fact\.evidenceRefs/);
+  assert.doesNotMatch(source, /formatQuotaRuntimeTimestampDisplay\(fact\.observedAt\)/);
+  assert.doesNotMatch(source, /formatQuotaRuntimeTimestampDisplay\(fact\.expiresAt\)/);
+  assert.doesNotMatch(source, /resolveQuotaFact\(/);
+});
+
 test('quota bar fill color is derived only from remaining quota value', async () => {
   const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 
