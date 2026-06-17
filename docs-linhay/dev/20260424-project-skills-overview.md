@@ -34,6 +34,8 @@
 
 ## 当前 Skills
 
+读取优先级：GetTokens 项目级 skill 的权威来源是本仓 `.agents/skills/<skill-name>/SKILL.md`。当任务触发 `gettokens-*` 或本仓安装的外部 project skill 时，先读仓库内版本；全局技能目录找不到只能说明全局未安装，不能判断项目级 skill 不存在。
+
 1. `.agents/skills/gettokens-ops-governance`
    **项目运营与治理**。整合了 Wails 开发回路（重启规则、就绪模型）、`spaces` 工作空间治理、文档与记忆写回流程、AGENTS 同步、subagent 监督交付闭环、release 分发验收，以及会话技能蒸馏。它定义了“如何在 GetTokens 仓库里正确地工作”。
 

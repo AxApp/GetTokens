@@ -60,6 +60,7 @@
 27. 每个候选问题进入修复前必须先有确凿证据：至少包含 backlog/体验报告/用户反馈等问题来源、当前代码或 UI 的事实位置、可复现现象或缺失证明、预期验收方式。只有猜测、直觉优先级或未复核的 backlog 条目不得直接进入代码修改；证据不足时只能进入调研、方案或标记为待证实。
 28. 外部 skills / prompt library / agent workflow 只能作为参考输入，不默认全量安装或照搬；吸收前必须先通过项目级 skill admission gate，并落到 `AGENTS.md`、项目级 `skills`、`docs-linhay/dev/`、领域词汇表、space 或 memory 的正确层级。
 29. 非平凡 GetTokens 任务开始前必须完成项目级 context setup；跨层需求默认先走一条 tracer-bullet 端到端行为链。细则见 `gettokens-ops-governance` 与 `docs-linhay/dev/20260616-agent-skill-operating-model.md`。
+30. GetTokens 项目级 skill 的权威读取路径是本仓 `.agents/skills/<skill-name>/SKILL.md`。当 AGENTS、dev 文档或任务语义指向 `gettokens-*` 等项目级 skill 时，必须优先读取本仓版本；全局技能目录只作为补充来源，不能因全局目录缺失就判断项目级 skill 不存在。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。
@@ -138,6 +139,7 @@ Git `worktree` 治理：
 5. 完整源码型本地参考项目默认不进入 git；`docs-linhay/references/` 只提交根部 Markdown 索引、调研摘要和必要的小型资料，参考项目源码目录由 `.gitignore` 忽略。既有已跟踪参考目录视为历史遗留，后续新增参考项目必须遵循“不提交源码目录，只提交调研结论”的规则。
 
 项目级 skills：
+GetTokens 项目级 skill 以本仓 `.agents/skills/<skill-name>/SKILL.md` 为准；触发到项目级 skill 时先读本仓版本，再考虑全局技能目录中的通用补充。
 1. 涉及 `space` 创建、命名、README 模板或截图归档时，优先使用 `gettokens-ops-governance`。
 2. 涉及文档写回或 memory 写回时，优先使用 `gettokens-ops-governance`。
 3. 涉及 AGENTS 级长期治理规则时，优先使用 `gettokens-ops-governance`；若用户明确说“整理”，同时使用 `gettokens-session-skill-distill`。

@@ -32,7 +32,7 @@
 
 1. 读取当前 `AGENTS.md`，确认是否有本轮新增或调整过的硬规则。
 2. 运行 `git status --short`，识别已有脏文件，避免吸收无关改动。
-3. 找到相关 `space`、`docs-linhay/dev/` 文档、领域 skill 和当天 memory。
+3. 找到相关 `space`、`docs-linhay/dev/` 文档、领域 skill 和当天 memory。领域或治理 skill 优先从本仓 `.agents/skills/<skill-name>/SKILL.md` 读取；全局技能目录只是补充来源，不能用全局缺失否定项目级 skill。
 4. 如果需求涉及 sidecar / Wails / frontend / dev bridge / native runtime，先写清权威事实源和验收证据。
 5. 如果出现术语歧义，先查 `docs-linhay/dev/20260616-gettokens-domain-glossary.md`，缺词再补。
 6. 对功能实现先列 BDD 场景和证据门禁，再进入红灯测试或最小实现。
