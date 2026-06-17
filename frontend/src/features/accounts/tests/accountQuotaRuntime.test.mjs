@@ -112,7 +112,33 @@ test('buildQuotaDisplay reads snake case quota runtime states from Wails status 
   ]);
 });
 
-test('quota percent progress uses used ratio while preserving remaining quota semantics', () => {
+test('regular quota percent progress keeps remaining quota as the display value', () => {
+  const display = buildQuotaDisplay(quotaCapableAccount, {
+    status: 'success',
+    quota: {
+      account_key: 'acct_codex_001',
+      status: 'success',
+      plan_type: 'pro',
+      windows: [
+        {
+          id: 'five-hour',
+          label: '5H',
+          remaining_percent: 40,
+          used_tokens: 24_000_000,
+          limit_tokens: 60_000_000,
+          reset_label: '06/11 00:34',
+        },
+      ],
+    },
+  });
+
+  assert.equal(display.status, 'success');
+  const [window] = display.windows;
+  assert.equal(window.remainingPercent, 40);
+  assert.equal(window.usedLabel, '60%');
+});
+
+test('xiaomi mimo quota normalizes upstream usage into remaining quota for card display', () => {
   const display = buildQuotaDisplay(quotaCapableAccount, {
     status: 'success',
     quota: {

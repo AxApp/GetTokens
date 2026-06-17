@@ -7,9 +7,7 @@ import { buildRateLimitGuardRows, type RateLimitState } from '../model/rateLimit
 import { formatLabel } from '../model/vendorPresetHelpers';
 import {
   formatQuotaResetDisplayWithUnix,
-  formatQuotaWindowUsageLabel,
   hasDisplayableBilling,
-  resolveQuotaWindowUsagePercent,
 } from '../model/accountQuota';
 import { resolveQuotaRemainingFillClass } from '../model/quotaColor';
 import { buildRuntimeWarningDisplay } from '../model/runtimeWarning';
@@ -171,10 +169,10 @@ export function QuotaBars({ quotaDisplay, t, showDivider = true }: QuotaBarsProp
         const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
         const valueLabel = displayMode === 'tokens' && hasQuotaTokenProgress(window)
           ? formatQuotaTokenProgress(window)
-          : formatQuotaWindowUsageLabel(window);
+          : formatQuotaPercent(window);
         const fillPercent = displayMode === 'tokens' && hasQuotaTokenProgress(window)
           ? resolveQuotaTokenFillPercent(window)
-          : resolveQuotaWindowUsagePercent(window);
+          : window.remainingPercent;
         const fillClass = fillPercent === null
           ? ''
           : window.remainingPercent !== null
@@ -237,9 +235,13 @@ function hasQuotaTokenProgress(window: QuotaWindowDisplay) {
   return typeof window.usedTokens === 'number' && typeof window.limitTokens === 'number' && window.limitTokens > 0;
 }
 
+function formatQuotaPercent(window: QuotaWindowDisplay) {
+  return window.remainingPercent === null ? '--' : `${window.remainingPercent}%`;
+}
+
 function formatQuotaTokenProgress(window: QuotaWindowDisplay) {
   if (!hasQuotaTokenProgress(window)) {
-    return formatQuotaWindowUsageLabel(window);
+    return formatQuotaPercent(window);
   }
   return `${formatTokenMetric(window.usedTokens)} / ${formatTokenMetric(window.limitTokens)}`;
 }
