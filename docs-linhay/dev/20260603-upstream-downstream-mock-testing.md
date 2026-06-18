@@ -62,6 +62,8 @@
 
 同类任务进入实现前，先判断上下游边界，并优先补一条失败测试证明：只要 mock 上游输入变化，当前流程能稳定给出预期下游行为或诊断结果。只有在单元 / 流程测试通过后，再补真实桌面、sidecar 或打包级 smoke。
 
+每个实现 slice 开工前必须在计划或提交说明里点名本轮的 mock upstream facts 与 mock downstream / spy outputs。如果上下游 pair 说不清，说明 seam 还没打开，应停在调研或 space 计划补齐，不直接接真实服务、真实账号或真实外部请求。
+
 ## 2026-06-18 Account Budget Guard / Route Engine 应用
 
 用户明确要求后续逐步围绕 mock upstream + mock downstream 的形式构造测试。该要求作为 Route Engine、Account Budget Guard、route guard source、quota threshold、usage calibration 等后续实现的默认测试方式。
