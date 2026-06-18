@@ -177,6 +177,21 @@
 
 本期仍不内置 `sub2api/new-api` 的生产 quota / billing 模板；管理接口继续使用 `openai_chat` 管理 base URL 与用户自定义 cURL。真实部署联调也不在本期范围内。
 
+## 2026-06-18 sub2api reset 功能 intake
+
+本轮按用户要求更新本地 sub2api 参考源码：docs-linhay/references/sub2api/ 已从 635ad81c 快进到 4a5665da（origin/main，v0.1.137）。
+
+捞出的新增 reset 相关能力主要来自上游 b8169492：
+
+1. 新增 OpenAI OAuth 账号的 quota/reset credit 查询：GET https://chatgpt.com/backend-api/wham/usage。
+2. 新增消费一次 reset credit：POST https://chatgpt.com/backend-api/wham/rate-limit-reset-credits/consume。
+3. 两个请求都需要 OpenAI OAuth access token、chatgpt-account-id、Codex Desktop originator/header 语义，并应复用账号代理/TLS 指纹策略。
+4. 前端新增 OpenAIQuotaResetCell，把“查询重置次数”和“重置”合成一个账号用量动作区。
+
+GetTokens 当前只完成参考提取，不直接落地实现。该动作会真实消耗用户 OpenAI reset credit，后续若接入必须放在 sidecar management API 内，以 fake upstream 红灯测试先覆盖 token、account id、headers、0 credits、401/403、429 和 consume success 分支。
+
+详细 intake：plans/20260618-sub2api-openai-quota-reset-intake.md。
+
 ## 2026-06-06 实现进展
 
 1. 已补齐账号详情页三端配置展示与保存链路：

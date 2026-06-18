@@ -61,3 +61,16 @@
 ## 后续执行规则
 
 同类任务进入实现前，先判断上下游边界，并优先补一条失败测试证明：只要 mock 上游输入变化，当前流程能稳定给出预期下游行为或诊断结果。只有在单元 / 流程测试通过后，再补真实桌面、sidecar 或打包级 smoke。
+
+## 2026-06-18 Account Budget Guard / Route Engine 应用
+
+用户明确要求后续逐步围绕 mock upstream + mock downstream 的形式构造测试。该要求作为 Route Engine、Account Budget Guard、route guard source、quota threshold、usage calibration 等后续实现的默认测试方式。
+
+执行要求：
+
+1. 先用 mock upstream 固定输入事实：fake quota window、fake usage aggregator、injected clock、fake account inventory、fake live sessions、fixture request context。
+2. 再用 mock downstream / spy 验证输出行为：route decision sink、fake executor、fake runtime source store、calibration ledger、Wails/frontend fixture DTO。
+3. 第一批测试优先覆盖 daily / multi-day / bounded window、手动有效用量修改、quota threshold、stale/degraded 不强阻断、drain 不中断已有 stream、block 不调用 executor、calibration revoke、provider quota-empty 优先级。
+4. 真实 dev App、真实账号、真实 OpenAI quota、真实 Codex 请求只作为后置 smoke，不作为第一验证路径。
+
+这一条不是只服务 Account Budget Guard。后续所有涉及 sidecar 热路径、路由决策、quota / usage、live sessions、route guard 回写的流程，都应优先按此方式先构造可复现测试。

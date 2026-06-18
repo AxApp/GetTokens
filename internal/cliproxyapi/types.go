@@ -559,6 +559,52 @@ type QuotaRefreshBatchResult struct {
 	Failed    int                      `json:"failed"`
 }
 
+type OpenAIQuotaResetUsage struct {
+	UserID                string                         `json:"user_id,omitempty"`
+	AccountID             string                         `json:"account_id,omitempty"`
+	Email                 string                         `json:"email,omitempty"`
+	PlanType              string                         `json:"plan_type,omitempty"`
+	RateLimitResetCredits *OpenAIQuotaResetCreditBalance `json:"rate_limit_reset_credits,omitempty"`
+}
+
+type OpenAIQuotaResetCreditBalance struct {
+	AvailableCount int `json:"available_count"`
+}
+
+type OpenAIQuotaResetCredit struct {
+	ID              string `json:"id,omitempty"`
+	ResetType       string `json:"reset_type,omitempty"`
+	Status          string `json:"status,omitempty"`
+	GrantedAt       string `json:"granted_at,omitempty"`
+	ExpiresAt       string `json:"expires_at,omitempty"`
+	RedeemStartedAt string `json:"redeem_started_at,omitempty"`
+	RedeemedAt      string `json:"redeemed_at,omitempty"`
+}
+
+type OpenAIQuotaResetCreditInfo struct {
+	AccountKey     string                 `json:"account_key"`
+	Status         string                 `json:"status"`
+	AvailableCount int                    `json:"available_count"`
+	PlanType       string                 `json:"plan_type,omitempty"`
+	FetchedAt      int64                  `json:"fetched_at"`
+	QuotaState     *QuotaRuntimeState     `json:"quota_state,omitempty"`
+	Usage          *OpenAIQuotaResetUsage `json:"usage,omitempty"`
+}
+
+type OpenAIQuotaResetConsumeResult struct {
+	AccountKey             string                  `json:"account_key"`
+	Status                 string                  `json:"status"`
+	Code                   string                  `json:"code,omitempty"`
+	Credit                 *OpenAIQuotaResetCredit `json:"credit,omitempty"`
+	WindowsReset           int                     `json:"windows_reset"`
+	AvailableCount         int                     `json:"available_count"`
+	PlanType               string                  `json:"plan_type,omitempty"`
+	FetchedAt              int64                   `json:"fetched_at"`
+	QuotaState             *QuotaRuntimeState      `json:"quota_state,omitempty"`
+	PostResetRefreshStatus string                  `json:"post_reset_refresh_status,omitempty"`
+	PostResetRefreshError  string                  `json:"post_reset_refresh_error,omitempty"`
+}
+
 type QuotaRefreshBatchJob struct {
 	JobID       string                   `json:"job_id"`
 	Status      string                   `json:"status"`

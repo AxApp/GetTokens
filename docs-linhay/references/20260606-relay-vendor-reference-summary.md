@@ -105,3 +105,18 @@
 3. `new-api` 是否只提供占位地址/本地部署语义，而不预填官方公网地址
 4. `vendorPresets` 是否都需要新增这两个项目
 5. `openAICompatibleProviderPresets` 是否也需要新增这两个项目
+
+## 2026-06-18 sub2api reset 功能更新摘录
+
+本地参考项目 docs-linhay/references/sub2api/ 已从 635ad81c 快进到 4a5665da（origin/main，v0.1.137）。
+
+本轮新增可复用信息不是 relay vendor preset 本身，而是 sub2api 上游新增的 OpenAI OAuth quota reset 能力：
+
+1. b8169492 新增 backend/internal/service/openai_quota_service.go，用 OpenAI OAuth access token 调 chatgpt.com backend-api：
+   - GET /backend-api/wham/usage 查询 rate limit window 与 rate_limit_reset_credits.available_count。
+   - POST /backend-api/wham/rate-limit-reset-credits/consume 消费一次 reset credit。
+2. 请求需要 Codex Desktop 语义 header：authorization、chatgpt-account-id、originator=Codex Desktop、oai-language、sec-fetch-*、priority；reset POST 还需要 application/json body。
+3. sub2api 前端新增 OpenAIQuotaResetCell，在 OpenAI OAuth 账号用量行展示“次数 N”和“重置”动作。
+4. 对 GetTokens 的结论：这是 sidecar 运行态动作，不是 vendor preset 静态模板；不能由前端直连，也不能只作为 quota curl 模板。若落地，应在 GetTokens sidecar 内实现 query/consume management API，并在 consume 成功后刷新现有 quota-status / route guard。
+
+详细边界记录见 docs-linhay/spaces/20260606-relay-vendor-support/plans/20260618-sub2api-openai-quota-reset-intake.md。

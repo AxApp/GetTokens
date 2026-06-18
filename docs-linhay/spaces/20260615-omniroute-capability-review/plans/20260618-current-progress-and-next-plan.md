@@ -148,4 +148,6 @@ Final Completion Wave 只做收口，不再新增横向业务范围。每个完�
 3. 路由执行层：Route Resilience 当前偏证据链和操作面，不是自动 scheduler；后续若做自动切换，需要先定义 sidecar authority 和回滚策略。
 4. 发布边界：sidecar smoke manifest 只证明 test-only evidence，不得直接作为 release artifact；Wails build-readiness 只证明本仓构建链路，不代表正式版 app 已更新。
 
+后续产品化需求与计划已独立落位到 `docs-linhay/spaces/20260618-omniroute-workbench-productization/`，避免与本 Final Completion Wave 的底座收口记录混在一起。
+
 本期可对外表达的用户价值是：GetTokens 后续不会只告诉用户“失败了”，而是能解释失败原因、额度状态、可切换路径、插件写入影响，并通过统一诊断台给出可复现证据。

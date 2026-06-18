@@ -46,6 +46,10 @@ export function CommitAccountMigration() {
   return window['go']['main']['App']['CommitAccountMigration']();
 }
 
+export function ConsumeOpenAIQuotaResetCredit(arg1) {
+  return window['go']['main']['App']['ConsumeOpenAIQuotaResetCredit'](arg1);
+}
+
 export function ConsumePendingDeepLinks() {
   return window['go']['main']['App']['ConsumePendingDeepLinks']();
 }
@@ -300,6 +304,10 @@ export function GetLocalProjectedUsageSettings() {
 
 export function GetOAuthStatus(arg1) {
   return window['go']['main']['App']['GetOAuthStatus'](arg1);
+}
+
+export function GetOpenAIQuotaResetCredit(arg1) {
+  return window['go']['main']['App']['GetOpenAIQuotaResetCredit'](arg1);
 }
 
 export function GetQuotaStatus(arg1) {

@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { AccountRecord, ApiFormat, BillingDisplay } from '../../../types';
+import type { main } from '../../../../wailsjs/go/models';
+import {
+  ConsumeOpenAIQuotaResetCredit,
+  GetOpenAIQuotaResetCredit,
+} from '../../../../wailsjs/go/main/App';
 import { useI18n } from '../../../context/I18nContext';
 import { toErrorMessage } from '../../../utils/error';
 import {
@@ -80,6 +85,7 @@ interface VerifyConnectionPanelProps {
 }
 
 type AccountQuotaLayoutMode = 'split' | 'stack';
+type OpenAIQuotaResetModalStatus = 'confirm' | 'loading' | 'success' | 'error';
 
 export interface AccountQuotaSectionProps {
   account: AccountRecord;
@@ -95,6 +101,13 @@ export interface AccountQuotaSectionProps {
   topBorder?: boolean;
   headerDivider?: boolean;
   layoutMode?: AccountQuotaLayoutMode;
+}
+
+interface OpenAIQuotaResetModalState {
+  open: boolean;
+  status: OpenAIQuotaResetModalStatus;
+  message: string;
+  result?: main.OpenAIQuotaResetConsumeResult;
 }
 
 export interface AccountBillingSectionProps {
@@ -1167,14 +1180,25 @@ export function AccountQuotaSection({
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
-  const liveWindows = quotaState?.quota ? selectQuotaWindows(quotaState.quota) : [];
+  const [resetInfo, setResetInfo] = useState<main.OpenAIQuotaResetCreditInfo | null>(null);
+  const [resetQueryStatus, setResetQueryStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [resetQueryMessage, setResetQueryMessage] = useState('');
+  const [resetQuotaState, setResetQuotaState] = useState<CodexQuotaState | undefined>();
+  const [resetModal, setResetModal] = useState<OpenAIQuotaResetModalState>({
+    open: false,
+    status: 'confirm',
+    message: '',
+  });
+  const isOpenAIAuthFileQuotaReset = account.credentialSource === 'auth-file' && (account.accountKind === 'auth-file' || account.provider === 'codex');
+  const effectiveQuotaState = resetQuotaState ?? quotaState;
+  const liveWindows = effectiveQuotaState?.quota ? selectQuotaWindows(effectiveQuotaState.quota) : [];
   const runtimeQuotaDisplay = useMemo(() => buildQuotaDisplay({
     ...account,
     quotaEnabled: draft.quotaEnabled,
     quotaCurl: draft.quotaCurl,
     billingEnabled: draft.billingEnabled,
     billingCurl: draft.billingCurl,
-  }, quotaState), [account, draft.quotaEnabled, draft.quotaCurl, draft.billingEnabled, draft.billingCurl, quotaState]);
+  }, effectiveQuotaState), [account, draft.quotaEnabled, draft.quotaCurl, draft.billingEnabled, draft.billingCurl, effectiveQuotaState]);
   const testQuotaDisplay = useMemo(() => normalizeQuotaTestDisplay(testResult), [testResult]);
   const visibleQuotaDisplay = quotaDisplay?.windows?.length
     ? quotaDisplay
@@ -1247,6 +1271,11 @@ export function AccountQuotaSection({
     setTestStatus('idle');
     setTestMessage('');
     setTestResult(null);
+    setResetInfo(null);
+    setResetQueryStatus('idle');
+    setResetQueryMessage('');
+    setResetQuotaState(undefined);
+    setResetModal({ open: false, status: 'confirm', message: '' });
   }, [account.id]);
 
   async function runQuotaTest() {
@@ -1270,8 +1299,92 @@ export function AccountQuotaSection({
     }
   }
 
+  async function queryOpenAIQuotaResetCredit() {
+    if (!isOpenAIAuthFileQuotaReset || !account.quotaKey) return;
+    setResetQueryStatus('loading');
+    setResetQueryMessage('');
+    try {
+      const result = await GetOpenAIQuotaResetCredit(account.quotaKey);
+      setResetInfo(result);
+      setResetQuotaState(result.quotaState ? { status: 'success', quota: result.quotaState } : undefined);
+      setResetQueryStatus('success');
+    } catch (error) {
+      setResetQueryMessage(toErrorMessage(error));
+      setResetQueryStatus('error');
+    }
+  }
+
+  function openResetConfirmation() {
+    if (!resetCreditKnown || (resetInfo?.availableCount ?? 0) <= 0) {
+      return;
+    }
+    setResetModal({ open: true, status: 'confirm', message: '' });
+  }
+
+  async function confirmOpenAIQuotaReset() {
+    if (!account.quotaKey) return;
+    if (!resetCreditKnown || (resetInfo?.availableCount ?? 0) <= 0) {
+      setResetModal({
+        open: true,
+        status: 'error',
+        message: '没有可用重置次数，请先查询最新重置次数。',
+      });
+      return;
+    }
+    setResetModal({ open: true, status: 'loading', message: '正在重置额度窗口...' });
+    try {
+      const result = await ConsumeOpenAIQuotaResetCredit(account.quotaKey);
+      setResetInfo({
+        accountKey: result.accountKey,
+        status: result.status,
+        availableCount: result.availableCount,
+        planType: result.planType,
+        fetchedAt: result.fetchedAt,
+        quotaState: result.quotaState,
+      } as main.OpenAIQuotaResetCreditInfo);
+      setResetQuotaState(result.quotaState ? { status: 'success', quota: result.quotaState } : undefined);
+      setResetQueryStatus('success');
+      setResetQueryMessage('');
+      setResetModal({
+        open: true,
+        status: 'success',
+        message: '重置成功，已刷新最新额度状态。',
+        result,
+      });
+    } catch (error) {
+      setResetModal({
+        open: true,
+        status: 'error',
+        message: toErrorMessage(error),
+      });
+    }
+  }
+
+  const resetCreditKnown = typeof resetInfo?.availableCount === 'number';
+  const resetCreditAvailable = resetCreditKnown && (resetInfo?.availableCount ?? 0) > 0;
+  const resetCreditLabel = resetCreditKnown ? String(resetInfo?.availableCount ?? 0) + ' 次可用' : '未查询';
   const quotaActions = (
-    readOnlyScripts ? null : <>
+    isOpenAIAuthFileQuotaReset ? (
+      <>
+        <button
+          type="button"
+          onClick={queryOpenAIQuotaResetCredit}
+          disabled={resetQueryStatus === 'loading' || !account.quotaKey}
+          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+        >
+          {resetQueryStatus === 'loading' ? '查询中...' : '查询重置次数'}
+        </button>
+        <button
+          type="button"
+          onClick={openResetConfirmation}
+          disabled={!account.quotaKey || resetQueryStatus === 'loading' || !resetCreditAvailable}
+          title={resetCreditAvailable ? '消耗 1 次 OpenAI reset credit' : resetCreditKnown ? '无可用重置次数' : '请先查询重置次数'}
+          className="btn-swiss !border-[var(--text-primary)] !bg-[var(--text-primary)] !text-[length:var(--font-size-ui-2xs)] !text-[var(--bg-main)]"
+        >
+          重置额度窗口
+        </button>
+      </>
+    ) : readOnlyScripts ? null : <>
       {hasQuotaScript ? (
         <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
           编辑脚本
@@ -1310,6 +1423,31 @@ export function AccountQuotaSection({
 
       <div data-account-quota-layout={layoutMode} className={quotaLayoutClassName}>
         <div data-account-quota-pane="windows" className="grid min-w-0 content-start gap-3">
+          {isOpenAIAuthFileQuotaReset ? (
+            <div data-openai-quota-reset-credit-panel="true" className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    RESET CREDITS
+                  </div>
+                  <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                    {resetCreditLabel}
+                  </div>
+                </div>
+                <AccountDetailPill tone={resetQueryStatus === 'error' ? 'danger' : resetQueryStatus === 'success' ? 'success' : 'neutral'}>
+                  {resetQueryStatus === 'loading' ? 'LOADING' : resetQueryStatus === 'success' ? 'LIVE' : resetQueryStatus === 'error' ? 'ERROR' : 'READY'}
+                </AccountDetailPill>
+              </div>
+              <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+                {resetQueryStatus === 'error'
+                  ? resetQueryMessage
+                  : resetInfo
+                    ? '获取时间 ' + formatUnixSecondsLabel(resetInfo.fetchedAt) + ' · ' + (resetInfo.planType || account.planType || 'unknown')
+                    : '查询后会显示剩余重置次数。点击重置会先二次确认，确认后结果会留在同一个弹框内。'}
+              </div>
+            </div>
+          ) : null}
+
           {visibleQuotaWindows.length > 0 ? (
             <div className="grid gap-2">
               <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -1335,7 +1473,7 @@ export function AccountQuotaSection({
           ) : null}
         </div>
 
-        <aside data-account-quota-pane="script" className={quotaScriptPaneClassName}>
+        {isOpenAIAuthFileQuotaReset ? null : <aside data-account-quota-pane="script" className={quotaScriptPaneClassName}>
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             SCRIPT
           </div>
@@ -1354,8 +1492,20 @@ export function AccountQuotaSection({
               暂无额度脚本
             </div>
           )}
-        </aside>
+        </aside>}
       </div>
+
+      {resetModal.open ? (
+        <OpenAIQuotaResetConfirmationModal
+          status={resetModal.status}
+          message={resetModal.message}
+          result={resetModal.result}
+          availableCount={resetInfo?.availableCount}
+          onConfirm={confirmOpenAIQuotaReset}
+          onRetry={confirmOpenAIQuotaReset}
+          onClose={() => setResetModal({ open: false, status: 'confirm', message: '' })}
+        />
+      ) : null}
 
       {editorOpen ? (
         <AccountCurlEditorModal
@@ -1374,6 +1524,132 @@ export function AccountQuotaSection({
       ) : null}
     </AccountDetailSection>
   );
+}
+
+function OpenAIQuotaResetConfirmationModal({
+  status,
+  message,
+  result,
+  availableCount,
+  onConfirm,
+  onRetry,
+  onClose,
+}: {
+  status: OpenAIQuotaResetModalStatus;
+  message: string;
+  result?: main.OpenAIQuotaResetConsumeResult;
+  availableCount?: number;
+  onConfirm: () => void;
+  onRetry: () => void;
+  onClose: () => void;
+}) {
+  const resetStatus = status;
+  const knownCount = typeof availableCount === 'number';
+  const description = resetStatus === 'confirm'
+    ? '重置速率限制后，继续不间断地工作。你还有 ' + (knownCount ? String(availableCount) : '未知') + ' 次重置 可用。'
+    : resetStatus === 'loading'
+      ? message || '正在向 sidecar 请求重置额度窗口...'
+      : resetStatus === 'success'
+        ? message || '重置成功。'
+        : message || '重置失败。';
+  const title = resetStatus === 'confirm'
+    ? '要重置你的使用量吗?'
+    : resetStatus === 'loading'
+      ? '正在重置使用量'
+      : resetStatus === 'success'
+        ? '重置成功'
+        : '重置失败';
+
+  return (
+    <div data-openai-quota-reset-modal={resetStatus} className="fixed inset-0 z-[1000] grid place-items-center bg-black/35 px-6 py-8 backdrop-blur-[18px]">
+      <style>{`
+        @keyframes openaiQuotaResetGradient {
+          0% { background-position: 0% 50%, 78% 52%, 0% 50%; transform: scale(1); }
+          50% { background-position: 100% 50%, 40% 44%, 100% 50%; transform: scale(1.035); }
+          100% { background-position: 0% 50%, 78% 52%, 0% 50%; transform: scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-openai-quota-reset-gradient] { animation: none !important; transform: none !important; }
+        }
+      `}</style>
+      <div className="relative grid w-full max-w-[38rem] overflow-hidden rounded-[2rem] border border-white/55 bg-[rgba(246,245,241,0.72)] shadow-[0_2rem_5rem_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+        <div className="relative h-40 overflow-hidden">
+          <div
+            data-openai-quota-reset-gradient="dynamic"
+            className="absolute -inset-5 animate-[openaiQuotaResetGradient_14s_ease-in-out_infinite] bg-[radial-gradient(circle_at_63%_58%,rgba(182,239,0,0.98)_0,rgba(120,137,0,0.82)_20%,transparent_34%),radial-gradient(circle_at_77%_60%,rgba(255,167,38,0.96)_0,rgba(255,171,46,0.78)_24%,transparent_40%),linear-gradient(120deg,rgba(69,199,237,0.94)_0%,rgba(188,198,255,0.88)_48%,rgba(231,182,255,0.9)_100%)] bg-[length:165%_165%,150%_150%,180%_180%] blur-[1px]"
+          />
+          <div className="absolute inset-0 bg-white/10 backdrop-blur-[3px]" />
+          <div className="absolute inset-0 opacity-45 [background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.58)_0_1px,transparent_1px_44px)]" />
+          <div className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[1.65rem] border border-white/35 bg-[linear-gradient(150deg,rgba(171,149,255,0.92),rgba(36,65,255,0.94))] text-4xl font-black text-white shadow-xl backdrop-blur-md">
+            ›_
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-6 top-6 grid h-14 w-14 place-items-center rounded-full border border-white/60 bg-white/45 text-3xl font-light text-[var(--text-muted)] shadow-lg backdrop-blur-xl"
+            aria-label="关闭重置弹框"
+          >
+            ×
+          </button>
+        </div>
+        <div className="grid gap-6 bg-white/35 px-10 py-9 text-center backdrop-blur-xl">
+          <div className="grid gap-3">
+            <h3 className="text-3xl font-black tracking-tight text-[var(--text-primary)]">{title}</h3>
+            <p className="text-lg font-black leading-relaxed text-[var(--text-muted)]">{description}</p>
+          </div>
+          {resetStatus === 'success' && result ? (
+            <div className="grid gap-2 rounded-2xl border-2 border-white/60 bg-white/35 p-4 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] shadow-inner backdrop-blur-xl">
+              <div>WINDOWS RESET: {result.windowsReset}</div>
+              <div>CREDIT: {result.credit?.status || result.code || 'redeemed'}</div>
+              <div>REDEEMED AT: {result.credit?.redeemedAt || '—'}</div>
+              <div>REMAINING: {result.availableCount}</div>
+              <div>QUOTA REFRESH: {result.postResetRefreshStatus || 'unknown'}</div>
+            </div>
+          ) : null}
+          {resetStatus === 'error' ? (
+            <div className="rounded-2xl border-2 border-[var(--color-status-danger)]/45 bg-[var(--color-status-danger)]/10 p-4 text-left text-[length:var(--font-size-ui-sm)] font-black text-[var(--color-status-danger)] shadow-inner backdrop-blur-xl">
+              {message}
+            </div>
+          ) : null}
+          <div className="grid gap-3">
+            {resetStatus === 'confirm' ? (
+              <button type="button" onClick={onConfirm} className="h-16 rounded-full bg-[var(--text-primary)] text-xl font-black text-[var(--bg-main)]">
+                确认重置使用次数
+              </button>
+            ) : resetStatus === 'loading' ? (
+              <button type="button" disabled className="h-16 rounded-full bg-[var(--text-primary)]/70 text-xl font-black text-[var(--bg-main)]">
+                重置中...
+              </button>
+            ) : resetStatus === 'success' ? (
+              <button type="button" onClick={onClose} className="h-16 rounded-full bg-[var(--text-primary)] text-xl font-black text-[var(--bg-main)]">
+                完成
+              </button>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={onClose} className="h-14 rounded-full border-2 border-[var(--border-color)] text-base font-black text-[var(--text-primary)]">
+                  关闭
+                </button>
+                <button type="button" onClick={onRetry} className="h-14 rounded-full bg-[var(--text-primary)] text-base font-black text-[var(--bg-main)]">
+                  重试
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatUnixSecondsLabel(value?: number) {
+  if (!value || !Number.isFinite(value)) {
+    return '—';
+  }
+  const date = new Date(value * 1000);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  return date.toLocaleString();
 }
 
 export function AccountBillingSection({

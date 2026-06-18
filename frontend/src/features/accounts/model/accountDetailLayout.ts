@@ -16,7 +16,7 @@ export function buildAccountDetailModulePlan(account: Pick<AccountRecord, 'crede
   }
 
   if (account.credentialSource === 'auth-file') {
-    return ['runtime', 'auth-file-actions', 'models', 'model-probe', 'rate-limit'];
+    return ['runtime', 'auth-file-actions', 'models', 'model-probe', 'rate-limit', 'quota'];
   }
 
   return ['runtime', 'rate-limit'];

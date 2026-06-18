@@ -27,6 +27,8 @@ export function ClearCodexLiveSessions():Promise<void>;
 
 export function CommitAccountMigration():Promise<main.AccountMigrationCommitResult>;
 
+export function ConsumeOpenAIQuotaResetCredit(arg1:string):Promise<main.OpenAIQuotaResetConsumeResult>;
+
 export function ConsumePendingDeepLinks():Promise<Array<string>>;
 
 export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void>;
@@ -154,6 +156,8 @@ export function GetLocalCodexModelProviderStateView():Promise<main.LocalCodexMod
 export function GetLocalProjectedUsageSettings():Promise<main.LocalProjectedUsageSettings>;
 
 export function GetOAuthStatus(arg1:string):Promise<main.OAuthStatusResult>;
+
+export function GetOpenAIQuotaResetCredit(arg1:string):Promise<main.OpenAIQuotaResetCreditInfo>;
 
 export function GetQuotaStatus(arg1:string):Promise<main.CodexQuotaResponse>;
 

@@ -112,6 +112,39 @@ type CodexQuotaBatchRefreshJob struct {
 	CompletedAt string                        `json:"completedAt,omitempty"`
 }
 
+type OpenAIQuotaResetCreditInfo struct {
+	AccountKey     string              `json:"accountKey"`
+	Status         string              `json:"status"`
+	AvailableCount int                 `json:"availableCount"`
+	PlanType       string              `json:"planType,omitempty"`
+	FetchedAt      int64               `json:"fetchedAt"`
+	QuotaState     *CodexQuotaResponse `json:"quotaState,omitempty"`
+}
+
+type OpenAIQuotaResetCredit struct {
+	ID              string `json:"id,omitempty"`
+	ResetType       string `json:"resetType,omitempty"`
+	Status          string `json:"status,omitempty"`
+	GrantedAt       string `json:"grantedAt,omitempty"`
+	ExpiresAt       string `json:"expiresAt,omitempty"`
+	RedeemStartedAt string `json:"redeemStartedAt,omitempty"`
+	RedeemedAt      string `json:"redeemedAt,omitempty"`
+}
+
+type OpenAIQuotaResetConsumeResult struct {
+	AccountKey             string                  `json:"accountKey"`
+	Status                 string                  `json:"status"`
+	Code                   string                  `json:"code,omitempty"`
+	Credit                 *OpenAIQuotaResetCredit `json:"credit,omitempty"`
+	WindowsReset           int                     `json:"windowsReset"`
+	AvailableCount         int                     `json:"availableCount"`
+	PlanType               string                  `json:"planType,omitempty"`
+	FetchedAt              int64                   `json:"fetchedAt"`
+	QuotaState             *CodexQuotaResponse     `json:"quotaState,omitempty"`
+	PostResetRefreshStatus string                  `json:"postResetRefreshStatus,omitempty"`
+	PostResetRefreshError  string                  `json:"postResetRefreshError,omitempty"`
+}
+
 type DeleteAccountsBatchInput struct {
 	AccountIDs []string `json:"accountIDs"`
 }

@@ -340,6 +340,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     onOpenEditor={() => props.onOpenScriptEditor?.('quota')}
                     onCloseEditor={props.onCloseScriptEditor}
                     onTestQuotaCurl={props.onTestQuotaCurl}
+                    readOnlyScripts={account.credentialSource === 'auth-file'}
                     topBorder={false}
                     headerDivider={false}
                     layoutMode={showBalanceSplit ? 'stack' : 'split'}

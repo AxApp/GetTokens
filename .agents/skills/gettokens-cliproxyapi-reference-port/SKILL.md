@@ -80,6 +80,17 @@ Do not implement a candidate just because it looks low-risk. Evidence-lacking ca
    - `CLI_PROXY_SOURCE_DIR="$tmp/src" ./scripts/ensure-sidecar.sh darwin arm64`
    - remove the temporary worktree after the build and confirm meta records `<fork-commit>:clean`.
 
+## 5.1 Restricted Sandbox Verification
+
+When the current environment blocks localhost listeners or default Go cache writes, keep the evidence boundary explicit instead of treating every package-level failure as an implementation failure.
+
+- If `httptest.NewServer`, `net.Listen("tcp", "127.0.0.1:0")`, or `[::1]:0` fails with `bind: operation not permitted`, classify the failure as a sandbox listener restriction only after a focused no-listener test covers the changed behavior.
+- For WebSocket or HTTP handshake slices that do not require a real port, prefer a `net.Pipe` / single-connection listener harness with `http.Serve` and the real gorilla/websocket upgrader. This still exercises the protocol path without binding localhost.
+- Keep the no-listener harness narrow and behavior-focused. Do not add broad test-only scaffolding if the candidate has no red/green implementation value.
+- Run fork tests and sidecar rebuilds with `GOCACHE=/private/tmp/gettokens-go-build-cache` when writes to the default Go cache under the home directory are denied.
+- Document remaining package-level failures in the child space and memory with the exact failing command, failing test name, and listener/cache error. Do not report full package green when only focused no-listener coverage passed.
+- If the same package can be tested later in an unrestricted environment, run the original package command and update acceptance from `sandbox-limited` to `real unrestricted pass`.
+
 ## 6. Real Dev App Acceptance
 
 Every implementation slice needs real dev App acceptance unless blocked and documented.

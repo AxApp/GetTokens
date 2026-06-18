@@ -61,6 +61,22 @@ func (a *App) GetQuotaStatus(accountKey string) (*cliproxyapi.QuotaRuntimeState,
 	return a.managementClient().GetQuotaStatus(accountKey)
 }
 
+func (a *App) GetOpenAIQuotaResetCredit(accountKey string) (*OpenAIQuotaResetCreditInfo, error) {
+	result, err := a.managementClient().GetOpenAIQuotaResetCredit(accountKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapOpenAIQuotaResetCreditInfo(result), nil
+}
+
+func (a *App) ConsumeOpenAIQuotaResetCredit(accountKey string) (*OpenAIQuotaResetConsumeResult, error) {
+	result, err := a.managementClient().ConsumeOpenAIQuotaResetCredit(accountKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapOpenAIQuotaResetConsumeResult(result), nil
+}
+
 func (a *App) RefreshCodexQuotasBatch(input CodexQuotaBatchRefreshInput) (*CodexQuotaBatchRefreshResult, error) {
 	result, err := a.managementClient().RefreshQuotaBatch(cliproxyapi.QuotaRefreshBatchInput{
 		AccountKeys:    normalizeQuotaBatchAccountKeys(input.AccountKeys),
@@ -468,6 +484,54 @@ func mapQuotaRuntimeStateToCodexQuotaResponse(state *cliproxyapi.QuotaRuntimeSta
 		BlockReason:     state.BlockReason,
 		Sources:         mapQuotaRuntimeSourcesToCodexQuotaResponse(state.Sources),
 		QuotaFact:       mapQuotaRuntimeFactToCodexQuotaResponse(state.Fact),
+	}
+}
+
+func mapOpenAIQuotaResetCreditInfo(info *cliproxyapi.OpenAIQuotaResetCreditInfo) *OpenAIQuotaResetCreditInfo {
+	if info == nil {
+		return nil
+	}
+	return &OpenAIQuotaResetCreditInfo{
+		AccountKey:     info.AccountKey,
+		Status:         info.Status,
+		AvailableCount: info.AvailableCount,
+		PlanType:       info.PlanType,
+		FetchedAt:      info.FetchedAt,
+		QuotaState:     mapQuotaRuntimeStateToCodexQuotaResponse(info.QuotaState),
+	}
+}
+
+func mapOpenAIQuotaResetConsumeResult(result *cliproxyapi.OpenAIQuotaResetConsumeResult) *OpenAIQuotaResetConsumeResult {
+	if result == nil {
+		return nil
+	}
+	return &OpenAIQuotaResetConsumeResult{
+		AccountKey:             result.AccountKey,
+		Status:                 result.Status,
+		Code:                   result.Code,
+		Credit:                 mapOpenAIQuotaResetCredit(result.Credit),
+		WindowsReset:           result.WindowsReset,
+		AvailableCount:         result.AvailableCount,
+		PlanType:               result.PlanType,
+		FetchedAt:              result.FetchedAt,
+		QuotaState:             mapQuotaRuntimeStateToCodexQuotaResponse(result.QuotaState),
+		PostResetRefreshStatus: result.PostResetRefreshStatus,
+		PostResetRefreshError:  result.PostResetRefreshError,
+	}
+}
+
+func mapOpenAIQuotaResetCredit(credit *cliproxyapi.OpenAIQuotaResetCredit) *OpenAIQuotaResetCredit {
+	if credit == nil {
+		return nil
+	}
+	return &OpenAIQuotaResetCredit{
+		ID:              credit.ID,
+		ResetType:       credit.ResetType,
+		Status:          credit.Status,
+		GrantedAt:       credit.GrantedAt,
+		ExpiresAt:       credit.ExpiresAt,
+		RedeemStartedAt: credit.RedeemStartedAt,
+		RedeemedAt:      credit.RedeemedAt,
 	}
 }
 

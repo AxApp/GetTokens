@@ -5237,6 +5237,121 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class OpenAIQuotaResetCredit {
+	    id?: string;
+	    resetType?: string;
+	    status?: string;
+	    grantedAt?: string;
+	    expiresAt?: string;
+	    redeemStartedAt?: string;
+	    redeemedAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new OpenAIQuotaResetCredit(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.resetType = source["resetType"];
+	        this.status = source["status"];
+	        this.grantedAt = source["grantedAt"];
+	        this.expiresAt = source["expiresAt"];
+	        this.redeemStartedAt = source["redeemStartedAt"];
+	        this.redeemedAt = source["redeemedAt"];
+	    }
+	}
+	export class OpenAIQuotaResetConsumeResult {
+	    accountKey: string;
+	    status: string;
+	    code?: string;
+	    credit?: OpenAIQuotaResetCredit;
+	    windowsReset: number;
+	    availableCount: number;
+	    planType?: string;
+	    fetchedAt: number;
+	    quotaState?: CodexQuotaResponse;
+	    postResetRefreshStatus?: string;
+	    postResetRefreshError?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new OpenAIQuotaResetConsumeResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	        this.status = source["status"];
+	        this.code = source["code"];
+	        this.credit = this.convertValues(source["credit"], OpenAIQuotaResetCredit);
+	        this.windowsReset = source["windowsReset"];
+	        this.availableCount = source["availableCount"];
+	        this.planType = source["planType"];
+	        this.fetchedAt = source["fetchedAt"];
+	        this.quotaState = this.convertValues(source["quotaState"], CodexQuotaResponse);
+	        this.postResetRefreshStatus = source["postResetRefreshStatus"];
+	        this.postResetRefreshError = source["postResetRefreshError"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+	export class OpenAIQuotaResetCreditInfo {
+	    accountKey: string;
+	    status: string;
+	    availableCount: number;
+	    planType?: string;
+	    fetchedAt: number;
+	    quotaState?: CodexQuotaResponse;
+
+	    static createFrom(source: any = {}) {
+	        return new OpenAIQuotaResetCreditInfo(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	        this.status = source["status"];
+	        this.availableCount = source["availableCount"];
+	        this.planType = source["planType"];
+	        this.fetchedAt = source["fetchedAt"];
+	        this.quotaState = this.convertValues(source["quotaState"], CodexQuotaResponse);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class OpenCodexConfigTomlResult {
 	    configPath: string;
 

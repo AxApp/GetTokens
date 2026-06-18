@@ -954,6 +954,46 @@ func (c *Client) RefreshQuota(accountKey string, includeBilling bool, force bool
 	return &response, nil
 }
 
+func (c *Client) GetOpenAIQuotaResetCredit(accountKey string) (*OpenAIQuotaResetCreditInfo, error) {
+	body, _, err := c.request("GET", "/v0/management/gettokens/openai-quota-reset/"+url.PathEscape(strings.TrimSpace(accountKey)), nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response OpenAIQuotaResetCreditInfo
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	normalizeOpenAIQuotaResetCreditInfo(&response)
+	return &response, nil
+}
+
+func (c *Client) ConsumeOpenAIQuotaResetCredit(accountKey string) (*OpenAIQuotaResetConsumeResult, error) {
+	body, _, err := c.request("POST", "/v0/management/gettokens/openai-quota-reset/"+url.PathEscape(strings.TrimSpace(accountKey))+"/consume", nil, bytes.NewReader([]byte("{}")), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response OpenAIQuotaResetConsumeResult
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	normalizeOpenAIQuotaResetConsumeResult(&response)
+	return &response, nil
+}
+
+func normalizeOpenAIQuotaResetCreditInfo(response *OpenAIQuotaResetCreditInfo) {
+	if response == nil || response.QuotaState == nil {
+		return
+	}
+	normalizeQuotaRuntimeStateSlices(response.QuotaState)
+}
+
+func normalizeOpenAIQuotaResetConsumeResult(response *OpenAIQuotaResetConsumeResult) {
+	if response == nil || response.QuotaState == nil {
+		return
+	}
+	normalizeQuotaRuntimeStateSlices(response.QuotaState)
+}
+
 func (c *Client) RefreshQuotaBatch(input QuotaRefreshBatchInput) (*QuotaRefreshBatchResult, error) {
 	if input.AccountKeys == nil {
 		input.AccountKeys = []string{}

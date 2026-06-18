@@ -1301,6 +1301,22 @@ func (a *App) GetQuotaStatus(accountKey string) (*CodexQuotaResponse, error) {
 	return mapQuotaRuntimeState(result), nil
 }
 
+func (a *App) GetOpenAIQuotaResetCredit(accountKey string) (*OpenAIQuotaResetCreditInfo, error) {
+	result, err := a.core.GetOpenAIQuotaResetCredit(accountKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapOpenAIQuotaResetCreditInfo(result), nil
+}
+
+func (a *App) ConsumeOpenAIQuotaResetCredit(accountKey string) (*OpenAIQuotaResetConsumeResult, error) {
+	result, err := a.core.ConsumeOpenAIQuotaResetCredit(accountKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapOpenAIQuotaResetConsumeResult(result), nil
+}
+
 func (a *App) RefreshCodexQuotasBatch(input CodexQuotaBatchRefreshInput) (*CodexQuotaBatchRefreshResult, error) {
 	result, err := a.core.RefreshCodexQuotasBatch(wailsapp.CodexQuotaBatchRefreshInput{
 		AccountKeys:    input.AccountKeys,
@@ -1375,6 +1391,54 @@ func mapTestCodexAPIKeyQuotaCurlInputToWails(input TestCodexAPIKeyQuotaCurlInput
 		QuotaCurl:      input.QuotaCurl,
 		PlatformCookie: input.PlatformCookie,
 		CurlVariables:  input.CurlVariables,
+	}
+}
+
+func mapOpenAIQuotaResetCreditInfo(info *wailsapp.OpenAIQuotaResetCreditInfo) *OpenAIQuotaResetCreditInfo {
+	if info == nil {
+		return nil
+	}
+	return &OpenAIQuotaResetCreditInfo{
+		AccountKey:     info.AccountKey,
+		Status:         info.Status,
+		AvailableCount: info.AvailableCount,
+		PlanType:       info.PlanType,
+		FetchedAt:      info.FetchedAt,
+		QuotaState:     mapCodexQuotaResponse(info.QuotaState),
+	}
+}
+
+func mapOpenAIQuotaResetConsumeResult(result *wailsapp.OpenAIQuotaResetConsumeResult) *OpenAIQuotaResetConsumeResult {
+	if result == nil {
+		return nil
+	}
+	return &OpenAIQuotaResetConsumeResult{
+		AccountKey:             result.AccountKey,
+		Status:                 result.Status,
+		Code:                   result.Code,
+		Credit:                 mapOpenAIQuotaResetCredit(result.Credit),
+		WindowsReset:           result.WindowsReset,
+		AvailableCount:         result.AvailableCount,
+		PlanType:               result.PlanType,
+		FetchedAt:              result.FetchedAt,
+		QuotaState:             mapCodexQuotaResponse(result.QuotaState),
+		PostResetRefreshStatus: result.PostResetRefreshStatus,
+		PostResetRefreshError:  result.PostResetRefreshError,
+	}
+}
+
+func mapOpenAIQuotaResetCredit(credit *wailsapp.OpenAIQuotaResetCredit) *OpenAIQuotaResetCredit {
+	if credit == nil {
+		return nil
+	}
+	return &OpenAIQuotaResetCredit{
+		ID:              credit.ID,
+		ResetType:       credit.ResetType,
+		Status:          credit.Status,
+		GrantedAt:       credit.GrantedAt,
+		ExpiresAt:       credit.ExpiresAt,
+		RedeemStartedAt: credit.RedeemStartedAt,
+		RedeemedAt:      credit.RedeemedAt,
 	}
 }
 

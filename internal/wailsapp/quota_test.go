@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
 func TestNormalizeAuthIndex(t *testing.T) {
@@ -259,6 +261,47 @@ func TestGetCodexQuotaLoadsUnifiedOpenAICompatibleCredential(t *testing.T) {
 	}
 	if quota.Billing.BalanceInfos[0].TotalBalance != "42.00" {
 		t.Fatalf("balance = %#v, want total 42.00", quota.Billing.BalanceInfos[0])
+	}
+}
+
+func TestOpenAIQuotaResetCreditBridgeUsesManagementAPI(t *testing.T) {
+	var requests []string
+	app := New("dev", "", "AxApp/GetTokens")
+	app.managementAPI = func() *cliproxyapi.Client {
+		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			_ = query
+			_ = body
+			_ = contentType
+			requests = append(requests, method+" "+path)
+			switch method + " " + path {
+			case "GET /v0/management/gettokens/openai-quota-reset/acct_00000000-0000-4000-8000-000000000001":
+				return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","available_count":2,"plan_type":"pro","fetched_at":1781760000,"quota_state":{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"pro","windows":[],"sources":[],"blocked":false}}`), 200, nil
+			case "POST /v0/management/gettokens/openai-quota-reset/acct_00000000-0000-4000-8000-000000000001/consume":
+				return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","code":"success","windows_reset":2,"available_count":1,"credit":{"status":"redeemed","redeemed_at":"2026-06-18T04:24:50Z"},"quota_state":{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"pro","windows":[],"sources":[],"blocked":false},"post_reset_refresh_status":"success"}`), 200, nil
+			default:
+				t.Fatalf("unexpected request: %s %s", method, path)
+			}
+			return nil, 404, nil
+		})
+	}
+
+	info, err := app.GetOpenAIQuotaResetCredit("acct_00000000-0000-4000-8000-000000000001")
+	if err != nil {
+		t.Fatalf("GetOpenAIQuotaResetCredit returned error: %v", err)
+	}
+	if info.AvailableCount != 2 || info.QuotaState == nil || info.QuotaState.PlanType != "pro" {
+		t.Fatalf("unexpected info: %#v", info)
+	}
+
+	result, err := app.ConsumeOpenAIQuotaResetCredit("acct_00000000-0000-4000-8000-000000000001")
+	if err != nil {
+		t.Fatalf("ConsumeOpenAIQuotaResetCredit returned error: %v", err)
+	}
+	if result.WindowsReset != 2 || result.Credit == nil || result.Credit.RedeemedAt == "" || result.QuotaState == nil {
+		t.Fatalf("unexpected consume result: %#v", result)
+	}
+	if strings.Join(requests, "\n") != "GET /v0/management/gettokens/openai-quota-reset/acct_00000000-0000-4000-8000-000000000001\nPOST /v0/management/gettokens/openai-quota-reset/acct_00000000-0000-4000-8000-000000000001/consume" {
+		t.Fatalf("requests = %#v", requests)
 	}
 }
 
