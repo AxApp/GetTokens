@@ -1,0 +1,27 @@
+{
+  "artifactVersion": "gettokens.extension.enable-state.v0",
+  "readOnlySlice": true,
+  "enableStates": [
+    "enabled",
+    "disabled",
+    "blocked",
+    "pending",
+    "readonly-unsupported"
+  ],
+  "actionAvailability": [
+    "read-only",
+    "disabled"
+  ],
+  "cases": [
+    {
+      "id": "missing-reasons-required-field",
+      "registryState": "invalid",
+      "compatibilityStatus": "compatible",
+      "diagnosticCodes": [
+        "unknown-capability-kind"
+      ],
+      "enableState": "blocked",
+      "actionAvailability": "disabled"
+    }
+  ]
+}

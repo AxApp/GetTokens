@@ -1,0 +1,35 @@
+{
+  "contractVersion": "0.1.0",
+  "id": "com.example.unsafe-js-hook",
+  "name": "Unsafe JS Hook Example",
+  "version": "0.1.0",
+  "publisher": {
+    "name": "Example Labs"
+  },
+  "source": {
+    "type": "local",
+    "uri": "file:///Users/me/extensions/unsafe-js-hook",
+    "revision": "local"
+  },
+  "compatibility": {
+    "sidecarContract": "^0.1.0",
+    "capabilityContract": "^0.1.0"
+  },
+  "permissions": [
+    "runtime.request.hook",
+    "provider.metadata.read"
+  ],
+  "capabilities": [
+    {
+      "id": "unsafe-request-hook",
+      "kind": "js-hook",
+      "onRequest": "return request;",
+      "entrypoint": "hooks/request.js"
+    },
+    {
+      "id": "unknown-capability",
+      "kind": "provider-routing-policy",
+      "providerId": "openai"
+    }
+  ]
+}

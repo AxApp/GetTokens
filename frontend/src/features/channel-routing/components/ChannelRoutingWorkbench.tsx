@@ -3,6 +3,7 @@ import {
   ChevronDown,
   CircleHelp,
   Play,
+  RefreshCcw,
   Settings2,
   Shuffle,
   Split,
@@ -10,17 +11,25 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
-import type { main } from '../../../../wailsjs/go/models';
+import { RunRouteResilienceAction } from '../../../../wailsjs/go/main/App';
+import { main } from '../../../../wailsjs/go/models';
+import { hasWailsAppBindings } from '../../../utils/previewMode';
 import {
   CHANNEL_ROUTE_MODE_HELP_SECTIONS,
   buildChannelRouteDecisionSummary,
+  buildRouteResilienceActionDescriptors,
+  buildRouteResilienceActionHistoryEntry,
+  buildRouteResilienceActionTargets,
   buildChannelRoutingExplainDigest,
+  findLatestRouteResilienceActionHistoryForTarget,
   type ChannelID,
   type ChannelRouteMode,
   type ChannelRouteDecisionSnapshot,
   type ChannelRoutingConfig,
   type ChannelRoutingParticipantAccountLike,
   type ProjectCandidatePoolProjectOption,
+  type RouteResilienceActionHistoryEntry,
+  type RouteResilienceActionName,
 } from '../model/channelRouting';
 
 interface ChannelRoutingWorkbenchProps {
@@ -64,6 +73,7 @@ export default function ChannelRoutingWorkbench({
   disabled = false,
   saving = false,
   message = '',
+  accounts = [],
   modelOptions = [],
   modelValue = '',
   projectOptions = [],
@@ -76,6 +86,10 @@ export default function ChannelRoutingWorkbench({
   onExplain,
 }: ChannelRoutingWorkbenchProps) {
   const [helpOpen, setHelpOpen] = useState(false);
+  const [selectedRouteActionTargetID, setSelectedRouteActionTargetID] = useState('');
+  const [routeActionPending, setRouteActionPending] = useState<RouteResilienceActionName | ''>('');
+  const [routeActionHistory, setRouteActionHistory] = useState<RouteResilienceActionHistoryEntry[]>([]);
+  const [routeActionError, setRouteActionError] = useState('');
   const explainView = buildChannelRoutingExplainDigest(explain);
   const routeDecisionRows = (routeDecisions ?? []).map((item) => buildChannelRouteDecisionSummary(item));
   const hasExplain = explainView.hasExplain;
@@ -83,6 +97,15 @@ export default function ChannelRoutingWorkbench({
   const filteredCount = explainView.filteredRows.reduce((total, item) => total + item.count, 0);
   const shadowCandidateCount = explainView.shadowCandidateRows.length;
   const normalizedModelOptions = normalizeDiagnosticModelOptions(modelOptions, modelValue);
+  const routeActionRuntimeAvailable = hasWailsAppBindings();
+  const routeActionTargets = buildRouteResilienceActionTargets(routeDecisions, accounts, modelValue);
+  const routeActionTarget =
+    routeActionTargets.find((target) => target.id === selectedRouteActionTargetID) || routeActionTargets[0] || null;
+  const routeActionButtons = buildRouteResilienceActionDescriptors(routeActionTarget, routeActionRuntimeAvailable);
+  const routeActionHistoryEntry = findLatestRouteResilienceActionHistoryForTarget(
+    routeActionHistory,
+    routeActionTarget?.id || '',
+  );
 
   useEffect(() => {
     if (!helpOpen) {
@@ -100,6 +123,47 @@ export default function ChannelRoutingWorkbench({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [helpOpen]);
+
+  useEffect(() => {
+    if (routeActionTargets.length === 0) {
+      if (selectedRouteActionTargetID) {
+        setSelectedRouteActionTargetID('');
+      }
+      return;
+    }
+    if (routeActionTargets.some((target) => target.id === selectedRouteActionTargetID)) {
+      return;
+    }
+    setSelectedRouteActionTargetID(routeActionTargets[0].id);
+  }, [routeActionTargets, selectedRouteActionTargetID]);
+
+  async function runRouteResilienceAction(action: RouteResilienceActionName) {
+    if (!routeActionTarget || !routeActionRuntimeAvailable) {
+      return;
+    }
+    const reason = `channel-routing-workbench:${channel}:${action}`;
+    const input = main.RouteResilienceActionInput.createFrom({
+      action,
+      accountKey: routeActionTarget.accountKey || undefined,
+      authId: routeActionTarget.authId || undefined,
+      model: routeActionTarget.model || undefined,
+      sources: action === 'clear_transient_lockout' ? [routeActionTarget.source].filter(Boolean) : undefined,
+      reason,
+      idempotencyKey: `${reason}:${routeActionTarget.id || routeActionTarget.accountKey || routeActionTarget.authId || 'unknown'}`,
+    });
+
+    setRouteActionPending(action);
+    setRouteActionError('');
+    try {
+      const result = await RunRouteResilienceAction(input);
+      const entry = buildRouteResilienceActionHistoryEntry(routeActionTarget, action, result);
+      setRouteActionHistory((current) => [entry, ...current]);
+    } catch (error) {
+      setRouteActionError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRouteActionPending('');
+    }
+  }
 
   return (
     <section
@@ -309,6 +373,200 @@ export default function ChannelRoutingWorkbench({
                 <Placeholder text="运行预演或探测后，这里会显示 sidecar 最近真实路由决策。" />
               )}
             </div>
+          </section>
+
+          <section className="border-t-2 border-[var(--border-color)] pt-4">
+            <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
+              <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">Route Resilience</span>
+              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                BRIDGE
+              </span>
+            </div>
+
+            {routeActionTarget ? (
+              <div className="grid gap-3">
+                <div className="grid gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)]">
+                  <div className="grid gap-2">
+                    <div className="flex min-w-0 items-center justify-between gap-3">
+                      <span className="text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">Action Targets</span>
+                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                        {routeActionTargets.length} 个
+                      </span>
+                    </div>
+                    {routeActionTargets.map((target) => {
+                      const active = target.id === routeActionTarget.id;
+                      return (
+                        <button
+                          key={target.id}
+                          type="button"
+                          onClick={() => setSelectedRouteActionTargetID(target.id)}
+                          className={`w-full border-2 px-3 py-2 text-left transition-colors active:scale-[0.99] ${
+                            active
+                              ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                              : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
+                          }`}
+                        >
+                          <div className="flex min-w-0 items-center justify-between gap-3">
+                            <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-black">
+                              {target.title}
+                            </span>
+                            <span
+                              className={`font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
+                                active ? 'text-[var(--bg-main)] opacity-70' : 'text-[var(--text-muted)]'
+                              }`}
+                            >
+                              {target.sourceLabel}
+                            </span>
+                          </div>
+                          <div
+                            className={`mt-1 min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-black leading-5 ${
+                              active ? 'text-[var(--bg-main)] opacity-80' : 'text-[var(--text-secondary)]'
+                            }`}
+                          >
+                            {target.meta}
+                          </div>
+                          {target.detail ? (
+                            <div
+                              className={`mt-1 min-w-0 truncate text-[length:var(--font-size-ui-xs)] leading-5 ${
+                                active ? 'text-[var(--bg-main)] opacity-80' : 'text-[var(--text-muted)]'
+                              }`}
+                            >
+                              {target.detail}
+                            </div>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="grid gap-3">
+                    <div className="input-swiss min-w-0 !px-3 !py-2">
+                      <div className="flex min-w-0 items-center justify-between gap-3">
+                        <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
+                          {routeActionTarget.accountTitle}
+                        </span>
+                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                          {routeActionTarget.sourceLabel}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-secondary)]">
+                        {[
+                          routeActionTarget.accountKey ? `account:${routeActionTarget.accountKey}` : '',
+                          routeActionTarget.authId ? `auth:${routeActionTarget.authId}` : '',
+                          routeActionTarget.model ? `model:${routeActionTarget.model}` : '',
+                          routeActionTarget.reasonSummary
+                            ? `${routeActionTarget.reasons.length > 1 ? 'reasons' : 'reason'}:${routeActionTarget.reasonSummary}`
+                            : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 xl:grid-cols-3">
+                      {routeActionButtons.map((item) => (
+                        <button
+                          key={item.action}
+                          type="button"
+                          onClick={() => void runRouteResilienceAction(item.action)}
+                          disabled={!item.enabled || Boolean(routeActionPending) || disabled}
+                          className="btn-swiss flex min-h-11 min-w-0 items-center gap-2 !px-3 !py-2 text-left disabled:cursor-not-allowed disabled:opacity-60"
+                          title={item.disabledReason || item.helper}
+                        >
+                          <RefreshCcw className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                              {item.title}
+                            </span>
+                            <span className="block truncate text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-secondary)]">
+                              {item.enabled ? item.helper : item.disabledReason || item.helper}
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {routeActionError ? (
+                      <div className="border-2 border-[var(--color-status-danger)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--color-status-danger)]">
+                        {routeActionError}
+                      </div>
+                    ) : null}
+
+                    <div
+                      className={`border-2 px-3 py-3 ${
+                        routeActionHistoryEntry?.tone === 'success'
+                          ? 'border-[var(--text-primary)]'
+                          : routeActionHistoryEntry?.tone === 'warning'
+                            ? 'border-[var(--color-status-warning)]'
+                            : routeActionHistoryEntry?.tone === 'danger'
+                              ? 'border-[var(--color-status-danger)]'
+                              : 'border-[var(--border-color)]'
+                      }`}
+                    >
+                      <div className="flex min-w-0 items-center justify-between gap-3">
+                        <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
+                          {routeActionHistoryEntry?.actionTitle || 'Action Response'}
+                        </span>
+                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                          {routeActionPending ? 'RUNNING' : routeActionHistoryEntry?.statusLabel || '未执行'}
+                        </span>
+                      </div>
+                      {routeActionHistoryEntry ? (
+                        <div className="mt-2 grid gap-1 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
+                          <div>{routeActionHistoryEntry.detail}</div>
+                          {routeActionHistoryEntry.authority ? <div>authority: {routeActionHistoryEntry.authority}</div> : null}
+                          {routeActionHistoryEntry.auditId ? <div>audit: {routeActionHistoryEntry.auditId}</div> : null}
+                          {routeActionHistoryEntry.beforeLabel ? <div>before: {routeActionHistoryEntry.beforeLabel}</div> : null}
+                          {routeActionHistoryEntry.afterLabel ? <div>after: {routeActionHistoryEntry.afterLabel}</div> : null}
+                          {routeActionHistoryEntry.droppedReasonsLabel ? (
+                            <div>dropped: {routeActionHistoryEntry.droppedReasonsLabel}</div>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-muted)]">
+                          当前 target 还没有 sidecar action response。
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t-2 border-[var(--border-color)] pt-3">
+                      <div className="mb-2 flex min-w-0 items-center justify-between gap-3">
+                        <span className="text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">Action History</span>
+                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                          {routeActionHistory.length} 条
+                        </span>
+                      </div>
+                      <div className="grid gap-2">
+                        {routeActionHistory.length > 0 ? (
+                          routeActionHistory.map((entry) => (
+                            <div key={entry.id} className="input-swiss min-w-0 !px-3 !py-2">
+                              <div className="flex min-w-0 items-center justify-between gap-3">
+                                <span className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                                  {entry.targetTitle} · {entry.actionTitle}
+                                </span>
+                                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                                  {entry.statusLabel}
+                                </span>
+                              </div>
+                              <div className="mt-1 min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-secondary)]">
+                                {entry.targetMeta}
+                              </div>
+                              <div className="mt-1 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-muted)]">
+                                {entry.detail}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <Placeholder text="执行 action 后，这里会按 target 保留 sidecar 返回历史。" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Placeholder text="最近真实决策里还没有可定位 account/auth 的 dropped reason，暂时无法触发 route resilience action。" />
+            )}
           </section>
         </div>
       </details>

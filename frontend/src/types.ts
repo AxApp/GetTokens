@@ -18,13 +18,15 @@ export type CodexLiveSessionsView = "session" | "project";
 export type CodexWorkspace =
   | "feature-config"
   | "binary-management"
+  | "extension-registry"
   | "skills"
   | "mcp-servers"
   | "account-list"
   | "live-sessions"
   | "session-management"
   | "vendor-status"
-  | "usage-codex";
+  | "usage-codex"
+  | "doctor-workbench";
 export type ClaudeWorkspace =
   | "account-list"
   | "skills"

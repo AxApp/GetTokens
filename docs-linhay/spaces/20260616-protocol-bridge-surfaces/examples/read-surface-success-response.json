@@ -1,0 +1,70 @@
+{
+  "version": "bridge.surface.v1",
+  "request_id": "brq_accounts_001",
+  "transport": "mcp",
+  "operation": "bridge.accounts.summary",
+  "actor": {
+    "client_id": "local-agent",
+    "auth_subject": "bridge-token:9f23ab10",
+    "scopes": [
+      "bridge.accounts.read"
+    ]
+  },
+  "status": "ok",
+  "query": {
+    "include_disabled": true,
+    "protocol": "codex",
+    "detail_level": "diagnostic_refs"
+  },
+  "data": {
+    "accounts": [
+      {
+        "account_key": "acct_codex_primary",
+        "kind": "auth-file",
+        "provider": "openai",
+        "display_name": "Codex Primary",
+        "credential_source": "auth-file",
+        "enabled": true,
+        "requestable": true,
+        "requestable_source": "sidecar-runtime-snapshot",
+        "runtime_status": "ready",
+        "guard_sources": [],
+        "quota_ref": "quota:acct_codex_primary:2026-06-16T08:00:00Z",
+        "model_refs": [
+          "model:gpt-5-codex"
+        ],
+        "last_runtime_update_unix_ms": 1781587200000,
+        "evidence_refs": [
+          {
+            "ref": "snapshot:accounts:1781587200000",
+            "source": "sidecar-runtime-snapshot"
+          },
+          {
+            "ref": "diagnostics:routeability:acct_codex_primary",
+            "source": "sidecar-route-explain"
+          }
+        ]
+      }
+    ]
+  },
+  "authority": {
+    "owner": "sidecar",
+    "endpoint": "/v0/management/gettokens/accounts/summary",
+    "snapshot_id": "snapshot:accounts:1781587200000",
+    "generated_at_unix_ms": 1781587200000,
+    "source_notes": [
+      {
+        "field": "data.accounts[].requestable",
+        "source": "sidecar-runtime-snapshot",
+        "note": "Adapter does not derive requestable from enabled or quota."
+      }
+    ]
+  },
+  "audit": {
+    "audit_id": "bra_accounts_001",
+    "redaction": "secrets-and-headers-removed",
+    "sidecar_request_id": "scr_accounts_001",
+    "duration_ms": 18
+  },
+  "warnings": []
+}

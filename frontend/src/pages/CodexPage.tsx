@@ -3,6 +3,8 @@ import CodexFeature from '../features/codex/CodexFeature';
 import CodexLiveSessionsFeature from '../features/codex-live-sessions/CodexLiveSessionsFeature';
 import CodexBinaryFeature from '../features/codex-binary/CodexBinaryFeature';
 import CodexExtensionsFeature from '../features/codex-extensions/CodexExtensionsFeature';
+import DoctorWorkbenchFeature from '../features/doctor-workbench/DoctorWorkbenchFeature';
+import GetTokensExtensionRegistryFeature from '../features/gettokens-extension-registry/GetTokensExtensionRegistryFeature';
 import UsageDeskFeature from '../features/accounts/UsageDeskFeature';
 import SessionManagementPage from './SessionManagementPage';
 import VendorStatusPage from './VendorStatusPage';
@@ -28,6 +30,10 @@ export default function CodexPage({ workspace, sidecarStatus, liveSessionsView, 
     return <CodexBinaryFeature />;
   }
 
+  if (workspace === 'extension-registry') {
+    return <GetTokensExtensionRegistryFeature />;
+  }
+
   if (workspace === 'skills' || workspace === 'mcp-servers') {
     return <CodexExtensionsFeature workspace={workspace} />;
   }
@@ -42,6 +48,10 @@ export default function CodexPage({ workspace, sidecarStatus, liveSessionsView, 
 
   if (workspace === 'vendor-status') {
     return <VendorStatusPage />;
+  }
+
+  if (workspace === 'doctor-workbench') {
+    return <DoctorWorkbenchFeature />;
   }
 
   return <CodexFeature workspace={workspace} />;

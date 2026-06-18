@@ -118,6 +118,8 @@ test('accounts preview inventory covers full account list states and providers',
 test('usage desk preview observed usage includes attributed and unresolved codex traffic', () => {
   const observed = getUsageDeskPreviewObservedUsage('codex');
 
+  assert.equal(observed.quotaFact?.source, 'quota-runtime');
+  assert.equal(observed.quotaFact?.state, 'available');
   assert.ok(Array.isArray(observed.items));
   assert.ok(observed.items.length >= 3);
   assert.equal(observed.items[0].provider, 'codex');
@@ -128,6 +130,8 @@ test('usage desk preview observed usage includes attributed and unresolved codex
 test('usage desk preview projected usage includes local projected detail rows and stats', () => {
   const projected = getUsageDeskPreviewProjectedUsage('codex');
 
+  assert.equal(projected.quotaFact?.source, 'local-projection');
+  assert.equal(projected.quotaFact?.state, 'unknown');
   assert.ok(Array.isArray(projected.details));
   assert.ok(projected.details.length >= 6);
   assert.equal(projected.details[0].provider, 'codex');
@@ -138,6 +142,7 @@ test('usage desk preview projected usage includes local projected detail rows an
 test('usage desk preview projected usage includes Claude local session rows', () => {
   const projected = getUsageDeskPreviewProjectedUsage('claude');
 
+  assert.equal(projected.quotaFact?.source, 'local-projection');
   assert.ok(Array.isArray(projected.details));
   assert.ok(projected.details.length >= 4);
   assert.equal(projected.details[0].provider, 'claude');

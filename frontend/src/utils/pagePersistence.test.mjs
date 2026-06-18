@@ -284,6 +284,7 @@ test('isCodexWorkspace only accepts known codex subpages', () => {
 test('resolveInitialCodexWorkspace falls back to feature config for invalid values', () => {
   assert.equal(resolveInitialCodexWorkspace('feature-config'), 'feature-config');
   assert.equal(resolveInitialCodexWorkspace('binary-management'), 'binary-management');
+  assert.equal(resolveInitialCodexWorkspace('extension-registry'), 'extension-registry');
   assert.equal(resolveInitialCodexWorkspace('skills'), 'skills');
   assert.equal(resolveInitialCodexWorkspace('mcp-servers'), 'mcp-servers');
   assert.equal(resolveInitialCodexWorkspace('account-list'), 'account-list');
@@ -318,6 +319,26 @@ test('persistCodexWorkspace writes the selected workspace to storage', () => {
   persistCodexWorkspace(storage, 'feature-config');
 
   assert.deepEqual(writes, [[CODEX_WORKSPACE_STORAGE_KEY, 'feature-config']]);
+});
+
+test('extension registry codex workspace persists and round-trips through hash parsing', () => {
+  const storage = {
+    getItem(key) {
+      assert.equal(key, CODEX_WORKSPACE_STORAGE_KEY);
+      return 'extension-registry';
+    },
+  };
+
+  assert.equal(isCodexWorkspace('extension-registry'), true);
+  assert.equal(readStoredCodexWorkspace(storage), 'extension-registry');
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=extension-registry'), {
+    page: 'codex',
+    codexWorkspace: 'extension-registry',
+  });
+  assert.equal(
+    buildFrameHash('codex', 'all', 'extension-registry', 'codex', 'codex'),
+    '#frame=codex&workspace=extension-registry',
+  );
 });
 
 test('isClaudeWorkspace only accepts known claude subpages', () => {

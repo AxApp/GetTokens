@@ -16,6 +16,7 @@ import {
   buildUsageDeskProjectedFacetGroups,
   formatUsageDeskChartValue,
   readUsageDeskProjectedStats,
+  resolveUsageDeskStatusEvidence,
   resolveUsageDeskCurveAnimationConfig,
   resolveUsageDeskChartSelectionKey,
   resolveUsageDeskLinkedRowKey,
@@ -26,6 +27,7 @@ import {
   usageDeskSessionDrilldownColumnLabels,
   usageDeskProjectedSurfaceViewOptions,
 } from '../model/usageDesk.ts';
+import { resolveQuotaStatusEvidenceFromPayload } from '../model/quotaStatusEvidence.ts';
 
 test('buildUsageDeskChartPointStyle keeps hit area centered on the plotted coordinate', () => {
   assert.deepEqual(buildUsageDeskChartPointStyle(128, 96), {
@@ -86,16 +88,195 @@ test('usage desk chart header removes source and facet summary strip', async () 
   assert.doesNotMatch(featureSource, /运营分面/);
   assert.doesNotMatch(featureSource, /Codex Usage Desk/);
   assert.doesNotMatch(featureSource, /Claude Usage Desk/);
-  assert.doesNotMatch(featureSource, /status=\{/);
   assert.doesNotMatch(featureSource, /<div className="mt-1[^"]*"[^>]*>\s*\{\s*action\.description\s*\}\s*<\/div>/s);
   assert.match(featureSource, /t\('accounts\.usage_desk_codex_title'\)/);
   assert.match(featureSource, /t\('accounts\.usage_desk_claude_title'\)/);
   assert.match(featureSource, /usage-desk-index-overflow-section/);
   assert.match(featureSource, /title=\{action\.description\}/);
+  assert.match(featureSource, /status=\{observedStatusEvidence \?/);
+  assert.match(featureSource, /status=\{projectedStatusEvidence \?/);
+  assert.match(featureSource, /UsageDeskEvidenceStatus/);
   assert.match(zhLocaleSource, /"usage_desk_codex_title": "Codex 用量分析"/);
   assert.match(zhLocaleSource, /"usage_desk_claude_title": "Claude 用量分析"/);
   assert.match(enLocaleSource, /"usage_desk_codex_title": "Codex Usage Desk"/);
   assert.match(enLocaleSource, /"usage_desk_claude_title": "Claude Usage Desk"/);
+});
+
+test('quota status evidence helper consumes explicit quotaFact authority for codex workspace', () => {
+  const fromFact = resolveQuotaStatusEvidenceFromPayload(
+    {
+      quotaFact: {
+        state: 'stale',
+        source: 'quota-runtime',
+        freshness: 'stale',
+        confidence: 'medium',
+        risk: 'warning',
+        explanation: 'cached quota fact',
+        evidenceRefs: ['source:cache'],
+      },
+      windows: [{ id: 'weekly', remainingPercent: 0 }],
+      blockReason: 'quota empty: weekly',
+    },
+    'codex',
+  );
+
+  assert.deepEqual(fromFact, {
+    title: 'Codex 配额事实',
+    summary: 'Stale / Warning risk',
+    view: {
+      stateLabel: 'Stale',
+      sourceLabel: 'Quota runtime authority',
+      freshnessLabel: 'Stale',
+      confidenceLabel: 'Medium confidence',
+      riskLabel: 'Warning risk',
+      summary: 'Stale / Warning risk',
+      explanation: 'cached quota fact',
+      observedAt: undefined,
+      expiresAt: undefined,
+      evidenceRefs: ['source:cache'],
+    },
+  });
+
+});
+
+test('quota status evidence helper accepts snake_case quota_fact authority for claude workspace', () => {
+  const evidence = resolveQuotaStatusEvidenceFromPayload(
+    {
+      quota_fact: {
+        state: 'no_quota',
+        source: 'quota-runtime',
+        freshness: 'fresh',
+        confidence: 'high',
+        explanation: 'weekly window exhausted',
+        observed_at: '2026-06-16T08:00:00Z',
+        expires_at: '2026-06-16T13:00:00Z',
+        evidence_refs: ['window:weekly'],
+      },
+      windows: [{ id: 'weekly', remainingPercent: 0 }],
+    },
+    'claude',
+  );
+
+  assert.deepEqual(evidence, {
+    title: 'Claude 配额事实',
+    summary: 'No quota / Blocking risk',
+    view: {
+      stateLabel: 'No quota',
+      sourceLabel: 'Quota runtime authority',
+      freshnessLabel: 'Fresh',
+      confidenceLabel: 'High confidence',
+      riskLabel: 'Blocking risk',
+      summary: 'No quota / Blocking risk',
+      explanation: 'weekly window exhausted',
+      observedAt: '2026-06-16T08:00:00Z',
+      expiresAt: '2026-06-16T13:00:00Z',
+      evidenceRefs: ['window:weekly'],
+    },
+  });
+});
+
+test('quota status evidence helper returns undefined when explicit fact is missing', () => {
+  const missingFact = resolveQuotaStatusEvidenceFromPayload(
+    {
+      windows: [{ id: 'weekly', remainingPercent: 0 }],
+      blockReason: 'quota empty: weekly',
+      totalTokens: 32000,
+    },
+    'codex',
+  );
+
+  assert.equal(missingFact, undefined);
+});
+
+test('quota status evidence helper returns undefined for incomplete explicit fact payload', () => {
+  const incompleteFact = resolveQuotaStatusEvidenceFromPayload(
+    {
+      quotaFact: {
+        source: 'quota-runtime',
+        freshness: 'fresh',
+        confidence: 'high',
+      },
+      blockReason: 'quota empty: weekly',
+    },
+    'codex',
+  );
+
+  assert.equal(incompleteFact, undefined);
+});
+
+test('usage desk status evidence reuses shared helper and marks windows-only authority hints as missing', () => {
+  const fromFact = resolveUsageDeskStatusEvidence(
+    {
+      fact: {
+        state: 'stale',
+        source: 'quota-runtime',
+        freshness: 'stale',
+        confidence: 'medium',
+        risk: 'warning',
+        explanation: 'cached quota fact',
+        evidenceRefs: ['source:cache'],
+      },
+      windows: [{ id: 'weekly', remainingPercent: 0 }],
+      blockReason: 'quota empty: weekly',
+    },
+    'codex',
+  );
+
+  assert.equal(fromFact?.title, 'Codex 配额事实');
+  assert.equal(fromFact?.summary, 'Stale / Warning risk');
+
+  const missingFact = resolveUsageDeskStatusEvidence(
+    {
+      windows: [{ id: 'weekly', remainingPercent: 0 }],
+      blockReason: 'quota empty: weekly',
+      totalTokens: 32000,
+      requestCount: 42,
+    },
+    'codex',
+  );
+
+  assert.deepEqual(missingFact, {
+    kind: 'missing-quota-fact',
+    title: 'Quota authority unavailable',
+    summary: 'Missing explicit quotaFact / Non-authoritative',
+    description:
+      'Usage totals, windows, and block reasons are displayed as local telemetry only. This view does not infer quota truth without explicit quotaFact.',
+  });
+});
+
+test('usage desk status evidence reports missing non-authoritative state instead of inferring quota truth from usage totals', () => {
+  const evidence = resolveUsageDeskStatusEvidence(
+    {
+      windows: [{ id: 'weekly', remainingPercent: 0, authority: 'window-derived-authority' }],
+      blockReason: 'quota empty: weekly',
+      usageTotals: {
+        input: 4096,
+        output: 512,
+        total: 4608,
+        authority: 'usage-derived-authority',
+      },
+      totalTokens: 128000,
+      requestCount: 42,
+    },
+    'codex',
+  );
+
+  assert.deepEqual(evidence, {
+    kind: 'missing-quota-fact',
+    title: 'Quota authority unavailable',
+    summary: 'Missing explicit quotaFact / Non-authoritative',
+    description:
+      'Usage totals, windows, and block reasons are displayed as local telemetry only. This view does not infer quota truth without explicit quotaFact.',
+  });
+});
+
+test('usage desk explicit fact still renders authority while missing state has its own UI branch', async () => {
+  const panelsSource = await readFile(new URL('../components/usage-desk/UsageDeskPanels.tsx', import.meta.url), 'utf8');
+
+  assert.match(panelsSource, /data-usage-desk-evidence-status="quota-fact"/);
+  assert.match(panelsSource, /data-usage-desk-evidence-status="missing-quota-fact"/);
+  assert.match(panelsSource, /NON-AUTHORITATIVE/);
+  assert.match(panelsSource, /'view' in evidence/);
 });
 
 test('usage desk chart grid fills the scroll viewport', async () => {

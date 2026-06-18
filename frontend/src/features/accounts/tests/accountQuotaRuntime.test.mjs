@@ -112,6 +112,76 @@ test('buildQuotaDisplay reads snake case quota runtime states from Wails status 
   ]);
 });
 
+test('buildQuotaDisplay exposes sidecar quota fact evidence for UI surfaces', () => {
+  const display = buildQuotaDisplay(quotaCapableAccount, {
+    status: 'success',
+    quota: {
+      account_key: 'acct_codex_001',
+      status: 'success',
+      fact: {
+        state: 'stale',
+        source: 'quota-runtime',
+        freshness: 'stale',
+        confidence: 'medium',
+        risk: 'warning',
+        explanation: 'cached quota fact',
+        observed_at: '2026-06-16T08:00:00Z',
+        expires_at: '2026-06-16T13:00:00Z',
+        evidence_refs: ['window:weekly', 'source:cache'],
+      },
+      windows: [],
+    },
+  });
+
+  assert.equal(display.status, 'empty');
+  assert.deepEqual(display.fact, {
+    state: 'stale',
+    source: 'quota-runtime',
+    freshness: 'stale',
+    confidence: 'medium',
+    risk: 'warning',
+    explanation: 'cached quota fact',
+    observedAt: '2026-06-16T08:00:00Z',
+    expiresAt: '2026-06-16T13:00:00Z',
+    evidenceRefs: ['window:weekly', 'source:cache'],
+  });
+});
+
+test('buildQuotaDisplay keeps windows visible but fact non-authoritative without explicit quota fact', () => {
+  const display = buildQuotaDisplay(quotaCapableAccount, {
+    status: 'success',
+    quota: {
+      account_key: 'acct_codex_001',
+      status: 'success',
+      plan_type: 'pro',
+      windows: [
+        {
+          id: 'weekly',
+          label: '7D',
+          remaining_percent: 0,
+          reset_label: '06/20 18:00',
+        },
+      ],
+      blocked: true,
+      block_reason: 'quota empty: weekly',
+      usageTotals: { input: 4096, output: 512, total: 4608 },
+      sources: [],
+    },
+  });
+
+  assert.equal(display.status, 'success');
+  assert.equal(display.blocked, true);
+  assert.equal(display.blockReason, 'quota empty: weekly');
+  assert.equal(display.windows.length, 1);
+  assert.deepEqual(display.fact, {
+    state: 'unknown',
+    freshness: 'unknown',
+    confidence: 'none',
+    risk: 'unknown',
+    explanation: 'Quota runtime status did not include an explicit quotaFact.',
+  });
+});
+
 test('regular quota percent progress keeps remaining quota as the display value', () => {
   const display = buildQuotaDisplay(quotaCapableAccount, {
     status: 'success',

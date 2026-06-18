@@ -954,6 +954,66 @@ export namespace main {
 	        this.configPath = source["configPath"];
 	    }
 	}
+	export class GetTokensExtensionRoot {
+	    id: string;
+	    path: string;
+	    readOnly: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionRoot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.path = source["path"];
+	        this.readOnly = source["readOnly"];
+	    }
+	}
+	export class ApplyGetTokensExtensionCodexConfigTransactionInput {
+	    manifestPaths?: string[];
+	    roots?: GetTokensExtensionRoot[];
+	    statePath?: string;
+	    targetPath: string;
+	    tempDir: string;
+	    configText: string;
+	    confirmationToken: string;
+	    skipVerifyReadback?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ApplyGetTokensExtensionCodexConfigTransactionInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manifestPaths = source["manifestPaths"];
+	        this.roots = this.convertValues(source["roots"], GetTokensExtensionRoot);
+	        this.statePath = source["statePath"];
+	        this.targetPath = source["targetPath"];
+	        this.tempDir = source["tempDir"];
+	        this.configText = source["configText"];
+	        this.confirmationToken = source["confirmationToken"];
+	        this.skipVerifyReadback = source["skipVerifyReadback"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class AuthFileItem {
 	    name: string;
 	    type?: string;
@@ -1164,6 +1224,34 @@ export namespace main {
 	        this.activated = source["activated"];
 	    }
 	}
+	export class ChannelRouteDroppedReason {
+	    accountID?: string;
+	    authID?: string;
+	    source?: string;
+	    scope?: string;
+	    reason?: string;
+	    model?: string;
+	    expiresAt?: string;
+	    updatedAt?: string;
+	    routeBlocking?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ChannelRouteDroppedReason(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountID = source["accountID"];
+	        this.authID = source["authID"];
+	        this.source = source["source"];
+	        this.scope = source["scope"];
+	        this.reason = source["reason"];
+	        this.model = source["model"];
+	        this.expiresAt = source["expiresAt"];
+	        this.updatedAt = source["updatedAt"];
+	        this.routeBlocking = source["routeBlocking"];
+	    }
+	}
 	export class ChannelRouteDecisionAuth {
 	    authID?: string;
 	    accountID?: string;
@@ -1199,6 +1287,7 @@ export namespace main {
 	    selectedProvider?: string;
 	    unavailableCode?: string;
 	    unavailableMessage?: string;
+	    droppedReasons?: ChannelRouteDroppedReason[];
 	    trace?: ChannelRouteDecisionStep[];
 
 	    static createFrom(source: any = {}) {
@@ -1225,6 +1314,7 @@ export namespace main {
 	        this.selectedProvider = source["selectedProvider"];
 	        this.unavailableCode = source["unavailableCode"];
 	        this.unavailableMessage = source["unavailableMessage"];
+	        this.droppedReasons = this.convertValues(source["droppedReasons"], ChannelRouteDroppedReason);
 	        this.trace = this.convertValues(source["trace"], ChannelRouteDecisionStep);
 	    }
 
@@ -1262,6 +1352,7 @@ export namespace main {
 	        this.limit = source["limit"];
 	    }
 	}
+
 	export class ChannelRouteEvent {
 	    id: string;
 	    recordedAt: string;
@@ -3157,6 +3248,34 @@ export namespace main {
 	        this.concurrency = source["concurrency"];
 	    }
 	}
+	export class CodexQuotaFact {
+	    state?: string;
+	    source?: string;
+	    freshness?: string;
+	    confidence?: string;
+	    risk?: string;
+	    explanation?: string;
+	    observedAt?: string;
+	    expiresAt?: string;
+	    evidenceRefs?: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexQuotaFact(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.state = source["state"];
+	        this.source = source["source"];
+	        this.freshness = source["freshness"];
+	        this.confidence = source["confidence"];
+	        this.risk = source["risk"];
+	        this.explanation = source["explanation"];
+	        this.observedAt = source["observedAt"];
+	        this.expiresAt = source["expiresAt"];
+	        this.evidenceRefs = source["evidenceRefs"];
+	    }
+	}
 	export class CodexQuotaSourceState {
 	    source: string;
 	    reason?: string;
@@ -3265,6 +3384,7 @@ export namespace main {
 	    blocked: boolean;
 	    blockReason?: string;
 	    sources: CodexQuotaSourceState[];
+	    quotaFact?: CodexQuotaFact;
 
 	    static createFrom(source: any = {}) {
 	        return new CodexQuotaResponse(source);
@@ -3285,6 +3405,7 @@ export namespace main {
 	        this.blocked = source["blocked"];
 	        this.blockReason = source["blockReason"];
 	        this.sources = this.convertValues(source["sources"], CodexQuotaSourceState);
+	        this.quotaFact = this.convertValues(source["quotaFact"], CodexQuotaFact);
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -3393,6 +3514,7 @@ export namespace main {
 		    return a;
 		}
 	}
+
 
 
 
@@ -3961,6 +4083,240 @@ export namespace main {
 	        this.id = source["id"];
 	    }
 	}
+	export class DoctorNavigationTarget {
+	    kind: string;
+	    label: string;
+	    hash: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DoctorNavigationTarget(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.label = source["label"];
+	        this.hash = source["hash"];
+	    }
+	}
+	export class DoctorRouteEvidencePayload {
+	    accountKey?: string;
+	    accountID?: string;
+	    authId?: string;
+	    model?: string;
+	    source?: string;
+	    scope?: string;
+	    reason?: string;
+	    routeBlocking?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new DoctorRouteEvidencePayload(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	        this.accountID = source["accountID"];
+	        this.authId = source["authId"];
+	        this.model = source["model"];
+	        this.source = source["source"];
+	        this.scope = source["scope"];
+	        this.reason = source["reason"];
+	        this.routeBlocking = source["routeBlocking"];
+	    }
+	}
+	export class DoctorEvidenceRef {
+	    kind: string;
+	    label: string;
+	    summary: string;
+	    refID: string;
+	    source: string;
+	    accountKey?: string;
+	    accountID?: string;
+	    authId?: string;
+	    model?: string;
+	    scope?: string;
+	    reason?: string;
+	    routeBlocking?: boolean;
+	    routeEvidence?: DoctorRouteEvidencePayload;
+	    droppedReason?: DoctorRouteEvidencePayload;
+	    quotaFact?: CodexQuotaFact;
+
+	    static createFrom(source: any = {}) {
+	        return new DoctorEvidenceRef(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.label = source["label"];
+	        this.summary = source["summary"];
+	        this.refID = source["refID"];
+	        this.source = source["source"];
+	        this.accountKey = source["accountKey"];
+	        this.accountID = source["accountID"];
+	        this.authId = source["authId"];
+	        this.model = source["model"];
+	        this.scope = source["scope"];
+	        this.reason = source["reason"];
+	        this.routeBlocking = source["routeBlocking"];
+	        this.routeEvidence = this.convertValues(source["routeEvidence"], DoctorRouteEvidencePayload);
+	        this.droppedReason = this.convertValues(source["droppedReason"], DoctorRouteEvidencePayload);
+	        this.quotaFact = this.convertValues(source["quotaFact"], CodexQuotaFact);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DoctorCheck {
+	    id: string;
+	    kind: string;
+	    title: string;
+	    status: string;
+	    reason: string;
+	    repairability: string;
+	    authority: string;
+	    confidence: string;
+	    lastCheckedAtUnixMs: number;
+	    evidence: DoctorEvidenceRef[];
+	    navigation: DoctorNavigationTarget[];
+
+	    static createFrom(source: any = {}) {
+	        return new DoctorCheck(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.kind = source["kind"];
+	        this.title = source["title"];
+	        this.status = source["status"];
+	        this.reason = source["reason"];
+	        this.repairability = source["repairability"];
+	        this.authority = source["authority"];
+	        this.confidence = source["confidence"];
+	        this.lastCheckedAtUnixMs = source["lastCheckedAtUnixMs"];
+	        this.evidence = this.convertValues(source["evidence"], DoctorEvidenceRef);
+	        this.navigation = this.convertValues(source["navigation"], DoctorNavigationTarget);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
+
+	export class DoctorSummary {
+	    total: number;
+	    critical: number;
+	    warning: number;
+	    notReady: number;
+	    ok: number;
+	    skipped: number;
+	    degraded: number;
+
+	    static createFrom(source: any = {}) {
+	        return new DoctorSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.total = source["total"];
+	        this.critical = source["critical"];
+	        this.warning = source["warning"];
+	        this.notReady = source["notReady"];
+	        this.ok = source["ok"];
+	        this.skipped = source["skipped"];
+	        this.degraded = source["degraded"];
+	    }
+	}
+	export class DoctorSnapshot {
+	    generatedAtUnixMs: number;
+	    source: string;
+	    sidecarReady: boolean;
+	    status: string;
+	    checks: DoctorCheck[];
+	    summary: DoctorSummary;
+
+	    static createFrom(source: any = {}) {
+	        return new DoctorSnapshot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.generatedAtUnixMs = source["generatedAtUnixMs"];
+	        this.source = source["source"];
+	        this.sidecarReady = source["sidecarReady"];
+	        this.status = source["status"];
+	        this.checks = this.convertValues(source["checks"], DoctorCheck);
+	        this.summary = this.convertValues(source["summary"], DoctorSummary);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DoctorSnapshotInput {
+	    scope?: string;
+	    includeEvidence?: boolean;
+	    maxEvidencePerCheck?: number;
+
+	    static createFrom(source: any = {}) {
+	        return new DoctorSnapshotInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.scope = source["scope"];
+	        this.includeEvidence = source["includeEvidence"];
+	        this.maxEvidencePerCheck = source["maxEvidencePerCheck"];
+	    }
+	}
+
 	export class DownloadFileResponse {
 	    name: string;
 	    contentBase64: string;
@@ -4087,6 +4443,516 @@ export namespace main {
 	        this.previewable = source["previewable"];
 	    }
 	}
+	export class GetTokensExtensionDiagnostic {
+	    code: string;
+	    severity: string;
+	    path?: string;
+	    message: string;
+	    source?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionDiagnostic(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.code = source["code"];
+	        this.severity = source["severity"];
+	        this.path = source["path"];
+	        this.message = source["message"];
+	        this.source = source["source"];
+	    }
+	}
+	export class GetTokensExtensionCapability {
+	    id?: string;
+	    kind?: string;
+	    state: string;
+	    requiredPermissions?: string[];
+	    declaredContributions?: string[];
+	    diagnostics: GetTokensExtensionDiagnostic[];
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCapability(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.kind = source["kind"];
+	        this.state = source["state"];
+	        this.requiredPermissions = source["requiredPermissions"];
+	        this.declaredContributions = source["declaredContributions"];
+	        this.diagnostics = this.convertValues(source["diagnostics"], GetTokensExtensionDiagnostic);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GetTokensExtensionCodexConfigTomlPatchPlan {
+	    targetSection: string;
+	    operation: string;
+	    beforeSnippet: string;
+	    afterSnippet: string;
+	    validation: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCodexConfigTomlPatchPlan(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.targetSection = source["targetSection"];
+	        this.operation = source["operation"];
+	        this.beforeSnippet = source["beforeSnippet"];
+	        this.afterSnippet = source["afterSnippet"];
+	        this.validation = source["validation"];
+	    }
+	}
+	export class GetTokensExtensionCodexConfigDryRunOperation {
+	    id: string;
+	    target: string;
+	    action: string;
+	    extensionID?: string;
+	    capabilityID?: string;
+	    preview?: string;
+	    patchPlan: GetTokensExtensionCodexConfigTomlPatchPlan;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCodexConfigDryRunOperation(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.target = source["target"];
+	        this.action = source["action"];
+	        this.extensionID = source["extensionID"];
+	        this.capabilityID = source["capabilityID"];
+	        this.preview = source["preview"];
+	        this.patchPlan = this.convertValues(source["patchPlan"], GetTokensExtensionCodexConfigTomlPatchPlan);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GetTokensExtensionCodexConfigDryRunValidation {
+	    code: string;
+	    severity: string;
+	    extensionID?: string;
+	    capabilityID?: string;
+	    target: string;
+	    message: string;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCodexConfigDryRunValidation(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.code = source["code"];
+	        this.severity = source["severity"];
+	        this.extensionID = source["extensionID"];
+	        this.capabilityID = source["capabilityID"];
+	        this.target = source["target"];
+	        this.message = source["message"];
+	    }
+	}
+	export class GetTokensExtensionCodexConfigDryRunSection {
+	    id: string;
+	    label: string;
+	    status: string;
+	    diffPreview: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCodexConfigDryRunSection(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.label = source["label"];
+	        this.status = source["status"];
+	        this.diffPreview = source["diffPreview"];
+	    }
+	}
+	export class GetTokensExtensionCodexConfigDryRunSummary {
+	    enabledExtensionCount: number;
+	    skippedExtensionCount: number;
+	    operationCount: number;
+	    validationErrorCount: number;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCodexConfigDryRunSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.enabledExtensionCount = source["enabledExtensionCount"];
+	        this.skippedExtensionCount = source["skippedExtensionCount"];
+	        this.operationCount = source["operationCount"];
+	        this.validationErrorCount = source["validationErrorCount"];
+	    }
+	}
+	export class GetTokensExtensionCodexConfigDryRunPreview {
+	    contractVersion: string;
+	    dryRun: boolean;
+	    generatedAt: string;
+	    target: string;
+	    targetPath?: string;
+	    summary: GetTokensExtensionCodexConfigDryRunSummary;
+	    sections: GetTokensExtensionCodexConfigDryRunSection[];
+	    operations: GetTokensExtensionCodexConfigDryRunOperation[];
+	    validation: GetTokensExtensionCodexConfigDryRunValidation[];
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCodexConfigDryRunPreview(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.contractVersion = source["contractVersion"];
+	        this.dryRun = source["dryRun"];
+	        this.generatedAt = source["generatedAt"];
+	        this.target = source["target"];
+	        this.targetPath = source["targetPath"];
+	        this.summary = this.convertValues(source["summary"], GetTokensExtensionCodexConfigDryRunSummary);
+	        this.sections = this.convertValues(source["sections"], GetTokensExtensionCodexConfigDryRunSection);
+	        this.operations = this.convertValues(source["operations"], GetTokensExtensionCodexConfigDryRunOperation);
+	        this.validation = this.convertValues(source["validation"], GetTokensExtensionCodexConfigDryRunValidation);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
+
+	export class GetTokensExtensionCodexConfigStagedApplyPlan {
+	    contractVersion: string;
+	    targetPath: string;
+	    confirmationToken: string;
+	    diffPreview: string[];
+	    appliedText: string;
+	    appliedOperations: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCodexConfigStagedApplyPlan(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.contractVersion = source["contractVersion"];
+	        this.targetPath = source["targetPath"];
+	        this.confirmationToken = source["confirmationToken"];
+	        this.diffPreview = source["diffPreview"];
+	        this.appliedText = source["appliedText"];
+	        this.appliedOperations = source["appliedOperations"];
+	    }
+	}
+	export class GetTokensExtensionCodexConfigStagedApplyResult {
+	    status: string;
+	    targetPath: string;
+	    backupPath?: string;
+	    tempPath?: string;
+	    confirmationToken: string;
+	    appliedOperations: string[];
+	    rolledBack: boolean;
+	    errorStage?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCodexConfigStagedApplyResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.targetPath = source["targetPath"];
+	        this.backupPath = source["backupPath"];
+	        this.tempPath = source["tempPath"];
+	        this.confirmationToken = source["confirmationToken"];
+	        this.appliedOperations = source["appliedOperations"];
+	        this.rolledBack = source["rolledBack"];
+	        this.errorStage = source["errorStage"];
+	    }
+	}
+
+	export class GetTokensExtensionCompatibility {
+	    manifestContract?: string;
+	    sidecarContract?: string;
+	    capabilityContract?: string;
+	    status?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionCompatibility(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manifestContract = source["manifestContract"];
+	        this.sidecarContract = source["sidecarContract"];
+	        this.capabilityContract = source["capabilityContract"];
+	        this.status = source["status"];
+	    }
+	}
+
+	export class GetTokensExtensionEnableState {
+	    id: string;
+	    state: string;
+	    updatedAt?: string;
+	    reason?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionEnableState(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.state = source["state"];
+	        this.updatedAt = source["updatedAt"];
+	        this.reason = source["reason"];
+	    }
+	}
+	export class GetTokensExtensionEnableStateFile {
+	    contractVersion: string;
+	    updatedAt?: string;
+	    extensions: GetTokensExtensionEnableState[];
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionEnableStateFile(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.contractVersion = source["contractVersion"];
+	        this.updatedAt = source["updatedAt"];
+	        this.extensions = this.convertValues(source["extensions"], GetTokensExtensionEnableState);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GetTokensExtensionPublisher {
+	    name?: string;
+	    url?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionPublisher(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.url = source["url"];
+	    }
+	}
+	export class GetTokensExtensionSource {
+	    type?: string;
+	    uri?: string;
+	    revision?: string;
+	    manifestPath: string;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionSource(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.uri = source["uri"];
+	        this.revision = source["revision"];
+	        this.manifestPath = source["manifestPath"];
+	    }
+	}
+	export class GetTokensExtensionSnapshot {
+	    id?: string;
+	    name?: string;
+	    version?: string;
+	    publisher?: GetTokensExtensionPublisher;
+	    source: GetTokensExtensionSource;
+	    state: string;
+	    readOnly: boolean;
+	    compatibility?: GetTokensExtensionCompatibility;
+	    permissions?: string[];
+	    capabilities?: GetTokensExtensionCapability[];
+	    diagnostics: GetTokensExtensionDiagnostic[];
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionSnapshot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.version = source["version"];
+	        this.publisher = this.convertValues(source["publisher"], GetTokensExtensionPublisher);
+	        this.source = this.convertValues(source["source"], GetTokensExtensionSource);
+	        this.state = source["state"];
+	        this.readOnly = source["readOnly"];
+	        this.compatibility = this.convertValues(source["compatibility"], GetTokensExtensionCompatibility);
+	        this.permissions = source["permissions"];
+	        this.capabilities = this.convertValues(source["capabilities"], GetTokensExtensionCapability);
+	        this.diagnostics = this.convertValues(source["diagnostics"], GetTokensExtensionDiagnostic);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GetTokensExtensionRegistrySnapshot {
+	    contractVersion: string;
+	    registryMode: string;
+	    generatedAt: string;
+	    readOnly: boolean;
+	    roots: GetTokensExtensionRoot[];
+	    extensions: GetTokensExtensionSnapshot[];
+	    diagnostics: GetTokensExtensionDiagnostic[];
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionRegistrySnapshot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.contractVersion = source["contractVersion"];
+	        this.registryMode = source["registryMode"];
+	        this.generatedAt = source["generatedAt"];
+	        this.readOnly = source["readOnly"];
+	        this.roots = this.convertValues(source["roots"], GetTokensExtensionRoot);
+	        this.extensions = this.convertValues(source["extensions"], GetTokensExtensionSnapshot);
+	        this.diagnostics = this.convertValues(source["diagnostics"], GetTokensExtensionDiagnostic);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class GetTokensExtensionRegistrySnapshotInput {
+	    manifestPaths?: string[];
+	    roots?: GetTokensExtensionRoot[];
+	    statePath?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new GetTokensExtensionRegistrySnapshotInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manifestPaths = source["manifestPaths"];
+	        this.roots = this.convertValues(source["roots"], GetTokensExtensionRoot);
+	        this.statePath = source["statePath"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
+
 	export class LocalCodexAuthState {
 	    authFilePath: string;
 	    hasAuthFile: boolean;
@@ -4467,6 +5333,82 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.server = this.convertValues(source["server"], CodexMcpServer);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class PrepareGetTokensExtensionCodexConfigApplyInput {
+	    manifestPaths?: string[];
+	    roots?: GetTokensExtensionRoot[];
+	    statePath?: string;
+	    targetPath: string;
+	    configText: string;
+
+	    static createFrom(source: any = {}) {
+	        return new PrepareGetTokensExtensionCodexConfigApplyInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manifestPaths = source["manifestPaths"];
+	        this.roots = this.convertValues(source["roots"], GetTokensExtensionRoot);
+	        this.statePath = source["statePath"];
+	        this.targetPath = source["targetPath"];
+	        this.configText = source["configText"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class PreviewGetTokensExtensionCodexConfigDryRunInput {
+	    manifestPaths?: string[];
+	    roots?: GetTokensExtensionRoot[];
+	    statePath?: string;
+	    targetPath?: string;
+	    configText?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new PreviewGetTokensExtensionCodexConfigDryRunInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manifestPaths = source["manifestPaths"];
+	        this.roots = this.convertValues(source["roots"], GetTokensExtensionRoot);
+	        this.statePath = source["statePath"];
+	        this.targetPath = source["targetPath"];
+	        this.configText = source["configText"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -5109,6 +6051,90 @@ export namespace main {
 	        this.removedPath = source["removedPath"];
 	        this.preview = source["preview"];
 	    }
+	}
+	export class RouteResilienceActionInput {
+	    action: string;
+	    accountKey?: string;
+	    authId?: string;
+	    model?: string;
+	    sources?: string[];
+	    reason?: string;
+	    dryRun?: boolean;
+	    idempotencyKey?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new RouteResilienceActionInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.action = source["action"];
+	        this.accountKey = source["accountKey"];
+	        this.authId = source["authId"];
+	        this.model = source["model"];
+	        this.sources = source["sources"];
+	        this.reason = source["reason"];
+	        this.dryRun = source["dryRun"];
+	        this.idempotencyKey = source["idempotencyKey"];
+	    }
+	}
+	export class RouteResilienceActionResult {
+	    ok: boolean;
+	    authority: string;
+	    action: string;
+	    status: string;
+	    accountKey?: string;
+	    authId?: string;
+	    model?: string;
+	    before: Record<string, any>;
+	    after: Record<string, any>;
+	    auditId?: string;
+	    droppedSources?: string[];
+	    droppedReasons?: ChannelRouteDroppedReason[];
+	    error?: string;
+	    notImplementedReason?: string;
+	    httpStatus?: number;
+
+	    static createFrom(source: any = {}) {
+	        return new RouteResilienceActionResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ok = source["ok"];
+	        this.authority = source["authority"];
+	        this.action = source["action"];
+	        this.status = source["status"];
+	        this.accountKey = source["accountKey"];
+	        this.authId = source["authId"];
+	        this.model = source["model"];
+	        this.before = source["before"];
+	        this.after = source["after"];
+	        this.auditId = source["auditId"];
+	        this.droppedSources = source["droppedSources"];
+	        this.droppedReasons = this.convertValues(source["droppedReasons"], ChannelRouteDroppedReason);
+	        this.error = source["error"];
+	        this.notImplementedReason = source["notImplementedReason"];
+	        this.httpStatus = source["httpStatus"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class SaveClaudeCodeMcpServerInput {
 	    server: ClaudeCodeMcpAsset;
@@ -5974,6 +7000,22 @@ export namespace main {
 		    }
 		    return a;
 		}
+	}
+	export class SetGetTokensExtensionEnabledInput {
+	    extensionID: string;
+	    enabled: boolean;
+	    statePath?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new SetGetTokensExtensionEnabledInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.extensionID = source["extensionID"];
+	        this.enabled = source["enabled"];
+	        this.statePath = source["statePath"];
+	    }
 	}
 	export class SidecarProxySettings {
 	    useSystemProxy: boolean;

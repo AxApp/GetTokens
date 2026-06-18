@@ -55,4 +55,11 @@ if [[ $errors -gt 0 ]]; then
   exit 1
 fi
 
+echo "Running quota static gate..."
+GETTOKENS_REPO_ROOT="${GETTOKENS_REPO_ROOT:-$(cd "$DOCS_ROOT/.." && pwd)}" \
+  node "$SCRIPT_DIR/check-quota-no-direct-fact-parser.mjs"
+
+echo "Running sidecar smoke manifest fixture gate..."
+node "$DOCS_ROOT/references/CLIProxyAPI/scripts/check-sidecar-smoke-manifest.mjs" fixture
+
 echo "Documentation check passed."

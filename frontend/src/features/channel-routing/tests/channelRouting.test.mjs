@@ -9,6 +9,13 @@ import {
   buildChannelRouteDecisionSummary,
   buildChannelRoutingParticipantRows,
   buildChannelRoutingExplainDigest,
+  buildRouteResilienceActionDescriptors,
+  buildRouteResilienceEvidenceDigestsFromDroppedReasons,
+  buildRouteResilienceEvidenceDigests,
+  buildRouteResilienceActionHistoryEntry,
+  buildRouteResilienceActionResultDigest,
+  buildRouteResilienceActionTargets,
+  findLatestRouteResilienceActionHistoryForTarget,
   buildProjectCandidatePoolProjectOptions,
   buildProjectCandidatePoolRuleRows,
   buildPreviewProjectCandidatePoolRules,
@@ -19,6 +26,7 @@ import {
   classifyChannelRouteMode,
   mergeProjectCandidatePoolObservedProjects,
   isChannelRouteMode,
+  isRouteResilienceTransientSource,
   normalizeChannelRoutingConfig,
   normalizeProjectCandidatePoolRuleDraft,
   normalizeProjectCandidatePoolRules,
@@ -219,6 +227,68 @@ test('buildChannelRouteAuditEventSummary includes filtered reason counts when av
   });
 
   assert.match(summary.meta, /过滤原因 runtime-rate-limit x2, account-disabled x1/);
+});
+
+test('buildRouteResilienceEvidenceDigestsFromDroppedReasons can enforce full stable identity', () => {
+  const partial = buildRouteResilienceEvidenceDigestsFromDroppedReasons(
+    [
+      {
+        decisionID: 'rd_partial',
+        recordedAt: '2026-06-17T10:00:00Z',
+        droppedReason: {
+          accountID: 'acct_partial',
+          authID: 'auth_partial',
+          source: 'upstream-error',
+          reason: 'temporary upstream timeout',
+        },
+      },
+    ],
+    [],
+    '',
+    { requireFullIdentity: true },
+  );
+
+  assert.deepEqual(partial, []);
+
+  const digests = buildRouteResilienceEvidenceDigestsFromDroppedReasons(
+    [
+      {
+        decisionID: 'rd_1',
+        recordedAt: '2026-06-17T10:00:00Z',
+        droppedReason: {
+          accountID: 'acct_route_001',
+          authID: 'auth_route_001',
+          source: 'upstream-error',
+          scope: 'model',
+          model: 'gpt-5',
+          reason: 'upstream recovered',
+          routeBlocking: true,
+        },
+      },
+      {
+        decisionID: 'rd_2',
+        recordedAt: '2026-06-17T10:01:00Z',
+        droppedReason: {
+          accountID: 'acct_route_001',
+          authID: 'auth_route_001',
+          source: 'upstream-error',
+          scope: 'model',
+          model: 'gpt-5',
+          reason: 'temporary upstream timeout',
+          routeBlocking: false,
+        },
+      },
+    ],
+    [],
+    '',
+    { requireFullIdentity: true },
+  );
+
+  assert.equal(digests.length, 1);
+  assert.equal(digests[0]?.id, 'acct_route_001|auth_route_001|gpt-5|upstream-error|model');
+  assert.equal(digests[0]?.reasonSummary, 'upstream recovered / temporary upstream timeout');
+  assert.equal(digests[0]?.detail, 'upstream recovered / temporary upstream timeout · 2 次命中');
+  assert.equal(digests[0]?.sourceLabel, '上游错误');
 });
 
 test('buildChannelRoutingExplainDigest turns raw explain data into readable sections', () => {
@@ -484,6 +554,596 @@ test('buildChannelRouteDecisionSummary prefers selected account, trace and unres
       unresolved: true,
     },
   );
+});
+
+test('buildChannelRouteDecisionSummary prefers structured dropped reasons before trace fallback', () => {
+  assert.deepEqual(
+    buildChannelRouteDecisionSummary({
+      id: 'decision-dropped',
+      recordedAt: '2026-06-15T10:10:00Z',
+      channel: 'codex',
+      model: 'gpt-5',
+      candidateCount: 0,
+      unavailableCode: 'no-routeable-account',
+      droppedReasons: [
+        {
+          accountID: 'acct-company-2',
+          authID: 'auth-company-2',
+          source: 'rate-limit',
+          scope: 'account',
+          reason: 'request window exhausted',
+          model: 'gpt-5',
+          expiresAt: '2026-06-15T10:15:00Z',
+          updatedAt: '2026-06-15T10:10:00Z',
+          routeBlocking: true,
+        },
+      ],
+      trace: [{ stage: 'pool-scope', reason: 'legacy trace fallback', activated: true }],
+    }),
+    {
+      id: 'decision-dropped',
+      title: '未命中 · no-routeable-account',
+      meta: '模型:gpt-5 · 0 个候选',
+      detail: 'rate-limit/account: request window exhausted · pool-scope: legacy trace fallback',
+      unresolved: true,
+    },
+  );
+});
+
+test('buildRouteResilienceActionTargets keeps multiple structured dropped reasons selectable', () => {
+  assert.deepEqual(
+    buildRouteResilienceActionTargets(
+      [
+        {
+          id: 'decision-1',
+          recordedAt: '2026-06-17T10:00:00Z',
+          channel: 'codex',
+          model: 'gpt-5',
+          candidateCount: 0,
+          droppedReasons: [
+            {
+              accountID: 'acct-company-1',
+              authID: 'auth-company-1',
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'upstream recovered',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+            {
+              accountID: 'acct-company-2',
+              authID: 'auth-company-2',
+              source: 'auth-error',
+              scope: 'model',
+              reason: 'token expired',
+              model: 'gpt-5-mini',
+              routeBlocking: true,
+            },
+          ],
+        },
+        {
+          id: 'decision-2',
+          recordedAt: '2026-06-17T10:05:00Z',
+          channel: 'codex',
+          model: 'gpt-5',
+          candidateCount: 0,
+          droppedReasons: [
+            {
+              accountID: 'acct-company-1',
+              authID: 'auth-company-1',
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'temporary upstream timeout',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+            {
+              accountID: 'acct-company-1',
+              authID: 'auth-company-1',
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'upstream recovered',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+          ],
+        },
+      ],
+      [
+        { id: 'acct-company-1', label: 'Company Primary' },
+        { id: 'acct-company-2', label: 'Company Backup' },
+      ],
+      '',
+    ),
+    [
+      {
+        id: 'acct-company-1|auth-company-1|gpt-5|upstream-error|account',
+        accountKey: 'acct-company-1',
+        authId: 'auth-company-1',
+        model: 'gpt-5',
+        accountTitle: 'Company Primary',
+        source: 'upstream-error',
+        scope: 'account',
+        reason: 'upstream recovered',
+        reasons: [
+          { reason: 'upstream recovered', count: 2 },
+          { reason: 'temporary upstream timeout', count: 1 },
+        ],
+        reasonSummary: 'upstream recovered x2 / temporary upstream timeout',
+        routeBlocking: true,
+        decisionID: 'decision-2',
+        recordedAt: '2026-06-17T10:05:00Z',
+        firstObservedDecisionID: 'decision-1',
+        firstObservedAt: '2026-06-17T10:00:00Z',
+        lastObservedDecisionID: 'decision-2',
+        lastObservedAt: '2026-06-17T10:05:00Z',
+        sourceLabel: '上游错误',
+        title: 'Company Primary',
+        meta: '上游错误 · account · model:gpt-5 · recent:decision-2',
+        detail: 'upstream recovered x2 / temporary upstream timeout · 3 次命中',
+        occurrenceCount: 3,
+      },
+      {
+        id: 'acct-company-2|auth-company-2|gpt-5-mini|auth-error|model',
+        accountKey: 'acct-company-2',
+        authId: 'auth-company-2',
+        model: 'gpt-5-mini',
+        accountTitle: 'Company Backup',
+        source: 'auth-error',
+        scope: 'model',
+        reason: 'token expired',
+        reasons: [{ reason: 'token expired', count: 1 }],
+        reasonSummary: 'token expired',
+        routeBlocking: true,
+        decisionID: 'decision-1',
+        recordedAt: '2026-06-17T10:00:00Z',
+        firstObservedDecisionID: 'decision-1',
+        firstObservedAt: '2026-06-17T10:00:00Z',
+        lastObservedDecisionID: 'decision-1',
+        lastObservedAt: '2026-06-17T10:00:00Z',
+        sourceLabel: '认证错误',
+        title: 'Company Backup',
+        meta: '认证错误 · model · model:gpt-5-mini · recent:decision-1',
+        detail: 'token expired',
+        occurrenceCount: 1,
+      },
+    ],
+  );
+});
+
+test('buildRouteResilienceEvidenceDigests keeps stable ids while aggregating multiple reasons and latest evidence metadata', () => {
+  assert.deepEqual(
+    buildRouteResilienceEvidenceDigests(
+      [
+        {
+          id: 'decision-1',
+          recordedAt: '2026-06-17T10:00:00Z',
+          channel: 'codex',
+          model: 'gpt-5',
+          candidateCount: 0,
+          droppedReasons: [
+            {
+              accountID: 'acct-company-1',
+              authID: 'auth-company-1',
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'upstream recovered',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+          ],
+        },
+        {
+          id: 'decision-2',
+          recordedAt: '2026-06-17T10:05:00Z',
+          channel: 'codex',
+          model: 'gpt-5',
+          candidateCount: 0,
+          droppedReasons: [
+            {
+              accountID: 'acct-company-1',
+              authID: 'auth-company-1',
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'temporary upstream timeout',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+            {
+              accountID: 'acct-company-1',
+              authID: 'auth-company-1',
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'upstream recovered',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+          ],
+        },
+      ],
+      [{ id: 'acct-company-1', label: 'Company Primary' }],
+      '',
+    ),
+    [
+      {
+        id: 'acct-company-1|auth-company-1|gpt-5|upstream-error|account',
+        accountKey: 'acct-company-1',
+        authId: 'auth-company-1',
+        model: 'gpt-5',
+        accountTitle: 'Company Primary',
+        source: 'upstream-error',
+        sourceLabel: '上游错误',
+        scope: 'account',
+        reason: 'upstream recovered',
+        reasons: [
+          { reason: 'upstream recovered', count: 2 },
+          { reason: 'temporary upstream timeout', count: 1 },
+        ],
+        reasonSummary: 'upstream recovered x2 / temporary upstream timeout',
+        routeBlocking: true,
+        decisionID: 'decision-2',
+        recordedAt: '2026-06-17T10:05:00Z',
+        firstObservedDecisionID: 'decision-1',
+        firstObservedAt: '2026-06-17T10:00:00Z',
+        lastObservedDecisionID: 'decision-2',
+        lastObservedAt: '2026-06-17T10:05:00Z',
+        detail: 'upstream recovered x2 / temporary upstream timeout · 3 次命中',
+        occurrenceCount: 3,
+      },
+    ],
+  );
+});
+
+test('buildRouteResilienceEvidenceDigests derives first and latest observation boundaries independent of input order', () => {
+  assert.deepEqual(
+    buildRouteResilienceEvidenceDigests(
+      [
+        {
+          id: 'decision-latest',
+          recordedAt: '2026-06-17T10:05:00Z',
+          channel: 'codex',
+          model: 'gpt-5',
+          candidateCount: 0,
+          droppedReasons: [
+            {
+              accountID: 'acct-company-1',
+              authID: 'auth-company-1',
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'temporary upstream timeout',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+          ],
+        },
+        {
+          id: 'decision-earliest',
+          recordedAt: '2026-06-17T10:00:00Z',
+          channel: 'codex',
+          model: 'gpt-5',
+          candidateCount: 0,
+          droppedReasons: [
+            {
+              accountID: 'acct-company-1',
+              authID: 'auth-company-1',
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'upstream recovered',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+          ],
+        },
+      ],
+      [{ id: 'acct-company-1', label: 'Company Primary' }],
+      '',
+    ),
+    [
+      {
+        id: 'acct-company-1|auth-company-1|gpt-5|upstream-error|account',
+        accountKey: 'acct-company-1',
+        authId: 'auth-company-1',
+        model: 'gpt-5',
+        accountTitle: 'Company Primary',
+        source: 'upstream-error',
+        sourceLabel: '上游错误',
+        scope: 'account',
+        reason: 'temporary upstream timeout',
+        reasons: [
+          { reason: 'temporary upstream timeout', count: 1 },
+          { reason: 'upstream recovered', count: 1 },
+        ],
+        reasonSummary: 'temporary upstream timeout / upstream recovered',
+        routeBlocking: true,
+        decisionID: 'decision-latest',
+        recordedAt: '2026-06-17T10:05:00Z',
+        firstObservedDecisionID: 'decision-earliest',
+        firstObservedAt: '2026-06-17T10:00:00Z',
+        lastObservedDecisionID: 'decision-latest',
+        lastObservedAt: '2026-06-17T10:05:00Z',
+        detail: 'temporary upstream timeout / upstream recovered · 2 次命中',
+        occurrenceCount: 2,
+      },
+    ],
+  );
+});
+
+test('buildRouteResilienceEvidenceDigests ignores dropped reasons without stable identity', () => {
+  assert.deepEqual(
+    buildRouteResilienceEvidenceDigests(
+      [
+        {
+          id: 'decision-identity',
+          recordedAt: '2026-06-17T10:00:00Z',
+          channel: 'codex',
+          model: 'gpt-5',
+          candidateCount: 0,
+          droppedReasons: [
+            {
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'anonymous reason should drop',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+            {
+              accountID: 'acct-company-1',
+              authID: 'auth-company-1',
+              source: 'upstream-error',
+              scope: 'account',
+              reason: 'named reason survives',
+              model: 'gpt-5',
+              routeBlocking: true,
+            },
+          ],
+        },
+      ],
+      [{ id: 'acct-company-1', label: 'Company Primary' }],
+      '',
+    ),
+    [
+      {
+        id: 'acct-company-1|auth-company-1|gpt-5|upstream-error|account',
+        accountKey: 'acct-company-1',
+        authId: 'auth-company-1',
+        model: 'gpt-5',
+        accountTitle: 'Company Primary',
+        source: 'upstream-error',
+        sourceLabel: '上游错误',
+        scope: 'account',
+        reason: 'named reason survives',
+        reasons: [{ reason: 'named reason survives', count: 1 }],
+        reasonSummary: 'named reason survives',
+        routeBlocking: true,
+        decisionID: 'decision-identity',
+        recordedAt: '2026-06-17T10:00:00Z',
+        firstObservedDecisionID: 'decision-identity',
+        firstObservedAt: '2026-06-17T10:00:00Z',
+        lastObservedDecisionID: 'decision-identity',
+        lastObservedAt: '2026-06-17T10:00:00Z',
+        detail: 'named reason survives',
+        occurrenceCount: 1,
+      },
+    ],
+  );
+});
+
+test('route resilience action descriptors keep transient cleanup narrow and surface not-implemented actions as passthrough', () => {
+  const descriptors = buildRouteResilienceActionDescriptors(
+    {
+      accountKey: 'acct-company-1',
+      authId: 'auth-company-1',
+      model: 'gpt-5',
+      accountTitle: 'Company Primary',
+      source: 'rate-limit',
+      scope: 'account',
+      reason: 'request window exhausted',
+      routeBlocking: true,
+      decisionID: 'decision-1',
+    },
+    true,
+  );
+
+  assert.equal(descriptors[0].action, 'clear_transient_lockout');
+  assert.equal(descriptors[0].enabled, false);
+  assert.match(descriptors[0].disabledReason || '', /transient source/);
+  assert.equal(descriptors[1].action, 'rerun_bounded_reconcile');
+  assert.equal(descriptors[1].enabled, true);
+  assert.equal(descriptors[2].action, 'recheck_routeability');
+  assert.equal(descriptors[2].enabled, true);
+});
+
+test('route resilience target identity stays stable when reason text changes', () => {
+  const initialTarget = buildRouteResilienceActionTargets(
+    [
+      {
+        id: 'decision-1',
+        recordedAt: '2026-06-17T10:00:00Z',
+        channel: 'codex',
+        model: 'gpt-5',
+        candidateCount: 0,
+        droppedReasons: [
+          {
+            accountID: 'acct-company-1',
+            authID: 'auth-company-1',
+            source: 'upstream-error',
+            scope: 'account',
+            reason: 'upstream recovered',
+            model: 'gpt-5',
+            routeBlocking: true,
+          },
+        ],
+      },
+    ],
+    [{ id: 'acct-company-1', label: 'Company Primary' }],
+    '',
+  )[0];
+  const refreshedTarget = buildRouteResilienceActionTargets(
+    [
+      {
+        id: 'decision-2',
+        recordedAt: '2026-06-17T10:05:00Z',
+        channel: 'codex',
+        model: 'gpt-5',
+        candidateCount: 0,
+        droppedReasons: [
+          {
+            accountID: 'acct-company-1',
+            authID: 'auth-company-1',
+            source: 'upstream-error',
+            scope: 'account',
+            reason: 'temporary upstream timeout',
+            model: 'gpt-5',
+            routeBlocking: true,
+          },
+        ],
+      },
+    ],
+    [{ id: 'acct-company-1', label: 'Company Primary' }],
+    '',
+  )[0];
+
+  const history = [
+    buildRouteResilienceActionHistoryEntry(initialTarget, 'clear_transient_lockout', {
+      ok: true,
+      action: 'clear_transient_lockout',
+      status: 'applied',
+      authority: 'sidecar',
+      auditId: 'audit-a',
+      before: { blockCount: 1 },
+      after: { blockCount: 0 },
+      droppedReasons: [],
+    }),
+  ];
+
+  assert.equal(initialTarget.id, 'acct-company-1|auth-company-1|gpt-5|upstream-error|account');
+  assert.equal(refreshedTarget.id, initialTarget.id);
+  assert.equal(refreshedTarget.reasonSummary, 'temporary upstream timeout');
+  assert.deepEqual(findLatestRouteResilienceActionHistoryForTarget(history, refreshedTarget.id), history[0]);
+});
+
+test('route resilience action history stays bound to target instead of one global result slot', () => {
+  const targetA = buildRouteResilienceActionTargets(
+    [
+      {
+        id: 'decision-1',
+        recordedAt: '2026-06-17T10:00:00Z',
+        channel: 'codex',
+        model: 'gpt-5',
+        candidateCount: 0,
+        droppedReasons: [
+          {
+            accountID: 'acct-company-1',
+            authID: 'auth-company-1',
+            source: 'upstream-error',
+            scope: 'account',
+            reason: 'upstream recovered',
+            model: 'gpt-5',
+            routeBlocking: true,
+          },
+        ],
+      },
+    ],
+    [{ id: 'acct-company-1', label: 'Company Primary' }],
+    '',
+  )[0];
+  const targetB = buildRouteResilienceActionTargets(
+    [
+      {
+        id: 'decision-2',
+        recordedAt: '2026-06-17T10:05:00Z',
+        channel: 'codex',
+        model: 'gpt-5-mini',
+        candidateCount: 0,
+        droppedReasons: [
+          {
+            accountID: 'acct-company-2',
+            authID: 'auth-company-2',
+            source: 'auth-error',
+            scope: 'model',
+            reason: 'token expired',
+            model: 'gpt-5-mini',
+            routeBlocking: true,
+          },
+        ],
+      },
+    ],
+    [{ id: 'acct-company-2', label: 'Company Backup' }],
+    '',
+  )[0];
+
+  const history = [
+    buildRouteResilienceActionHistoryEntry(targetA, 'clear_transient_lockout', {
+      ok: true,
+      action: 'clear_transient_lockout',
+      status: 'applied',
+      authority: 'sidecar',
+      auditId: 'audit-a',
+      before: { blockCount: 1 },
+      after: { blockCount: 0 },
+      droppedReasons: [],
+    }),
+    buildRouteResilienceActionHistoryEntry(targetB, 'recheck_routeability', {
+      ok: false,
+      action: 'recheck_routeability',
+      status: 'not_implemented',
+      httpStatus: 501,
+      notImplementedReason: 'routeability service permissions not available in current management layer',
+      authority: 'sidecar',
+      droppedReasons: [{ source: 'auth-error', scope: 'model', reason: 'token expired' }],
+    }),
+  ];
+
+  assert.deepEqual(findLatestRouteResilienceActionHistoryForTarget(history, targetA.id), history[0]);
+  assert.deepEqual(findLatestRouteResilienceActionHistoryForTarget(history, targetB.id), history[1]);
+  assert.deepEqual(history[1], {
+    id: 'acct-company-2|auth-company-2|gpt-5-mini|auth-error|model:recheck_routeability:not_implemented:sidecar',
+    targetID: 'acct-company-2|auth-company-2|gpt-5-mini|auth-error|model',
+    targetTitle: 'Company Backup',
+    targetMeta: '认证错误 · model · model:gpt-5-mini · recent:decision-2',
+    action: 'recheck_routeability',
+    actionTitle: '重查 routeability',
+    statusLabel: '未实现',
+    tone: 'warning',
+    detail: 'routeability service permissions not available in current management layer',
+    authority: 'sidecar',
+    auditId: '',
+    beforeLabel: '',
+    afterLabel: '',
+    droppedReasonsLabel: '认证错误 / model: token expired',
+  });
+});
+
+test('buildRouteResilienceActionResultDigest preserves sidecar not_implemented instead of treating it as success', () => {
+  assert.deepEqual(
+    buildRouteResilienceActionResultDigest({
+      ok: false,
+      action: 'recheck_routeability',
+      status: 'not_implemented',
+      httpStatus: 501,
+      before: { blockCount: 1 },
+      after: { blockCount: 1 },
+      droppedReasons: [{ source: 'auth-error', scope: 'account', reason: 'auth failed' }],
+      notImplementedReason: 'current gettokenshooks management layer does not own bounded reconcile or routeability service permissions',
+    }),
+    {
+      statusLabel: '未实现',
+      tone: 'warning',
+      detail:
+        'current gettokenshooks management layer does not own bounded reconcile or routeability service permissions',
+      beforeLabel: 'blockCount:1',
+      afterLabel: 'blockCount:1',
+      droppedReasonsLabel: '认证错误 / account: auth failed',
+    },
+  );
+});
+
+test('isRouteResilienceTransientSource only allows the sidecar-supported clear list', () => {
+  assert.equal(isRouteResilienceTransientSource('auth-error'), true);
+  assert.equal(isRouteResilienceTransientSource('upstream-rate-limit'), true);
+  assert.equal(isRouteResilienceTransientSource('upstream-error'), true);
+  assert.equal(isRouteResilienceTransientSource('rate-limit'), false);
+  assert.equal(isRouteResilienceTransientSource('quota-empty'), false);
 });
 
 test('buildChannelRoutingParticipantRows shows only requestable accounts in channel order', () => {

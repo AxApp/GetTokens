@@ -236,6 +236,138 @@ func TestRateLimitClientCRUDStatusAndEvents(t *testing.T) {
 	}
 }
 
+func TestDoctorDiagnosticsClientReadsSidecarSnapshot(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		if method != "GET" {
+			t.Fatalf("expected GET, got %s", method)
+		}
+		if path != "/v0/management/gettokens/doctor-diagnostics" {
+			t.Fatalf("unexpected path: %s", path)
+		}
+		return []byte(`{
+			"authority":"sidecar",
+			"source":"sidecar-diagnostics",
+			"generatedAt":"2026-06-17T08:00:00Z",
+			"summary":{"status":"warning","total":2,"ok":0,"notReady":0,"warning":2,"blocking":0,"evidence":2},
+			"checks":[
+				{
+					"id":"route_guard_dropped_reasons",
+					"status":"warning",
+					"reason":"Active route guard dropped reason evidence is present.",
+					"repairability":"read_only",
+					"evidence":[
+						{
+							"kind":"route_dropped_reason",
+							"accountKey":"acct_route_001",
+							"authId":"auth_route_001",
+							"source":"upstream-rate-limit",
+							"scope":"account",
+							"model":"gpt-5",
+							"reason":"upstream 429 active cooldown",
+							"routeBlocking":true,
+							"droppedReason":{
+								"accountKey":"acct_route_001",
+								"accountId":"acct_route_001",
+								"authId":"auth_route_001",
+								"source":"upstream-rate-limit",
+								"scope":"account",
+								"reason":"upstream 429 active cooldown",
+								"model":"gpt-5",
+								"routeBlocking":true
+							}
+						}
+					]
+				},
+				{
+					"id":"quota_facts",
+					"status":"warning",
+					"reason":"Quota runtime facts are available from sidecar runtime state.",
+					"repairability":"read_only",
+					"evidence":[
+						{
+							"kind":"quota_fact",
+							"accountKey":"acct_quota_001",
+							"source":"quota-curl",
+							"state":"denied",
+							"freshness":"fresh",
+							"confidence":"high",
+							"risk":"denied",
+							"explanation":"Provider denied quota check",
+							"evidenceRefs":["quota-status:acct_quota_001"],
+							"quotaFact":{
+								"state":"denied",
+								"source":"quota-curl",
+								"freshness":"fresh",
+								"confidence":"high",
+								"risk":"denied",
+								"explanation":"Provider denied quota check",
+								"observed_at":"2026-06-17T08:00:00Z",
+								"evidence_refs":["quota-status:acct_quota_001"]
+							}
+						}
+					]
+				}
+			]
+		}`), 200, nil
+	})
+
+	response, supported, err := client.GetDoctorDiagnostics()
+	if err != nil {
+		t.Fatalf("GetDoctorDiagnostics returned error: %v", err)
+	}
+	if !supported {
+		t.Fatal("supported = false, want true")
+	}
+	if response == nil {
+		t.Fatal("response = nil, want non-nil")
+	}
+	if response.Authority != "sidecar" || response.Source != "sidecar-diagnostics" || response.GeneratedAt != "2026-06-17T08:00:00Z" {
+		t.Fatalf("unexpected response core: %#v", response)
+	}
+	if response.Summary.Status != "warning" || response.Summary.Total != 2 || response.Summary.Warning != 2 || response.Summary.Evidence != 2 {
+		t.Fatalf("unexpected summary: %#v", response.Summary)
+	}
+	if len(response.Checks) != 2 {
+		t.Fatalf("checks = %#v, want 2", response.Checks)
+	}
+	if response.Checks[0].ID != "route_guard_dropped_reasons" || len(response.Checks[0].Evidence) != 1 {
+		t.Fatalf("route check = %#v, want one route evidence", response.Checks[0])
+	}
+	route := response.Checks[0].Evidence[0]
+	if route.DroppedReason == nil || route.DroppedReason.AccountKey != "acct_route_001" || route.DroppedReason.AccountID != "acct_route_001" || route.DroppedReason.AuthID != "auth_route_001" || route.DroppedReason.Model != "gpt-5" || !route.DroppedReason.RouteBlocking {
+		t.Fatalf("route nested dropped reason = %#v, want preserved typed route evidence", route.DroppedReason)
+	}
+	if response.Checks[1].ID != "quota_facts" || len(response.Checks[1].Evidence) != 1 {
+		t.Fatalf("quota check = %#v, want one quota evidence", response.Checks[1])
+	}
+	quota := response.Checks[1].Evidence[0]
+	if quota.AccountKey != "acct_quota_001" || quota.State != "denied" || quota.Risk != "denied" || quota.QuotaFact == nil || quota.QuotaFact.State != "denied" {
+		t.Fatalf("quota evidence = %#v, want preserved quota fact", quota)
+	}
+	if quota.QuotaFact.ObservedAt != "2026-06-17T08:00:00Z" || len(quota.QuotaFact.EvidenceRefs) != 1 || quota.QuotaFact.EvidenceRefs[0] != "quota-status:acct_quota_001" {
+		t.Fatalf("quota nested fact = %#v, want sidecar snake_case fields decoded", quota.QuotaFact)
+	}
+}
+
+func TestDoctorDiagnosticsClientReturnsUnsupportedOn404And501(t *testing.T) {
+	for _, status := range []int{404, 501} {
+		client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			return []byte(`{"error":"unsupported"}`), status, nil
+		})
+
+		response, supported, err := client.GetDoctorDiagnostics()
+		if err != nil {
+			t.Fatalf("status %d GetDoctorDiagnostics returned error: %v", status, err)
+		}
+		if supported {
+			t.Fatalf("status %d supported = true, want false", status)
+		}
+		if response != nil {
+			t.Fatalf("status %d response = %#v, want nil", status, response)
+		}
+	}
+}
+
 func TestProjectCandidatePoolRuleClientCRUD(t *testing.T) {
 	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		switch {
@@ -326,12 +458,12 @@ func TestQuotaRuntimeClientStatus(t *testing.T) {
 				t.Fatalf("unexpected content type: %s", contentType)
 			}
 			assertJSONContains(t, body, `"plan_type":"plus"`)
-			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"plus","windows":[{"id":"five-hour","remaining_percent":0,"reset_at_unix":1893456000}],"blocked":true,"sources":[{"source":"quota-empty","reason":"quota empty"}]}`), 200, nil
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"plus","windows":[{"id":"five-hour","remaining_percent":0,"reset_at_unix":1893456000}],"blocked":true,"sources":[{"source":"quota-empty","reason":"quota empty"}],"fact":{"state":"stale","source":"legacy-fact","freshness":"stale","confidence":"low","risk":"warning","explanation":"legacy fact should not win","observed_at":"2026-06-16T07:00:00Z","evidence_refs":["legacy:fact"]},"quotaFact":{"state":"no_quota","source":"quota-runtime","freshness":"fresh","confidence":"high","risk":"blocking","explanation":"five-hour exhausted","observedAt":"2026-06-16T08:00:00Z","expiresAt":"2026-06-16T13:00:00Z","evidenceRefs":["window:five-hour","guard:quota-empty"]}}`), 200, nil
 		case method == "GET" && path == "/v0/management/gettokens/quota-status":
 			if got := query.Get("account_key"); got != "acct_00000000-0000-4000-8000-000000000001" {
 				t.Fatalf("unexpected quota account_key query: %s", got)
 			}
-			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","windows":[],"sources":[]}`), 200, nil
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","windows":[],"sources":[],"fact":{"state":"available","source":"quota-status","freshness":"fresh","confidence":"medium","risk":"none","explanation":"billing evidence","observed_at":"2026-06-16T08:01:00Z","expires_at":"2026-06-16T13:01:00Z","evidence_refs":["billing:balance"]}}`), 200, nil
 		default:
 			t.Fatalf("unexpected request: %s %s", method, path)
 		}
@@ -347,9 +479,56 @@ func TestQuotaRuntimeClientStatus(t *testing.T) {
 	if err != nil || status == nil || !status.Blocked || status.Sources[0].Source != "quota-empty" {
 		t.Fatalf("UpsertQuotaStatus = %#v, err = %v", status, err)
 	}
+	if status.Fact == nil || status.Fact.State != "no_quota" || status.Fact.ObservedAt != "2026-06-16T08:00:00Z" || len(status.Fact.EvidenceRefs) != 2 {
+		t.Fatalf("UpsertQuotaStatus fact = %#v, want parsed sidecar fact", status.Fact)
+	}
+	if status.Fact.Source != "quota-runtime" || status.Fact.EvidenceRefs[0] != "window:five-hour" {
+		t.Fatalf("UpsertQuotaStatus fact = %#v, want quotaFact to win over legacy fact", status.Fact)
+	}
 	status, err = client.GetQuotaStatus("acct_00000000-0000-4000-8000-000000000001")
 	if err != nil || status == nil || status.AccountKey == "" {
 		t.Fatalf("GetQuotaStatus = %#v, err = %v", status, err)
+	}
+	if status.Fact == nil || status.Fact.State != "available" || status.Fact.ExpiresAt != "2026-06-16T13:01:00Z" || status.Fact.EvidenceRefs[0] != "billing:balance" {
+		t.Fatalf("GetQuotaStatus fact = %#v, want parsed sidecar fact", status.Fact)
+	}
+}
+
+func TestQuotaRuntimeClientDecodesQuotaFactAliasesWithoutLocalInference(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		if method != "GET" || path != "/v0/management/gettokens/quota-status" {
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		want := "acct_camel,acct_snake,acct_legacy,acct_missing"
+		if got := query.Get("account_keys"); got != want {
+			t.Fatalf("account_keys query = %q, want %q", got, want)
+		}
+		return []byte(`{"items":[
+			{"account_key":"acct_camel","status":"success","windows":[],"sources":[],"quotaFact":{"state":"available","source":"quota-runtime","freshness":"fresh","confidence":"high","risk":"none","observedAt":"2026-06-17T08:00:00Z","evidenceRefs":["quota:camel"]}},
+			{"account_key":"acct_snake","status":"success","windows":[],"sources":[],"quota_fact":{"state":"stale","source":"quota-runtime","freshness":"stale","confidence":"medium","risk":"warning","observed_at":"2026-06-17T08:01:00Z","evidence_refs":["quota:snake"]}},
+			{"account_key":"acct_legacy","status":"success","windows":[],"sources":[],"fact":{"state":"denied","source":"quota-runtime","freshness":"fresh","confidence":"high","risk":"denied","observed_at":"2026-06-17T08:02:00Z","evidence_refs":["quota:legacy"]}},
+			{"account_key":"acct_missing","status":"success","windows":[{"id":"weekly","remaining_percent":0}],"blocked":true,"block_reason":"quota empty: weekly","sources":[]}
+		]}`), 200, nil
+	})
+
+	statuses, err := client.GetQuotaStatuses([]string{"acct_camel", "acct_snake", "acct_legacy", "acct_missing"})
+	if err != nil {
+		t.Fatalf("GetQuotaStatuses: %v", err)
+	}
+	if len(statuses) != 4 {
+		t.Fatalf("statuses = %#v, want 4", statuses)
+	}
+	if statuses[0].Fact == nil || statuses[0].Fact.State != "available" || statuses[0].Fact.ObservedAt != "2026-06-17T08:00:00Z" || statuses[0].Fact.EvidenceRefs[0] != "quota:camel" {
+		t.Fatalf("camel quotaFact = %#v, want explicit sidecar fact", statuses[0].Fact)
+	}
+	if statuses[1].Fact == nil || statuses[1].Fact.State != "stale" || statuses[1].Fact.ObservedAt != "2026-06-17T08:01:00Z" || statuses[1].Fact.EvidenceRefs[0] != "quota:snake" {
+		t.Fatalf("snake quota_fact = %#v, want explicit sidecar fact", statuses[1].Fact)
+	}
+	if statuses[2].Fact == nil || statuses[2].Fact.State != "denied" || statuses[2].Fact.EvidenceRefs[0] != "quota:legacy" {
+		t.Fatalf("legacy fact = %#v, want explicit sidecar fact", statuses[2].Fact)
+	}
+	if statuses[3].Fact != nil {
+		t.Fatalf("missing fact = %#v, want no local authority inference from windows/block_reason", statuses[3].Fact)
 	}
 }
 
@@ -564,6 +743,29 @@ func TestListChannelRoutingDecisionsClientEndpoints(t *testing.T) {
 	}
 }
 
+func TestListChannelRoutingDecisionsClientAcceptsStructuredDroppedReasons(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		return []byte(`{"items":[
+			{"id":"route-camel","channel":"codex","candidateCount":0,"droppedReasons":[{"accountID":"acct_company_1","authID":"auth_company_1","source":"rate-limit","scope":"account","reason":"request window exhausted","model":"gpt-5","expiresAt":"2026-06-15T10:05:00Z","updatedAt":"2026-06-15T10:00:00Z","routeBlocking":true}]},
+			{"id":"route-snake","channel":"codex","candidateCount":0,"dropped_reasons":[{"account_id":"acct_company_2","auth_id":"auth_company_2","source":"quota-empty","scope":"model","reason":"quota exhausted","model":"gpt-5-mini","expires_at":"2026-06-15T11:05:00Z","updated_at":"2026-06-15T11:00:00Z","route_blocking":true}]}
+		]}`), 200, nil
+	})
+
+	items, supported, err := client.ListChannelRoutingDecisions("codex", 5)
+	if err != nil || !supported {
+		t.Fatalf("ListChannelRoutingDecisions err=%v supported=%v", err, supported)
+	}
+	if len(items) != 2 {
+		t.Fatalf("items = %#v, want 2", items)
+	}
+	if got := items[0].DroppedReasons; len(got) != 1 || got[0].AccountID != "acct_company_1" || got[0].AuthID != "auth_company_1" || got[0].Source != "rate-limit" || got[0].Scope != "account" || got[0].Reason != "request window exhausted" || got[0].Model != "gpt-5" || got[0].ExpiresAt != "2026-06-15T10:05:00Z" || got[0].UpdatedAt != "2026-06-15T10:00:00Z" || !got[0].RouteBlocking {
+		t.Fatalf("camel dropped reasons = %#v", got)
+	}
+	if got := items[1].DroppedReasons; len(got) != 1 || got[0].AccountID != "acct_company_2" || got[0].AuthID != "auth_company_2" || got[0].Source != "quota-empty" || got[0].Scope != "model" || got[0].Reason != "quota exhausted" || got[0].Model != "gpt-5-mini" || got[0].ExpiresAt != "2026-06-15T11:05:00Z" || got[0].UpdatedAt != "2026-06-15T11:00:00Z" || !got[0].RouteBlocking {
+		t.Fatalf("snake dropped reasons = %#v", got)
+	}
+}
+
 func TestListChannelRoutingDecisionsClientReturnsUnsupportedOn404(t *testing.T) {
 	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		return nil, 404, nil
@@ -575,6 +777,92 @@ func TestListChannelRoutingDecisionsClientReturnsUnsupportedOn404(t *testing.T) 
 	}
 	if supported || items != nil {
 		t.Fatalf("ListChannelRoutingDecisions = %#v, supported=%v, want unsupported nil", items, supported)
+	}
+}
+
+func TestRunRouteResilienceActionPostsManagementPayload(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		if method != "POST" || path != "/v0/management/gettokens/route-resilience/actions" {
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		if contentType != "application/json" {
+			t.Fatalf("contentType = %q, want application/json", contentType)
+		}
+		payload, err := io.ReadAll(body)
+		if err != nil {
+			t.Fatalf("read body: %v", err)
+		}
+		payloadText := string(payload)
+		if !strings.Contains(payloadText, `"action":"clear_transient_lockout"`) || !strings.Contains(payloadText, `"accountKey":"acct_company_1"`) {
+			t.Fatalf("unexpected payload: %s", payload)
+		}
+		return []byte(`{
+			"ok": true,
+			"authority": "sidecar",
+			"action": "clear_transient_lockout",
+			"status": "applied",
+			"accountKey": "acct_company_1",
+			"authId": "auth_company_1",
+			"model": "gpt-5",
+			"before": {"blockCount": 1},
+			"after": {"blockCount": 0},
+			"auditId": "route-audit-1",
+			"droppedSources": ["upstream-error"],
+			"droppedReasons": [{"accountID":"acct_company_1","authID":"auth_company_1","source":"upstream-error","scope":"account","reason":"cleared","model":"gpt-5","routeBlocking":false}]
+		}`), 200, nil
+	})
+
+	result, err := client.RunRouteResilienceAction(RouteResilienceActionRequest{
+		Action:     "clear_transient_lockout",
+		AccountKey: "acct_company_1",
+		Sources:    []string{"upstream-error"},
+		Reason:     "operator verified recovery",
+	})
+	if err != nil {
+		t.Fatalf("RunRouteResilienceAction: %v", err)
+	}
+	if result.HTTPStatus != 200 || !result.OK || result.Authority != "sidecar" || result.Action != "clear_transient_lockout" || result.Status != "applied" {
+		t.Fatalf("result core = %#v", result)
+	}
+	if result.Before["blockCount"] != float64(1) || result.After["blockCount"] != float64(0) {
+		t.Fatalf("before/after = %#v %#v", result.Before, result.After)
+	}
+	if len(result.DroppedSources) != 1 || result.DroppedSources[0] != "upstream-error" {
+		t.Fatalf("droppedSources = %#v", result.DroppedSources)
+	}
+	if len(result.DroppedReasons) != 1 || result.DroppedReasons[0].Source != "upstream-error" || result.DroppedReasons[0].Model != "gpt-5" {
+		t.Fatalf("droppedReasons = %#v", result.DroppedReasons)
+	}
+}
+
+func TestRouteResilienceActionNotImplementedPreserves501Payload(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		return []byte(`{
+			"ok": false,
+			"authority": "sidecar",
+			"action": "rerun_bounded_reconcile",
+			"status": "not_implemented",
+			"accountKey": "acct_company_1",
+			"before": {"blockCount": 1},
+			"after": {"blockCount": 1},
+			"droppedReasons": [{"accountID":"acct_company_1","authID":"auth_company_1","source":"auth-error","scope":"account","reason":"auth failed","routeBlocking":true}],
+			"notImplementedReason": "current gettokenshooks management layer does not own bounded reconcile or routeability service permissions"
+		}`), 501, nil
+	})
+
+	result, err := client.RunRouteResilienceAction(RouteResilienceActionRequest{
+		Action:     "rerun_bounded_reconcile",
+		AccountKey: "acct_company_1",
+		Reason:     "operator requested bounded reconcile",
+	})
+	if err != nil {
+		t.Fatalf("RunRouteResilienceAction: %v", err)
+	}
+	if result.HTTPStatus != 501 || result.OK || result.Status != "not_implemented" || result.NotImplementedReason == "" {
+		t.Fatalf("result = %#v, want 501 not_implemented payload", result)
+	}
+	if len(result.DroppedReasons) != 1 || result.DroppedReasons[0].Source != "auth-error" || !result.DroppedReasons[0].RouteBlocking {
+		t.Fatalf("droppedReasons = %#v", result.DroppedReasons)
 	}
 }
 

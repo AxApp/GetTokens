@@ -5,6 +5,7 @@ import {
   usageDeskSessionDrilldownColumnLabels,
   type UsageDeskProjectedProjectUsage,
   type UsageDeskProjectedSessionUsage,
+  type UsageDeskStatusEvidence,
 } from '../../model/usageDesk';
 
 export function StatePanel({ title, body, tone = 'default' }: { title: string; body: ReactNode; tone?: 'default' | 'error' }) {
@@ -28,6 +29,74 @@ export function InfoCard({ title, highlight, body }: { title: string; highlight:
       <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{title}</div>
       <div className="mt-3 text-[length:var(--font-size-ui-4xl)] font-black uppercase italic tracking-tight text-[var(--text-primary)]">{highlight}</div>
       <p className="mt-3 text-[length:var(--font-size-ui-md-compact)] leading-6 text-[var(--text-muted)]">{body}</p>
+    </div>
+  );
+}
+
+export function UsageDeskEvidenceStatus({ evidence }: { evidence: UsageDeskStatusEvidence }) {
+  if (!('view' in evidence)) {
+    return (
+      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3" data-usage-desk-evidence-status="missing-quota-fact">
+        <div className="min-w-0 flex-1">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            NON-AUTHORITATIVE
+          </div>
+          <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+            {evidence.title}
+          </div>
+          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+            {evidence.summary}
+          </div>
+          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-muted)]">
+            {evidence.description}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const metaItems = [
+    evidence.view.stateLabel,
+    evidence.view.sourceLabel,
+    evidence.view.freshnessLabel,
+    evidence.view.confidenceLabel,
+    evidence.view.riskLabel,
+  ];
+  const evidenceRefsTitle = evidence.view.evidenceRefs.join('\n');
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3" data-usage-desk-evidence-status="quota-fact">
+      <div className="min-w-0 flex-1">
+        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+          {evidence.title}
+        </div>
+        <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+          {evidence.summary}
+        </div>
+        {evidence.view.explanation ? (
+          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-muted)]">
+            {evidence.view.explanation}
+          </div>
+        ) : null}
+      </div>
+      <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
+        {metaItems.map((item) => (
+          <span
+            key={item}
+            className="border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]"
+          >
+            {item}
+          </span>
+        ))}
+        {evidence.view.evidenceRefs.length > 0 ? (
+          <span
+            title={evidenceRefsTitle}
+            className="border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]"
+          >
+            refs {evidence.view.evidenceRefs.length}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }

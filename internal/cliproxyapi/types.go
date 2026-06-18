@@ -1,5 +1,10 @@
 package cliproxyapi
 
+import (
+	"bytes"
+	"encoding/json"
+)
+
 type CodexModel struct {
 	Name  string `json:"name"`
 	Alias string `json:"alias"`
@@ -393,6 +398,45 @@ type QuotaRuntimeSourceState struct {
 	NextReset string `json:"next_reset,omitempty"`
 }
 
+type QuotaRuntimeFact struct {
+	State        string   `json:"state,omitempty"`
+	Source       string   `json:"source,omitempty"`
+	Freshness    string   `json:"freshness,omitempty"`
+	Confidence   string   `json:"confidence,omitempty"`
+	Risk         string   `json:"risk,omitempty"`
+	Explanation  string   `json:"explanation,omitempty"`
+	ObservedAt   string   `json:"observed_at,omitempty"`
+	ExpiresAt    string   `json:"expires_at,omitempty"`
+	EvidenceRefs []string `json:"evidence_refs,omitempty"`
+}
+
+func (fact *QuotaRuntimeFact) UnmarshalJSON(data []byte) error {
+	type alias QuotaRuntimeFact
+	var decoded struct {
+		alias
+		ObservedAtCamel   string   `json:"observedAt,omitempty"`
+		ExpiresAtCamel    string   `json:"expiresAt,omitempty"`
+		EvidenceRefsCamel []string `json:"evidenceRefs,omitempty"`
+	}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	next := QuotaRuntimeFact(decoded.alias)
+	if decoded.ObservedAtCamel != "" {
+		next.ObservedAt = decoded.ObservedAtCamel
+	}
+	if decoded.ExpiresAtCamel != "" {
+		next.ExpiresAt = decoded.ExpiresAtCamel
+	}
+	if decoded.EvidenceRefsCamel != nil {
+		next.EvidenceRefs = append([]string(nil), decoded.EvidenceRefsCamel...)
+	} else {
+		next.EvidenceRefs = append([]string(nil), next.EvidenceRefs...)
+	}
+	*fact = next
+	return nil
+}
+
 type QuotaRuntimeState struct {
 	AccountKey      string                    `json:"account_key"`
 	Source          string                    `json:"source,omitempty"`
@@ -407,6 +451,93 @@ type QuotaRuntimeState struct {
 	Blocked         bool                      `json:"blocked"`
 	BlockReason     string                    `json:"block_reason,omitempty"`
 	Sources         []QuotaRuntimeSourceState `json:"sources"`
+	Fact            *QuotaRuntimeFact         `json:"fact,omitempty"`
+}
+
+func (state *QuotaRuntimeState) UnmarshalJSON(data []byte) error {
+	type alias QuotaRuntimeState
+	var decoded alias
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	for _, key := range []string{"quotaFact", "quota_fact", "fact"} {
+		payload, ok := raw[key]
+		if !ok || len(bytes.TrimSpace(payload)) == 0 || bytes.Equal(bytes.TrimSpace(payload), []byte("null")) {
+			continue
+		}
+		var fact QuotaRuntimeFact
+		if err := json.Unmarshal(payload, &fact); err != nil {
+			return err
+		}
+		decoded.Fact = cloneQuotaRuntimeFact(&fact)
+		break
+	}
+
+	*state = QuotaRuntimeState(decoded)
+	return nil
+}
+
+func cloneQuotaRuntimeFact(fact *QuotaRuntimeFact) *QuotaRuntimeFact {
+	if fact == nil {
+		return nil
+	}
+	next := *fact
+	next.EvidenceRefs = append([]string(nil), fact.EvidenceRefs...)
+	return &next
+}
+
+type DoctorDiagnosticsResponse struct {
+	Authority   string                   `json:"authority"`
+	Source      string                   `json:"source"`
+	GeneratedAt string                   `json:"generatedAt"`
+	Summary     DoctorDiagnosticsSummary `json:"summary"`
+	Checks      []DoctorDiagnosticCheck  `json:"checks"`
+}
+
+type DoctorDiagnosticsSummary struct {
+	Status   string `json:"status"`
+	Total    int    `json:"total"`
+	OK       int    `json:"ok"`
+	NotReady int    `json:"notReady"`
+	Warning  int    `json:"warning"`
+	Blocking int    `json:"blocking"`
+	Evidence int    `json:"evidence"`
+}
+
+type DoctorDiagnosticCheck struct {
+	ID            string                     `json:"id"`
+	Status        string                     `json:"status"`
+	Reason        string                     `json:"reason"`
+	Repairability string                     `json:"repairability"`
+	Evidence      []DoctorDiagnosticEvidence `json:"evidence"`
+}
+
+type DoctorDiagnosticEvidence struct {
+	Kind          string                       `json:"kind"`
+	AccountKey    string                       `json:"accountKey,omitempty"`
+	AccountID     string                       `json:"accountId,omitempty"`
+	AuthID        string                       `json:"authId,omitempty"`
+	Source        string                       `json:"source,omitempty"`
+	Scope         string                       `json:"scope,omitempty"`
+	Reason        string                       `json:"reason,omitempty"`
+	Model         string                       `json:"model,omitempty"`
+	ExpiresAt     string                       `json:"expiresAt,omitempty"`
+	UpdatedAt     string                       `json:"updatedAt,omitempty"`
+	RouteBlocking bool                         `json:"routeBlocking,omitempty"`
+	State         string                       `json:"state,omitempty"`
+	Freshness     string                       `json:"freshness,omitempty"`
+	Confidence    string                       `json:"confidence,omitempty"`
+	Risk          string                       `json:"risk,omitempty"`
+	Explanation   string                       `json:"explanation,omitempty"`
+	ObservedAt    string                       `json:"observedAt,omitempty"`
+	EvidenceRefs  []string                     `json:"evidenceRefs,omitempty"`
+	DroppedReason *ChannelRoutingDroppedReason `json:"droppedReason,omitempty"`
+	QuotaFact     *QuotaRuntimeFact            `json:"quotaFact,omitempty"`
 }
 
 type QuotaRefreshBatchInput struct {

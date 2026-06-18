@@ -43,6 +43,7 @@ const codexLiveSessionsViews: ReadonlySet<CodexLiveSessionsView> = new Set(['ses
 const codexWorkspaces: ReadonlySet<CodexWorkspace> = new Set([
   'feature-config',
   'binary-management',
+  'extension-registry',
   'skills',
   'mcp-servers',
   'account-list',
@@ -50,6 +51,7 @@ const codexWorkspaces: ReadonlySet<CodexWorkspace> = new Set([
   'session-management',
   'vendor-status',
   'usage-codex',
+  'doctor-workbench',
 ]);
 const claudeWorkspaces: ReadonlySet<ClaudeWorkspace> = new Set(['account-list', 'skills', 'mcp-servers', 'session-management', 'usage']);
 const sessionManagementWorkspaces: ReadonlySet<SessionManagementWorkspace> = new Set(['codex', 'claude']);

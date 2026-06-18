@@ -850,6 +850,17 @@ export function getAccountsPreviewAuthFileModels(name: string): Array<{ name: st
 export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'claude' = 'codex') {
   if (workspace === 'claude') {
     return {
+      quotaFact: {
+        state: 'stale',
+        source: 'quota-runtime',
+        freshness: 'stale',
+        confidence: 'medium',
+        risk: 'warning',
+        explanation: 'Anthropic relay quota fact is served from cached runtime evidence.',
+        observedAt: '2026-06-17T09:00:00Z',
+        expiresAt: '2026-06-17T13:00:00Z',
+        evidenceRefs: ['workspace:claude', 'source:cache'],
+      },
       items: [
         previewObservedUsageItem({
           accountKey: 'openai-compatible:anthropic-relay',
@@ -872,6 +883,17 @@ export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'claude' =
   }
 
   return {
+    quotaFact: {
+      state: 'available',
+      source: 'quota-runtime',
+      freshness: 'fresh',
+      confidence: 'high',
+      risk: 'none',
+      explanation: 'Sidecar quota runtime still reports available capacity.',
+      observedAt: '2026-06-17T10:00:00Z',
+      expiresAt: '2026-06-17T15:00:00Z',
+      evidenceRefs: ['workspace:codex', 'window:weekly'],
+    },
     items: [
       previewObservedUsageItem({
         accountKey: 'codex-api-key:stable-001',
@@ -934,6 +956,16 @@ export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'claude' =
 export function getUsageDeskPreviewProjectedUsage(workspace: 'codex' | 'claude' = 'codex') {
   if (workspace === 'claude') {
     return {
+      quotaFact: {
+        state: 'unknown',
+        source: 'local-projection',
+        freshness: 'unknown',
+        confidence: 'low',
+        risk: 'unknown',
+        explanation: 'Local session projection does not own provider quota authority.',
+        observedAt: '2026-06-17T09:05:00Z',
+        evidenceRefs: ['workspace:claude', 'projection:local-session'],
+      },
       details: [
         previewProjectedDetail({ provider: 'claude', projectName: 'GetTokens', sessionID: 'projects/-Users-linhey-Desktop-GetTokens/session-a.jsonl', daysAgo: 4, hour: 11, minute: 15, model: 'claude-opus-4-6', inputTokens: 210000, cachedInputTokens: 78000, outputTokens: 18000, requestCount: 2 }),
         previewProjectedDetail({ provider: 'claude', projectName: 'GetTokens', sessionID: 'projects/-Users-linhey-Desktop-GetTokens/session-a.jsonl', daysAgo: 3, hour: 16, minute: 35, model: 'claude-sonnet-4-6', inputTokens: 180000, cachedInputTokens: 64000, outputTokens: 16000, requestCount: 2 }),
@@ -949,6 +981,16 @@ export function getUsageDeskPreviewProjectedUsage(workspace: 'codex' | 'claude' 
   }
 
   return {
+    quotaFact: {
+      state: 'unknown',
+      source: 'local-projection',
+      freshness: 'unknown',
+      confidence: 'low',
+      risk: 'unknown',
+      explanation: 'Local Codex rollout projection is read-only and cannot infer quota authority.',
+      observedAt: '2026-06-17T10:05:00Z',
+      evidenceRefs: ['workspace:codex', 'projection:local-rollout'],
+    },
     details: [
       previewProjectedDetail({ daysAgo: 6, hour: 11, minute: 20, model: 'gpt-5-codex', inputTokens: 420000, cachedInputTokens: 80000, outputTokens: 26000, requestCount: 3 }),
       previewProjectedDetail({ daysAgo: 5, hour: 10, minute: 30, model: 'gpt-5-codex', inputTokens: 390000, cachedInputTokens: 72000, outputTokens: 24000, requestCount: 3 }),

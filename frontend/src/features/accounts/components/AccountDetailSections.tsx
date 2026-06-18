@@ -23,6 +23,7 @@ import {
   type AccountProxyRouteDraft,
 } from '../model/accountProxyRoute.ts';
 import { buildQuotaDisplay, normalizeQuotaTestDisplay, selectQuotaWindows } from '../model/accountQuota';
+import type { AccountRouteResilienceEvidence } from '../model/accountPresentation';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { CodexQuotaState, QuotaDisplay } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
@@ -192,6 +193,7 @@ export function AccountRuntimeRouteSection({
     meta: string;
     detail: string;
     unresolved: boolean;
+    routeResilienceEvidence?: AccountRouteResilienceEvidence[];
   }>;
   span?: AccountDetailSectionSpan;
 }) {
@@ -332,6 +334,13 @@ export function AccountRuntimeRouteSection({
                       {decision.detail}
                     </div>
                   ) : null}
+                  {decision.routeResilienceEvidence?.length ? (
+                    <div data-account-runtime-route-resilience="evidence" className="mt-2 grid gap-2">
+                      {decision.routeResilienceEvidence.map((evidence) => (
+                        <RuntimeRouteResilienceEvidenceMarker key={evidence.id} evidence={evidence} />
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -453,6 +462,235 @@ function formatRuntimeRepairTimestamp(value: number) {
   } catch {
     return String(value);
   }
+}
+
+function RuntimeRouteResilienceEvidenceMarker({
+  evidence,
+}: {
+  evidence: AccountRouteResilienceEvidence;
+}) {
+  const sourceScopeModelLabel = [
+    evidence.sourceLabel || evidence.source || '未知 source',
+    evidence.scope || 'scope-unknown',
+    evidence.model ? `model:${evidence.model}` : 'model:unknown',
+  ].join(' / ');
+
+  return (
+    <div
+      data-account-runtime-route-resilience-marker={evidence.digestDisplayMode}
+      className="grid gap-2 border border-[var(--border-color)] bg-[color-mix(in_srgb,var(--bg-muted)_72%,transparent)] px-3 py-2"
+    >
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          Route Resilience Evidence
+        </div>
+        <AccountDetailPill
+          tone={evidence.matchedRouteBlocking ? 'danger' : 'neutral'}
+          className="!min-h-0 !py-0.5 !text-[length:var(--font-size-ui-2xs)]"
+        >
+          {evidence.digestDisplayMode === 'reference'
+            ? evidence.matchedRouteBlocking ? 'REF BLOCKING' : 'REF OBSERVE'
+            : evidence.matchedRouteBlocking ? 'BLOCKING' : 'OBSERVE'}
+        </AccountDetailPill>
+      </div>
+      <AccountDetailEvidenceGrid
+        rows={evidence.digestDisplayMode === 'reference'
+          ? [
+              {
+                label: 'Stable Target ID',
+                value: evidence.id,
+                title: evidence.id,
+              },
+              {
+                label: 'This Decision',
+                value: formatRouteResilienceCurrentDecisionLabel(evidence),
+                title: buildRouteResilienceCurrentDecisionTitle(evidence),
+              },
+              {
+                label: 'Digest Coverage',
+                value: formatRouteResilienceCoverageLabel(evidence),
+                title: buildRouteResilienceCoverageTitle(evidence),
+              },
+              {
+                label: 'Digest Above',
+                value: formatRouteResilienceReferenceLabel(evidence),
+                title: buildRouteResilienceLatestEvidenceTitle(evidence),
+              },
+            ]
+          : [
+              {
+                label: 'Stable Target ID',
+                value: evidence.id,
+                title: evidence.id,
+              },
+              {
+                label: 'Latest Evidence',
+                value: formatRouteResilienceLatestEvidenceLabel(evidence),
+                title: buildRouteResilienceLatestEvidenceTitle(evidence),
+              },
+              {
+                label: 'This Decision',
+                value: formatRouteResilienceCurrentDecisionLabel(evidence),
+                title: buildRouteResilienceCurrentDecisionTitle(evidence),
+              },
+              {
+                label: 'First Seen',
+                value: formatRouteResilienceObservedAt(evidence.firstObservedAt),
+                title: buildRouteResilienceObservedTitle(evidence.firstObservedAt, evidence.firstObservedDecisionID),
+              },
+              {
+                label: 'Last Seen',
+                value: formatRouteResilienceObservedAt(evidence.lastObservedAt),
+                title: buildRouteResilienceObservedTitle(evidence.lastObservedAt, evidence.lastObservedDecisionID),
+              },
+              {
+                label: 'Relevant Decisions',
+                value: formatRouteResilienceRelevantDecisionsLabel(evidence),
+                title: buildRouteResilienceRelevantDecisionsTitle(evidence),
+              },
+              {
+                label: 'Digest Coverage',
+                value: formatRouteResilienceCoverageLabel(evidence),
+                title: buildRouteResilienceCoverageTitle(evidence),
+              },
+              {
+                label: 'Reason Summary',
+                value: evidence.reasonSummary || '—',
+                title: evidence.reasonSummary || '—',
+              },
+              {
+                label: 'Source / Scope / Model',
+                value: sourceScopeModelLabel,
+                title: [evidence.source, evidence.scope, evidence.model].filter(Boolean).join(' / ') || sourceScopeModelLabel,
+              },
+            ]}
+      />
+      {evidence.matchedReasonDetails?.length ? (
+        <div data-account-runtime-route-reason-details="current-decision" className="grid gap-1">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            Reason Details
+          </div>
+          <div className="grid gap-1">
+            {evidence.matchedReasonDetails.map((reasonDetail, index) => (
+              <div
+                key={`${reasonDetail.reason}-${reasonDetail.routeBlocking ? 'blocking' : 'observe'}-${index}`}
+                data-account-runtime-route-reason-detail={reasonDetail.routeBlocking ? 'blocking' : 'observe'}
+                className="grid gap-1 border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1.5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center"
+              >
+                <AccountDetailPill
+                  tone={reasonDetail.routeBlocking ? 'danger' : 'neutral'}
+                  className="!min-h-0 w-fit !py-0.5 !text-[length:var(--font-size-ui-2xs)]"
+                >
+                  {reasonDetail.routeBlocking ? 'BLOCKING' : 'OBSERVE'}
+                </AccountDetailPill>
+                <div
+                  className="min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]"
+                  title={formatRouteResilienceReasonDetailTitle(reasonDetail.reason, reasonDetail.routeBlocking)}
+                >
+                  {reasonDetail.reason || 'reason:unknown'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatRouteResilienceLatestEvidenceLabel(evidence: AccountRouteResilienceEvidence) {
+  const decisionLabel = String(evidence.decisionID || '').trim() || 'decision:unknown';
+  const recordedAtLabel = formatRouteResilienceObservedAt(evidence.recordedAt);
+  return `${decisionLabel} · ${recordedAtLabel}`;
+}
+
+function buildRouteResilienceLatestEvidenceTitle(evidence: AccountRouteResilienceEvidence) {
+  return [
+    String(evidence.decisionID || '').trim() || 'decision:unknown',
+    String(evidence.recordedAt || '').trim() || 'recordedAt:unknown',
+  ].join(' · ');
+}
+
+function buildRouteResilienceObservedTitle(recordedAt: string, decisionID: string) {
+  return [
+    String(recordedAt || '').trim() || 'unknown',
+    String(decisionID || '').trim() || 'decision:unknown',
+  ].join(' · ');
+}
+
+function formatRouteResilienceCurrentDecisionLabel(evidence: AccountRouteResilienceEvidence) {
+  const decisionLabel = String(evidence.matchedDecisionID || '').trim() || 'decision:unknown';
+  const recordedAtLabel = formatRouteResilienceObservedAt(evidence.matchedRecordedAt);
+  return `${decisionLabel} · ${recordedAtLabel}`;
+}
+
+function buildRouteResilienceCurrentDecisionTitle(evidence: AccountRouteResilienceEvidence) {
+  return buildRouteResilienceObservedTitle(evidence.matchedRecordedAt, evidence.matchedDecisionID);
+}
+
+function formatRouteResilienceReferenceLabel(evidence: AccountRouteResilienceEvidence) {
+  const relatedDecisionCount = evidence.relevantDecisions?.length || 0;
+  if (relatedDecisionCount <= 1) {
+    return '当前 decision 独占 digest；无需重复完整 metadata';
+  }
+  return `共享 digest · 共 ${relatedDecisionCount} 条相关 decision；完整 metadata 已在更近 decision 展示`;
+}
+
+function formatRouteResilienceRelevantDecisionsLabel(evidence: AccountRouteResilienceEvidence) {
+  if (!evidence.relevantDecisions?.length) {
+    return '—';
+  }
+  return evidence.relevantDecisions
+    .map((decision) => `${decision.decisionID || 'decision:unknown'} @ ${formatRouteResilienceObservedAt(decision.recordedAt)}`)
+    .join(' / ');
+}
+
+function buildRouteResilienceRelevantDecisionsTitle(evidence: AccountRouteResilienceEvidence) {
+  if (!evidence.relevantDecisions?.length) {
+    return '—';
+  }
+  return evidence.relevantDecisions
+    .map((decision) => buildRouteResilienceObservedTitle(decision.recordedAt, decision.decisionID))
+    .join(' / ');
+}
+
+function formatRouteResilienceCoverageLabel(evidence: AccountRouteResilienceEvidence) {
+  const totalDecisionCount = evidence.relevantDecisions?.length || 0;
+  if (totalDecisionCount <= 0) {
+    return '—';
+  }
+  return `${totalDecisionCount} decisions · ${evidence.blockingDecisionCount} blocking / ${evidence.observeDecisionCount} observe`;
+}
+
+function buildRouteResilienceCoverageTitle(evidence: AccountRouteResilienceEvidence) {
+  const totalDecisionCount = evidence.relevantDecisions?.length || 0;
+  if (totalDecisionCount <= 0) {
+    return '—';
+  }
+  return [
+    `total:${totalDecisionCount}`,
+    `blocking:${evidence.blockingDecisionCount}`,
+    `observe:${evidence.observeDecisionCount}`,
+  ].join(' · ');
+}
+
+function formatRouteResilienceReasonDetailTitle(reason: string, routeBlocking: boolean) {
+  return [
+    routeBlocking ? 'BLOCKING' : 'OBSERVE',
+    String(reason || '').trim() || 'reason:unknown',
+  ].join(' · ');
+}
+
+function formatRouteResilienceObservedAt(value: string) {
+  const normalizedValue = String(value || '').trim();
+  if (!normalizedValue) {
+    return '—';
+  }
+  const parsed = new Date(normalizedValue);
+  if (Number.isNaN(parsed.getTime())) {
+    return normalizedValue;
+  }
+  return parsed.toISOString().replace('T', ' ').replace('.000Z', 'Z');
 }
 
 export function AccountCredentialVerifySection({

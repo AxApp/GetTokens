@@ -1,0 +1,249 @@
+{
+  "version": "gettokens.bridge.capabilities.v1",
+  "schema": "schemas/bridge-surface-v1.schema.json",
+  "route_state_owner": "sidecar",
+  "bridge_route_state": "forbidden",
+  "transports": [
+    "mcp",
+    "a2a",
+    "openai_admin"
+  ],
+  "operations": [
+    {
+      "id": "bridge.accounts.summary",
+      "type": "read",
+      "default_scope": "bridge.accounts.read",
+      "authority": {
+        "owner": "sidecar",
+        "sources": [
+          "sidecar account runtime",
+          "account store projection"
+        ]
+      },
+      "input_schema_ref": "#/$defs/accountsSummaryInput",
+      "output_schema_ref": "#/$defs/accountsSummaryOutput",
+      "forbidden_outputs": [
+        "raw auth file",
+        "access token",
+        "refresh token",
+        "id token",
+        "api key plaintext",
+        "platform cookie",
+        "sensitive quota or billing headers"
+      ],
+      "adapter_notes": [
+        "requestable must come from sidecar runtime or diagnostics",
+        "enabled is not sufficient to derive requestable"
+      ]
+    },
+    {
+      "id": "bridge.models.supported",
+      "type": "read",
+      "default_scope": "bridge.models.read",
+      "authority": {
+        "owner": "sidecar",
+        "sources": [
+          "sidecar model registry",
+          "account-associated catalog"
+        ]
+      },
+      "input_schema_ref": "#/$defs/modelsSupportedInput",
+      "output_schema_ref": "#/$defs/modelsSupportedOutput",
+      "forbidden_outputs": [
+        "provider-inferred availability without sidecar evidence",
+        "disabled or deleted account as available model source"
+      ],
+      "adapter_notes": [
+        "metadata-only definitions must remain metadata_only",
+        "adapter must not infer protocol support from display name or base URL"
+      ]
+    },
+    {
+      "id": "bridge.routes.diagnostics",
+      "type": "read",
+      "default_scope": "bridge.routes.diagnostics.read",
+      "authority": {
+        "owner": "sidecar",
+        "sources": [
+          "sidecar route explain",
+          "sidecar route decision ledger"
+        ]
+      },
+      "input_schema_ref": "#/$defs/routesDiagnosticsInput",
+      "output_schema_ref": "#/$defs/routesDiagnosticsOutput",
+      "forbidden_outputs": [
+        "raw credentials",
+        "unredacted selected account secret",
+        "future route selection guarantee"
+      ],
+      "adapter_notes": [
+        "dry_run may call sidecar explain or probe only",
+        "dry_run must not create session affinity, route guard state, or candidate pool state"
+      ]
+    },
+    {
+      "id": "bridge.quota.summary",
+      "type": "read",
+      "default_scope": "bridge.quota.read",
+      "authority": {
+        "owner": "sidecar",
+        "sources": [
+          "sidecar quota runtime",
+          "sidecar guard source evidence"
+        ]
+      },
+      "input_schema_ref": "#/$defs/quotaSummaryInput",
+      "output_schema_ref": "#/$defs/quotaSummaryOutput",
+      "forbidden_outputs": [
+        "billing cookies",
+        "sensitive billing headers",
+        "frontend quota bar state as authority"
+      ],
+      "adapter_notes": [
+        "stale or degraded quota must be explicit",
+        "bridge must not write or clear quota-empty guards"
+      ]
+    },
+    {
+      "id": "bridge.actions.routeability_recheck",
+      "type": "safe_action",
+      "default_scope": "bridge.actions.routeability_recheck",
+      "authority": {
+        "owner": "sidecar",
+        "sources": [
+          "sidecar route diagnostics",
+          "sidecar guard evaluator"
+        ]
+      },
+      "input_schema_ref": "#/$defs/actionInput",
+      "output_schema_ref": "#/$defs/actionOutput",
+      "requires_idempotency_key": true,
+      "adapter_notes": [
+        "accepted only means sidecar operation was created or deduplicated",
+        "final requestable truth must be read from a later sidecar snapshot or diagnostics result"
+      ]
+    },
+    {
+      "id": "bridge.actions.quota_refresh",
+      "type": "safe_action",
+      "default_scope": "bridge.actions.quota_refresh",
+      "authority": {
+        "owner": "sidecar",
+        "sources": [
+          "sidecar quota refresh endpoint"
+        ]
+      },
+      "input_schema_ref": "#/$defs/actionInput",
+      "output_schema_ref": "#/$defs/actionOutput",
+      "requires_idempotency_key": true,
+      "adapter_notes": [
+        "external retries must not create refresh storms",
+        "billing refresh remains opt-in through include_billing"
+      ]
+    },
+    {
+      "id": "bridge.actions.model_catalog_refresh",
+      "type": "safe_action",
+      "default_scope": "bridge.actions.model_catalog_refresh",
+      "authority": {
+        "owner": "sidecar",
+        "sources": [
+          "sidecar model catalog refresh"
+        ]
+      },
+      "input_schema_ref": "#/$defs/actionInput",
+      "output_schema_ref": "#/$defs/actionOutput",
+      "requires_idempotency_key": true,
+      "adapter_notes": [
+        "operation refreshes account-associated catalog only",
+        "manual metadata cannot be promoted to available without sidecar evidence"
+      ]
+    },
+    {
+      "id": "bridge.actions.diagnostics_probe",
+      "type": "safe_action",
+      "default_scope": "bridge.actions.diagnostics_probe",
+      "authority": {
+        "owner": "sidecar",
+        "sources": [
+          "sidecar diagnostics probe runner"
+        ]
+      },
+      "input_schema_ref": "#/$defs/actionInput",
+      "output_schema_ref": "#/$defs/actionOutput",
+      "requires_idempotency_key": true,
+      "adapter_notes": [
+        "probe must be read-only or dry-run",
+        "probe must not write route guard, candidate pool, session affinity, or selected account state"
+      ]
+    }
+  ],
+  "error_envelopes": [
+    {
+      "code": "missing_scope",
+      "status": "rejected",
+      "required_fields": [
+        "error.required_scopes",
+        "error.sidecar_invoked"
+      ],
+      "sidecar_invoked": false,
+      "audit_required": true,
+      "adapter_notes": [
+        "bridge auth rejects the call before invoking protected sidecar diagnostics or action endpoints",
+        "response still includes audit metadata and the protected authority endpoint for traceability"
+      ]
+    },
+    {
+      "code": "invalid_request",
+      "status": "rejected",
+      "sidecar_invoked": false,
+      "audit_required": true,
+      "adapter_notes": [
+        "schema or operation/query mismatch is rejected at the bridge adapter boundary",
+        "adapter must not repair invalid route, model, quota, or action input by guessing defaults outside the schema"
+      ]
+    },
+    {
+      "code": "sidecar_unavailable",
+      "status": "rejected",
+      "sidecar_invoked": true,
+      "audit_required": true,
+      "adapter_notes": [
+        "adapter may report sidecar reachability failure but must not synthesize routeability, quota, or model availability",
+        "recoverable indicates retry suitability, not runtime truth"
+      ]
+    },
+    {
+      "code": "operation_rejected",
+      "status": "rejected",
+      "sidecar_invoked": true,
+      "audit_required": true,
+      "adapter_notes": [
+        "sidecar may reject a protected read or safe action after bridge auth succeeds",
+        "adapter may project a safe sidecar_error_code but must not leak Authorization, Cookie, or plaintext idempotency values"
+      ]
+    }
+  ],
+  "forbidden_bridge_state": [
+    "candidate pool",
+    "selected account",
+    "fallback order",
+    "route guard state",
+    "session affinity",
+    "quota-empty block",
+    "rate-limit block",
+    "auth-error block",
+    "model availability truth",
+    "requestable truth",
+    "live session pin"
+  ],
+  "allowed_bridge_state": [
+    "client config",
+    "token hash",
+    "scope grants",
+    "transport enablement",
+    "audit events",
+    "operation refs",
+    "schema version metadata"
+  ]
+}

@@ -62,6 +62,14 @@ func (a *App) SidecarRequest(method string, path string, query url.Values, body 
 		return nil, resp.StatusCode, err
 	}
 
+	if path == "/v0/management/gettokens/route-resilience/actions" {
+		return respBody, resp.StatusCode, nil
+	}
+
+	if path == "/v0/management/gettokens/doctor-diagnostics" && (resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusNotImplemented) {
+		return respBody, resp.StatusCode, nil
+	}
+
 	if resp.StatusCode >= http.StatusBadRequest {
 		msg := strings.TrimSpace(string(respBody))
 		if msg == "" {

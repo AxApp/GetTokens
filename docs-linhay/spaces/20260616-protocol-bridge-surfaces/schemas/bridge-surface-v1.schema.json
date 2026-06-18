@@ -1,0 +1,1215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gettokens.local/schemas/bridge-surface-v1.schema.json",
+  "title": "GetTokens Protocol Bridge Surface v1",
+  "description": "Canonical request input plus bridge-auth-generated response, audit, output, and error contract for Protocol Bridge read surfaces and safe actions. Request adapters must not accept or trust an external actor field; actor is produced by bridge auth for response and audit projection only.",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/requestEnvelope"
+    },
+    {
+      "$ref": "#/$defs/responseEnvelope"
+    }
+  ],
+  "$defs": {
+    "version": {
+      "const": "bridge.surface.v1"
+    },
+    "transport": {
+      "type": "string",
+      "enum": [
+        "mcp",
+        "a2a",
+        "openai_admin"
+      ]
+    },
+    "operation": {
+      "type": "string",
+      "enum": [
+        "bridge.accounts.summary",
+        "bridge.models.supported",
+        "bridge.routes.diagnostics",
+        "bridge.quota.summary",
+        "bridge.actions.routeability_recheck",
+        "bridge.actions.quota_refresh",
+        "bridge.actions.model_catalog_refresh",
+        "bridge.actions.diagnostics_probe"
+      ]
+    },
+    "readOperation": {
+      "type": "string",
+      "enum": [
+        "bridge.accounts.summary",
+        "bridge.models.supported",
+        "bridge.routes.diagnostics",
+        "bridge.quota.summary"
+      ]
+    },
+    "actionOperation": {
+      "type": "string",
+      "enum": [
+        "bridge.actions.routeability_recheck",
+        "bridge.actions.quota_refresh",
+        "bridge.actions.model_catalog_refresh",
+        "bridge.actions.diagnostics_probe"
+      ]
+    },
+    "actor": {
+      "type": "object",
+      "description": "Bridge-auth-generated actor projection for response and audit. This is not an external request authority and must not be accepted from adapter request input.",
+      "additionalProperties": false,
+      "required": [
+        "client_id",
+        "auth_subject",
+        "scopes"
+      ],
+      "properties": {
+        "client_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "auth_subject": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Redacted subject reference such as bridge-token:<hash-prefix>. Never a raw token."
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "endpoint",
+        "generated_at_unix_ms"
+      ],
+      "properties": {
+        "owner": {
+          "const": "sidecar"
+        },
+        "endpoint": {
+          "type": "string",
+          "pattern": "^/v[0-9]+/"
+        },
+        "snapshot_id": {
+          "type": "string"
+        },
+        "ledger_ref": {
+          "type": "string"
+        },
+        "generated_at_unix_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourceNote"
+          }
+        }
+      }
+    },
+    "sourceNote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "source"
+      ],
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "sidecar-runtime-snapshot",
+            "sidecar-account-store-projection",
+            "sidecar-model-registry",
+            "sidecar-route-explain",
+            "sidecar-route-decision-ledger",
+            "sidecar-quota-runtime",
+            "sidecar-operation-runner",
+            "wails-local-config"
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "audit_id",
+        "redaction"
+      ],
+      "properties": {
+        "audit_id": {
+          "type": "string",
+          "pattern": "^bra_[A-Za-z0-9_-]+$"
+        },
+        "redaction": {
+          "type": "string",
+          "enum": [
+            "secrets-removed",
+            "secrets-and-headers-removed"
+          ]
+        },
+        "sidecar_request_id": {
+          "type": "string"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "field": {
+          "type": "string"
+        }
+      }
+    },
+    "requestEnvelope": {
+      "type": "object",
+      "description": "External adapter request input. The request adapter derives the actor from bridge auth context; external actor values are not accepted or trusted.",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "request_id",
+        "transport",
+        "operation",
+        "query"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^brq_[A-Za-z0-9_-]+$"
+        },
+        "transport": {
+          "$ref": "#/$defs/transport"
+        },
+        "operation": {
+          "$ref": "#/$defs/operation"
+        },
+        "query": {
+          "$ref": "#/$defs/query"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "description": "Required by action operations before adapter execution; may be omitted by read operations."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "bridge.accounts.summary"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/accountsSummaryInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "bridge.models.supported"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/modelsSupportedInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "bridge.routes.diagnostics"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/routesDiagnosticsInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "bridge.quota.summary"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/quotaSummaryInput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "$ref": "#/$defs/actionOperation"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "idempotency_key"
+            ],
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/actionInput"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "responseEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "request_id",
+        "transport",
+        "operation",
+        "actor",
+        "status",
+        "authority",
+        "audit",
+        "warnings"
+      ],
+      "properties": {
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^brq_[A-Za-z0-9_-]+$"
+        },
+        "transport": {
+          "$ref": "#/$defs/transport"
+        },
+        "operation": {
+          "$ref": "#/$defs/operation"
+        },
+        "actor": {
+          "$ref": "#/$defs/actor"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "accepted",
+            "rejected",
+            "running",
+            "completed",
+            "failed"
+          ]
+        },
+        "query": {
+          "$ref": "#/$defs/query"
+        },
+        "data": {
+          "$ref": "#/$defs/data"
+        },
+        "error": {
+          "$ref": "#/$defs/error"
+        },
+        "authority": {
+          "$ref": "#/$defs/authority"
+        },
+        "audit": {
+          "$ref": "#/$defs/audit"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/warning"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ok"
+              },
+              "operation": {
+                "const": "bridge.accounts.summary"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/accountsSummaryInput"
+              },
+              "data": {
+                "$ref": "#/$defs/accountsSummaryOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ok"
+              },
+              "operation": {
+                "const": "bridge.models.supported"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/modelsSupportedInput"
+              },
+              "data": {
+                "$ref": "#/$defs/modelsSupportedOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ok"
+              },
+              "operation": {
+                "const": "bridge.routes.diagnostics"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/routesDiagnosticsInput"
+              },
+              "data": {
+                "$ref": "#/$defs/routesDiagnosticsOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "ok"
+              },
+              "operation": {
+                "const": "bridge.quota.summary"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/quotaSummaryInput"
+              },
+              "data": {
+                "$ref": "#/$defs/quotaSummaryOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "$ref": "#/$defs/actionOperation"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "query": {
+                "$ref": "#/$defs/actionInput"
+              },
+              "data": {
+                "$ref": "#/$defs/actionOutput"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "accepted",
+                  "running",
+                  "completed"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "data"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "rejected",
+                  "failed"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "error"
+            ]
+          }
+        }
+      ]
+    },
+    "query": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/accountsSummaryInput"
+        },
+        {
+          "$ref": "#/$defs/modelsSupportedInput"
+        },
+        {
+          "$ref": "#/$defs/routesDiagnosticsInput"
+        },
+        {
+          "$ref": "#/$defs/quotaSummaryInput"
+        },
+        {
+          "$ref": "#/$defs/actionInput"
+        }
+      ]
+    },
+    "data": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/accountsSummaryOutput"
+        },
+        {
+          "$ref": "#/$defs/modelsSupportedOutput"
+        },
+        {
+          "$ref": "#/$defs/routesDiagnosticsOutput"
+        },
+        {
+          "$ref": "#/$defs/quotaSummaryOutput"
+        },
+        {
+          "$ref": "#/$defs/actionOutput"
+        }
+      ]
+    },
+    "protocol": {
+      "type": "string",
+      "enum": [
+        "codex",
+        "openai_responses",
+        "openai_chat",
+        "anthropic"
+      ]
+    },
+    "accountKey": {
+      "type": "string",
+      "pattern": "^acct_[A-Za-z0-9_-]+$"
+    },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "source"
+      ],
+      "properties": {
+        "ref": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "accountsSummaryInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "include_disabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "kinds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "auth-file",
+              "codex-api-key",
+              "openai-compatible"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "detail_level": {
+          "type": "string",
+          "enum": [
+            "summary",
+            "diagnostic_refs"
+          ],
+          "default": "summary"
+        }
+      }
+    },
+    "accountsSummaryOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "accounts"
+      ],
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "account_key",
+              "kind",
+              "provider",
+              "display_name",
+              "credential_source",
+              "enabled",
+              "requestable",
+              "requestable_source",
+              "runtime_status",
+              "guard_sources",
+              "quota_ref",
+              "model_refs",
+              "last_runtime_update_unix_ms",
+              "evidence_refs"
+            ],
+            "properties": {
+              "account_key": {
+                "$ref": "#/$defs/accountKey"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "provider": {
+                "type": "string"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "credential_source": {
+                "type": "string",
+                "enum": [
+                  "auth-file",
+                  "api-key",
+                  "openai-compatible-config",
+                  "sidecar-account-store"
+                ]
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "requestable": {
+                "type": "boolean"
+              },
+              "requestable_source": {
+                "type": "string",
+                "enum": [
+                  "sidecar-runtime-snapshot",
+                  "sidecar-route-diagnostics"
+                ]
+              },
+              "runtime_status": {
+                "type": "string",
+                "enum": [
+                  "ready",
+                  "blocked",
+                  "stale",
+                  "unknown"
+                ]
+              },
+              "guard_sources": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "quota_ref": {
+                "type": "string"
+              },
+              "model_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "last_runtime_update_unix_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/evidenceRef"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "modelsSupportedInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "account_key": {
+          "$ref": "#/$defs/accountKey"
+        },
+        "include_disabled_sources": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "modelsSupportedOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "models"
+      ],
+      "properties": {
+        "models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "model_id",
+              "display_name",
+              "protocol_formats",
+              "source_accounts",
+              "source_type",
+              "availability",
+              "capability_tags",
+              "warnings",
+              "last_refreshed_unix_ms",
+              "evidence_refs"
+            ],
+            "properties": {
+              "model_id": {
+                "type": "string"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "protocol_formats": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/protocol"
+                },
+                "uniqueItems": true
+              },
+              "source_accounts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/accountKey"
+                }
+              },
+              "source_type": {
+                "type": "string",
+                "enum": [
+                  "account-associated",
+                  "sidecar-metadata",
+                  "manual-config"
+                ]
+              },
+              "availability": {
+                "type": "string",
+                "enum": [
+                  "available",
+                  "blocked",
+                  "stale",
+                  "metadata_only"
+                ]
+              },
+              "capability_tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/warning"
+                }
+              },
+              "last_refreshed_unix_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/evidenceRef"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "routesDiagnosticsInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "model"
+      ],
+      "properties": {
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "model": {
+          "type": "string"
+        },
+        "project": {
+          "type": "string"
+        },
+        "account_key": {
+          "$ref": "#/$defs/accountKey"
+        },
+        "include_recent_decisions": {
+          "type": "boolean",
+          "default": true
+        },
+        "probe_mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "dry_run"
+          ],
+          "default": "none"
+        }
+      }
+    },
+    "routesDiagnosticsOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routeable",
+        "candidate_pool_summary",
+        "dropped_reasons",
+        "guard_sources",
+        "quota_evidence",
+        "model_evidence",
+        "auth_evidence",
+        "recent_decision_refs",
+        "authority_trace"
+      ],
+      "properties": {
+        "routeable": {
+          "type": "boolean"
+        },
+        "selected_candidate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "account_key": {
+              "$ref": "#/$defs/accountKey"
+            },
+            "redaction": {
+              "const": "account-ref-only"
+            }
+          }
+        },
+        "candidate_pool_summary": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "dropped_reasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "guard_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "quota_evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceRef"
+          }
+        },
+        "model_evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceRef"
+          }
+        },
+        "auth_evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceRef"
+          }
+        },
+        "recent_decision_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "probe_result": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "authority_trace": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceRef"
+          }
+        }
+      }
+    },
+    "quotaSummaryInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "account_key": {
+          "$ref": "#/$defs/accountKey"
+        },
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "include_billing": {
+          "type": "boolean",
+          "default": false
+        },
+        "include_stale": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "quotaSummaryOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quotas"
+      ],
+      "properties": {
+        "quotas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "account_key",
+              "windows",
+              "remaining_percent",
+              "stale",
+              "confidence",
+              "source",
+              "last_checked_unix_ms",
+              "guard_ref"
+            ],
+            "properties": {
+              "account_key": {
+                "$ref": "#/$defs/accountKey"
+              },
+              "windows": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "remaining_percent": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "used_tokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "limit_tokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "remaining_tokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reset_at_unix": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "billing": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "stale": {
+                "type": "boolean"
+              },
+              "degraded_reason": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "sidecar-quota-runtime",
+                  "sidecar-guard-source"
+                ]
+              },
+              "last_checked_unix_ms": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "guard_ref": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "actionInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "account_key": {
+          "$ref": "#/$defs/accountKey"
+        },
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "model": {
+          "type": "string"
+        },
+        "project": {
+          "type": "string"
+        },
+        "include_billing": {
+          "type": "boolean",
+          "default": false
+        },
+        "probe_mode": {
+          "type": "string",
+          "enum": [
+            "dry_run"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 256
+        }
+      }
+    },
+    "actionOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_id",
+        "status",
+        "action",
+        "target",
+        "authority",
+        "audit_id"
+      ],
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^bro_[A-Za-z0-9_-]+$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "rejected",
+            "running",
+            "completed",
+            "failed"
+          ]
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "routeability_recheck",
+            "quota_refresh",
+            "model_catalog_refresh",
+            "diagnostics_probe"
+          ]
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "account_key": {
+              "$ref": "#/$defs/accountKey"
+            },
+            "protocol": {
+              "$ref": "#/$defs/protocol"
+            },
+            "model": {
+              "type": "string"
+            },
+            "project": {
+              "type": "string"
+            }
+          }
+        },
+        "authority": {
+          "$ref": "#/$defs/authority"
+        },
+        "audit_id": {
+          "type": "string",
+          "pattern": "^bra_[A-Za-z0-9_-]+$"
+        },
+        "result_ref": {
+          "type": "string"
+        },
+        "sidecar_error_code": {
+          "type": "string"
+        },
+        "recoverable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "recoverable"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "missing_scope",
+            "invalid_request",
+            "sidecar_unavailable",
+            "operation_rejected",
+            "rate_limited"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "required_scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "recoverable": {
+          "type": "boolean"
+        },
+        "sidecar_error_code": {
+          "type": "string"
+        },
+        "sidecar_invoked": {
+          "type": "boolean",
+          "description": "False for bridge auth/scope failures that are rejected before any sidecar call."
+        }
+      }
+    }
+  }
+}

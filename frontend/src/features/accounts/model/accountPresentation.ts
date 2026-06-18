@@ -5,6 +5,8 @@ import type { AccountStabilitySummary, QuotaDisplay, Translator } from './types'
 import {
   buildChannelRouteDecisionSummary,
   type ChannelRouteDecisionSnapshot,
+  buildRouteResilienceEvidenceDigests,
+  type RouteResilienceEvidenceDigest,
 } from '../../channel-routing/model/channelRouting.ts';
 import { formatLabel, formatShortLabel } from './vendorPresetHelpers.ts';
 
@@ -493,6 +495,29 @@ export interface AccountRecentRouteDecisionSummary {
   meta: string;
   detail: string;
   unresolved: boolean;
+  routeResilienceEvidence?: AccountRouteResilienceEvidence[];
+}
+
+export interface AccountRouteResilienceEvidenceDecisionRef {
+  decisionID: string;
+  recordedAt: string;
+  routeBlocking: boolean;
+}
+
+export interface AccountRouteResilienceReasonDetail {
+  reason: string;
+  routeBlocking: boolean;
+}
+
+export interface AccountRouteResilienceEvidence extends RouteResilienceEvidenceDigest {
+  digestDisplayMode: 'full' | 'reference';
+  matchedDecisionID: string;
+  matchedRecordedAt: string;
+  matchedRouteBlocking: boolean;
+  matchedReasonDetails: AccountRouteResilienceReasonDetail[];
+  relevantDecisions: AccountRouteResilienceEvidenceDecisionRef[];
+  blockingDecisionCount: number;
+  observeDecisionCount: number;
 }
 
 export function buildAccountRecentRouteDecisionSummaries(
@@ -504,27 +529,24 @@ export function buildAccountRecentRouteDecisionSummaries(
     return [];
   }
 
-  return decisions
-    .filter((decision) => {
-      const selectedAccountID = String(decision.selectedAccountID || '').trim();
-      const selectedAuthID = String(decision.selectedAuthID || '').trim();
-      if (selectedAccountID === accountID || selectedAuthID === accountID) {
-        return true;
-      }
-      return (decision.candidates || []).some((candidate) => {
-        const candidateAccountID = String(candidate.accountID || '').trim();
-        const candidateAuthID = String(candidate.authID || '').trim();
-        return candidateAccountID === accountID || candidateAuthID === accountID;
-      });
-    })
+  const matchedDecisions = decisions.filter((decision) => decisionTouchesAccount(decision, accountID));
+  const routeResilienceEvidenceByDecisionID = buildAccountRouteResilienceEvidenceByDecisionID(accountID, matchedDecisions);
+  const displayedDecisions = matchedDecisions
     .sort((left, right) => String(right.recordedAt || '').localeCompare(String(left.recordedAt || '')))
-    .slice(0, 5)
+    .slice(0, 5);
+  const seenEvidenceDigestIDs = new Set<string>();
+
+  return displayedDecisions
     .map((decision) => {
       const baseSummary = buildChannelRouteDecisionSummary(decision);
       const matchedAs = String(decision.selectedAccountID || '').trim() === accountID
         || String(decision.selectedAuthID || '').trim() === accountID
         ? 'selected'
         : 'candidate';
+      const routeResilienceEvidence = decorateAccountRouteResilienceEvidenceForDisplay(
+        routeResilienceEvidenceByDecisionID.get(decision.id) || [],
+        seenEvidenceDigestIDs,
+      );
       return {
         id: baseSummary.id,
         channel: String(decision.channel || '').trim(),
@@ -537,6 +559,207 @@ export function buildAccountRecentRouteDecisionSummaries(
         ].filter(Boolean).join(' · '),
         detail: baseSummary.detail,
         unresolved: baseSummary.unresolved,
+        ...(routeResilienceEvidence.length > 0 ? { routeResilienceEvidence } : {}),
       };
     });
+}
+
+function decisionTouchesAccount(
+  decision: ChannelRouteDecisionSnapshot,
+  accountID: string,
+) {
+  const normalizedAccountID = String(accountID || '').trim();
+  if (!normalizedAccountID) {
+    return false;
+  }
+  const selectedAccountID = String(decision.selectedAccountID || '').trim();
+  const selectedAuthID = String(decision.selectedAuthID || '').trim();
+  if (selectedAccountID === normalizedAccountID || selectedAuthID === normalizedAccountID) {
+    return true;
+  }
+  return (decision.candidates || []).some((candidate) => {
+    const candidateAccountID = String(candidate.accountID || '').trim();
+    const candidateAuthID = String(candidate.authID || '').trim();
+    return candidateAccountID === normalizedAccountID || candidateAuthID === normalizedAccountID;
+  });
+}
+
+function buildAccountRouteResilienceEvidenceByDecisionID(
+  accountID: string,
+  decisions: ChannelRouteDecisionSnapshot[],
+): Map<string, AccountRouteResilienceEvidence[]> {
+  const normalizedAccountID = String(accountID || '').trim();
+  if (!normalizedAccountID || decisions.length === 0) {
+    return new Map();
+  }
+
+  const digests = buildRouteResilienceEvidenceDigests(
+    decisions,
+    [{ id: normalizedAccountID, label: normalizedAccountID }],
+    '',
+  ).filter((digest) => digest.accountKey === normalizedAccountID || digest.authId === normalizedAccountID);
+  const digestByID = new Map(digests.map((digest) => [digest.id, digest]));
+  const decisionByID = new Map(decisions.map((decision) => [decision.id, decision]));
+  const digestRefsByID = new Map<string, AccountRouteResilienceEvidenceDecisionRef[]>();
+  const decisionDigestsByDecisionID = new Map<string, AccountRouteResilienceEvidence[]>();
+  const reasonDetailsByDecisionID = new Map<string, Map<string, AccountRouteResilienceReasonDetail[]>>();
+  const evidenceByDecisionID = new Map<string, AccountRouteResilienceEvidence[]>();
+
+  for (const decision of decisions) {
+    const decisionDigests = buildAccountRouteResilienceEvidence(normalizedAccountID, decision);
+    if (!decisionDigests.length) {
+      continue;
+    }
+    const reasonDetailsByDigestID = buildAccountRouteResilienceReasonDetailsByDigestID(normalizedAccountID, decision);
+    decisionDigestsByDecisionID.set(decision.id, decisionDigests);
+    reasonDetailsByDecisionID.set(decision.id, reasonDetailsByDigestID);
+    for (const digest of decisionDigests) {
+      const refs = digestRefsByID.get(digest.id) || [];
+      const nextRef = {
+        decisionID: String(decision.id || '').trim(),
+        recordedAt: String(decision.recordedAt || '').trim(),
+        routeBlocking: digest.routeBlocking,
+      };
+      if (
+        !refs.some(
+          (ref) =>
+            ref.decisionID === nextRef.decisionID
+            && ref.recordedAt === nextRef.recordedAt
+            && ref.routeBlocking === nextRef.routeBlocking,
+        )
+      ) {
+        refs.push(nextRef);
+      }
+      digestRefsByID.set(digest.id, refs);
+    }
+  }
+
+  for (const [decisionID, decisionDigests] of decisionDigestsByDecisionID.entries()) {
+    const matchedDecision = decisionByID.get(decisionID);
+    const reasonDetailsByDigestID = reasonDetailsByDecisionID.get(decisionID) || new Map();
+    evidenceByDecisionID.set(
+      decisionID,
+      decisionDigests.map((digest) => {
+        const relevantDecisions = sortAccountRouteResilienceDecisionRefs(digestRefsByID.get(digest.id) || []);
+        const { blockingDecisionCount, observeDecisionCount } =
+          summarizeAccountRouteResilienceDecisionCoverage(relevantDecisions);
+        return {
+          ...(digestByID.get(digest.id) || digest),
+          digestDisplayMode: 'full',
+          matchedDecisionID: decisionID,
+          matchedRecordedAt: String(matchedDecision?.recordedAt || '').trim(),
+          matchedRouteBlocking: digest.routeBlocking,
+          matchedReasonDetails: reasonDetailsByDigestID.get(digest.id) || [],
+          relevantDecisions,
+          blockingDecisionCount,
+          observeDecisionCount,
+        };
+      }),
+    );
+  }
+
+  return evidenceByDecisionID;
+}
+
+function decorateAccountRouteResilienceEvidenceForDisplay(
+  evidenceList: AccountRouteResilienceEvidence[],
+  seenEvidenceDigestIDs: Set<string>,
+): AccountRouteResilienceEvidence[] {
+  return evidenceList.map((evidence) => {
+    const digestDisplayMode = seenEvidenceDigestIDs.has(evidence.id) ? 'reference' : 'full';
+    seenEvidenceDigestIDs.add(evidence.id);
+    return {
+      ...evidence,
+      digestDisplayMode,
+    };
+  });
+}
+
+function buildAccountRouteResilienceEvidence(
+  accountID: string,
+  decision: ChannelRouteDecisionSnapshot,
+): AccountRouteResilienceEvidence[] {
+  const normalizedAccountID = String(accountID || '').trim();
+  if (!normalizedAccountID || !decision.droppedReasons?.length) {
+    return [];
+  }
+
+  return buildRouteResilienceEvidenceDigests(
+    [decision],
+    [{ id: normalizedAccountID, label: normalizedAccountID }],
+    String(decision.model || '').trim(),
+  )
+    .filter((digest) => digest.accountKey === normalizedAccountID || digest.authId === normalizedAccountID)
+    .map((digest) => ({
+      ...digest,
+      digestDisplayMode: 'full',
+      matchedDecisionID: String(decision.id || '').trim(),
+      matchedRecordedAt: String(decision.recordedAt || '').trim(),
+      matchedRouteBlocking: digest.routeBlocking,
+      matchedReasonDetails: buildAccountRouteResilienceReasonDetailsByDigestID(normalizedAccountID, decision).get(digest.id) || [],
+      relevantDecisions: [],
+      blockingDecisionCount: digest.routeBlocking ? 1 : 0,
+      observeDecisionCount: digest.routeBlocking ? 0 : 1,
+    }));
+}
+
+function buildAccountRouteResilienceReasonDetailsByDigestID(
+  accountID: string,
+  decision: ChannelRouteDecisionSnapshot,
+): Map<string, AccountRouteResilienceReasonDetail[]> {
+  const normalizedAccountID = String(accountID || '').trim();
+  const detailsByDigestID = new Map<string, AccountRouteResilienceReasonDetail[]>();
+  if (!normalizedAccountID || !decision.droppedReasons?.length) {
+    return detailsByDigestID;
+  }
+
+  for (const droppedReason of decision.droppedReasons) {
+    const accountKey = String(droppedReason.accountID || '').trim();
+    const authId = String(droppedReason.authID || '').trim();
+    if (accountKey !== normalizedAccountID && authId !== normalizedAccountID) {
+      continue;
+    }
+    const model = String(droppedReason.model || decision.model || '').trim();
+    const source = String(droppedReason.source || '').trim();
+    const scope = String(droppedReason.scope || '').trim();
+    const digestID = [accountKey, authId, model, source, scope].join('|');
+    const details = detailsByDigestID.get(digestID) || [];
+    details.push({
+      reason: String(droppedReason.reason || '').trim() || 'reason:unknown',
+      routeBlocking: droppedReason.routeBlocking !== false,
+    });
+    detailsByDigestID.set(digestID, details);
+  }
+
+  return detailsByDigestID;
+}
+
+function sortAccountRouteResilienceDecisionRefs(
+  refs: AccountRouteResilienceEvidenceDecisionRef[],
+): AccountRouteResilienceEvidenceDecisionRef[] {
+  return [...refs].sort((left, right) => {
+    const recordedAtDiff = String(right.recordedAt || '').localeCompare(String(left.recordedAt || ''));
+    if (recordedAtDiff !== 0) {
+      return recordedAtDiff;
+    }
+    return String(right.decisionID || '').localeCompare(String(left.decisionID || ''));
+  });
+}
+
+function summarizeAccountRouteResilienceDecisionCoverage(
+  refs: AccountRouteResilienceEvidenceDecisionRef[],
+) {
+  let blockingDecisionCount = 0;
+  let observeDecisionCount = 0;
+  for (const ref of refs) {
+    if (ref.routeBlocking) {
+      blockingDecisionCount += 1;
+    } else {
+      observeDecisionCount += 1;
+    }
+  }
+  return {
+    blockingDecisionCount,
+    observeDecisionCount,
+  };
 }

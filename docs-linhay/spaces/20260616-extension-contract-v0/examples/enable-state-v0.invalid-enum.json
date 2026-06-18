@@ -1,0 +1,32 @@
+{
+  "artifactVersion": "gettokens.extension.enable-state.v0",
+  "readOnlySlice": true,
+  "enableStates": [
+    "enabled",
+    "disabled",
+    "blocked",
+    "pending",
+    "readonly-unsupported"
+  ],
+  "actionAvailability": [
+    "read-only",
+    "disabled"
+  ],
+  "cases": [
+    {
+      "id": "invalid-enable-state-enum",
+      "registryState": "readonly-compatible",
+      "compatibilityStatus": "compatible",
+      "diagnosticCodes": [],
+      "enableState": "soft-enabled",
+      "actionAvailability": "read-only",
+      "reasons": [
+        {
+          "code": "readonly-slice-active-view",
+          "label": "Read-only active view",
+          "message": "invalid fixture proving unknown enable-state enum is rejected"
+        }
+      ]
+    }
+  ]
+}

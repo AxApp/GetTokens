@@ -154,31 +154,73 @@ type ChannelRouteDecisionsInput struct {
 }
 
 type ChannelRouteDecision struct {
-	ID                   string                     `json:"id"`
-	RecordedAt           string                     `json:"recordedAt"`
-	Channel              string                     `json:"channel"`
-	Providers            []string                   `json:"providers,omitempty"`
-	Model                string                     `json:"model,omitempty"`
-	ProjectKey           string                     `json:"projectKey,omitempty"`
-	ProjectName          string                     `json:"projectName,omitempty"`
-	ProjectKeySource     string                     `json:"projectKeySource,omitempty"`
-	ProjectKeyConfidence string                     `json:"projectKeyConfidence,omitempty"`
-	ProjectMatchKeys     []string                   `json:"projectMatchKeys,omitempty"`
-	Source               string                     `json:"source,omitempty"`
-	CandidateCount       int                        `json:"candidateCount"`
-	Candidates           []ChannelRouteDecisionAuth `json:"candidates,omitempty"`
-	SelectedAuthID       string                     `json:"selectedAuthID,omitempty"`
-	SelectedAccountID    string                     `json:"selectedAccountID,omitempty"`
-	SelectedProvider     string                     `json:"selectedProvider,omitempty"`
-	UnavailableCode      string                     `json:"unavailableCode,omitempty"`
-	UnavailableMessage   string                     `json:"unavailableMessage,omitempty"`
-	Trace                []ChannelRouteDecisionStep `json:"trace,omitempty"`
+	ID                   string                      `json:"id"`
+	RecordedAt           string                      `json:"recordedAt"`
+	Channel              string                      `json:"channel"`
+	Providers            []string                    `json:"providers,omitempty"`
+	Model                string                      `json:"model,omitempty"`
+	ProjectKey           string                      `json:"projectKey,omitempty"`
+	ProjectName          string                      `json:"projectName,omitempty"`
+	ProjectKeySource     string                      `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string                      `json:"projectKeyConfidence,omitempty"`
+	ProjectMatchKeys     []string                    `json:"projectMatchKeys,omitempty"`
+	Source               string                      `json:"source,omitempty"`
+	CandidateCount       int                         `json:"candidateCount"`
+	Candidates           []ChannelRouteDecisionAuth  `json:"candidates,omitempty"`
+	SelectedAuthID       string                      `json:"selectedAuthID,omitempty"`
+	SelectedAccountID    string                      `json:"selectedAccountID,omitempty"`
+	SelectedProvider     string                      `json:"selectedProvider,omitempty"`
+	UnavailableCode      string                      `json:"unavailableCode,omitempty"`
+	UnavailableMessage   string                      `json:"unavailableMessage,omitempty"`
+	DroppedReasons       []ChannelRouteDroppedReason `json:"droppedReasons,omitempty"`
+	Trace                []ChannelRouteDecisionStep  `json:"trace,omitempty"`
 }
 
 type ChannelRouteDecisionAuth struct {
 	AuthID    string `json:"authID,omitempty"`
 	AccountID string `json:"accountID,omitempty"`
 	Provider  string `json:"provider,omitempty"`
+}
+
+type ChannelRouteDroppedReason struct {
+	AccountID     string `json:"accountID,omitempty"`
+	AuthID        string `json:"authID,omitempty"`
+	Source        string `json:"source,omitempty"`
+	Scope         string `json:"scope,omitempty"`
+	Reason        string `json:"reason,omitempty"`
+	Model         string `json:"model,omitempty"`
+	ExpiresAt     string `json:"expiresAt,omitempty"`
+	UpdatedAt     string `json:"updatedAt,omitempty"`
+	RouteBlocking bool   `json:"routeBlocking,omitempty"`
+}
+
+type RouteResilienceActionInput struct {
+	Action         string   `json:"action"`
+	AccountKey     string   `json:"accountKey,omitempty"`
+	AuthID         string   `json:"authId,omitempty"`
+	Model          string   `json:"model,omitempty"`
+	Sources        []string `json:"sources,omitempty"`
+	Reason         string   `json:"reason,omitempty"`
+	DryRun         bool     `json:"dryRun,omitempty"`
+	IdempotencyKey string   `json:"idempotencyKey,omitempty"`
+}
+
+type RouteResilienceActionResult struct {
+	OK                   bool                        `json:"ok"`
+	Authority            string                      `json:"authority"`
+	Action               string                      `json:"action"`
+	Status               string                      `json:"status"`
+	AccountKey           string                      `json:"accountKey,omitempty"`
+	AuthID               string                      `json:"authId,omitempty"`
+	Model                string                      `json:"model,omitempty"`
+	Before               map[string]any              `json:"before"`
+	After                map[string]any              `json:"after"`
+	AuditID              string                      `json:"auditId,omitempty"`
+	DroppedSources       []string                    `json:"droppedSources,omitempty"`
+	DroppedReasons       []ChannelRouteDroppedReason `json:"droppedReasons,omitempty"`
+	Error                string                      `json:"error,omitempty"`
+	NotImplementedReason string                      `json:"notImplementedReason,omitempty"`
+	HTTPStatus           int                         `json:"httpStatus,omitempty"`
 }
 
 type ChannelRouteDecisionStep struct {
@@ -474,6 +516,7 @@ func (a *App) ListChannelRouteDecisions(input ChannelRouteDecisionsInput) ([]Cha
 			UnavailableCode:      item.UnavailableCode,
 			UnavailableMessage:   item.UnavailableMessage,
 			Candidates:           make([]ChannelRouteDecisionAuth, 0, len(item.Candidates)),
+			DroppedReasons:       make([]ChannelRouteDroppedReason, 0, len(item.DroppedReasons)),
 			Trace:                make([]ChannelRouteDecisionStep, 0, len(item.Trace)),
 		}
 		for _, candidate := range item.Candidates {
@@ -481,6 +524,19 @@ func (a *App) ListChannelRouteDecisions(input ChannelRouteDecisionsInput) ([]Cha
 				AuthID:    candidate.AuthID,
 				AccountID: candidate.AccountID,
 				Provider:  candidate.Provider,
+			})
+		}
+		for _, dropped := range item.DroppedReasons {
+			decision.DroppedReasons = append(decision.DroppedReasons, ChannelRouteDroppedReason{
+				AccountID:     dropped.AccountID,
+				AuthID:        dropped.AuthID,
+				Source:        dropped.Source,
+				Scope:         dropped.Scope,
+				Reason:        dropped.Reason,
+				Model:         dropped.Model,
+				ExpiresAt:     dropped.ExpiresAt,
+				UpdatedAt:     dropped.UpdatedAt,
+				RouteBlocking: dropped.RouteBlocking,
 			})
 		}
 		for _, step := range item.Trace {
@@ -505,6 +561,71 @@ func (a *App) ListChannelRouteDecisions(input ChannelRouteDecisionsInput) ([]Cha
 		out = append(out, decision)
 	}
 	return out, nil
+}
+
+func (a *App) RunRouteResilienceAction(input RouteResilienceActionInput) (*RouteResilienceActionResult, error) {
+	result, err := a.managementClient().RunRouteResilienceAction(cliproxyapi.RouteResilienceActionRequest{
+		Action:         input.Action,
+		AccountKey:     input.AccountKey,
+		AuthID:         input.AuthID,
+		Model:          input.Model,
+		Sources:        append([]string(nil), input.Sources...),
+		Reason:         input.Reason,
+		DryRun:         input.DryRun,
+		IdempotencyKey: input.IdempotencyKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapRouteResilienceActionResult(result), nil
+}
+
+func mapRouteResilienceActionResult(input *cliproxyapi.RouteResilienceActionResponse) *RouteResilienceActionResult {
+	if input == nil {
+		return nil
+	}
+	result := &RouteResilienceActionResult{
+		OK:                   input.OK,
+		Authority:            input.Authority,
+		Action:               input.Action,
+		Status:               input.Status,
+		AccountKey:           input.AccountKey,
+		AuthID:               input.AuthID,
+		Model:                input.Model,
+		Before:               cloneMapAny(input.Before),
+		After:                cloneMapAny(input.After),
+		AuditID:              input.AuditID,
+		DroppedSources:       append([]string(nil), input.DroppedSources...),
+		DroppedReasons:       make([]ChannelRouteDroppedReason, 0, len(input.DroppedReasons)),
+		Error:                input.Error,
+		NotImplementedReason: input.NotImplementedReason,
+		HTTPStatus:           input.HTTPStatus,
+	}
+	for _, dropped := range input.DroppedReasons {
+		result.DroppedReasons = append(result.DroppedReasons, ChannelRouteDroppedReason{
+			AccountID:     dropped.AccountID,
+			AuthID:        dropped.AuthID,
+			Source:        dropped.Source,
+			Scope:         dropped.Scope,
+			Reason:        dropped.Reason,
+			Model:         dropped.Model,
+			ExpiresAt:     dropped.ExpiresAt,
+			UpdatedAt:     dropped.UpdatedAt,
+			RouteBlocking: dropped.RouteBlocking,
+		})
+	}
+	return result
+}
+
+func cloneMapAny(input map[string]any) map[string]any {
+	if input == nil {
+		return nil
+	}
+	out := make(map[string]any, len(input))
+	for key, value := range input {
+		out[key] = value
+	}
+	return out
 }
 
 func explainChannelRoutingWithAccounts(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput) ChannelRoutingExplainResult {

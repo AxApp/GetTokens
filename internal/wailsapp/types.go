@@ -75,6 +75,7 @@ type CodexQuotaResponse struct {
 	Blocked         bool                    `json:"blocked"`
 	BlockReason     string                  `json:"blockReason,omitempty"`
 	Sources         []CodexQuotaSourceState `json:"sources"`
+	QuotaFact       *CodexQuotaFact         `json:"quotaFact,omitempty"`
 }
 
 type CodexQuotaBatchRefreshInput struct {
@@ -134,6 +135,18 @@ type CodexQuotaSourceState struct {
 	NextReset string `json:"nextReset,omitempty"`
 }
 
+type CodexQuotaFact struct {
+	State        string   `json:"state,omitempty"`
+	Source       string   `json:"source,omitempty"`
+	Freshness    string   `json:"freshness,omitempty"`
+	Confidence   string   `json:"confidence,omitempty"`
+	Risk         string   `json:"risk,omitempty"`
+	Explanation  string   `json:"explanation,omitempty"`
+	ObservedAt   string   `json:"observedAt,omitempty"`
+	ExpiresAt    string   `json:"expiresAt,omitempty"`
+	EvidenceRefs []string `json:"evidenceRefs,omitempty"`
+}
+
 type CodexQuotaBillingInfo struct {
 	IsAvailable  bool                           `json:"isAvailable"`
 	BalanceInfos []CodexQuotaBillingBalanceInfo `json:"balanceInfos"`
@@ -144,6 +157,80 @@ type CodexQuotaBillingBalanceInfo struct {
 	TotalBalance    string `json:"totalBalance"`
 	GrantedBalance  string `json:"grantedBalance"`
 	ToppedUpBalance string `json:"toppedUpBalance"`
+}
+
+type DoctorSnapshotInput struct {
+	Scope               string `json:"scope,omitempty"`
+	IncludeEvidence     bool   `json:"includeEvidence,omitempty"`
+	MaxEvidencePerCheck int    `json:"maxEvidencePerCheck,omitempty"`
+}
+
+type DoctorSnapshot struct {
+	GeneratedAtUnixMs int64         `json:"generatedAtUnixMs"`
+	Source            string        `json:"source"`
+	SidecarReady      bool          `json:"sidecarReady"`
+	Status            string        `json:"status"`
+	Checks            []DoctorCheck `json:"checks"`
+	Summary           DoctorSummary `json:"summary"`
+}
+
+type DoctorSummary struct {
+	Total    int `json:"total"`
+	Critical int `json:"critical"`
+	Warning  int `json:"warning"`
+	NotReady int `json:"notReady"`
+	OK       int `json:"ok"`
+	Skipped  int `json:"skipped"`
+	Degraded int `json:"degraded"`
+}
+
+type DoctorCheck struct {
+	ID                  string                   `json:"id"`
+	Kind                string                   `json:"kind"`
+	Title               string                   `json:"title"`
+	Status              string                   `json:"status"`
+	Reason              string                   `json:"reason"`
+	Repairability       string                   `json:"repairability"`
+	Authority           string                   `json:"authority"`
+	Confidence          string                   `json:"confidence"`
+	LastCheckedAtUnixMs int64                    `json:"lastCheckedAtUnixMs"`
+	Evidence            []DoctorEvidenceRef      `json:"evidence"`
+	Navigation          []DoctorNavigationTarget `json:"navigation"`
+}
+
+type DoctorEvidenceRef struct {
+	Kind          string                      `json:"kind"`
+	Label         string                      `json:"label"`
+	Summary       string                      `json:"summary"`
+	RefID         string                      `json:"refID"`
+	Source        string                      `json:"source"`
+	AccountKey    string                      `json:"accountKey,omitempty"`
+	AccountID     string                      `json:"accountID,omitempty"`
+	AuthID        string                      `json:"authId,omitempty"`
+	Model         string                      `json:"model,omitempty"`
+	Scope         string                      `json:"scope,omitempty"`
+	Reason        string                      `json:"reason,omitempty"`
+	RouteBlocking *bool                       `json:"routeBlocking,omitempty"`
+	RouteEvidence *DoctorRouteEvidencePayload `json:"routeEvidence,omitempty"`
+	DroppedReason *DoctorRouteEvidencePayload `json:"droppedReason,omitempty"`
+	QuotaFact     *CodexQuotaFact             `json:"quotaFact,omitempty"`
+}
+
+type DoctorRouteEvidencePayload struct {
+	AccountKey    string `json:"accountKey,omitempty"`
+	AccountID     string `json:"accountID,omitempty"`
+	AuthID        string `json:"authId,omitempty"`
+	Model         string `json:"model,omitempty"`
+	Source        string `json:"source,omitempty"`
+	Scope         string `json:"scope,omitempty"`
+	Reason        string `json:"reason,omitempty"`
+	RouteBlocking *bool  `json:"routeBlocking,omitempty"`
+}
+
+type DoctorNavigationTarget struct {
+	Kind  string `json:"kind"`
+	Label string `json:"label"`
+	Hash  string `json:"hash"`
 }
 
 type RelayLocalApplyResult struct {

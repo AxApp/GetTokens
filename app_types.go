@@ -72,6 +72,7 @@ type CodexQuotaResponse struct {
 	Blocked         bool                    `json:"blocked"`
 	BlockReason     string                  `json:"blockReason,omitempty"`
 	Sources         []CodexQuotaSourceState `json:"sources"`
+	QuotaFact       *CodexQuotaFact         `json:"quotaFact,omitempty"`
 }
 
 type CodexQuotaBatchRefreshInput struct {
@@ -131,6 +132,18 @@ type CodexQuotaSourceState struct {
 	NextReset string `json:"nextReset,omitempty"`
 }
 
+type CodexQuotaFact struct {
+	State        string   `json:"state,omitempty"`
+	Source       string   `json:"source,omitempty"`
+	Freshness    string   `json:"freshness,omitempty"`
+	Confidence   string   `json:"confidence,omitempty"`
+	Risk         string   `json:"risk,omitempty"`
+	Explanation  string   `json:"explanation,omitempty"`
+	ObservedAt   string   `json:"observedAt,omitempty"`
+	ExpiresAt    string   `json:"expiresAt,omitempty"`
+	EvidenceRefs []string `json:"evidenceRefs,omitempty"`
+}
+
 type CodexQuotaBillingInfo struct {
 	IsAvailable  bool                           `json:"isAvailable"`
 	BalanceInfos []CodexQuotaBillingBalanceInfo `json:"balanceInfos"`
@@ -141,6 +154,271 @@ type CodexQuotaBillingBalanceInfo struct {
 	TotalBalance    string `json:"totalBalance"`
 	GrantedBalance  string `json:"grantedBalance"`
 	ToppedUpBalance string `json:"toppedUpBalance"`
+}
+
+type DoctorSnapshotInput struct {
+	Scope               string `json:"scope,omitempty"`
+	IncludeEvidence     bool   `json:"includeEvidence,omitempty"`
+	MaxEvidencePerCheck int    `json:"maxEvidencePerCheck,omitempty"`
+}
+
+type DoctorSnapshot struct {
+	GeneratedAtUnixMs int64         `json:"generatedAtUnixMs"`
+	Source            string        `json:"source"`
+	SidecarReady      bool          `json:"sidecarReady"`
+	Status            string        `json:"status"`
+	Checks            []DoctorCheck `json:"checks"`
+	Summary           DoctorSummary `json:"summary"`
+}
+
+type DoctorSummary struct {
+	Total    int `json:"total"`
+	Critical int `json:"critical"`
+	Warning  int `json:"warning"`
+	NotReady int `json:"notReady"`
+	OK       int `json:"ok"`
+	Skipped  int `json:"skipped"`
+	Degraded int `json:"degraded"`
+}
+
+type DoctorCheck struct {
+	ID                  string                   `json:"id"`
+	Kind                string                   `json:"kind"`
+	Title               string                   `json:"title"`
+	Status              string                   `json:"status"`
+	Reason              string                   `json:"reason"`
+	Repairability       string                   `json:"repairability"`
+	Authority           string                   `json:"authority"`
+	Confidence          string                   `json:"confidence"`
+	LastCheckedAtUnixMs int64                    `json:"lastCheckedAtUnixMs"`
+	Evidence            []DoctorEvidenceRef      `json:"evidence"`
+	Navigation          []DoctorNavigationTarget `json:"navigation"`
+}
+
+type DoctorEvidenceRef struct {
+	Kind          string                      `json:"kind"`
+	Label         string                      `json:"label"`
+	Summary       string                      `json:"summary"`
+	RefID         string                      `json:"refID"`
+	Source        string                      `json:"source"`
+	AccountKey    string                      `json:"accountKey,omitempty"`
+	AccountID     string                      `json:"accountID,omitempty"`
+	AuthID        string                      `json:"authId,omitempty"`
+	Model         string                      `json:"model,omitempty"`
+	Scope         string                      `json:"scope,omitempty"`
+	Reason        string                      `json:"reason,omitempty"`
+	RouteBlocking *bool                       `json:"routeBlocking,omitempty"`
+	RouteEvidence *DoctorRouteEvidencePayload `json:"routeEvidence,omitempty"`
+	DroppedReason *DoctorRouteEvidencePayload `json:"droppedReason,omitempty"`
+	QuotaFact     *CodexQuotaFact             `json:"quotaFact,omitempty"`
+}
+
+type DoctorRouteEvidencePayload struct {
+	AccountKey    string `json:"accountKey,omitempty"`
+	AccountID     string `json:"accountID,omitempty"`
+	AuthID        string `json:"authId,omitempty"`
+	Model         string `json:"model,omitempty"`
+	Source        string `json:"source,omitempty"`
+	Scope         string `json:"scope,omitempty"`
+	Reason        string `json:"reason,omitempty"`
+	RouteBlocking *bool  `json:"routeBlocking,omitempty"`
+}
+
+type DoctorNavigationTarget struct {
+	Kind  string `json:"kind"`
+	Label string `json:"label"`
+	Hash  string `json:"hash"`
+}
+
+type GetTokensExtensionRegistrySnapshotInput struct {
+	ManifestPaths []string                 `json:"manifestPaths,omitempty"`
+	Roots         []GetTokensExtensionRoot `json:"roots,omitempty"`
+	StatePath     string                   `json:"statePath,omitempty"`
+}
+
+type SetGetTokensExtensionEnabledInput struct {
+	ExtensionID string `json:"extensionID"`
+	Enabled     bool   `json:"enabled"`
+	StatePath   string `json:"statePath,omitempty"`
+}
+
+type PreviewGetTokensExtensionCodexConfigDryRunInput struct {
+	ManifestPaths []string                 `json:"manifestPaths,omitempty"`
+	Roots         []GetTokensExtensionRoot `json:"roots,omitempty"`
+	StatePath     string                   `json:"statePath,omitempty"`
+	TargetPath    string                   `json:"targetPath,omitempty"`
+	ConfigText    string                   `json:"configText,omitempty"`
+}
+
+type PrepareGetTokensExtensionCodexConfigApplyInput struct {
+	ManifestPaths []string                 `json:"manifestPaths,omitempty"`
+	Roots         []GetTokensExtensionRoot `json:"roots,omitempty"`
+	StatePath     string                   `json:"statePath,omitempty"`
+	TargetPath    string                   `json:"targetPath"`
+	ConfigText    string                   `json:"configText"`
+}
+
+type ApplyGetTokensExtensionCodexConfigTransactionInput struct {
+	ManifestPaths      []string                 `json:"manifestPaths,omitempty"`
+	Roots              []GetTokensExtensionRoot `json:"roots,omitempty"`
+	StatePath          string                   `json:"statePath,omitempty"`
+	TargetPath         string                   `json:"targetPath"`
+	TempDir            string                   `json:"tempDir"`
+	ConfigText         string                   `json:"configText"`
+	ConfirmationToken  string                   `json:"confirmationToken"`
+	SkipVerifyReadback bool                     `json:"skipVerifyReadback,omitempty"`
+}
+
+type GetTokensExtensionEnableStateFile struct {
+	ContractVersion string                          `json:"contractVersion"`
+	UpdatedAt       string                          `json:"updatedAt,omitempty"`
+	Extensions      []GetTokensExtensionEnableState `json:"extensions"`
+}
+
+type GetTokensExtensionEnableState struct {
+	ID        string `json:"id"`
+	State     string `json:"state"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
+	Reason    string `json:"reason,omitempty"`
+}
+
+type GetTokensExtensionRegistrySnapshot struct {
+	ContractVersion string                         `json:"contractVersion"`
+	RegistryMode    string                         `json:"registryMode"`
+	GeneratedAt     string                         `json:"generatedAt"`
+	ReadOnly        bool                           `json:"readOnly"`
+	Roots           []GetTokensExtensionRoot       `json:"roots"`
+	Extensions      []GetTokensExtensionSnapshot   `json:"extensions"`
+	Diagnostics     []GetTokensExtensionDiagnostic `json:"diagnostics"`
+}
+
+type GetTokensExtensionRoot struct {
+	ID       string `json:"id"`
+	Path     string `json:"path"`
+	ReadOnly bool   `json:"readOnly"`
+}
+
+type GetTokensExtensionSnapshot struct {
+	ID            string                          `json:"id,omitempty"`
+	Name          string                          `json:"name,omitempty"`
+	Version       string                          `json:"version,omitempty"`
+	Publisher     GetTokensExtensionPublisher     `json:"publisher,omitempty"`
+	Source        GetTokensExtensionSource        `json:"source"`
+	State         string                          `json:"state"`
+	ReadOnly      bool                            `json:"readOnly"`
+	Compatibility GetTokensExtensionCompatibility `json:"compatibility,omitempty"`
+	Permissions   []string                        `json:"permissions,omitempty"`
+	Capabilities  []GetTokensExtensionCapability  `json:"capabilities,omitempty"`
+	Diagnostics   []GetTokensExtensionDiagnostic  `json:"diagnostics"`
+}
+
+type GetTokensExtensionPublisher struct {
+	Name string `json:"name,omitempty"`
+	URL  string `json:"url,omitempty"`
+}
+
+type GetTokensExtensionSource struct {
+	Type         string `json:"type,omitempty"`
+	URI          string `json:"uri,omitempty"`
+	Revision     string `json:"revision,omitempty"`
+	ManifestPath string `json:"manifestPath"`
+}
+
+type GetTokensExtensionCompatibility struct {
+	ManifestContract   string `json:"manifestContract,omitempty"`
+	SidecarContract    string `json:"sidecarContract,omitempty"`
+	CapabilityContract string `json:"capabilityContract,omitempty"`
+	Status             string `json:"status,omitempty"`
+}
+
+type GetTokensExtensionCapability struct {
+	ID                    string                         `json:"id,omitempty"`
+	Kind                  string                         `json:"kind,omitempty"`
+	State                 string                         `json:"state"`
+	RequiredPermissions   []string                       `json:"requiredPermissions,omitempty"`
+	DeclaredContributions []string                       `json:"declaredContributions,omitempty"`
+	Diagnostics           []GetTokensExtensionDiagnostic `json:"diagnostics"`
+}
+
+type GetTokensExtensionDiagnostic struct {
+	Code     string `json:"code"`
+	Severity string `json:"severity"`
+	Path     string `json:"path,omitempty"`
+	Message  string `json:"message"`
+	Source   string `json:"source,omitempty"`
+}
+
+type GetTokensExtensionCodexConfigDryRunPreview struct {
+	ContractVersion string                                          `json:"contractVersion"`
+	DryRun          bool                                            `json:"dryRun"`
+	GeneratedAt     string                                          `json:"generatedAt"`
+	Target          string                                          `json:"target"`
+	TargetPath      string                                          `json:"targetPath,omitempty"`
+	Summary         GetTokensExtensionCodexConfigDryRunSummary      `json:"summary"`
+	Sections        []GetTokensExtensionCodexConfigDryRunSection    `json:"sections"`
+	Operations      []GetTokensExtensionCodexConfigDryRunOperation  `json:"operations"`
+	Validation      []GetTokensExtensionCodexConfigDryRunValidation `json:"validation"`
+}
+
+type GetTokensExtensionCodexConfigDryRunSummary struct {
+	EnabledExtensionCount int `json:"enabledExtensionCount"`
+	SkippedExtensionCount int `json:"skippedExtensionCount"`
+	OperationCount        int `json:"operationCount"`
+	ValidationErrorCount  int `json:"validationErrorCount"`
+}
+
+type GetTokensExtensionCodexConfigDryRunSection struct {
+	ID          string   `json:"id"`
+	Label       string   `json:"label"`
+	Status      string   `json:"status"`
+	DiffPreview []string `json:"diffPreview"`
+}
+
+type GetTokensExtensionCodexConfigDryRunOperation struct {
+	ID           string                                     `json:"id"`
+	Target       string                                     `json:"target"`
+	Action       string                                     `json:"action"`
+	ExtensionID  string                                     `json:"extensionID,omitempty"`
+	CapabilityID string                                     `json:"capabilityID,omitempty"`
+	Preview      string                                     `json:"preview,omitempty"`
+	PatchPlan    GetTokensExtensionCodexConfigTomlPatchPlan `json:"patchPlan"`
+}
+
+type GetTokensExtensionCodexConfigTomlPatchPlan struct {
+	TargetSection string   `json:"targetSection"`
+	Operation     string   `json:"operation"`
+	BeforeSnippet string   `json:"beforeSnippet"`
+	AfterSnippet  string   `json:"afterSnippet"`
+	Validation    []string `json:"validation"`
+}
+
+type GetTokensExtensionCodexConfigDryRunValidation struct {
+	Code         string `json:"code"`
+	Severity     string `json:"severity"`
+	ExtensionID  string `json:"extensionID,omitempty"`
+	CapabilityID string `json:"capabilityID,omitempty"`
+	Target       string `json:"target"`
+	Message      string `json:"message"`
+}
+
+type GetTokensExtensionCodexConfigStagedApplyPlan struct {
+	ContractVersion   string   `json:"contractVersion"`
+	TargetPath        string   `json:"targetPath"`
+	ConfirmationToken string   `json:"confirmationToken"`
+	DiffPreview       []string `json:"diffPreview"`
+	AppliedText       string   `json:"appliedText"`
+	AppliedOperations []string `json:"appliedOperations"`
+}
+
+type GetTokensExtensionCodexConfigStagedApplyResult struct {
+	Status            string   `json:"status"`
+	TargetPath        string   `json:"targetPath"`
+	BackupPath        string   `json:"backupPath,omitempty"`
+	TempPath          string   `json:"tempPath,omitempty"`
+	ConfirmationToken string   `json:"confirmationToken"`
+	AppliedOperations []string `json:"appliedOperations"`
+	RolledBack        bool     `json:"rolledBack"`
+	ErrorStage        string   `json:"errorStage,omitempty"`
 }
 
 type AccountRecord struct {
@@ -430,31 +708,73 @@ type ChannelRouteDecisionsInput struct {
 }
 
 type ChannelRouteDecision struct {
-	ID                   string                     `json:"id"`
-	RecordedAt           string                     `json:"recordedAt"`
-	Channel              string                     `json:"channel"`
-	Providers            []string                   `json:"providers,omitempty"`
-	Model                string                     `json:"model,omitempty"`
-	ProjectKey           string                     `json:"projectKey,omitempty"`
-	ProjectName          string                     `json:"projectName,omitempty"`
-	ProjectKeySource     string                     `json:"projectKeySource,omitempty"`
-	ProjectKeyConfidence string                     `json:"projectKeyConfidence,omitempty"`
-	ProjectMatchKeys     []string                   `json:"projectMatchKeys,omitempty"`
-	Source               string                     `json:"source,omitempty"`
-	CandidateCount       int                        `json:"candidateCount"`
-	Candidates           []ChannelRouteDecisionAuth `json:"candidates,omitempty"`
-	SelectedAuthID       string                     `json:"selectedAuthID,omitempty"`
-	SelectedAccountID    string                     `json:"selectedAccountID,omitempty"`
-	SelectedProvider     string                     `json:"selectedProvider,omitempty"`
-	UnavailableCode      string                     `json:"unavailableCode,omitempty"`
-	UnavailableMessage   string                     `json:"unavailableMessage,omitempty"`
-	Trace                []ChannelRouteDecisionStep `json:"trace,omitempty"`
+	ID                   string                      `json:"id"`
+	RecordedAt           string                      `json:"recordedAt"`
+	Channel              string                      `json:"channel"`
+	Providers            []string                    `json:"providers,omitempty"`
+	Model                string                      `json:"model,omitempty"`
+	ProjectKey           string                      `json:"projectKey,omitempty"`
+	ProjectName          string                      `json:"projectName,omitempty"`
+	ProjectKeySource     string                      `json:"projectKeySource,omitempty"`
+	ProjectKeyConfidence string                      `json:"projectKeyConfidence,omitempty"`
+	ProjectMatchKeys     []string                    `json:"projectMatchKeys,omitempty"`
+	Source               string                      `json:"source,omitempty"`
+	CandidateCount       int                         `json:"candidateCount"`
+	Candidates           []ChannelRouteDecisionAuth  `json:"candidates,omitempty"`
+	SelectedAuthID       string                      `json:"selectedAuthID,omitempty"`
+	SelectedAccountID    string                      `json:"selectedAccountID,omitempty"`
+	SelectedProvider     string                      `json:"selectedProvider,omitempty"`
+	UnavailableCode      string                      `json:"unavailableCode,omitempty"`
+	UnavailableMessage   string                      `json:"unavailableMessage,omitempty"`
+	DroppedReasons       []ChannelRouteDroppedReason `json:"droppedReasons,omitempty"`
+	Trace                []ChannelRouteDecisionStep  `json:"trace,omitempty"`
 }
 
 type ChannelRouteDecisionAuth struct {
 	AuthID    string `json:"authID,omitempty"`
 	AccountID string `json:"accountID,omitempty"`
 	Provider  string `json:"provider,omitempty"`
+}
+
+type ChannelRouteDroppedReason struct {
+	AccountID     string `json:"accountID,omitempty"`
+	AuthID        string `json:"authID,omitempty"`
+	Source        string `json:"source,omitempty"`
+	Scope         string `json:"scope,omitempty"`
+	Reason        string `json:"reason,omitempty"`
+	Model         string `json:"model,omitempty"`
+	ExpiresAt     string `json:"expiresAt,omitempty"`
+	UpdatedAt     string `json:"updatedAt,omitempty"`
+	RouteBlocking bool   `json:"routeBlocking,omitempty"`
+}
+
+type RouteResilienceActionInput struct {
+	Action         string   `json:"action"`
+	AccountKey     string   `json:"accountKey,omitempty"`
+	AuthID         string   `json:"authId,omitempty"`
+	Model          string   `json:"model,omitempty"`
+	Sources        []string `json:"sources,omitempty"`
+	Reason         string   `json:"reason,omitempty"`
+	DryRun         bool     `json:"dryRun,omitempty"`
+	IdempotencyKey string   `json:"idempotencyKey,omitempty"`
+}
+
+type RouteResilienceActionResult struct {
+	OK                   bool                        `json:"ok"`
+	Authority            string                      `json:"authority"`
+	Action               string                      `json:"action"`
+	Status               string                      `json:"status"`
+	AccountKey           string                      `json:"accountKey,omitempty"`
+	AuthID               string                      `json:"authId,omitempty"`
+	Model                string                      `json:"model,omitempty"`
+	Before               map[string]any              `json:"before"`
+	After                map[string]any              `json:"after"`
+	AuditID              string                      `json:"auditId,omitempty"`
+	DroppedSources       []string                    `json:"droppedSources,omitempty"`
+	DroppedReasons       []ChannelRouteDroppedReason `json:"droppedReasons,omitempty"`
+	Error                string                      `json:"error,omitempty"`
+	NotImplementedReason string                      `json:"notImplementedReason,omitempty"`
+	HTTPStatus           int                         `json:"httpStatus,omitempty"`
 }
 
 type ChannelRouteDecisionStep struct {

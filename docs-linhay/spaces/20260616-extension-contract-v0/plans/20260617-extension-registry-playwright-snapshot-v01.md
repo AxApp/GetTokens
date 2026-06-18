@@ -1,0 +1,220 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img [ref=e9]
+          - generic [ref=e15]:
+            - generic [ref=e16]: GET
+            - generic [ref=e17]: TOKENS
+        - button "收起侧边栏" [expanded] [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+      - navigation [ref=e22]:
+        - button "运行状态" [ref=e24] [cursor=pointer]:
+          - img [ref=e25]
+          - generic [ref=e28]: 运行状态
+        - button "账号池" [ref=e30] [cursor=pointer]:
+          - img [ref=e31]
+          - generic [ref=e34]: 账号池
+          - img [ref=e36]
+        - button "代理池" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e43]: 代理池
+        - generic [ref=e44]:
+          - button "Codex" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+            - generic [ref=e49]: Codex
+            - img [ref=e51]
+          - generic:
+            - generic:
+              - generic:
+                - button: 功能开关
+              - generic:
+                - button: 二进制管理
+              - generic:
+                - button: Extension Registry
+              - generic:
+                - button: Skills
+              - generic:
+                - button: MCP Servers
+              - generic:
+                - button: 账号列表
+              - generic:
+                - button: 运行会话
+              - generic:
+                - button: 会话管理
+              - generic:
+                - button: OpenAI 状态
+              - generic:
+                - button: 用量统计
+        - generic [ref=e53]:
+          - button "Claude" [ref=e54] [cursor=pointer]:
+            - img [ref=e55]
+            - generic [ref=e58]: Claude
+            - img [ref=e60]
+          - generic:
+            - generic:
+              - button: 账号列表
+              - button: Skills / Commands
+              - button: MCP Servers
+              - button: 会话管理
+              - button: 用量统计
+              - button: 设置
+              - button: CLAUDE.md
+              - button: 子代理
+        - button "应用设置" [ref=e63] [cursor=pointer]:
+          - img [ref=e64]
+          - generic [ref=e67]: 应用设置
+        - button "设计系统" [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+          - generic [ref=e73]: 设计系统
+        - button "调试面板" [ref=e75] [cursor=pointer]:
+          - img [ref=e76]
+          - generic [ref=e79]: 调试面板
+      - generic [ref=e81]:
+        - generic [ref=e83]: VERSION browser
+        - img "VERSION browser"
+    - main [ref=e84]:
+      - generic [ref=e145]:
+        - text: AssetWorkbenchShell
+        - generic [ref=e146]:
+          - generic [ref=e147]:
+            - text: WorkspacePageHeader
+            - generic [ref=e148]:
+              - heading "GetTokens Extension Registry" [level=2] [ref=e149]
+              - generic [ref=e150]: 2 extensions / 1 invalid / 3 capability kinds / 2 roots
+            - button "刷新 snapshot" [ref=e152] [cursor=pointer]:
+              - img [ref=e153]
+              - generic [ref=e158]: 刷新 snapshot
+          - generic [ref=e159]:
+            - generic [ref=e160]:
+              - generic [ref=e161]:
+                - generic [ref=e162]:
+                  - text: SearchInput
+                  - img
+                  - searchbox "搜索 extension、diagnostic、capability、source path" [ref=e163]
+                - generic [ref=e164]:
+                  - generic [ref=e165]:
+                    - img [ref=e166]
+                    - text: Read-only only
+                  - generic [ref=e169]: contract 0.1.0
+                  - generic [ref=e170]: mode read-only
+              - generic [ref=e171]:
+                - generic [ref=e172]: Generated 2026-06-17T08:40:00Z
+                - generic [ref=e173]: 只读 registry snapshot 已刷新；未读取或写入 Codex Skills/MCP 配置。
+            - generic [ref=e174]: 此页只展示 extension registry snapshot、diagnostics、capability kinds、source/root 信息；不会 enable/disable，不会执行 capability，不会读写 Codex 配置。
+            - generic [ref=e175]:
+              - main [ref=e176]:
+                - generic [ref=e177]:
+                  - generic [ref=e178]:
+                    - generic [ref=e179]: Extension
+                    - generic [ref=e180]: State
+                    - generic [ref=e181]: Capabilities
+                    - generic [ref=e182]: Diagnostics
+                  - generic [ref=e183]:
+                    - button "Legacy Hook Probe com.example.legacy-hook / 0.0.2 /Users/linhey/.config/gettokens-dev/extensions/legacy-hook/gettokens.extension.json INVALID quota-probe 2" [ref=e184] [cursor=pointer]:
+                      - generic [ref=e185]:
+                        - generic [ref=e186]: Legacy Hook Probe
+                        - generic [ref=e187]: com.example.legacy-hook / 0.0.2
+                        - generic [ref=e188]: /Users/linhey/.config/gettokens-dev/extensions/legacy-hook/gettokens.extension.json
+                      - generic [ref=e189]: INVALID
+                      - generic [ref=e191]: quota-probe
+                      - generic [ref=e192]: "2"
+                    - button "Example OpenAI Metadata com.example.openai-metadata / 0.1.0 /Users/linhey/.config/gettokens-dev/extensions/openai-metadata/gettokens.extension.json READONLY COMPATIBLE model-catalog-source provider-metadata 0" [ref=e193] [cursor=pointer]:
+                      - generic [ref=e194]:
+                        - generic [ref=e195]: Example OpenAI Metadata
+                        - generic [ref=e196]: com.example.openai-metadata / 0.1.0
+                        - generic [ref=e197]: /Users/linhey/.config/gettokens-dev/extensions/openai-metadata/gettokens.extension.json
+                      - generic [ref=e198]: READONLY COMPATIBLE
+                      - generic [ref=e199]:
+                        - generic [ref=e200]: model-catalog-source
+                        - generic [ref=e201]: provider-metadata
+                      - generic [ref=e202]: "0"
+              - complementary [ref=e203]:
+                - generic [ref=e204]:
+                  - generic [ref=e205]:
+                    - generic [ref=e206]:
+                      - img [ref=e207]
+                      - text: Roots
+                    - generic [ref=e212]:
+                      - generic [ref=e213]:
+                        - generic [ref=e214]:
+                          - generic [ref=e215]: app-owned
+                          - generic [ref=e216]: 2 extensions
+                        - generic [ref=e217]: /Users/linhey/.config/gettokens-dev/extensions
+                      - generic [ref=e218]:
+                        - generic [ref=e219]:
+                          - generic [ref=e220]: bundled
+                          - generic [ref=e221]: 0 extensions
+                        - generic [ref=e222]: /Applications/GetTokens Dev.app/Contents/Resources/extensions
+                  - generic [ref=e223]:
+                    - generic [ref=e224]:
+                      - img [ref=e225]
+                      - text: Registry Diagnostics
+                    - generic [ref=e228]:
+                      - generic [ref=e229]:
+                        - generic [ref=e230]: extension-root-not-found
+                        - generic [ref=e231]: registry / warning
+                      - generic [ref=e232]: extension root not found; returning empty scan result for that root
+                      - generic [ref=e233]: $.roots[2]
+                      - generic [ref=e234]: /Applications/GetTokens Dev.app/Contents/Resources/extensions
+                  - generic [ref=e235]:
+                    - generic [ref=e236]:
+                      - img [ref=e237]
+                      - text: Selected Extension
+                    - generic [ref=e241]:
+                      - generic [ref=e242]:
+                        - generic [ref=e243]: Legacy Hook Probe
+                        - generic [ref=e244]: com.example.legacy-hook / 0.0.2
+                        - generic [ref=e245]:
+                          - generic [ref=e246]:
+                            - generic [ref=e247]: State
+                            - generic [ref=e248]: INVALID
+                          - generic [ref=e249]:
+                            - generic [ref=e250]: Root
+                            - generic [ref=e251]: app-owned
+                          - generic [ref=e252]:
+                            - generic [ref=e253]: Manifest
+                            - generic [ref=e254]: /Users/linhey/.config/gettokens-dev/extensions/legacy-hook/gettokens.extension.json
+                          - generic [ref=e255]:
+                            - generic [ref=e256]: Source
+                            - generic [ref=e257]: file:///Users/linhey/.config/gettokens-dev/extensions/legacy-hook
+                          - generic [ref=e258]:
+                            - generic [ref=e259]: Permissions
+                            - generic [ref=e260]: provider.metadata.read, network.fetch.declared-endpoints
+                      - generic [ref=e262]:
+                        - generic [ref=e263]:
+                          - generic [ref=e264]:
+                            - generic [ref=e265]: legacy-hook
+                            - generic [ref=e266]: quota-probe / INVALID
+                          - generic [ref=e267]: 1 contributions
+                        - generic [ref=e268]:
+                          - generic [ref=e269]:
+                            - generic [ref=e270]: Required
+                            - generic [ref=e271]: quota.probe.read
+                          - generic [ref=e272]:
+                            - generic [ref=e273]: Declared
+                            - generic [ref=e274]: provider:legacy/quota
+                        - generic [ref=e276]:
+                          - generic [ref=e277]:
+                            - generic [ref=e278]: forbidden-permission
+                            - generic [ref=e279]: capability / error
+                          - generic [ref=e280]: runtime.request.hook is not allowed by extension contract v0
+                          - generic [ref=e281]: $.permissions[1]
+                          - generic [ref=e282]: /Users/linhey/.config/gettokens-dev/extensions/legacy-hook/gettokens.extension.json
+                      - generic [ref=e283]:
+                        - generic [ref=e284]:
+                          - generic [ref=e285]:
+                            - generic [ref=e286]: unknown-capability-kind
+                            - generic [ref=e287]: extension / error
+                          - generic [ref=e288]: capability kind "js-hook" is not allowed by extension contract v0
+                          - generic [ref=e289]: $.capabilities[0].kind
+                          - generic [ref=e290]: /Users/linhey/.config/gettokens-dev/extensions/legacy-hook/gettokens.extension.json
+                        - generic [ref=e291]:
+                          - generic [ref=e292]:
+                            - generic [ref=e293]: forbidden-permission
+                            - generic [ref=e294]: capability / error
+                          - generic [ref=e295]: runtime.request.hook is not allowed by extension contract v0
+                          - generic [ref=e296]: $.permissions[1]
+                          - generic [ref=e297]: /Users/linhey/.config/gettokens-dev/extensions/legacy-hook/gettokens.extension.json
+  - button "🎯" [ref=e144] [cursor=pointer]

@@ -32,6 +32,7 @@ import {
   buildUsageDeskProjectedSnapshot,
   buildUsageDeskProjectedSummaryItems,
   formatUsageDeskChartValue,
+  resolveUsageDeskStatusEvidence,
   resolveUsageDeskChartSelectionKey,
   resolveUsageDeskLinkedRowKey,
   shouldOpenUsageDeskProjectedSessionSurface,
@@ -506,6 +507,15 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     });
   }, [projectedDrilldownDayKey, projectedSnapshot.dailyPoints, visibleProjectedDailyPoints]);
 
+  const observedStatusEvidence = useMemo(
+    () => resolveUsageDeskStatusEvidence(observedUsageData, workspace),
+    [observedUsageData, workspace],
+  );
+  const projectedStatusEvidence = useMemo(
+    () => resolveUsageDeskStatusEvidence(projectedUsageData, workspace),
+    [projectedUsageData, workspace],
+  );
+
   const projectedChartUnit: UsageDeskChartUnit = projectedChartMetric === 'requests' ? 'count' : 'tokens';
   const projectedPrimaryChartPoints = projectedDrilldownDayKey
     ? projectedSnapshot.minutePoints.map((point) => ({
@@ -782,6 +792,8 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     projectedDrilldownDayKey,
     observedSummaryItems,
     projectedSummaryItems,
+    observedStatusEvidence,
+    projectedStatusEvidence,
     projectedChartUnit,
     projectedPrimaryChartPoints,
     selectedProjectedProjectUsages,

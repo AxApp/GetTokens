@@ -357,6 +357,7 @@ func quotaRuntimeStateFromCodexQuotaResponse(accountKey string, source string, s
 		Billing:        quotaRuntimeBillingFromCodexQuotaResponse(quota.Billing),
 		Stale:          quota.Stale,
 		DegradedReason: strings.TrimSpace(quota.DegradedReason),
+		Fact:           quotaRuntimeFactFromCodexQuotaResponse(quota.QuotaFact),
 	}
 }
 
@@ -466,6 +467,7 @@ func mapQuotaRuntimeStateToCodexQuotaResponse(state *cliproxyapi.QuotaRuntimeSta
 		Blocked:         state.Blocked,
 		BlockReason:     state.BlockReason,
 		Sources:         mapQuotaRuntimeSourcesToCodexQuotaResponse(state.Sources),
+		QuotaFact:       mapQuotaRuntimeFactToCodexQuotaResponse(state.Fact),
 	}
 }
 
@@ -532,6 +534,40 @@ func mapQuotaRuntimeBillingToCodexQuotaResponse(billing *cliproxyapi.QuotaRuntim
 	return &CodexQuotaBillingInfo{
 		IsAvailable:  billing.IsAvailable,
 		BalanceInfos: infos,
+	}
+}
+
+func mapQuotaRuntimeFactToCodexQuotaResponse(fact *cliproxyapi.QuotaRuntimeFact) *CodexQuotaFact {
+	if fact == nil {
+		return nil
+	}
+	return &CodexQuotaFact{
+		State:        fact.State,
+		Source:       fact.Source,
+		Freshness:    fact.Freshness,
+		Confidence:   fact.Confidence,
+		Risk:         fact.Risk,
+		Explanation:  fact.Explanation,
+		ObservedAt:   fact.ObservedAt,
+		ExpiresAt:    fact.ExpiresAt,
+		EvidenceRefs: append([]string(nil), fact.EvidenceRefs...),
+	}
+}
+
+func quotaRuntimeFactFromCodexQuotaResponse(fact *CodexQuotaFact) *cliproxyapi.QuotaRuntimeFact {
+	if fact == nil {
+		return nil
+	}
+	return &cliproxyapi.QuotaRuntimeFact{
+		State:        fact.State,
+		Source:       fact.Source,
+		Freshness:    fact.Freshness,
+		Confidence:   fact.Confidence,
+		Risk:         fact.Risk,
+		Explanation:  fact.Explanation,
+		ObservedAt:   fact.ObservedAt,
+		ExpiresAt:    fact.ExpiresAt,
+		EvidenceRefs: append([]string(nil), fact.EvidenceRefs...),
 	}
 }
 

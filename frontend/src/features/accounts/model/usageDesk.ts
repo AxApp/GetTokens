@@ -4,6 +4,10 @@ import type {
   AccountUsageAttributionResponse,
 } from './accountUsage';
 import type { UsageDeskWorkspace } from '../../../types';
+import {
+  resolveQuotaStatusEvidenceFromPayload,
+  type QuotaStatusEvidence,
+} from './quotaStatusEvidence.ts';
 
 export type UsageDeskSource = 'observed' | 'projected';
 export type UsageDeskFacetKind = 'provider' | 'account' | 'model';
@@ -27,6 +31,15 @@ export interface UsageDeskFacetGroup {
   label: string;
   options: UsageDeskFacetOption[];
 }
+
+export interface UsageDeskMissingQuotaFactEvidence {
+  kind: 'missing-quota-fact';
+  title: string;
+  summary: string;
+  description: string;
+}
+
+export type UsageDeskStatusEvidence = QuotaStatusEvidence | UsageDeskMissingQuotaFactEvidence;
 
 export interface UsageDeskObservedDetail {
   timestamp: string;
@@ -257,6 +270,41 @@ export type UsageDeskCurveMotion = 'standard' | 'realtime';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+export function resolveUsageDeskStatusEvidence(
+  payload: unknown,
+  workspace: UsageDeskWorkspace,
+): UsageDeskStatusEvidence | undefined {
+  const evidence = resolveQuotaStatusEvidenceFromPayload(payload, workspace);
+  if (evidence) {
+    return evidence;
+  }
+  if (!isRecord(payload) || !hasUsageDeskQuotaTelemetry(payload)) {
+    return undefined;
+  }
+  return {
+    kind: 'missing-quota-fact',
+    title: 'Quota authority unavailable',
+    summary: 'Missing explicit quotaFact / Non-authoritative',
+    description:
+      'Usage totals, windows, and block reasons are displayed as local telemetry only. This view does not infer quota truth without explicit quotaFact.',
+  };
+}
+
+function hasUsageDeskQuotaTelemetry(payload: Record<string, unknown>): boolean {
+  return [
+    'windows',
+    'blockReason',
+    'block_reason',
+    'usageTotals',
+    'usage_totals',
+    'totalTokens',
+    'total_tokens',
+    'requestCount',
+    'request_count',
+    'items',
+  ].some((key) => key in payload);
 }
 
 function isAttributionResponse(payload: unknown): payload is AccountUsageAttributionResponse {

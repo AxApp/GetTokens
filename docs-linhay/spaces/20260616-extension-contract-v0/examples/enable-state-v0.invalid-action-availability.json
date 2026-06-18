@@ -1,0 +1,34 @@
+{
+  "artifactVersion": "gettokens.extension.enable-state.v0",
+  "readOnlySlice": true,
+  "enableStates": [
+    "enabled",
+    "disabled",
+    "blocked",
+    "pending",
+    "readonly-unsupported"
+  ],
+  "actionAvailability": [
+    "read-only",
+    "disabled"
+  ],
+  "cases": [
+    {
+      "id": "invalid-action-availability-enum",
+      "registryState": "disabled",
+      "compatibilityStatus": "compatible",
+      "diagnosticCodes": [
+        "extension-disabled"
+      ],
+      "enableState": "disabled",
+      "actionAvailability": "toggleable",
+      "reasons": [
+        {
+          "code": "extension-disabled",
+          "label": "Disabled in registry",
+          "message": "invalid fixture proving action availability enum is rejected"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "artifactVersion": "gettokens.extension.enable-state.v0",
+  "readOnlySlice": true,
+  "enableStates": [
+    "enabled",
+    "disabled",
+    "blocked",
+    "pending",
+    "readonly-unsupported"
+  ],
+  "actionAvailability": [
+    "read-only",
+    "disabled"
+  ],
+  "cases": [
+    {
+      "id": "readonly-compatible-enabled-view",
+      "registryState": "readonly-compatible",
+      "compatibilityStatus": "compatible",
+      "diagnosticCodes": [],
+      "enableState": "enabled",
+      "actionAvailability": "read-only",
+      "reasons": [
+        {
+          "code": "readonly-slice-active-view",
+          "label": "Read-only active view",
+          "message": "registry snapshot is read-only, but readonly-compatible maps to enabled semantics for display"
+        }
+      ]
+    },
+    {
+      "id": "disabled-registry-state",
+      "registryState": "disabled",
+      "compatibilityStatus": "compatible",
+      "diagnosticCodes": [
+        "extension-disabled"
+      ],
+      "enableState": "disabled",
+      "actionAvailability": "read-only",
+      "reasons": [
+        {
+          "code": "extension-disabled",
+          "label": "Disabled in registry",
+          "message": "extension is registered as disabled and remains non-mutable in this read-only slice"
+        }
+      ]
+    },
+    {
+      "id": "invalid-blocked-contract",
+      "registryState": "invalid",
+      "compatibilityStatus": "compatible",
+      "diagnosticCodes": [
+        "unknown-capability-kind"
+      ],
+      "enableState": "blocked",
+      "actionAvailability": "disabled",
+      "reasons": [
+        {
+          "code": "unknown-capability-kind",
+          "label": "Contract blocked",
+          "message": "manifest validation failed, so enable action stays disabled until the contract is fixed"
+        }
+      ]
+    },
+    {
+      "id": "pending-review",
+      "registryState": "pending",
+      "compatibilityStatus": "compatible",
+      "diagnosticCodes": [
+        "enable-state-pending-review"
+      ],
+      "enableState": "pending",
+      "actionAvailability": "disabled",
+      "reasons": [
+        {
+          "code": "enable-state-pending-review",
+          "label": "Pending review",
+          "message": "extension is waiting on external review and cannot be acted on in this read-only slice"
+        }
+      ]
+    },
+    {
+      "id": "unknown-readonly-fallback",
+      "registryState": "mystery-state",
+      "compatibilityStatus": "unknown",
+      "diagnosticCodes": [
+        "readonly-slice-unsupported"
+      ],
+      "enableState": "readonly-unsupported",
+      "actionAvailability": "disabled",
+      "reasons": [
+        {
+          "code": "readonly-slice-unsupported",
+          "label": "Unsupported in slice",
+          "message": "snapshot does not expose enough stable signal to infer a true enable or disable state"
+        }
+      ]
+    }
+  ]
+}

@@ -113,6 +113,17 @@ export interface ChannelRouteDecisionSnapshot {
   selectedProvider?: string;
   unavailableCode?: string;
   unavailableMessage?: string;
+  droppedReasons?: Array<{
+    accountID?: string;
+    authID?: string;
+    source?: string;
+    scope?: string;
+    reason?: string;
+    model?: string;
+    expiresAt?: string;
+    updatedAt?: string;
+    routeBlocking?: boolean;
+  }>;
   trace?: Array<{
     stage?: string;
     policy?: string;
@@ -133,6 +144,96 @@ export interface ChannelRouteDecisionSummary {
   meta: string;
   detail: string;
   unresolved: boolean;
+}
+
+export type RouteResilienceActionName =
+  | 'clear_transient_lockout'
+  | 'rerun_bounded_reconcile'
+  | 'recheck_routeability';
+
+export interface RouteResilienceActionTargetReason {
+  reason: string;
+  count: number;
+}
+
+export interface RouteResilienceEvidenceDigest {
+  id: string;
+  accountKey: string;
+  authId: string;
+  model: string;
+  accountTitle: string;
+  source: string;
+  scope: string;
+  reason: string;
+  reasons: RouteResilienceActionTargetReason[];
+  reasonSummary: string;
+  routeBlocking: boolean;
+  decisionID: string;
+  recordedAt: string;
+  firstObservedDecisionID: string;
+  firstObservedAt: string;
+  lastObservedDecisionID: string;
+  lastObservedAt: string;
+  sourceLabel: string;
+  detail: string;
+  occurrenceCount: number;
+}
+
+export interface RouteResilienceDroppedReasonLike {
+  accountID?: string;
+  authID?: string;
+  source?: string;
+  scope?: string;
+  reason?: string;
+  model?: string;
+  routeBlocking?: boolean;
+}
+
+export interface RouteResilienceDroppedReasonDigestEntry {
+  decisionID?: string;
+  recordedAt?: string;
+  model?: string;
+  droppedReason?: RouteResilienceDroppedReasonLike | null;
+}
+
+export interface RouteResilienceActionTarget extends RouteResilienceEvidenceDigest {
+  title: string;
+  meta: string;
+}
+
+export interface RouteResilienceActionDescriptor {
+  action: RouteResilienceActionName;
+  title: string;
+  helper: string;
+  enabled: boolean;
+  disabledReason?: string;
+  sourceLabel: string;
+}
+
+export interface RouteResilienceActionResultDigest {
+  statusLabel: string;
+  tone: 'neutral' | 'success' | 'warning' | 'danger';
+  detail: string;
+  beforeLabel: string;
+  afterLabel: string;
+  droppedReasonsLabel: string;
+}
+
+export interface RouteResilienceActionHistoryEntry {
+  id: string;
+  targetID: string;
+  targetTitle: string;
+  targetMeta: string;
+  action: RouteResilienceActionName;
+  actionTitle: string;
+  statusLabel: string;
+  tone: 'neutral' | 'success' | 'warning' | 'danger';
+  detail: string;
+  authority: string;
+  auditId: string;
+  beforeLabel: string;
+  afterLabel: string;
+  droppedReasonsLabel: string;
 }
 
 export interface ChannelRoutingExplainLike {
@@ -579,6 +680,7 @@ export function buildChannelRouteDecisionSummary(decision: ChannelRouteDecisionS
     .filter(Boolean)
     .join(' · ');
   const detail = [
+    summarizeChannelRouteDecisionDroppedReasons(decision),
     summarizeChannelRouteDecisionTrace(decision),
     selectedAccountID || selectedAuthID ? `命中凭据 ${selectedAccountID || selectedAuthID}` : '',
     String(decision.unavailableMessage || '').trim(),
@@ -592,6 +694,311 @@ export function buildChannelRouteDecisionSummary(decision: ChannelRouteDecisionS
     detail,
     unresolved: !selectedAccountID,
   };
+}
+
+export function buildRouteResilienceActionTarget(
+  decisions: ChannelRouteDecisionSnapshot[] | null | undefined,
+  accounts: ChannelRoutingParticipantAccountLike[] = [],
+  fallbackModel = '',
+): RouteResilienceActionTarget | null {
+  return buildRouteResilienceActionTargets(decisions, accounts, fallbackModel)[0] || null;
+}
+
+export function buildRouteResilienceEvidenceDigests(
+  decisions: ChannelRouteDecisionSnapshot[] | null | undefined,
+  accounts: ChannelRoutingParticipantAccountLike[] = [],
+  fallbackModel = '',
+): RouteResilienceEvidenceDigest[] {
+  const digestEntries: RouteResilienceDroppedReasonDigestEntry[] = [];
+  for (const decision of decisions || []) {
+    for (const droppedReason of decision.droppedReasons || []) {
+      digestEntries.push({
+        decisionID: decision.id,
+        recordedAt: decision.recordedAt,
+        model: decision.model,
+        droppedReason,
+      });
+    }
+  }
+  return buildRouteResilienceEvidenceDigestsFromDroppedReasons(digestEntries, accounts, fallbackModel);
+}
+
+export function buildRouteResilienceEvidenceDigestsFromDroppedReasons(
+  entries: RouteResilienceDroppedReasonDigestEntry[] | null | undefined,
+  accounts: ChannelRoutingParticipantAccountLike[] = [],
+  fallbackModel = '',
+  options: { requireFullIdentity?: boolean } = {},
+): RouteResilienceEvidenceDigest[] {
+  const accountTitleByID = new Map<string, string>();
+  for (const account of accounts) {
+    const id = String(account.id || '').trim();
+    if (!id || accountTitleByID.has(id)) {
+      continue;
+    }
+    accountTitleByID.set(id, String(account.label || '').trim() || id);
+  }
+
+  const ordered: RouteResilienceEvidenceDigest[] = [];
+  const digestByID = new Map<string, RouteResilienceEvidenceDigest>();
+
+  for (const entry of entries || []) {
+    const dropped = entry?.droppedReason;
+    const accountKey = String(dropped?.accountID || '').trim();
+    const authId = String(dropped?.authID || '').trim();
+    if (!accountKey && !authId) {
+      continue;
+    }
+    const accountTitle = accountTitleByID.get(accountKey) || accountKey || authId;
+    const model = String(dropped?.model || entry?.model || fallbackModel || '').trim();
+    const source = String(dropped?.source || '').trim();
+    const scope = String(dropped?.scope || '').trim();
+    if (options.requireFullIdentity && (!model || !source || !scope)) {
+      continue;
+    }
+    const reason = String(dropped?.reason || '').trim();
+    const decisionID = String(entry?.decisionID || '').trim();
+    const recordedAt = String(entry?.recordedAt || '').trim();
+    const id = [accountKey, authId, model, source, scope].join('|');
+    const existing = digestByID.get(id);
+    if (existing) {
+      existing.occurrenceCount += 1;
+      existing.routeBlocking = existing.routeBlocking || dropped?.routeBlocking !== false;
+      mergeRouteResilienceTargetReason(existing, reason);
+      if (shouldUseRouteResilienceFirstObservation(recordedAt, existing.firstObservedAt)) {
+        existing.firstObservedAt = recordedAt;
+        existing.firstObservedDecisionID = decisionID;
+      }
+      const isSameLatestObservation =
+        decisionID === existing.lastObservedDecisionID && recordedAt === existing.lastObservedAt;
+      if (shouldUseRouteResilienceLatestObservation(recordedAt, decisionID, existing)) {
+        existing.decisionID = decisionID;
+        existing.recordedAt = recordedAt;
+        existing.lastObservedDecisionID = decisionID;
+        existing.lastObservedAt = recordedAt;
+        if (reason) {
+          existing.reason = reason;
+        }
+      } else if (!existing.reason && reason) {
+        existing.reason = reason;
+      } else if (isSameLatestObservation && reason) {
+        existing.reason = reason;
+      }
+      existing.reasonSummary = formatRouteResilienceReasonSummary(existing.reasons);
+      existing.detail = formatRouteResilienceTargetDetail(existing.reasonSummary, existing.occurrenceCount);
+      continue;
+    }
+
+    const reasons = buildRouteResilienceTargetReasons(reason);
+    const reasonSummary = formatRouteResilienceReasonSummary(reasons);
+    const digest: RouteResilienceEvidenceDigest = {
+      id,
+      accountKey,
+      authId,
+      model,
+      accountTitle: accountTitle || '未命名账号',
+      source,
+      scope,
+      reason,
+      reasons,
+      reasonSummary,
+      routeBlocking: dropped?.routeBlocking !== false,
+      decisionID,
+      recordedAt,
+      firstObservedDecisionID: decisionID,
+      firstObservedAt: recordedAt,
+      lastObservedDecisionID: decisionID,
+      lastObservedAt: recordedAt,
+      sourceLabel: formatRouteResilienceSourceLabel(source),
+      detail: formatRouteResilienceTargetDetail(reasonSummary, 1),
+      occurrenceCount: 1,
+    };
+    ordered.push(digest);
+    digestByID.set(id, digest);
+  }
+
+  return ordered;
+}
+
+export function buildRouteResilienceActionTargets(
+  decisions: ChannelRouteDecisionSnapshot[] | null | undefined,
+  accounts: ChannelRoutingParticipantAccountLike[] = [],
+  fallbackModel = '',
+): RouteResilienceActionTarget[] {
+  return buildRouteResilienceEvidenceDigests(decisions, accounts, fallbackModel).map((digest) => ({
+    ...digest,
+    title: digest.accountTitle,
+    meta: [
+      digest.sourceLabel,
+      digest.scope || 'scope-unknown',
+      digest.model ? `model:${digest.model}` : '',
+      `recent:${digest.decisionID || 'unknown'}`,
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  }));
+}
+
+export function buildRouteResilienceActionDescriptors(
+  target: RouteResilienceActionTarget | null,
+  runtimeAvailable: boolean,
+): RouteResilienceActionDescriptor[] {
+  return [
+    {
+      action: 'clear_transient_lockout',
+      title: '清 transient lockout',
+      helper: '仅允许 auth-error / upstream-rate-limit / upstream-error。',
+      enabled: Boolean(runtimeAvailable && target && isRouteResilienceTransientSource(target.source)),
+      disabledReason: !runtimeAvailable
+        ? '浏览器预览无 Wails runtime'
+        : !target
+          ? '最近决策里没有可定位的 dropped reason'
+          : !isRouteResilienceTransientSource(target.source)
+            ? '当前 source 不是 sidecar 允许清理的 transient source'
+            : undefined,
+      sourceLabel: formatRouteResilienceSourceLabel(target?.source || ''),
+    },
+    {
+      action: 'rerun_bounded_reconcile',
+      title: '重跑 bounded reconcile',
+      helper: '当前 UI 只透传 sidecar 返回；若未实现会显示 not_implemented。',
+      enabled: Boolean(runtimeAvailable && target?.accountKey),
+      disabledReason: !runtimeAvailable
+        ? '浏览器预览无 Wails runtime'
+        : !target?.accountKey
+          ? '缺少 accountKey'
+          : undefined,
+      sourceLabel: formatRouteResilienceSourceLabel(target?.source || ''),
+    },
+    {
+      action: 'recheck_routeability',
+      title: '重查 routeability',
+      helper: '当前 UI 只透传 sidecar 返回；若未实现会显示 not_implemented。',
+      enabled: Boolean(runtimeAvailable && (target?.accountKey || target?.authId)),
+      disabledReason: !runtimeAvailable
+        ? '浏览器预览无 Wails runtime'
+        : !target?.accountKey && !target?.authId
+          ? '缺少 accountKey / authId'
+          : undefined,
+      sourceLabel: formatRouteResilienceSourceLabel(target?.source || ''),
+    },
+  ];
+}
+
+export function buildRouteResilienceActionResultDigest(
+  result: {
+    ok?: boolean;
+    status?: string;
+    error?: string;
+    notImplementedReason?: string;
+    httpStatus?: number;
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
+    droppedReasons?: Array<{
+      source?: string;
+      scope?: string;
+      reason?: string;
+    }>;
+  } | null | undefined,
+): RouteResilienceActionResultDigest {
+  if (!result) {
+    return {
+      statusLabel: '未执行',
+      tone: 'neutral',
+      detail: '尚未触发 route resilience action。',
+      beforeLabel: '',
+      afterLabel: '',
+      droppedReasonsLabel: '',
+    };
+  }
+
+  const status = String(result.status || '').trim();
+  const isNotImplemented = status === 'not_implemented' || Number(result.httpStatus) === 501;
+  const tone = isNotImplemented ? 'warning' : result.ok ? 'success' : result.error ? 'danger' : 'neutral';
+  const statusLabel = isNotImplemented ? '未实现' : status || (result.ok ? '已返回' : '失败');
+  const detail =
+    String(result.notImplementedReason || result.error || '').trim() ||
+    (result.ok ? 'sidecar 已返回结构化 action response。' : 'sidecar 未返回额外说明。');
+  return {
+    statusLabel,
+    tone,
+    detail,
+    beforeLabel: formatRouteResilienceStateSummary(result.before),
+    afterLabel: formatRouteResilienceStateSummary(result.after),
+    droppedReasonsLabel: formatRouteResilienceDroppedReasonsLabel(result.droppedReasons),
+  };
+}
+
+export function buildRouteResilienceActionHistoryEntry(
+  target: RouteResilienceActionTarget,
+  action: RouteResilienceActionName,
+  result: {
+    ok?: boolean;
+    action?: string;
+    status?: string;
+    error?: string;
+    notImplementedReason?: string;
+    httpStatus?: number;
+    authority?: string;
+    auditId?: string;
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
+    droppedReasons?: Array<{
+      source?: string;
+      scope?: string;
+      reason?: string;
+    }>;
+  } | null | undefined,
+): RouteResilienceActionHistoryEntry {
+  const digest = buildRouteResilienceActionResultDigest(result);
+  const status = String(result?.status || '').trim() || (result?.ok ? 'ok' : 'unknown');
+  const authority = String(result?.authority || '').trim();
+  const auditId = String(result?.auditId || '').trim();
+  return {
+    id: `${target.id}:${action}:${auditId || `${status}:${authority || 'unknown'}`}`,
+    targetID: target.id,
+    targetTitle: target.title,
+    targetMeta: target.meta,
+    action,
+    actionTitle: formatRouteResilienceActionTitle(action),
+    statusLabel: digest.statusLabel,
+    tone: digest.tone,
+    detail: digest.detail,
+    authority,
+    auditId,
+    beforeLabel: digest.beforeLabel,
+    afterLabel: digest.afterLabel,
+    droppedReasonsLabel: digest.droppedReasonsLabel,
+  };
+}
+
+export function findLatestRouteResilienceActionHistoryForTarget(
+  history: RouteResilienceActionHistoryEntry[],
+  targetID: string,
+): RouteResilienceActionHistoryEntry | null {
+  const normalizedTargetID = String(targetID || '').trim();
+  if (!normalizedTargetID) {
+    return null;
+  }
+  return history.find((entry) => entry.targetID === normalizedTargetID) || null;
+}
+
+function summarizeChannelRouteDecisionDroppedReasons(decision: ChannelRouteDecisionSnapshot): string {
+  for (const dropped of decision.droppedReasons || []) {
+    const source = String(dropped?.source || '').trim();
+    const scope = String(dropped?.scope || '').trim();
+    const reason = String(dropped?.reason || '').trim();
+    const prefix = [source, scope].filter(Boolean).join('/');
+    if (prefix && reason) {
+      return `${prefix}: ${reason}`;
+    }
+    if (reason) {
+      return reason;
+    }
+    if (prefix) {
+      return prefix;
+    }
+  }
+  return '';
 }
 
 function summarizeChannelRouteDecisionTrace(decision: ChannelRouteDecisionSnapshot): string {
@@ -609,6 +1016,127 @@ function summarizeChannelRouteDecisionTrace(decision: ChannelRouteDecisionSnapsh
     }
   }
   return '';
+}
+
+export function isRouteResilienceTransientSource(source: unknown): boolean {
+  switch (String(source || '').trim()) {
+    case 'auth-error':
+    case 'upstream-rate-limit':
+    case 'upstream-error':
+      return true;
+    default:
+      return false;
+  }
+}
+
+export function formatRouteResilienceSourceLabel(source: unknown): string {
+  switch (String(source || '').trim()) {
+    case 'auth-error':
+      return '认证错误';
+    case 'upstream-rate-limit':
+      return '上游限流';
+    case 'upstream-error':
+      return '上游错误';
+    case 'rate-limit':
+      return '持久限流';
+    case 'quota-empty':
+      return '额度耗尽';
+    default:
+      return String(source || '').trim() || '未知 source';
+  }
+}
+
+function shouldUseRouteResilienceFirstObservation(nextRecordedAt: string, currentRecordedAt: string): boolean {
+  if (!nextRecordedAt) {
+    return false;
+  }
+  if (!currentRecordedAt) {
+    return true;
+  }
+  return nextRecordedAt < currentRecordedAt;
+}
+
+function shouldUseRouteResilienceLatestObservation(
+  nextRecordedAt: string,
+  nextDecisionID: string,
+  current: Pick<RouteResilienceEvidenceDigest, 'lastObservedAt' | 'lastObservedDecisionID'>,
+): boolean {
+  if (nextRecordedAt) {
+    if (!current.lastObservedAt) {
+      return true;
+    }
+    if (nextRecordedAt > current.lastObservedAt) {
+      return true;
+    }
+    if (nextRecordedAt < current.lastObservedAt) {
+      return false;
+    }
+    return nextDecisionID !== current.lastObservedDecisionID;
+  }
+
+  if (current.lastObservedAt) {
+    return false;
+  }
+  return Boolean(nextDecisionID) && nextDecisionID !== current.lastObservedDecisionID;
+}
+
+function buildRouteResilienceTargetReasons(reason: string): RouteResilienceActionTargetReason[] {
+  const normalizedReason = String(reason || '').trim();
+  return normalizedReason ? [{ reason: normalizedReason, count: 1 }] : [];
+}
+
+function mergeRouteResilienceTargetReason(
+  target: Pick<RouteResilienceEvidenceDigest, 'reasons'>,
+  reason: string,
+): void {
+  const normalizedReason = String(reason || '').trim();
+  if (!normalizedReason) {
+    return;
+  }
+  const existing = target.reasons.find((item) => item.reason === normalizedReason);
+  if (existing) {
+    existing.count += 1;
+    return;
+  }
+  target.reasons.push({ reason: normalizedReason, count: 1 });
+}
+
+function formatRouteResilienceReasonSummary(reasons: RouteResilienceActionTargetReason[]): string {
+  const labels = reasons
+    .map((item) => {
+      const normalizedReason = String(item.reason || '').trim();
+      if (!normalizedReason) {
+        return '';
+      }
+      return item.count > 1 ? `${normalizedReason} x${item.count}` : normalizedReason;
+    })
+    .filter(Boolean);
+
+  if (labels.length === 0) {
+    return '';
+  }
+  return labels.join(' / ');
+}
+
+function formatRouteResilienceTargetDetail(reasonSummary: string, occurrenceCount: number): string {
+  const normalizedReason = String(reasonSummary || '').trim();
+  if (occurrenceCount > 1) {
+    return normalizedReason ? `${normalizedReason} · ${occurrenceCount} 次命中` : `${occurrenceCount} 次命中`;
+  }
+  return normalizedReason;
+}
+
+function formatRouteResilienceActionTitle(action: RouteResilienceActionName): string {
+  switch (action) {
+    case 'clear_transient_lockout':
+      return '清 transient lockout';
+    case 'rerun_bounded_reconcile':
+      return '重跑 bounded reconcile';
+    case 'recheck_routeability':
+      return '重查 routeability';
+    default:
+      return action;
+  }
 }
 
 export function buildChannelRoutingExplainDigest(
@@ -1250,6 +1778,54 @@ function formatChannelRoutingFilteredReason(reason: string): string {
     default:
       return reason;
   }
+}
+
+function formatRouteResilienceStateSummary(input: Record<string, unknown> | null | undefined): string {
+  if (!input || typeof input !== 'object') {
+    return '';
+  }
+  const preferredKeys = ['blockCount', 'status', 'failureClass', 'registeredModelsCount'];
+  const preferredParts = preferredKeys
+    .map((key) => {
+      const value = input[key];
+      if (value === undefined || value === null || value === '') {
+        return '';
+      }
+      return `${key}:${String(value)}`;
+    })
+    .filter(Boolean);
+  if (preferredParts.length > 0) {
+    return preferredParts.join(' · ');
+  }
+  const fallbackParts = Object.entries(input)
+    .filter(([, value]) => ['string', 'number', 'boolean'].includes(typeof value))
+    .slice(0, 3)
+    .map(([key, value]) => `${key}:${String(value)}`);
+  return fallbackParts.join(' · ');
+}
+
+function formatRouteResilienceDroppedReasonsLabel(
+  droppedReasons:
+    | Array<{
+        source?: string;
+        scope?: string;
+        reason?: string;
+      }>
+    | null
+    | undefined,
+): string {
+  const first = droppedReasons?.[0];
+  if (!first) {
+    return '';
+  }
+  const source = String(first.source || '').trim();
+  const scope = String(first.scope || '').trim();
+  const reason = String(first.reason || '').trim();
+  const prefix = [formatRouteResilienceSourceLabel(source), scope].filter(Boolean).join(' / ');
+  if (prefix && reason) {
+    return `${prefix}: ${reason}`;
+  }
+  return prefix || reason;
 }
 
 function buildProjectCandidatePoolDigest(

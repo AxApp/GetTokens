@@ -112,13 +112,115 @@ type ChannelRoutingDecisionSnapshot struct {
 	SelectedProvider     string                            `json:"selectedProvider,omitempty"`
 	UnavailableCode      string                            `json:"unavailableCode,omitempty"`
 	UnavailableMessage   string                            `json:"unavailableMessage,omitempty"`
+	DroppedReasons       []ChannelRoutingDroppedReason     `json:"droppedReasons,omitempty"`
 	Trace                []ChannelRoutingDecisionStep      `json:"trace"`
+}
+
+func (s *ChannelRoutingDecisionSnapshot) UnmarshalJSON(data []byte) error {
+	type alias ChannelRoutingDecisionSnapshot
+	var base alias
+	if err := json.Unmarshal(data, &base); err != nil {
+		return err
+	}
+	var compat struct {
+		DroppedReasonsSnake []ChannelRoutingDroppedReason `json:"dropped_reasons"`
+	}
+	if err := json.Unmarshal(data, &compat); err != nil {
+		return err
+	}
+	*s = ChannelRoutingDecisionSnapshot(base)
+	if compat.DroppedReasonsSnake != nil && s.DroppedReasons == nil {
+		s.DroppedReasons = compat.DroppedReasonsSnake
+	}
+	return nil
 }
 
 type ChannelRoutingDecisionCandidate struct {
 	AuthID    string `json:"authID,omitempty"`
 	AccountID string `json:"accountID,omitempty"`
 	Provider  string `json:"provider,omitempty"`
+}
+
+type ChannelRoutingDroppedReason struct {
+	AccountKey    string `json:"accountKey,omitempty"`
+	AccountID     string `json:"accountID,omitempty"`
+	AuthID        string `json:"authID,omitempty"`
+	Source        string `json:"source,omitempty"`
+	Scope         string `json:"scope,omitempty"`
+	Reason        string `json:"reason,omitempty"`
+	Model         string `json:"model,omitempty"`
+	ExpiresAt     string `json:"expiresAt,omitempty"`
+	UpdatedAt     string `json:"updatedAt,omitempty"`
+	RouteBlocking bool   `json:"routeBlocking,omitempty"`
+}
+
+func (r *ChannelRoutingDroppedReason) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		AccountKey         string `json:"accountKey"`
+		AccountID          string `json:"accountID"`
+		AccountIDCamel     string `json:"accountId"`
+		AccountIDSnake     string `json:"account_id"`
+		AuthID             string `json:"authID"`
+		AuthIDCamel        string `json:"authId"`
+		AuthIDSnake        string `json:"auth_id"`
+		Source             string `json:"source"`
+		Scope              string `json:"scope"`
+		Reason             string `json:"reason"`
+		Model              string `json:"model"`
+		ExpiresAt          string `json:"expiresAt"`
+		ExpiresAtSnake     string `json:"expires_at"`
+		UpdatedAt          string `json:"updatedAt"`
+		UpdatedAtSnake     string `json:"updated_at"`
+		RouteBlocking      *bool  `json:"routeBlocking"`
+		RouteBlockingSnake *bool  `json:"route_blocking"`
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	r.AccountKey = firstNonEmpty(aux.AccountKey, aux.AccountIDCamel, aux.AccountID, aux.AccountIDSnake)
+	r.AccountID = firstNonEmpty(aux.AccountIDCamel, aux.AccountID, aux.AccountKey, aux.AccountIDSnake)
+	r.AuthID = firstNonEmpty(aux.AuthIDCamel, aux.AuthID, aux.AuthIDSnake)
+	r.Source = aux.Source
+	r.Scope = aux.Scope
+	r.Reason = aux.Reason
+	r.Model = aux.Model
+	r.ExpiresAt = firstNonEmpty(aux.ExpiresAt, aux.ExpiresAtSnake)
+	r.UpdatedAt = firstNonEmpty(aux.UpdatedAt, aux.UpdatedAtSnake)
+	if aux.RouteBlocking != nil {
+		r.RouteBlocking = *aux.RouteBlocking
+	} else if aux.RouteBlockingSnake != nil {
+		r.RouteBlocking = *aux.RouteBlockingSnake
+	}
+	return nil
+}
+
+type RouteResilienceActionRequest struct {
+	Action         string   `json:"action"`
+	AccountKey     string   `json:"accountKey,omitempty"`
+	AuthID         string   `json:"authId,omitempty"`
+	Model          string   `json:"model,omitempty"`
+	Sources        []string `json:"sources,omitempty"`
+	Reason         string   `json:"reason,omitempty"`
+	DryRun         bool     `json:"dryRun,omitempty"`
+	IdempotencyKey string   `json:"idempotencyKey,omitempty"`
+}
+
+type RouteResilienceActionResponse struct {
+	OK                   bool                          `json:"ok"`
+	Authority            string                        `json:"authority"`
+	Action               string                        `json:"action"`
+	Status               string                        `json:"status"`
+	AccountKey           string                        `json:"accountKey,omitempty"`
+	AuthID               string                        `json:"authId,omitempty"`
+	Model                string                        `json:"model,omitempty"`
+	Before               map[string]any                `json:"before"`
+	After                map[string]any                `json:"after"`
+	AuditID              string                        `json:"auditId,omitempty"`
+	DroppedSources       []string                      `json:"droppedSources,omitempty"`
+	DroppedReasons       []ChannelRoutingDroppedReason `json:"droppedReasons,omitempty"`
+	Error                string                        `json:"error,omitempty"`
+	NotImplementedReason string                        `json:"notImplementedReason,omitempty"`
+	HTTPStatus           int                           `json:"httpStatus,omitempty"`
 }
 
 type ChannelRoutingDecisionStep struct {
@@ -136,6 +238,15 @@ type ChannelRoutingDecisionStep struct {
 
 func New(request RequestFunc) *Client {
 	return &Client{request: request}
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func (c *Client) ListAPIKeys() ([]string, error) {
@@ -597,6 +708,59 @@ func (c *Client) ListChannelRoutingDecisions(channel string, limit int) ([]Chann
 		}
 	}
 	return response.Items, true, nil
+}
+
+func (c *Client) RunRouteResilienceAction(input RouteResilienceActionRequest) (*RouteResilienceActionResponse, error) {
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, status, err := c.request("POST", "/v0/management/gettokens/route-resilience/actions", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response RouteResilienceActionResponse
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, &response); err != nil {
+			return nil, err
+		}
+	}
+	response.HTTPStatus = status
+	if response.DroppedSources == nil {
+		response.DroppedSources = []string{}
+	}
+	if response.DroppedReasons == nil {
+		response.DroppedReasons = []ChannelRoutingDroppedReason{}
+	}
+	return &response, nil
+}
+
+func (c *Client) GetDoctorDiagnostics() (*DoctorDiagnosticsResponse, bool, error) {
+	body, status, err := c.request("GET", "/v0/management/gettokens/doctor-diagnostics", nil, nil, "")
+	if err != nil {
+		return nil, false, err
+	}
+	if status == 404 || status == 501 {
+		return nil, false, nil
+	}
+	var response DoctorDiagnosticsResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, false, err
+	}
+	if response.Checks == nil {
+		response.Checks = []DoctorDiagnosticCheck{}
+	}
+	for index := range response.Checks {
+		if response.Checks[index].Evidence == nil {
+			response.Checks[index].Evidence = []DoctorDiagnosticEvidence{}
+		}
+		for evidenceIndex := range response.Checks[index].Evidence {
+			if response.Checks[index].Evidence[evidenceIndex].EvidenceRefs == nil {
+				response.Checks[index].Evidence[evidenceIndex].EvidenceRefs = []string{}
+			}
+		}
+	}
+	return &response, true, nil
 }
 
 func (c *Client) GetAccountStoreDiagnostics() (*AccountStoreDiagnostics, error) {

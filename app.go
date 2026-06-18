@@ -410,6 +410,7 @@ func (a *App) ListChannelRouteDecisions(input ChannelRouteDecisionsInput) ([]Cha
 			UnavailableCode:      item.UnavailableCode,
 			UnavailableMessage:   item.UnavailableMessage,
 			Candidates:           make([]ChannelRouteDecisionAuth, 0, len(item.Candidates)),
+			DroppedReasons:       make([]ChannelRouteDroppedReason, 0, len(item.DroppedReasons)),
 			Trace:                make([]ChannelRouteDecisionStep, 0, len(item.Trace)),
 		}
 		for _, candidate := range item.Candidates {
@@ -417,6 +418,19 @@ func (a *App) ListChannelRouteDecisions(input ChannelRouteDecisionsInput) ([]Cha
 				AuthID:    candidate.AuthID,
 				AccountID: candidate.AccountID,
 				Provider:  candidate.Provider,
+			})
+		}
+		for _, dropped := range item.DroppedReasons {
+			decision.DroppedReasons = append(decision.DroppedReasons, ChannelRouteDroppedReason{
+				AccountID:     dropped.AccountID,
+				AuthID:        dropped.AuthID,
+				Source:        dropped.Source,
+				Scope:         dropped.Scope,
+				Reason:        dropped.Reason,
+				Model:         dropped.Model,
+				ExpiresAt:     dropped.ExpiresAt,
+				UpdatedAt:     dropped.UpdatedAt,
+				RouteBlocking: dropped.RouteBlocking,
 			})
 		}
 		for _, step := range item.Trace {
@@ -441,6 +455,23 @@ func (a *App) ListChannelRouteDecisions(input ChannelRouteDecisionsInput) ([]Cha
 		out = append(out, decision)
 	}
 	return out, nil
+}
+
+func (a *App) RunRouteResilienceAction(input RouteResilienceActionInput) (*RouteResilienceActionResult, error) {
+	result, err := a.core.RunRouteResilienceAction(wailsapp.RouteResilienceActionInput{
+		Action:         input.Action,
+		AccountKey:     input.AccountKey,
+		AuthID:         input.AuthID,
+		Model:          input.Model,
+		Sources:        append([]string(nil), input.Sources...),
+		Reason:         input.Reason,
+		DryRun:         input.DryRun,
+		IdempotencyKey: input.IdempotencyKey,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapRouteResilienceActionResult(result), nil
 }
 
 func mapChannelAccountRuntimeState(input *wailsapp.ChannelAccountRuntimeState) *ChannelAccountRuntimeState {
@@ -1192,6 +1223,58 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 		return nil, err
 	}
 	return mapCodexQuotaResponse(result), nil
+}
+
+func (a *App) GetDoctorSnapshot(input DoctorSnapshotInput) (*DoctorSnapshot, error) {
+	result, err := a.core.GetDoctorSnapshot(wailsapp.DoctorSnapshotInput{
+		Scope:               input.Scope,
+		IncludeEvidence:     input.IncludeEvidence,
+		MaxEvidencePerCheck: input.MaxEvidencePerCheck,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapDoctorSnapshot(result), nil
+}
+
+func (a *App) GetGetTokensExtensionRegistrySnapshot(input GetTokensExtensionRegistrySnapshotInput) (*GetTokensExtensionRegistrySnapshot, error) {
+	result, err := a.core.GetGetTokensExtensionRegistrySnapshot(mapGetTokensExtensionRegistryInput(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapGetTokensExtensionRegistrySnapshot(result), nil
+}
+
+func (a *App) SetGetTokensExtensionEnabled(input SetGetTokensExtensionEnabledInput) (*GetTokensExtensionEnableStateFile, error) {
+	result, err := a.core.SetGetTokensExtensionEnabled(mapSetGetTokensExtensionEnabledInput(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapGetTokensExtensionEnableStateFile(result), nil
+}
+
+func (a *App) PreviewGetTokensExtensionCodexConfigDryRun(input PreviewGetTokensExtensionCodexConfigDryRunInput) (*GetTokensExtensionCodexConfigDryRunPreview, error) {
+	result, err := a.core.PreviewGetTokensExtensionCodexConfigDryRun(mapPreviewGetTokensExtensionCodexConfigDryRunInput(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapGetTokensExtensionCodexConfigDryRunPreview(result), nil
+}
+
+func (a *App) PrepareGetTokensExtensionCodexConfigApply(input PrepareGetTokensExtensionCodexConfigApplyInput) (*GetTokensExtensionCodexConfigStagedApplyPlan, error) {
+	result, err := a.core.PrepareGetTokensExtensionCodexConfigApply(mapPrepareGetTokensExtensionCodexConfigApplyInput(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapGetTokensExtensionCodexConfigStagedApplyPlan(result), nil
+}
+
+func (a *App) ApplyGetTokensExtensionCodexConfigTransaction(input ApplyGetTokensExtensionCodexConfigTransactionInput) (*GetTokensExtensionCodexConfigStagedApplyResult, error) {
+	result, err := a.core.ApplyGetTokensExtensionCodexConfigTransaction(mapApplyGetTokensExtensionCodexConfigTransactionInput(input))
+	if err != nil {
+		return mapGetTokensExtensionCodexConfigStagedApplyResult(result), err
+	}
+	return mapGetTokensExtensionCodexConfigStagedApplyResult(result), nil
 }
 
 func (a *App) GetAllQuotaStatuses() ([]CodexQuotaResponse, error) {

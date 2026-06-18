@@ -14,6 +14,10 @@ export function ApplyDeepLinkImport(arg1) {
   return window['go']['main']['App']['ApplyDeepLinkImport'](arg1);
 }
 
+export function ApplyGetTokensExtensionCodexConfigTransaction(arg1) {
+  return window['go']['main']['App']['ApplyGetTokensExtensionCodexConfigTransaction'](arg1);
+}
+
 export function ApplyRelayServiceConfigToLocal(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['ApplyRelayServiceConfigToLocal'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
@@ -274,6 +278,14 @@ export function GetCodexSkillsSnapshot() {
   return window['go']['main']['App']['GetCodexSkillsSnapshot']();
 }
 
+export function GetDoctorSnapshot(arg1) {
+  return window['go']['main']['App']['GetDoctorSnapshot'](arg1);
+}
+
+export function GetGetTokensExtensionRegistrySnapshot(arg1) {
+  return window['go']['main']['App']['GetGetTokensExtensionRegistrySnapshot'](arg1);
+}
+
 export function GetLocalCodexAuthState() {
   return window['go']['main']['App']['GetLocalCodexAuthState']();
 }
@@ -422,12 +434,20 @@ export function PreflightCodexMcpServer(arg1) {
   return window['go']['main']['App']['PreflightCodexMcpServer'](arg1);
 }
 
+export function PrepareGetTokensExtensionCodexConfigApply(arg1) {
+  return window['go']['main']['App']['PrepareGetTokensExtensionCodexConfigApply'](arg1);
+}
+
 export function PreviewCodexFeatureConfig(arg1) {
   return window['go']['main']['App']['PreviewCodexFeatureConfig'](arg1);
 }
 
 export function PreviewDeepLinkImport(arg1) {
   return window['go']['main']['App']['PreviewDeepLinkImport'](arg1);
+}
+
+export function PreviewGetTokensExtensionCodexConfigDryRun(arg1) {
+  return window['go']['main']['App']['PreviewGetTokensExtensionCodexConfigDryRun'](arg1);
 }
 
 export function ProbeClaudeCodeAccountRouting(arg1) {
@@ -490,6 +510,10 @@ export function RevealCodexBinaryVersion(arg1) {
   return window['go']['main']['App']['RevealCodexBinaryVersion'](arg1);
 }
 
+export function RunRouteResilienceAction(arg1) {
+  return window['go']['main']['App']['RunRouteResilienceAction'](arg1);
+}
+
 export function SaveChannelRoutingConfig(arg1) {
   return window['go']['main']['App']['SaveChannelRoutingConfig'](arg1);
 }
@@ -532,6 +556,10 @@ export function SetAuthFileStatus(arg1, arg2) {
 
 export function SetCodexModelCatalogSyncEnabled(arg1) {
   return window['go']['main']['App']['SetCodexModelCatalogSyncEnabled'](arg1);
+}
+
+export function SetGetTokensExtensionEnabled(arg1) {
+  return window['go']['main']['App']['SetGetTokensExtensionEnabled'](arg1);
 }
 
 export function StartCodexOAuth() {

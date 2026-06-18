@@ -36,6 +36,7 @@ interface SidebarProps {
 const codexWorkspaceItems = [
   { id: 'feature-config', label: 'nav.codex_feature_config' },
   { id: 'binary-management', label: 'nav.codex_binary_management' },
+  { id: 'extension-registry', label: 'extension-registry', labelText: 'Extension Registry' },
   { id: 'skills', label: 'nav.codex_skills' },
   { id: 'mcp-servers', label: 'nav.codex_mcp_servers' },
   { id: 'account-list', label: 'nav.codex_account_list' },
@@ -43,7 +44,7 @@ const codexWorkspaceItems = [
   { id: 'session-management', label: 'nav.session_management' },
   { id: 'vendor-status', label: 'nav.openai_status' },
   { id: 'usage-codex', label: 'nav.usage_desk_codex' },
-] as const satisfies ReadonlyArray<{ id: CodexWorkspace; label: string }>;
+] as const satisfies ReadonlyArray<{ id: CodexWorkspace; label: string; labelText?: string }>;
 
 const claudeWorkspaceItems = [
   { id: 'account-list', label: 'nav.claude_account_list' },
@@ -309,7 +310,7 @@ export default function Sidebar({
                               : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
                           }`}
                         >
-                          {t(workspace.label)}
+                          {'labelText' in workspace ? workspace.labelText : t(workspace.label)}
                         </button>
                         </div>
                       ))}

@@ -17,7 +17,7 @@ import {
 } from './model/usageDesk';
 import { UsageChartCard } from './components/usage-desk/UsageDeskChart';
 import { UsageDetailTable } from './components/usage-desk/UsageDetailTable';
-import { StatePanel, UsageProjectDrilldownPanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
+import { StatePanel, UsageDeskEvidenceStatus, UsageProjectDrilldownPanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
 
 export default function UsageDeskFeature({
   sidecarStatus,
@@ -58,6 +58,8 @@ export default function UsageDeskFeature({
     projectedDrilldownDayKey,
     observedSummaryItems,
     projectedSummaryItems,
+    observedStatusEvidence,
+    projectedStatusEvidence,
     projectedChartUnit,
     projectedPrimaryChartPoints,
     selectedProjectedProjectUsages,
@@ -158,6 +160,7 @@ export default function UsageDeskFeature({
                             compactProgress={stickyProgress}
                             unit="count"
                             summaryItems={observedSummaryItems}
+                            status={observedStatusEvidence ? <UsageDeskEvidenceStatus evidence={observedStatusEvidence} /> : undefined}
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"
@@ -220,6 +223,7 @@ export default function UsageDeskFeature({
                             compactProgress={stickyProgress}
                             unit={projectedChartUnit}
                             summaryItems={projectedSummaryItems}
+                            status={projectedStatusEvidence ? <UsageDeskEvidenceStatus evidence={projectedStatusEvidence} /> : undefined}
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"

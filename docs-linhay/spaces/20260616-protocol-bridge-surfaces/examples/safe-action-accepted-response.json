@@ -1,0 +1,55 @@
+{
+  "version": "bridge.surface.v1",
+  "request_id": "brq_quota_refresh_001",
+  "transport": "a2a",
+  "operation": "bridge.actions.quota_refresh",
+  "actor": {
+    "client_id": "quota-maintenance-agent",
+    "auth_subject": "bridge-token:5d6c001a",
+    "scopes": [
+      "bridge.quota.read",
+      "bridge.actions.quota_refresh"
+    ]
+  },
+  "status": "accepted",
+  "query": {
+    "account_key": "acct_codex_primary",
+    "include_billing": false,
+    "reason": "manual stale quota refresh"
+  },
+  "data": {
+    "operation_id": "bro_quota_refresh_001",
+    "status": "accepted",
+    "action": "quota_refresh",
+    "target": {
+      "account_key": "acct_codex_primary"
+    },
+    "authority": {
+      "owner": "sidecar",
+      "endpoint": "/v0/management/gettokens/quota-refresh/acct_codex_primary",
+      "generated_at_unix_ms": 1781587260000
+    },
+    "audit_id": "bra_quota_refresh_001",
+    "result_ref": "pending:sidecar-operation:bro_quota_refresh_001"
+  },
+  "authority": {
+    "owner": "sidecar",
+    "endpoint": "/v0/management/gettokens/quota-refresh/acct_codex_primary",
+    "ledger_ref": "operation:bro_quota_refresh_001",
+    "generated_at_unix_ms": 1781587260000,
+    "source_notes": [
+      {
+        "field": "data.status",
+        "source": "sidecar-operation-runner",
+        "note": "Accepted is not final quota truth; callers must reread bridge.quota.summary."
+      }
+    ]
+  },
+  "audit": {
+    "audit_id": "bra_quota_refresh_001",
+    "redaction": "secrets-and-headers-removed",
+    "sidecar_request_id": "scr_quota_refresh_001",
+    "duration_ms": 23
+  },
+  "warnings": []
+}

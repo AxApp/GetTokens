@@ -6,6 +6,7 @@ import {
   DisableGetTokensCodexModelCatalogProjection,
   EnableGetTokensCodexModelCatalogProjection,
   GetAccountStoreDiagnostics,
+  GetAllQuotaStatuses,
   GetAppRuntimeSettings,
   GetLocalCodexAuthState,
   GetLocalCodexModelProviderStateView,
@@ -25,8 +26,10 @@ import {
 } from './components/RelayEditors';
 import {
   StatusApplyLocalSection,
+  StatusQuotaEvidenceSection,
 } from './components/StatusPanels';
 import { RELAY_CODEX_DEFAULT_MODEL, RELAY_CODEX_PROVIDER_ID } from '../accounts/model/accountConfig';
+import { buildStatusQuotaEvidenceSectionState } from './model/quotaEvidenceSection';
 import {
   defaultRelayProviderOptions,
   defaultRelayReasoningEffortOptions,
@@ -165,6 +168,7 @@ export default function StatusFeature({
   );
   const [localCodexProviderStateLoaded, setLocalCodexProviderStateLoaded] = useState(() => !hasWailsAppBindings());
   const [accountStoreDiagnostics, setAccountStoreDiagnostics] = useState<main.AccountStoreDiagnostics | null>(null);
+  const [quotaStatuses, setQuotaStatuses] = useState<main.CodexQuotaResponse[]>([]);
   const [localApplyMessage, setLocalApplyMessage] = useState('');
   const [claudeApplyMessage, setClaudeApplyMessage] = useState('');
   const [isApplyingToLocal, setIsApplyingToLocal] = useState(false);
@@ -434,6 +438,35 @@ export default function StatusFeature({
     }
 
     void loadRelaySupportedModels();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sidecarStatus.code, trackRequest]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadQuotaStatuses() {
+      if (sidecarStatus.code !== 'ready') {
+        setQuotaStatuses([]);
+        return;
+      }
+
+      try {
+        const result = await trackRequest('GetAllQuotaStatuses', { args: [] }, () => GetAllQuotaStatuses());
+        if (!cancelled) {
+          setQuotaStatuses(Array.isArray(result) ? result : []);
+        }
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setQuotaStatuses([]);
+        }
+      }
+    }
+
+    void loadQuotaStatuses();
 
     return () => {
       cancelled = true;
@@ -1047,6 +1080,10 @@ export default function StatusFeature({
     () => buildAccountStoreDiagnosticsView(accountStoreDiagnostics),
     [accountStoreDiagnostics]
   );
+  const quotaEvidenceSection = useMemo(
+    () => buildStatusQuotaEvidenceSectionState(quotaStatuses, 'codex'),
+    [quotaStatuses]
+  );
   const healthzHasError = healthz.startsWith('ERROR:') || healthz.startsWith('FAIL:');
   const trimmedStatusMessage = sidecarStatus.message.trim();
   const statusHeadline =
@@ -1137,6 +1174,7 @@ export default function StatusFeature({
             isDisablingModelCatalog={isDisablingModelCatalog}
             onChangeSyncCodexModelCatalog={(nextValue) => void changeSyncCodexModelCatalog(nextValue)}
           />
+          <StatusQuotaEvidenceSection state={quotaEvidenceSection} />
           <AccountStoreDiagnosticsPanel view={accountStoreDiagnosticsView} />
         </section>
       </div>

@@ -1,5 +1,12 @@
 import type { AccountRecord, AuthFile, BillingDisplay, CodexQuota } from '../../../types';
-import type { CodexQuotaState, QuotaDisplay, QuotaWindowDisplay, Translator } from './types';
+import type {
+  CodexQuotaState,
+  QuotaDisplay,
+  QuotaFactDisplay,
+  QuotaFactEvidenceView,
+  QuotaWindowDisplay,
+  Translator,
+} from './types';
 
 export function supportsQuota(account: AccountRecord) {
   const provider = String(account.provider || '').trim().toLowerCase();
@@ -22,11 +29,13 @@ export function isCodexAuthFile(account: AuthFile) {
 }
 
 export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaState): QuotaDisplay {
+  const fact = resolveQuotaFact(account, state);
   if (!supportsQuota(account)) {
     return {
       status: 'unsupported',
       planType: '',
       windows: [],
+      fact,
     };
   }
 
@@ -35,6 +44,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
       status: 'loading',
       planType: '',
       windows: [],
+      fact,
     };
   }
 
@@ -43,6 +53,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
       status: 'error',
       planType: '',
       windows: [],
+      fact,
     };
   }
 
@@ -70,6 +81,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
       status: 'empty',
       planType: readQuotaRuntimeString(state.quota, 'planType', 'plan_type'),
       windows: [],
+      fact,
       refreshing,
       updatedAt: readQuotaRuntimeString(state.quota, 'updatedAt', 'updated_at') || undefined,
       lastEvaluatedAt: readQuotaRuntimeString(state.quota, 'lastEvaluatedAt', 'last_evaluated_at') || undefined,
@@ -81,11 +93,226 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
     status: 'success',
     planType: readQuotaRuntimeString(state.quota, 'planType', 'plan_type'),
     windows,
+    fact,
     refreshing,
     updatedAt: readQuotaRuntimeString(state.quota, 'updatedAt', 'updated_at') || undefined,
     lastEvaluatedAt: readQuotaRuntimeString(state.quota, 'lastEvaluatedAt', 'last_evaluated_at') || undefined,
     ...runtimeState,
   };
+}
+
+export function resolveQuotaFact(account: AccountRecord, state?: CodexQuotaState): QuotaFactDisplay {
+  if (!supportsQuota(account)) {
+    return {
+      state: 'unsupported',
+      freshness: 'unknown',
+      confidence: 'none',
+      risk: 'none',
+      explanation: 'Quota probe is not configured for this account.',
+    };
+  }
+
+  if (!state || (state.status === 'loading' && !state.quota)) {
+    return {
+      state: 'unknown',
+      freshness: 'unknown',
+      confidence: 'none',
+      risk: 'unknown',
+      explanation: 'Quota runtime status has not been observed yet.',
+    };
+  }
+
+  if (!state.quota) {
+    return {
+      state: 'unknown',
+      freshness: 'unknown',
+      confidence: 'low',
+      risk: 'unknown',
+      explanation: 'Quota runtime status is unavailable.',
+    };
+  }
+
+  const explicitFact = resolveExplicitQuotaFactDisplay(state.quota);
+  if (explicitFact) {
+    return explicitFact;
+  }
+
+  return {
+    state: 'unknown',
+    freshness: 'unknown',
+    confidence: 'none',
+    risk: 'unknown',
+    explanation: 'Quota runtime status did not include an explicit quotaFact.',
+  };
+}
+
+interface ExplicitQuotaFactFallbackOptions {
+  sourceFallback?: string;
+  explanationFallback?: string;
+}
+
+export function resolveExplicitQuotaFactDisplay(
+  payload: unknown,
+  options?: ExplicitQuotaFactFallbackOptions,
+): QuotaFactDisplay | undefined {
+  const raw = resolveExplicitQuotaFactRecord(payload);
+  if (!raw || typeof raw !== 'object') {
+    return undefined;
+  }
+  const fact = coerceQuotaFactDisplay(raw as Record<string, unknown>);
+  if (!fact) {
+    return undefined;
+  }
+
+  const sourceFallback = String(options?.sourceFallback || '').trim();
+  const explanationFallback = String(options?.explanationFallback || '').trim();
+  return {
+    ...fact,
+    source: fact.source || sourceFallback || undefined,
+    explanation: fact.explanation || explanationFallback || undefined,
+  };
+}
+
+export function coerceQuotaFactDisplay(record: Record<string, unknown>): QuotaFactDisplay | undefined {
+  const state = normalizeQuotaFactState(String(record.state || '').trim());
+  if (!state) {
+    return undefined;
+  }
+  return {
+    state,
+    source: String(record.source || '').trim() || undefined,
+    freshness: normalizeQuotaFactValue(record.freshness, ['fresh', 'stale', 'unknown'], 'unknown'),
+    confidence: normalizeQuotaFactValue(record.confidence, ['high', 'medium', 'low', 'none'], 'none'),
+    risk: normalizeQuotaFactValue(record.risk, ['none', 'warning', 'blocking', 'denied', 'unknown'], selectQuotaFactRisk(state)),
+    explanation: String(record.explanation || '').trim() || undefined,
+    observedAt: readQuotaFactString(record, 'observedAt', 'observed_at') || undefined,
+    expiresAt: readQuotaFactString(record, 'expiresAt', 'expires_at') || undefined,
+    evidenceRefs: readQuotaFactEvidenceRefs(record),
+  };
+}
+
+export function normalizeQuotaFactState(value: string): QuotaFactDisplay['state'] | undefined {
+  const normalized = value.trim().replace(/_/g, '-');
+  if (!['unsupported', 'unknown', 'available', 'no-quota', 'stale', 'denied'].includes(normalized)) {
+    return undefined;
+  }
+  return normalized as QuotaFactDisplay['state'];
+}
+
+export function buildQuotaFactEvidenceView(fact?: QuotaFactDisplay | null): QuotaFactEvidenceView | undefined {
+  if (!fact) {
+    return undefined;
+  }
+
+  const stateLabel = quotaFactStateLabelMap[fact.state];
+  const riskLabel = quotaFactRiskLabelMap[fact.risk];
+  const freshnessLabel = quotaFactFreshnessLabelMap[fact.freshness];
+  const confidenceLabel = quotaFactConfidenceLabelMap[fact.confidence];
+  const sourceLabel = formatQuotaFactSourceLabel(fact.source);
+  const summary = [stateLabel, riskLabel === 'No risk' ? '' : riskLabel].filter(Boolean).join(' / ');
+
+  return {
+    stateLabel,
+    sourceLabel,
+    freshnessLabel,
+    confidenceLabel,
+    riskLabel,
+    summary,
+    explanation: fact.explanation,
+    observedAt: fact.observedAt,
+    expiresAt: fact.expiresAt,
+    evidenceRefs: fact.evidenceRefs || [],
+  };
+}
+
+const quotaFactStateLabelMap: Record<QuotaFactDisplay['state'], string> = {
+  unsupported: 'Unsupported',
+  unknown: 'Unknown',
+  available: 'Available',
+  'no-quota': 'No quota',
+  stale: 'Stale',
+  denied: 'Denied',
+};
+
+const quotaFactFreshnessLabelMap: Record<QuotaFactDisplay['freshness'], string> = {
+  fresh: 'Fresh',
+  stale: 'Stale',
+  unknown: 'Unknown freshness',
+};
+
+const quotaFactConfidenceLabelMap: Record<QuotaFactDisplay['confidence'], string> = {
+  high: 'High confidence',
+  medium: 'Medium confidence',
+  low: 'Low confidence',
+  none: 'No confidence',
+};
+
+const quotaFactRiskLabelMap: Record<QuotaFactDisplay['risk'], string> = {
+  none: 'No risk',
+  warning: 'Warning risk',
+  blocking: 'Blocking risk',
+  denied: 'Denied by provider',
+  unknown: 'Unknown risk',
+};
+
+function formatQuotaFactSourceLabel(source?: string) {
+  const normalized = String(source || '').trim().toLowerCase();
+  if (!normalized) {
+    return 'Unknown source';
+  }
+  if (normalized === 'quota-runtime') {
+    return 'Quota runtime authority';
+  }
+  if (normalized === 'provider-quota-curl') {
+    return 'Provider quota probe';
+  }
+  if (normalized === 'auth-file-usage') {
+    return 'Auth-file usage probe';
+  }
+  return normalized
+    .split(/[-_:]+/)
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function selectQuotaFactRisk(state: QuotaFactDisplay['state']): QuotaFactDisplay['risk'] {
+  switch (state) {
+    case 'available':
+    case 'unsupported':
+      return 'none';
+    case 'stale':
+      return 'warning';
+    case 'no-quota':
+      return 'blocking';
+    case 'denied':
+      return 'denied';
+    case 'unknown':
+    default:
+      return 'unknown';
+  }
+}
+
+function normalizeQuotaFactValue<T extends string>(value: unknown, allowed: T[], fallback: T): T {
+  const normalized = String(value || '').trim();
+  return allowed.includes(normalized as T) ? (normalized as T) : fallback;
+}
+
+function resolveExplicitQuotaFactRecord(payload: unknown) {
+  return readQuotaRuntimeField(payload, 'quotaFact', 'quota_fact') ?? readQuotaRuntimeField(payload, 'fact', 'fact');
+}
+
+function readQuotaFactString(record: Record<string, unknown>, camelKey: string, snakeKey: string) {
+  return String(record[camelKey] || record[snakeKey] || '').trim();
+}
+
+function readQuotaFactEvidenceRefs(record: Record<string, unknown>) {
+  const raw = record.evidenceRefs || record.evidence_refs;
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+  const refs = raw.map((item) => String(item || '').trim()).filter(Boolean);
+  return refs.length > 0 ? refs : undefined;
 }
 
 export function buildQuotaBlockBadgeLabel(quotaDisplay: QuotaDisplay, t: Translator) {

@@ -1,0 +1,47 @@
+{
+  "version": "bridge.surface.v1",
+  "request_id": "brq_route_diag_001",
+  "transport": "openai_admin",
+  "operation": "bridge.routes.diagnostics",
+  "actor": {
+    "client_id": "readonly-model-agent",
+    "auth_subject": "bridge-token:aab901fc",
+    "scopes": [
+      "bridge.models.read"
+    ]
+  },
+  "status": "rejected",
+  "query": {
+    "protocol": "codex",
+    "model": "gpt-5-codex",
+    "include_recent_decisions": true,
+    "probe_mode": "none"
+  },
+  "error": {
+    "code": "missing_scope",
+    "message": "bridge.routes.diagnostics.read is required for bridge.routes.diagnostics.",
+    "required_scopes": [
+      "bridge.routes.diagnostics.read"
+    ],
+    "recoverable": true,
+    "sidecar_invoked": false
+  },
+  "authority": {
+    "owner": "sidecar",
+    "endpoint": "/v0/management/gettokens/routes/diagnostics",
+    "generated_at_unix_ms": 1781587320000,
+    "source_notes": [
+      {
+        "field": "error.code",
+        "source": "wails-local-config",
+        "note": "Bridge auth denied the call before invoking sidecar diagnostics."
+      }
+    ]
+  },
+  "audit": {
+    "audit_id": "bra_route_diag_reject_001",
+    "redaction": "secrets-removed",
+    "duration_ms": 4
+  },
+  "warnings": []
+}

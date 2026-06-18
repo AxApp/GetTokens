@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
 func TestQuotaRuntimeBridgeCallsReadOnlyManagementAPI(t *testing.T) {
@@ -69,7 +71,7 @@ func TestRefreshCodexQuotasBatchCallsBatchManagementAPI(t *testing.T) {
 			}
 			payload, _ := io.ReadAll(body)
 			gotPayload = string(payload)
-			return []byte(`{"items":[{"account_key":"acct_runtime","status":"success","plan_type":"team","windows":[],"sources":[]}],"errors":[{"account_key":"acct_failed","error":"quota curl missing"}],"succeeded":1,"failed":1}`), 200, nil
+			return []byte(`{"items":[{"account_key":"acct_runtime","status":"success","plan_type":"team","windows":[],"sources":[],"fact":{"state":"available","source":"quota-runtime","freshness":"fresh","confidence":"high","risk":"none","explanation":"billing balance available","observed_at":"2026-06-16T08:00:00Z","expires_at":"2026-06-16T13:00:00Z","evidence_refs":["billing:balance"]}}],"errors":[{"account_key":"acct_failed","error":"quota curl missing"}],"succeeded":1,"failed":1}`), 200, nil
 		},
 	}
 
@@ -84,6 +86,9 @@ func TestRefreshCodexQuotasBatchCallsBatchManagementAPI(t *testing.T) {
 	if len(result.Items) != 1 || result.Items[0].AccountKey != "acct_runtime" || result.Items[0].PlanType != "team" {
 		t.Fatalf("batch items = %#v", result.Items)
 	}
+	if result.Items[0].QuotaFact == nil || result.Items[0].QuotaFact.State != "available" || result.Items[0].QuotaFact.ObservedAt != "2026-06-16T08:00:00Z" || result.Items[0].QuotaFact.EvidenceRefs[0] != "billing:balance" {
+		t.Fatalf("batch item fact = %#v, want sidecar fact passthrough", result.Items[0].QuotaFact)
+	}
 	if len(result.Errors) != 1 || result.Errors[0].AccountKey != "acct_failed" {
 		t.Fatalf("batch errors = %#v", result.Errors)
 	}
@@ -91,6 +96,51 @@ func TestRefreshCodexQuotasBatchCallsBatchManagementAPI(t *testing.T) {
 		!strings.Contains(gotPayload, `"include_billing":true`) ||
 		!strings.Contains(gotPayload, `"concurrency":4`) {
 		t.Fatalf("batch payload = %s", gotPayload)
+	}
+}
+
+func TestQuotaRuntimeStateToCodexQuotaResponsePassesThroughFact(t *testing.T) {
+	state := &cliproxyapi.QuotaRuntimeState{
+		AccountKey: "acct_runtime",
+		Status:     "success",
+		Windows:    []cliproxyapi.QuotaRuntimeWindow{},
+		Sources:    []cliproxyapi.QuotaRuntimeSourceState{},
+		Fact: &cliproxyapi.QuotaRuntimeFact{
+			State:        "no_quota",
+			Source:       "quota-runtime",
+			Freshness:    "fresh",
+			Confidence:   "high",
+			Risk:         "blocking",
+			Explanation:  "weekly window exhausted",
+			ObservedAt:   "2026-06-16T08:00:00Z",
+			ExpiresAt:    "2026-06-16T13:00:00Z",
+			EvidenceRefs: []string{"window:weekly", "guard:quota-empty"},
+		},
+	}
+	result := mapQuotaRuntimeStateToCodexQuotaResponse(state)
+
+	if result.QuotaFact == nil {
+		t.Fatal("QuotaFact = nil, want sidecar fact passthrough")
+	}
+	if result.QuotaFact.State != "no_quota" ||
+		result.QuotaFact.Source != "quota-runtime" ||
+		result.QuotaFact.Freshness != "fresh" ||
+		result.QuotaFact.Confidence != "high" ||
+		result.QuotaFact.Risk != "blocking" ||
+		result.QuotaFact.Explanation != "weekly window exhausted" ||
+		result.QuotaFact.ObservedAt != "2026-06-16T08:00:00Z" ||
+		result.QuotaFact.ExpiresAt != "2026-06-16T13:00:00Z" ||
+		len(result.QuotaFact.EvidenceRefs) != 2 ||
+		result.QuotaFact.EvidenceRefs[1] != "guard:quota-empty" {
+		t.Fatalf("QuotaFact = %#v, want exact passthrough", result.QuotaFact)
+	}
+	state.Fact.EvidenceRefs[0] = "mutated-source"
+	if result.QuotaFact.EvidenceRefs[0] != "window:weekly" {
+		t.Fatalf("QuotaFact evidence refs changed after source mutation: %#v", result.QuotaFact.EvidenceRefs)
+	}
+	result.QuotaFact.EvidenceRefs[1] = "mutated-result"
+	if state.Fact.EvidenceRefs[1] != "guard:quota-empty" {
+		t.Fatalf("source fact evidence refs changed after result mutation: %#v", state.Fact.EvidenceRefs)
 	}
 }
 

@@ -1,0 +1,144 @@
+{
+  "version": "gettokens.bridge.mcp.adapter.mapping.v1",
+  "transport": "mcp",
+  "canonical_manifest": "schemas/canonical-operations-v01.json",
+  "bridge_schema": "schemas/bridge-surface-v1.schema.json",
+  "tools": [
+    {
+      "name": "gettokens.accounts.summary",
+      "canonical_operation": "bridge.accounts.summary",
+      "type": "read",
+      "required_scope": "bridge.accounts.read",
+      "query_target": "canonical.query",
+      "query_schema_ref": "schemas/bridge-surface-v1.schema.json#/$defs/accountsSummaryInput",
+      "response_envelope": "bridge.surface.v1.responseEnvelope",
+      "requires_idempotency_key": false,
+      "adapter_only_truth_fields": []
+    },
+    {
+      "name": "gettokens.models.supported",
+      "canonical_operation": "bridge.models.supported",
+      "type": "read",
+      "required_scope": "bridge.models.read",
+      "query_target": "canonical.query",
+      "query_schema_ref": "schemas/bridge-surface-v1.schema.json#/$defs/modelsSupportedInput",
+      "response_envelope": "bridge.surface.v1.responseEnvelope",
+      "requires_idempotency_key": false,
+      "adapter_only_truth_fields": []
+    },
+    {
+      "name": "gettokens.routes.diagnostics",
+      "canonical_operation": "bridge.routes.diagnostics",
+      "type": "read",
+      "required_scope": "bridge.routes.diagnostics.read",
+      "query_target": "canonical.query",
+      "query_schema_ref": "schemas/bridge-surface-v1.schema.json#/$defs/routesDiagnosticsInput",
+      "response_envelope": "bridge.surface.v1.responseEnvelope",
+      "requires_idempotency_key": false,
+      "adapter_only_truth_fields": []
+    },
+    {
+      "name": "gettokens.quota.summary",
+      "canonical_operation": "bridge.quota.summary",
+      "type": "read",
+      "required_scope": "bridge.quota.read",
+      "query_target": "canonical.query",
+      "query_schema_ref": "schemas/bridge-surface-v1.schema.json#/$defs/quotaSummaryInput",
+      "response_envelope": "bridge.surface.v1.responseEnvelope",
+      "requires_idempotency_key": false,
+      "adapter_only_truth_fields": []
+    },
+    {
+      "name": "gettokens.actions.routeability_recheck",
+      "canonical_operation": "bridge.actions.routeability_recheck",
+      "type": "safe_action",
+      "required_scope": "bridge.actions.routeability_recheck",
+      "query_target": "canonical.query",
+      "query_schema_ref": "schemas/bridge-surface-v1.schema.json#/$defs/actionInput",
+      "response_envelope": "bridge.surface.v1.responseEnvelope",
+      "requires_idempotency_key": true,
+      "adapter_only_truth_fields": [],
+      "safe_action_result": "operation_ref_only"
+    },
+    {
+      "name": "gettokens.actions.quota_refresh",
+      "canonical_operation": "bridge.actions.quota_refresh",
+      "type": "safe_action",
+      "required_scope": "bridge.actions.quota_refresh",
+      "query_target": "canonical.query",
+      "query_schema_ref": "schemas/bridge-surface-v1.schema.json#/$defs/actionInput",
+      "response_envelope": "bridge.surface.v1.responseEnvelope",
+      "requires_idempotency_key": true,
+      "adapter_only_truth_fields": [],
+      "safe_action_result": "operation_ref_only"
+    },
+    {
+      "name": "gettokens.actions.model_catalog_refresh",
+      "canonical_operation": "bridge.actions.model_catalog_refresh",
+      "type": "safe_action",
+      "required_scope": "bridge.actions.model_catalog_refresh",
+      "query_target": "canonical.query",
+      "query_schema_ref": "schemas/bridge-surface-v1.schema.json#/$defs/actionInput",
+      "response_envelope": "bridge.surface.v1.responseEnvelope",
+      "requires_idempotency_key": true,
+      "adapter_only_truth_fields": [],
+      "safe_action_result": "operation_ref_only"
+    },
+    {
+      "name": "gettokens.actions.diagnostics_probe",
+      "canonical_operation": "bridge.actions.diagnostics_probe",
+      "type": "safe_action",
+      "required_scope": "bridge.actions.diagnostics_probe",
+      "query_target": "canonical.query",
+      "query_schema_ref": "schemas/bridge-surface-v1.schema.json#/$defs/actionInput",
+      "response_envelope": "bridge.surface.v1.responseEnvelope",
+      "requires_idempotency_key": true,
+      "adapter_only_truth_fields": [],
+      "safe_action_result": "operation_ref_only"
+    }
+  ],
+  "resources": [
+    {
+      "name": "gettokens.bridge.manifest",
+      "uri": "gettokens://bridge/manifest",
+      "kind": "manifest",
+      "source": "schemas/canonical-operations-v01.json",
+      "exposes": [
+        "canonical_operations",
+        "default_scopes",
+        "authority_sources",
+        "forbidden_bridge_state"
+      ]
+    },
+    {
+      "name": "gettokens.bridge.schema",
+      "uri": "gettokens://bridge/schema",
+      "kind": "schema",
+      "source": "schemas/bridge-surface-v1.schema.json",
+      "exposes": [
+        "request_envelope",
+        "response_envelope",
+        "query_defs",
+        "output_defs"
+      ]
+    },
+    {
+      "name": "gettokens.bridge.scopes",
+      "uri": "gettokens://bridge/scopes",
+      "kind": "scope_list",
+      "source": "schemas/canonical-operations-v01.json",
+      "exposes": [
+        "bridge.accounts.read",
+        "bridge.models.read",
+        "bridge.routes.diagnostics.read",
+        "bridge.quota.read",
+        "bridge.actions.routeability_recheck",
+        "bridge.actions.quota_refresh",
+        "bridge.actions.model_catalog_refresh",
+        "bridge.actions.diagnostics_probe",
+        "bridge.config.read",
+        "bridge.config.write"
+      ]
+    }
+  ]
+}

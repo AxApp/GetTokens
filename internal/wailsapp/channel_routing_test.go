@@ -956,7 +956,7 @@ func TestListChannelRouteDecisionsReturnsManagementResults(t *testing.T) {
 			if got := query.Get("limit"); got != "5" {
 				t.Fatalf("limit = %q, want 5", got)
 			}
-			return []byte(`{"items":[{"id":"decision-1","recordedAt":"2026-06-15T10:00:00Z","channel":"codex","providers":["codex"],"model":"gpt-5","projectKey":"workspace:gettokens","projectName":"GetTokens","projectKeySource":"codex-turn-workspace","projectKeyConfidence":"strong","projectMatchKeys":["workspace:gettokens"],"source":"scheduler","candidateCount":2,"selectedAuthID":"auth-company-1","selectedAccountID":"acct-company-1","selectedProvider":"codex","candidates":[{"authID":"auth-company-1","accountID":"acct-company-1","provider":"codex"}],"trace":[{"stage":"pool-scope","policy":"ProjectCandidatePoolPolicy","reason":"project-candidate-pool matched","before":4,"after":2,"allowIDs":["acct-company-1"],"orderIDs":["acct-company-1"],"fallback":false,"activated":true}]}]}`), 200, nil
+			return []byte(`{"items":[{"id":"decision-1","recordedAt":"2026-06-15T10:00:00Z","channel":"codex","providers":["codex"],"model":"gpt-5","projectKey":"workspace:gettokens","projectName":"GetTokens","projectKeySource":"codex-turn-workspace","projectKeyConfidence":"strong","projectMatchKeys":["workspace:gettokens"],"source":"scheduler","candidateCount":2,"selectedAuthID":"auth-company-1","selectedAccountID":"acct-company-1","selectedProvider":"codex","candidates":[{"authID":"auth-company-1","accountID":"acct-company-1","provider":"codex"}],"droppedReasons":[{"accountID":"acct-company-2","authID":"auth-company-2","source":"rate-limit","scope":"account","reason":"request window exhausted","model":"gpt-5","expiresAt":"2026-06-15T10:05:00Z","updatedAt":"2026-06-15T10:00:00Z","routeBlocking":true}],"trace":[{"stage":"pool-scope","policy":"ProjectCandidatePoolPolicy","reason":"project-candidate-pool matched","before":4,"after":2,"allowIDs":["acct-company-1"],"orderIDs":["acct-company-1"],"fallback":false,"activated":true}]}]}`), 200, nil
 		})
 	}
 
@@ -973,6 +973,13 @@ func TestListChannelRouteDecisionsReturnsManagementResults(t *testing.T) {
 	}
 	if len(decision.Candidates) != 1 || decision.Candidates[0].AccountID != "acct-company-1" {
 		t.Fatalf("decision candidates mismatch: %#v", decision.Candidates)
+	}
+	if len(decision.DroppedReasons) != 1 {
+		t.Fatalf("dropped reasons = %#v, want one", decision.DroppedReasons)
+	}
+	dropped := decision.DroppedReasons[0]
+	if dropped.AccountID != "acct-company-2" || dropped.AuthID != "auth-company-2" || dropped.Source != "rate-limit" || dropped.Scope != "account" || dropped.Reason != "request window exhausted" || dropped.Model != "gpt-5" || dropped.ExpiresAt != "2026-06-15T10:05:00Z" || dropped.UpdatedAt != "2026-06-15T10:00:00Z" || !dropped.RouteBlocking {
+		t.Fatalf("dropped reason mismatch: %#v", dropped)
 	}
 	if len(decision.Trace) != 1 || decision.Trace[0].Policy != "ProjectCandidatePoolPolicy" || decision.Trace[0].Fallback == nil || *decision.Trace[0].Fallback {
 		t.Fatalf("decision trace mismatch: %#v", decision.Trace)
@@ -993,6 +1000,72 @@ func TestListChannelRouteDecisionsFallsBackToEmptyWhenUnsupported(t *testing.T) 
 	}
 	if len(decisions) != 0 {
 		t.Fatalf("decisions = %#v, want empty fallback", decisions)
+	}
+}
+
+func TestRouteResilienceActionBridgePassesThroughClearTransientLockout(t *testing.T) {
+	app := New("dev", "", "AxApp/GetTokens")
+	app.managementAPI = func() *cliproxyapi.Client {
+		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method != http.MethodPost {
+				t.Fatalf("expected POST, got %s", method)
+			}
+			if path != "/v0/management/gettokens/route-resilience/actions" {
+				t.Fatalf("unexpected path: %s", path)
+			}
+			payload, err := io.ReadAll(body)
+			if err != nil {
+				t.Fatalf("read body: %v", err)
+			}
+			if text := string(payload); !strings.Contains(text, `"action":"clear_transient_lockout"`) || !strings.Contains(text, `"accountKey":"acct-company-1"`) || !strings.Contains(text, `"sources":["upstream-error"]`) {
+				t.Fatalf("unexpected payload: %s", payload)
+			}
+			return []byte(`{"ok":true,"authority":"sidecar","action":"clear_transient_lockout","status":"applied","accountKey":"acct-company-1","authId":"auth-company-1","model":"gpt-5","before":{"blockCount":1},"after":{"blockCount":0},"auditId":"route-audit-1","droppedSources":["upstream-error"],"droppedReasons":[{"accountID":"acct-company-1","authID":"auth-company-1","source":"upstream-error","scope":"account","reason":"cleared","model":"gpt-5","routeBlocking":false}]}`), 200, nil
+		})
+	}
+
+	result, err := app.RunRouteResilienceAction(RouteResilienceActionInput{
+		Action:     "clear_transient_lockout",
+		AccountKey: "acct-company-1",
+		Sources:    []string{"upstream-error"},
+		Reason:     "operator verified recovery",
+	})
+	if err != nil {
+		t.Fatalf("RunRouteResilienceAction: %v", err)
+	}
+	if result.HTTPStatus != 200 || !result.OK || result.Status != "applied" || result.Authority != "sidecar" {
+		t.Fatalf("result core mismatch: %#v", result)
+	}
+	if result.Before["blockCount"] != float64(1) || result.After["blockCount"] != float64(0) {
+		t.Fatalf("before/after mismatch: %#v %#v", result.Before, result.After)
+	}
+	if len(result.DroppedReasons) != 1 || result.DroppedReasons[0].Source != "upstream-error" || result.DroppedReasons[0].Model != "gpt-5" {
+		t.Fatalf("droppedReasons mismatch: %#v", result.DroppedReasons)
+	}
+}
+
+func TestRunRouteResilienceActionBridgePreservesNotImplementedPayload(t *testing.T) {
+	app := New("dev", "", "AxApp/GetTokens")
+	app.managementAPI = func() *cliproxyapi.Client {
+		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			return []byte(`{"ok":false,"authority":"sidecar","action":"recheck_routeability","status":"not_implemented","accountKey":"acct-company-1","model":"gpt-5","before":{"blockCount":1},"after":{"blockCount":1},"droppedReasons":[{"accountID":"acct-company-1","authID":"auth-company-1","source":"auth-error","scope":"account","reason":"auth failed","model":"gpt-5","routeBlocking":true}],"notImplementedReason":"current gettokenshooks management layer does not own bounded reconcile or routeability service permissions"}`), http.StatusNotImplemented, nil
+		})
+	}
+
+	result, err := app.RunRouteResilienceAction(RouteResilienceActionInput{
+		Action:     "recheck_routeability",
+		AccountKey: "acct-company-1",
+		Model:      "gpt-5",
+		Reason:     "operator requested routeability recheck",
+	})
+	if err != nil {
+		t.Fatalf("RunRouteResilienceAction: %v", err)
+	}
+	if result.HTTPStatus != http.StatusNotImplemented || result.OK || result.Status != "not_implemented" || result.NotImplementedReason == "" {
+		t.Fatalf("result = %#v, want not_implemented payload", result)
+	}
+	if len(result.DroppedReasons) != 1 || result.DroppedReasons[0].Source != "auth-error" || !result.DroppedReasons[0].RouteBlocking {
+		t.Fatalf("droppedReasons mismatch: %#v", result.DroppedReasons)
 	}
 }
 

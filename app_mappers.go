@@ -6,6 +6,7 @@ import (
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/cliproxyapi"
+	"github.com/linhay/gettokens/internal/gettokensextensions"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 )
 
@@ -436,6 +437,7 @@ func mapCodexQuotaResponse(result *wailsapp.CodexQuotaResponse) *CodexQuotaRespo
 		Blocked:         result.Blocked,
 		BlockReason:     result.BlockReason,
 		Sources:         sources,
+		QuotaFact:       mapWailsCodexQuotaFact(result.QuotaFact),
 	}
 }
 
@@ -525,6 +527,7 @@ func mapQuotaRuntimeState(result *cliproxyapi.QuotaRuntimeState) *CodexQuotaResp
 		Blocked:         result.Blocked,
 		BlockReason:     result.BlockReason,
 		Sources:         sources,
+		QuotaFact:       mapCliproxyQuotaRuntimeFact(result.Fact),
 	}
 }
 
@@ -565,6 +568,517 @@ func mapCodexQuotaBillingInfo(result *wailsapp.CodexQuotaBillingInfo) *CodexQuot
 	return &CodexQuotaBillingInfo{
 		IsAvailable:  result.IsAvailable,
 		BalanceInfos: infos,
+	}
+}
+
+func mapDoctorSnapshot(result *wailsapp.DoctorSnapshot) *DoctorSnapshot {
+	if result == nil {
+		return nil
+	}
+	return &DoctorSnapshot{
+		GeneratedAtUnixMs: result.GeneratedAtUnixMs,
+		Source:            result.Source,
+		SidecarReady:      result.SidecarReady,
+		Status:            result.Status,
+		Checks:            mapDoctorChecks(result.Checks),
+		Summary: DoctorSummary{
+			Total:    result.Summary.Total,
+			Critical: result.Summary.Critical,
+			Warning:  result.Summary.Warning,
+			NotReady: result.Summary.NotReady,
+			OK:       result.Summary.OK,
+			Skipped:  result.Summary.Skipped,
+			Degraded: result.Summary.Degraded,
+		},
+	}
+}
+
+func mapRouteResilienceActionResult(result *wailsapp.RouteResilienceActionResult) *RouteResilienceActionResult {
+	if result == nil {
+		return nil
+	}
+	return &RouteResilienceActionResult{
+		OK:                   result.OK,
+		Authority:            result.Authority,
+		Action:               result.Action,
+		Status:               result.Status,
+		AccountKey:           result.AccountKey,
+		AuthID:               result.AuthID,
+		Model:                result.Model,
+		Before:               cloneRouteResilienceActionMap(result.Before),
+		After:                cloneRouteResilienceActionMap(result.After),
+		AuditID:              result.AuditID,
+		DroppedSources:       append([]string(nil), result.DroppedSources...),
+		DroppedReasons:       mapRouteResilienceDroppedReasons(result.DroppedReasons),
+		Error:                result.Error,
+		NotImplementedReason: result.NotImplementedReason,
+		HTTPStatus:           result.HTTPStatus,
+	}
+}
+
+func mapRouteResilienceDroppedReasons(items []wailsapp.ChannelRouteDroppedReason) []ChannelRouteDroppedReason {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]ChannelRouteDroppedReason, 0, len(items))
+	for _, item := range items {
+		out = append(out, ChannelRouteDroppedReason{
+			AccountID:     item.AccountID,
+			AuthID:        item.AuthID,
+			Source:        item.Source,
+			Scope:         item.Scope,
+			Reason:        item.Reason,
+			Model:         item.Model,
+			ExpiresAt:     item.ExpiresAt,
+			UpdatedAt:     item.UpdatedAt,
+			RouteBlocking: item.RouteBlocking,
+		})
+	}
+	return out
+}
+
+func cloneRouteResilienceActionMap(input map[string]any) map[string]any {
+	if input == nil {
+		return nil
+	}
+	out := make(map[string]any, len(input))
+	for key, value := range input {
+		out[key] = value
+	}
+	return out
+}
+
+func mapGetTokensExtensionRegistryInput(input GetTokensExtensionRegistrySnapshotInput) wailsapp.GetTokensExtensionRegistrySnapshotInput {
+	roots := make([]wailsapp.GetTokensExtensionRootDTO, 0, len(input.Roots))
+	for _, root := range input.Roots {
+		roots = append(roots, wailsapp.GetTokensExtensionRootDTO{
+			ID:       root.ID,
+			Path:     root.Path,
+			ReadOnly: true,
+		})
+	}
+	return wailsapp.GetTokensExtensionRegistrySnapshotInput{
+		ManifestPaths: append([]string(nil), input.ManifestPaths...),
+		Roots:         roots,
+		StatePath:     input.StatePath,
+	}
+}
+
+func mapSetGetTokensExtensionEnabledInput(input SetGetTokensExtensionEnabledInput) wailsapp.SetGetTokensExtensionEnabledInput {
+	return wailsapp.SetGetTokensExtensionEnabledInput{
+		ExtensionID: input.ExtensionID,
+		Enabled:     input.Enabled,
+		StatePath:   input.StatePath,
+	}
+}
+
+func mapPreviewGetTokensExtensionCodexConfigDryRunInput(input PreviewGetTokensExtensionCodexConfigDryRunInput) wailsapp.PreviewGetTokensExtensionCodexConfigDryRunInput {
+	roots := make([]wailsapp.GetTokensExtensionRootDTO, 0, len(input.Roots))
+	for _, root := range input.Roots {
+		roots = append(roots, wailsapp.GetTokensExtensionRootDTO{
+			ID:       root.ID,
+			Path:     root.Path,
+			ReadOnly: true,
+		})
+	}
+	return wailsapp.PreviewGetTokensExtensionCodexConfigDryRunInput{
+		ManifestPaths: append([]string(nil), input.ManifestPaths...),
+		Roots:         roots,
+		StatePath:     input.StatePath,
+		TargetPath:    input.TargetPath,
+		ConfigText:    input.ConfigText,
+	}
+}
+
+func mapPrepareGetTokensExtensionCodexConfigApplyInput(input PrepareGetTokensExtensionCodexConfigApplyInput) wailsapp.PrepareGetTokensExtensionCodexConfigApplyInput {
+	roots := make([]wailsapp.GetTokensExtensionRootDTO, 0, len(input.Roots))
+	for _, root := range input.Roots {
+		roots = append(roots, wailsapp.GetTokensExtensionRootDTO{
+			ID:       root.ID,
+			Path:     root.Path,
+			ReadOnly: true,
+		})
+	}
+	return wailsapp.PrepareGetTokensExtensionCodexConfigApplyInput{
+		ManifestPaths: append([]string(nil), input.ManifestPaths...),
+		Roots:         roots,
+		StatePath:     input.StatePath,
+		TargetPath:    input.TargetPath,
+		ConfigText:    input.ConfigText,
+	}
+}
+
+func mapApplyGetTokensExtensionCodexConfigTransactionInput(input ApplyGetTokensExtensionCodexConfigTransactionInput) wailsapp.ApplyGetTokensExtensionCodexConfigTransactionInput {
+	roots := make([]wailsapp.GetTokensExtensionRootDTO, 0, len(input.Roots))
+	for _, root := range input.Roots {
+		roots = append(roots, wailsapp.GetTokensExtensionRootDTO{
+			ID:       root.ID,
+			Path:     root.Path,
+			ReadOnly: true,
+		})
+	}
+	return wailsapp.ApplyGetTokensExtensionCodexConfigTransactionInput{
+		ManifestPaths:      append([]string(nil), input.ManifestPaths...),
+		Roots:              roots,
+		StatePath:          input.StatePath,
+		TargetPath:         input.TargetPath,
+		TempDir:            input.TempDir,
+		ConfigText:         input.ConfigText,
+		ConfirmationToken:  input.ConfirmationToken,
+		SkipVerifyReadback: input.SkipVerifyReadback,
+	}
+}
+
+func mapGetTokensExtensionEnableStateFile(result *gettokensextensions.ExtensionEnableStateFile) *GetTokensExtensionEnableStateFile {
+	if result == nil {
+		return nil
+	}
+	return &GetTokensExtensionEnableStateFile{
+		ContractVersion: result.ContractVersion,
+		UpdatedAt:       result.UpdatedAt,
+		Extensions:      mapGetTokensExtensionEnableStates(result.Extensions),
+	}
+}
+
+func mapGetTokensExtensionEnableStates(items []gettokensextensions.ExtensionEnableStateEntry) []GetTokensExtensionEnableState {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]GetTokensExtensionEnableState, 0, len(items))
+	for _, item := range items {
+		out = append(out, GetTokensExtensionEnableState{
+			ID:        item.ID,
+			State:     string(item.State),
+			UpdatedAt: item.UpdatedAt,
+			Reason:    item.Reason,
+		})
+	}
+	return out
+}
+
+func mapGetTokensExtensionCodexConfigStagedApplyPlan(result *gettokensextensions.CodexConfigStagedApplyPlan) *GetTokensExtensionCodexConfigStagedApplyPlan {
+	if result == nil {
+		return nil
+	}
+	return &GetTokensExtensionCodexConfigStagedApplyPlan{
+		ContractVersion:   result.ContractVersion,
+		TargetPath:        result.TargetPath,
+		ConfirmationToken: result.ConfirmationToken,
+		DiffPreview:       append([]string(nil), result.DiffPreview...),
+		AppliedText:       result.AppliedText,
+		AppliedOperations: append([]string(nil), result.AppliedOperations...),
+	}
+}
+
+func mapGetTokensExtensionCodexConfigStagedApplyResult(result *gettokensextensions.CodexConfigStagedApplyResult) *GetTokensExtensionCodexConfigStagedApplyResult {
+	if result == nil {
+		return nil
+	}
+	return &GetTokensExtensionCodexConfigStagedApplyResult{
+		Status:            result.Status,
+		TargetPath:        result.TargetPath,
+		BackupPath:        result.BackupPath,
+		TempPath:          result.TempPath,
+		ConfirmationToken: result.ConfirmationToken,
+		AppliedOperations: append([]string(nil), result.AppliedOperations...),
+		RolledBack:        result.RolledBack,
+		ErrorStage:        result.ErrorStage,
+	}
+}
+
+func mapGetTokensExtensionCodexConfigDryRunPreview(result *gettokensextensions.CodexConfigDryRunPreview) *GetTokensExtensionCodexConfigDryRunPreview {
+	if result == nil {
+		return nil
+	}
+	return &GetTokensExtensionCodexConfigDryRunPreview{
+		ContractVersion: result.ContractVersion,
+		DryRun:          result.DryRun,
+		GeneratedAt:     result.GeneratedAt,
+		Target:          result.Target,
+		TargetPath:      result.TargetPath,
+		Summary: GetTokensExtensionCodexConfigDryRunSummary{
+			EnabledExtensionCount: result.Summary.EnabledExtensionCount,
+			SkippedExtensionCount: result.Summary.SkippedExtensionCount,
+			OperationCount:        result.Summary.OperationCount,
+			ValidationErrorCount:  result.Summary.ValidationErrorCount,
+		},
+		Sections:   mapGetTokensExtensionCodexConfigDryRunSections(result.Sections),
+		Operations: mapGetTokensExtensionCodexConfigDryRunOperations(result.Operations),
+		Validation: mapGetTokensExtensionCodexConfigDryRunValidation(result.Validation),
+	}
+}
+
+func mapGetTokensExtensionCodexConfigDryRunSections(items []gettokensextensions.CodexConfigDryRunSection) []GetTokensExtensionCodexConfigDryRunSection {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]GetTokensExtensionCodexConfigDryRunSection, 0, len(items))
+	for _, item := range items {
+		out = append(out, GetTokensExtensionCodexConfigDryRunSection{
+			ID:          item.ID,
+			Label:       item.Label,
+			Status:      item.Status,
+			DiffPreview: append([]string(nil), item.DiffPreview...),
+		})
+	}
+	return out
+}
+
+func mapGetTokensExtensionCodexConfigDryRunOperations(items []gettokensextensions.CodexConfigDryRunOperation) []GetTokensExtensionCodexConfigDryRunOperation {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]GetTokensExtensionCodexConfigDryRunOperation, 0, len(items))
+	for _, item := range items {
+		out = append(out, GetTokensExtensionCodexConfigDryRunOperation{
+			ID:           item.ID,
+			Target:       item.Target,
+			Action:       item.Action,
+			ExtensionID:  item.ExtensionID,
+			CapabilityID: item.CapabilityID,
+			Preview:      item.Preview,
+			PatchPlan:    mapGetTokensExtensionCodexConfigTomlPatchPlan(item.PatchPlan),
+		})
+	}
+	return out
+}
+
+func mapGetTokensExtensionCodexConfigTomlPatchPlan(item gettokensextensions.CodexConfigTomlPatchPlan) GetTokensExtensionCodexConfigTomlPatchPlan {
+	return GetTokensExtensionCodexConfigTomlPatchPlan{
+		TargetSection: item.TargetSection,
+		Operation:     item.Operation,
+		BeforeSnippet: item.BeforeSnippet,
+		AfterSnippet:  item.AfterSnippet,
+		Validation:    append([]string(nil), item.Validation...),
+	}
+}
+
+func mapGetTokensExtensionCodexConfigDryRunValidation(items []gettokensextensions.CodexConfigDryRunValidation) []GetTokensExtensionCodexConfigDryRunValidation {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]GetTokensExtensionCodexConfigDryRunValidation, 0, len(items))
+	for _, item := range items {
+		out = append(out, GetTokensExtensionCodexConfigDryRunValidation{
+			Code:         item.Code,
+			Severity:     item.Severity,
+			ExtensionID:  item.ExtensionID,
+			CapabilityID: item.CapabilityID,
+			Target:       item.Target,
+			Message:      item.Message,
+		})
+	}
+	return out
+}
+
+func mapGetTokensExtensionRegistrySnapshot(result *gettokensextensions.RegistrySnapshot) *GetTokensExtensionRegistrySnapshot {
+	if result == nil {
+		return nil
+	}
+	return &GetTokensExtensionRegistrySnapshot{
+		ContractVersion: result.ContractVersion,
+		RegistryMode:    result.RegistryMode,
+		GeneratedAt:     result.GeneratedAt,
+		ReadOnly:        result.ReadOnly,
+		Roots:           mapGetTokensExtensionRoots(result.Roots),
+		Extensions:      mapGetTokensExtensionSnapshots(result.Extensions),
+		Diagnostics:     mapGetTokensExtensionDiagnostics(result.Diagnostics),
+	}
+}
+
+func mapGetTokensExtensionRoots(items []gettokensextensions.Root) []GetTokensExtensionRoot {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]GetTokensExtensionRoot, 0, len(items))
+	for _, item := range items {
+		out = append(out, GetTokensExtensionRoot{
+			ID:       item.ID,
+			Path:     item.Path,
+			ReadOnly: item.ReadOnly,
+		})
+	}
+	return out
+}
+
+func mapGetTokensExtensionSnapshots(items []gettokensextensions.ExtensionSnapshot) []GetTokensExtensionSnapshot {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]GetTokensExtensionSnapshot, 0, len(items))
+	for _, item := range items {
+		out = append(out, GetTokensExtensionSnapshot{
+			ID:            item.ID,
+			Name:          item.Name,
+			Version:       item.Version,
+			Publisher:     GetTokensExtensionPublisher{Name: item.Publisher.Name, URL: item.Publisher.URL},
+			Source:        GetTokensExtensionSource{Type: item.Source.Type, URI: item.Source.URI, Revision: item.Source.Revision, ManifestPath: item.Source.ManifestPath},
+			State:         string(item.State),
+			ReadOnly:      item.ReadOnly,
+			Compatibility: GetTokensExtensionCompatibility{ManifestContract: item.Compatibility.ManifestContract, SidecarContract: item.Compatibility.SidecarContract, CapabilityContract: item.Compatibility.CapabilityContract, Status: item.Compatibility.Status},
+			Permissions:   append([]string(nil), item.Permissions...),
+			Capabilities:  mapGetTokensExtensionCapabilities(item.Capabilities),
+			Diagnostics:   mapGetTokensExtensionDiagnostics(item.Diagnostics),
+		})
+	}
+	return out
+}
+
+func mapGetTokensExtensionCapabilities(items []gettokensextensions.CapabilitySnapshot) []GetTokensExtensionCapability {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]GetTokensExtensionCapability, 0, len(items))
+	for _, item := range items {
+		out = append(out, GetTokensExtensionCapability{
+			ID:                    item.ID,
+			Kind:                  item.Kind,
+			State:                 string(item.State),
+			RequiredPermissions:   append([]string(nil), item.RequiredPermissions...),
+			DeclaredContributions: append([]string(nil), item.DeclaredContributions...),
+			Diagnostics:           mapGetTokensExtensionDiagnostics(item.Diagnostics),
+		})
+	}
+	return out
+}
+
+func mapGetTokensExtensionDiagnostics(items []gettokensextensions.Diagnostic) []GetTokensExtensionDiagnostic {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]GetTokensExtensionDiagnostic, 0, len(items))
+	for _, item := range items {
+		out = append(out, GetTokensExtensionDiagnostic{
+			Code:     item.Code,
+			Severity: string(item.Severity),
+			Path:     item.Path,
+			Message:  item.Message,
+			Source:   item.Source,
+		})
+	}
+	return out
+}
+
+func mapDoctorChecks(items []wailsapp.DoctorCheck) []DoctorCheck {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]DoctorCheck, 0, len(items))
+	for _, item := range items {
+		out = append(out, DoctorCheck{
+			ID:                  item.ID,
+			Kind:                item.Kind,
+			Title:               item.Title,
+			Status:              item.Status,
+			Reason:              item.Reason,
+			Repairability:       item.Repairability,
+			Authority:           item.Authority,
+			Confidence:          item.Confidence,
+			LastCheckedAtUnixMs: item.LastCheckedAtUnixMs,
+			Evidence:            mapDoctorEvidenceRefs(item.Evidence),
+			Navigation:          mapDoctorNavigationTargets(item.Navigation),
+		})
+	}
+	return out
+}
+
+func mapDoctorEvidenceRefs(items []wailsapp.DoctorEvidenceRef) []DoctorEvidenceRef {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]DoctorEvidenceRef, 0, len(items))
+	for _, item := range items {
+		out = append(out, DoctorEvidenceRef{
+			Kind:          item.Kind,
+			Label:         item.Label,
+			Summary:       item.Summary,
+			RefID:         item.RefID,
+			Source:        item.Source,
+			AccountKey:    item.AccountKey,
+			AccountID:     item.AccountID,
+			AuthID:        item.AuthID,
+			Model:         item.Model,
+			Scope:         item.Scope,
+			Reason:        item.Reason,
+			RouteBlocking: cloneBoolPtr(item.RouteBlocking),
+			RouteEvidence: mapDoctorRouteEvidencePayload(item.RouteEvidence),
+			DroppedReason: mapDoctorRouteEvidencePayload(item.DroppedReason),
+			QuotaFact:     mapWailsCodexQuotaFact(item.QuotaFact),
+		})
+	}
+	return out
+}
+
+func mapDoctorRouteEvidencePayload(item *wailsapp.DoctorRouteEvidencePayload) *DoctorRouteEvidencePayload {
+	if item == nil {
+		return nil
+	}
+	return &DoctorRouteEvidencePayload{
+		AccountKey:    item.AccountKey,
+		AccountID:     item.AccountID,
+		AuthID:        item.AuthID,
+		Model:         item.Model,
+		Source:        item.Source,
+		Scope:         item.Scope,
+		Reason:        item.Reason,
+		RouteBlocking: cloneBoolPtr(item.RouteBlocking),
+	}
+}
+
+func cloneBoolPtr(value *bool) *bool {
+	if value == nil {
+		return nil
+	}
+	next := *value
+	return &next
+}
+
+func mapDoctorNavigationTargets(items []wailsapp.DoctorNavigationTarget) []DoctorNavigationTarget {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]DoctorNavigationTarget, 0, len(items))
+	for _, item := range items {
+		out = append(out, DoctorNavigationTarget{
+			Kind:  item.Kind,
+			Label: item.Label,
+			Hash:  item.Hash,
+		})
+	}
+	return out
+}
+
+func mapWailsCodexQuotaFact(result *wailsapp.CodexQuotaFact) *CodexQuotaFact {
+	if result == nil {
+		return nil
+	}
+	return &CodexQuotaFact{
+		State:        result.State,
+		Source:       result.Source,
+		Freshness:    result.Freshness,
+		Confidence:   result.Confidence,
+		Risk:         result.Risk,
+		Explanation:  result.Explanation,
+		ObservedAt:   result.ObservedAt,
+		ExpiresAt:    result.ExpiresAt,
+		EvidenceRefs: append([]string(nil), result.EvidenceRefs...),
+	}
+}
+
+func mapCliproxyQuotaRuntimeFact(result *cliproxyapi.QuotaRuntimeFact) *CodexQuotaFact {
+	if result == nil {
+		return nil
+	}
+	return &CodexQuotaFact{
+		State:        result.State,
+		Source:       result.Source,
+		Freshness:    result.Freshness,
+		Confidence:   result.Confidence,
+		Risk:         result.Risk,
+		Explanation:  result.Explanation,
+		ObservedAt:   result.ObservedAt,
+		ExpiresAt:    result.ExpiresAt,
+		EvidenceRefs: append([]string(nil), result.EvidenceRefs...),
 	}
 }
 

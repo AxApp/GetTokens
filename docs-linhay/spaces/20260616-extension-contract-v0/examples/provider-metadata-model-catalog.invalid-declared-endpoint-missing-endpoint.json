@@ -1,0 +1,48 @@
+{
+  "contractVersion": "0.1.0",
+  "id": "com.example.openai-metadata",
+  "name": "Example OpenAI Metadata",
+  "version": "0.1.0",
+  "publisher": {
+    "name": "Example Labs",
+    "url": "https://example.com"
+  },
+  "description": "Adds provider metadata and a declared endpoint model catalog source.",
+  "homepage": "https://example.com/gettokens-extension",
+  "source": {
+    "type": "local",
+    "uri": "file:///Users/me/extensions/openai-metadata",
+    "revision": "local"
+  },
+  "compatibility": {
+    "gettokens": ">=0.0.0",
+    "sidecarContract": "^0.1.0",
+    "capabilityContract": "^0.1.0"
+  },
+  "permissions": [
+    "provider.metadata.read",
+    "model.catalog.read",
+    "network.fetch.declared-endpoints"
+  ],
+  "capabilities": [
+    {
+      "id": "openai-provider-metadata",
+      "kind": "provider-metadata",
+      "provider": {
+        "id": "openai",
+        "displayName": "OpenAI",
+        "family": "openai-compatible",
+        "homepage": "https://platform.openai.com",
+        "contributionMode": "augment"
+      }
+    },
+    {
+      "id": "openai-model-catalog",
+      "kind": "model-catalog-source",
+      "providerId": "openai",
+      "source": {
+        "type": "declared-endpoint"
+      }
+    }
+  ]
+}

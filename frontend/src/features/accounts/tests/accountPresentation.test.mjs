@@ -633,6 +633,560 @@ test('account detail recent route decisions keep only decisions that touch the c
   ]);
 });
 
+test('account detail route resilience evidence groups reasons by stable target identity', () => {
+  const rows = buildAccountRecentRouteDecisionSummaries(
+    { id: 'acct_company_1' },
+    [
+      {
+        id: 'decision-resilience',
+        recordedAt: '2026-06-15T12:00:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        droppedReasons: [
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'rpm cooldown',
+            routeBlocking: true,
+          },
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'tpm cooldown',
+            routeBlocking: true,
+          },
+          {
+            accountID: 'acct_company_2',
+            authID: 'auth_company_2',
+            source: 'auth-error',
+            scope: 'account',
+            model: 'gpt-5.4',
+            reason: 'other account auth failed',
+            routeBlocking: true,
+          },
+        ],
+      },
+    ],
+  );
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].routeResilienceEvidence?.length, 1);
+  assert.deepEqual(rows[0].routeResilienceEvidence?.map((evidence) => ({
+    id: evidence.id,
+    digestDisplayMode: evidence.digestDisplayMode,
+    matchedDecisionID: evidence.matchedDecisionID,
+    matchedRecordedAt: evidence.matchedRecordedAt,
+    matchedRouteBlocking: evidence.matchedRouteBlocking,
+    relevantDecisions: evidence.relevantDecisions,
+    blockingDecisionCount: evidence.blockingDecisionCount,
+    observeDecisionCount: evidence.observeDecisionCount,
+    accountKey: evidence.accountKey,
+    authId: evidence.authId,
+    decisionID: evidence.decisionID,
+    recordedAt: evidence.recordedAt,
+    firstObservedDecisionID: evidence.firstObservedDecisionID,
+    firstObservedAt: evidence.firstObservedAt,
+    lastObservedDecisionID: evidence.lastObservedDecisionID,
+    lastObservedAt: evidence.lastObservedAt,
+    source: evidence.source,
+    sourceLabel: evidence.sourceLabel,
+    scope: evidence.scope,
+    model: evidence.model,
+    routeBlocking: evidence.routeBlocking,
+    reasonSummary: evidence.reasonSummary,
+    detail: evidence.detail,
+    occurrenceCount: evidence.occurrenceCount,
+  })), [
+    {
+      id: 'acct_company_1|auth_company_1|gpt-5.4|upstream-rate-limit|model',
+      digestDisplayMode: 'full',
+      matchedDecisionID: 'decision-resilience',
+      matchedRecordedAt: '2026-06-15T12:00:00Z',
+      matchedRouteBlocking: true,
+      relevantDecisions: [
+        {
+          decisionID: 'decision-resilience',
+          recordedAt: '2026-06-15T12:00:00Z',
+          routeBlocking: true,
+        },
+      ],
+      blockingDecisionCount: 1,
+      observeDecisionCount: 0,
+      accountKey: 'acct_company_1',
+      authId: 'auth_company_1',
+      decisionID: 'decision-resilience',
+      recordedAt: '2026-06-15T12:00:00Z',
+      firstObservedDecisionID: 'decision-resilience',
+      firstObservedAt: '2026-06-15T12:00:00Z',
+      lastObservedDecisionID: 'decision-resilience',
+      lastObservedAt: '2026-06-15T12:00:00Z',
+      source: 'upstream-rate-limit',
+      sourceLabel: '上游限流',
+      scope: 'model',
+      model: 'gpt-5.4',
+      routeBlocking: true,
+      reasonSummary: 'rpm cooldown / tpm cooldown',
+      detail: 'rpm cooldown / tpm cooldown · 2 次命中',
+      occurrenceCount: 2,
+    },
+  ]);
+  assert.doesNotMatch(rows[0].routeResilienceEvidence[0].id, /rpm cooldown|tpm cooldown/);
+});
+
+test('account detail route resilience evidence reuses digest recency metadata across decisions', () => {
+  const rows = buildAccountRecentRouteDecisionSummaries(
+    { id: 'acct_company_1' },
+    [
+      {
+        id: 'decision-resilience-older',
+        recordedAt: '2026-06-15T12:00:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        droppedReasons: [
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'rpm cooldown',
+            routeBlocking: true,
+          },
+        ],
+      },
+      {
+        id: 'decision-resilience-latest',
+        recordedAt: '2026-06-15T12:05:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        droppedReasons: [
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'tpm cooldown',
+            routeBlocking: true,
+          },
+        ],
+      },
+    ],
+  );
+
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].routeResilienceEvidence?.length, 1);
+  assert.equal(rows[1].routeResilienceEvidence?.length, 1);
+  assert.deepEqual(
+    rows.map((row) => row.routeResilienceEvidence?.map((evidence) => ({
+      id: evidence.id,
+      digestDisplayMode: evidence.digestDisplayMode,
+      matchedDecisionID: evidence.matchedDecisionID,
+      matchedRecordedAt: evidence.matchedRecordedAt,
+      matchedRouteBlocking: evidence.matchedRouteBlocking,
+      relevantDecisions: evidence.relevantDecisions,
+      blockingDecisionCount: evidence.blockingDecisionCount,
+      observeDecisionCount: evidence.observeDecisionCount,
+      decisionID: evidence.decisionID,
+      recordedAt: evidence.recordedAt,
+      firstObservedDecisionID: evidence.firstObservedDecisionID,
+      firstObservedAt: evidence.firstObservedAt,
+      lastObservedDecisionID: evidence.lastObservedDecisionID,
+      lastObservedAt: evidence.lastObservedAt,
+      reasonSummary: evidence.reasonSummary,
+      detail: evidence.detail,
+      occurrenceCount: evidence.occurrenceCount,
+    }))),
+    [
+      [
+        {
+          id: 'acct_company_1|auth_company_1|gpt-5.4|upstream-rate-limit|model',
+          digestDisplayMode: 'full',
+          matchedDecisionID: 'decision-resilience-latest',
+          matchedRecordedAt: '2026-06-15T12:05:00Z',
+          matchedRouteBlocking: true,
+          relevantDecisions: [
+            {
+              decisionID: 'decision-resilience-latest',
+              recordedAt: '2026-06-15T12:05:00Z',
+              routeBlocking: true,
+            },
+            {
+              decisionID: 'decision-resilience-older',
+              recordedAt: '2026-06-15T12:00:00Z',
+              routeBlocking: true,
+            },
+          ],
+          blockingDecisionCount: 2,
+          observeDecisionCount: 0,
+          decisionID: 'decision-resilience-latest',
+          recordedAt: '2026-06-15T12:05:00Z',
+          firstObservedDecisionID: 'decision-resilience-older',
+          firstObservedAt: '2026-06-15T12:00:00Z',
+          lastObservedDecisionID: 'decision-resilience-latest',
+          lastObservedAt: '2026-06-15T12:05:00Z',
+          reasonSummary: 'rpm cooldown / tpm cooldown',
+          detail: 'rpm cooldown / tpm cooldown · 2 次命中',
+          occurrenceCount: 2,
+        },
+      ],
+      [
+        {
+          id: 'acct_company_1|auth_company_1|gpt-5.4|upstream-rate-limit|model',
+          digestDisplayMode: 'reference',
+          matchedDecisionID: 'decision-resilience-older',
+          matchedRecordedAt: '2026-06-15T12:00:00Z',
+          matchedRouteBlocking: true,
+          relevantDecisions: [
+            {
+              decisionID: 'decision-resilience-latest',
+              recordedAt: '2026-06-15T12:05:00Z',
+              routeBlocking: true,
+            },
+            {
+              decisionID: 'decision-resilience-older',
+              recordedAt: '2026-06-15T12:00:00Z',
+              routeBlocking: true,
+            },
+          ],
+          blockingDecisionCount: 2,
+          observeDecisionCount: 0,
+          decisionID: 'decision-resilience-latest',
+          recordedAt: '2026-06-15T12:05:00Z',
+          firstObservedDecisionID: 'decision-resilience-older',
+          firstObservedAt: '2026-06-15T12:00:00Z',
+          lastObservedDecisionID: 'decision-resilience-latest',
+          lastObservedAt: '2026-06-15T12:05:00Z',
+          reasonSummary: 'rpm cooldown / tpm cooldown',
+          detail: 'rpm cooldown / tpm cooldown · 2 次命中',
+          occurrenceCount: 2,
+        },
+      ],
+    ],
+  );
+  assert.equal(rows[0].routeResilienceEvidence[0].id, rows[1].routeResilienceEvidence[0].id);
+  assert.doesNotMatch(rows[0].routeResilienceEvidence[0].id, /rpm cooldown|tpm cooldown/);
+});
+
+test('account detail route resilience evidence keeps different route semantics as separate digests', () => {
+  const rows = buildAccountRecentRouteDecisionSummaries(
+    { id: 'acct_company_1' },
+    [
+      {
+        id: 'decision-semantic-split',
+        recordedAt: '2026-06-15T12:10:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        droppedReasons: [
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'rpm cooldown',
+            routeBlocking: true,
+          },
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'auth-error',
+            scope: 'account',
+            model: 'gpt-5.4',
+            reason: 'oauth refresh failed',
+            routeBlocking: true,
+          },
+        ],
+      },
+    ],
+  );
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].routeResilienceEvidence?.length, 2);
+  assert.deepEqual(
+    rows[0].routeResilienceEvidence?.map((evidence) => ({
+      id: evidence.id,
+      source: evidence.source,
+      scope: evidence.scope,
+      reasonSummary: evidence.reasonSummary,
+    })),
+    [
+      {
+        id: 'acct_company_1|auth_company_1|gpt-5.4|upstream-rate-limit|model',
+        source: 'upstream-rate-limit',
+        scope: 'model',
+        reasonSummary: 'rpm cooldown',
+      },
+      {
+        id: 'acct_company_1|auth_company_1|gpt-5.4|auth-error|account',
+        source: 'auth-error',
+        scope: 'account',
+        reasonSummary: 'oauth refresh failed',
+      },
+    ],
+  );
+});
+
+test('account detail route resilience evidence keeps per-decision blocking explainability after dedupe', () => {
+  const rows = buildAccountRecentRouteDecisionSummaries(
+    { id: 'acct_company_1' },
+    [
+      {
+        id: 'decision-observe-newer',
+        recordedAt: '2026-06-15T12:15:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        droppedReasons: [
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'soft cooldown warning',
+            routeBlocking: false,
+          },
+        ],
+      },
+      {
+        id: 'decision-blocking-older',
+        recordedAt: '2026-06-15T12:10:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        droppedReasons: [
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'hard cooldown block',
+            routeBlocking: true,
+          },
+        ],
+      },
+    ],
+  );
+
+  assert.equal(rows.length, 2);
+  assert.deepEqual(
+    rows.map((row) => row.routeResilienceEvidence?.map((evidence) => ({
+      digestDisplayMode: evidence.digestDisplayMode,
+      matchedDecisionID: evidence.matchedDecisionID,
+      matchedRouteBlocking: evidence.matchedRouteBlocking,
+      routeBlocking: evidence.routeBlocking,
+      blockingDecisionCount: evidence.blockingDecisionCount,
+      observeDecisionCount: evidence.observeDecisionCount,
+      relevantDecisions: evidence.relevantDecisions,
+    }))),
+    [
+      [
+        {
+          digestDisplayMode: 'full',
+          matchedDecisionID: 'decision-observe-newer',
+          matchedRouteBlocking: false,
+          routeBlocking: true,
+          blockingDecisionCount: 1,
+          observeDecisionCount: 1,
+          relevantDecisions: [
+            {
+              decisionID: 'decision-observe-newer',
+              recordedAt: '2026-06-15T12:15:00Z',
+              routeBlocking: false,
+            },
+            {
+              decisionID: 'decision-blocking-older',
+              recordedAt: '2026-06-15T12:10:00Z',
+              routeBlocking: true,
+            },
+          ],
+        },
+      ],
+      [
+        {
+          digestDisplayMode: 'reference',
+          matchedDecisionID: 'decision-blocking-older',
+          matchedRouteBlocking: true,
+          routeBlocking: true,
+          blockingDecisionCount: 1,
+          observeDecisionCount: 1,
+          relevantDecisions: [
+            {
+              decisionID: 'decision-observe-newer',
+              recordedAt: '2026-06-15T12:15:00Z',
+              routeBlocking: false,
+            },
+            {
+              decisionID: 'decision-blocking-older',
+              recordedAt: '2026-06-15T12:10:00Z',
+              routeBlocking: true,
+            },
+          ],
+        },
+      ],
+    ],
+  );
+});
+
+test('account detail route resilience evidence keeps per-reason blocking details inside one decision digest', () => {
+  const rows = buildAccountRecentRouteDecisionSummaries(
+    { id: 'acct_company_1' },
+    [
+      {
+        id: 'decision-mixed-reasons',
+        recordedAt: '2026-06-17T08:00:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        droppedReasons: [
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'rpm cooldown blocks current turn',
+            routeBlocking: true,
+          },
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'tpm cooldown observed for telemetry',
+            routeBlocking: false,
+          },
+        ],
+      },
+    ],
+  );
+
+  assert.equal(rows.length, 1);
+  const evidence = rows[0].routeResilienceEvidence?.[0];
+  assert.equal(evidence?.id, 'acct_company_1|auth_company_1|gpt-5.4|upstream-rate-limit|model');
+  assert.equal(evidence?.matchedRouteBlocking, true);
+  assert.deepEqual(evidence?.matchedReasonDetails, [
+    {
+      reason: 'rpm cooldown blocks current turn',
+      routeBlocking: true,
+    },
+    {
+      reason: 'tpm cooldown observed for telemetry',
+      routeBlocking: false,
+    },
+  ]);
+  assert.doesNotMatch(evidence?.id || '', /rpm cooldown blocks current turn|tpm cooldown observed for telemetry/);
+});
+
+test('account detail route resilience reference evidence keeps current-decision reason details', () => {
+  const rows = buildAccountRecentRouteDecisionSummaries(
+    { id: 'acct_company_1' },
+    [
+      {
+        id: 'decision-full-newer',
+        recordedAt: '2026-06-17T08:05:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        droppedReasons: [
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'newer soft warning',
+            routeBlocking: false,
+          },
+        ],
+      },
+      {
+        id: 'decision-reference-older',
+        recordedAt: '2026-06-17T08:00:00Z',
+        channel: 'codex',
+        source: 'scheduler',
+        candidateCount: 2,
+        candidates: [{ accountID: 'acct_company_1', provider: 'codex' }],
+        droppedReasons: [
+          {
+            accountID: 'acct_company_1',
+            authID: 'auth_company_1',
+            source: 'upstream-rate-limit',
+            scope: 'model',
+            model: 'gpt-5.4',
+            reason: 'older hard block',
+            routeBlocking: true,
+          },
+        ],
+      },
+    ],
+  );
+
+  assert.equal(rows.length, 2);
+  assert.deepEqual(
+    rows.map((row) => row.routeResilienceEvidence?.map((evidence) => ({
+      digestDisplayMode: evidence.digestDisplayMode,
+      matchedDecisionID: evidence.matchedDecisionID,
+      matchedRouteBlocking: evidence.matchedRouteBlocking,
+      matchedReasonDetails: evidence.matchedReasonDetails,
+      routeBlocking: evidence.routeBlocking,
+    }))),
+    [
+      [
+        {
+          digestDisplayMode: 'full',
+          matchedDecisionID: 'decision-full-newer',
+          matchedRouteBlocking: false,
+          matchedReasonDetails: [
+            {
+              reason: 'newer soft warning',
+              routeBlocking: false,
+            },
+          ],
+          routeBlocking: true,
+        },
+      ],
+      [
+        {
+          digestDisplayMode: 'reference',
+          matchedDecisionID: 'decision-reference-older',
+          matchedRouteBlocking: true,
+          matchedReasonDetails: [
+            {
+              reason: 'older hard block',
+              routeBlocking: true,
+            },
+          ],
+          routeBlocking: true,
+        },
+      ],
+    ],
+  );
+  assert.equal(rows[0].routeResilienceEvidence[0].id, rows[1].routeResilienceEvidence[0].id);
+  assert.doesNotMatch(rows[1].routeResilienceEvidence[0].id, /older hard block|newer soft warning/);
+});
+
 test('account detail headings keep explicit provider scope', () => {
   const t = (key) =>
     ({

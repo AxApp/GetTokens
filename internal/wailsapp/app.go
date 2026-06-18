@@ -45,6 +45,7 @@ type App struct {
 	codexModelCatalogRefreshFunc     func() error
 	codexBinary                      *codexbinary.Service
 	menuBar                          *menubar.Controller
+	getTokensExtensionStatePath      string
 }
 
 type localUsageRuntimeState struct {

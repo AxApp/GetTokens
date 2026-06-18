@@ -118,6 +118,17 @@ After the fork commit and dev acceptance:
 - If a required memory file already has unrelated staged changes, prefer committing the existing staged work first or make a separate skill-only commit; do not silently mix unrelated memory edits into a claimed reference-port closure.
 - If `ensure-sidecar.sh` reports `dirty` only because the fork contains unrelated local work, do not rewrite or stash that work. Use `CLI_PROXY_SOURCE_DIR` with a temporary clean worktree for the rebuild, then document the clean fingerprint and the intentionally preserved dirty files.
 
+## 8.1 Sidecar Smoke Evidence Boundary
+
+When maintaining `docs-linhay/references/CLIProxyAPI/scripts/gettokens-sidecar-build-smoke.sh` and its manifest checker:
+
+- Treat the smoke binary as test-only evidence. It must not be copied into `build/bin/GetTokens.app`, `Contents/MacOS/cli-proxy-api`, `/Applications/GetTokens.app`, release staging, or published assets.
+- The manifest must distinguish source state from binary artifact state: `sourceState.classification` records `clean-source` or `dirty-source`, while `sourceState.artifactClass` remains `volatile-test-binary`.
+- Dirty primary smoke is acceptable only as source-state evidence. If the same commit can be checked out cleanly, run or record a clean comparison smoke and write `sourceStateComparison.cleanComparisonAvailable=true`, `sameCommit=true`, `cleanManifestPath`, `cleanSourceStateHash`, and `cleanBinarySha256`.
+- If clean comparison cannot run, record `sourceStateComparison.cleanComparisonAvailable=false` with a concrete `cleanUnavailableReason`; do not silently promote dirty smoke into release evidence.
+- Docs gates must use stable fixture mode and must not rebuild sidecar. Latest-mode tests that temporarily write `/private/tmp` latest manifests must backup and restore any existing latest evidence before exiting.
+- Keep `reproducibilityBoundary.binarySha256Volatile=true`, `releaseBoundary.dirtyStatusEvidenceOnly=true`, `testOnly=true`, `notReleaseArtifact=true`, and `releasePipelineEligible=false` locked in checker tests.
+
 ## 9. Completion Summary
 
 Final response should include:

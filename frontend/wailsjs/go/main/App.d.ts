@@ -11,6 +11,8 @@ export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:
 
 export function ApplyDeepLinkImport(arg1:string):Promise<main.DeepLinkApplyResult>;
 
+export function ApplyGetTokensExtensionCodexConfigTransaction(arg1:main.ApplyGetTokensExtensionCodexConfigTransactionInput):Promise<main.GetTokensExtensionCodexConfigStagedApplyResult>;
+
 export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:boolean):Promise<main.RelayLocalApplyResult>;
 
 export function ApplyRelayServiceConfigToLocalV2(arg1:main.RelayLocalApplyInput):Promise<main.RelayLocalApplyResult>;
@@ -141,6 +143,10 @@ export function GetCodexSkillFilePreview(arg1:main.GetCodexSkillFilePreviewInput
 
 export function GetCodexSkillsSnapshot():Promise<main.CodexSkillsSnapshot>;
 
+export function GetDoctorSnapshot(arg1:main.DoctorSnapshotInput):Promise<main.DoctorSnapshot>;
+
+export function GetGetTokensExtensionRegistrySnapshot(arg1:main.GetTokensExtensionRegistrySnapshotInput):Promise<main.GetTokensExtensionRegistrySnapshot>;
+
 export function GetLocalCodexAuthState():Promise<main.LocalCodexAuthState>;
 
 export function GetLocalCodexModelProviderStateView():Promise<main.LocalCodexModelProviderStateView>;
@@ -215,9 +221,13 @@ export function PatchClaudeCodeSettings(arg1:main.PatchClaudeCodeSettingsInputDT
 
 export function PreflightCodexMcpServer(arg1:main.PreflightCodexMcpServerInput):Promise<main.CodexMcpPreflightResult>;
 
+export function PrepareGetTokensExtensionCodexConfigApply(arg1:main.PrepareGetTokensExtensionCodexConfigApplyInput):Promise<main.GetTokensExtensionCodexConfigStagedApplyPlan>;
+
 export function PreviewCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
 
 export function PreviewDeepLinkImport(arg1:string):Promise<main.DeepLinkImportPreview>;
+
+export function PreviewGetTokensExtensionCodexConfigDryRun(arg1:main.PreviewGetTokensExtensionCodexConfigDryRunInput):Promise<main.GetTokensExtensionCodexConfigDryRunPreview>;
 
 export function ProbeClaudeCodeAccountRouting(arg1:main.ProbeClaudeCodeAccountRoutingInput):Promise<main.ClaudeCodeAccountRoutingProbeResult>;
 
@@ -249,6 +259,8 @@ export function RemoveCodexSkill(arg1:main.RemoveCodexSkillInput):Promise<main.R
 
 export function RevealCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<void>;
 
+export function RunRouteResilienceAction(arg1:main.RouteResilienceActionInput):Promise<main.RouteResilienceActionResult>;
+
 export function SaveChannelRoutingConfig(arg1:main.ChannelRoutingConfig):Promise<main.ChannelRoutingConfig>;
 
 export function SaveClaudeCodeMcpServer(arg1:main.SaveClaudeCodeMcpServerInput):Promise<main.SaveClaudeCodeMcpServerResult>;
@@ -270,6 +282,8 @@ export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<void>;
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 
 export function SetCodexModelCatalogSyncEnabled(arg1:boolean):Promise<main.AppRuntimeSettings>;
+
+export function SetGetTokensExtensionEnabled(arg1:main.SetGetTokensExtensionEnabledInput):Promise<main.GetTokensExtensionEnableStateFile>;
 
 export function StartCodexOAuth():Promise<main.OAuthStartResult>;
 

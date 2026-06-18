@@ -1,0 +1,781 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gettokens.local/schemas/gettokens-extension-v0.schema.json",
+  "title": "GetTokens Extension Contract v0 Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "id",
+    "name",
+    "version",
+    "publisher",
+    "source",
+    "compatibility",
+    "permissions",
+    "capabilities"
+  ],
+  "properties": {
+    "contractVersion": {
+      "type": "string",
+      "pattern": "^0\\.1\\.\\d+$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"
+    },
+    "publisher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 300
+        }
+      }
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 300
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "uri"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "local",
+            "bundled"
+          ]
+        },
+        "uri": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sidecarContract",
+        "capabilityContract"
+      ],
+      "properties": {
+        "gettokens": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "sidecarContract": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "capabilityContract": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/permission"
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/capability"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/metadataValue"
+      }
+    }
+  },
+  "$defs": {
+    "permission": {
+      "enum": [
+        "provider.metadata.read",
+        "model.catalog.read",
+        "account.import.preview",
+        "account.import.apply",
+        "quota.probe.read",
+        "network.fetch.declared-endpoints",
+        "secret.ref.read"
+      ]
+    },
+    "capabilityKind": {
+      "enum": [
+        "provider-metadata",
+        "model-catalog-source",
+        "account-importer",
+        "quota-probe"
+      ]
+    },
+    "capability": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/providerMetadataCapability"
+        },
+        {
+          "$ref": "#/$defs/modelCatalogSourceCapability"
+        },
+        {
+          "$ref": "#/$defs/accountImporterCapability"
+        },
+        {
+          "$ref": "#/$defs/quotaProbeCapability"
+        }
+      ]
+    },
+    "capabilityBase": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "kind": {
+          "$ref": "#/$defs/capabilityKind"
+        }
+      }
+    },
+    "providerMetadataCapability": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/capabilityBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "provider"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "kind": {
+              "const": "provider-metadata"
+            },
+            "provider": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "displayName",
+                "family"
+              ],
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/providerId"
+                },
+                "displayName": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "family": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "homepage": {
+                  "type": "string",
+                  "format": "uri",
+                  "maxLength": 300
+                },
+                "contributionMode": {
+                  "enum": [
+                    "create",
+                    "augment"
+                  ]
+                }
+              }
+            },
+            "endpoints": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/providerEndpoint"
+              }
+            },
+            "ui": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "accent": {
+                  "type": "string",
+                  "pattern": "^#[0-9A-Fa-f]{6}$"
+                },
+                "docsUrl": {
+                  "type": "string",
+                  "format": "uri",
+                  "maxLength": 300
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "modelCatalogSourceCapability": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/capabilityBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "providerId",
+            "source"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "kind": {
+              "const": "model-catalog-source"
+            },
+            "providerId": {
+              "$ref": "#/$defs/providerId"
+            },
+            "source": {
+              "$ref": "#/$defs/modelCatalogSource"
+            },
+            "models": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/modelCatalogEntry"
+              }
+            },
+            "contributionMode": {
+              "enum": [
+                "create",
+                "augment"
+              ]
+            },
+            "priority": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          }
+        }
+      ]
+    },
+    "accountImporterCapability": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/capabilityBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "providerId",
+            "formats",
+            "preview"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "kind": {
+              "const": "account-importer"
+            },
+            "providerId": {
+              "$ref": "#/$defs/providerId"
+            },
+            "formats": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/importFormat"
+              }
+            },
+            "preview": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "redactSecrets",
+                "requiresUserConfirm"
+              ],
+              "properties": {
+                "redactSecrets": {
+                  "type": "boolean",
+                  "const": true
+                },
+                "requiresUserConfirm": {
+                  "type": "boolean",
+                  "const": true
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "quotaProbeCapability": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/capabilityBase"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "providerId",
+            "target",
+            "request",
+            "response",
+            "schedule"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/identifier"
+            },
+            "kind": {
+              "const": "quota-probe"
+            },
+            "providerId": {
+              "$ref": "#/$defs/providerId"
+            },
+            "target": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "scope"
+              ],
+              "properties": {
+                "scope": {
+                  "enum": [
+                    "account",
+                    "provider"
+                  ]
+                },
+                "credentialRef": {
+                  "$ref": "#/$defs/credentialRef"
+                },
+                "quotaDimension": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                }
+              }
+            },
+            "request": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "method",
+                "urlTemplate"
+              ],
+              "properties": {
+                "method": {
+                  "enum": [
+                    "GET",
+                    "POST"
+                  ]
+                },
+                "urlTemplate": {
+                  "type": "string",
+                  "pattern": "^https://",
+                  "maxLength": 1000
+                },
+                "headers": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/requestHeader"
+                  }
+                },
+                "timeoutMs": {
+                  "type": "integer",
+                  "minimum": 100,
+                  "maximum": 30000
+                }
+              }
+            },
+            "response": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "parser",
+                "fields"
+              ],
+              "properties": {
+                "parser": {
+                  "enum": [
+                    "json-pointer"
+                  ]
+                },
+                "fields": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "additionalProperties": {
+                    "type": "string",
+                    "pattern": "^/"
+                  }
+                }
+              }
+            },
+            "schedule": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "mode"
+              ],
+              "properties": {
+                "mode": {
+                  "enum": [
+                    "manual",
+                    "manual-or-background"
+                  ]
+                },
+                "minIntervalSec": {
+                  "type": "integer",
+                  "minimum": 60
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "providerEndpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "baseUrl",
+        "protocol",
+        "auth"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "baseUrl": {
+          "type": "string",
+          "pattern": "^https://",
+          "maxLength": 1000
+        },
+        "protocol": {
+          "enum": [
+            "openai-compatible",
+            "anthropic-compatible",
+            "custom-http"
+          ]
+        },
+        "auth": {
+          "enum": [
+            "bearer-token",
+            "api-key",
+            "none"
+          ]
+        }
+      }
+    },
+    "modelCatalogSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "static-json",
+            "declared-endpoint"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^[^/\\\\].*\\.json$",
+          "maxLength": 500
+        },
+        "endpoint": {
+          "type": "string",
+          "pattern": "^https://",
+          "maxLength": 1000
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "static-json"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "path"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "declared-endpoint"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "endpoint"
+            ]
+          }
+        }
+      ]
+    },
+    "modelCatalogEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "displayName",
+        "inputModalities",
+        "outputModalities",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "inputModalities": {
+          "$ref": "#/$defs/modalities"
+        },
+        "outputModalities": {
+          "$ref": "#/$defs/modalities"
+        },
+        "contextWindow": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "status": {
+          "enum": [
+            "available",
+            "deprecated",
+            "preview",
+            "unavailable"
+          ]
+        },
+        "docsUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 300
+        }
+      }
+    },
+    "modalities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "text",
+          "image",
+          "audio",
+          "video",
+          "tool"
+        ]
+      }
+    },
+    "importFormat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mediaType",
+        "parser",
+        "fields"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "mediaType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "parser": {
+          "enum": [
+            "env-key-value",
+            "json-object",
+            "csv-header-row"
+          ]
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/importField"
+          }
+        }
+      }
+    },
+    "importField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "target",
+        "required"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "target": {
+          "type": "string",
+          "pattern": "^(credential|endpoint|account|metadata)\\.[A-Za-z0-9_.-]+$",
+          "maxLength": 160
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "secret": {
+          "type": "boolean"
+        }
+      }
+    },
+    "requestHeader": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "valueFrom"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "valueFrom": {
+          "enum": [
+            "credential.bearer",
+            "credential.apiKey",
+            "account.defaultCredential"
+          ]
+        }
+      }
+    },
+    "credentialRef": {
+      "enum": [
+        "account.defaultCredential",
+        "credential.bearer",
+        "credential.apiKey"
+      ]
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$"
+    },
+    "providerId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,79}$"
+    },
+    "metadataValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/metadataValue"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/metadataValue"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -35,6 +35,7 @@ export interface QuotaDisplay {
   status: 'unsupported' | 'loading' | 'error' | 'empty' | 'success';
   planType: string;
   windows: QuotaWindowDisplay[];
+  fact?: QuotaFactDisplay;
   refreshing?: boolean;
   updatedAt?: string;
   lastEvaluatedAt?: string;
@@ -43,6 +44,43 @@ export interface QuotaDisplay {
   stale?: boolean;
   degradedReason?: string;
   sources?: QuotaSourceDisplay[];
+}
+
+export type QuotaFactState =
+  | 'unsupported'
+  | 'unknown'
+  | 'available'
+  | 'no-quota'
+  | 'stale'
+  | 'denied';
+
+export type QuotaFactFreshness = 'fresh' | 'stale' | 'unknown';
+export type QuotaFactConfidence = 'high' | 'medium' | 'low' | 'none';
+export type QuotaFactRisk = 'none' | 'warning' | 'blocking' | 'denied' | 'unknown';
+
+export interface QuotaFactDisplay {
+  state: QuotaFactState;
+  source?: string;
+  freshness: QuotaFactFreshness;
+  confidence: QuotaFactConfidence;
+  risk: QuotaFactRisk;
+  explanation?: string;
+  observedAt?: string;
+  expiresAt?: string;
+  evidenceRefs?: string[];
+}
+
+export interface QuotaFactEvidenceView {
+  stateLabel: string;
+  sourceLabel: string;
+  freshnessLabel: string;
+  confidenceLabel: string;
+  riskLabel: string;
+  summary: string;
+  explanation?: string;
+  observedAt?: string;
+  expiresAt?: string;
+  evidenceRefs: string[];
 }
 
 export interface QuotaSourceDisplay {

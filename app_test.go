@@ -5,13 +5,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/gettokensextensions"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 	"github.com/wailsapp/wails/v2/pkg/menu"
 )
+
+func boolPtr(value bool) *bool {
+	return &value
+}
 
 func TestGitHubRepoUsesPublishedReleaseRepository(t *testing.T) {
 	if GitHubRepo != "AxApp/GetTokens" {
@@ -745,5 +751,562 @@ func TestMapCodexQuotaResponsePreservesBilling(t *testing.T) {
 	}
 	if result.Windows[0].RemainingTokens == nil || *result.Windows[0].RemainingTokens != 875 {
 		t.Fatalf("mapCodexQuotaResponse remaining tokens = %#v, want 875", result.Windows[0].RemainingTokens)
+	}
+}
+
+func TestMapDoctorSnapshotPreservesCoreFields(t *testing.T) {
+	result := mapDoctorSnapshot(&wailsapp.DoctorSnapshot{
+		GeneratedAtUnixMs: 1781596800000,
+		Source:            "sidecar-diagnostics",
+		SidecarReady:      true,
+		Status:            "warning",
+		Summary: wailsapp.DoctorSummary{
+			Total:    2,
+			Warning:  1,
+			Critical: 1,
+		},
+		Checks: []wailsapp.DoctorCheck{{
+			ID:                  "route_guard_dropped_reasons",
+			Kind:                "route-guard-stale-block",
+			Title:               "Route guard dropped reasons present",
+			Status:              "warning",
+			Reason:              "Active route guard dropped reason evidence is present.",
+			Repairability:       "read_only",
+			Authority:           "sidecar",
+			Confidence:          "medium",
+			LastCheckedAtUnixMs: 1781596799000,
+			Evidence: []wailsapp.DoctorEvidenceRef{{
+				Kind:          "route_decision",
+				Label:         "acct-route-1",
+				Summary:       "request window exhausted",
+				RefID:         "acct-route-1",
+				Source:        "sidecar",
+				AccountKey:    "acct-route-1",
+				AuthID:        "auth-route-1",
+				Model:         "gpt-5",
+				Scope:         "account",
+				Reason:        "request window exhausted",
+				RouteBlocking: boolPtr(true),
+				RouteEvidence: &wailsapp.DoctorRouteEvidencePayload{
+					AccountKey:    "acct-route-1",
+					AuthID:        "auth-route-1",
+					Model:         "gpt-5",
+					Source:        "rate-limit",
+					Scope:         "account",
+					Reason:        "request window exhausted",
+					RouteBlocking: boolPtr(true),
+				},
+				DroppedReason: &wailsapp.DoctorRouteEvidencePayload{
+					AccountKey:    "acct-route-1",
+					AuthID:        "auth-route-1",
+					Model:         "gpt-5",
+					Source:        "rate-limit",
+					Scope:         "account",
+					Reason:        "nested request window exhausted",
+					RouteBlocking: boolPtr(true),
+				},
+			}},
+			Navigation: []wailsapp.DoctorNavigationTarget{{
+				Kind:  "route_decisions",
+				Label: "Open route decisions",
+				Hash:  "#frame=codex&workspace=account-list",
+			}},
+		}},
+	})
+
+	if result == nil {
+		t.Fatal("mapDoctorSnapshot returned nil")
+	}
+	if result.Source != "sidecar-diagnostics" || !result.SidecarReady || result.Status != "warning" {
+		t.Fatalf("snapshot core mismatch: %#v", result)
+	}
+	if result.Summary.Total != 2 || result.Summary.Warning != 1 || result.Summary.Critical != 1 {
+		t.Fatalf("summary mismatch: %#v", result.Summary)
+	}
+	if len(result.Checks) != 1 {
+		t.Fatalf("checks length = %d, want 1", len(result.Checks))
+	}
+	check := result.Checks[0]
+	if check.ID != "route_guard_dropped_reasons" || check.Status != "warning" || check.Authority != "sidecar" || check.Confidence != "medium" || check.Repairability != "read_only" {
+		t.Fatalf("check mismatch: %#v", check)
+	}
+	if len(check.Evidence) != 1 || check.Evidence[0].RefID != "acct-route-1" || check.Evidence[0].Source != "sidecar" {
+		t.Fatalf("evidence mismatch: %#v", check.Evidence)
+	}
+	evidence := check.Evidence[0]
+	if evidence.AccountKey != "acct-route-1" || evidence.AuthID != "auth-route-1" || evidence.Model != "gpt-5" || evidence.Scope != "account" || evidence.Reason != "request window exhausted" || evidence.RouteBlocking == nil || !*evidence.RouteBlocking {
+		t.Fatalf("typed evidence mismatch: %#v", evidence)
+	}
+	if evidence.RouteEvidence == nil || evidence.RouteEvidence.Source != "rate-limit" || evidence.RouteEvidence.AccountKey != "acct-route-1" || evidence.RouteEvidence.RouteBlocking == nil || !*evidence.RouteEvidence.RouteBlocking {
+		t.Fatalf("nested routeEvidence mismatch: %#v", evidence.RouteEvidence)
+	}
+	if evidence.DroppedReason == nil || evidence.DroppedReason.Reason != "nested request window exhausted" || evidence.DroppedReason.AuthID != "auth-route-1" || evidence.DroppedReason.RouteBlocking == nil || !*evidence.DroppedReason.RouteBlocking {
+		t.Fatalf("nested droppedReason mismatch: %#v", evidence.DroppedReason)
+	}
+	if len(check.Navigation) != 1 || check.Navigation[0].Hash != "#frame=codex&workspace=account-list" {
+		t.Fatalf("navigation mismatch: %#v", check.Navigation)
+	}
+}
+
+func TestDoctorEvidenceRefRootJSONContractPreservesDroppedReason(t *testing.T) {
+	payload := DoctorEvidenceRef{
+		Kind:       "route_dropped_reason",
+		Label:      "text evidence is not route authority",
+		Summary:    "summary is not route authority",
+		RefID:      "ref-is-not-route-authority",
+		Source:     "sidecar",
+		AccountKey: "top-level-account-should-not-win",
+		DroppedReason: &DoctorRouteEvidencePayload{
+			AccountKey:    "acct-route-json",
+			AccountID:     "acct-route-json",
+			AuthID:        "auth-route-json",
+			Model:         "gpt-5",
+			Source:        "rate-limit",
+			Scope:         "account",
+			Reason:        "nested droppedReason survives root JSON",
+			RouteBlocking: boolPtr(true),
+		},
+	}
+
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal DoctorEvidenceRef: %v", err)
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(encoded, &raw); err != nil {
+		t.Fatalf("unmarshal raw DoctorEvidenceRef: %v", err)
+	}
+	if _, ok := raw["droppedReason"]; !ok {
+		t.Fatalf("root JSON missing droppedReason: %s", encoded)
+	}
+	var decoded DoctorEvidenceRef
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatalf("unmarshal DoctorEvidenceRef: %v", err)
+	}
+	if decoded.DroppedReason == nil || decoded.DroppedReason.AccountKey != "acct-route-json" || decoded.DroppedReason.AuthID != "auth-route-json" || decoded.DroppedReason.Model != "gpt-5" || decoded.DroppedReason.Source != "rate-limit" || decoded.DroppedReason.Scope != "account" || decoded.DroppedReason.Reason != "nested droppedReason survives root JSON" {
+		t.Fatalf("decoded droppedReason mismatch: %#v", decoded.DroppedReason)
+	}
+	if decoded.DroppedReason.RouteBlocking == nil || !*decoded.DroppedReason.RouteBlocking {
+		t.Fatalf("decoded routeBlocking mismatch: %#v", decoded.DroppedReason.RouteBlocking)
+	}
+}
+
+func TestMapDoctorSnapshotPreservesQuotaFactPayload(t *testing.T) {
+	result := mapDoctorSnapshot(&wailsapp.DoctorSnapshot{
+		GeneratedAtUnixMs: 1781596800000,
+		Source:            "sidecar-diagnostics",
+		SidecarReady:      true,
+		Status:            "warning",
+		Summary:           wailsapp.DoctorSummary{Total: 1, Warning: 1},
+		Checks: []wailsapp.DoctorCheck{{
+			ID:            "quota_facts",
+			Kind:          "quota-runtime-fact",
+			Title:         "Quota runtime facts need attention",
+			Status:        "warning",
+			Repairability: "read_only",
+			Authority:     "sidecar",
+			Evidence: []wailsapp.DoctorEvidenceRef{{
+				Kind:       "quota_fact",
+				Label:      "acct-quota-1",
+				Summary:    "weekly window exhausted",
+				RefID:      "quota-status:acct-quota-1",
+				Source:     "quota-runtime",
+				AccountKey: "acct-quota-1",
+				QuotaFact: &wailsapp.CodexQuotaFact{
+					State:        "no_quota",
+					Source:       "quota-runtime",
+					Freshness:    "fresh",
+					Confidence:   "high",
+					Risk:         "blocking",
+					Explanation:  "weekly window exhausted",
+					ObservedAt:   "2026-06-17T08:00:00Z",
+					ExpiresAt:    "2026-06-17T13:00:00Z",
+					EvidenceRefs: []string{"window:weekly", "guard:quota-empty"},
+				},
+			}},
+		}},
+	})
+
+	if result == nil || len(result.Checks) != 1 || len(result.Checks[0].Evidence) != 1 {
+		t.Fatalf("mapped snapshot mismatch: %#v", result)
+	}
+	fact := result.Checks[0].Evidence[0].QuotaFact
+	if fact == nil || fact.State != "no_quota" || fact.Risk != "blocking" || fact.ObservedAt != "2026-06-17T08:00:00Z" || len(fact.EvidenceRefs) != 2 {
+		t.Fatalf("quota fact mismatch: %#v", fact)
+	}
+}
+
+func TestGetDoctorSnapshotRootBindingReturnsNotReadySnapshot(t *testing.T) {
+	app := NewApp()
+
+	snapshot, err := app.GetDoctorSnapshot(DoctorSnapshotInput{IncludeEvidence: true})
+	if err != nil {
+		t.Fatalf("GetDoctorSnapshot: %v", err)
+	}
+	if snapshot == nil {
+		t.Fatal("GetDoctorSnapshot returned nil")
+	}
+	if snapshot.Source != "wails-aggregate" || snapshot.SidecarReady {
+		t.Fatalf("snapshot source/readiness mismatch: %#v", snapshot)
+	}
+	if snapshot.Status != "not_ready" || snapshot.Summary.NotReady == 0 {
+		t.Fatalf("snapshot status mismatch: %#v", snapshot)
+	}
+	if len(snapshot.Checks) != 1 || snapshot.Checks[0].ID != "sidecar-runtime-not-ready" {
+		t.Fatalf("snapshot checks mismatch: %#v", snapshot.Checks)
+	}
+}
+
+func TestMapRouteResilienceActionPreservesDroppedReasons(t *testing.T) {
+	result := mapRouteResilienceActionResult(&wailsapp.RouteResilienceActionResult{
+		OK:                   false,
+		Authority:            "sidecar",
+		Action:               "recheck_routeability",
+		Status:               "not_implemented",
+		AccountKey:           "acct-company-1",
+		AuthID:               "auth-company-1",
+		Model:                "gpt-5",
+		Before:               map[string]any{"blockCount": float64(1)},
+		After:                map[string]any{"blockCount": float64(1)},
+		DroppedSources:       []string{"auth-error"},
+		NotImplementedReason: "current gettokenshooks management layer does not own bounded reconcile or routeability service permissions",
+		HTTPStatus:           http.StatusNotImplemented,
+		DroppedReasons: []wailsapp.ChannelRouteDroppedReason{{
+			AccountID:     "acct-company-1",
+			AuthID:        "auth-company-1",
+			Source:        "auth-error",
+			Scope:         "account",
+			Reason:        "auth failed",
+			Model:         "gpt-5",
+			ExpiresAt:     "2026-06-16T10:05:00Z",
+			UpdatedAt:     "2026-06-16T10:00:00Z",
+			RouteBlocking: true,
+		}},
+	})
+
+	if result == nil {
+		t.Fatal("mapRouteResilienceActionResult returned nil")
+	}
+	if result.HTTPStatus != http.StatusNotImplemented || result.OK || result.Status != "not_implemented" || result.NotImplementedReason == "" {
+		t.Fatalf("result core mismatch: %#v", result)
+	}
+	if result.Before["blockCount"] != float64(1) || result.After["blockCount"] != float64(1) {
+		t.Fatalf("before/after mismatch: %#v %#v", result.Before, result.After)
+	}
+	if len(result.DroppedSources) != 1 || result.DroppedSources[0] != "auth-error" {
+		t.Fatalf("droppedSources mismatch: %#v", result.DroppedSources)
+	}
+	if len(result.DroppedReasons) != 1 {
+		t.Fatalf("droppedReasons = %#v, want one", result.DroppedReasons)
+	}
+	dropped := result.DroppedReasons[0]
+	if dropped.AccountID != "acct-company-1" || dropped.AuthID != "auth-company-1" || dropped.Source != "auth-error" || dropped.Scope != "account" || dropped.Reason != "auth failed" || dropped.Model != "gpt-5" || dropped.ExpiresAt != "2026-06-16T10:05:00Z" || dropped.UpdatedAt != "2026-06-16T10:00:00Z" || !dropped.RouteBlocking {
+		t.Fatalf("dropped reason mismatch: %#v", dropped)
+	}
+}
+
+func TestMapGetTokensExtensionRegistrySnapshotPreservesReadOnlyContract(t *testing.T) {
+	source := gettokensextensions.RegistrySnapshot{
+		ContractVersion: "0.1.0",
+		RegistryMode:    "read-only",
+		GeneratedAt:     "2026-06-16T08:00:00Z",
+		ReadOnly:        true,
+		Roots: []gettokensextensions.Root{{
+			ID:       "fixture",
+			Path:     "/tmp/extensions",
+			ReadOnly: true,
+		}},
+		Extensions: []gettokensextensions.ExtensionSnapshot{{
+			ID:       "com.example.openai-metadata",
+			Name:     "Example OpenAI Metadata",
+			Version:  "0.1.0",
+			State:    gettokensextensions.StateReadonlyCompatible,
+			ReadOnly: true,
+			Publisher: gettokensextensions.Publisher{
+				Name: "Example Labs",
+				URL:  "https://example.com",
+			},
+			Source: gettokensextensions.ExtensionSource{
+				Type:         "local",
+				URI:          "file:///tmp/extensions/openai",
+				Revision:     "local",
+				ManifestPath: "/tmp/extensions/openai/gettokens.extension.json",
+			},
+			Compatibility: gettokensextensions.CompatibilitySnapshot{
+				ManifestContract:   "0.1.0",
+				SidecarContract:    "^0.1.0",
+				CapabilityContract: "^0.1.0",
+				Status:             "compatible",
+			},
+			Permissions: []string{"provider.metadata.read"},
+			Capabilities: []gettokensextensions.CapabilitySnapshot{{
+				ID:                    "openai-provider",
+				Kind:                  "provider-metadata",
+				State:                 gettokensextensions.StateReadonlyCompatible,
+				RequiredPermissions:   []string{"provider.metadata.read"},
+				DeclaredContributions: []string{"provider:openai"},
+			}},
+			Diagnostics: []gettokensextensions.Diagnostic{{
+				Code:     gettokensextensions.DiagnosticIncompatibleContract,
+				Severity: gettokensextensions.SeverityWarning,
+				Path:     "$.compatibility",
+				Message:  "warning",
+				Source:   "/tmp/extensions/openai/gettokens.extension.json",
+			}},
+		}},
+	}
+
+	result := mapGetTokensExtensionRegistrySnapshot(&source)
+	if result == nil {
+		t.Fatal("mapGetTokensExtensionRegistrySnapshot returned nil")
+	}
+	if result.RegistryMode != "read-only" || !result.ReadOnly {
+		t.Fatalf("snapshot read-only contract mismatch: %#v", result)
+	}
+	if len(result.Roots) != 1 || !result.Roots[0].ReadOnly {
+		t.Fatalf("roots mismatch: %#v", result.Roots)
+	}
+	if len(result.Extensions) != 1 {
+		t.Fatalf("extensions len = %d, want 1", len(result.Extensions))
+	}
+	extension := result.Extensions[0]
+	if extension.ID != "com.example.openai-metadata" || extension.State != "readonly-compatible" || !extension.ReadOnly {
+		t.Fatalf("extension mismatch: %#v", extension)
+	}
+	if extension.Source.ManifestPath != "/tmp/extensions/openai/gettokens.extension.json" {
+		t.Fatalf("manifest path mismatch: %#v", extension.Source)
+	}
+	if len(extension.Capabilities) != 1 || extension.Capabilities[0].Kind != "provider-metadata" {
+		t.Fatalf("capability mismatch: %#v", extension.Capabilities)
+	}
+	if len(extension.Diagnostics) != 1 || extension.Diagnostics[0].Code != gettokensextensions.DiagnosticIncompatibleContract {
+		t.Fatalf("diagnostics mismatch: %#v", extension.Diagnostics)
+	}
+}
+
+func TestGetTokensExtensionRegistryRootBindingReturnsFixtureSnapshot(t *testing.T) {
+	app := NewApp()
+	manifest := filepath.Join("docs-linhay", "spaces", "20260616-extension-contract-v0", "examples", "provider-metadata-model-catalog.valid.json")
+
+	snapshot, err := app.GetGetTokensExtensionRegistrySnapshot(GetTokensExtensionRegistrySnapshotInput{
+		ManifestPaths: []string{manifest},
+	})
+	if err != nil {
+		t.Fatalf("GetGetTokensExtensionRegistrySnapshot returned error: %v", err)
+	}
+	if snapshot == nil || snapshot.RegistryMode != "read-only" || !snapshot.ReadOnly {
+		t.Fatalf("snapshot mismatch: %#v", snapshot)
+	}
+	if len(snapshot.Extensions) != 1 || snapshot.Extensions[0].ID != "com.example.openai-metadata" {
+		t.Fatalf("extensions mismatch: %#v", snapshot.Extensions)
+	}
+	if len(snapshot.Extensions[0].Capabilities) != 2 {
+		t.Fatalf("capabilities mismatch: %#v", snapshot.Extensions[0].Capabilities)
+	}
+}
+
+func TestSetGetTokensExtensionEnabledRootBindingPersistsLocalState(t *testing.T) {
+	app := NewApp()
+	statePath := filepath.Join(t.TempDir(), "extension-enable-state.json")
+
+	state, err := app.SetGetTokensExtensionEnabled(SetGetTokensExtensionEnabledInput{
+		ExtensionID: "com.example.openai-metadata",
+		Enabled:     false,
+		StatePath:   statePath,
+	})
+	if err != nil {
+		t.Fatalf("SetGetTokensExtensionEnabled returned error: %v", err)
+	}
+	if state == nil || len(state.Extensions) != 1 {
+		t.Fatalf("state mismatch: %#v", state)
+	}
+	if state.Extensions[0].ID != "com.example.openai-metadata" || state.Extensions[0].State != "disabled" {
+		t.Fatalf("state entry mismatch: %#v", state.Extensions[0])
+	}
+
+	manifest := filepath.Join("docs-linhay", "spaces", "20260616-extension-contract-v0", "examples", "provider-metadata-model-catalog.valid.json")
+	snapshot, err := app.GetGetTokensExtensionRegistrySnapshot(GetTokensExtensionRegistrySnapshotInput{
+		ManifestPaths: []string{manifest},
+		StatePath:     statePath,
+	})
+	if err != nil {
+		t.Fatalf("GetGetTokensExtensionRegistrySnapshot returned error: %v", err)
+	}
+	if len(snapshot.Extensions) != 1 || snapshot.Extensions[0].State != "disabled" {
+		t.Fatalf("snapshot state mismatch: %#v", snapshot.Extensions)
+	}
+}
+
+func TestPreviewGetTokensExtensionCodexConfigDryRunRootBinding(t *testing.T) {
+	app := NewApp()
+	statePath := filepath.Join(t.TempDir(), "extension-enable-state.json")
+	manifest := filepath.Join("docs-linhay", "spaces", "20260616-extension-contract-v0", "examples", "provider-metadata-model-catalog.valid.json")
+
+	if _, err := app.SetGetTokensExtensionEnabled(SetGetTokensExtensionEnabledInput{
+		ExtensionID: "com.example.openai-metadata",
+		Enabled:     true,
+		StatePath:   statePath,
+	}); err != nil {
+		t.Fatalf("SetGetTokensExtensionEnabled returned error: %v", err)
+	}
+
+	preview, err := app.PreviewGetTokensExtensionCodexConfigDryRun(PreviewGetTokensExtensionCodexConfigDryRunInput{
+		ManifestPaths: []string{manifest},
+		StatePath:     statePath,
+		TargetPath:    filepath.Join(t.TempDir(), "config.toml"),
+		ConfigText: `
+[[skills.config]]
+path = "/tmp/root-existing-skill"
+
+[mcp_servers.com-example-openai-metadata-catalog-openai]
+command = "root-existing-catalog"
+bearer_token = "literal-token-root-do-not-keep"
+`,
+	})
+	if err != nil {
+		t.Fatalf("PreviewGetTokensExtensionCodexConfigDryRun returned error: %v", err)
+	}
+	if preview == nil || !preview.DryRun || preview.Target != "codex-config" {
+		t.Fatalf("preview mismatch: %#v", preview)
+	}
+	if preview.Summary.EnabledExtensionCount != 1 || preview.Summary.OperationCount != 2 || preview.Summary.ValidationErrorCount != 0 {
+		t.Fatalf("summary mismatch: %#v", preview.Summary)
+	}
+	if len(preview.Operations) != 2 || preview.Operations[0].CapabilityID == "" || preview.Operations[0].Action != "preview" {
+		t.Fatalf("operations mismatch: %#v", preview.Operations)
+	}
+	if preview.Operations[0].PatchPlan.TargetSection == "" || preview.Operations[0].PatchPlan.BeforeSnippet == "" || preview.Operations[0].PatchPlan.AfterSnippet == "" {
+		t.Fatalf("operation should expose TOML patch plan preview: %#v", preview.Operations[0])
+	}
+	if len(preview.Operations[0].PatchPlan.Validation) == 0 {
+		t.Fatalf("operation patch plan should expose validation: %#v", preview.Operations[0].PatchPlan)
+	}
+	joined := preview.Operations[0].PatchPlan.BeforeSnippet + "\n" + preview.Operations[0].PatchPlan.AfterSnippet + "\n" +
+		preview.Operations[1].PatchPlan.BeforeSnippet + "\n" + preview.Operations[1].PatchPlan.AfterSnippet
+	if strings.Contains(joined, "literal-token-root-do-not-keep") {
+		t.Fatalf("root dry-run should not return token literals: %s", joined)
+	}
+	if !strings.Contains(strings.Join(preview.Operations[0].PatchPlan.Validation, "\n")+strings.Join(preview.Operations[1].PatchPlan.Validation, "\n"), "input-toml-read-only") {
+		t.Fatalf("root dry-run should mark TOML input as read-only: %#v", preview.Operations)
+	}
+	if len(preview.Sections) != 2 || preview.Sections[0].ID != "skills.config" || preview.Sections[1].ID != "mcp_servers" {
+		t.Fatalf("sections mismatch: %#v", preview.Sections)
+	}
+}
+
+func TestGetTokensExtensionCodexConfigTransactionRootBinding(t *testing.T) {
+	app := NewApp()
+	manifest := filepath.Join("docs-linhay", "spaces", "20260616-extension-contract-v0", "examples", "provider-metadata-model-catalog.valid.json")
+	targetPath := filepath.Join(t.TempDir(), "config.toml")
+	configText := `# root caller supplied text
+model = "gpt-5"
+
+[mcp_servers.com-example-openai-metadata-catalog-openai]
+command = "root-existing-catalog"
+bearer_token = "literal-token-root-do-not-keep"
+`
+	if err := os.WriteFile(targetPath, []byte(configText), 0o600); err != nil {
+		t.Fatalf("write target: %v", err)
+	}
+
+	plan, err := app.PrepareGetTokensExtensionCodexConfigApply(PrepareGetTokensExtensionCodexConfigApplyInput{
+		ManifestPaths: []string{manifest},
+		TargetPath:    targetPath,
+		ConfigText:    configText,
+	})
+	if err != nil {
+		t.Fatalf("PrepareGetTokensExtensionCodexConfigApply returned error: %v", err)
+	}
+	if plan == nil || plan.ConfirmationToken == "" || plan.AppliedText == "" {
+		t.Fatalf("plan mismatch: %#v", plan)
+	}
+
+	result, err := app.ApplyGetTokensExtensionCodexConfigTransaction(ApplyGetTokensExtensionCodexConfigTransactionInput{
+		ManifestPaths:     []string{manifest},
+		TargetPath:        targetPath,
+		TempDir:           t.TempDir(),
+		ConfigText:        configText,
+		ConfirmationToken: plan.ConfirmationToken,
+	})
+	if err != nil {
+		t.Fatalf("ApplyGetTokensExtensionCodexConfigTransaction returned error: %v", err)
+	}
+	if result == nil || result.Status != "applied" || result.BackupPath == "" || result.TempPath == "" {
+		t.Fatalf("result mismatch: %#v", result)
+	}
+	body, err := os.ReadFile(targetPath)
+	if err != nil {
+		t.Fatalf("read target: %v", err)
+	}
+	if string(body) != plan.AppliedText {
+		t.Fatalf("target should match prepared applied text")
+	}
+	if strings.Contains(string(body), "literal-token-root-do-not-keep") {
+		t.Fatalf("root transaction should redact token literals: %s", body)
+	}
+}
+
+func TestPreviewGetTokensExtensionCodexConfigDryRunInputMapperPreservesReadOnlyInput(t *testing.T) {
+	input := PreviewGetTokensExtensionCodexConfigDryRunInput{
+		ManifestPaths: []string{"manifest-a.json"},
+		Roots: []GetTokensExtensionRoot{{
+			ID:       "root-a",
+			Path:     "/tmp/root-a",
+			ReadOnly: false,
+		}},
+		StatePath:  "/tmp/gettokens-extension-state.json",
+		TargetPath: "/tmp/codex-config.toml",
+		ConfigText: "bearer_token = \"do-not-drop-before-redaction\"",
+	}
+
+	core := mapPreviewGetTokensExtensionCodexConfigDryRunInput(input)
+	if len(core.ManifestPaths) != 1 || core.ManifestPaths[0] != input.ManifestPaths[0] {
+		t.Fatalf("manifest paths mismatch: %#v", core.ManifestPaths)
+	}
+	if len(core.Roots) != 1 || core.Roots[0].ID != "root-a" || core.Roots[0].Path != "/tmp/root-a" || !core.Roots[0].ReadOnly {
+		t.Fatalf("roots mismatch: %#v", core.Roots)
+	}
+	if core.StatePath != input.StatePath || core.TargetPath != input.TargetPath || core.ConfigText != input.ConfigText {
+		t.Fatalf("dry-run input mapper dropped read-only fields: %#v", core)
+	}
+
+	input.ManifestPaths[0] = "mutated.json"
+	if core.ManifestPaths[0] == "mutated.json" {
+		t.Fatalf("manifest paths should be cloned, got %#v", core.ManifestPaths)
+	}
+}
+
+func TestGetTokensExtensionCodexConfigTransactionInputMappersPreserveFields(t *testing.T) {
+	prepareInput := PrepareGetTokensExtensionCodexConfigApplyInput{
+		ManifestPaths: []string{"manifest-a.json"},
+		Roots:         []GetTokensExtensionRoot{{ID: "root-a", Path: "/tmp/root-a"}},
+		StatePath:     "/tmp/state.json",
+		TargetPath:    "/tmp/target.toml",
+		ConfigText:    "model = \"gpt-5\"\n",
+	}
+	prepareCore := mapPrepareGetTokensExtensionCodexConfigApplyInput(prepareInput)
+	if prepareCore.TargetPath != prepareInput.TargetPath || prepareCore.ConfigText != prepareInput.ConfigText || prepareCore.StatePath != prepareInput.StatePath {
+		t.Fatalf("prepare mapper dropped fields: %#v", prepareCore)
+	}
+	if len(prepareCore.ManifestPaths) != 1 || len(prepareCore.Roots) != 1 || !prepareCore.Roots[0].ReadOnly {
+		t.Fatalf("prepare mapper roots/manifest mismatch: %#v", prepareCore)
+	}
+
+	applyInput := ApplyGetTokensExtensionCodexConfigTransactionInput{
+		ManifestPaths:      []string{"manifest-a.json"},
+		Roots:              []GetTokensExtensionRoot{{ID: "root-a", Path: "/tmp/root-a"}},
+		StatePath:          "/tmp/state.json",
+		TargetPath:         "/tmp/target.toml",
+		TempDir:            "/tmp/stage",
+		ConfigText:         "model = \"gpt-5\"\n",
+		ConfirmationToken:  "token",
+		SkipVerifyReadback: true,
+	}
+	applyCore := mapApplyGetTokensExtensionCodexConfigTransactionInput(applyInput)
+	if applyCore.TargetPath != applyInput.TargetPath || applyCore.TempDir != applyInput.TempDir || applyCore.ConfigText != applyInput.ConfigText || applyCore.ConfirmationToken != applyInput.ConfirmationToken || !applyCore.SkipVerifyReadback {
+		t.Fatalf("apply mapper dropped fields: %#v", applyCore)
+	}
+	if len(applyCore.ManifestPaths) != 1 || len(applyCore.Roots) != 1 || !applyCore.Roots[0].ReadOnly {
+		t.Fatalf("apply mapper roots/manifest mismatch: %#v", applyCore)
 	}
 }

@@ -7,6 +7,7 @@ import SegmentedControl from '../../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { RelayModelEditorModal } from './RelayEditors';
 import StatusSnippetPanel from './StatusSnippetPanel';
+import type { StatusQuotaEvidenceSectionState } from '../model/quotaEvidenceSection';
 import {
   buildClaudeCodeSettingsDiff,
   buildCodexLocalApplyDiff,
@@ -23,6 +24,181 @@ import type { RelayProviderOption } from '../model/relayProviderCatalog';
 import { RELAY_CODEX_DEFAULT_MODEL } from '../../accounts/model/accountConfig';
 
 type LocalCliPanelTarget = 'codex' | 'claude';
+
+export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEvidenceSectionState }) {
+  if (state.items.length === 0 && !state.notice) {
+    return null;
+  }
+
+  return (
+    <section
+      className="card-swiss grid gap-4 p-4"
+      data-status-quota-evidence-section="true"
+    >
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            QUOTA EVIDENCE
+          </div>
+          <div className="mt-1 font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+            Runtime authority facts
+          </div>
+        </div>
+        <div className="shrink-0 border-2 border-[var(--border-color)] px-3 py-1 text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+          {state.items.length} FACT{state.items.length === 1 ? '' : 'S'}
+        </div>
+      </div>
+
+      {state.notice ? (
+        <div
+          className="grid gap-2 border border-[var(--border-color)] bg-[var(--bg-elevated)] px-4 py-3"
+          data-status-quota-evidence-empty="true"
+        >
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            {state.notice.eyebrow}
+          </div>
+          <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+            {state.notice.title}
+          </div>
+          <div className="font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-muted)]">
+            {state.notice.description}
+          </div>
+          {state.notice.unscopedMissingFactCount > 0 ? (
+            <div
+              className="grid gap-1 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2"
+              data-status-quota-evidence-missing-unscoped="true"
+            >
+              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                UNSCOPED PAYLOADS MISSING EXPLICIT FACT
+              </div>
+              <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                {state.notice.unscopedMissingFactCount} UNSCOPED PAYLOAD
+                {state.notice.unscopedMissingFactCount === 1 ? '' : 'S'} MISSING EXPLICIT FACT
+              </div>
+              {state.notice.unscopedMissingFactSamples?.length ? (
+                <div className="grid gap-2 pt-1" data-status-quota-evidence-unscoped-samples="true">
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    UNSCOPED TRACE SAMPLES
+                  </div>
+                  <ul className="grid gap-1">
+                    {state.notice.unscopedMissingFactSamples.map((label) => (
+                      <li
+                        key={label}
+                        className="break-all font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)]"
+                      >
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    NON-AUTHORITATIVE TRACE
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {state.notice.accountKeys?.length ? (
+            <div className="grid gap-2 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
+              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                MISSING EXPLICIT FACT
+              </div>
+              <ul className="grid gap-1" data-status-quota-evidence-missing-accounts="true">
+                {state.notice.accountKeys.map((accountKey) => (
+                  <li
+                    key={accountKey}
+                    className="break-all font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)]"
+                  >
+                    {accountKey}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="grid gap-3">
+        {state.items.map((item) => {
+          const { evidence } = item;
+          const rows = [
+            ['STATE', evidence.view.stateLabel],
+            ['SOURCE', evidence.view.sourceLabel],
+            ['FRESHNESS', evidence.view.freshnessLabel],
+            ['CONFIDENCE', evidence.view.confidenceLabel],
+            ['RISK', evidence.view.riskLabel],
+            ['SUMMARY', evidence.summary],
+          ];
+
+          return (
+            <article
+              key={`${item.accountKey || 'unknown'}:${item.updatedAt || evidence.summary}`}
+              className="grid gap-3 border border-[var(--border-color)] bg-[var(--bg-elevated)] p-3"
+              data-status-quota-evidence-item="true"
+            >
+              <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div className="min-w-0">
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {evidence.title}
+                  </div>
+                  <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                    {item.accountKey || 'UNSCOPED'}
+                  </div>
+                </div>
+                {item.updatedAt ? (
+                  <div className="shrink-0 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    UPDATED {item.updatedAt}
+                  </div>
+                ) : null}
+              </div>
+
+              <dl className="grid gap-2 md:grid-cols-2">
+                {rows.map(([label, value]) => (
+                  <div key={label} className="grid gap-1 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
+                    <dt className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      {label}
+                    </dt>
+                    <dd className="font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                      {value}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+
+              {evidence.view.explanation ? (
+                <div className="grid gap-1 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    EXPLANATION
+                  </div>
+                  <div className="font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)]">
+                    {evidence.view.explanation}
+                  </div>
+                </div>
+              ) : null}
+
+              {evidence.view.evidenceRefs.length > 0 ? (
+                <div className="grid gap-2 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    EVIDENCE REFS
+                  </div>
+                  <ul className="grid gap-1">
+                    {evidence.view.evidenceRefs.map((ref) => (
+                      <li
+                        key={ref}
+                        className="break-all font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)]"
+                      >
+                        {ref}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 export function formatRelayProviderSelectLabel(provider: RelayProviderOption) {
   const providerID = provider.id.trim();

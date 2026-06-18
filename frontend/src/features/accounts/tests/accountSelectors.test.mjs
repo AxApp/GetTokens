@@ -64,6 +64,13 @@ test('quota refresh falls back to full loading only before the first quota paylo
     status: 'loading',
     planType: '',
     windows: [],
+    fact: {
+      state: 'unknown',
+      freshness: 'unknown',
+      confidence: 'none',
+      risk: 'unknown',
+      explanation: 'Quota runtime status has not been observed yet.',
+    },
   });
 });
 
