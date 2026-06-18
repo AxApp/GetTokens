@@ -111,6 +111,18 @@ git diff --check
 
 4. `AGENTS.md` 只保留项目级短入口；执行细则留在 `gettokens-ops-governance` 和本文档。
 
+## 混合脏工作区下的提交收口
+
+当一个 feature 已完成，但同一工作区还存在另一条需求的 tracked/untracked 改动时，提交本身必须先被视为一次治理动作，而不是简单 `git add .`：
+
+1. 先读取 `git status --short --branch -uall`，把每个变更分为本 feature、无关用户改动、生成验收证据、混合内容文件。
+2. 本 feature 使用精确 pathspec 或 hunk 暂存；混合 memory/docs 文件只暂存本 feature 段落，不能为了提交方便把其它需求记录一起带上。
+3. 对 browser DOM snapshot、截图等验收产物单独判断。如果生成时叠加了无关主题、布局或本地实验改动，就不能把它提交到另一个 feature slice；应保留为本地证据或重新在干净工作树生成。
+4. commit 前重新读取 `git diff --cached --name-only` 与 `git diff --cached --stat`，确认暂存面能逐项追溯到本 feature。
+5. 验证命令按本 feature 风险运行；最终说明要明确 residual dirty files 属于哪条并行需求，避免把“工作树不干净”误读成当前 feature 未完成。
+
+这个流程的执行入口在 `.agents/skills/gettokens-ops-governance/SKILL.md` 的 `Mixed Worktree Ship Hygiene`。它是跨功能的提交卫生规则，但还不是 repo-wide 硬约束，因此不升级到 `AGENTS.md`。
+
 ## 跨项目复用提示词
 
 将下面提示词粘到其它项目的 agent 会话中，让它按该项目上下文落地同类流程：

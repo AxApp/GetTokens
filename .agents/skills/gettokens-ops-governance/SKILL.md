@@ -154,6 +154,14 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - user-owned temporary artifacts that are intentionally not versioned
 - If generated screenshots or browser artifacts should not enter git, add or refine ignore rules before claiming cleanup is complete.
 
+### 3.3 Mixed Worktree Ship Hygiene
+- Use this when a completed feature must be committed while the repository also contains unrelated tracked or untracked work.
+- Start with `git status --short --branch -uall`, then classify every changed path as in-scope, unrelated user work, generated evidence, or mixed-content.
+- Stage only the closure set that can be traced to the feature. Prefer exact pathspecs and `git diff --cached --name-only`; use hunk staging only when one file contains both in-scope and unrelated sections.
+- For mixed memory/docs files, do not stage the whole file by convenience. Stage only the feature-specific entry, or use index-only staging so unrelated user notes remain in the working tree.
+- Treat browser DOM snapshots and screenshots as evidence, not automatically shippable artifacts. If they were generated while unrelated theme/layout changes were present, do not commit them into a different feature slice unless the dirty style state is intentionally part of that feature’s acceptance.
+- Before committing, re-run the relevant gates against the staged closure and explicitly report any residual dirty files as out-of-scope rather than absorbing them into the commit.
+
 ## 4. Subagent Delivery Loop
 - **Trigger**: Use this loop when a requirement will be implemented by delegated agents or when the user explicitly asks for `subagent` delivery.
 - **Controller Role**:
