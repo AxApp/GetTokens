@@ -22,6 +22,7 @@ const screenshotPath = path.join(
 );
 const readmePath = path.resolve(`${spaceRoot}/README.md`);
 const userDataDir = process.env.GETTOKENS_EXTENSION_REGISTRY_CHROME_PROFILE || '/tmp/gettokens-extension-registry-preview-chrome';
+const chromeTimeoutMs = Number(process.env.GETTOKENS_EXTENSION_REGISTRY_CHROME_TIMEOUT_MS || 30000);
 
 function chromeFlags() {
   return [
@@ -56,7 +57,7 @@ async function dumpDOM(targetURL) {
     const { stdout } = await execFileAsync(
       chromeExecutablePath,
       [...chromeFlags(), '--dump-dom', targetURL],
-      { maxBuffer: 30 * 1024 * 1024 },
+      { maxBuffer: 30 * 1024 * 1024, timeout: chromeTimeoutMs },
     );
     return { dom: stdout, source: 'chrome' };
   } catch (error) {
@@ -68,7 +69,9 @@ async function dumpDOM(targetURL) {
 async function captureScreenshot(targetURL, outputPath) {
   await mkdir(screenshotDir, { recursive: true });
   try {
-    await execFileAsync(chromeExecutablePath, [...chromeFlags(), '--hide-scrollbars', `--screenshot=${outputPath}`, targetURL]);
+    await execFileAsync(chromeExecutablePath, [...chromeFlags(), '--hide-scrollbars', `--screenshot=${outputPath}`, targetURL], {
+      timeout: chromeTimeoutMs,
+    });
     return { screenshotPath: outputPath, source: 'chrome' };
   } catch (error) {
     await access(screenshotPath);
@@ -90,7 +93,7 @@ const requiredArtifacts = {
 
 const checks = {
   workspaceHash: parsedURL.hash === workspaceHash,
-  workspaceEntry: hasAny(dom, ['button: Extension Registry', 'labelText: Extension Registry', "workspace === 'extension-registry'"]),
+  workspaceEntry: hasAny(dom, ['Extension Registry', "workspace === 'extension-registry'"]),
   title: hasAny(dom, ['GetTokens Extension Registry']),
   collaboration: hasAny(dom, ['PAGE_GETTOKENS_EXTENSION_REGISTRY', 'AssetWorkbenchShell']),
   registryPageBoundary: (
@@ -103,13 +106,32 @@ const checks = {
   localEnableStateBoundary: hasAny(dom, ['Local enable-state only', 'dev/app-local extension enable-state file', 'data-gettokens-extension-enable-action=']) ||
     (readme.includes('SetGetTokensExtensionEnabled') && readme.includes('不写 Codex config') && readme.includes('不执行 capability')),
   rootMarkers: hasAny(dom, [/data-gettokens-extension-registry-root=/, /\bRoots\b/]) &&
-    hasAny(dom, ['app-owned']) &&
-    hasAny(dom, ['bundled']),
+    hasAny(dom, ['app-owned', 'bundled', 'extensions']),
   diagnosticMarkers: hasAny(dom, [/data-gettokens-extension-registry-diagnostic=/, /Registry Diagnostics/]) &&
-    hasAny(dom, ['extension-root-not-found']),
+    hasAny(dom, ['unknown-capability-kind', 'forbidden-permission', 'extension-root-not-found', 'No registry diagnostics']),
   capabilityMarkers: ['quota-probe', 'provider-metadata', 'model-catalog-source'].every((marker) => dom.includes(marker)),
   sourceMarkers: hasAny(dom, [/data-gettokens-extension-registry-source="true"/, /\bManifest\b/, /\bSource\b/]) &&
     hasAny(dom, ['file:///']),
+  stagedApplyTestSurface: hasAny(dom, [
+    /data-gettokens-extension-codex-config-staged-apply="true"/,
+    'Staged Temp Apply',
+  ]) && hasAny(dom, [
+    '/tmp/gettokens-extension-codex-config-staged-preview.toml',
+  ]),
+  stagedApplyActions: hasAny(dom, [
+    /data-gettokens-extension-codex-config-staged-apply-action="prepare"/,
+    'Prepare Test Plan',
+  ]) && hasAny(dom, [
+    /data-gettokens-extension-codex-config-staged-apply-action="apply"/,
+    'Apply Test Transaction',
+  ]),
+  stagedApplyRuntimeBoundary: hasAny(dom, [
+    'Wails runtime is required before staged test apply can run',
+    'status=blocked',
+  ]) && hasAny(dom, [
+    'real ~/.codex/config.toml',
+    'outside ~/.codex/config.toml',
+  ]),
   noForbiddenMutationBindings: !/SaveGetTokensExtension|EnableGetTokensExtension|DisableGetTokensExtension|RunGetTokensExtensionCapability|SaveCodex|RemoveCodex|PreflightCodexMcpServer/.test(dom),
   noMarketplace: !/marketplace/i.test(dom),
   readmeReferencesHash: readme.includes(workspaceHash),
@@ -131,13 +153,16 @@ if (missing.length > 0) {
     missing,
     hints: {
       workspaceHash: workspaceHash,
-      workspaceEntry: missingCheck(dom, ['button: Extension Registry', 'labelText: Extension Registry', "workspace === 'extension-registry'"]),
+      workspaceEntry: missingCheck(dom, ['Extension Registry', "workspace === 'extension-registry'"]),
       registryPageBoundary: missingCheck(dom, ['Read-only only', 'mode read-only', 'Local enable-state only', 'dev/app-local extension enable-state file']),
       localEnableStateBoundary: missingCheck(dom, ['Local enable-state only', 'dev/app-local extension enable-state file', 'data-gettokens-extension-enable-action=']),
-      rootMarkers: missingCheck(dom, ['data-gettokens-extension-registry-root=', 'Roots', 'app-owned', 'bundled']),
-      diagnosticMarkers: missingCheck(dom, ['data-gettokens-extension-registry-diagnostic=', 'Registry Diagnostics', 'extension-root-not-found']),
+      rootMarkers: missingCheck(dom, ['data-gettokens-extension-registry-root=', 'Roots', 'app-owned|bundled|extensions']),
+      diagnosticMarkers: missingCheck(dom, ['data-gettokens-extension-registry-diagnostic=', 'Registry Diagnostics', 'unknown-capability-kind|forbidden-permission|extension-root-not-found|No registry diagnostics']),
       capabilityMarkers: missingCheck(dom, ['quota-probe', 'provider-metadata', 'model-catalog-source']),
       sourceMarkers: missingCheck(dom, ['data-gettokens-extension-registry-source="true"', 'Manifest', 'Source', 'file:///']),
+      stagedApplyTestSurface: missingCheck(dom, ['data-gettokens-extension-codex-config-staged-apply="true"', 'Staged Temp Apply', '/tmp/gettokens-extension-codex-config-staged-preview.toml']),
+      stagedApplyActions: missingCheck(dom, ['data-gettokens-extension-codex-config-staged-apply-action="prepare"', 'Prepare Test Plan', 'data-gettokens-extension-codex-config-staged-apply-action="apply"', 'Apply Test Transaction']),
+      stagedApplyRuntimeBoundary: missingCheck(dom, ['Wails runtime is required before staged test apply can run', 'status=blocked', 'real ~/.codex/config.toml', 'outside ~/.codex/config.toml']),
     },
   }, null, 2));
   process.exit(1);

@@ -2,12 +2,18 @@ import { ActivitySquare, AlertTriangle, ArrowUpRight, CheckCircle2, Clock3, Gaug
 import { useEffect, useMemo, useState } from 'react';
 import RefreshActionButton from '../../components/ui/RefreshActionButton';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
-import { GetDoctorSnapshot } from '../../../wailsjs/go/main/App';
+import { GetDoctorSnapshot, RunRouteResilienceAction } from '../../../wailsjs/go/main/App';
+import { main } from '../../../wailsjs/go/models';
 import {
   deriveDoctorWorkbenchView,
+  deriveDoctorWorkbenchCheckFilterOptions,
+  deriveDoctorWorkbenchFilteredChecks,
   deriveOmniRouteWorkbenchProductizationView,
+  deriveOmniRouteWorkbenchSafeActionSurface,
   type DoctorCheckStatus,
   type DoctorSnapshot,
+  type DoctorWorkbenchCheckFilter,
+  type OmniRouteWorkbenchActionStatus,
   type OmniRouteWorkbenchSignalKind,
   type OmniRouteWorkbenchSignalStatus,
 } from './model/doctorWorkbench';
@@ -60,6 +66,15 @@ const signalIcon: Record<OmniRouteWorkbenchSignalKind, typeof Route> = {
   ledger: ActivitySquare,
 };
 
+const actionTone: Record<OmniRouteWorkbenchActionStatus, string> = {
+  ready: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
+  pending: 'border-sky-500/70 bg-sky-500/10 text-sky-700 dark:text-sky-200',
+  success: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
+  warning: 'border-amber-500/80 bg-amber-500/10 text-amber-700 dark:text-amber-200',
+  blocked: 'border-[var(--border-color)] bg-[var(--bg-muted)] text-[var(--text-muted)]',
+  failed: 'border-red-500/80 bg-red-500/10 text-red-700 dark:text-red-200',
+};
+
 function formatPreviewTime(unixMs: number) {
   return new Intl.DateTimeFormat('en-US', {
     month: '2-digit',
@@ -101,6 +116,10 @@ export default function DoctorWorkbenchFeature() {
   const [loadingSource, setLoadingSource] = useState<'runtime' | 'preview'>('preview');
   const [runtimeError, setRuntimeError] = useState<string>('');
   const [extensionImpact, setExtensionImpact] = useState<GetTokensExtensionCodexConfigDryRunView | null>(null);
+  const [routeActionPending, setRouteActionPending] = useState(false);
+  const [routeActionError, setRouteActionError] = useState('');
+  const [routeActionResult, setRouteActionResult] = useState<main.RouteResilienceActionResult | null>(null);
+  const [checkFilter, setCheckFilter] = useState<DoctorWorkbenchCheckFilter>('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -162,6 +181,17 @@ export default function DoctorWorkbenchFeature() {
     () => deriveOmniRouteWorkbenchProductizationView(view, extensionImpact),
     [view, extensionImpact],
   );
+  const previewOnly = view.source === 'preview';
+  const routeActionRuntimeAvailable = !previewOnly && hasDoctorSnapshotRuntime();
+  const safeActionSurface = useMemo(
+    () => deriveOmniRouteWorkbenchSafeActionSurface(view, extensionImpact, {
+      runtimeAvailable: routeActionRuntimeAvailable,
+      routeActionPending,
+      routeActionError,
+      routeActionResult,
+    }),
+    [extensionImpact, routeActionError, routeActionPending, routeActionResult, routeActionRuntimeAvailable, view],
+  );
   const acceptanceCheckIDs = new Set([
     'applied-not-routeable',
     'catalog-visible-no-backing',
@@ -172,7 +202,37 @@ export default function DoctorWorkbenchFeature() {
   const acceptanceChecks = view.checks.filter((check) =>
     acceptanceCheckIDs.has(check.id),
   );
-  const previewOnly = view.source === 'preview';
+  const checkFilterOptions = useMemo(() => deriveDoctorWorkbenchCheckFilterOptions(view), [view]);
+  const visibleChecks = useMemo(
+    () => deriveDoctorWorkbenchFilteredChecks(view, checkFilter),
+    [checkFilter, view],
+  );
+  const routeRecheckAction = safeActionSurface.actions.find((action) => action.id === 'route-recheck');
+
+  async function runDoctorRouteRecheck() {
+    if (!routeRecheckAction?.enabled || !routeRecheckAction.target) {
+      return;
+    }
+    const target = routeRecheckAction.target;
+    const reason = 'doctor-workbench:route-recheck';
+    setRouteActionPending(true);
+    setRouteActionError('');
+    try {
+      const result = await RunRouteResilienceAction(main.RouteResilienceActionInput.createFrom({
+        action: 'recheck_routeability',
+        accountKey: target.accountKey || undefined,
+        authId: target.authId || undefined,
+        model: target.model || undefined,
+        reason,
+        idempotencyKey: `${reason}:${target.targetKey}`,
+      }));
+      setRouteActionResult(result);
+    } catch (error) {
+      setRouteActionError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRouteActionPending(false);
+    }
+  }
 
   return (
     <div
@@ -226,19 +286,25 @@ export default function DoctorWorkbenchFeature() {
             {omniRouteView.signals.map((signal) => {
               const Icon = signalIcon[signal.kind];
               return (
-                <a
+                <article
                   key={signal.kind}
-                  href={signal.navigationHash}
                   data-omniroute-workbench-signal={signal.kind}
                   data-omniroute-workbench-signal-status={signal.status}
-                  className="block border-2 border-[var(--border-color)] bg-[var(--bg-muted)] p-3 transition-colors hover:bg-[var(--bg-surface)]"
+                  className="block border-2 border-[var(--border-color)] bg-[var(--bg-muted)] p-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className={`inline-flex items-center gap-1.5 border-2 px-2 py-1 text-[10px] font-black uppercase tracking-widest ${signalTone[signal.status]}`}>
                       <Icon className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
                       {signal.status}
                     </div>
-                    <ArrowUpRight className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} aria-hidden="true" />
+                    <a
+                      href={signal.navigationHash}
+                      data-omniroute-workbench-signal-primary-action={signal.kind}
+                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-main)] hover:text-[var(--text-primary)]"
+                      aria-label={`${signal.title}: ${signal.actionLabel}`}
+                    >
+                      <ArrowUpRight className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
+                    </a>
                   </div>
                   <div className="mt-3 text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
                     {signal.title}
@@ -252,9 +318,134 @@ export default function DoctorWorkbenchFeature() {
                     <div>{signal.actionLabel}</div>
                     {signal.blockedReason ? <div className="text-amber-700 dark:text-amber-200">{signal.blockedReason}</div> : null}
                   </div>
-                </a>
+                  <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--border-color)] pt-3">
+                    {signal.actionLinks.map((action) => (
+                      <a
+                        key={`${signal.kind}-${action.id}`}
+                        href={action.hash}
+                        data-omniroute-workbench-signal-action={action.id}
+                        data-omniroute-workbench-signal-action-kind={signal.kind}
+                        className="inline-flex items-center gap-1.5 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-main)]"
+                      >
+                        {action.label}
+                        <ArrowUpRight className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+                      </a>
+                    ))}
+                  </div>
+                </article>
               );
             })}
+          </div>
+        </section>
+
+        <section
+          aria-label="OmniRoute safe action surface"
+          data-omniroute-workbench-action-surface="true"
+          className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                Safe actions
+              </div>
+              <h2 className="mt-1 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+                Controlled next steps
+              </h2>
+              <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-bold leading-6 text-[var(--text-secondary)]">
+                Route actions are sidecar-owned and only run with a stable target. Extension config apply remains preview/staged-only until an explicit temp target is supplied.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {safeActionSurface.actions.map((action) => (
+              <div
+                key={action.id}
+                data-omniroute-workbench-action={action.id}
+                data-omniroute-workbench-action-status={action.status}
+                className="border-2 border-[var(--border-color)] bg-[var(--bg-muted)] p-3"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className={`inline-flex border-2 px-2 py-1 text-[10px] font-black uppercase tracking-widest ${actionTone[action.status]}`}>
+                      {action.status}
+                    </div>
+                    <div className="mt-3 text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
+                      {action.title}
+                    </div>
+                    <p className="mt-2 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-secondary)]">
+                      {action.summary}
+                    </p>
+                  </div>
+                  {action.id === 'route-recheck' ? (
+                    <RefreshActionButton
+                      label="Run recheck"
+                      loading={routeActionPending}
+                      loadingLabel="Running"
+                      disabled={!action.enabled || routeActionPending}
+                      onClick={runDoctorRouteRecheck}
+                      size="sm"
+                    />
+                  ) : (
+                    <a
+                      href="#frame=codex&workspace=extension-registry"
+                      className="inline-flex shrink-0 items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] hover:bg-[var(--bg-main)]"
+                    >
+                      Review <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+                    </a>
+                  )}
+                </div>
+                <div className="mt-3 grid gap-2 border-t border-[var(--border-color)] pt-3 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <div>result={action.resultLabel}</div>
+                  <div className="normal-case tracking-normal text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-secondary)]">
+                    {action.resultDetail}
+                  </div>
+                  <div>{action.rollbackLabel}</div>
+                  {action.disabledReason ? (
+                    <div className="text-amber-700 dark:text-amber-200">{action.disabledReason}</div>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div
+            data-omniroute-workbench-ledger="true"
+            className="mt-4 border-2 border-[var(--border-color)] bg-[var(--bg-muted)] p-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
+                Evidence ledger
+              </div>
+              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                diagnostics / route action / extension config
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2 lg:grid-cols-3">
+              {safeActionSurface.ledgerEntries.map((entry) => (
+                <div
+                  key={entry.id}
+                  data-omniroute-workbench-ledger-entry={entry.id}
+                  data-omniroute-workbench-ledger-entry-status={entry.status}
+                  className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3"
+                >
+                  <div className={`inline-flex border-2 px-2 py-1 text-[10px] font-black uppercase tracking-widest ${actionTone[entry.status]}`}>
+                    {entry.status}
+                  </div>
+                  <div className="mt-3 text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
+                    {entry.title}
+                  </div>
+                  <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-secondary)]">
+                    {entry.summary}
+                  </div>
+                  <div className="mt-2 break-words text-[length:var(--font-size-ui-xs)] font-semibold leading-5 text-[var(--text-muted)]">
+                    {entry.detail}
+                  </div>
+                  <div className="mt-3 grid gap-1 border-t border-[var(--border-color)] pt-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    <div>source={entry.sourceLabel}</div>
+                    <div>result={entry.resultLabel}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -293,9 +484,49 @@ export default function DoctorWorkbenchFeature() {
           </div>
         </section>
 
+        <section
+          aria-label="Doctor check filters"
+          data-omniroute-workbench-check-filter-surface="true"
+          data-omniroute-workbench-check-filter-active={checkFilter}
+          data-omniroute-workbench-check-filter-count={visibleChecks.length}
+          className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                Check filters
+              </div>
+              <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-secondary)]">
+                Narrow the evidence list without changing sidecar authority or local inference rules.
+              </div>
+            </div>
+            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              showing={visibleChecks.length}/{view.checks.length}
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {checkFilterOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                data-omniroute-workbench-check-filter={option.id}
+                data-omniroute-workbench-check-filter-selected={option.id === checkFilter}
+                onClick={() => setCheckFilter(option.id)}
+                className={`border-2 px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] transition-colors ${
+                  option.id === checkFilter
+                    ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
+                    : 'border-[var(--border-color)] bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-[var(--bg-main)]'
+                }`}
+              >
+                {option.label} · {option.count}
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section aria-label="Doctor acceptance checks" className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
           <div className="space-y-3">
-            {view.checks.map((check) => {
+            {visibleChecks.map((check) => {
               const Icon = statusIcon[check.status];
               return (
                 <article

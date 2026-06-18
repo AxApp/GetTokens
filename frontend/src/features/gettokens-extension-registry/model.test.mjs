@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   deriveGetTokensExtensionCodexConfigDryRunView,
+  deriveGetTokensExtensionCodexConfigStagedApplyView,
   deriveGetTokensExtensionRegistryView,
   formatRegistryGeneratedAt,
   formatRegistryStateLabel,
@@ -223,4 +224,86 @@ test('deriveGetTokensExtensionCodexConfigDryRunView redacts sensitive preview fi
   assert.match(view.operations[1].patchPlan.beforeSnippet, /bearer_token_env_var = "OPENAI_MCP_TOKEN"/);
   assert.match(view.operations[1].patchPlan.afterSnippet, /Cookie = "<redacted>"/);
   assert.equal(view.validation[1].message, '<redacted> <redacted>');
+});
+
+test('deriveGetTokensExtensionCodexConfigStagedApplyView blocks unsafe or non-runtime apply', () => {
+  const noRuntime = deriveGetTokensExtensionCodexConfigStagedApplyView({
+    runtimeAvailable: false,
+    targetPath: '/tmp/gettokens-extension-codex-config-staged-preview.toml',
+    tempDir: '/tmp',
+    operationCount: 2,
+    validationErrorCount: 0,
+  });
+  assert.equal(noRuntime.status, 'blocked');
+  assert.equal(noRuntime.enabledPrepare, false);
+  assert.equal(noRuntime.enabledApply, false);
+  assert.match(noRuntime.disabledReason, /Wails runtime/);
+
+  const realConfig = deriveGetTokensExtensionCodexConfigStagedApplyView({
+    runtimeAvailable: true,
+    targetPath: '~/.codex/config.toml',
+    tempDir: '/tmp',
+    operationCount: 2,
+    validationErrorCount: 0,
+  });
+  assert.equal(realConfig.status, 'blocked');
+  assert.match(realConfig.disabledReason, /real ~\/\.codex\/config\.toml is blocked/);
+
+  const validationBlocked = deriveGetTokensExtensionCodexConfigStagedApplyView({
+    runtimeAvailable: true,
+    targetPath: '/tmp/gettokens-extension-codex-config-staged-preview.toml',
+    tempDir: '/tmp',
+    operationCount: 2,
+    validationErrorCount: 1,
+  });
+  assert.equal(validationBlocked.status, 'blocked');
+  assert.match(validationBlocked.disabledReason, /validation errors/);
+});
+
+test('deriveGetTokensExtensionCodexConfigStagedApplyView exposes prepare apply and rollback state', () => {
+  const ready = deriveGetTokensExtensionCodexConfigStagedApplyView({
+    runtimeAvailable: true,
+    targetPath: '/tmp/gettokens-extension-codex-config-staged-preview.toml',
+    tempDir: '/tmp',
+    operationCount: 2,
+    validationErrorCount: 0,
+  });
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.enabledPrepare, true);
+  assert.equal(ready.enabledApply, false);
+
+  const prepared = deriveGetTokensExtensionCodexConfigStagedApplyView({
+    runtimeAvailable: true,
+    targetPath: '/tmp/gettokens-extension-codex-config-staged-preview.toml',
+    tempDir: '/tmp',
+    operationCount: 2,
+    validationErrorCount: 0,
+    plan: {
+      confirmationToken: 'confirm-test-token',
+      diffPreview: ['token = "secret-token-should-redact"'],
+      appliedOperations: ['skills.config:append'],
+    },
+  });
+  assert.equal(prepared.status, 'prepared');
+  assert.equal(prepared.enabledApply, true);
+  assert.match(prepared.confirmationLabel, /confirm-test-token/);
+  assert.deepEqual(prepared.diffPreview, ['token = "<redacted>"']);
+  assert.deepEqual(prepared.appliedOperations, ['skills.config:append']);
+
+  const failed = deriveGetTokensExtensionCodexConfigStagedApplyView({
+    runtimeAvailable: true,
+    targetPath: '/tmp/gettokens-extension-codex-config-staged-preview.toml',
+    tempDir: '/tmp',
+    operationCount: 2,
+    validationErrorCount: 0,
+    result: {
+      status: 'failed',
+      rolledBack: true,
+      errorStage: 'verify',
+      appliedOperations: ['skills.config:append'],
+    },
+  });
+  assert.equal(failed.status, 'failed');
+  assert.equal(failed.resultLabel, 'failed');
+  assert.match(failed.rollbackLabel, /rolledBack=true stage=verify/);
 });

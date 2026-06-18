@@ -1,5 +1,7 @@
 import {
+  ApplyGetTokensExtensionCodexConfigTransaction,
   GetGetTokensExtensionRegistrySnapshot,
+  PrepareGetTokensExtensionCodexConfigApply,
   PreviewGetTokensExtensionCodexConfigDryRun,
   SetGetTokensExtensionEnabled,
 } from '../../../wailsjs/go/main/App';
@@ -49,4 +51,22 @@ export async function previewGetTokensExtensionCodexConfigDryRun(
   return PreviewGetTokensExtensionCodexConfigDryRun(
     input || ({} as main.PreviewGetTokensExtensionCodexConfigDryRunInput),
   ) as Promise<main.GetTokensExtensionCodexConfigDryRunPreview>;
+}
+
+export async function prepareGetTokensExtensionCodexConfigApply(
+  input: main.PrepareGetTokensExtensionCodexConfigApplyInput,
+): Promise<main.GetTokensExtensionCodexConfigStagedApplyPlan> {
+  if (!hasWailsAppBindings()) {
+    throw new Error('Wails runtime is required before staged Codex config apply can be prepared.');
+  }
+  return PrepareGetTokensExtensionCodexConfigApply(input) as Promise<main.GetTokensExtensionCodexConfigStagedApplyPlan>;
+}
+
+export async function applyGetTokensExtensionCodexConfigTransaction(
+  input: main.ApplyGetTokensExtensionCodexConfigTransactionInput,
+): Promise<main.GetTokensExtensionCodexConfigStagedApplyResult> {
+  if (!hasWailsAppBindings()) {
+    throw new Error('Wails runtime is required before staged Codex config apply can run.');
+  }
+  return ApplyGetTokensExtensionCodexConfigTransaction(input) as Promise<main.GetTokensExtensionCodexConfigStagedApplyResult>;
 }

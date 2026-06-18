@@ -60,13 +60,40 @@ test('doctor feature source file recognizes sidecar diagnostics runtime source',
   assert.match(wailsModelsSource, /droppedReason\?: DoctorRouteEvidencePayload/);
   assert.match(modelSource, /extractTypedDoctorRouteEvidence/);
   assert.match(modelSource, /deriveOmniRouteWorkbenchProductizationView/);
+  assert.match(modelSource, /deriveOmniRouteWorkbenchSafeActionSurface/);
+  assert.match(modelSource, /deriveOmniRouteWorkbenchLedgerEntries/);
+  assert.match(modelSource, /deriveDoctorWorkbenchCheckFilterOptions/);
+  assert.match(modelSource, /deriveDoctorWorkbenchFilteredChecks/);
+  assert.match(modelSource, /DoctorWorkbenchCheckFilter/);
   assert.match(modelSource, /OmniRouteWorkbenchSignalKind/);
+  assert.match(modelSource, /OmniRouteWorkbenchSignalActionView/);
+  assert.match(modelSource, /OmniRouteWorkbenchSafeActionView/);
+  assert.match(modelSource, /diagnostics-snapshot/);
+  assert.match(modelSource, /route-action-ledger/);
+  assert.match(modelSource, /extension-config-ledger/);
+  assert.match(modelSource, /buildAccountDetailHashFromEvidence/);
   assert.match(modelSource, /sourceLabel/);
   assert.match(modelSource, /summaryLabel/);
   assert.match(featureSource, /data-omniroute-workbench-summary="true"/);
   assert.match(featureSource, /data-omniroute-workbench-signal=/);
+  assert.match(featureSource, /data-omniroute-workbench-signal-action=/);
+  assert.match(featureSource, /data-omniroute-workbench-signal-action-kind=/);
+  assert.match(featureSource, /data-omniroute-workbench-signal-primary-action=/);
+  assert.match(featureSource, /data-omniroute-workbench-action-surface="true"/);
+  assert.match(featureSource, /data-omniroute-workbench-action=/);
+  assert.match(featureSource, /data-omniroute-workbench-action-status=/);
+  assert.match(featureSource, /data-omniroute-workbench-ledger="true"/);
+  assert.match(featureSource, /data-omniroute-workbench-ledger-entry=/);
+  assert.match(featureSource, /diagnostics \/ route action \/ extension config/);
+  assert.match(featureSource, /data-omniroute-workbench-check-filter-surface="true"/);
+  assert.match(featureSource, /data-omniroute-workbench-check-filter=/);
+  assert.match(featureSource, /data-omniroute-workbench-check-filter-active=/);
+  assert.match(featureSource, /Narrow the evidence list without changing sidecar authority/);
   assert.match(featureSource, /previewGetTokensExtensionCodexConfigDryRun/);
   assert.match(featureSource, /deriveGetTokensExtensionCodexConfigDryRunView/);
+  assert.match(featureSource, /RunRouteResilienceAction/);
+  assert.match(featureSource, /recheck_routeability/);
+  assert.match(featureSource, /doctor-workbench:route-recheck/);
   assert.match(featureSource, /source=\$\{view\.source\}/);
   assert.match(featureSource, /item\.sourceLabel/);
   assert.match(featureSource, /item\.summaryLabel/);
@@ -87,27 +114,35 @@ test('doctor feature source file recognizes sidecar diagnostics runtime source',
   assert.match(featureSource, /item\.routeBlockingLabel/);
   assert.match(featureSource, /item\.routeFallbackState/);
   assert.match(appBindingTypeSource, /GetDoctorSnapshot\(arg1:main\.DoctorSnapshotInput\):Promise<main\.DoctorSnapshot>/);
+  assert.match(appBindingTypeSource, /RunRouteResilienceAction\(arg1:main\.RouteResilienceActionInput\):Promise<main\.RouteResilienceActionResult>/);
   assert.match(appBindingSource, /GetDoctorSnapshot/);
+  assert.match(appBindingSource, /RunRouteResilienceAction/);
   assert.doesNotMatch(wailsModelsSource, /RepairDoctorSnapshot|ApplyDoctorRepair|MutateDoctorSnapshot/);
   assert.doesNotMatch(appBindingTypeSource, /RepairDoctorSnapshot|ApplyDoctorRepair|MutateDoctorSnapshot/);
   assert.doesNotMatch(appBindingSource, /RepairDoctorSnapshot|ApplyDoctorRepair|MutateDoctorSnapshot/);
+  assert.doesNotMatch(featureSource, /PrepareGetTokensExtensionCodexConfigApply|ApplyGetTokensExtensionCodexConfigTransaction/);
 });
 
 test('doctor entry is wired to CodexPage and uses Wails runtime before preview fallback', async () => {
-  const [codexPageSource, featureSource] = await Promise.all([
+  const [codexPageSource, featureSource, sidebarSource] = await Promise.all([
     readFile(new URL('../../../pages/CodexPage.tsx', import.meta.url), 'utf8'),
     readFile(new URL('../DoctorWorkbenchFeature.tsx', import.meta.url), 'utf8'),
+    readFile(new URL('../../../components/biz/Sidebar.tsx', import.meta.url), 'utf8'),
   ]);
 
   assert.match(codexPageSource, /workspace === 'doctor-workbench'/);
   assert.match(codexPageSource, /<DoctorWorkbenchFeature \/>/);
-  assert.match(featureSource, /import \{ GetDoctorSnapshot \} from '..\/..\/..\/wailsjs\/go\/main\/App'/);
+  assert.match(sidebarSource, /id: 'doctor-workbench'/);
+  assert.match(sidebarSource, /labelText: 'Doctor Workbench'/);
+  assert.match(featureSource, /import \{ GetDoctorSnapshot, RunRouteResilienceAction \} from '..\/..\/..\/wailsjs\/go\/main\/App'/);
   assert.match(featureSource, /hasDoctorSnapshotRuntime/);
   assert.match(featureSource, /GetDoctorSnapshot\?: unknown/);
   assert.match(featureSource, /GetDoctorSnapshot\(\{ scope: 'codex', includeEvidence: true, maxEvidencePerCheck: 4 \}\)/);
+  assert.match(featureSource, /RunRouteResilienceAction\(main\.RouteResilienceActionInput\.createFrom/);
   assert.match(featureSource, /getDoctorWorkbenchPreviewSnapshot\(\)/);
   assert.match(featureSource, /source=\$\{view\.source\}/);
   assert.match(featureSource, /previewOnly \? 'preview-only' : loadingSource/);
   assert.match(featureSource, /without repair mutations/);
   assert.doesNotMatch(featureSource, /RepairDoctorSnapshot|ApplyDoctorRepair|MutateDoctorSnapshot/);
+  assert.doesNotMatch(featureSource, /PrepareGetTokensExtensionCodexConfigApply|ApplyGetTokensExtensionCodexConfigTransaction/);
 });

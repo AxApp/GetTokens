@@ -148,6 +148,30 @@ export interface GetTokensExtensionCodexConfigTomlPatchPlanView {
   validation: string[];
 }
 
+export type GetTokensExtensionCodexConfigStagedApplyStatus =
+  | 'blocked'
+  | 'ready'
+  | 'preparing'
+  | 'prepared'
+  | 'applying'
+  | 'applied'
+  | 'failed';
+
+export interface GetTokensExtensionCodexConfigStagedApplyView {
+  status: GetTokensExtensionCodexConfigStagedApplyStatus;
+  targetPath: string;
+  tempDir: string;
+  enabledPrepare: boolean;
+  enabledApply: boolean;
+  disabledReason: string;
+  confirmationLabel: string;
+  diffPreview: string[];
+  appliedOperations: string[];
+  resultLabel: string;
+  rollbackLabel: string;
+  errorDetail: string;
+}
+
 export function deriveGetTokensExtensionRegistryView(
   snapshot: main.GetTokensExtensionRegistrySnapshot,
   options: GetTokensExtensionRegistryViewOptions = {},
@@ -222,6 +246,88 @@ export function deriveGetTokensExtensionCodexConfigDryRunView(
       message: redactCodexConfigSensitiveText(item.message || ''),
     })),
   };
+}
+
+export function deriveGetTokensExtensionCodexConfigStagedApplyView({
+  runtimeAvailable,
+  targetPath,
+  tempDir,
+  operationCount,
+  validationErrorCount,
+  preparing = false,
+  applying = false,
+  plan,
+  result,
+  error = '',
+}: {
+  runtimeAvailable: boolean;
+  targetPath: string;
+  tempDir: string;
+  operationCount: number;
+  validationErrorCount: number;
+  preparing?: boolean;
+  applying?: boolean;
+  plan?: Partial<main.GetTokensExtensionCodexConfigStagedApplyPlan> | null;
+  result?: Partial<main.GetTokensExtensionCodexConfigStagedApplyResult> | null;
+  error?: string;
+}): GetTokensExtensionCodexConfigStagedApplyView {
+  const cleanTargetPath = String(targetPath || '').trim();
+  const cleanTempDir = String(tempDir || '').trim();
+  const planReady = Boolean(plan?.confirmationToken);
+  const hasResult = Boolean(result?.status);
+  const hasError = Boolean(error);
+  const safeTarget = isExplicitTempCodexConfigTarget(cleanTargetPath);
+  const disabledReason = !runtimeAvailable
+    ? 'Wails runtime is required before staged test apply can run.'
+    : !safeTarget
+      ? 'Staged apply requires an explicit /tmp or /private/tmp target path; real ~/.codex/config.toml is blocked.'
+      : !cleanTempDir
+        ? 'Staged apply requires an explicit temp dir.'
+        : operationCount <= 0
+          ? 'No dry-run operation is available to stage.'
+          : validationErrorCount > 0
+            ? 'Dry-run validation errors must be resolved before staging.'
+            : '';
+  const status: GetTokensExtensionCodexConfigStagedApplyStatus = preparing
+    ? 'preparing'
+    : applying
+      ? 'applying'
+      : hasError || (hasResult && result?.status !== 'applied')
+        ? 'failed'
+        : result?.status === 'applied'
+          ? 'applied'
+          : planReady
+            ? 'prepared'
+            : disabledReason
+              ? 'blocked'
+              : 'ready';
+  return {
+    status,
+    targetPath: cleanTargetPath || 'not-set',
+    tempDir: cleanTempDir || 'not-set',
+    enabledPrepare: !disabledReason && !preparing && !applying,
+    enabledApply: !disabledReason && planReady && !preparing && !applying,
+    disabledReason,
+    confirmationLabel: planReady ? `confirmation=${plan?.confirmationToken}` : 'Prepare creates a one-use confirmation token.',
+    diffPreview: (plan?.diffPreview || []).map((line) => redactCodexConfigSensitiveText(String(line))),
+    appliedOperations: (result?.appliedOperations || plan?.appliedOperations || []).map((item) => String(item)),
+    resultLabel: hasResult ? String(result?.status || 'unknown') : 'No staged transaction has run.',
+    rollbackLabel: hasResult
+      ? `rolledBack=${String(Boolean(result?.rolledBack))}${result?.errorStage ? ` stage=${result.errorStage}` : ''}`
+      : 'Rollback result appears after apply/verify runs.',
+    errorDetail: error || '',
+  };
+}
+
+function isExplicitTempCodexConfigTarget(targetPath: string): boolean {
+  const clean = targetPath.trim();
+  if (!clean) {
+    return false;
+  }
+  if (clean.includes('/.codex/config.toml') || clean === '~/.codex/config.toml') {
+    return false;
+  }
+  return clean.startsWith('/tmp/') || clean.startsWith('/private/tmp/');
 }
 
 function readCodexConfigTomlPatchPlan(

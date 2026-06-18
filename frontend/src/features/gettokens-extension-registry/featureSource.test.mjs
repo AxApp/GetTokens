@@ -32,6 +32,9 @@ test('extension registry feature consumes snapshot plus local enable-state bindi
 
   assert.match(apiSource, /GetGetTokensExtensionRegistrySnapshot/);
   assert.match(apiSource, /SetGetTokensExtensionEnabled/);
+  assert.match(apiSource, /PrepareGetTokensExtensionCodexConfigApply/);
+  assert.match(apiSource, /ApplyGetTokensExtensionCodexConfigTransaction/);
+  assert.match(apiSource, /Wails runtime is required before staged Codex config apply/);
   assert.match(codexPageSource, /workspace === 'extension-registry'/);
   assert.match(codexPageSource, /<GetTokensExtensionRegistryFeature \/>/);
   assert.match(sidebarSource, /id: 'extension-registry'/);
@@ -48,6 +51,11 @@ test('extension registry feature consumes snapshot plus local enable-state bindi
   assert.match(source, /data-gettokens-extension-enable-action=/);
   assert.match(source, /dev\/app-local extension enable-state file/);
   assert.match(source, /不写 Codex config，不执行 capability/);
+  assert.match(source, /data-gettokens-extension-codex-config-staged-apply="true"/);
+  assert.match(source, /data-gettokens-extension-codex-config-staged-apply-action="prepare"/);
+  assert.match(source, /data-gettokens-extension-codex-config-staged-apply-action="apply"/);
+  assert.match(source, /stagedApplyTestTargetPath = '\/tmp\/gettokens-extension-codex-config-staged-preview\.toml'/);
+  assert.match(source, /未写真实 ~\/\.codex\/config\.toml/);
   assert.match(source, /展示 extension registry snapshot、diagnostics、capability kinds、source\/root 信息/);
   assert.doesNotMatch(source, /SaveCodex|RemoveCodex|OpenCodexSkillInFinder|PreflightCodexMcpServer/);
   assert.doesNotMatch(source, /marketplace/i);

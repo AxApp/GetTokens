@@ -1,7 +1,10 @@
 import {
   buildQuotaFactEvidenceView,
 } from '../../accounts/model/accountQuota.ts';
-import { buildRouteResilienceEvidenceDigestsFromDroppedReasons } from '../../channel-routing/model/channelRouting.ts';
+import {
+  buildRouteResilienceActionResultDigest,
+  buildRouteResilienceEvidenceDigestsFromDroppedReasons,
+} from '../../channel-routing/model/channelRouting.ts';
 import type { GetTokensExtensionCodexConfigDryRunView } from '../../gettokens-extension-registry/model.ts';
 import { deriveQuotaFactFromDoctorEvidence } from './quotaEvidenceAdapter.ts';
 
@@ -117,8 +120,15 @@ export interface OmniRouteWorkbenchSignalView {
   sourceLabel: string;
   evidenceLabel: string;
   navigationHash: string;
+  actionLinks: OmniRouteWorkbenchSignalActionView[];
   actionLabel: string;
   blockedReason: string;
+}
+
+export interface OmniRouteWorkbenchSignalActionView {
+  id: string;
+  label: string;
+  hash: string;
 }
 
 export interface OmniRouteWorkbenchProductizationView {
@@ -127,6 +137,46 @@ export interface OmniRouteWorkbenchProductizationView {
   sourceLabel: string;
   primaryStatus: OmniRouteWorkbenchSignalStatus;
   signals: OmniRouteWorkbenchSignalView[];
+}
+
+export type OmniRouteWorkbenchActionStatus = 'ready' | 'pending' | 'success' | 'warning' | 'blocked' | 'failed';
+export type DoctorWorkbenchCheckFilter = 'all' | 'actionable' | 'route' | 'quota' | 'critical';
+
+export interface OmniRouteWorkbenchRouteActionTargetView {
+  targetKey: string;
+  accountKey?: string;
+  authId?: string;
+  model?: string;
+  source?: string;
+  scope?: string;
+}
+
+export interface OmniRouteWorkbenchSafeActionView {
+  id: 'route-recheck' | 'extension-staged-apply';
+  status: OmniRouteWorkbenchActionStatus;
+  title: string;
+  summary: string;
+  enabled: boolean;
+  disabledReason: string;
+  resultLabel: string;
+  resultDetail: string;
+  rollbackLabel: string;
+  target?: OmniRouteWorkbenchRouteActionTargetView;
+}
+
+export interface OmniRouteWorkbenchLedgerEntryView {
+  id: 'diagnostics-snapshot' | 'route-action-ledger' | 'extension-config-ledger';
+  status: OmniRouteWorkbenchActionStatus;
+  title: string;
+  summary: string;
+  detail: string;
+  sourceLabel: string;
+  resultLabel: string;
+}
+
+export interface OmniRouteWorkbenchSafeActionSurfaceView {
+  actions: OmniRouteWorkbenchSafeActionView[];
+  ledgerEntries: OmniRouteWorkbenchLedgerEntryView[];
 }
 
 export interface DoctorWorkbenchEvidenceView extends DoctorEvidenceRef {
@@ -140,6 +190,12 @@ export interface DoctorWorkbenchEvidenceView extends DoctorEvidenceRef {
   reasonSummary?: string;
   routeBlockingLabel?: string;
   routeFallbackState?: 'partial-identity' | 'unknown-non-authoritative';
+}
+
+export interface DoctorWorkbenchCheckFilterOptionView {
+  id: DoctorWorkbenchCheckFilter;
+  label: string;
+  count: number;
 }
 
 const statusRank: Record<DoctorCheckStatus, number> = {
@@ -193,6 +249,48 @@ export function deriveDoctorWorkbenchView(snapshot: DoctorSnapshot): DoctorWorkb
   };
 }
 
+export function deriveDoctorWorkbenchCheckFilterOptions(view: DoctorWorkbenchView): DoctorWorkbenchCheckFilterOptionView[] {
+  return [
+    { id: 'all', label: 'All checks', count: view.checks.length },
+    { id: 'actionable', label: 'Actionable', count: deriveDoctorWorkbenchFilteredChecks(view, 'actionable').length },
+    { id: 'route', label: 'Route', count: deriveDoctorWorkbenchFilteredChecks(view, 'route').length },
+    { id: 'quota', label: 'Quota', count: deriveDoctorWorkbenchFilteredChecks(view, 'quota').length },
+    { id: 'critical', label: 'Critical', count: deriveDoctorWorkbenchFilteredChecks(view, 'critical').length },
+  ];
+}
+
+export function deriveDoctorWorkbenchFilteredChecks(
+  view: DoctorWorkbenchView,
+  filter: DoctorWorkbenchCheckFilter,
+): DoctorWorkbenchCheckView[] {
+  if (filter === 'all') {
+    return view.checks;
+  }
+  if (filter === 'critical') {
+    return view.checks.filter((check) => check.status === 'critical');
+  }
+  if (filter === 'actionable') {
+    return view.checks.filter((check) =>
+      check.status !== 'ok' && check.status !== 'skipped' && check.repairability !== 'none',
+    );
+  }
+  if (filter === 'route') {
+    return view.checks.filter((check) =>
+      check.kind.includes('route') ||
+      check.id.includes('route') ||
+      check.evidence.some((item) => Boolean(item.targetKey)),
+    );
+  }
+  if (filter === 'quota') {
+    return view.checks.filter((check) =>
+      check.kind.includes('quota') ||
+      check.id.includes('quota') ||
+      check.evidence.some((item) => item.kind.includes('quota') || item.summaryLabel.toLowerCase().includes('quota')),
+    );
+  }
+  return view.checks;
+}
+
 export function deriveOmniRouteWorkbenchProductizationView(
   view: DoctorWorkbenchView,
   extensionImpact?: GetTokensExtensionCodexConfigDryRunView | null,
@@ -216,6 +314,218 @@ export function deriveOmniRouteWorkbenchProductizationView(
   };
 }
 
+export function deriveOmniRouteWorkbenchSafeActionSurface(
+  view: DoctorWorkbenchView,
+  extensionImpact: GetTokensExtensionCodexConfigDryRunView | null | undefined,
+  options: {
+    runtimeAvailable: boolean;
+    routeActionPending?: boolean;
+    routeActionError?: string;
+    routeActionResult?: {
+      ok?: boolean;
+      status?: string;
+      error?: string;
+      notImplementedReason?: string;
+      httpStatus?: number;
+      before?: Record<string, unknown>;
+      after?: Record<string, unknown>;
+      droppedReasons?: Array<{
+        source?: string;
+        scope?: string;
+        reason?: string;
+      }>;
+      auditId?: string;
+    } | null;
+  },
+): OmniRouteWorkbenchSafeActionSurfaceView {
+  return {
+    actions: [
+      deriveRouteRecheckAction(view, options),
+      deriveExtensionStagedApplyAction(extensionImpact),
+    ],
+    ledgerEntries: deriveOmniRouteWorkbenchLedgerEntries(view, extensionImpact, options),
+  };
+}
+
+function deriveOmniRouteWorkbenchLedgerEntries(
+  view: DoctorWorkbenchView,
+  extensionImpact: GetTokensExtensionCodexConfigDryRunView | null | undefined,
+  options: {
+    runtimeAvailable: boolean;
+    routeActionPending?: boolean;
+    routeActionError?: string;
+    routeActionResult?: {
+      ok?: boolean;
+      status?: string;
+      error?: string;
+      notImplementedReason?: string;
+      httpStatus?: number;
+      auditId?: string;
+    } | null;
+  },
+): OmniRouteWorkbenchLedgerEntryView[] {
+  const resultDigest = buildRouteResilienceActionResultDigest(options.routeActionResult);
+  const routeTarget = firstRouteActionTarget(view);
+  const routeStatus: OmniRouteWorkbenchActionStatus = options.routeActionPending
+    ? 'pending'
+    : options.routeActionError
+      ? 'failed'
+      : options.routeActionResult
+        ? (options.routeActionResult.ok ? 'success' : 'warning')
+        : routeTarget
+          ? 'ready'
+          : 'blocked';
+  const diagnosticStatus: OmniRouteWorkbenchActionStatus = view.statusCounts.critical > 0
+    ? 'failed'
+    : view.statusCounts.warning + view.statusCounts.degraded + view.statusCounts.not_ready > 0
+      ? 'warning'
+      : 'success';
+  const extensionStatus: OmniRouteWorkbenchActionStatus = extensionImpact?.validationErrorCount
+    ? 'warning'
+    : extensionImpact?.operationCount
+      ? 'ready'
+      : 'blocked';
+  return [
+    {
+      id: 'diagnostics-snapshot',
+      status: diagnosticStatus,
+      title: 'Diagnostics snapshot',
+      summary: `${view.checks.length} doctor checks; critical=${view.statusCounts.critical}; warning=${view.statusCounts.warning}; degraded=${view.statusCounts.degraded}.`,
+      detail: view.runtimeTruth ? 'Runtime Doctor snapshot is the active evidence source.' : 'Preview Doctor snapshot is being used; runtime actions remain blocked.',
+      sourceLabel: formatDoctorEvidenceSourceLabel(view.source),
+      resultLabel: view.sidecarReady ? 'sidecar-ready' : 'sidecar-not-ready',
+    },
+    {
+      id: 'route-action-ledger',
+      status: routeStatus,
+      title: 'Route action ledger',
+      summary: routeTarget
+        ? `target=${routeTarget.accountKey || routeTarget.authId || 'unknown'} model=${routeTarget.model || 'unknown'} scope=${routeTarget.scope || 'unknown'}`
+        : 'No stable route target has been recorded.',
+      detail: options.routeActionError
+        ? String(options.routeActionError)
+        : options.routeActionPending
+          ? 'Route recheck is pending.'
+          : options.routeActionResult?.auditId
+            ? `audit=${options.routeActionResult.auditId}; ${resultDigest.detail}`
+            : resultDigest.detail,
+      sourceLabel: options.runtimeAvailable ? 'sidecar route action' : 'runtime unavailable',
+      resultLabel: options.routeActionError ? 'failed' : resultDigest.statusLabel,
+    },
+    {
+      id: 'extension-config-ledger',
+      status: extensionStatus,
+      title: 'Extension config ledger',
+      summary: extensionImpact
+        ? `${extensionImpact.operationCount} dry-run operation${extensionImpact.operationCount === 1 ? '' : 's'}; validation=${extensionImpact.validationErrorCount}.`
+        : 'No extension dry-run evidence has loaded.',
+      detail: extensionImpact?.sections[0]?.label || 'Open Extension Registry to review config impact and staged temp apply results.',
+      sourceLabel: extensionImpact?.dryRun ? 'dry-run only' : 'extension registry',
+      resultLabel: extensionImpact ? 'preview-only' : 'missing',
+    },
+  ];
+}
+
+function deriveRouteRecheckAction(
+  view: DoctorWorkbenchView,
+  options: {
+    runtimeAvailable: boolean;
+    routeActionPending?: boolean;
+    routeActionError?: string;
+    routeActionResult?: {
+      ok?: boolean;
+      status?: string;
+      error?: string;
+      notImplementedReason?: string;
+      httpStatus?: number;
+      before?: Record<string, unknown>;
+      after?: Record<string, unknown>;
+      droppedReasons?: Array<{
+        source?: string;
+        scope?: string;
+        reason?: string;
+      }>;
+      auditId?: string;
+    } | null;
+  },
+): OmniRouteWorkbenchSafeActionView {
+  const target = firstRouteActionTarget(view);
+  const resultDigest = buildRouteResilienceActionResultDigest(options.routeActionResult);
+  const hasResult = Boolean(options.routeActionResult);
+  const hasError = Boolean(options.routeActionError);
+  const enabled = Boolean(options.runtimeAvailable && target && (target.accountKey || target.authId));
+  const status: OmniRouteWorkbenchActionStatus = options.routeActionPending
+    ? 'pending'
+    : hasError
+      ? 'failed'
+      : hasResult
+        ? (options.routeActionResult?.ok ? 'success' : 'warning')
+        : enabled
+          ? 'ready'
+          : 'blocked';
+  const disabledReason = !options.runtimeAvailable
+    ? 'Wails runtime is required before Doctor can run sidecar route actions.'
+    : !target
+      ? 'No stable route target is available from typed route evidence.'
+      : !target.accountKey && !target.authId
+        ? 'Route recheck requires accountKey or authId.'
+        : '';
+  return {
+    id: 'route-recheck',
+    status,
+    title: 'Route recheck',
+    summary: target
+      ? `Target ${target.accountKey || target.authId || 'unknown'} / ${target.model || 'model-unknown'} / ${target.scope || 'scope-unknown'}`
+      : 'No addressable route target.',
+    enabled,
+    disabledReason,
+    resultLabel: hasError ? 'Failed' : resultDigest.statusLabel,
+    resultDetail: hasError ? String(options.routeActionError || '') : resultDigest.detail,
+    rollbackLabel: options.routeActionResult?.auditId
+      ? `audit=${options.routeActionResult.auditId}`
+      : 'Sidecar action ledger will hold the result when runtime returns audit evidence.',
+    target,
+  };
+}
+
+function deriveExtensionStagedApplyAction(
+  extensionImpact: GetTokensExtensionCodexConfigDryRunView | null | undefined,
+): OmniRouteWorkbenchSafeActionView {
+  const operationCount = extensionImpact?.operationCount || 0;
+  return {
+    id: 'extension-staged-apply',
+    status: 'blocked',
+    title: 'Extension staged apply',
+    summary: operationCount > 0
+      ? `${operationCount} dry-run operation${operationCount === 1 ? '' : 's'} available for review.`
+      : 'No dry-run operation is currently available.',
+    enabled: false,
+    disabledReason: 'Requires an explicit temp/test target and confirmation token; real ~/.codex/config.toml write is out of scope.',
+    resultLabel: 'Preview only',
+    resultDetail: extensionImpact?.sections[0]?.label || 'Dry-run impact must be reviewed in Extension Registry.',
+    rollbackLabel: 'Rollback is only shown after a staged temp transaction runs.',
+  };
+}
+
+function firstRouteActionTarget(view: DoctorWorkbenchView): OmniRouteWorkbenchRouteActionTargetView | undefined {
+  for (const check of view.checks) {
+    for (const evidence of check.evidence) {
+      if (!evidence.targetKey) {
+        continue;
+      }
+      return {
+        targetKey: evidence.targetKey,
+        accountKey: evidence.accountKey,
+        authId: evidence.authId,
+        model: evidence.model,
+        source: evidence.source,
+        scope: evidence.scope,
+      };
+    }
+  }
+  return undefined;
+}
+
 const signalStatusRank: Record<OmniRouteWorkbenchSignalStatus, number> = {
   critical: 0,
   warning: 1,
@@ -233,7 +543,15 @@ function deriveRouteHealthSignal(view: DoctorWorkbenchView): OmniRouteWorkbenchS
   const structuredTargets = routeChecks.flatMap((check) => check.evidence.filter((item) => item.targetKey));
   const blockingTargets = structuredTargets.filter((item) => item.routeBlockingLabel === 'Route blocking');
   const worstStatus = pickWorstSignalStatus(routeChecks.map((check) => mapDoctorStatusToSignalStatus(check.status)));
-  const primaryNavigation = routeChecks.find((check) => check.primaryNavigation)?.primaryNavigation?.hash || '#frame=codex&workspace=account-list';
+  const routeDecisionNavigation = firstNavigationByKind(routeChecks, 'route_decisions');
+  const accountDetailNavigation = firstNavigationByKind(view.checks, 'account_detail');
+  const primaryNavigation = routeDecisionNavigation?.hash || routeChecks.find((check) => check.primaryNavigation)?.primaryNavigation?.hash || '#frame=codex&workspace=account-list';
+  const actionLinks = uniqueSignalActionLinks([
+    accountDetailNavigation
+      ? { id: 'account-detail', label: accountDetailNavigation.label || 'Open account detail', hash: accountDetailNavigation.hash }
+      : null,
+    { id: 'route-decisions', label: routeDecisionNavigation?.label || 'Open route decisions', hash: primaryNavigation },
+  ]);
   return {
     kind: 'route',
     status: structuredTargets.length > 0 ? worstStatus : 'missing',
@@ -244,6 +562,7 @@ function deriveRouteHealthSignal(view: DoctorWorkbenchView): OmniRouteWorkbenchS
     sourceLabel: routeChecks[0]?.authority || 'sidecar',
     evidenceLabel: structuredTargets[0]?.reasonSummary || routeChecks[0]?.reason || 'No route evidence',
     navigationHash: primaryNavigation,
+    actionLinks,
     actionLabel: structuredTargets.length > 0 ? 'Review route decisions' : 'Open route diagnostics',
     blockedReason: structuredTargets.length > 0 ? '' : 'Missing account/auth/model/source/scope typed evidence.',
   };
@@ -258,6 +577,12 @@ function deriveQuotaHealthSignal(view: DoctorWorkbenchView): OmniRouteWorkbenchS
   );
   const missingEvidence = quotaEvidence.filter((item) => item.summaryLabel === String(item.summary || '').trim());
   const worstStatus = pickWorstSignalStatus(quotaChecks.map((check) => mapDoctorStatusToSignalStatus(check.status)));
+  const statusNavigation = quotaChecks.find((check) => check.primaryNavigation)?.primaryNavigation;
+  const accountDetailHash = buildAccountDetailHashFromEvidence(quotaEvidence[0]);
+  const actionLinks = uniqueSignalActionLinks([
+    { id: 'quota-status', label: statusNavigation?.label || 'Open quota status', hash: statusNavigation?.hash || '#frame=status' },
+    accountDetailHash ? { id: 'quota-account-detail', label: 'Open related account', hash: accountDetailHash } : null,
+  ]);
   return {
     kind: 'quota',
     status: quotaChecks.length === 0 ? 'missing' : worstStatus,
@@ -267,7 +592,8 @@ function deriveQuotaHealthSignal(view: DoctorWorkbenchView): OmniRouteWorkbenchS
       : `${explicitEvidence.length} explicit fact${explicitEvidence.length === 1 ? '' : 's'}; ${missingEvidence.length} non-authoritative fallback${missingEvidence.length === 1 ? '' : 's'}.`,
     sourceLabel: quotaChecks[0]?.authority || 'sidecar',
     evidenceLabel: explicitEvidence[0]?.summaryLabel || quotaEvidence[0]?.summaryLabel || 'Missing explicit quotaFact',
-    navigationHash: quotaChecks.find((check) => check.primaryNavigation)?.primaryNavigation?.hash || '#frame=status',
+    navigationHash: statusNavigation?.hash || '#frame=status',
+    actionLinks,
     actionLabel: 'Review quota evidence',
     blockedReason: quotaChecks.length === 0 ? 'Quota authority requires explicit quotaFact from sidecar diagnostics.' : '',
   };
@@ -285,6 +611,7 @@ function deriveExtensionImpactSignal(
       sourceLabel: 'Extension registry',
       evidenceLabel: 'No dry-run preview',
       navigationHash: '#frame=codex&workspace=extension-registry',
+      actionLinks: [{ id: 'extension-registry', label: 'Open extension registry', hash: '#frame=codex&workspace=extension-registry' }],
       actionLabel: 'Open extension registry',
       blockedReason: 'Dry-run preview must load before any config impact can be shown.',
     };
@@ -298,6 +625,7 @@ function deriveExtensionImpactSignal(
     sourceLabel: extensionImpact.dryRun ? 'Dry-run only' : 'Runtime preview',
     evidenceLabel: extensionImpact.sections[0]?.label || 'Codex config projection',
     navigationHash: '#frame=codex&workspace=extension-registry',
+    actionLinks: [{ id: 'extension-registry', label: 'Open extension registry', hash: '#frame=codex&workspace=extension-registry' }],
     actionLabel: 'Review config impact',
     blockedReason: extensionImpact.dryRun ? 'Preview only; real ~/.codex/config.toml write is out of scope.' : '',
   };
@@ -318,9 +646,47 @@ function deriveEvidenceLedgerSignal(
     sourceLabel: view.runtimeTruth ? 'Runtime snapshot' : 'Preview snapshot',
     evidenceLabel: extensionReady ? 'Extension dry-run impact available' : 'Doctor evidence only',
     navigationHash: '#frame=codex&workspace=doctor-workbench',
+    actionLinks: [{ id: 'doctor-workbench', label: 'Stay in workbench', hash: '#frame=codex&workspace=doctor-workbench' }],
     actionLabel: 'Stay in workbench',
     blockedReason: routeActionReady || extensionReady ? '' : 'No action ledger target is currently addressable.',
   };
+}
+
+function firstNavigationByKind(
+  checks: DoctorWorkbenchCheckView[],
+  kind: string,
+): DoctorNavigationTarget | undefined {
+  for (const check of checks) {
+    const navigation = check.navigation.find((target) => target.kind === kind);
+    if (navigation) {
+      return navigation;
+    }
+  }
+  return undefined;
+}
+
+function buildAccountDetailHashFromEvidence(evidence: DoctorWorkbenchEvidenceView | undefined) {
+  const candidates = [evidence?.label, evidence?.refID].map((item) => String(item || '').trim());
+  const candidate = candidates.find((item) => item && !item.startsWith('quota_') && item.includes(':') && !item.includes(' ')) || '';
+  if (!candidate) {
+    return '';
+  }
+  return `#frame=accounts&detail=${encodeURIComponent(candidate)}`;
+}
+
+function uniqueSignalActionLinks(
+  links: Array<OmniRouteWorkbenchSignalActionView | null | undefined>,
+): OmniRouteWorkbenchSignalActionView[] {
+  const seen = new Set<string>();
+  const result: OmniRouteWorkbenchSignalActionView[] = [];
+  for (const link of links) {
+    if (!link?.hash || seen.has(link.id)) {
+      continue;
+    }
+    seen.add(link.id);
+    result.push(link);
+  }
+  return result;
 }
 
 function mapDoctorStatusToSignalStatus(status: DoctorCheckStatus): OmniRouteWorkbenchSignalStatus {

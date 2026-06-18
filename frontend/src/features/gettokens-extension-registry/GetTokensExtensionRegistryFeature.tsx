@@ -6,12 +6,15 @@ import RefreshActionButton from '../../components/ui/RefreshActionButton';
 import SearchInput from '../../components/ui/SearchInput';
 import { toErrorMessage } from '../../utils/error';
 import {
+  applyGetTokensExtensionCodexConfigTransaction,
   loadGetTokensExtensionRegistrySnapshot,
+  prepareGetTokensExtensionCodexConfigApply,
   previewGetTokensExtensionCodexConfigDryRun,
   setGetTokensExtensionEnabled,
 } from './api';
 import {
   deriveGetTokensExtensionCodexConfigDryRunView,
+  deriveGetTokensExtensionCodexConfigStagedApplyView,
   deriveGetTokensExtensionRegistryView,
   formatRegistryGeneratedAt,
   formatRegistryStateLabel,
@@ -20,10 +23,19 @@ import {
   getGetTokensExtensionCodexConfigDryRunPreview,
   getGetTokensExtensionRegistryPreviewSnapshot,
 } from './previewData';
+import { hasWailsAppBindings } from '../../utils/previewMode';
 
 interface GetTokensExtensionRegistryFeatureProps {
   input?: main.GetTokensExtensionRegistrySnapshotInput;
 }
+
+const stagedApplyTestTargetPath = '/tmp/gettokens-extension-codex-config-staged-preview.toml';
+const stagedApplyTempDir = '/tmp';
+const stagedApplyConfigText = [
+  '# GetTokens Extension Registry staged test target',
+  '# This file is intentionally outside ~/.codex/config.toml.',
+  '',
+].join('\n');
 
 export default function GetTokensExtensionRegistryFeature({ input }: GetTokensExtensionRegistryFeatureProps) {
   const [snapshot, setSnapshot] = useState<main.GetTokensExtensionRegistrySnapshot>(() => getGetTokensExtensionRegistryPreviewSnapshot());
@@ -34,6 +46,10 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
   const [codexConfigDryRun, setCodexConfigDryRun] = useState<main.GetTokensExtensionCodexConfigDryRunPreview>(() =>
     getGetTokensExtensionCodexConfigDryRunPreview(),
   );
+  const [stagedApplyPlan, setStagedApplyPlan] = useState<main.GetTokensExtensionCodexConfigStagedApplyPlan | null>(null);
+  const [stagedApplyResult, setStagedApplyResult] = useState<main.GetTokensExtensionCodexConfigStagedApplyResult | null>(null);
+  const [stagedApplyError, setStagedApplyError] = useState('');
+  const [stagedApplyPhase, setStagedApplyPhase] = useState<'idle' | 'preparing' | 'applying'>('idle');
   const [message, setMessage] = useState('Registry snapshot 已加载；enable-state 操作仅写 GetTokens 本地 state file。');
 
   const inputKey = JSON.stringify(input || {});
@@ -44,6 +60,22 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
   const codexConfigDryRunView = useMemo(
     () => deriveGetTokensExtensionCodexConfigDryRunView(codexConfigDryRun),
     [codexConfigDryRun],
+  );
+  const runtimeAvailable = hasWailsAppBindings();
+  const stagedApplyView = useMemo(
+    () => deriveGetTokensExtensionCodexConfigStagedApplyView({
+      runtimeAvailable,
+      targetPath: stagedApplyTestTargetPath,
+      tempDir: stagedApplyTempDir,
+      operationCount: codexConfigDryRunView.operationCount,
+      validationErrorCount: codexConfigDryRunView.validationErrorCount,
+      preparing: stagedApplyPhase === 'preparing',
+      applying: stagedApplyPhase === 'applying',
+      plan: stagedApplyPlan,
+      result: stagedApplyResult,
+      error: stagedApplyError,
+    }),
+    [codexConfigDryRunView.operationCount, codexConfigDryRunView.validationErrorCount, runtimeAvailable, stagedApplyError, stagedApplyPhase, stagedApplyPlan, stagedApplyResult],
   );
 
   useEffect(() => {
@@ -66,6 +98,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
       const nextDryRun = await previewGetTokensExtensionCodexConfigDryRun(mapDryRunInput(input));
       setSnapshot(nextSnapshot);
       setCodexConfigDryRun(nextDryRun);
+      resetStagedApplyState();
       setMessage('Registry snapshot 与 Codex config dry-run 已刷新；未读取或写入 Codex Skills/MCP 配置。');
     } catch (error) {
       setMessage(`读取 extension registry snapshot 失败：${toErrorMessage(error)}`);
@@ -92,10 +125,69 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
       const nextDryRun = await previewGetTokensExtensionCodexConfigDryRun(mapDryRunInput(input));
       setSnapshot(nextSnapshot);
       setCodexConfigDryRun(nextDryRun);
+      resetStagedApplyState();
     } catch (error) {
       setMessage(`更新 extension enable-state 失败：${toErrorMessage(error)}`);
     } finally {
       setMutatingExtensionID('');
+    }
+  }
+
+  function resetStagedApplyState() {
+    setStagedApplyPlan(null);
+    setStagedApplyResult(null);
+    setStagedApplyError('');
+    setStagedApplyPhase('idle');
+  }
+
+  async function prepareStagedApply() {
+    if (!stagedApplyView.enabledPrepare) {
+      return;
+    }
+    setStagedApplyPhase('preparing');
+    setStagedApplyError('');
+    setStagedApplyResult(null);
+    try {
+      const plan = await prepareGetTokensExtensionCodexConfigApply(main.PrepareGetTokensExtensionCodexConfigApplyInput.createFrom({
+        manifestPaths: input?.manifestPaths,
+        roots: input?.roots,
+        statePath: input?.statePath,
+        targetPath: stagedApplyTestTargetPath,
+        configText: stagedApplyConfigText,
+      }));
+      setStagedApplyPlan(plan);
+      setMessage('Codex config staged test plan 已准备；目标仅为 /tmp 测试文件，未写真实 ~/.codex/config.toml。');
+    } catch (error) {
+      setStagedApplyError(toErrorMessage(error));
+      setMessage(`准备 staged test apply 失败：${toErrorMessage(error)}`);
+    } finally {
+      setStagedApplyPhase('idle');
+    }
+  }
+
+  async function applyStagedTransaction() {
+    if (!stagedApplyView.enabledApply || !stagedApplyPlan?.confirmationToken) {
+      return;
+    }
+    setStagedApplyPhase('applying');
+    setStagedApplyError('');
+    try {
+      const result = await applyGetTokensExtensionCodexConfigTransaction(main.ApplyGetTokensExtensionCodexConfigTransactionInput.createFrom({
+        manifestPaths: input?.manifestPaths,
+        roots: input?.roots,
+        statePath: input?.statePath,
+        targetPath: stagedApplyTestTargetPath,
+        tempDir: stagedApplyTempDir,
+        configText: stagedApplyConfigText,
+        confirmationToken: stagedApplyPlan.confirmationToken,
+      }));
+      setStagedApplyResult(result);
+      setMessage(`Codex config staged test transaction ${result.status || 'finished'}；结果只写入 /tmp 测试目标。`);
+    } catch (error) {
+      setStagedApplyError(toErrorMessage(error));
+      setMessage(`执行 staged test transaction 失败：${toErrorMessage(error)}`);
+    } finally {
+      setStagedApplyPhase('idle');
     }
   }
 
@@ -150,8 +242,11 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
         <GetTokensExtensionRegistryAside
           view={view}
           codexConfigDryRunView={codexConfigDryRunView}
+          stagedApplyView={stagedApplyView}
           mutatingExtensionID={mutatingExtensionID}
           onSetEnabled={setExtensionEnabled}
+          onPrepareStagedApply={prepareStagedApply}
+          onApplyStagedTransaction={applyStagedTransaction}
         />
       }
     >
@@ -255,13 +350,19 @@ function mapDryRunInput(
 function GetTokensExtensionRegistryAside({
   view,
   codexConfigDryRunView,
+  stagedApplyView,
   mutatingExtensionID,
   onSetEnabled,
+  onPrepareStagedApply,
+  onApplyStagedTransaction,
 }: {
   view: ReturnType<typeof deriveGetTokensExtensionRegistryView>;
   codexConfigDryRunView: ReturnType<typeof deriveGetTokensExtensionCodexConfigDryRunView>;
+  stagedApplyView: ReturnType<typeof deriveGetTokensExtensionCodexConfigStagedApplyView>;
   mutatingExtensionID: string;
   onSetEnabled: (extensionID: string, enabled: boolean) => void | Promise<void>;
+  onPrepareStagedApply: () => void | Promise<void>;
+  onApplyStagedTransaction: () => void | Promise<void>;
 }) {
   return (
     <div className="grid min-h-0 content-start gap-0">
@@ -364,6 +465,68 @@ function GetTokensExtensionRegistryAside({
                 </div>
               ))
             )}
+          </div>
+          <div
+            data-gettokens-extension-codex-config-staged-apply="true"
+            data-gettokens-extension-codex-config-staged-apply-status={stagedApplyView.status}
+            className="grid gap-3 border-2 border-[var(--border-color)] bg-[color-mix(in_srgb,var(--bg-surface)_86%,white)] px-3 py-3"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
+                  Staged Temp Apply
+                </div>
+                <div className="mt-1 text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                  status={stagedApplyView.status}
+                </div>
+                <div className="mt-2 max-w-[18rem] text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                  Only an explicit /tmp test target is allowed; real ~/.codex/config.toml apply remains blocked.
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={!stagedApplyView.enabledPrepare}
+                  data-gettokens-extension-codex-config-staged-apply-action="prepare"
+                  onClick={() => void onPrepareStagedApply()}
+                  className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)] transition-colors hover:bg-[color-mix(in_srgb,var(--accent)_12%,var(--bg-main))] disabled:cursor-not-allowed disabled:border-dashed disabled:text-[var(--text-muted)]"
+                >
+                  Prepare Test Plan
+                </button>
+                <button
+                  type="button"
+                  disabled={!stagedApplyView.enabledApply}
+                  data-gettokens-extension-codex-config-staged-apply-action="apply"
+                  onClick={() => void onApplyStagedTransaction()}
+                  className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)] transition-colors hover:bg-[color-mix(in_srgb,var(--accent)_12%,var(--bg-main))] disabled:cursor-not-allowed disabled:border-dashed disabled:text-[var(--text-muted)]"
+                >
+                  Apply Test Transaction
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[length:var(--font-size-ui-xs)]">
+              <KeyValueRow label="Target" value={stagedApplyView.targetPath} monospace />
+              <KeyValueRow label="Temp Dir" value={stagedApplyView.tempDir} monospace />
+              <KeyValueRow label="Confirmation" value={stagedApplyView.confirmationLabel} monospace />
+              <KeyValueRow label="Result" value={stagedApplyView.resultLabel} monospace />
+              <KeyValueRow label="Rollback" value={stagedApplyView.rollbackLabel} monospace />
+              <KeyValueRow label="Operations" value={stagedApplyView.appliedOperations.join(', ') || '-'} monospace />
+            </div>
+            {stagedApplyView.disabledReason ? (
+              <div className="border border-dashed border-[var(--border-color)] px-2 py-2 text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                {stagedApplyView.disabledReason}
+              </div>
+            ) : null}
+            {stagedApplyView.errorDetail ? (
+              <div className="border border-red-500/70 bg-red-500/10 px-2 py-2 text-[length:var(--font-size-ui-xs)] font-bold text-red-700 dark:text-red-200">
+                {stagedApplyView.errorDetail}
+              </div>
+            ) : null}
+            {stagedApplyView.diffPreview.length > 0 ? (
+              <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+                {stagedApplyView.diffPreview.join('\n')}
+              </pre>
+            ) : null}
           </div>
         </div>
       </section>

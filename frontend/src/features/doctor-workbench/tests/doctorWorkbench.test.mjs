@@ -2,8 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  deriveDoctorWorkbenchCheckFilterOptions,
+  deriveDoctorWorkbenchFilteredChecks,
   deriveDoctorWorkbenchView,
   deriveOmniRouteWorkbenchProductizationView,
+  deriveOmniRouteWorkbenchSafeActionSurface,
 } from '../model/doctorWorkbench.ts';
 import { getDoctorWorkbenchPreviewSnapshot } from '../model/previewData.ts';
 import { deriveGetTokensExtensionCodexConfigDryRunView } from '../../gettokens-extension-registry/model.ts';
@@ -212,6 +215,28 @@ test('doctor preview includes explicit quota fact and non-authoritative missing 
   );
 });
 
+test('doctor workbench check filters expose actionable route quota and critical slices', () => {
+  const view = deriveDoctorWorkbenchView(getDoctorWorkbenchPreviewSnapshot());
+  const options = deriveDoctorWorkbenchCheckFilterOptions(view);
+  const byID = Object.fromEntries(options.map((option) => [option.id, option]));
+  const actionable = deriveDoctorWorkbenchFilteredChecks(view, 'actionable');
+  const route = deriveDoctorWorkbenchFilteredChecks(view, 'route');
+  const quota = deriveDoctorWorkbenchFilteredChecks(view, 'quota');
+  const critical = deriveDoctorWorkbenchFilteredChecks(view, 'critical');
+
+  assert.equal(byID.all?.count, view.checks.length);
+  assert.equal(byID.actionable?.count, actionable.length);
+  assert.equal(byID.route?.count, route.length);
+  assert.equal(byID.quota?.count, quota.length);
+  assert.equal(byID.critical?.count, critical.length);
+  assert.ok(actionable.length > 0);
+  assert.ok(actionable.every((check) => check.status !== 'ok' && check.repairability !== 'none'));
+  assert.ok(route.some((check) => check.id === 'route_guard_dropped_reasons'));
+  assert.ok(route.every((check) => check.kind.includes('route') || check.id.includes('route') || check.evidence.some((item) => item.targetKey)));
+  assert.ok(quota.some((check) => check.id === 'quota_facts'));
+  assert.ok(critical.every((check) => check.status === 'critical'));
+});
+
 test('omniroute productization view summarizes route quota extension and ledger signals', () => {
   const doctorView = deriveDoctorWorkbenchView(getDoctorWorkbenchPreviewSnapshot());
   const extensionImpact = deriveGetTokensExtensionCodexConfigDryRunView(
@@ -226,14 +251,131 @@ test('omniroute productization view summarizes route quota extension and ledger 
   assert.equal(byKind.route?.status, 'warning');
   assert.match(byKind.route?.summary || '', /1 stable route target/);
   assert.equal(byKind.route?.navigationHash, '#frame=codex&workspace=account-list');
+  assert.deepEqual(byKind.route?.actionLinks, [
+    { id: 'account-detail', label: 'Open account detail', hash: '#frame=accounts&detail=codex-api-key%3Astable-001' },
+    { id: 'route-decisions', label: 'Open route decisions', hash: '#frame=codex&workspace=account-list' },
+  ]);
   assert.equal(byKind.quota?.status, 'warning');
   assert.match(byKind.quota?.summary || '', /1 explicit fact/);
   assert.match(byKind.quota?.summary || '', /1 non-authoritative fallback/);
+  assert.deepEqual(byKind.quota?.actionLinks, [
+    { id: 'quota-status', label: 'Open quota status', hash: '#frame=status' },
+    { id: 'quota-account-detail', label: 'Open related account', hash: '#frame=accounts&detail=codex-api-key%3Astable-001' },
+  ]);
   assert.equal(byKind.extension?.status, 'preview');
   assert.match(byKind.extension?.summary || '', /2 config operations projected/);
   assert.match(byKind.extension?.blockedReason || '', /Preview only/);
+  assert.deepEqual(byKind.extension?.actionLinks, [
+    { id: 'extension-registry', label: 'Open extension registry', hash: '#frame=codex&workspace=extension-registry' },
+  ]);
   assert.equal(byKind.ledger?.status, 'ready');
   assert.match(byKind.ledger?.summary || '', /route target ready/);
+});
+
+test('omniroute safe action surface blocks preview actions and real config apply', () => {
+  const doctorView = deriveDoctorWorkbenchView(getDoctorWorkbenchPreviewSnapshot());
+  const extensionImpact = deriveGetTokensExtensionCodexConfigDryRunView(
+    getGetTokensExtensionCodexConfigDryRunPreview(),
+  );
+  const surface = deriveOmniRouteWorkbenchSafeActionSurface(doctorView, extensionImpact, {
+    runtimeAvailable: false,
+  });
+  const byID = Object.fromEntries(surface.actions.map((action) => [action.id, action]));
+
+  assert.equal(byID['route-recheck']?.status, 'blocked');
+  assert.equal(byID['route-recheck']?.enabled, false);
+  assert.match(byID['route-recheck']?.disabledReason || '', /Wails runtime/);
+  assert.equal(byID['route-recheck']?.target?.targetKey, 'acct_route_001|auth_route_001|gpt-5|upstream-error|model');
+
+  assert.equal(byID['extension-staged-apply']?.status, 'blocked');
+  assert.equal(byID['extension-staged-apply']?.enabled, false);
+  assert.match(byID['extension-staged-apply']?.summary || '', /2 dry-run operations/);
+  assert.match(byID['extension-staged-apply']?.disabledReason || '', /explicit temp\/test target/);
+  assert.match(byID['extension-staged-apply']?.disabledReason || '', /real ~\/\.codex\/config\.toml write is out of scope/);
+
+  const ledgerByID = Object.fromEntries(surface.ledgerEntries.map((entry) => [entry.id, entry]));
+  assert.equal(surface.ledgerEntries.length, 3);
+  assert.equal(ledgerByID['diagnostics-snapshot']?.status, 'failed');
+  assert.match(ledgerByID['diagnostics-snapshot']?.summary || '', /doctor checks/);
+  assert.equal(ledgerByID['route-action-ledger']?.status, 'ready');
+  assert.match(ledgerByID['route-action-ledger']?.summary || '', /target=acct_route_001/);
+  assert.equal(ledgerByID['extension-config-ledger']?.status, 'ready');
+  assert.match(ledgerByID['extension-config-ledger']?.summary || '', /2 dry-run operations/);
+});
+
+test('omniroute route recheck becomes ready only with runtime and stable typed target', () => {
+  const doctorView = deriveDoctorWorkbenchView(getDoctorWorkbenchPreviewSnapshot());
+  const surface = deriveOmniRouteWorkbenchSafeActionSurface(doctorView, null, {
+    runtimeAvailable: true,
+  });
+  const action = surface.actions.find((item) => item.id === 'route-recheck');
+
+  assert.equal(action?.status, 'ready');
+  assert.equal(action?.enabled, true);
+  assert.equal(action?.disabledReason, '');
+  assert.equal(action?.target?.accountKey, 'acct_route_001');
+  assert.equal(action?.target?.authId, 'auth_route_001');
+  assert.equal(action?.target?.model, 'gpt-5');
+  assert.equal(action?.target?.scope, 'model');
+});
+
+test('omniroute safe action surface exposes pending success warning and failure results', () => {
+  const doctorView = deriveDoctorWorkbenchView(getDoctorWorkbenchPreviewSnapshot());
+
+  const pending = deriveOmniRouteWorkbenchSafeActionSurface(doctorView, null, {
+    runtimeAvailable: true,
+    routeActionPending: true,
+  }).actions.find((item) => item.id === 'route-recheck');
+  assert.equal(pending?.status, 'pending');
+
+  const success = deriveOmniRouteWorkbenchSafeActionSurface(doctorView, null, {
+    runtimeAvailable: true,
+    routeActionResult: {
+      ok: true,
+      status: 'applied',
+      auditId: 'audit-route-001',
+      before: { routeable: false },
+      after: { routeable: true },
+    },
+  }).actions.find((item) => item.id === 'route-recheck');
+  assert.equal(success?.status, 'success');
+  assert.equal(success?.resultLabel, 'applied');
+  assert.match(success?.rollbackLabel || '', /audit=audit-route-001/);
+
+  const successSurface = deriveOmniRouteWorkbenchSafeActionSurface(doctorView, null, {
+    runtimeAvailable: true,
+    routeActionResult: {
+      ok: true,
+      status: 'applied',
+      auditId: 'audit-route-001',
+      before: { routeable: false },
+      after: { routeable: true },
+    },
+  });
+  const routeLedger = successSurface.ledgerEntries.find((entry) => entry.id === 'route-action-ledger');
+  assert.equal(routeLedger?.status, 'success');
+  assert.match(routeLedger?.detail || '', /audit=audit-route-001/);
+
+  const notImplemented = deriveOmniRouteWorkbenchSafeActionSurface(doctorView, null, {
+    runtimeAvailable: true,
+    routeActionResult: {
+      ok: false,
+      status: 'not_implemented',
+      httpStatus: 501,
+      notImplementedReason: 'sidecar action endpoint is not enabled',
+    },
+  }).actions.find((item) => item.id === 'route-recheck');
+  assert.equal(notImplemented?.status, 'warning');
+  assert.equal(notImplemented?.resultLabel, '未实现');
+  assert.match(notImplemented?.resultDetail || '', /sidecar action endpoint is not enabled/);
+
+  const failed = deriveOmniRouteWorkbenchSafeActionSurface(doctorView, null, {
+    runtimeAvailable: true,
+    routeActionError: 'sidecar unavailable',
+  }).actions.find((item) => item.id === 'route-recheck');
+  assert.equal(failed?.status, 'failed');
+  assert.equal(failed?.resultLabel, 'Failed');
+  assert.match(failed?.resultDetail || '', /sidecar unavailable/);
 });
 
 test('doctor route evidence falls back when stable route identity is not explicit', () => {

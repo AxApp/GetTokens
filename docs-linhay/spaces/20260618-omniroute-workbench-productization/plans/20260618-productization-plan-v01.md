@@ -112,6 +112,15 @@
 - extension item 可跳 extension registry；
 - hash canonicalizer 不丢 modal/detail 参数。
 
+执行记录：
+
+- 现有稳定入口为 `#frame=codex&workspace=doctor-workbench`。
+- 已在 Codex sidebar 增加 `Doctor Workbench` 可见子入口，使用既有 `CodexWorkspace` 和 `labelText` 模式。
+- Doctor entry test 已锁住 CodexPage route、Sidebar entry、Wails runtime first / preview fallback。
+- 已为 OmniRoute summary signals 增加显式 `actionLinks`：Route 提供 account detail 与 route decisions，Quota 提供 status 与 related account detail，Extension 提供 extension registry，Ledger 保留 workbench 自身入口。
+- 已新增 Doctor check filters：All / Actionable / Route / Quota / Critical。过滤只作用于 `view.checks` 展示列表，依据 check kind/id/status/repairability 与已解析 typed evidence，不改变 route/quota authority，也不从 usage totals 或 summary 本地推导结论。
+- Productization preview gate 已锁住 `data-omniroute-workbench-signal-action=*` DOM markers，证明多入口导航在预览页可见。
+
 ### Phase 3：Safe Action Surface
 
 目标：把现有受控 action 暴露成可理解操作，不新增自动修复。
@@ -122,11 +131,21 @@
 - action pending / success / failure / rollback UI。
 
 验收：
-- action 不在缺 stable target 时出现；
+- route action 不在缺 Wails runtime 或 stable target 时可执行；
 - sidecar `not_implemented` 原样可见；
 - route action history 按 target 绑定；
 - staged apply 只允许 explicit temp/test target；
 - UI 不出现真实 Codex config 写入入口。
+
+执行记录：
+
+- 已新增 `deriveOmniRouteWorkbenchSafeActionSurface`，统一输出 `route-recheck` 与 `extension-staged-apply` 两类 safe action view。
+- `route-recheck` 只在 Wails runtime 可用且 Doctor typed route evidence 提供 `accountKey/authId/model/source/scope` stable target 时 enabled；调用现有 `RunRouteResilienceAction`，action 固定为 `recheck_routeability`，idempotency key 绑定 `doctor-workbench:route-recheck:<targetKey>`。
+- route action 结果在页面内显示 pending / success / warning / failed；sidecar `not_implemented` 维持 warning，不伪装成成功；返回 `auditId` 时显示 ledger/audit 标识。
+- Safe action surface 已新增 `Evidence ledger` 区域，固定展示 `diagnostics-snapshot`、`route-action-ledger`、`extension-config-ledger` 三类 entry；route action pending / failed / success / not implemented 均会反映到 ledger，返回 `auditId` 时显示 audit 详情。
+- Doctor Workbench 的 `extension-staged-apply` 卡片仍保持 disabled/blocked，只展示 dry-run operation count 和 Review 入口；Doctor Workbench 不接入 `PrepareGetTokensExtensionCodexConfigApply` 或 `ApplyGetTokensExtensionCodexConfigTransaction`，避免从诊断页发起配置写入。
+- Extension Registry 已补齐 staged temp apply 预演 UI：目标固定为显式 `/tmp/gettokens-extension-codex-config-staged-preview.toml` 测试文件；prepare 调用现有 Wails `PrepareGetTokensExtensionCodexConfigApply` 生成 confirmation token / diff preview；apply 调用 `ApplyGetTokensExtensionCodexConfigTransaction` 写入 `/tmp` 测试目标并展示 result / rollback。浏览器 preview 或无 Wails runtime 时保持 blocked；真实 `~/.codex/config.toml` local apply 仍需单独授权。
+- 已扩展 Doctor source/preview gate，锁住 `data-omniroute-workbench-action-*` markers、route action 接线和 no-real-apply 边界。
 
 ### Phase 4：Acceptance and Screenshots
 
@@ -142,6 +161,15 @@
 - 截图路径固定在 `docs-linhay/spaces/20260618-omniroute-workbench-productization/screenshots/`；
 - docs-check 和 diff-check 通过。
 
+执行记录：
+
+- 已新增产品化专用 preview gate：`docs-linhay/scripts/check-omniroute-workbench-productization-preview.mjs`。
+- DOM snapshot 固定归档到 `plans/20260618-omniroute-workbench-preview-snapshot-v01.md`。
+- 截图固定归档到 `screenshots/20260618/workbench/20260618-omniroute-workbench-preview-baseline-v01.png`。
+- Gate 覆盖 Workbench summary、Route / Quota / Extension / Ledger 四类 signals、safe action surface、route recheck、Evidence ledger 三类 entry、extension staged apply blocked 状态、preview/runtime boundary、Doctor 不接入真实 Extension config apply。
+- 2026-06-18 已使用本地 Vite dev server + headless Chrome 通过产品化 preview gate；截图目视确认不是空白页/错误页，并展示了 Safe actions 的 blocked 状态。
+- 2026-06-19 已重新运行产品化 preview gate，新增 `signalActionLinks=true`，覆盖 account detail / route decisions / quota status / related account detail / extension registry 多入口导航。
+
 ## Test Plan
 
 Focused tests:
@@ -155,10 +183,11 @@ node docs-linhay/scripts/check-wails-binding-surface.mjs
 CHROME_EXECUTABLE_PATH=/nonexistent/chrome node docs-linhay/scripts/check-doctor-workbench-preview.mjs
 ```
 
-本次 read-only slice 已运行：
+本次 read-only + safe-action slice 已运行：
 
 ```bash
 npm --prefix frontend run test:doctor-workbench
+node --test frontend/src/components/biz/sidebarState.test.mjs
 npm --prefix frontend run typecheck
 node --test frontend/src/features/gettokens-extension-registry/model.test.mjs frontend/src/features/gettokens-extension-registry/featureSource.test.mjs
 node docs-linhay/scripts/check-quota-no-direct-fact-parser.mjs
@@ -168,9 +197,54 @@ bash docs-linhay/scripts/check-docs.sh
 git diff --check
 ```
 
-本 slice 已扩展 Doctor preview gate：在无 Chrome 环境下继续使用 archived snapshot/screenshot fallback，同时通过源码与 fixture 检查锁住 `data-omniroute-workbench-*` summary markers、explicit quotaFact fixture 与 Extension dry-run 接线。
+Phase 4 产品化截图 slice 追加运行：
 
-后续进入 Safe Action Surface 前仍需补真实 action result 状态、pending/failure/rollback UI 和对应测试；本 slice 仅完成 read-only summary。
+```bash
+node docs-linhay/scripts/check-omniroute-workbench-productization-preview.mjs
+bash docs-linhay/scripts/check-docs.sh
+git diff --check
+```
+
+产品化 preview gate 输出：
+
+- source=`chrome`
+- screenshot=`chrome-file-written-after-nonzero-exit`（Chrome CLI 返回非零但已写入 159016 bytes PNG，脚本按文件存在和 gate 全绿判定为可用截图）
+- checks：`workspaceHash`、`omniRouteSummary`、`routeQuotaExtensionLedgerSignals`、`safeActionSurface`、`routeRecheckAction`、`signalActionLinks`、`extensionStagedApplyBlocked`、`previewRuntimeBoundary`、`noRealExtensionApplyInDoctor` 等均为 true。
+
+本 slice 已扩展 Doctor preview gate：在无 Chrome 环境下继续使用 archived snapshot/screenshot fallback，同时通过源码与 fixture 检查锁住 `data-omniroute-workbench-*` summary/action markers、explicit quotaFact fixture、Extension dry-run 接线、route recheck 接线，以及 Doctor 不接入真实 Extension config apply。
+
+Extension Registry staged temp apply slice 追加运行：
+
+```bash
+node --test frontend/src/features/gettokens-extension-registry/model.test.mjs frontend/src/features/gettokens-extension-registry/featureSource.test.mjs
+npm --prefix frontend run typecheck
+GETTOKENS_EXTENSION_REGISTRY_CHROME_TIMEOUT_MS=35000 node docs-linhay/scripts/check-gettokens-extension-registry-preview.mjs
+GOCACHE=/private/tmp/gettokens-go-cache go test -count=1 ./internal/wailsapp ./internal/gettokensextensions
+```
+
+Extension Registry preview gate 新增并通过：`stagedApplyTestSurface`、`stagedApplyActions`、`stagedApplyRuntimeBoundary`，证明页面展示 prepare/apply 测试入口、固定 `/tmp` 测试目标、无 Wails runtime blocked 状态，以及真实 `~/.codex/config.toml` 仍 blocked。
+
+Evidence ledger surface slice 追加运行：
+
+```bash
+npm --prefix frontend run test:doctor-workbench
+npm --prefix frontend run typecheck
+node docs-linhay/scripts/check-omniroute-workbench-productization-preview.mjs
+```
+
+产品化 preview gate 新增并通过：`evidenceLedgerSurface=true`，证明 Doctor Workbench 渲染 `data-omniroute-workbench-ledger="true"`，并固定包含 `diagnostics-snapshot`、`route-action-ledger`、`extension-config-ledger` 三类 ledger entry。
+
+Doctor check filter slice 追加运行：
+
+```bash
+npm --prefix frontend run test:doctor-workbench
+npm --prefix frontend run typecheck
+node docs-linhay/scripts/check-omniroute-workbench-productization-preview.mjs
+```
+
+产品化 preview gate 新增并通过：`checkFilterSurface=true`，证明 Doctor Workbench 渲染 `data-omniroute-workbench-check-filter-surface="true"`，并固定包含 `all`、`actionable`、`route`、`quota`、`critical` 五类 filter。
+
+当前已完成 read-only summary、可见 sidebar 入口和 safe action surface。后续若要进入真实 Extension config local apply，必须新建独立授权 space，不应在本产品化 slice 内顺手打开真实写入。
 
 Broader validation before handoff:
 
@@ -182,6 +256,12 @@ node docs-linhay/scripts/check-omniroute-contract-artifacts.mjs
 bash docs-linhay/scripts/check-docs.sh
 git diff --check
 ```
+
+Broader validation 记录：
+
+- `GOCACHE=/private/tmp/gettokens-go-cache go test -count=1 ./internal/wailsapp ./internal/cliproxyapi ./internal/gettokensextensions` 通过。
+- `node docs-linhay/scripts/check-omniroute-contract-artifacts.mjs` 通过，59 checks。
+- `npm --prefix frontend run test:unit` 已通过，927 tests；同时更新了 auth-file quota reset 相关旧测试契约，明确 auth-file detail 可包含 quota reset 模块，但仍不开放 billing / model-routing。
 
 ## Review Slicing
 

@@ -29,11 +29,12 @@ test('account detail frame uses the fullscreen detail modal shell', async () => 
   assert.match(modalFrameSource, /createPortal\(modal, document\.body\)/);
 });
 
-test('account detail keeps auth-file modules lightweight', () => {
-  assert.deepEqual(
-    buildAccountDetailModulePlan({ credentialSource: 'auth-file' }),
-    ['runtime', 'auth-file-actions', 'models', 'model-probe', 'rate-limit'],
-  );
+test('account detail keeps auth-file modules scoped to oauth operations and quota reset', () => {
+  const modulePlan = buildAccountDetailModulePlan({ credentialSource: 'auth-file' });
+
+  assert.deepEqual(modulePlan, ['runtime', 'auth-file-actions', 'models', 'model-probe', 'rate-limit', 'quota']);
+  assert.equal(modulePlan.includes('billing'), false);
+  assert.equal(modulePlan.includes('model-routing'), false);
 });
 
 test('accounts page loads auth-file rows from unified account store only', async () => {

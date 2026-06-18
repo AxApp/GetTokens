@@ -224,7 +224,7 @@ test('codex oauth detail renders quota and billing as read-only resource modules
   assert.match(modalSource, /<AccountQuotaSection[\s\S]*?readOnlyScripts=\{readOnlyQuotaScripts\}/);
   assert.match(modalSource, /<AccountBillingSection[\s\S]*?readOnlyScripts=\{readOnlyQuotaScripts\}/);
   assert.match(detailSectionsSource, /readOnlyScripts\?: boolean/);
-  assert.match(detailSectionsSource, /const quotaActions = \(\s*readOnlyScripts \? null :/);
+  assert.match(detailSectionsSource, /const quotaActions = \([\s\S]*?isOpenAIAuthFileQuotaReset \? \([\s\S]*?\) : readOnlyScripts \? null :/);
   assert.match(detailSectionsSource, /const billingActions = \(\s*readOnlyScripts \? null :/);
 });
 

@@ -62,6 +62,12 @@ OmniRoute 借鉴能力第一阶段已经完成内部能力底座：Route Resilie
 - 本期设计稿：`（未产出）`
 - 约束：单期只保留一个 HTML 文件；若存在多稿对比，也必须收敛在同一个 HTML 文件内。
 
+## 验收产物
+
+- Preview gate：`docs-linhay/scripts/check-omniroute-workbench-productization-preview.mjs`
+- DOM snapshot：`plans/20260618-omniroute-workbench-preview-snapshot-v01.md`
+- 截图：`screenshots/20260618/workbench/20260618-omniroute-workbench-preview-baseline-v01.png`
+
 ## Worktree 映射
 
 - branch：`feat/20260618-omniroute-workbench-productization`
@@ -79,5 +85,18 @@ OmniRoute 借鉴能力第一阶段已经完成内部能力底座：Route Resilie
 - 产品化计划：[plans/20260618-productization-plan-v01.md](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260618-omniroute-workbench-productization/plans/20260618-productization-plan-v01.md:1)
 
 ## 当前状态
-- 状态：read-only-summary-implemented
-- 最近更新：2026-06-18
+- 状态：phase7-doctor-check-filters-accepted
+- 最近更新：2026-06-19
+
+## 本轮执行记录
+
+- Doctor Workbench 已增加 `OmniRoute Workbench v1` safe action surface。
+- Route recheck 只在 Wails runtime 可用且 Doctor typed route evidence 提供 stable target 时启用；pending / success / not_implemented / failure 都在当前视图内原样展示。
+- Doctor Workbench 内的 Extension staged apply 卡片仍只展示 dry-run impact review 与 Review 入口，不在 Doctor 页面接入 `PrepareGetTokensExtensionCodexConfigApply` / `ApplyGetTokensExtensionCodexConfigTransaction`，避免从诊断页发起配置写入。
+- Extension Registry 已增加 `/tmp/gettokens-extension-codex-config-staged-preview.toml` 测试目标的 staged temp apply 预演：prepare 生成 confirmation token / diff preview，apply 只写 `/tmp` 测试文件并展示 result / rollback；真实 `~/.codex/config.toml` 写入仍需单独授权。
+- Preview gate 已扩展 `data-omniroute-workbench-action-*` 源码检查和 no-real-apply 检查；产品化截图与 DOM snapshot 固定归档在本 space。
+- 2026-06-18 headless Chrome preview gate 已通过；截图目视确认包含 summary、四类 signals、Safe actions、blocked route recheck、blocked extension staged apply 和 source boundary。
+- 2026-06-19 已补齐 summary signal 多入口导航：Route -> account detail / route decisions，Quota -> status / related account detail，Extension -> extension registry；产品化 preview gate 新增 `signalActionLinks=true` 断言。
+- 2026-06-19 已补齐 Extension Registry staged temp apply UI 与 preview gate：`Staged Temp Apply` 只允许显式 `/tmp` 测试目标，preview/browser 无 Wails runtime 时 blocked，真实 `~/.codex/config.toml` local apply 仍 blocked。
+- 2026-06-19 已补齐 Doctor Workbench Evidence ledger surface：safe action surface 内新增 diagnostics snapshot、route action ledger、extension config ledger 三类 entry；route action 返回 `auditId` 时 ledger 直接显示 audit 结果，产品化 preview gate 新增 `evidenceLedgerSurface=true`。
+- 2026-06-19 已补齐 Doctor check filters：页面提供 All / Actionable / Route / Quota / Critical 过滤入口，只筛选已有 Doctor typed evidence，不改变 sidecar authority 或在前端推导 route/quota 真相；产品化 preview gate 新增 `checkFilterSurface=true`。

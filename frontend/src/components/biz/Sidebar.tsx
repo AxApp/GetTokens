@@ -36,6 +36,7 @@ interface SidebarProps {
 const codexWorkspaceItems = [
   { id: 'feature-config', label: 'nav.codex_feature_config' },
   { id: 'binary-management', label: 'nav.codex_binary_management' },
+  { id: 'doctor-workbench', label: 'doctor-workbench', labelText: 'Doctor Workbench' },
   { id: 'extension-registry', label: 'extension-registry', labelText: 'Extension Registry' },
   { id: 'skills', label: 'nav.codex_skills' },
   { id: 'mcp-servers', label: 'nav.codex_mcp_servers' },
