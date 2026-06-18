@@ -1,19 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { deriveDoctorWorkbenchView } from '../model/doctorWorkbench.ts';
+import {
+  deriveDoctorWorkbenchView,
+  deriveOmniRouteWorkbenchProductizationView,
+} from '../model/doctorWorkbench.ts';
 import { getDoctorWorkbenchPreviewSnapshot } from '../model/previewData.ts';
+import { deriveGetTokensExtensionCodexConfigDryRunView } from '../../gettokens-extension-registry/model.ts';
+import { getGetTokensExtensionCodexConfigDryRunPreview } from '../../gettokens-extension-registry/previewData.ts';
 
 test('doctor workbench view sorts blocking checks before healthy checks', () => {
   const view = deriveDoctorWorkbenchView(getDoctorWorkbenchPreviewSnapshot());
 
   assert.deepEqual(
     view.checks.map((check) => check.id),
-    ['applied-not-routeable', 'catalog-visible-no-backing', 'stale-route-guard', 'route_guard_dropped_reasons', 'account-store-startup-reconcile'],
+    [
+      'applied-not-routeable',
+      'catalog-visible-no-backing',
+      'quota_facts',
+      'stale-route-guard',
+      'route_guard_dropped_reasons',
+      'account-store-startup-reconcile',
+    ],
   );
   assert.deepEqual(view.statusCounts, {
     critical: 1,
-    warning: 3,
+    warning: 4,
     degraded: 0,
     not_ready: 0,
     ok: 1,
@@ -102,7 +114,7 @@ test('doctor preview covers first acceptance checks with evidence and navigation
   const view = deriveDoctorWorkbenchView(getDoctorWorkbenchPreviewSnapshot());
   const byID = Object.fromEntries(view.checks.map((check) => [check.id, check]));
 
-  for (const id of ['applied-not-routeable', 'catalog-visible-no-backing', 'stale-route-guard', 'route_guard_dropped_reasons']) {
+  for (const id of ['applied-not-routeable', 'catalog-visible-no-backing', 'stale-route-guard', 'route_guard_dropped_reasons', 'quota_facts']) {
     assert.ok(byID[id], `missing preview check: ${id}`);
     assert.ok(byID[id].evidenceCount > 0, `missing evidence: ${id}`);
     assert.ok(byID[id].primaryNavigation?.hash.startsWith('#'), `missing navigation hash: ${id}`);
@@ -183,6 +195,45 @@ test('doctor preview keeps source labels aligned for status evidence', () => {
 
   assert.equal(readyCheck?.evidence[0]?.sourceLabel, 'Wails aggregate');
   assert.equal(readyCheck?.evidence[0]?.summaryLabel, 'Open with no recovery events.');
+});
+
+test('doctor preview includes explicit quota fact and non-authoritative missing fact evidence', () => {
+  const view = deriveDoctorWorkbenchView(getDoctorWorkbenchPreviewSnapshot());
+  const quotaCheck = view.checks.find((item) => item.id === 'quota_facts');
+
+  assert.ok(quotaCheck, 'missing quota_facts preview check');
+  assert.equal(quotaCheck?.evidenceCount, 2);
+  assert.equal(quotaCheck?.evidence[0]?.sourceLabel, 'Quota runtime authority');
+  assert.equal(quotaCheck?.evidence[0]?.summaryLabel, 'Stale / Warning risk');
+  assert.equal(quotaCheck?.evidence[1]?.sourceLabel, 'Quota Runtime');
+  assert.equal(
+    quotaCheck?.evidence[1]?.summaryLabel,
+    'Missing explicit quotaFact; windows and usage totals are non-authoritative.',
+  );
+});
+
+test('omniroute productization view summarizes route quota extension and ledger signals', () => {
+  const doctorView = deriveDoctorWorkbenchView(getDoctorWorkbenchPreviewSnapshot());
+  const extensionImpact = deriveGetTokensExtensionCodexConfigDryRunView(
+    getGetTokensExtensionCodexConfigDryRunPreview(),
+  );
+  const productView = deriveOmniRouteWorkbenchProductizationView(doctorView, extensionImpact);
+  const byKind = Object.fromEntries(productView.signals.map((signal) => [signal.kind, signal]));
+
+  assert.equal(productView.title, 'OmniRoute Workbench v1');
+  assert.equal(productView.primaryStatus, 'critical');
+  assert.equal(productView.signals.length, 4);
+  assert.equal(byKind.route?.status, 'warning');
+  assert.match(byKind.route?.summary || '', /1 stable route target/);
+  assert.equal(byKind.route?.navigationHash, '#frame=codex&workspace=account-list');
+  assert.equal(byKind.quota?.status, 'warning');
+  assert.match(byKind.quota?.summary || '', /1 explicit fact/);
+  assert.match(byKind.quota?.summary || '', /1 non-authoritative fallback/);
+  assert.equal(byKind.extension?.status, 'preview');
+  assert.match(byKind.extension?.summary || '', /2 config operations projected/);
+  assert.match(byKind.extension?.blockedReason || '', /Preview only/);
+  assert.equal(byKind.ledger?.status, 'ready');
+  assert.match(byKind.ledger?.summary || '', /route target ready/);
 });
 
 test('doctor route evidence falls back when stable route identity is not explicit', () => {

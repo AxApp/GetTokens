@@ -1,10 +1,22 @@
-import { AlertTriangle, ArrowUpRight, CheckCircle2, Clock3, ShieldAlert } from 'lucide-react';
+import { ActivitySquare, AlertTriangle, ArrowUpRight, CheckCircle2, Clock3, Gauge, Puzzle, Route, ShieldAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import RefreshActionButton from '../../components/ui/RefreshActionButton';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { GetDoctorSnapshot } from '../../../wailsjs/go/main/App';
-import { deriveDoctorWorkbenchView, type DoctorCheckStatus, type DoctorSnapshot } from './model/doctorWorkbench';
+import {
+  deriveDoctorWorkbenchView,
+  deriveOmniRouteWorkbenchProductizationView,
+  type DoctorCheckStatus,
+  type DoctorSnapshot,
+  type OmniRouteWorkbenchSignalKind,
+  type OmniRouteWorkbenchSignalStatus,
+} from './model/doctorWorkbench';
 import { getDoctorWorkbenchPreviewSnapshot } from './model/previewData';
+import { previewGetTokensExtensionCodexConfigDryRun } from '../gettokens-extension-registry/api';
+import {
+  deriveGetTokensExtensionCodexConfigDryRunView,
+  type GetTokensExtensionCodexConfigDryRunView,
+} from '../gettokens-extension-registry/model';
 
 const statusLabel: Record<DoctorCheckStatus, string> = {
   critical: 'Critical',
@@ -31,6 +43,21 @@ const statusIcon = {
   not_ready: Clock3,
   ok: CheckCircle2,
   skipped: Clock3,
+};
+
+const signalTone: Record<OmniRouteWorkbenchSignalStatus, string> = {
+  critical: 'border-red-500/80 bg-red-500/10 text-red-700 dark:text-red-200',
+  warning: 'border-amber-500/80 bg-amber-500/10 text-amber-700 dark:text-amber-200',
+  missing: 'border-[var(--border-color)] bg-[var(--bg-muted)] text-[var(--text-muted)]',
+  preview: 'border-sky-500/70 bg-sky-500/10 text-sky-700 dark:text-sky-200',
+  ready: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
+};
+
+const signalIcon: Record<OmniRouteWorkbenchSignalKind, typeof Route> = {
+  route: Route,
+  quota: Gauge,
+  extension: Puzzle,
+  ledger: ActivitySquare,
 };
 
 function formatPreviewTime(unixMs: number) {
@@ -73,6 +100,7 @@ export default function DoctorWorkbenchFeature() {
   const [snapshot, setSnapshot] = useState<DoctorSnapshot>(() => getDoctorWorkbenchPreviewSnapshot());
   const [loadingSource, setLoadingSource] = useState<'runtime' | 'preview'>('preview');
   const [runtimeError, setRuntimeError] = useState<string>('');
+  const [extensionImpact, setExtensionImpact] = useState<GetTokensExtensionCodexConfigDryRunView | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -109,7 +137,31 @@ export default function DoctorWorkbenchFeature() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    previewGetTokensExtensionCodexConfigDryRun()
+      .then((preview) => {
+        if (cancelled) {
+          return;
+        }
+        setExtensionImpact(deriveGetTokensExtensionCodexConfigDryRunView(preview));
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        setExtensionImpact(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const view = useMemo(() => deriveDoctorWorkbenchView(snapshot), [snapshot]);
+  const omniRouteView = useMemo(
+    () => deriveOmniRouteWorkbenchProductizationView(view, extensionImpact),
+    [view, extensionImpact],
+  );
   const acceptanceCheckIDs = new Set([
     'applied-not-routeable',
     'catalog-visible-no-backing',
@@ -131,7 +183,7 @@ export default function DoctorWorkbenchFeature() {
       <div className="w-full space-y-6">
         <WorkspacePageHeader
           title="Doctor Workbench"
-          subtitle={`source=${view.source} / runtime=${previewOnly ? 'preview-only' : loadingSource} / generated ${formatPreviewTime(view.generatedAtUnixMs)}`}
+          subtitle={`${omniRouteView.title} / source=${view.source} / runtime=${previewOnly ? 'preview-only' : loadingSource} / generated ${formatPreviewTime(view.generatedAtUnixMs)}`}
           align="center"
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -146,6 +198,65 @@ export default function DoctorWorkbenchFeature() {
             </div>
           }
         />
+
+        <section
+          aria-label="OmniRoute workbench summary"
+          data-omniroute-workbench-summary="true"
+          data-omniroute-workbench-status={omniRouteView.primaryStatus}
+          className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                OmniRoute Workbench
+              </div>
+              <h2 className="mt-1 text-[length:var(--font-size-ui-2xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+                Failure explanation surface
+              </h2>
+              <p className="mt-2 max-w-4xl text-[length:var(--font-size-ui-sm)] font-bold leading-6 text-[var(--text-secondary)]">
+                {omniRouteView.subtitle}
+              </p>
+            </div>
+            <div className={`border-2 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${signalTone[omniRouteView.primaryStatus]}`}>
+              {omniRouteView.primaryStatus} / {omniRouteView.sourceLabel}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 xl:grid-cols-4">
+            {omniRouteView.signals.map((signal) => {
+              const Icon = signalIcon[signal.kind];
+              return (
+                <a
+                  key={signal.kind}
+                  href={signal.navigationHash}
+                  data-omniroute-workbench-signal={signal.kind}
+                  data-omniroute-workbench-signal-status={signal.status}
+                  className="block border-2 border-[var(--border-color)] bg-[var(--bg-muted)] p-3 transition-colors hover:bg-[var(--bg-surface)]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className={`inline-flex items-center gap-1.5 border-2 px-2 py-1 text-[10px] font-black uppercase tracking-widest ${signalTone[signal.status]}`}>
+                      <Icon className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+                      {signal.status}
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} aria-hidden="true" />
+                  </div>
+                  <div className="mt-3 text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
+                    {signal.title}
+                  </div>
+                  <p className="mt-2 min-h-12 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-secondary)]">
+                    {signal.summary}
+                  </p>
+                  <div className="mt-3 space-y-1 border-t border-[var(--border-color)] pt-3 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    <div>source={signal.sourceLabel}</div>
+                    <div className="truncate">evidence={signal.evidenceLabel}</div>
+                    <div>{signal.actionLabel}</div>
+                    {signal.blockedReason ? <div className="text-amber-700 dark:text-amber-200">{signal.blockedReason}</div> : null}
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </section>
 
         <section
           aria-label="Doctor source boundary"

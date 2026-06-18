@@ -88,6 +88,14 @@
 - route evidence 继续复用 existing digest helper；
 - extension impact 复用 dry-run view model，不复制 patch plan parser。
 
+执行记录：
+
+- 已实现 read-only `OmniRoute Workbench v1` summary model：`deriveOmniRouteWorkbenchProductizationView`。
+- 已在 Doctor Workbench 顶部增加四类 signals：Route health、Quota health、Extension impact、Evidence ledger。
+- 已新增 preview quota facts，覆盖 explicit quotaFact 与 missing explicit quotaFact 的非权威提示。
+- Extension impact 只使用现有 dry-run preview 和 `deriveGetTokensExtensionCodexConfigDryRunView`，不读取或写入真实 `~/.codex/config.toml`。
+- 页面只渲染导航和证据摘要，不新增 mutation action。
+
 ### Phase 2：User-Facing Entry and Navigation
 
 目标：让用户能稳定进入页面，并从异常卡片跳转到对应细节。
@@ -147,6 +155,23 @@ node docs-linhay/scripts/check-wails-binding-surface.mjs
 CHROME_EXECUTABLE_PATH=/nonexistent/chrome node docs-linhay/scripts/check-doctor-workbench-preview.mjs
 ```
 
+本次 read-only slice 已运行：
+
+```bash
+npm --prefix frontend run test:doctor-workbench
+npm --prefix frontend run typecheck
+node --test frontend/src/features/gettokens-extension-registry/model.test.mjs frontend/src/features/gettokens-extension-registry/featureSource.test.mjs
+node docs-linhay/scripts/check-quota-no-direct-fact-parser.mjs
+node docs-linhay/scripts/check-wails-binding-surface.mjs
+CHROME_EXECUTABLE_PATH=/nonexistent/chrome node docs-linhay/scripts/check-doctor-workbench-preview.mjs
+bash docs-linhay/scripts/check-docs.sh
+git diff --check
+```
+
+本 slice 已扩展 Doctor preview gate：在无 Chrome 环境下继续使用 archived snapshot/screenshot fallback，同时通过源码与 fixture 检查锁住 `data-omniroute-workbench-*` summary markers、explicit quotaFact fixture 与 Extension dry-run 接线。
+
+后续进入 Safe Action Surface 前仍需补真实 action result 状态、pending/failure/rollback UI 和对应测试；本 slice 仅完成 read-only summary。
+
 Broader validation before handoff:
 
 ```bash
@@ -182,3 +207,5 @@ Each slice must be independently mergeable. After slice 2, the page should alrea
 ## 沉淀判断
 
 本计划复用既有 GetTokens 规则：sidecar authority、explicit fact、read-only diagnostics、staged temp apply、preview gate。未产生新的 repo-wide 硬约束；暂不更新 AGENTS.md 或项目 skill。
+
+本次 read-only summary slice 继续复用上述规则，未新增项目级 skill；后续若形成稳定的 Workbench summary pattern，再考虑补入 `gettokens-frontend-design-quality` 或单独 OmniRoute frontend workflow。

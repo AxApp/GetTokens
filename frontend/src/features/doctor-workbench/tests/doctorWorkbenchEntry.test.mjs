@@ -59,8 +59,14 @@ test('doctor feature source file recognizes sidecar diagnostics runtime source',
   assert.match(wailsModelsSource, /routeEvidence\?: DoctorRouteEvidencePayload/);
   assert.match(wailsModelsSource, /droppedReason\?: DoctorRouteEvidencePayload/);
   assert.match(modelSource, /extractTypedDoctorRouteEvidence/);
+  assert.match(modelSource, /deriveOmniRouteWorkbenchProductizationView/);
+  assert.match(modelSource, /OmniRouteWorkbenchSignalKind/);
   assert.match(modelSource, /sourceLabel/);
   assert.match(modelSource, /summaryLabel/);
+  assert.match(featureSource, /data-omniroute-workbench-summary="true"/);
+  assert.match(featureSource, /data-omniroute-workbench-signal=/);
+  assert.match(featureSource, /previewGetTokensExtensionCodexConfigDryRun/);
+  assert.match(featureSource, /deriveGetTokensExtensionCodexConfigDryRunView/);
   assert.match(featureSource, /source=\$\{view\.source\}/);
   assert.match(featureSource, /item\.sourceLabel/);
   assert.match(featureSource, /item\.summaryLabel/);

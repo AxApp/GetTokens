@@ -19,6 +19,12 @@ const archivedSnapshotPath = path.resolve(
 const previewFixturePath = path.resolve(
   'frontend/src/features/doctor-workbench/model/previewData.ts',
 );
+const featureSourcePath = path.resolve(
+  'frontend/src/features/doctor-workbench/DoctorWorkbenchFeature.tsx',
+);
+const modelSourcePath = path.resolve(
+  'frontend/src/features/doctor-workbench/model/doctorWorkbench.ts',
+);
 const screenshotPath = path.join(
   screenshotDir,
   '20260617-doctor-workbench-baseline-v01.png',
@@ -93,9 +99,11 @@ async function captureScreenshot(targetURL, outputPath) {
   }
 }
 
-const [readme, previewFixture, { dom, source, chromeError: domChromeError }] = await Promise.all([
+const [readme, previewFixture, featureSource, modelSource, { dom, source, chromeError: domChromeError }] = await Promise.all([
   readArtifact(readmePath),
   readArtifact(previewFixturePath),
+  readArtifact(featureSourcePath),
+  readArtifact(modelSourcePath),
   dumpDOM(url),
 ]);
 const nestedDroppedReasonFixture = extractFixtureBlock(previewFixture, "refID: 'rd_preview_nested_dropped_reason'");
@@ -136,6 +144,34 @@ const checks = {
   fixtureNestedScope: hasAny(previewFixture, [/droppedReason:\s*\{[\s\S]*scope:\s*'model'/]),
   fixtureNestedReason: hasAny(previewFixture, [/droppedReason:\s*\{[\s\S]*reason:\s*'nested preview droppedReason survives browser fixture'/]),
   fixtureNestedRouteBlocking: hasAny(previewFixture, [/droppedReason:\s*\{[\s\S]*routeBlocking:\s*true/]),
+  fixtureQuotaFact: hasAny(previewFixture, [
+    /id:\s*'quota_facts'/,
+    /quotaFact:\s*\{/,
+    /state:\s*'stale'/,
+    /summary:\s*'Missing explicit quotaFact; windows and usage totals are non-authoritative\.'/,
+  ]),
+  omniRouteSummarySource: hasAny(featureSource, [
+    /data-omniroute-workbench-summary="true"/,
+    /data-omniroute-workbench-status=/,
+    /OmniRoute Workbench/,
+  ]),
+  omniRouteSignalsSource: hasAny(featureSource, [
+    /data-omniroute-workbench-signal=/,
+    /data-omniroute-workbench-signal-status=/,
+    /omniRouteView\.signals\.map/,
+  ]),
+  omniRouteModelSource: hasAny(modelSource, [
+    /deriveOmniRouteWorkbenchProductizationView/,
+    /deriveRouteHealthSignal/,
+    /deriveQuotaHealthSignal/,
+    /deriveExtensionImpactSignal/,
+    /deriveEvidenceLedgerSignal/,
+  ]),
+  extensionDryRunWired: hasAny(featureSource, [
+    /previewGetTokensExtensionCodexConfigDryRun/,
+    /deriveGetTokensExtensionCodexConfigDryRunView/,
+    /setExtensionImpact/,
+  ]),
   fixtureKeepsConflictText: hasAny(previewFixture, [
     /label:\s*'account=acct_wrong_preview auth=auth_wrong_preview'/,
   ]) && hasAny(previewFixture, [
@@ -184,6 +220,23 @@ if (missing.length > 0) {
         "summary: 'scope=account reason=conflicting preview text routeBlocking=false'",
         "source: 'preview-text-conflict'",
       ]),
+      omniRouteSummarySource: missingCheck(featureSource, [
+        'data-omniroute-workbench-summary="true"',
+        'data-omniroute-workbench-status=',
+        'OmniRoute Workbench',
+      ]),
+      omniRouteModelSource: missingCheck(modelSource, [
+        'deriveOmniRouteWorkbenchProductizationView',
+        'deriveRouteHealthSignal',
+        'deriveQuotaHealthSignal',
+        'deriveExtensionImpactSignal',
+        'deriveEvidenceLedgerSignal',
+      ]),
+      extensionDryRunWired: missingCheck(featureSource, [
+        'previewGetTokensExtensionCodexConfigDryRun',
+        'deriveGetTokensExtensionCodexConfigDryRunView',
+        'setExtensionImpact',
+      ]),
     },
   }, null, 2));
   process.exit(1);
@@ -200,6 +253,8 @@ console.log(JSON.stringify({
   artifacts: {
     readmePath,
     previewFixturePath,
+    featureSourcePath,
+    modelSourcePath,
     snapshotPath: archivedSnapshotPath,
     screenshotPath,
   },
