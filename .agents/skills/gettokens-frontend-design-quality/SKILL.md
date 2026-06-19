@@ -318,3 +318,21 @@ Score: <0-20> / 20
 - 只保留“卡片感”，但没有建立普通设置表和复合对象 panel 的层级。
 - 在两栏复合面板里复用全局长字段宽度，导致 `usage_hint_text` 这类 key 竖排。
 - 把参考图里的假字段名照搬到真实配置页面。
+
+### 4.12 Functional review scope for UI migrations
+
+当用户要求审查 UI 迁移但明确限定为“只看功能有没有坏”“不审样式”时，审查必须把功能回归和视觉/皮肤问题分开；不要把 token、字号、颜色、阴影、圆角或设计契约当作阻塞发现。
+
+适用模块：Parchment token 迁移、AntD adapter 试点、基础 UI 组件换肤、Debug/Settings/Accounts 等页面视觉迁移后的功能验收。
+
+执行顺序：
+1. 先复述审查口径：本轮只看事件、状态、数据、路由、禁用态、输入输出、关闭/展开、选择/清空、复制/保存等功能行为。
+2. 对通用组件逐项比对行为契约：`onChange`、`onClick`、`disabled`、`readOnly`、`aria` 状态、portal/overlay 关闭、外部点击关闭、keyboard handling、selected/open/expanded state。
+3. 对业务页面比对 hook 和 handler 是否仍接入：列表数据来源、选中集合、全选/清空、复制/删除、保存/刷新、hash/modal 参数、Wails binding 调用保护。
+4. 视觉类问题只能放到“非本轮阻塞备注”，除非它直接导致功能不可达，例如按钮不可点击、控件被遮挡、文本输入不可见、可访问名称丢失。
+5. 验证优先使用 typecheck、build、相关 unit/model tests、DOM/源码断言；如果完整测试失败，必须说明失败是否来自本次 diff，不能把脏工作区的无关失败归因给当前提交。
+
+常见反例：
+- 用户要求只审功能时，仍把标题字号、inline color、阴影覆盖作为主要阻塞。
+- 只看截图判断“没问题”，没有核对 `disabled`、`onChange`、外部关闭、选中状态和复制/清空等 handler。
+- 完整测试因工作区其它未提交文件失败，却没有隔离说明，导致当前 UI 迁移被误判为功能失败。
