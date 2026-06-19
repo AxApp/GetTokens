@@ -119,3 +119,29 @@ test('account quota section exposes calibration and threshold rule editors', () 
   assert.match(thresholdPanel, /Reason trace/);
   assert.match(thresholdPanel, /Diagnostics \/ ignored facts/);
 });
+
+test('quota threshold rule panel uses the quiet workspace shell', () => {
+  const panel = readFileSync(path.join(repoRoot, 'frontend/src/features/accounts/components/QuotaThresholdRulePanel.tsx'), 'utf8');
+
+  assert.match(panel, /const quotaThresholdPanelClass =/);
+  assert.match(panel, /const quotaThresholdButtonClass =/);
+  assert.match(panel, /const quotaThresholdInputClass =/);
+  assert.match(panel, /const quotaThresholdMetaClass =/);
+  assert.match(panel, /data-account-quota-threshold-rule-panel/);
+  assert.match(panel, /data-budget-window-definition-panel/);
+  assert.match(panel, /data-route-guard-simulation-state/);
+  assert.match(panel, /--gt-surface-canvas/);
+  assert.match(panel, /--gt-surface-muted/);
+  assert.match(panel, /--gt-border-subtle/);
+  assert.match(panel, /--gt-status-danger/);
+  assert.doesNotMatch(panel, /btn-swiss/);
+  assert.doesNotMatch(panel, /input-swiss/);
+  assert.doesNotMatch(panel, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(panel, /border-t-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(panel, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(panel, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(panel, /font-black/);
+  assert.doesNotMatch(panel, /uppercase/);
+  assert.doesNotMatch(panel, /tracking-\[0\.12em\]/);
+  assert.doesNotMatch(panel, /tracking-\[0\.18em\]/);
+});
