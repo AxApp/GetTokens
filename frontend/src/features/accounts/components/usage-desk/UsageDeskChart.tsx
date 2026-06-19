@@ -8,6 +8,26 @@ import {
   type UsageDeskChartUnit,
 } from '../../model/usageDesk';
 
+const usageDeskChartShellClass =
+  'flex flex-col overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const usageDeskChartToolbarClass = 'flex flex-col border-b border-[var(--gt-border-subtle)]';
+const usageDeskChartStatusClass =
+  'flex items-center justify-between border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2';
+const usageDeskChartControlsClass = 'flex w-full items-center bg-[var(--gt-surface-canvas)]';
+const usageDeskChartSurfaceClass = 'overflow-x-auto overflow-y-hidden bg-[var(--gt-surface-canvas)]';
+const usageDeskChartFooterClass =
+  'flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
+const usageDeskChartFooterValueClass =
+  'text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--text-primary)]';
+const usageDeskChartPointRingClass =
+  'rounded-full border border-[var(--gt-surface-canvas)] transition-transform';
+const usageDeskChartAxisLabelClass =
+  'absolute whitespace-nowrap font-semibold transition-all -translate-x-1/2 pointer-events-none';
+const usageDeskEmptyChartClass =
+  'relative overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const usageDeskEmptyChartTitleClass =
+  'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+
 export function UsageChartCard({
   rangeAnimationVersion = 0,
   compactProgress = 0,
@@ -38,19 +58,11 @@ export function UsageChartCard({
   curveMotion?: UsageDeskCurveMotion;
 }) {
   return (
-    <div className="flex flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
+    <div className={usageDeskChartShellClass} data-usage-desk-chart-card>
       {status || controls ? (
-        <div className="flex flex-col border-b-2 border-[var(--border-color)]">
-          {status && (
-            <div className="flex items-center justify-between bg-[var(--bg-surface)] px-4 py-2 border-b-2 border-[var(--border-color)]">
-               {status}
-            </div>
-          )}
-          {controls && (
-             <div className="flex w-full items-center bg-[var(--bg-main)]">
-                {controls}
-             </div>
-          )}
+        <div className={usageDeskChartToolbarClass}>
+          {status && <div className={usageDeskChartStatusClass}>{status}</div>}
+          {controls && <div className={usageDeskChartControlsClass}>{controls}</div>}
         </div>
       ) : null}
 
@@ -67,15 +79,13 @@ export function UsageChartCard({
             curveMotion={curveMotion}
           />
         )}
-        {/* 凹陷感内阴影叠加层 */}
-        <div className="pointer-events-none absolute inset-0 shadow-[inset_0_12px_16px_-8px_var(--shadow-inset-color),inset_0_-12px_16px_-8px_var(--shadow-inset-color)]" />
       </div>
 
       {(summaryItems.length > 0 || footerExtra) && (
-        <footer className="flex flex-wrap items-center gap-x-8 gap-y-2 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
+        <footer className={usageDeskChartFooterClass}>
           {summaryItems.map((item, idx) => (
             <div key={idx} className="flex flex-col gap-1">
-               <span className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-tight text-[var(--text-primary)]">{item}</span>
+              <span className={usageDeskChartFooterValueClass}>{item}</span>
             </div>
           ))}
           {footerExtra && <div className="ml-auto">{footerExtra}</div>}
@@ -194,7 +204,8 @@ function ChartSurface({
   return (
     <div
       ref={chartScrollRef}
-      className="overflow-x-auto overflow-y-hidden bg-[var(--bg-main)]"
+      className={usageDeskChartSurfaceClass}
+      data-usage-desk-chart-surface
       style={{ backgroundImage: chartGridBackgroundImage }}
     >
       <div
@@ -381,7 +392,7 @@ function ChartPoint({
       {/* 1. 数值标签 (不占用空间) */}
       <div
         className={`absolute whitespace-nowrap text-center transition-all pointer-events-none ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
-        style={{ color, fontSize: selected ? 'var(--font-size-ui-md)' : 'var(--font-size-ui-md-compact)', fontWeight: selected ? 900 : 800 }}
+        style={{ color, fontSize: selected ? 'var(--font-size-ui-md)' : 'var(--font-size-ui-md-compact)', fontWeight: selected ? 700 : 600 }}
       >
         {label}
       </div>
@@ -392,14 +403,14 @@ function ChartPoint({
           <div className="absolute h-8 w-8 rounded-full bg-[var(--text-primary)] opacity-10 animate-pulse" />
         )}
         <div
-          className={`rounded-full border-2 border-[var(--bg-main)] shadow-sm transition-transform ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}
+          className={`${usageDeskChartPointRingClass} ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}
           style={{ backgroundColor: color }}
         />
       </div>
 
       {/* 3. 辅助轴向标签 (日期/时间) - 绝对定位到 chart 底部 */}
       <div
-        className="absolute whitespace-nowrap font-black transition-all -translate-x-1/2 pointer-events-none"
+        className={usageDeskChartAxisLabelClass}
         style={{
           top: `${helperY - y}px`,
           fontSize: 'var(--font-size-ui-sm)',
@@ -427,7 +438,8 @@ export function EmptyChartPlaceholder({
 
   return (
     <div
-      className="relative overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
+      className={usageDeskEmptyChartClass}
+      data-usage-desk-empty-chart
       style={{
         height: `${chartHeight}px`,
         backgroundImage:
@@ -435,7 +447,7 @@ export function EmptyChartPlaceholder({
       }}
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,var(--color-chart-empty-overlay-from),var(--color-chart-empty-overlay-to))] px-6 text-center">
-        <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">{title}</div>
+        <div className={usageDeskEmptyChartTitleClass}>{title}</div>
         <p className="max-w-md text-[length:var(--font-size-ui-md-compact)] font-bold leading-6 text-[var(--text-muted)]">{body}</p>
       </div>
     </div>

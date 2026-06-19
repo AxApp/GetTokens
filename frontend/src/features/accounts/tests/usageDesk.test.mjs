@@ -313,6 +313,30 @@ test('usage desk chart grid fills the scroll viewport', async () => {
   assert.doesNotMatch(chartSource, /height: `\$\{chartHeight\}px`,\s*width: `\$\{chartWidth\}px`,\s*backgroundImage:/);
 });
 
+test('UsageDeskChart uses the quiet workspace shell', async () => {
+  const chartSource = await readFile(new URL('../components/usage-desk/UsageDeskChart.tsx', import.meta.url), 'utf8');
+
+  assert.match(chartSource, /const usageDeskChartShellClass =/);
+  assert.match(chartSource, /const usageDeskChartSurfaceClass =/);
+  assert.match(chartSource, /const usageDeskChartFooterClass =/);
+  assert.match(chartSource, /const usageDeskChartPointRingClass =/);
+  assert.match(chartSource, /data-usage-desk-chart-card/);
+  assert.match(chartSource, /data-usage-desk-chart-surface/);
+  assert.match(chartSource, /data-usage-desk-empty-chart/);
+  assert.match(chartSource, /--gt-surface-canvas/);
+  assert.match(chartSource, /--gt-surface-muted/);
+  assert.match(chartSource, /--gt-border-subtle/);
+  assert.doesNotMatch(chartSource, /border-2/);
+  assert.doesNotMatch(chartSource, /border-b-2/);
+  assert.doesNotMatch(chartSource, /border-t-2/);
+  assert.doesNotMatch(chartSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(chartSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(chartSource, /font-black/);
+  assert.doesNotMatch(chartSource, /uppercase/);
+  assert.doesNotMatch(chartSource, /tracking-\[0\.18em\]/);
+  assert.doesNotMatch(chartSource, /shadow-\[/);
+});
+
 test('usage desk detail selection starts from summary state and supports toggling off', async () => {
   const hookSource = await readFile(new URL('../hooks/useUsageDeskFeature.ts', import.meta.url), 'utf8');
 
