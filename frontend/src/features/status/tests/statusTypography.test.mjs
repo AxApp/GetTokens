@@ -262,8 +262,15 @@ test('codex feature rows render a settings table and a grouped multi_agent_v2 co
   assert.doesNotMatch(featureSectionSource, /account-card-header/);
   assert.doesNotMatch(featureSectionSource, /border-l-\[6px\]/);
   assert.match(featureSectionSource, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(13rem,18rem\)\]/);
-  assert.match(featureSectionSource, /border-2 border-\[var\(--border-color\)\]/);
-  assert.match(featureSectionSource, /divide-y-2 divide-\[var\(--border-color\)\]/);
+  assert.match(featureSectionSource, /const codexFeaturePanelClass =/);
+  assert.match(featureSectionSource, /const codexFeaturePrimaryButtonClass =/);
+  assert.match(featureSectionSource, /--gt-surface-canvas/);
+  assert.match(featureSectionSource, /--gt-border-subtle/);
+  assert.match(featureSectionSource, /divide-y divide-\[var\(--gt-border-subtle\)\]/);
+  assert.doesNotMatch(featureSectionSource, /btn-swiss/);
+  assert.doesNotMatch(featureSectionSource, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(featureSectionSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(featureSectionSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(featureSectionSource, /--codex-blue/);
   assert.doesNotMatch(featureSectionSource, /--codex-panel/);
   assert.match(featureSectionSource, /data-codex-feature-primary-heading=\{pathGroup\.primaryLabel\}/);
