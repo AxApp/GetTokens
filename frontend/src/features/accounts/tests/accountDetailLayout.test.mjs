@@ -12,6 +12,9 @@ import { normalizeQuotaTestDisplay } from '../model/accountQuota.ts';
 function sourceBlock(source, startMarker, endMarker) {
   const start = source.indexOf(startMarker);
   assert.notEqual(start, -1, `missing start marker: ${startMarker}`);
+  if (!endMarker) {
+    return source.slice(start);
+  }
   const end = source.indexOf(endMarker, start + startMarker.length);
   assert.notEqual(end, -1, `missing end marker: ${endMarker}`);
   return source.slice(start, end);
@@ -867,6 +870,43 @@ test('account detail shell primitives use the quiet workspace shell', async () =
   assert.doesNotMatch(targetSource, /font-black/);
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.14em\]|tracking-\[0\.06em\]/);
+});
+
+test('account detail stat and evidence primitives use the quiet workspace shell', async () => {
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+  const targetSource = [
+    sourceBlock(primitiveSource, 'const toneClassNames:', 'const sectionDensityClassNames:'),
+    sourceBlock(primitiveSource, 'export function AccountDetailStatGrid({', 'export function AccountDetailFieldGrid({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailFieldGrid({', 'export function AccountDetailField({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailField({', 'export function AccountDetailPill({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailPill({', 'export function AccountDetailNotice({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailNotice({', 'export function AccountDetailEmptyState({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailEmptyState({', 'export function AccountDetailEvidenceGrid({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailEvidenceGrid({', null),
+  ].join('\n');
+
+  assert.match(primitiveSource, /const accountDetailStatGridClass =/);
+  assert.match(primitiveSource, /const accountDetailStatCellClass =/);
+  assert.match(primitiveSource, /const accountDetailFieldGridClass =/);
+  assert.match(primitiveSource, /const accountDetailPillClass =/);
+  assert.match(primitiveSource, /const accountDetailNoticeClass =/);
+  assert.match(primitiveSource, /const accountDetailEvidenceGridClass =/);
+  assert.match(targetSource, /--gt-surface-canvas/);
+  assert.match(targetSource, /--gt-surface-muted/);
+  assert.match(targetSource, /--gt-border-subtle/);
+  assert.match(targetSource, /--gt-status-success/);
+  assert.match(targetSource, /--gt-status-warning/);
+  assert.match(targetSource, /--gt-status-danger/);
+  assert.doesNotMatch(targetSource, /border-2/);
+  assert.doesNotMatch(targetSource, /border-b-2/);
+  assert.doesNotMatch(targetSource, /border-l-4/);
+  assert.doesNotMatch(targetSource, /border-dashed/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(targetSource, /color-status-/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-widest|tracking-wide/);
 });
 
 test('account detail header chips and description are spaced without an internal divider', async () => {

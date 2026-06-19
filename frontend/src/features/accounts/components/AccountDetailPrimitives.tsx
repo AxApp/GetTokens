@@ -8,10 +8,10 @@ export type AccountDetailSectionSpan = 'auto' | 'wide';
 const AccountDetailModuleLayoutContext = createContext<AccountDetailModuleStackLayout>('flow');
 
 const toneClassNames: Record<AccountDetailTone, string> = {
-  neutral: 'border-[var(--border-color)] text-[var(--text-muted)]',
-  success: 'border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]',
-  warning: 'border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] text-[var(--color-status-warning)]',
-  danger: 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]',
+  neutral: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
+  success: 'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
+  warning: 'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)]',
+  danger: 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
 };
 
 const sectionDensityClassNames: Record<AccountDetailSectionDensity, string> = {
@@ -70,6 +70,36 @@ const accountDetailModuleSideClass =
   'min-w-0 border-t border-[var(--gt-border-subtle)] xl:border-l xl:border-t-0 xl:pl-6';
 const accountDetailModuleBandsClass =
   'min-w-0 border-t border-[var(--gt-border-subtle)]';
+const accountDetailStatGridClass =
+  'grid overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const accountDetailStatCellClass =
+  'min-w-0 border-b border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3';
+const accountDetailStatLabelClass =
+  'truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailStatValueClass =
+  'mt-1 truncate font-mono text-[length:var(--font-size-ui-md)] font-semibold tabular-nums text-[var(--text-primary)]';
+const accountDetailStatMetaClass =
+  'mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailFieldGridClass =
+  'grid gap-4 border-b border-[var(--gt-border-subtle)] pb-5';
+const accountDetailFieldLabelClass =
+  'text-[length:var(--font-size-ui-sm)] font-semibold italic tracking-normal text-[var(--text-muted)]';
+const accountDetailFieldValueClass =
+  'break-all text-[length:var(--font-size-ui-md)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountDetailPillClass =
+  'inline-flex min-h-7 items-center rounded border px-2 py-1 text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal';
+const accountDetailNoticeClass =
+  'rounded border px-4 py-3 text-[length:var(--font-size-ui-sm)] font-medium leading-relaxed tracking-normal';
+const accountDetailEmptyStateClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-6 text-center text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-muted)]';
+const accountDetailEvidenceGridClass =
+  'grid overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const accountDetailEvidenceRowClass =
+  'grid gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2.5 last:border-b-0 md:grid-cols-[8rem_minmax(0,1fr)] md:items-start';
+const accountDetailEvidenceLabelClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailEvidenceValueClass =
+  'min-w-0 break-all font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
 
 interface AccountDetailSectionProps {
   eyebrow?: ReactNode;
@@ -353,7 +383,7 @@ export function AccountDetailStatGrid({
       : 'md:grid-cols-3';
 
   return (
-    <div className={`grid overflow-hidden border-2 border-[var(--border-color)] ${columnClassName} ${className}`}>
+    <div className={`${accountDetailStatGridClass} ${columnClassName} ${className}`}>
       {children}
     </div>
   );
@@ -369,15 +399,15 @@ export function AccountDetailStatCell({
   meta?: ReactNode;
 }) {
   return (
-    <div className="min-w-0 border-b border-r border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3">
-      <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+    <div className={accountDetailStatCellClass}>
+      <div className={accountDetailStatLabelClass}>
         {label}
       </div>
-      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tabular-nums text-[var(--text-primary)]">
+      <div className={accountDetailStatValueClass}>
         {value}
       </div>
       {meta ? (
-        <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+        <div className={accountDetailStatMetaClass}>
           {meta}
         </div>
       ) : null}
@@ -396,7 +426,7 @@ export function AccountDetailFieldGrid({
 }) {
   const columnClassName = columns === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3';
   return (
-    <div className={`grid gap-4 border-b-2 border-dashed border-[var(--border-color)] pb-5 ${columnClassName} ${className}`}>
+    <div className={`${accountDetailFieldGridClass} ${columnClassName} ${className}`}>
       {children}
     </div>
   );
@@ -415,11 +445,11 @@ export function AccountDetailField({
 }) {
   return (
     <div className={`min-w-0 space-y-1 ${align === 'right' ? 'text-right' : ''}`}>
-      <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase italic text-[var(--text-muted)]">
+      <div className={accountDetailFieldLabelClass}>
         {label}
       </div>
       <div
-        className="break-all text-[length:var(--font-size-ui-md)] font-black uppercase text-[var(--text-primary)]"
+        className={accountDetailFieldValueClass}
         title={title}
       >
         {value}
@@ -438,7 +468,7 @@ export function AccountDetailPill({
   className?: string;
 }) {
   return (
-    <span className={`inline-flex min-h-7 items-center border px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${toneClassNames[tone]} ${className}`}>
+    <span className={`${accountDetailPillClass} ${toneClassNames[tone]} ${className}`}>
       {children}
     </span>
   );
@@ -454,7 +484,7 @@ export function AccountDetailNotice({
   className?: string;
 }) {
   return (
-    <div className={`border-l-4 border-y border-r px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide ${toneClassNames[tone]} ${className}`}>
+    <div className={`${accountDetailNoticeClass} ${toneClassNames[tone]} ${className}`}>
       {children}
     </div>
   );
@@ -468,7 +498,7 @@ export function AccountDetailEmptyState({
   className?: string;
 }) {
   return (
-    <div className={`border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-6 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-widest text-[var(--text-muted)] ${className}`}>
+    <div className={`${accountDetailEmptyStateClass} ${className}`}>
       {children}
     </div>
   );
@@ -483,16 +513,14 @@ export function AccountDetailEvidenceGrid({
 }) {
   const outerClassName = compact
     ? 'grid mt-2'
-    : 'grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]';
+    : accountDetailEvidenceGridClass;
   const rowClassName = compact
     ? 'grid gap-1 py-1 md:grid-cols-[6rem_minmax(0,1fr)] md:items-start'
-    : 'grid gap-2 border-b border-dashed border-[var(--border-color)] px-3 py-2.5 last:border-b-0 md:grid-cols-[8rem_minmax(0,1fr)] md:items-start';
-  const labelClassName = compact
-    ? 'font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]'
-    : 'font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]';
+    : accountDetailEvidenceRowClass;
+  const labelClassName = accountDetailEvidenceLabelClass;
   const valueClassName = compact
     ? 'min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)]'
-    : 'min-w-0 break-all font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal text-[var(--text-primary)]';
+    : accountDetailEvidenceValueClass;
 
   return (
     <div className={outerClassName}>
