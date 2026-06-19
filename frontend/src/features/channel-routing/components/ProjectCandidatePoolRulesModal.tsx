@@ -22,6 +22,9 @@ interface ProjectCandidatePoolRulesModalProps {
   onPreviewRule?: (rule: ProjectCandidatePoolRuleLike) => void;
 }
 
+const projectCandidateRulesModalButtonClass =
+  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)]';
+
 export default function ProjectCandidatePoolRulesModal({
   channel,
   rules,
@@ -43,11 +46,11 @@ export default function ProjectCandidatePoolRulesModal({
       coverViewport
       ariaLabel="项目配置"
       header={
-        <div className="flex min-w-0 items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center justify-between gap-3" data-project-candidate-rules-modal-header>
           <div className="flex min-w-0 items-center gap-2">
-            <Settings2 className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={4} />
+            <Settings2 className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={3} />
             <div className="min-w-0">
-              <h2 className="text-[length:var(--font-size-ui-lg)] font-black leading-5 text-[var(--text-primary)]">
+              <h2 className="text-[length:var(--font-size-ui-lg)] font-semibold leading-5 text-[var(--text-primary)]">
                 项目配置
               </h2>
               <p className="mt-1 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
@@ -61,9 +64,9 @@ export default function ProjectCandidatePoolRulesModal({
               type="button"
               onClick={onClose}
               aria-label="关闭项目配置"
-              className="btn-swiss flex min-h-9 items-center gap-2 !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]"
+              className={projectCandidateRulesModalButtonClass}
             >
-              <X className="h-3.5 w-3.5" strokeWidth={4} />
+              <X className="h-3.5 w-3.5" strokeWidth={3} />
               关闭
             </button>
           </div>

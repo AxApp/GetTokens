@@ -1543,15 +1543,26 @@ test('Codex and Claude account list pages expose project candidate pool rule edi
 
 test('ProjectCandidatePoolRulesPanel stays flat inside the project config modal', async () => {
   const source = await readFile(new URL('../components/ProjectCandidatePoolRulesPanel.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/ProjectCandidatePoolRulesModal.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /<section className="flex min-h-0 flex-1 flex-col">/);
-  assert.match(source, /grid min-h-0 flex-1 gap-6 overflow-x-hidden/);
-  assert.match(source, /xl:border-r xl:border-\[var\(--border-color\)\] xl:pr-5/);
-  assert.match(source, /border-y border-\[var\(--border-color\)\]/);
+  assert.match(source, /const projectCandidateRulesShellClass =/);
+  assert.match(source, /const projectCandidateRulesPanelClass =/);
+  assert.match(source, /const projectCandidateRulesButtonClass =/);
+  assert.match(source, /const projectCandidateRulesSelectClass =/);
+  assert.match(source, /data-project-candidate-pool-rules-panel/);
+  assert.match(source, /data-project-candidate-rule-draft/);
+  assert.match(source, /data-project-candidate-account-list/);
+  assert.match(source, /data-project-candidate-rule-list/);
+  assert.match(source, /data-project-candidate-rule-row/);
+  assert.match(source, /data-project-candidate-rules-message/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+  assert.match(modalSource, /const projectCandidateRulesModalButtonClass =/);
+  assert.match(modalSource, /data-project-candidate-rules-modal-header/);
   assert.match(source, /projectOptions\.map/);
   assert.match(source, /请选择历史项目/);
-  assert.match(source, /flex min-h-0 min-w-0 flex-1 flex-col/);
-  assert.match(source, /min-h-0 flex-1 overflow-y-auto overflow-x-hidden border-y border-\[var\(--border-color\)\]/);
   assert.match(source, /createPortal/);
   assert.match(source, /primaryActionSlot/);
   assert.match(source, /onClick=\{saveRule\}[\s\S]*\{selectedExistingRule \? '更新规则' : '新建规则'\}/);
@@ -1576,6 +1587,16 @@ test('ProjectCandidatePoolRulesPanel stays flat inside the project config modal'
   assert.doesNotMatch(source, /overflow-hidden border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\]/);
   assert.doesNotMatch(source, /<section className="min-w-0 border border-\[var\(--border-color\)\] p-3">/);
   assert.doesNotMatch(source, /<section className="min-w-0 border border-\[var\(--border-color\)\]">/);
+  for (const targetSource of [source, modalSource]) {
+    assert.doesNotMatch(targetSource, /btn-swiss|input-swiss|select-swiss|card-swiss/);
+    assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
+    assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+    assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+    assert.doesNotMatch(targetSource, /color-status-/);
+    assert.doesNotMatch(targetSource, /font-black/);
+    assert.doesNotMatch(targetSource, /uppercase/);
+    assert.doesNotMatch(targetSource, /shadow-hard|shadow-\[/);
+  }
 });
 
 test('ChannelRoutingWorkbench leaves participant account filtering to the account order list', async () => {

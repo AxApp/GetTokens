@@ -40,6 +40,39 @@ const emptyDraft: ProjectCandidatePoolRuleLike = {
   allowAccountIDs: [],
 };
 
+const projectCandidateRulesShellClass = 'flex min-h-0 flex-1 flex-col text-[var(--text-primary)]';
+const projectCandidateRulesGridClass =
+  'grid min-h-0 flex-1 gap-4 overflow-x-hidden xl:grid-cols-[minmax(18rem,0.78fr)_minmax(0,1.22fr)]';
+const projectCandidateRulesPanelClass =
+  'flex min-h-0 min-w-0 flex-col rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const projectCandidateRulesPanelBodyClass = 'flex min-h-0 flex-1 flex-col gap-3 p-3';
+const projectCandidateRulesLabelClass = 'mb-1 block text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]';
+const projectCandidateRulesSelectClass =
+  'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+const projectCandidateRulesListClass =
+  'min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const projectCandidateRulesEmptyClass = 'px-3 py-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const projectCandidateRulesAccountRowClass =
+  'grid min-w-0 grid-cols-[1rem_2rem_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2 last:border-b-0';
+const projectCandidateRulesRankClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const projectCandidateRulesButtonClass =
+  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+const projectCandidateRulesPrimaryButtonClass =
+  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50';
+const projectCandidateRulesIconButtonClass =
+  'inline-flex h-7 w-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-45';
+const projectCandidateRulesMetaClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const projectCandidateRulesChipClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-secondary)]';
+const projectCandidateRulesStrongChipClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]';
+const projectCandidateRulesDangerChipClass =
+  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,transparent)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-status-danger)]';
+const projectCandidateRulesMessageClass =
+  'mt-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-secondary)]';
+
 export default function ProjectCandidatePoolRulesPanel({
   channel,
   rules,
@@ -220,32 +253,32 @@ export default function ProjectCandidatePoolRulesPanel({
   }
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col">
+    <section className={projectCandidateRulesShellClass} data-project-candidate-pool-rules-panel>
       {primaryActionSlot
         ? createPortal(
             <button
               type="button"
               onClick={saveRule}
               disabled={controlsDisabled || draftIssues.length > 0}
-              className="btn-swiss flex min-h-9 items-center justify-center gap-2 !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]"
+              className={projectCandidateRulesPrimaryButtonClass}
             >
-              <Plus className="h-3.5 w-3.5" strokeWidth={4} />
+              <Plus className="h-3.5 w-3.5" strokeWidth={3} />
               {selectedExistingRule ? '更新规则' : '新建规则'}
             </button>,
             primaryActionSlot,
           )
         : null}
 
-      <div className="grid min-h-0 flex-1 gap-6 overflow-x-hidden xl:grid-cols-[minmax(18rem,0.8fr)_minmax(0,1.2fr)]">
-        <section className="flex min-h-0 min-w-0 flex-col xl:border-r xl:border-[var(--border-color)] xl:pr-5">
-          <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className={projectCandidateRulesGridClass}>
+        <section className={projectCandidateRulesPanelClass} data-project-candidate-rule-draft>
+          <div className={projectCandidateRulesPanelBodyClass}>
             <label className="block min-w-0">
-              <span className="mb-1 block text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">项目</span>
+              <span className={projectCandidateRulesLabelClass}>项目</span>
               <select
                 value={String(draft.projectKey || '')}
                 disabled={controlsDisabled || projectOptions.length === 0}
                 onChange={(event) => selectProject(event.currentTarget.value)}
-                className="input-swiss h-10 w-full text-[length:var(--font-size-ui-sm)]"
+                className={projectCandidateRulesSelectClass}
               >
                 <option value="">请选择历史项目</option>
                 {projectOptions.map((option) => (
@@ -258,14 +291,14 @@ export default function ProjectCandidatePoolRulesPanel({
             </label>
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
-                <span className="text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">允许账号</span>
-                <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                <span className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">允许账号</span>
+                <span className={projectCandidateRulesMetaClass}>
                   {normalizedAllowAccountIDs.length} enabled
                 </span>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden border-y border-[var(--border-color)]">
+              <div className={projectCandidateRulesListClass} data-project-candidate-account-list>
                 {requestableAccounts.length === 0 ? (
-                  <div className="px-3 py-3 text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">暂无可选账号</div>
+                  <div className={projectCandidateRulesEmptyClass}>暂无可选账号</div>
                 ) : (
                   draftAccountRows.map(({ account, rank, enabled }) => {
                     const accountID = String(account.id || '').trim();
@@ -275,8 +308,8 @@ export default function ProjectCandidatePoolRulesPanel({
                       <div
                         key={accountID}
                         className={[
-                          'grid min-w-0 grid-cols-[1rem_2rem_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--border-color)] px-3 py-2 last:border-b-0',
-                          enabled ? 'bg-[var(--bg-panel)]' : 'opacity-70',
+                          projectCandidateRulesAccountRowClass,
+                          enabled ? 'bg-[var(--gt-surface-muted)]' : 'opacity-70',
                         ].join(' ')}
                       >
                         <input
@@ -288,14 +321,14 @@ export default function ProjectCandidatePoolRulesPanel({
                           className="h-4 w-4 accent-[var(--text-primary)]"
                           aria-label={`${enabled ? '停用' : '启用'} ${account.label || accountID}`}
                         />
-                        <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                        <span className={projectCandidateRulesRankClass}>
                           {enabled ? `#${rank}` : '--'}
                         </span>
                         <label htmlFor={`project-candidate-account-${accountID}`} className="min-w-0 cursor-pointer">
-                          <span className="block truncate text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
+                          <span className="block truncate text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
                             {account.label || accountID}
                           </span>
-                          <span className="block truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                          <span className={projectCandidateRulesMetaClass}>
                             {account.provider || account.sourceKind || accountID}
                           </span>
                         </label>
@@ -304,21 +337,21 @@ export default function ProjectCandidatePoolRulesPanel({
                             type="button"
                             disabled={controlsDisabled || !canMoveUp}
                             onClick={() => moveDraftAccount(accountID, -1)}
-                            className="btn-swiss flex h-7 w-7 items-center justify-center !px-0 !py-0"
+                            className={projectCandidateRulesIconButtonClass}
                             aria-label={`上移 ${account.label || accountID}`}
                             title="上移"
                           >
-                            <ArrowUp className="h-3.5 w-3.5" strokeWidth={4} />
+                            <ArrowUp className="h-3.5 w-3.5" strokeWidth={3} />
                           </button>
                           <button
                             type="button"
                             disabled={controlsDisabled || !canMoveDown}
                             onClick={() => moveDraftAccount(accountID, 1)}
-                            className="btn-swiss flex h-7 w-7 items-center justify-center !px-0 !py-0"
+                            className={projectCandidateRulesIconButtonClass}
                             aria-label={`下移 ${account.label || accountID}`}
                             title="下移"
                           >
-                            <ArrowDown className="h-3.5 w-3.5" strokeWidth={4} />
+                            <ArrowDown className="h-3.5 w-3.5" strokeWidth={3} />
                           </button>
                         </span>
                       </div>
@@ -330,26 +363,26 @@ export default function ProjectCandidatePoolRulesPanel({
           </div>
         </section>
 
-        <section className="flex min-h-0 min-w-0 flex-col">
+        <section className={projectCandidateRulesPanelClass} data-project-candidate-rule-list>
           {rows.length === 0 ? (
-            <div className="min-h-0 flex-1 border-y border-[var(--border-color)] px-3 py-4 text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">
+            <div className="min-h-0 flex-1 px-3 py-4 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
               暂无项目候选池规则
             </div>
           ) : (
-            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden border-y border-[var(--border-color)]">
+            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
               {rows.map((row) => (
-                <article key={row.id} className="min-w-0 border-b border-[var(--border-color)] p-3 last:border-b-0">
+                <article key={row.id} className="min-w-0 border-b border-[var(--gt-border-subtle)] p-3 last:border-b-0" data-project-candidate-rule-row>
                   <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                        <h3 className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                           {row.projectTitle}
                         </h3>
-                        <span className="border border-[var(--border-color)] px-1.5 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                        <span className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]">
                           {row.statusLabel}
                         </span>
                       </div>
-                      <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                      <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]">
                         {row.projectKey}
                       </div>
                       {row.projectMeta ? (
@@ -362,7 +395,7 @@ export default function ProjectCandidatePoolRulesPanel({
                           type="button"
                           onClick={() => onPreviewRule(row.raw)}
                           disabled={controlsDisabled}
-                          className="btn-swiss min-h-8 !px-2 !py-1 !text-[length:var(--font-size-ui-xs)]"
+                          className={projectCandidateRulesButtonClass}
                         >
                           预演
                         </button>
@@ -371,7 +404,7 @@ export default function ProjectCandidatePoolRulesPanel({
                         type="button"
                         onClick={() => void toggleRule(row.raw)}
                         disabled={controlsDisabled}
-                        className="btn-swiss min-h-8 !px-2 !py-1 !text-[length:var(--font-size-ui-xs)]"
+                        className={projectCandidateRulesButtonClass}
                       >
                         {row.enabled ? '停用' : '启用'}
                       </button>
@@ -380,24 +413,24 @@ export default function ProjectCandidatePoolRulesPanel({
                         onClick={() => void deleteRule(row.raw)}
                         disabled={controlsDisabled}
                         aria-label="删除项目候选池规则"
-                        className="btn-swiss flex min-h-8 items-center gap-1 !px-2 !py-1 !text-[length:var(--font-size-ui-xs)]"
+                        className={`${projectCandidateRulesButtonClass} gap-1`}
                       >
-                        <Trash2 className="h-3.5 w-3.5" strokeWidth={4} />
+                        <Trash2 className="h-3.5 w-3.5" strokeWidth={3} />
                         删除
                       </button>
                     </div>
                   </div>
                   <div className="mt-3 flex min-w-0 flex-wrap gap-2">
-                    <span className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
+                    <span className={projectCandidateRulesStrongChipClass}>
                       {row.accountCountLabel}
                     </span>
                     {row.allowAccountTitles.slice(0, 5).map((title) => (
-                      <span key={title} className="max-w-[14rem] truncate border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-xs)] text-[var(--text-secondary)]">
+                      <span key={title} className={`${projectCandidateRulesChipClass} max-w-[14rem] truncate`}>
                         {title}
                       </span>
                     ))}
                     {row.missingAccountIDs.length > 0 ? (
-                      <span className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black text-[var(--color-status-danger)]">
+                      <span className={projectCandidateRulesDangerChipClass}>
                         缺失 {row.missingAccountIDs.length}
                       </span>
                     ) : null}
@@ -410,7 +443,7 @@ export default function ProjectCandidatePoolRulesPanel({
       </div>
 
       {message ? (
-        <div className="border-t-2 border-[var(--border-color)] px-4 py-3 text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-secondary)]">
+        <div className={projectCandidateRulesMessageClass} data-project-candidate-rules-message>
           {message}
         </div>
       ) : null}
