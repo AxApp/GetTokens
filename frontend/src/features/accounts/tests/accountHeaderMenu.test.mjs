@@ -76,9 +76,17 @@ test('AccountsHeader exposes separate account-list and runtime refresh actions',
 
   assert.match(headerSource, /onRefreshAccounts/);
   assert.match(headerSource, /onRefreshRuntime/);
+  assert.match(headerSource, /runtimeRefreshing\?: boolean/);
   assert.match(headerSource, /accounts\.refresh_accounts/);
   assert.match(headerSource, /accounts\.refresh_runtime/);
   assert.match(headerSource, /accounts\.refresh_runtime_hint/);
+  assert.match(headerSource, /disabled=\{!ready \|\| loading \|\| runtimeRefreshing\}/);
+  assert.match(headerSource, /data-accounts-runtime-refreshing=\{runtimeRefreshing \? 'true' : undefined\}/);
+  assert.match(headerSource, /className=\{`h-4 w-4 \$\{runtimeRefreshing \? 'animate-pulse' : ''\}`\}/);
+  assert.doesNotMatch(headerSource, /<Activity className=\{`h-4 w-4 \$\{loading \? 'animate-pulse' : ''\}`\}/);
+  assert.match(featureSource, /const \[runtimeRefreshing, setRuntimeRefreshing\] = useState\(false\)/);
+  assert.match(featureSource, /await Promise\.allSettled\(\[/);
+  assert.match(featureSource, /runtimeRefreshing=\{runtimeRefreshing\}/);
   assert.match(featureSource, /onRefreshAccounts=\{\(\) => void loadAccounts\(\{ refreshSupplementalData: false \}\)\}/);
   assert.match(featureSource, /onRefreshRuntime=\{\(\) => void refreshAccountsRuntime\(\)\}/);
   assert.doesNotMatch(featureSource, /onRefresh=\{\(\) => void loadAccounts\(\{ showSupplementalRefreshing: true \}\)\}/);

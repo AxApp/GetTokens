@@ -170,6 +170,8 @@ test('accounts toolbar display mode switch only offers full and list views', asy
   const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /grid-cols-2/);
+  assert.match(source, /className="grid h-8 shrink-0 grid-cols-2 overflow-hidden rounded-md border"/);
+  assert.match(source, /text-\[length:var\(--font-size-ui-xs\)\] font-medium leading-none/);
   assert.match(source, /onDisplayModeChange\('full'\)/);
   assert.match(source, /onDisplayModeChange\('list'\)/);
   assert.doesNotMatch(source, /onDisplayModeChange\('compact'\)|display_mode_compact/);

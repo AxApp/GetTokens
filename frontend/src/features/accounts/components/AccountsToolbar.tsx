@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Download, MoreVertical, Power, RefreshCw, Trash2, X } from 'lucide-react';
+import { Download, MoreVertical, Power, RefreshCw, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import SearchInput from '../../../components/ui/SearchInput';
 import {
   applyAccountsFilterState,
@@ -203,14 +203,22 @@ export default function AccountsToolbar({
         <div className="flex w-full items-center">
           <SearchInput value={searchTerm} onChange={onSearchChange} placeholder={t('accounts.search_placeholder')} />
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div
+          data-accounts-toolbar-controls="true"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-2.5 py-2"
+          style={{
+            borderColor: 'var(--gt-border-subtle)',
+            backgroundColor: 'color-mix(in srgb, var(--gt-surface-muted) 54%, transparent)',
+          }}
+        >
           <div ref={menuRef} className="relative">
             <button
               type="button"
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+              className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
             >
-              {buildToolbarFilterLabel(t, filterSummaryParts)}
+              <SlidersHorizontal size={13} strokeWidth={2} />
+              <span>{buildToolbarFilterLabel(t, filterSummaryParts)}</span>
             </button>
             {isMenuOpen ? (
               <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 rounded-lg border p-4"
@@ -375,13 +383,13 @@ export default function AccountsToolbar({
             ) : null}
           </div>
           {filterSummaryParts.length > 0 ? (
-            <div className="flex min-w-[220px] flex-1 flex-wrap items-center gap-1.5">
+            <div className="flex min-w-[220px] flex-1 flex-wrap items-center gap-1">
               {filterSummaryParts.map((part, index) => (
                 <button
                   key={`${part.kind}-${part.label}-${index}`}
                   type="button"
                   onClick={() => removeFilterPart(index)}
-                  className="inline-flex h-9 max-w-[210px] items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-status-danger)] hover:text-white"
+                  className="inline-flex h-8 max-w-[210px] items-center gap-1.5 rounded-md border px-2 text-xs font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-status-danger)] hover:text-white"
                   style={{ borderColor: 'var(--gt-border-default)', backgroundColor: 'var(--gt-surface-muted)' }}
                   title={t('accounts.filter_remove_condition')}
                 >
@@ -391,7 +399,7 @@ export default function AccountsToolbar({
               ))}
             </div>
           ) : null}
-          <div className="flex flex-wrap items-stretch justify-end gap-2">
+          <div className="flex flex-wrap items-stretch justify-end gap-1.5">
             <ToolbarModeMenu
               label={t('accounts.group_mode_label')}
               value={groupMode}
@@ -417,7 +425,7 @@ export default function AccountsToolbar({
               onChange={(value) => onSortModeChange(value as AccountSortMode)}
             />
             <div
-              className="grid h-10 shrink-0 grid-cols-2 overflow-hidden rounded-md border"
+              className="grid h-8 shrink-0 grid-cols-2 overflow-hidden rounded-md border"
               style={{ borderColor: 'var(--gt-border-default)', backgroundColor: 'var(--gt-surface-canvas)' }}
               data-account-card-ignore-click="true"
             >
@@ -428,7 +436,10 @@ export default function AccountsToolbar({
                 {t('accounts.display_mode_list')}
               </DisplayModeButton>
             </div>
-            <button onClick={onToggleSelectionMode} className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]">
+            <button
+              onClick={onToggleSelectionMode}
+              className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
+            >
               {isSelectionMode ? t('accounts.cancel_selection') : t('accounts.selection_mode')}
             </button>
           </div>
@@ -847,7 +858,7 @@ function ToolbarModeMenu<T extends string>({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]"
+        className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
       >
         {label} · {activeLabel}
       </button>
@@ -896,7 +907,7 @@ function DisplayModeButton({
     <button
       type="button"
       onClick={onClick}
-      className={`h-full min-h-0 px-3 text-sm font-medium leading-none ${
+      className={`h-full min-h-0 px-2.5 text-[length:var(--font-size-ui-xs)] font-medium leading-none ${
         bordered ? 'border-r border-[var(--border-color)]' : ''
       } ${
         active

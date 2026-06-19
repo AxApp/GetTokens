@@ -268,13 +268,22 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     useState<AccountDetailScriptRoute | "">(() =>
       readAccountDetailScriptFromHash(),
     );
-  const refreshAccountsRuntime = useCallback(() => {
-    accounts.forEach((account) => {
-      void refreshCodexQuota(account);
-    });
-    void refreshAccountUsage(accounts);
-    void refreshAccountRateLimits(accounts);
-  }, [accounts, refreshAccountRateLimits, refreshAccountUsage, refreshCodexQuota]);
+  const [runtimeRefreshing, setRuntimeRefreshing] = useState(false);
+  const refreshAccountsRuntime = useCallback(async () => {
+    if (runtimeRefreshing) {
+      return;
+    }
+    setRuntimeRefreshing(true);
+    try {
+      await Promise.allSettled([
+        ...accounts.map((account) => refreshCodexQuota(account)),
+        refreshAccountUsage(accounts),
+        refreshAccountRateLimits(accounts),
+      ]);
+    } finally {
+      setRuntimeRefreshing(false);
+    }
+  }, [accounts, refreshAccountRateLimits, refreshAccountUsage, refreshCodexQuota, runtimeRefreshing]);
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const [accountModelNamesByID, setAccountModelNamesByID] = useState<Record<string, string[]>>({});
@@ -1399,6 +1408,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             accountCount={accounts.length}
             ready={ready}
             loading={loading}
+            runtimeRefreshing={runtimeRefreshing}
             isHeaderActionsMenuOpen={isHeaderActionsMenuOpen}
             headerActionsMenuRef={headerActionsMenuRef}
             onToggleMenu={() => setIsHeaderActionsMenuOpen((prev) => !prev)}

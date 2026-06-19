@@ -17,6 +17,7 @@ interface AccountsHeaderProps {
   accountCount: number;
   ready: boolean;
   loading: boolean;
+  runtimeRefreshing?: boolean;
   isHeaderActionsMenuOpen: boolean;
   headerActionsMenuRef: MutableRefObject<HTMLDivElement | null>;
   onToggleMenu: () => void;
@@ -34,6 +35,7 @@ export default function AccountsHeader({
   accountCount,
   ready,
   loading,
+  runtimeRefreshing = false,
   isHeaderActionsMenuOpen,
   headerActionsMenuRef,
   onToggleMenu,
@@ -103,11 +105,13 @@ export default function AccountsHeader({
             <button
               onClick={onRefreshRuntime}
               className="parchment-toolbar-action-secondary flex h-10 w-10 items-center justify-center !px-0"
-              disabled={!ready || loading}
+              disabled={!ready || loading || runtimeRefreshing}
+              aria-busy={runtimeRefreshing ? 'true' : undefined}
+              data-accounts-runtime-refreshing={runtimeRefreshing ? 'true' : undefined}
               title={t('accounts.refresh_runtime_hint')}
               aria-label={t('accounts.refresh_runtime')}
             >
-              <Activity className={`h-4 w-4 ${loading ? 'animate-pulse' : ''}`} strokeWidth={2} />
+              <Activity className={`h-4 w-4 ${runtimeRefreshing ? 'animate-pulse' : ''}`} strokeWidth={2} />
             </button>
             <div ref={headerActionsMenuRef} className="relative">
               <button

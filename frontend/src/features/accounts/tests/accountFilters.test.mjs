@@ -391,8 +391,13 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.sort_mode_priority'), true);
   assert.equal(source.includes('accounts.sort_mode_quota'), true);
   assert.equal(source.includes('disabled={planAvailabilityResolved'), false);
-  assert.equal(source.includes('className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]"'), true);
-  assert.equal(source.includes('text-[length:var(--font-size-ui-sm-plus)] font-black uppercase leading-none tracking-[0.12em]'), true);
+  assert.equal(source.includes('data-accounts-toolbar-controls="true"'), true);
+  assert.equal(source.includes("backgroundColor: 'color-mix(in srgb, var(--gt-surface-muted) 54%, transparent)'"), true);
+  assert.equal(source.includes('SlidersHorizontal'), true);
+  assert.equal(source.includes('className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"'), true);
+  assert.equal(source.includes('className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]"'), false);
+  assert.equal(source.includes('text-[length:var(--font-size-ui-sm-plus)] font-black uppercase leading-none tracking-[0.12em]'), false);
+  assert.equal(source.includes('text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)]'), true);
 });
 
 test('AccountsToolbar filter menu keeps options in compact list mode', async () => {
@@ -423,9 +428,12 @@ test('AccountsHeader splits account list refresh from runtime refresh', async ()
 
   assert.match(headerSource, /onRefreshAccounts: \(\) => void/);
   assert.match(headerSource, /onRefreshRuntime: \(\) => void/);
+  assert.match(headerSource, /runtimeRefreshing\?: boolean/);
   assert.match(headerSource, /title=\{t\('accounts\.refresh_accounts'\)\}/);
   assert.match(headerSource, /title=\{t\('accounts\.refresh_runtime_hint'\)\}/);
   assert.match(headerSource, /aria-label=\{t\('accounts\.refresh_runtime'\)\}/);
+  assert.match(headerSource, /data-accounts-runtime-refreshing=\{runtimeRefreshing \? 'true' : undefined\}/);
+  assert.match(featureSource, /runtimeRefreshing=\{runtimeRefreshing\}/);
   assert.match(featureSource, /onRefreshAccounts=\{\(\) => void loadAccounts\(\{ refreshSupplementalData: false \}\)\}/);
   assert.match(featureSource, /onRefreshRuntime=\{\(\) => void refreshAccountsRuntime\(\)\}/);
 });

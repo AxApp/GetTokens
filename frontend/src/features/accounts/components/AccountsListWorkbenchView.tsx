@@ -13,6 +13,7 @@ interface AccountsListWorkbenchViewProps {
   accountCount: number;
   ready: boolean;
   loading: boolean;
+  runtimeRefreshing?: boolean;
   isHeaderActionsMenuOpen: boolean;
   headerActionsMenuRef: MutableRefObject<HTMLDivElement | null>;
   onToggleMenu: () => void;
@@ -57,6 +58,7 @@ export default function AccountsListWorkbenchView({
   accountCount,
   ready,
   loading,
+  runtimeRefreshing,
   isHeaderActionsMenuOpen,
   headerActionsMenuRef,
   onToggleMenu,
@@ -102,6 +104,7 @@ export default function AccountsListWorkbenchView({
         accountCount={accountCount}
         ready={ready}
         loading={loading}
+        runtimeRefreshing={runtimeRefreshing}
         isHeaderActionsMenuOpen={isHeaderActionsMenuOpen}
         headerActionsMenuRef={headerActionsMenuRef}
         onToggleMenu={onToggleMenu}
