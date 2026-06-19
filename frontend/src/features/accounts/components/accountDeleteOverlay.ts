@@ -13,6 +13,35 @@ interface BuildAccountDeleteOverlayParams {
   onConfirmDelete: (account: AccountRecord) => void;
 }
 
+const accountDeleteOverlayShellClass =
+  'flex h-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]';
+const accountDeleteOverlayListShellClass =
+  'flex h-full min-h-[5rem] items-center gap-3 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[var(--text-primary)]';
+const accountDeleteOverlayHeaderClass =
+  'border-b border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-status-danger)_7%,var(--gt-surface-muted))] px-4 py-3';
+const accountDeleteOverlayIconClass =
+  'flex h-10 w-10 shrink-0 items-center justify-center rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_36%,var(--gt-border-subtle))] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]';
+const accountDeleteOverlayEyebrowClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
+const accountDeleteOverlayTitleClass =
+  'mt-1 truncate text-[length:var(--font-size-ui-xl-plus)] font-semibold leading-tight text-[var(--text-primary)]';
+const accountDeleteOverlayListTitleClass =
+  'mt-1 truncate text-[length:var(--font-size-ui-lg)] font-semibold leading-tight text-[var(--text-primary)]';
+const accountDeleteOverlayMetaClass =
+  'mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDeleteOverlayButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)]';
+const accountDeleteOverlayListButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)]';
+const accountDeleteOverlayDangerButtonClass =
+  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity hover:opacity-90';
+const accountDeleteOverlayListDangerButtonClass =
+  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity hover:opacity-90';
+const accountDeleteOverlayFieldLabelClass =
+  'w-[3rem] shrink-0 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDeleteOverlayFieldValueClass =
+  'min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-semibold leading-snug text-[var(--text-primary)]';
+
 export function buildAccountDeleteOverlay({
   t,
   account,
@@ -30,8 +59,7 @@ export function buildAccountDeleteOverlay({
     return createElement(
       'div',
       {
-        className:
-          'flex h-full min-h-[5rem] items-center gap-3 overflow-hidden border-2 border-[color-mix(in_srgb,var(--color-status-danger)_50%,var(--border-color))] bg-[linear-gradient(180deg,color-mix(in_srgb,white_74%,var(--bg-main))_0%,color-mix(in_srgb,var(--bg-main)_88%,white)_100%)] px-3 py-2 shadow-[inset_0_1px_0_color-mix(in_srgb,white_78%,transparent),0_10px_28px_color-mix(in_srgb,var(--shadow-color)_18%,transparent)] backdrop-blur-[14px]',
+        className: accountDeleteOverlayListShellClass,
         'data-account-card-delete-overlay': 'true',
         'data-account-card-delete-overlay-density': 'list',
         'data-account-card-ignore-click': 'true',
@@ -41,8 +69,7 @@ export function buildAccountDeleteOverlay({
       createElement(
         'span',
         {
-          className:
-            'flex h-10 w-10 shrink-0 items-center justify-center border border-[color-mix(in_srgb,var(--color-status-danger)_36%,var(--border-color))] bg-[color-mix(in_srgb,white_72%,transparent)] text-[var(--color-status-danger)] shadow-[inset_0_1px_0_color-mix(in_srgb,white_90%,transparent)]',
+          className: accountDeleteOverlayIconClass,
         },
         createElement(AlertTriangle, { size: 19, strokeWidth: 3 }),
       ),
@@ -51,29 +78,29 @@ export function buildAccountDeleteOverlay({
         { className: 'min-w-0 flex-1' },
         createElement(
           'div',
-          { className: 'font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--color-status-danger)]' },
+          { className: accountDeleteOverlayEyebrowClass },
           t('common.confirm_delete'),
         ),
         createElement(
           'div',
-          { className: 'mt-1 truncate text-[length:var(--font-size-ui-lg)] font-black italic leading-tight text-[var(--text-primary)]' },
+          { className: accountDeleteOverlayListTitleClass },
           primaryLabel,
         ),
         createElement(
           'div',
-          { className: 'mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]' },
+          { className: accountDeleteOverlayMetaClass },
           sourceLabel(t, account.credentialSource),
         ),
       ),
       createElement(
         'div',
-        { className: 'flex shrink-0 items-center gap-2' },
+        { className: 'flex shrink-0 items-center gap-2', 'data-account-card-delete-overlay-section': 'actions' },
         createElement(
           'button',
           {
             type: 'button',
             onClick: onCancelDelete,
-            className: 'btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]',
+            className: accountDeleteOverlayListButtonClass,
           },
           t('common.cancel'),
         ),
@@ -82,8 +109,7 @@ export function buildAccountDeleteOverlay({
           {
             type: 'button',
             onClick: () => onConfirmDelete(account),
-            className:
-              'btn-swiss !border-[var(--color-status-danger)] !bg-[var(--color-status-danger)] !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-white',
+            className: accountDeleteOverlayListDangerButtonClass,
           },
           t('common.delete'),
         ),
@@ -94,8 +120,7 @@ export function buildAccountDeleteOverlay({
   return createElement(
     'div',
     {
-      className:
-        'flex h-full flex-col overflow-hidden border-2 border-[color-mix(in_srgb,var(--color-status-danger)_50%,var(--border-color))] bg-[linear-gradient(180deg,color-mix(in_srgb,white_72%,var(--bg-main))_0%,color-mix(in_srgb,var(--bg-main)_84%,white)_100%)] shadow-[inset_0_1px_0_color-mix(in_srgb,white_78%,transparent),0_18px_44px_color-mix(in_srgb,var(--shadow-color)_22%,transparent)] backdrop-blur-[14px]',
+      className: accountDeleteOverlayShellClass,
       'data-account-card-delete-overlay': 'true',
       'data-account-card-ignore-click': 'true',
       onClick: (event: MouseEvent) => event.stopPropagation(),
@@ -104,8 +129,8 @@ export function buildAccountDeleteOverlay({
     createElement(
       'div',
       {
-        className:
-          'border-b-2 border-[color-mix(in_srgb,var(--color-status-danger)_28%,var(--border-color))] bg-[linear-gradient(180deg,color-mix(in_srgb,white_86%,transparent)_0%,color-mix(in_srgb,var(--bg-main)_86%,white)_100%)] px-4 py-3 shadow-[inset_0_1px_0_color-mix(in_srgb,white_86%,transparent)]',
+        className: accountDeleteOverlayHeaderClass,
+        'data-account-card-delete-overlay-section': 'header',
       },
       createElement(
         'div',
@@ -113,8 +138,7 @@ export function buildAccountDeleteOverlay({
         createElement(
           'span',
           {
-            className:
-              'flex h-10 w-10 shrink-0 items-center justify-center border border-[color-mix(in_srgb,var(--color-status-danger)_36%,var(--border-color))] bg-[color-mix(in_srgb,white_72%,transparent)] text-[var(--color-status-danger)] shadow-[inset_0_1px_0_color-mix(in_srgb,white_90%,transparent)]',
+            className: accountDeleteOverlayIconClass,
           },
           createElement(AlertTriangle, { size: 19, strokeWidth: 3 }),
         ),
@@ -124,14 +148,13 @@ export function buildAccountDeleteOverlay({
           createElement(
             'div',
             {
-              className:
-                'font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--color-status-danger)]',
+              className: accountDeleteOverlayEyebrowClass,
             },
             t('common.confirm_delete'),
           ),
           createElement(
             'div',
-            { className: 'mt-1 truncate text-[length:var(--font-size-ui-xl-plus)] font-black italic leading-tight text-[var(--text-primary)]' },
+            { className: accountDeleteOverlayTitleClass },
             primaryLabel,
           ),
         ),
@@ -139,18 +162,18 @@ export function buildAccountDeleteOverlay({
     ),
     createElement(
       'div',
-      { className: 'flex flex-1 flex-col px-4 py-4' },
+      { className: 'flex flex-1 flex-col px-4 py-4', 'data-account-card-delete-overlay-section': 'details' },
       createElement(
         'div',
         { className: 'flex items-center gap-2' },
-        createElement('span', { className: 'h-2.5 w-2.5 shrink-0 bg-[var(--color-status-danger)]' }),
+        createElement('span', { className: 'h-2.5 w-2.5 shrink-0 rounded-sm bg-[var(--gt-status-danger)]' }),
         createElement(
           'div',
-          { className: 'text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.14em] text-[var(--color-status-danger)]' },
+          { className: 'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]' },
           t('accounts.card_delete'),
         ),
       ),
-      createElement('div', { className: 'mt-3 h-px bg-[color-mix(in_srgb,var(--border-color)_66%,transparent)]' }),
+      createElement('div', { className: 'mt-3 h-px bg-[var(--gt-border-subtle)]' }),
       createElement(
         'div',
         { className: 'grid gap-2 pt-3' },
@@ -160,16 +183,16 @@ export function buildAccountDeleteOverlay({
             {
               key: row.label,
               className:
-                'flex items-center gap-3 border-b border-[color-mix(in_srgb,var(--border-color)_56%,transparent)] pb-2 last:border-b-0 last:pb-0',
+                'flex items-center gap-3 border-b border-[var(--gt-border-subtle)] pb-2 last:border-b-0 last:pb-0',
             },
             createElement(
               'div',
-              { className: 'w-[3rem] shrink-0 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]' },
+              { className: accountDeleteOverlayFieldLabelClass },
               row.label,
             ),
             createElement(
               'div',
-              { className: 'min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-black leading-snug text-[var(--text-primary)]' },
+              { className: accountDeleteOverlayFieldValueClass },
               row.value,
             ),
           ),
@@ -180,14 +203,15 @@ export function buildAccountDeleteOverlay({
       'div',
       {
         className:
-          'flex items-center justify-between gap-3 border-t-2 border-[color-mix(in_srgb,var(--text-primary)_58%,var(--border-color))] bg-[linear-gradient(180deg,color-mix(in_srgb,white_82%,transparent)_0%,color-mix(in_srgb,var(--bg-main)_92%,white)_100%)] px-4 py-3 shadow-[0_-1px_0_color-mix(in_srgb,white_82%,transparent)]',
+          'flex items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3',
+        'data-account-card-delete-overlay-section': 'actions',
       },
       createElement(
         'button',
         {
           type: 'button',
           onClick: onCancelDelete,
-          className: 'btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]',
+          className: accountDeleteOverlayButtonClass,
         },
         t('common.cancel'),
       ),
@@ -196,8 +220,7 @@ export function buildAccountDeleteOverlay({
         {
           type: 'button',
           onClick: () => onConfirmDelete(account),
-          className:
-            'btn-swiss !border-[var(--color-status-danger)] !bg-[var(--color-status-danger)] !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)] !text-white',
+          className: accountDeleteOverlayDangerButtonClass,
         },
         t('common.delete'),
       ),

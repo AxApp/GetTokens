@@ -8,6 +8,7 @@ import { buildAccountDeleteOverlay } from '../components/accountDeleteOverlay.ts
 const t = (key) => key;
 
 test('buildAccountDeleteOverlay renders a full-card delete overlay', () => {
+  const source = readFileSync(new URL('../components/accountDeleteOverlay.ts', import.meta.url), 'utf8');
   const markup = renderToStaticMarkup(
     buildAccountDeleteOverlay({
       t,
@@ -29,13 +30,24 @@ test('buildAccountDeleteOverlay renders a full-card delete overlay', () => {
     }),
   );
 
+  assert.match(source, /const accountDeleteOverlayShellClass =/);
+  assert.match(source, /const accountDeleteOverlayListShellClass =/);
+  assert.match(source, /const accountDeleteOverlayButtonClass =/);
+  assert.match(source, /const accountDeleteOverlayDangerButtonClass =/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
   assert.match(markup, /data-account-card-delete-overlay="true"/);
-  assert.match(markup, /flex h-full flex-col overflow-hidden border-2 border-\[color-mix\(in_srgb,var\(--color-status-danger\)_50%,var\(--border-color\)\)\]/);
-  assert.match(markup, /bg-\[linear-gradient\(180deg,color-mix\(in_srgb,white_72%,var\(--bg-main\)\)_0%,color-mix\(in_srgb,var\(--bg-main\)_84%,white\)_100%\)\]/);
-  assert.match(markup, /backdrop-blur-\[14px\]/);
-  assert.match(markup, /text-\[length:var\(--font-size-ui-xl-plus\)\] font-black italic/);
+  assert.match(markup, /data-account-card-delete-overlay-section="header"/);
+  assert.match(markup, /data-account-card-delete-overlay-section="details"/);
+  assert.match(markup, /data-account-card-delete-overlay-section="actions"/);
+  assert.match(markup, /flex h-full flex-col overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\]/);
+  assert.match(markup, /bg-\[var\(--gt-surface-canvas\)\]/);
+  assert.match(markup, /text-\[var\(--gt-status-danger\)\]/);
+  assert.match(markup, /text-\[length:var\(--font-size-ui-xl-plus\)\] font-semibold/);
   assert.match(markup, /flex flex-1 flex-col px-4 py-4/);
-  assert.match(markup, /mt-3 h-px bg-\[color-mix\(in_srgb,var\(--border-color\)_66%,transparent\)\]/);
+  assert.match(markup, /mt-3 h-px bg-\[var\(--gt-border-subtle\)\]/);
   assert.match(markup, /grid gap-2 pt-3/);
   assert.match(markup, /grid gap-2/);
   assert.match(markup, /flex items-center justify-between gap-3/);
@@ -49,6 +61,15 @@ test('buildAccountDeleteOverlay renders a full-card delete overlay', () => {
   assert.doesNotMatch(markup, /grid grid-cols-\[3rem_minmax\(0,1fr\)\]/);
   assert.doesNotMatch(markup, /max-w-\[18rem\]/);
   assert.doesNotMatch(markup, /text-center/);
+  assert.doesNotMatch(source, /btn-swiss|input-swiss|select-swiss|card-swiss/);
+  assert.doesNotMatch(source, /border-2|border-t-2|border-b-2/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /color-status-/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /shadow-hard|shadow-\[/);
+  assert.doesNotMatch(source, /backdrop-blur/);
 });
 
 test('buildAccountDeleteOverlay keeps list mode delete actions visible', () => {
@@ -76,7 +97,8 @@ test('buildAccountDeleteOverlay keeps list mode delete actions visible', () => {
 
   assert.match(markup, /data-account-card-delete-overlay="true"/);
   assert.match(markup, /data-account-card-delete-overlay-density="list"/);
-  assert.match(markup, /flex h-full min-h-\[5rem\] items-center gap-3/);
+  assert.match(markup, /flex h-full min-h-\[5rem\] items-center gap-3 overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\]/);
+  assert.match(markup, /data-account-card-delete-overlay-section="actions"/);
   assert.match(markup, /flex shrink-0 items-center gap-2/);
   assert.match(markup, /common\.cancel/);
   assert.match(markup, /common\.delete/);
