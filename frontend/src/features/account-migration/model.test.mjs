@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   canCommitAccountMigration,
@@ -52,4 +53,37 @@ test('formatAccountMigrationKind provides operator-facing labels', () => {
   assert.equal(formatAccountMigrationKind('openai-compatible'), 'OpenAI Compatible');
   assert.equal(formatAccountMigrationKind('custom'), 'custom');
   assert.equal(formatAccountMigrationKind(''), 'Unknown');
+});
+
+test('AccountMigrationGate uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('./AccountMigrationGate.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const accountMigrationGateShellClass =/);
+  assert.match(source, /const accountMigrationGateHeaderClass =/);
+  assert.match(source, /const accountMigrationGatePanelClass =/);
+  assert.match(source, /const accountMigrationGateButtonClass =/);
+  assert.match(source, /const accountMigrationGatePrimaryButtonClass =/);
+  assert.match(source, /const accountMigrationGateNoticeToneClass =/);
+  assert.match(source, /data-account-migration-loading/);
+  assert.match(source, /data-account-migration-gate/);
+  assert.match(source, /data-account-migration-header/);
+  assert.match(source, /data-account-migration-summary-panel/);
+  assert.match(source, /data-account-migration-kind-list/);
+  assert.match(source, /data-account-migration-stats/);
+  assert.match(source, /data-account-migration-notices/);
+  assert.match(source, /data-account-migration-footer/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-success/);
+  assert.match(source, /--gt-status-warning/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /btn-swiss|input-swiss|select-swiss|card-swiss/);
+  assert.doesNotMatch(source, /border-2|border-t-2|border-b-2|border-b-4|border-t-4/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /color-status-/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /shadow-hard|shadow-\[/);
 });

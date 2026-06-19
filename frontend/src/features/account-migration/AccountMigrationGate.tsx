@@ -24,6 +24,43 @@ interface AccountMigrationGateProps {
   children: ReactNode;
 }
 
+const accountMigrationGateLoadingClass =
+  'fixed inset-0 z-[90] flex min-w-0 overflow-hidden bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]';
+const accountMigrationGateShellClass =
+  'fixed inset-0 z-[90] flex w-screen max-w-full min-w-0 flex-col overflow-hidden bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]';
+const accountMigrationGateHeaderClass =
+  'flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-4 lg:px-7';
+const accountMigrationGateBadgeClass =
+  'mb-2 inline-flex rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountMigrationGateButtonClass =
+  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+const accountMigrationGatePrimaryButtonClass =
+  'inline-flex min-h-14 w-full items-center justify-center gap-2 rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-6 py-4 text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50';
+const accountMigrationGatePanelClass =
+  'grid min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const accountMigrationGatePanelHeaderClass =
+  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-4 py-3';
+const accountMigrationGateStepIndexClass =
+  'grid h-11 w-11 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]';
+const accountMigrationGateChipClass =
+  'inline-flex items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]';
+const accountMigrationGateEmptyChipClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountMigrationGateStatsClass =
+  'grid min-w-0 gap-3 border-t border-[var(--gt-border-subtle)] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0';
+const accountMigrationGateNoticesClass =
+  'grid gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
+const accountMigrationGateNoticeToneClass = {
+  success:
+    'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]',
+  warning:
+    'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] text-[var(--gt-status-warning)]',
+  error:
+    'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]',
+};
+const accountMigrationGateFooterClass =
+  'min-w-0 shrink-0 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-5 lg:p-7';
+
 export default function AccountMigrationGate({ sidecarStatus, children }: AccountMigrationGateProps) {
   const { trackRequest } = useDebug();
   const previewMode = hasPreviewMode('account-migration');
@@ -135,7 +172,8 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
         <section
           role="status"
           aria-live="polite"
-          className="fixed inset-0 z-[90] flex min-w-0 overflow-hidden bg-[var(--bg-surface)] text-[var(--text-primary)]"
+          className={accountMigrationGateLoadingClass}
+          data-account-migration-loading
         >
           <PageLoadingFallback />
         </section>
@@ -171,14 +209,15 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-migration-title"
-        className="fixed inset-0 z-[90] flex w-screen max-w-full min-w-0 flex-col overflow-hidden bg-[var(--bg-surface)] text-[var(--text-primary)]"
+        className={accountMigrationGateShellClass}
+        data-account-migration-gate
       >
-      <header className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-4 border-b-4 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-4 lg:px-7">
+      <header className={accountMigrationGateHeaderClass} data-account-migration-header>
         <div className="min-w-0">
-          <div className="mb-2 inline-flex border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em]">
-            APP STARTED / MIGRATION MODAL
+          <div className={accountMigrationGateBadgeClass}>
+            App started / migration modal
           </div>
-          <h1 id="account-migration-title" className="text-[length:var(--font-size-ui-5xl)] font-black leading-tight lg:text-[length:var(--font-size-ui-display)]">
+          <h1 id="account-migration-title" className="text-[length:var(--font-size-ui-5xl)] font-semibold leading-tight lg:text-[length:var(--font-size-ui-display)]">
             账号存储迁移
           </h1>
           <p className="mt-1 max-w-3xl break-words text-[length:var(--font-size-ui-md)] font-semibold leading-relaxed text-[var(--text-muted)] [overflow-wrap:anywhere]">
@@ -189,7 +228,7 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
           type="button"
           onClick={loadPreview}
           disabled={loading || busyAction !== null}
-          className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
+          className={accountMigrationGateButtonClass}
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           重新检查
@@ -197,9 +236,9 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
       </header>
 
       <div className="grid min-h-0 min-w-0 flex-1 content-start gap-5 overflow-y-auto overflow-x-hidden p-5 lg:p-7">
-        <section className="grid min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-          <div className="border-b-2 border-[var(--border-color)] px-4 py-3">
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <section className={accountMigrationGatePanelClass} data-account-migration-summary-panel>
+          <div className={accountMigrationGatePanelHeaderClass}>
+            <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]">
               迁移列表
             </div>
           </div>
@@ -208,34 +247,34 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
             <div className="grid min-w-0 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-center">
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center border-2 border-[var(--border-color)] bg-[var(--text-primary)] font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--bg-main)]">
+                  <span className={accountMigrationGateStepIndexClass}>
                     01
                   </span>
                   <div className="min-w-0">
-                    <div className="text-[length:var(--font-size-ui-2xl)] font-black">账号迁移</div>
+                    <div className="text-[length:var(--font-size-ui-2xl)] font-semibold">账号迁移</div>
                     <p className="mt-1 break-words text-[length:var(--font-size-ui-sm)] font-semibold leading-relaxed text-[var(--text-muted)] [overflow-wrap:anywhere]">
                       导入账号凭证与配置，确认 SQLite 账号写入后删除旧账号事实源。
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-4 flex min-w-0 flex-wrap gap-2">
+                <div className="mt-4 flex min-w-0 flex-wrap gap-2" data-account-migration-kind-list>
                   {preview?.kindSummary?.length ? (
                     preview.kindSummary.map((item) => (
-                      <span key={item.kind} className="inline-flex items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black">
+                      <span key={item.kind} className={accountMigrationGateChipClass}>
                         {formatAccountMigrationKind(item.kind)}
                         <span className="text-[var(--text-muted)]">{item.count}</span>
                       </span>
                     ))
                   ) : (
-                    <span className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                    <span className={accountMigrationGateEmptyChipClass}>
                       {loading ? 'Dry-run' : 'No Candidates'}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="grid min-w-0 gap-3 border-t-2 border-dashed border-[var(--border-color)] pt-4 lg:border-l-2 lg:border-t-0 lg:pl-4 lg:pt-0">
+              <div className={accountMigrationGateStatsClass} data-account-migration-stats>
                 <MigrationStat label="旧账号来源" value={`${totalCandidates}`} />
                 <MigrationStat label="SQLite 账号" value={`${migratedAccounts}`} />
                 <MigrationStat
@@ -248,7 +287,7 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
         </section>
 
         {(error || message || preview?.warnings?.length) ? (
-          <section className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+          <section className={accountMigrationGateNoticesClass} data-account-migration-notices>
             {error ? <NoticeLine tone="error" text={error} /> : null}
             {message ? <NoticeLine tone="success" text={message} /> : null}
             {preview?.warnings?.map((warning) => <NoticeLine key={warning} tone="warning" text={warning} />)}
@@ -256,13 +295,13 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
         ) : null}
       </div>
 
-      <footer className="min-w-0 shrink-0 border-t-4 border-[var(--border-color)] bg-[var(--bg-main)] p-5 lg:p-7">
+      <footer className={accountMigrationGateFooterClass} data-account-migration-footer>
         {primaryAction ? (
           <button
             type="button"
             onClick={primaryAction.onClick}
             disabled={primaryAction.disabled}
-            className="btn-swiss min-h-16 w-full bg-[var(--text-primary)] !px-6 !py-4 !text-[length:var(--font-size-ui-lg)] !font-black !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={accountMigrationGatePrimaryButtonClass}
           >
             {primaryAction.icon}
             {primaryAction.label}
@@ -275,20 +314,18 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
 }
 
 function NoticeLine({ tone, text }: { tone: 'success' | 'warning' | 'error'; text: string }) {
-  const toneClass =
-    tone === 'success'
-      ? 'bg-[var(--color-status-success)] text-[var(--text-on-accent)]'
-      : tone === 'warning'
-        ? 'bg-[var(--color-status-warning)] text-[var(--text-primary)]'
-        : 'bg-[var(--color-status-danger)] text-[var(--text-on-accent)]';
-  return <div className={`px-3 py-2 text-[length:var(--font-size-ui-sm)] font-black leading-relaxed ${toneClass}`}>{text}</div>;
+  return (
+    <div className={`rounded border px-3 py-2 text-[length:var(--font-size-ui-sm)] font-semibold leading-relaxed ${accountMigrationGateNoticeToneClass[tone]}`}>
+      {text}
+    </div>
+  );
 }
 
 function MigrationStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 border-b border-dashed border-[var(--border-color)] pb-2 last:border-b-0 last:pb-0">
-      <span className="truncate text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</span>
-      <span className="font-mono text-[length:var(--font-size-ui-lg)] font-black">{value}</span>
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 border-b border-[var(--gt-border-subtle)] pb-2 last:border-b-0 last:pb-0">
+      <span className="truncate text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]">{label}</span>
+      <span className="font-mono text-[length:var(--font-size-ui-lg)] font-semibold">{value}</span>
     </div>
   );
 }
