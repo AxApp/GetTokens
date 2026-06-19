@@ -3,22 +3,26 @@ import type { ReactNode } from 'react';
 interface WorkspacePageHeaderProps {
   title: ReactNode;
   subtitle?: ReactNode;
+  meta?: ReactNode;
   actions?: ReactNode;
   align?: 'end' | 'center';
   className?: string;
   titleClassName?: string;
   subtitleClassName?: string;
+  metaClassName?: string;
   actionsClassName?: string;
 }
 
 export default function WorkspacePageHeader({
   title,
   subtitle,
+  meta,
   actions,
   align = 'end',
   className = '',
   titleClassName = '',
   subtitleClassName = '',
+  metaClassName = '',
   actionsClassName = '',
 }: WorkspacePageHeaderProps) {
   return (
@@ -45,6 +49,7 @@ export default function WorkspacePageHeader({
             {subtitle}
           </div>
         ) : null}
+        {meta ? <div className={`mt-2 min-w-0 ${metaClassName}`.trim()}>{meta}</div> : null}
       </div>
       {actions ? <div className={`flex items-center justify-end gap-3 ${actionsClassName}`}>{actions}</div> : null}
     </header>

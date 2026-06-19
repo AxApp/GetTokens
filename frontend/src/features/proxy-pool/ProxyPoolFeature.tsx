@@ -1,4 +1,6 @@
+import { Download, FileInput, ListChecks, MoreVertical, Pencil, Play, Plus, RefreshCw, Trash2, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { AutoComplete, Button } from 'antd';
 import { FetchProxySubscription, ProbeProxyNode } from '../../../wailsjs/go/main/App';
 
 import SearchInput from '../../components/ui/SearchInput';
@@ -536,12 +538,31 @@ export default function ProxyPoolFeature() {
     setFeedback(`已导出 ${selectedNodes.length} 条选中节点。`);
   }
 
+  const summaryText = `显示 ${filteredNodes.length} / ${summary.totalCount} · 可用 ${summary.availableCount} · 待复查 ${summary.reviewCount} · 平均延时 ${summary.averageLatencyMs} ms · 平均可用率 ${summary.averageAvailabilityRate}% · ${feedback}`;
+  const probeTargetOptions = probeTargetHistory.slice(0, 5).map((url) => ({
+    value: url,
+    label: (
+      <span className="block truncate font-mono text-[length:var(--font-size-ui-lg)]" title={url}>
+        {url}
+      </span>
+    ),
+  }));
+
   return (
-    <section className="flex h-full flex-col overflow-auto bg-[var(--bg-surface)] text-[var(--text-primary)]">
-      <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-5 p-7">
+    <section className="flex h-full flex-col overflow-auto bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]">
+      <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-4 px-6 py-5">
         <WorkspacePageHeader
           title="代理池"
-          subtitle={`网络代理池 / 本地维护 / ${filteredNodes.length} / ${summary.totalCount} / 可用 ${summary.availableCount} / 待复查 ${summary.reviewCount} / 平均延时 ${summary.averageLatencyMs} ms / ${feedback}`}
+          meta={
+            <span
+              data-proxy-pool-summary="true"
+              className="block max-w-[min(62rem,70vw)] truncate text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]"
+              title={summaryText}
+            >
+              {summaryText}
+            </span>
+          }
+          actionsClassName="gap-2"
           actions={
             <>
               <input
@@ -551,31 +572,47 @@ export default function ProxyPoolFeature() {
                 className="hidden"
                 onChange={handleImportFileChange}
               />
-              <button type="button" onClick={openCreateModal} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
-                新增代理
+              <button
+                type="button"
+                aria-label="新增代理"
+                title="新增代理"
+                onClick={openCreateModal}
+                className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--bg-main)] shadow-sm transition hover:opacity-90"
+              >
+                <Plus className="h-5 w-5" strokeWidth={2.5} />
               </button>
               <div ref={headerMenuRef} className="relative">
-                <button type="button" onClick={() => setIsHeaderMenuOpen((prev) => !prev)} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
-                  更多操作
+                <button
+                  type="button"
+                  aria-label="更多操作"
+                  title="更多操作"
+                  onClick={() => setIsHeaderMenuOpen((prev) => !prev)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                >
+                  <MoreVertical className="h-5 w-5" strokeWidth={2.5} />
                 </button>
                 {isHeaderMenuOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+0.75rem)] z-20 flex min-w-[220px] flex-col gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-2 shadow-[6px_6px_0_var(--shadow-color)]">
+                  <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 flex min-w-[240px] flex-col gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-[var(--gt-elevation-raised-2)]">
                     <MenuActionButton
+                      icon={<Upload className="h-4 w-4" strokeWidth={2.3} />}
                       label="导入列表"
                       description="粘贴文本或导入 JSON"
                       onClick={openImportModal}
                     />
                     <MenuActionButton
+                      icon={<FileInput className="h-4 w-4" strokeWidth={2.3} />}
                       label="导入订阅"
                       description="从纯文本订阅拉取节点"
                       onClick={openSubscriptionModal}
                     />
                     <MenuActionButton
+                      icon={<ListChecks className="h-4 w-4" strokeWidth={2.3} />}
                       label="订阅源"
                       description="查看、刷新和删除订阅源"
                       onClick={openSubscriptionManager}
                     />
                     <MenuActionButton
+                      icon={<Download className="h-4 w-4" strokeWidth={2.3} />}
                       label="导出全部"
                       description={`导出当前 ${nodes.length} 条节点`}
                       onClick={() => {
@@ -584,6 +621,7 @@ export default function ProxyPoolFeature() {
                       }}
                     />
                     <MenuActionButton
+                      icon={<ListChecks className="h-4 w-4" strokeWidth={2.3} />}
                       label={isSelectionMode ? '结束选择' : '批量选择'}
                       description={isSelectionMode ? '退出当前批量选择模式' : '显示选择列并启用批量操作'}
                       onClick={() => {
@@ -596,6 +634,7 @@ export default function ProxyPoolFeature() {
                       }}
                     />
                     <MenuActionButton
+                      icon={<RefreshCw className="h-4 w-4" strokeWidth={2.3} />}
                       label="批量测速"
                       description={`对当前筛选内 ${filteredNodes.length} 条执行测速`}
                       onClick={() => {
@@ -610,95 +649,100 @@ export default function ProxyPoolFeature() {
           }
         />
 
-        <section>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex min-w-0 flex-1 flex-col gap-4">
-              <div className="w-full">
-                <SearchInput
-                  value={query}
-                  onChange={setQuery}
-                  placeholder="搜索协议 / IP / 端口 / 来源"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-col gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">测速网址</span>
-                  <input
-                    type="text"
-                    list="proxy-probe-target-history"
+        <section
+          data-proxy-pool-toolbar="true"
+          className="contents"
+        >
+          <div className="grid items-center gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(26rem,36rem)]">
+            <div className="min-w-0">
+              <SearchInput
+                value={query}
+                onChange={setQuery}
+                placeholder="搜索协议 / IP / 端口 / 来源"
+                className="rounded-md"
+              />
+            </div>
+            <div className="min-w-0">
+              <label className="grid min-w-0 items-center gap-2 sm:grid-cols-[max-content_minmax(0,1fr)]">
+                <span className="text-left text-sm font-medium text-[var(--text-muted)]">测速网址</span>
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                  <AutoComplete
+                    allowClear
+                    options={probeTargetOptions}
+                    popupMatchSelectWidth
+                    size="large"
                     value={probeTargetURL}
-                    onChange={(event) => setProbeTargetURL(event.target.value)}
-                    onBlur={(event) => {
-                      commitProbeTargetURL(event.target.value);
+                    onChange={setProbeTargetURL}
+                    onSelect={(url) => {
+                      setProbeTargetURL(url);
+                      commitProbeTargetURL(url);
+                      setProbeTargetHistory((current) => rememberProxyProbeTargetURL(current, url));
                     }}
-                    className="input-swiss w-full"
+                    onBlur={() => {
+                      commitProbeTargetURL(probeTargetURL);
+                    }}
+                    showSearch={{ filterOption: false }}
+                    className="w-full"
+                    rootClassName="proxy-pool-probe-target-autocomplete"
                     placeholder="https://example.com"
                   />
-                  <datalist id="proxy-probe-target-history">
-                    {probeTargetHistory.map((url) => (
-                      <option key={url} value={url} />
-                    ))}
-                  </datalist>
+                  <Button
+                    htmlType="button"
+                    size="large"
+                    aria-label={probingIDs.length > 0 ? '测速中' : '执行测速'}
+                    title={probingIDs.length > 0 ? '测速中' : '执行测速'}
+                    icon={<Play className="h-3.5 w-3.5" fill="currentColor" strokeWidth={2.4} />}
+                    loading={probingIDs.length > 0}
+                    disabled={filteredNodes.length === 0}
+                    className="proxy-pool-probe-target-button"
+                    onClick={handleBatchRetest}
+                  />
                 </div>
-                {probeTargetHistory.length > 0 ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">历史</span>
-                    {probeTargetHistory.slice(0, 5).map((url) => (
-                      <button
-                        key={url}
-                        type="button"
-                        onClick={() => {
-                          setProbeTargetURL(url);
-                          setProbeTargetHistory((current) => rememberProxyProbeTargetURL(current, url));
-                        }}
-                        className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
-                      >
-                        {url}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-              {isSelectionMode ? (
-                <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-[var(--border-color)] pt-4 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                  <span className="mr-2">{selectedCount > 0 ? `已选 ${selectedCount}` : '选择模式'}</span>
-                  <button type="button" onClick={toggleSelectCurrentPage} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
-                    {allCurrentPageSelected ? '取消当前页' : '全选当前页'}
-                  </button>
-                  <button type="button" onClick={toggleSelectAllFiltered} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
-                    {allFilteredSelected ? '取消当前筛选' : '全选当前筛选'}
-                  </button>
-                  {selectedCount > 0 ? (
-                    <>
-                      <button type="button" onClick={handleSelectedRetest} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
-                        测速
-                      </button>
-                      <button type="button" onClick={exportSelectedNodes} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
-                        导出
-                      </button>
-                      <button type="button" onClick={clearSelection} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
-                        清空
-                      </button>
-                      <button type="button" onClick={handleBatchDelete} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]">
-                        删除
-                      </button>
-                    </>
-                  ) : null}
-                  <button type="button" onClick={disableSelectionMode} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
-                    结束选择
-                  </button>
-                </div>
-              ) : null}
+              </label>
             </div>
-
           </div>
+
+          {isSelectionMode ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--gt-border-subtle)] pt-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+              <span className="mr-1">{selectedCount > 0 ? `已选 ${selectedCount}` : '选择模式'}</span>
+              <button type="button" onClick={toggleSelectCurrentPage} className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)]">
+                {allCurrentPageSelected ? '取消当前页' : '全选当前页'}
+              </button>
+              <button type="button" onClick={toggleSelectAllFiltered} className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)]">
+                {allFilteredSelected ? '取消当前筛选' : '全选当前筛选'}
+              </button>
+              {selectedCount > 0 ? (
+                <>
+                  <button type="button" onClick={handleSelectedRetest} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)]">
+                    <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    测速
+                  </button>
+                  <button type="button" onClick={exportSelectedNodes} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)]">
+                    <Download className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    导出
+                  </button>
+                  <button type="button" onClick={clearSelection} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)]">
+                    <X className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    清空
+                  </button>
+                  <button type="button" onClick={handleBatchDelete} className="inline-flex h-8 items-center gap-1.5 rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-status-danger)] transition hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_16%,transparent)]">
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={2.4} />
+                    删除
+                  </button>
+                </>
+              ) : null}
+              <button type="button" onClick={disableSelectionMode} className="ml-auto inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)] transition hover:border-[var(--gt-border-strong)] hover:text-[var(--text-primary)]">
+                结束选择
+              </button>
+            </div>
+          ) : null}
         </section>
 
-        <section className="border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+        <section data-proxy-pool-table="true" className="overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]">
           <div className="overflow-x-auto">
-            <table className="w-full table-auto border-collapse">
+            <table className="w-full table-fixed border-collapse">
               <thead>
-                <tr className="bg-[var(--bg-surface)]">
+                <tr className="bg-[var(--gt-surface-muted)]">
                   {isSelectionMode ? (
                     <TableHead compact>
                       <span className="sr-only">选择</span>
@@ -722,7 +766,7 @@ export default function ProxyPoolFeature() {
               <tbody>
                 {filteredNodes.length === 0 ? (
                   <tr>
-                    <td colSpan={isSelectionMode ? 8 : 7} className="px-4 py-16 text-center text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <td colSpan={isSelectionMode ? 8 : 7} className="px-4 py-16 text-center text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
                       当前筛选结果为空
                     </td>
                   </tr>
@@ -745,8 +789,8 @@ export default function ProxyPoolFeature() {
             </table>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-3">
-            <div className="flex flex-wrap items-center gap-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
               <span>
                 第 {pagination.page} / {pagination.pageCount} 页
               </span>
@@ -756,7 +800,7 @@ export default function ProxyPoolFeature() {
               <select
                 value={pageSize}
                 onChange={(event) => setPageSize(Number(event.target.value))}
-                className="input-swiss min-w-[96px] !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                className="h-8 min-w-[96px] rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] outline-none"
               >
                 {proxyPoolPageSizeOptions.map((size) => (
                   <option key={size} value={size}>
@@ -770,7 +814,7 @@ export default function ProxyPoolFeature() {
               <button
                 type="button"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
-                className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={pagination.page <= 1}
               >
                 上一页
@@ -778,7 +822,7 @@ export default function ProxyPoolFeature() {
               <button
                 type="button"
                 onClick={() => setPage((current) => Math.min(pagination.pageCount, current + 1))}
-                className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={pagination.page >= pagination.pageCount}
               >
                 下一页
@@ -875,11 +919,13 @@ function StatusAvailabilityPill({
   const isAvailable = status === 'available';
   return (
     <div
-      className={`inline-flex min-w-[64px] items-center justify-center border px-2.5 py-1.5 text-center ${
-        isAvailable ? 'border-[var(--border-color)] text-[var(--text-primary)]' : 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
+      className={`inline-flex min-w-[64px] items-center justify-center rounded-full border px-2.5 py-1 text-center ${
+        isAvailable
+          ? 'border-[color-mix(in_srgb,var(--gt-status-success)_30%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]'
+          : 'border-[color-mix(in_srgb,var(--gt-status-warning)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] text-[var(--gt-status-warning)]'
       }`}
     >
-      <span className="text-[length:var(--font-size-ui-md-compact)] font-black">{availabilityRate}%</span>
+      <span className="text-[length:var(--font-size-ui-xs)] font-semibold">{availabilityRate}%</span>
     </div>
   );
 }
@@ -904,9 +950,9 @@ function ProxyNodeRow({
   onDelete: (id: string) => void;
 }) {
   return (
-    <tr className="border-t border-dashed border-[var(--border-color)] first:border-t-0 hover:bg-[var(--bg-main)]/50">
+    <tr className="border-t border-[var(--gt-border-subtle)] first:border-t-0 hover:bg-[var(--gt-surface-muted)]">
       {selectionEnabled ? (
-        <td className="w-10 px-2 py-4 align-middle">
+        <td className="w-10 px-2 py-3 align-middle">
           <input
             type="checkbox"
             checked={selected}
@@ -915,28 +961,35 @@ function ProxyNodeRow({
           />
         </td>
       ) : null}
-        <td className="w-[88px] px-3 py-5 align-middle">
-          <StatusAvailabilityPill status={node.status} availabilityRate={node.availabilityRate} />
-        </td>
-      <td className="w-[88px] px-3 py-5 align-middle font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase text-[var(--text-primary)] whitespace-nowrap">{node.protocol}</td>
+      <td className="w-[88px] px-3 py-3 align-middle">
+        <StatusAvailabilityPill status={node.status} availabilityRate={node.availabilityRate} />
+      </td>
+      <td className="w-[88px] whitespace-nowrap px-3 py-3 align-middle font-mono text-[length:var(--font-size-ui-sm)] font-semibold uppercase text-[var(--text-primary)]">{node.protocol}</td>
       <td
-        className="w-[180px] max-w-[180px] px-3 py-5 align-middle font-mono text-[length:var(--font-size-ui-md-compact)] font-bold text-[var(--text-primary)] break-words"
+        className="w-[180px] max-w-[180px] break-words px-3 py-3 align-middle font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]"
         title={`${node.host}:${node.port}`}
       >
         {node.host}:{node.port}
       </td>
-      <td className="w-[96px] px-3 py-5 align-middle text-[length:var(--font-size-ui-md-compact)] font-bold text-[var(--text-primary)] whitespace-nowrap">{node.latencyMs} ms</td>
-      <td className="w-[112px] px-3 py-5 align-middle text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)] whitespace-nowrap">{formatRelativeProxyCheckedTime(node.lastCheckedAt)}</td>
-      <td className="min-w-[180px] px-3 py-5 align-middle">
-        <div className="truncate text-[length:var(--font-size-ui-md-compact)] font-bold text-[var(--text-primary)]" title={node.sourceLabel || '未标记'}>
+      <td className="w-[96px] whitespace-nowrap px-3 py-3 align-middle text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">{node.latencyMs} ms</td>
+      <td className="w-[112px] whitespace-nowrap px-3 py-3 align-middle text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">{formatRelativeProxyCheckedTime(node.lastCheckedAt)}</td>
+      <td className="min-w-[180px] px-3 py-3 align-middle">
+        <div className="truncate text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]" title={node.sourceLabel || '未标记'}>
           {node.sourceLabel || '未标记'}
         </div>
       </td>
-      <td className="w-[112px] px-3 py-5 align-middle">
+      <td className="w-[112px] px-3 py-3 align-middle">
         <div className="flex items-center gap-1.5">
-          <ActionButton onClick={() => onRetest(node.id)} disabled={probing}>
-            {probing ? '测速中' : '测速'}
-          </ActionButton>
+          <button
+            type="button"
+            aria-label={probing ? '测速中' : '测速'}
+            title={probing ? '测速中' : '测速'}
+            onClick={() => onRetest(node.id)}
+            disabled={probing}
+            className="flex h-8 w-8 items-center justify-center rounded bg-transparent text-[var(--text-primary)] transition hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${probing ? 'animate-spin' : ''}`} strokeWidth={2.4} />
+          </button>
           <ProxyNodeActionsMenu onEdit={onEdit} onDelete={() => onDelete(node.id)} />
         </div>
       </td>
@@ -977,19 +1030,20 @@ function ProxyNodeActionsMenu({
         type="button"
         aria-label="更多操作"
         onClick={() => setOpen((current) => !current)}
-        className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[length:var(--font-size-ui-lg)] font-black text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)] active:scale-95"
+        className="flex h-8 w-8 items-center justify-center rounded bg-transparent text-[var(--text-primary)] transition hover:bg-[var(--gt-surface-muted)] active:scale-95"
       >
-        ⋮
+        <MoreVertical className="h-4 w-4" strokeWidth={2.4} />
       </button>
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-10 flex min-w-[132px] flex-col gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-2 shadow-[4px_4px_0_var(--shadow-color)]">
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-10 flex min-w-[140px] flex-col gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-[var(--gt-elevation-raised-2)]">
           <ActionButton
             onClick={() => {
               setOpen(false);
               onEdit();
             }}
           >
-            编辑
+            <Pencil className="h-3.5 w-3.5" strokeWidth={2.4} />
+            <span>编辑</span>
           </ActionButton>
           <ActionButton
             onClick={() => {
@@ -998,7 +1052,8 @@ function ProxyNodeActionsMenu({
             }}
             tone="danger"
           >
-            删除
+            <Trash2 className="h-3.5 w-3.5" strokeWidth={2.4} />
+            <span>删除</span>
           </ActionButton>
         </div>
       ) : null}
@@ -1361,7 +1416,7 @@ function ProxyPoolSubscriptionManagerModal({
 function TableHead({ children, compact = false, className = '' }: { children: ReactNode; compact?: boolean; className?: string }) {
   return (
     <th
-      className={`${compact ? 'w-10 px-2' : 'px-3'} ${className} border-b-2 border-[var(--border-color)] py-3 text-left text-[length:var(--font-size-ui-sm)] font-black tracking-[0.12em] text-[var(--text-primary)]`}
+      className={`${compact ? 'w-10 px-2' : 'px-3'} ${className} border-b border-[var(--gt-border-subtle)] py-2.5 text-left text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]`}
     >
       {children}
     </th>
@@ -1391,10 +1446,10 @@ function SortableTableHead({
       <button
         type="button"
         onClick={() => onSort(sortKey)}
-        className="inline-flex items-center gap-2 uppercase transition-opacity hover:opacity-70"
+        className="inline-flex items-center gap-1.5 transition-colors hover:text-[var(--text-primary)]"
       >
         <span>{children}</span>
-        <span className={isActive ? 'text-[var(--accent-red)]' : 'text-[var(--text-muted)]'}>{arrow}</span>
+        <span className={isActive ? 'text-[var(--gt-status-info)]' : 'text-[var(--text-muted)]'}>{arrow}</span>
       </button>
     </TableHead>
   );
@@ -1418,7 +1473,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`btn-swiss inline-flex h-8 items-center justify-start text-left !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-[var(--color-status-danger)]' : ''} ${className}`}
+      className={`inline-flex h-8 items-center justify-start gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-left text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''} ${className}`}
     >
       {children}
     </button>
@@ -1426,10 +1481,12 @@ function ActionButton({
 }
 
 function MenuActionButton({
+  icon,
   label,
   description,
   onClick,
 }: {
+  icon?: ReactNode;
   label: string;
   description: string;
   onClick: () => void;
@@ -1438,10 +1495,13 @@ function MenuActionButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full flex-col items-start gap-1 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-left transition-transform hover:translate-x-[-1px] hover:translate-y-[-1px]"
+      className="flex w-full items-start gap-2 rounded px-2.5 py-2 text-left transition hover:bg-[var(--gt-surface-muted)]"
     >
-      <span className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">{label}</span>
-      <span className="text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-muted)]">{description}</span>
+      {icon ? <span className="mt-0.5 shrink-0 text-[var(--text-muted)]">{icon}</span> : null}
+      <span className="min-w-0">
+        <span className="block text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">{label}</span>
+        <span className="mt-0.5 block text-[length:var(--font-size-ui-xs)] font-medium leading-4 text-[var(--text-muted)]">{description}</span>
+      </span>
     </button>
   );
 }
