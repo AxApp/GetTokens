@@ -58,21 +58,99 @@ test('account card full grid uses elastic tracks that can fit additional cards',
   assert.doesNotMatch(styleSource, /account-card-grid-compact|--account-card-grid-compact-width/);
 });
 
+test('account card frame does not render a tone-colored side border', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const toneSource = await readFile(new URL('../components/attributionCardTone.ts', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(source, /ATTRIBUTION_CARD_TONE_BORDER_CLASS/);
+  assert.doesNotMatch(source, /border-l-\[\d+px\]/);
+  assert.doesNotMatch(toneSource, /border-l-\[var\(--gt-status-/);
+  assert.doesNotMatch(toneSource, /border-l-\[var\(--gt-border-default\)\]/);
+  assert.match(source, /const glowClass = ATTRIBUTION_CARD_TONE_GLOW_CLASS\[tone\];/);
+  assert.match(source, /className=\{`min-h-\[4\.5rem\] p-0 \$\{glowClass\} \$\{className\}`\}/);
+  assert.match(source, /className=\{`p-0 \$\{glowClass\} \$\{className\}`\}/);
+});
+
+test('account cards render a subtle status glow and diffuse wash', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const toneSource = await readFile(new URL('../components/attributionCardTone.ts', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+
+  assert.match(source, /ATTRIBUTION_CARD_TONE_GLOW_CLASS/);
+  assert.match(toneSource, /positive: 'account-card-status-glow account-card-status-glow-positive'/);
+  assert.match(toneSource, /warning: 'account-card-status-glow account-card-status-glow-warning'/);
+  assert.match(toneSource, /critical: 'account-card-status-glow account-card-status-glow-critical'/);
+  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow\s*\{[\s\S]*radial-gradient\(circle at calc\(100% - 1\.5rem\) 1\.25rem, color-mix\(in srgb, var\(--account-card-status-glow-accent\) 12%, transparent\)/);
+  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow\s*\{[\s\S]*radial-gradient\(ellipse at 18% 92%, color-mix\(in srgb, var\(--account-card-status-glow-accent\) 5%, transparent\)/);
+  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow\s*\{[\s\S]*var\(--gt-surface-canvas\)/);
+  assert.doesNotMatch(styleSource, /account-card-status-glow[\s\S]*ellipse at 12% 0%/);
+  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow-positive\s*\{[^}]*--account-card-status-glow-accent:\s*var\(--gt-status-success\)/s);
+  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow-warning\s*\{[^}]*--account-card-status-glow-accent:\s*var\(--gt-status-warning\)/s);
+  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow-critical\s*\{[^}]*--account-card-status-glow-accent:\s*var\(--gt-status-danger\)/s);
+});
+
+test('full account card subtitle renders as its own header row', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const fullSource = source.split('// ── Full density ──')[1] || '';
+
+  assert.match(fullSource, /<div className="account-card-meta-action-row -mr-4 grid min-w-0 grid-cols-\[minmax\(0,1fr\)_auto\] items-center gap-2">[\s\S]*\{topActions \? <div className="col-start-2 shrink-0 justify-self-end">\{topActions\}<\/div> : null\}\s*<\/div>\s*\) : null\}\s*<div className="flex items-center gap-2">/);
+  assert.match(fullSource, /<div className="flex items-center gap-2">[\s\S]*<h3[\s\S]*\{title\}[\s\S]*<\/div>\s*<\/div>\s*\{subtitle \? \(/);
+  assert.match(source, /className="mt-1\.5 break-all text-xs"/);
+  assert.match(source, /className="mt-1\.5 text-xs font-medium"/);
+});
+
+test('full account card tone dot starts the metadata row', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const fullSource = source.split('// ── Full density ──')[1] || '';
+
+  assert.match(fullSource, /<div[\s\S]*className="account-card-meta-row[^"]*"[\s\S]*>\s*<span className=\{`h-2 w-2 shrink-0 rounded-full \$\{accentFillClass\}`\} \/>/);
+  assert.doesNotMatch(fullSource, /\{eyebrow \? <span className="min-w-0 truncate">\{eyebrow\}<\/span> : null\}\s*<span className=\{`h-2 w-2 shrink-0 rounded-full \$\{accentFillClass\}`\} \/>/);
+  assert.doesNotMatch(fullSource, /<div className="flex items-center gap-2">\s*<span className=\{`h-2 w-2 shrink-0 rounded-full \$\{accentFillClass\}`\} \/>/);
+});
+
+test('full account card badges share the eyebrow metadata row', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const fullSource = source.split('// ── Full density ──')[1] || '';
+
+  assert.match(fullSource, /eyebrow \|\| eyebrowPrefix \|\| priorityBadges\.length > 0/);
+  assert.match(fullSource, /className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1\.5 overflow-hidden text-\[length:var\(--font-size-ui-sm-plus\)\] font-semibold leading-none"/);
+  assert.match(fullSource, /\{eyebrow \? <span className="min-w-0 truncate">\{eyebrow\}<\/span> : null\}\s*\{priorityBadges\.length > 0 \? \(\s*<div className="account-card-meta-badges flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">/s);
+  assert.match(fullSource, /className=\{`account-card-meta-badge shrink-0 truncate rounded border px-1\.5 py-0\.5 text-\[length:var\(--font-size-ui-sm\)\] font-semibold leading-none \$\{ATTRIBUTION_CARD_BADGE_TONE_CLASS\[badge\.tone \|\| 'neutral'\]\}`\}/);
+  assert.doesNotMatch(fullSource, /<div className="mt-2 flex flex-wrap gap-1">/);
+  assert.doesNotMatch(fullSource, /\{topActions \? <div className="-mr-4 shrink-0 pl-4">\{topActions\}<\/div> : null\}/);
+});
+
+test('full account card metadata tags use priority order and hide low priority tags first', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+
+  assert.match(source, /function resolveAttributionCardBadgePriority\(badge: AttributionCardBadge\)/);
+  assert.match(source, /if \(badge\.tone === 'critical'\) return 0;/);
+  assert.match(source, /if \(badge\.tone === 'warning'\) return 1;/);
+  assert.match(source, /if \(badge\.backgroundColor\) return 2;/);
+  assert.match(source, /return 3;/);
+  assert.match(source, /const priorityBadges = \[\.\.\.badges\]\.sort\(compareAttributionCardBadges\);/);
+  assert.match(source, /data-account-card-badge-priority=\{resolveAttributionCardBadgePriority\(badge\)\}/);
+  assert.match(styleSource, /\.account-card-meta-row\s*\{[^}]*container-type:\s*inline-size/s);
+  assert.match(styleSource, /@container \(max-width: 176px\)\s*\{[\s\S]*\.account-card-meta-badge\[data-account-card-badge-priority="3"\]\s*\{[^}]*display:\s*none/s);
+  assert.match(styleSource, /@container \(max-width: 128px\)\s*\{[\s\S]*\.account-card-meta-badge\[data-account-card-badge-priority="2"\]\s*\{[^}]*display:\s*none/s);
+  assert.match(styleSource, /@container \(max-width: 96px\)\s*\{[\s\S]*\.account-card-meta-badge\[data-account-card-badge-priority="1"\]\s*\{[^}]*display:\s*none/s);
+});
+
 test('list density keeps only the plan badge before metrics and actions', async () => {
   const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
   const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
-  assert.match(source, /account-card-list-identity/);
-  assert.match(source, /account-card-list-status/);
-  assert.match(source, /account-card-list-endpoint/);
-  assert.match(source, /badges\.find\(\(badge\) => badge\.backgroundColor\)/);
+  assert.match(source, /const listStatusText = \[/);
+  assert.match(source, /className="min-w-0 flex-1 space-y-1"/);
+  assert.match(source, /className="min-w-0 truncate text-xs font-medium"/);
+  assert.match(source, /priorityBadges\.find\(\(badge\) => badge\.backgroundColor\)/);
   assert.match(source, /join\(' · '\)/);
   assert.match(source, /formatCountMetric\(usageSummary\?\.requestCount \?\? 0\)/);
   assert.match(source, /formatTokenMetric\(usageSummary\?\.totalTokens \?\? 0\)/);
   assert.match(source, /quotaDisplay\?\.status === 'unsupported'/);
   assert.doesNotMatch(source, /AccountMiniMetrics usageSummary=\{usageSummary\}/);
-  assert.doesNotMatch(source, /account-card-list-metrics/);
   assert.doesNotMatch(source, /account-card-list-badges/);
   assert.match(styleSource, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s*auto/);
   assert.doesNotMatch(styleSource, /\.account-card-list-row\s*\{[^}]*minmax\(18rem,\s*1\.35fr\)/s);
@@ -143,7 +221,7 @@ test('quota rows keep label and percentage together above the progress bar', asy
 
   assert.match(source, /account-card-quota-heading/);
   assert.match(source, /showDivider = true/);
-  assert.match(source, /showDivider \? 'border-b border-dashed border-\[var\(--border-color\)\]' : ''/);
+  assert.match(source, /showDivider \? 'border-b border-dashed border-\[var\(--gt-border-subtle\)\]' : ''/);
   assert.match(source, /className="account-card-quota-row grid min-w-0 gap-1\.5"/);
   assert.doesNotMatch(styleSource, /\.account-card-quota-row\s*\{[^}]*grid-template-columns:\s*4\.25rem/s);
 });
@@ -160,21 +238,22 @@ test('full attribution cards do not render the retired traffic metrics module', 
   assert.match(cardSource, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} refreshing=\{rateLimitRefreshing \|\| usageRefreshing\} t=\{t\} \/>/);
 });
 
-test('account card footer actions use a solid top divider with two equal columns', async () => {
+test('account card footer only renders the reauth action when required', async () => {
   const attributionSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
   const cardSource = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
   const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
-  assert.match(attributionSource, /className="mt-auto border-t border-\[var\(--border-color\)\] px-4 pb-4 pt-3"/);
-  assert.match(cardSource, /className="account-card-action-grid grid gap-2"/);
-  assert.doesNotMatch(cardSource, /account-card-action-grid grid gap-2 border-t border-dashed/);
+  assert.match(attributionSource, /footer \? <div className="mt-auto px-4 pb-3 pt-2" style=\{\{ borderTop: '1px solid var\(--gt-border-subtle\)' \}\}>\{footer\}<\/div> : null/);
+  assert.match(cardSource, /const showFooterReauth = showFooterReauthAction && canReauth;/);
+  assert.match(cardSource, /density === 'list' \|\| !showFooterReauth \? undefined/);
+  assert.match(cardSource, /className="grid gap-2"/);
+  assert.match(cardSource, /onClick=\{\(\) => onStartReauth\(account\)\}/);
+  assert.doesNotMatch(cardSource, /t\('common\.details'\)/);
+  assert.doesNotMatch(cardSource, /account-card-footer-refresh-button/);
   assert.doesNotMatch(sectionsSource, /<section className="grid gap-2\.5 border-b border-dashed border-\[var\(--border-color\)\] px-4 py-3">/);
   assert.doesNotMatch(cardSource, /actionColumnClass|account-card-action-grid-1|account-card-action-grid-2|account-card-action-grid-3/);
-  assert.match(cardSource, /className="btn-swiss account-card-action-grid-span !py-1\.5/);
-  assert.match(styleSource, /\.account-card-action-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/s);
-  assert.match(styleSource, /\.account-card-action-grid-span\s*\{[^}]*grid-column:\s*1 \/ -1/s);
-  assert.doesNotMatch(styleSource, /account-card-action-grid-1|account-card-action-grid-2|account-card-action-grid-3/);
+  assert.doesNotMatch(styleSource, /account-card-action-grid|account-card-action-grid-span/);
 });
 
 test('quota bars can toggle from percent to token progress when token counts exist', async () => {

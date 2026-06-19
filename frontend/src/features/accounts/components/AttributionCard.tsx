@@ -13,13 +13,12 @@ import {
 } from './CardSections';
 import {
   ATTRIBUTION_CARD_BADGE_TONE_CLASS,
-  ATTRIBUTION_CARD_TONE_BORDER_CLASS,
   ATTRIBUTION_CARD_TONE_FILL_CLASS,
+  ATTRIBUTION_CARD_TONE_GLOW_CLASS,
   type AttributionCardTone,
 } from './attributionCardTone';
 
 type AttributionCardDensity = 'full' | 'list';
-
 
 function buildRouteGuardFrameDebugLabel(rateLimitStatus?: RateLimitState) {
   const rows = buildRateLimitGuardRows(rateLimitStatus);
@@ -34,6 +33,17 @@ export interface AttributionCardBadge {
   shortLabel?: string;
   backgroundColor?: string;
   tone?: AttributionCardTone;
+}
+
+function resolveAttributionCardBadgePriority(badge: AttributionCardBadge) {
+  if (badge.tone === 'critical') return 0;
+  if (badge.tone === 'warning') return 1;
+  if (badge.backgroundColor) return 2;
+  return 3;
+}
+
+function compareAttributionCardBadges(a: AttributionCardBadge, b: AttributionCardBadge) {
+  return resolveAttributionCardBadgePriority(a) - resolveAttributionCardBadgePriority(b);
 }
 
 interface AttributionCardProps {
@@ -91,24 +101,22 @@ export default function AttributionCard({
   interactive = true,
   onOpen,
 }: AttributionCardProps) {
-  const accentBorderClass = ATTRIBUTION_CARD_TONE_BORDER_CLASS[tone];
   const accentFillClass = ATTRIBUTION_CARD_TONE_FILL_CLASS[tone];
+  const glowClass = ATTRIBUTION_CARD_TONE_GLOW_CLASS[tone];
   const resolvedQuotaDisplay = quotaDisplay ?? { status: 'unsupported', planType: '', windows: [] };
+  const priorityBadges = [...badges].sort(compareAttributionCardBadges);
   const overlayFrameClass =
     density === 'list'
       ? 'absolute -inset-y-0.5 -left-2 -right-0.5 z-20'
       : 'absolute -inset-y-0.5 -left-1.5 -right-0.5 z-20';
   const routeGuardFrameDebugLabel = buildRouteGuardFrameDebugLabel(rateLimitStatus);
 
+  // ── List density ──
   if (density === 'list') {
-    const planBadge = badges.find((badge) => badge.backgroundColor) ?? null;
+    const planBadge = priorityBadges.find((badge) => badge.backgroundColor) ?? null;
     const firstQuotaWindow = resolvedQuotaDisplay.windows?.[0];
     const quotaStatusText = firstQuotaWindow
-      ? `${firstQuotaWindow.label} ${
-          firstQuotaWindow.remainingPercent === null
-            ? '--'
-            : `${firstQuotaWindow.remainingPercent}%`
-        }`
+      ? `${firstQuotaWindow.label} ${firstQuotaWindow.remainingPercent === null ? '--' : `${firstQuotaWindow.remainingPercent}%`}`
       : quotaDisplay?.status === 'unsupported'
         ? t('accounts.quota_unsupported')
         : '';
@@ -119,14 +127,12 @@ export default function AttributionCard({
       `${t('accounts.recent_requests')} ${formatCountMetric(usageSummary?.requestCount ?? 0)}`,
       `${t('accounts.total_tokens')} ${formatTokenMetric(usageSummary?.totalTokens ?? 0)}`,
       quotaStatusText,
-    ]
-      .filter(Boolean)
-      .join(' · ');
+    ].filter(Boolean).join(' · ');
     const secondaryCopy = failureReason || subtitle;
 
     return (
       <AccountCardFrame
-        className={`min-h-[5.25rem] border-l-[6px] p-0 ${accentBorderClass} ${className}`}
+        className={`min-h-[4.5rem] p-0 ${glowClass} ${className}`}
         cardID={cardID}
         style={style}
         interactive={interactive}
@@ -134,42 +140,48 @@ export default function AttributionCard({
         debugLabel={routeGuardFrameDebugLabel}
         onOpen={onOpen}
       >
-        <div className="account-card-list-row grid gap-3 px-3 py-2.5">
-          <div className="account-card-list-identity grid min-w-0 gap-1.5">
-            <div className="account-card-list-status flex min-w-0 items-center gap-2">
-              <span className={`h-2.5 w-2.5 shrink-0 ${accentFillClass}`} />
-              <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center gap-2">
+              <span className={`h-2 w-2 shrink-0 rounded-full ${accentFillClass}`} />
+              <span
+                className="min-w-0 truncate text-xs font-medium"
+                style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
+              >
                 {listStatusText || listEyebrow}
               </span>
             </div>
-            <h3 className="truncate text-[length:var(--font-size-ui-xl)] font-black uppercase leading-tight tracking-normal text-[var(--text-primary)]">
+            <h3
+              className="truncate text-sm font-semibold leading-tight"
+              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
+            >
               {title}
             </h3>
             {secondaryCopy ? (
               <div
-                className={`account-card-list-endpoint flex min-w-0 items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.06em] ${
-                  failureReason ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
-                }`}
+                className="min-w-0 truncate text-xs"
+                style={{
+                  color: failureReason ? 'var(--gt-status-danger)' : 'var(--gt-ink-muted)',
+                  fontFamily: 'var(--gt-font-family-mono)',
+                }}
               >
-                <span className="shrink-0 text-[length:var(--font-size-ui-2xs)] tracking-[0.16em] opacity-70">
-                  {failureReason ? t('common.status') : t('accounts.ui_base_url')}
-                </span>
-                <span className="min-w-0 truncate">{secondaryCopy}</span>
+                {secondaryCopy}
               </div>
             ) : null}
           </div>
-          {topActions ? <div className="account-card-list-actions justify-self-start">{topActions}</div> : null}
+          {topActions ? <div className="shrink-0">{topActions}</div> : null}
         </div>
-        {customBody ? <div className="border-t-2 border-[var(--border-color)]">{customBody}</div> : null}
+        {customBody ? <div style={{ borderTop: '1px solid var(--gt-border-subtle)' }}>{customBody}</div> : null}
         {footer ? <div className="px-3 pb-3">{footer}</div> : null}
         {overlay ? <div className={overlayFrameClass}>{overlay}</div> : null}
       </AccountCardFrame>
     );
   }
 
+  // ── Full density ──
   return (
     <AccountCardFrame
-      className={`border-l-[6px] p-0 ${accentBorderClass} ${className}`}
+      className={`p-0 ${glowClass} ${className}`}
       cardID={cardID}
       style={style}
       interactive={interactive}
@@ -177,59 +189,70 @@ export default function AttributionCard({
       debugLabel={routeGuardFrameDebugLabel}
       onOpen={onOpen}
     >
-      <div className="account-card-header relative flex min-h-[112px] items-start gap-4 border-b-[3px] border-[var(--border-color)] px-4 py-4">
-        {leadingAction ? <div className="shrink-0">{leadingAction}</div> : null}
-        <div className={`min-w-0 flex-1 space-y-3 ${topActions ? 'pr-20' : ''}`}>
-          {eyebrow || eyebrowPrefix ? (
-            <div className="flex min-w-0 items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-              {eyebrowPrefix ? (
-                <span className="shrink-0 tracking-normal text-[var(--text-primary)]">{eyebrowPrefix}</span>
-              ) : null}
-              {eyebrow ? <span className="min-w-0 truncate">{eyebrow}</span> : null}
-            </div>
-          ) : null}
-          <div className="space-y-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <div className={`h-2.5 w-2.5 shrink-0 ${accentFillClass}`} />
-              <h3 className="truncate text-[length:var(--font-size-ui-xl-plus)] font-black leading-tight tracking-[0.02em] text-[var(--text-primary)]">
-                {title}
-              </h3>
-            </div>
-            {subtitle ? (
-              <div className="break-all font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                {subtitle}
-              </div>
-            ) : null}
-            {failureReason ? (
-              <div className="text-[length:var(--font-size-ui-sm)] font-black leading-relaxed text-[var(--color-status-danger)]">{failureReason}</div>
-            ) : null}
-          </div>
-          {badges.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {badges.map((badge) => (
-                <span
-                  key={`${badge.label}-${badge.tone || 'neutral'}`}
-                  title={badge.label}
-                  style={badge.backgroundColor ? { backgroundColor: badge.backgroundColor } : undefined}
-                  className={`border px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] ${
-                    ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']
-                  }`}
+      {/* Header */}
+      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
+        <div className="min-w-0 space-y-1.5">
+          {eyebrow || eyebrowPrefix || priorityBadges.length > 0 || topActions ? (
+            <div className="account-card-meta-action-row -mr-4 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+              {eyebrow || eyebrowPrefix || priorityBadges.length > 0 ? (
+                <div
+                  className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1.5 overflow-hidden text-[length:var(--font-size-ui-sm-plus)] font-semibold leading-none"
+                  style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
                 >
-                  {badge.shortLabel || badge.label}
-                </span>
-              ))}
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${accentFillClass}`} />
+                  {eyebrowPrefix ? (
+                    <span className="shrink-0" style={{ color: 'var(--gt-ink-primary)' }}>{eyebrowPrefix}</span>
+                  ) : null}
+                  {eyebrow ? <span className="min-w-0 truncate">{eyebrow}</span> : null}
+                  {priorityBadges.length > 0 ? (
+                    <div className="account-card-meta-badges flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
+                      {priorityBadges.map((badge) => (
+                        <span
+                          key={`${badge.label}-${badge.tone || 'neutral'}`}
+                          data-account-card-badge-priority={resolveAttributionCardBadgePriority(badge)}
+                          title={badge.label}
+                          style={badge.backgroundColor ? { backgroundColor: badge.backgroundColor } : undefined}
+                          className={`account-card-meta-badge shrink-0 truncate rounded border px-1.5 py-0.5 text-[length:var(--font-size-ui-sm)] font-semibold leading-none ${ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']}`}
+                        >
+                          {badge.shortLabel || badge.label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {topActions ? <div className="col-start-2 shrink-0 justify-self-end">{topActions}</div> : null}
             </div>
           ) : null}
+          <div className="flex items-center gap-2">
+            <h3
+              className="truncate text-sm font-semibold leading-tight"
+              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
+            >
+              {title}
+            </h3>
+          </div>
         </div>
-        {topActions ? <div className="account-card-top-actions absolute right-4 top-4 z-10">{topActions}</div> : null}
+        {subtitle ? (
+          <div
+            className="mt-1.5 break-all text-xs"
+            style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
+          >
+            {subtitle}
+          </div>
+        ) : null}
+        {failureReason ? (
+          <div className="mt-1.5 text-xs font-medium" style={{ color: 'var(--gt-status-danger)' }}>{failureReason}</div>
+        ) : null}
       </div>
 
+      {/* Content sections */}
       <QuotaBars quotaDisplay={resolvedQuotaDisplay} t={t} />
       <BillingBalance billing={billing} />
       <RateLimitGuard rateLimitStatus={rateLimitStatus} usageSummary={usageSummary} refreshing={rateLimitRefreshing || usageRefreshing} t={t} />
 
-      {customBody ? <div className="shrink-0 border-t-2 border-[var(--border-color)]">{customBody}</div> : null}
-      {footer ? <div className="mt-auto border-t border-[var(--border-color)] px-4 pb-4 pt-3">{footer}</div> : null}
+      {customBody ? <div className="shrink-0" style={{ borderTop: '1px solid var(--gt-border-subtle)' }}>{customBody}</div> : null}
+      {footer ? <div className="mt-auto px-4 pb-3 pt-2" style={{ borderTop: '1px solid var(--gt-border-subtle)' }}>{footer}</div> : null}
       {overlay ? <div className={overlayFrameClass}>{overlay}</div> : null}
     </AccountCardFrame>
   );

@@ -1,4 +1,5 @@
 import type { CSSProperties, KeyboardEvent, MouseEvent, ReactNode } from 'react';
+import { Card } from 'antd';
 import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions';
 
 interface AccountCardFrameProps {
@@ -40,32 +41,33 @@ export default function AccountCardFrame({
     onOpen();
   }
 
-  const frameProps = {
-    'data-account-card': true,
-    'data-account-card-id': cardID,
-    'data-account-card-open-details': interactive ? 'true' : undefined,
-    className: `card-swiss relative flex h-full w-full min-w-0 max-w-full flex-col overflow-visible bg-[var(--bg-main)] p-0 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] active:scale-[0.985] ${
-      interactive ? 'cursor-pointer' : ''
-    } ${className}`,
-    style,
-    onClick: handleClick,
-    onKeyDown: handleKeyDown,
-    role: interactive ? 'button' : undefined,
-    'aria-label': interactive ? openDetailsLabel : undefined,
-    tabIndex: interactive ? 0 : -1,
-  };
+  const card = (
+    <Card
+      data-account-card="true"
+      data-account-card-id={cardID}
+      data-account-card-open-details={interactive ? 'true' : undefined}
+      hoverable={interactive}
+      className={`${interactive ? 'cursor-pointer' : ''} ${className}`}
+      styles={{
+        body: { padding: 0, height: '100%', display: 'flex', flexDirection: 'column' },
+      }}
+      style={{
+        height: '100%',
+        ...style,
+      }}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role={interactive ? 'button' : undefined}
+      aria-label={interactive ? openDetailsLabel : undefined}
+      tabIndex={interactive ? 0 : -1}
+    >
+      {children}
+    </Card>
+  );
 
   if (debugLabel) {
-    return (
-      <div {...frameProps} data-debug={debugLabel}>
-        {children}
-      </div>
-    );
+    return <div data-debug={debugLabel}>{card}</div>;
   }
 
-  return (
-    <div {...frameProps}>
-      {children}
-    </div>
-  );
+  return card;
 }

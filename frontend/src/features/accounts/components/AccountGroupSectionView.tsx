@@ -216,7 +216,7 @@ export default function AccountGroupSectionView({
 
   return (
     <section className="space-y-4" data-account-group-collapsed={isCollapsed ? 'true' : 'false'}>
-      <div className="flex items-center justify-between gap-4 border-b-2 border-[var(--border-color)] pb-4">
+      <div className="flex items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--gt-border-subtle)' }}>
         <div className="flex min-w-0 items-center gap-3">
           {onToggleCollapsed ? (
             <button
@@ -225,22 +225,29 @@ export default function AccountGroupSectionView({
               aria-controls={groupBodyID}
               aria-expanded={!isCollapsed}
               onClick={() => onToggleCollapsed(group.id)}
-              className="btn-swiss flex h-8 w-8 shrink-0 items-center justify-center !px-0 !py-0"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+              style={{ color: 'var(--gt-ink-secondary)' }}
               title={collapseLabel}
             >
               {isCollapsed ? (
-                <ChevronRight size={16} strokeWidth={3} />
+                <ChevronRight size={16} strokeWidth={2} />
               ) : (
-                <ChevronDown size={16} strokeWidth={3} />
+                <ChevronDown size={16} strokeWidth={2} />
               )}
             </button>
           ) : null}
-          <h3 className="min-w-0 truncate text-[length:var(--font-size-ui-6xl)] font-black uppercase leading-none tracking-[-0.04em] text-[var(--text-primary)]">
+          <h3
+            className="min-w-0 truncate text-lg font-semibold leading-none"
+            style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
+          >
             {group.label}
           </h3>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <p className="text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <p
+            className="text-xs"
+            style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
+          >
             {group.accounts.length} {t('accounts.plan_group_meta')}
           </p>
           {groupSelectionAction ? (
@@ -249,9 +256,9 @@ export default function AccountGroupSectionView({
               aria-pressed={allGroupSelected}
               onClick={() => groupSelectionAction(group.accounts)}
               disabled={!hasAccounts}
-              className="btn-swiss flex h-8 items-center gap-1.5 !px-2.5 !py-1 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="parchment-toolbar-action-secondary flex h-8 items-center gap-1.5 !px-2.5 !py-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <SquareCheckBig size={13} strokeWidth={3} />
+              <SquareCheckBig size={13} strokeWidth={2} />
               {allGroupSelected ? t('accounts.unselect_group') : t('accounts.select_group')}
             </button>
           ) : null}
@@ -260,9 +267,9 @@ export default function AccountGroupSectionView({
               type="button"
               onClick={() => onRefreshGroup(group.accounts)}
               disabled={!canRefreshGroup}
-              className="btn-swiss flex h-8 items-center gap-1.5 !px-2.5 !py-1 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="parchment-toolbar-action-secondary flex h-8 items-center gap-1.5 !px-2.5 !py-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <RefreshCw size={13} strokeWidth={3} />
+              <RefreshCw size={13} strokeWidth={2} />
               {t('accounts.refresh_group')}
             </button>
           ) : null}
@@ -274,15 +281,17 @@ export default function AccountGroupSectionView({
                 aria-haspopup="menu"
                 aria-expanded={isMenuOpen}
                 onClick={toggleGroupActionsMenu}
-                className="btn-swiss flex h-8 w-8 items-center justify-center !px-0 !py-0"
+                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-muted)]"
+                style={{ color: 'var(--gt-ink-secondary)' }}
                 title={t('accounts.group_actions')}
               >
-                <MoreVertical size={14} strokeWidth={3} />
+                <MoreVertical size={14} strokeWidth={2} />
               </button>
               {isMenuOpen ? (
                 <div
                   role="menu"
-                  className="absolute right-0 top-full z-30 mt-2 w-56 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
+                  className="absolute right-0 top-full z-30 mt-2 w-56 rounded-lg border p-1"
+                style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}
                 >
                   {onSetGroupDisabled ? (
                     <>
@@ -294,9 +303,9 @@ export default function AccountGroupSectionView({
                           closeGroupActionsMenu();
                           onSetGroupDisabled(group.accounts, false);
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <Power size={14} strokeWidth={3} />
+                        <Power size={14} strokeWidth={2} />
                         {t('accounts.enable_group')}
                       </button>
                       <button
@@ -307,9 +316,9 @@ export default function AccountGroupSectionView({
                           closeGroupActionsMenu();
                           onSetGroupDisabled(group.accounts, true);
                         }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <Power size={14} strokeWidth={3} />
+                        <Power size={14} strokeWidth={2} />
                         {t('accounts.disable_group')}
                       </button>
                     </>
@@ -321,21 +330,21 @@ export default function AccountGroupSectionView({
                         role="menuitem"
                         disabled={!canDeleteGroup}
                         onClick={() => setIsGroupDeleteConfirming(true)}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <Trash2 size={14} strokeWidth={3} />
+                        <Trash2 size={14} strokeWidth={2} />
                         {deleteGroupLabel}
                       </button>
                       {isGroupDeleteConfirming ? (
-                        <div className="mt-1 grid gap-2 border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] p-2">
-                          <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
+                        <div className="mt-1 grid gap-2 rounded border p-2" style={{ borderColor: 'var(--gt-status-danger)', backgroundColor: 'color-mix(in srgb, var(--gt-status-danger) 10%, transparent)' }}>
+                          <div className="text-xs font-medium text-[var(--gt-status-danger)]">
                             {deleteGroupConfirmLabel} · {deleteGroupResolution.targets.length}/{group.accounts.length}
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <button
                               type="button"
                               onClick={() => setIsGroupDeleteConfirming(false)}
-                              className="btn-swiss !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)]"
+                              className="parchment-toolbar-action-secondary !px-2 !py-2 text-xs"
                             >
                               {t('common.cancel')}
                             </button>
@@ -346,7 +355,7 @@ export default function AccountGroupSectionView({
                                 onDeleteGroup(group.accounts);
                               }}
                               disabled={!canDeleteGroup}
-                              className="btn-swiss !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)] !text-[var(--color-status-danger)]"
+                              className="parchment-toolbar-action-secondary !px-2 !py-2 text-xs !text-[var(--gt-status-danger)]"
                             >
                               {t('accounts.group_remove_confirm_action')}
                             </button>

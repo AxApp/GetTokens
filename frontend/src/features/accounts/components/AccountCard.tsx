@@ -113,6 +113,7 @@ export default function AccountCard({
   const primaryLabel = resolveAccountPrimaryLabel(account);
   const failureReason = resolveAccountFailureReason(account);
   const canReauth = isCodexReauthEligible(account);
+  const showFooterReauth = showFooterReauthAction && canReauth;
   const canMenuReauth = isCodexAuthFile(account);
   const operationalState = resolveAccountOperationalState(account, usageSummary, quotaDisplay, t);
   const statusTone =
@@ -249,190 +250,172 @@ export default function AccountCard({
       style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
       interactive={!isSelectionMode && !isPendingDelete}
       overlay={deleteOverlay}
-      topActions={
-        <div className="flex shrink-0 items-center justify-end gap-2" data-account-card-ignore-click="true">
-          {isSelectionMode ? (
-            <label className="flex cursor-pointer items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)]">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={() => onToggleSelection(account.id)}
-                className="h-3.5 w-3.5 accent-[var(--text-primary)]"
-              />
-              {t('accounts.select_account')}
-            </label>
-          ) : null}
-          {!isSelectionMode && !isPendingDelete ? (
-            <>
-              {refreshAction.visible ? (
-                <button
-                  type="button"
-                  aria-label={t(refreshAction.labelKey)}
-                  title={t(refreshAction.labelKey)}
-                  onClick={() => onRefreshQuota(account)}
-                  className="btn-swiss flex h-8 w-8 items-center justify-center !px-0 !py-0"
-                  disabled={!ready || refreshAction.disabled}
-                >
-                  <RefreshCw
-                    size={16}
-                    strokeWidth={3}
-                    className={refreshAction.disabled ? 'animate-spin' : undefined}
-                  />
-                </button>
-              ) : null}
-              <div ref={actionMenuRef} className="relative">
-                <button
-                  type="button"
-                  aria-label={t('accounts.card_actions')}
-                  aria-haspopup="menu"
-                  aria-expanded={isActionMenuOpen}
-                  onClick={() => setIsActionMenuOpen((prev) => !prev)}
-                  className="btn-swiss flex h-8 w-8 items-center justify-center !px-0 !py-0"
-                  title={t('accounts.card_actions')}
-                >
-                  <MoreVertical size={16} strokeWidth={3} />
-                </button>
-                {isActionMenuOpen ? (
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-full z-30 mt-2 w-44 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
-                  >
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => void copyAccountContent()}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
-                    >
-                      <FileText size={14} strokeWidth={3} />
-                      {t('accounts.copy_account_config')}
-                    </button>
-                    {canMenuReauth ? (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          if (isOAuthPending) {
-                            return;
-                          }
-                          setIsActionMenuOpen(false);
-                          onStartReauth(account);
-                        }}
-                        disabled={isOAuthPending}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50"
-                      >
-                        <RotateCw size={14} strokeWidth={3} />
-                        {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
-                      </button>
-                    ) : null}
-                    {localCliActions.length > 0 ? (
-                      <>
-                        <div className="my-1 border-t-2 border-dashed border-[var(--border-color)]" />
-                        {localCliActions.map((action) => (
-                          <button
-                            key={action.id}
-                            type="button"
-                            role="menuitem"
-                            disabled={action.disabled}
-                            onClick={() => {
-                              if (action.disabled) {
-                                return;
-                              }
-                              setIsActionMenuOpen(false);
-                              action.onSelect(account);
-                            }}
-                            title={action.disabledReason || action.detail || action.label}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <Terminal size={14} strokeWidth={3} className="shrink-0" />
-                            <span>{action.label}</span>
-                          </button>
-                        ))}
-                      </>
-                    ) : null}
-                    {canToggleDisabled ? (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setIsActionMenuOpen(false);
-                          onToggleDisabled(account);
-                        }}
-                        disabled={!ready || isStatusPending}
-                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50 ${
-                          account.disabled ? 'text-[var(--text-primary)]' : 'text-[var(--color-status-danger)]'
-                        }`}
-                      >
-                        <Power size={14} strokeWidth={3} />
-                        {isStatusPending ? t('common.loading') : account.disabled ? t('common.enable') : t('common.disable')}
-                      </button>
-                    ) : null}
-                    {showDeleteAction ? (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setIsActionMenuOpen(false);
-                          onRequestDelete(account.id);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)]"
-                      >
-                        <Trash2 size={14} strokeWidth={3} />
-                        {t('accounts.card_delete')}
-                      </button>
-                    ) : null}
-                    {copyState !== 'idle' ? (
-                      <div
-                        className={`border-t border-dashed border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
-                          copyState === 'success' ? 'text-[var(--color-status-success)]' : 'text-[var(--color-status-danger)]'
-                        }`}
-                      >
-                        {copyState === 'success' ? t('accounts.copy_done') : t('accounts.copy_failed')}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            </>
-          ) : null}
-        </div>
+      leadingAction={
+        isSelectionMode ? (
+          <label className="flex cursor-pointer items-center" data-account-card-ignore-click="true">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelection(account.id)}
+              className="h-4 w-4 rounded accent-[var(--gt-accent-primary)]"
+            />
+          </label>
+        ) : null
       }
-      footer={
-        !showFooterActions || isPendingDelete || density === 'list' ? undefined : (
-          <div
-            className="account-card-action-grid grid gap-2"
-            data-account-card-ignore-click="true"
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            <button type="button" onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]">
-              {t('common.details')}
-            </button>
+      topActions={
+        !isSelectionMode && !isPendingDelete ? (
+          <div className="flex shrink-0 items-center gap-1" data-account-card-ignore-click="true">
             {refreshAction.visible ? (
               <button
                 type="button"
                 aria-label={t(refreshAction.labelKey)}
                 title={t(refreshAction.labelKey)}
                 onClick={() => onRefreshQuota(account)}
-                className="btn-swiss account-card-footer-refresh-button flex items-center justify-center !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-muted)]"
+                style={{ color: 'var(--gt-ink-secondary)' }}
                 disabled={!ready || refreshAction.disabled}
               >
                 <RefreshCw
-                  size={15}
-                  strokeWidth={3}
+                  size={16}
+                  strokeWidth={2}
                   className={refreshAction.disabled ? 'animate-spin' : undefined}
                 />
               </button>
             ) : null}
-            {showFooterReauthAction && canReauth ? (
+            <div ref={actionMenuRef} className="relative">
               <button
                 type="button"
-                onClick={() => onStartReauth(account)}
-                className="btn-swiss account-card-action-grid-span !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-                disabled={isOAuthPending}
+                aria-label={t('accounts.card_actions')}
+                aria-haspopup="menu"
+                aria-expanded={isActionMenuOpen}
+                onClick={() => setIsActionMenuOpen((prev) => !prev)}
+                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-muted)]"
+                style={{ color: 'var(--gt-ink-secondary)' }}
+                title={t('accounts.card_actions')}
               >
-                {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
+                <MoreVertical size={16} strokeWidth={2} />
               </button>
-            ) : null}
+              {isActionMenuOpen ? (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-30 mt-2 w-44 rounded-lg border p-1"
+                  style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => void copyAccountContent()}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]"
+                  >
+                    <FileText size={14} strokeWidth={2} />
+                    {t('accounts.copy_account_config')}
+                  </button>
+                  {canMenuReauth ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        if (isOAuthPending) {
+                          return;
+                        }
+                        setIsActionMenuOpen(false);
+                        onStartReauth(account);
+                      }}
+                      disabled={isOAuthPending}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50"
+                    >
+                      <RotateCw size={14} strokeWidth={2} />
+                      {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
+                    </button>
+                  ) : null}
+                  {localCliActions.length > 0 ? (
+                    <>
+                      <div className="my-1 border-t border-dashed" style={{ borderColor: 'var(--gt-border-subtle)' }} />
+                      {localCliActions.map((action) => (
+                        <button
+                          key={action.id}
+                          type="button"
+                          role="menuitem"
+                          disabled={action.disabled}
+                          onClick={() => {
+                            if (action.disabled) {
+                              return;
+                            }
+                            setIsActionMenuOpen(false);
+                            action.onSelect(account);
+                          }}
+                          title={action.disabledReason || action.detail || action.label}
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Terminal size={14} strokeWidth={2} className="shrink-0" />
+                          <span>{action.label}</span>
+                        </button>
+                      ))}
+                    </>
+                  ) : null}
+                  {canToggleDisabled ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsActionMenuOpen(false);
+                        onToggleDisabled(account);
+                      }}
+                      disabled={!ready || isStatusPending}
+                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50 ${
+                        account.disabled ? 'text-[var(--gt-ink-primary)]' : 'text-[var(--gt-status-danger)]'
+                      }`}
+                    >
+                      <Power size={14} strokeWidth={2} />
+                      {isStatusPending ? t('common.loading') : account.disabled ? t('common.enable') : t('common.disable')}
+                    </button>
+                  ) : null}
+                  {showDeleteAction ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsActionMenuOpen(false);
+                        onRequestDelete(account.id);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)]"
+                    >
+                      <Trash2 size={14} strokeWidth={2} />
+                      {t('accounts.card_delete')}
+                    </button>
+                  ) : null}
+                  {copyState !== 'idle' ? (
+                    <div
+                      className={`border-t border-dashed px-3 py-2 text-xs font-medium ${
+                        copyState === 'success' ? 'text-[var(--gt-status-success)]' : 'text-[var(--gt-status-danger)]'
+                      }`}
+                      style={{ borderColor: 'var(--gt-border-subtle)' }}
+                    >
+                      {copyState === 'success' ? t('accounts.copy_done') : t('accounts.copy_failed')}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null
+      }
+      footer={
+        !showFooterActions || isPendingDelete || density === 'list' || !showFooterReauth ? undefined : (
+          <div
+            className="grid gap-2"
+            data-account-card-ignore-click="true"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => onStartReauth(account)}
+              className="parchment-toolbar-action-secondary !py-1.5 text-xs"
+              disabled={isOAuthPending}
+            >
+              {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
+            </button>
           </div>
         )
       }

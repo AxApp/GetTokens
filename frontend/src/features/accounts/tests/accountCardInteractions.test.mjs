@@ -146,7 +146,7 @@ test('account card refresh action keeps quota label for quota-capable accounts',
   });
 });
 
-test('account card top and footer actions expose refresh icon buttons', async () => {
+test('account card exposes refresh as a top icon action only', async () => {
   const source = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
   const attributionSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
 
@@ -154,9 +154,12 @@ test('account card top and footer actions expose refresh icon buttons', async ()
   assert.match(source, /aria-label=\{t\(refreshAction\.labelKey\)\}/);
   assert.match(source, /title=\{t\(refreshAction\.labelKey\)\}/);
   assert.match(source, /onClick=\{\(\) => onRefreshQuota\(account\)\}/);
-  assert.match(source, /<MoreVertical size=\{16\} strokeWidth=\{3\} \/>/);
-  assert.match(source, /account-card-footer-refresh-button/);
-  assert.match(attributionSource, /topActions \? 'pr-20' : ''/);
+  assert.match(source, /<MoreVertical size=\{16\} strokeWidth=\{2\} \/>/);
+  assert.match(source, /className="flex shrink-0 items-center gap-1"/);
+  assert.doesNotMatch(source, /className="-mr-4 flex shrink-0 items-center gap-1"/);
+  assert.doesNotMatch(source, /account-card-footer-refresh-button/);
+  assert.match(attributionSource, /topActions \? <div className="shrink-0 justify-self-end">\{topActions\}<\/div> : null/);
+  assert.match(attributionSource, /topActions \? <div className="shrink-0">\{topActions\}<\/div> : null/);
 });
 
 test('accounts import modal opens with app-local copied account payload when available', async () => {
@@ -217,8 +220,10 @@ test('account card frame exposes card-level detail expansion semantics', async (
   const source = await readFile(new URL('../components/AccountCardFrame.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /data-account-card-open-details/);
-  assert.match(source, /'aria-label': interactive \? openDetailsLabel : undefined/);
-  assert.match(source, /role: interactive \? 'button' : undefined/);
+  assert.match(source, /<Card/);
+  assert.match(source, /aria-label=\{interactive \? openDetailsLabel : undefined\}/);
+  assert.match(source, /role=\{interactive \? 'button' : undefined\}/);
+  assert.match(source, /hoverable=\{interactive\}/);
 });
 
 test('account card runtime warning banner summarizes stale reasons but keeps full tooltip', async () => {

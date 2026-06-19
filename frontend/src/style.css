@@ -1135,6 +1135,30 @@
     container-type: inline-size;
   }
 
+  [data-account-card].account-card-status-glow {
+    --account-card-status-glow-accent: var(--gt-ink-muted);
+    background-color: var(--gt-surface-canvas);
+    background-image:
+      radial-gradient(circle at calc(100% - 1.5rem) 1.25rem, color-mix(in srgb, var(--account-card-status-glow-accent) 12%, transparent) 0%, transparent 4.5rem),
+      radial-gradient(ellipse at 18% 92%, color-mix(in srgb, var(--account-card-status-glow-accent) 5%, transparent) 0%, transparent 58%);
+  }
+
+  [data-account-card].account-card-status-glow-neutral {
+    --account-card-status-glow-accent: var(--gt-ink-muted);
+  }
+
+  [data-account-card].account-card-status-glow-positive {
+    --account-card-status-glow-accent: var(--gt-status-success);
+  }
+
+  [data-account-card].account-card-status-glow-warning {
+    --account-card-status-glow-accent: var(--gt-status-warning);
+  }
+
+  [data-account-card].account-card-status-glow-critical {
+    --account-card-status-glow-accent: var(--gt-status-danger);
+  }
+
   [data-account-card] * {
     min-width: 0;
   }
@@ -1177,6 +1201,14 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .account-card-meta-row {
+    container-type: inline-size;
+  }
+
+  .account-card-meta-badge {
+    max-width: 5.25rem;
+  }
+
   .account-card-quota-refresh-skeleton {
     background-image:
       repeating-linear-gradient(
@@ -1191,14 +1223,6 @@
     opacity: 0.72;
   }
 
-  .account-card-action-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .account-card-action-grid-span {
-    grid-column: 1 / -1;
-  }
-
   @container (min-width: 46rem) {
     .account-card-list-row {
       align-items: center;
@@ -1207,6 +1231,12 @@
 
     .account-card-list-actions {
       justify-self: end;
+    }
+  }
+
+  @container (max-width: 176px) {
+    .account-card-meta-badge[data-account-card-badge-priority="3"] {
+      display: none;
     }
   }
 
@@ -1239,6 +1269,18 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
+  }
+
+  @container (max-width: 128px) {
+    .account-card-meta-badge[data-account-card-badge-priority="2"] {
+      display: none;
+    }
+  }
+
+  @container (max-width: 96px) {
+    .account-card-meta-badge[data-account-card-badge-priority="1"] {
+      display: none;
+    }
   }
 
   @container (max-width: 288px) {
@@ -1720,7 +1762,7 @@
     padding: 0 0.75rem;
     border: 1px solid var(--gt-border-default);
     border-radius: var(--gt-radius-sm);
-    background-color: var(--gt-surface-raised);
+    background-color: var(--gt-surface-muted);
     color: var(--gt-ink-primary);
     font-family: var(--gt-font-family-sans);
     font-size: var(--gt-font-size-body);
@@ -1731,7 +1773,7 @@
   }
 
   .parchment-toolbar-action-secondary:hover {
-    background-color: var(--gt-surface-muted);
+    background-color: var(--gt-border-default);
   }
 
   .parchment-toolbar-action-secondary:active {

@@ -24,7 +24,13 @@ function RuntimeWarningBanner({ warning, dataAttribute }: RuntimeWarningBannerPr
 
   return (
     <div
-      className="min-w-0 overflow-hidden border border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_12%,transparent)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--color-status-warning)]"
+      className="min-w-0 overflow-hidden rounded border px-2 py-1 text-xs font-medium"
+      style={{
+        borderColor: 'var(--gt-status-warning)',
+        backgroundColor: 'color-mix(in srgb, var(--gt-status-warning) 12%, transparent)',
+        color: 'var(--gt-status-warning)',
+        fontFamily: 'var(--gt-font-family-mono)',
+      }}
       title={display.full}
       {...dataProps}
     >
@@ -50,7 +56,13 @@ export function FormatBadges({ account }: FormatBadgesProps) {
       {formats.map((fmt) => (
         <span
           key={fmt}
-          className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]"
+          className="rounded border px-2 py-0.5 text-xs font-medium"
+          style={{
+            borderColor: 'var(--gt-border-default)',
+            backgroundColor: 'var(--gt-surface-muted)',
+            color: 'var(--gt-ink-muted)',
+            fontFamily: 'var(--gt-font-family-mono)',
+          }}
         >
           {formatLabel(fmt)}
         </span>
@@ -101,11 +113,11 @@ export function AccountMiniMetrics({ usageSummary, quotaDisplay, t }: AccountMin
 
 export function AccountMiniMetric({ label, value, title = '' }: { label: string; value: string; title?: string }) {
   return (
-    <div className="account-card-list-metric-cell min-w-0 border-l border-dashed border-[var(--border-color)] px-2 py-1.5 first:border-l-0" title={title}>
-      <div className="truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+    <div className="account-card-list-metric-cell min-w-0 border-l border-dashed border-[var(--gt-border-subtle)] px-2 py-1.5 first:border-l-0" title={title}>
+      <div className="truncate font-mono text-[length:var(--font-size-ui-2xs)] font-medium  text-[var(--gt-ink-muted)]">
         {label}
       </div>
-      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--gt-ink-primary)]">
         {value}
       </div>
     </div>
@@ -149,8 +161,8 @@ export function QuotaBars({ quotaDisplay, t, showDivider = true }: QuotaBarsProp
 
   return (
     <section
-      className={`grid gap-2.5 px-4 py-3 ${showDivider ? 'border-b border-dashed border-[var(--border-color)]' : ''} ${
-        hasTokenProgress ? 'cursor-pointer transition-colors hover:bg-[var(--bg-surface)]' : ''
+      className={`grid gap-2.5 px-4 py-3 ${showDivider ? 'border-b border-dashed border-[var(--gt-border-subtle)]' : ''} ${
+        hasTokenProgress ? 'cursor-pointer transition-colors hover:bg-[var(--gt-surface-muted)]' : ''
       }`}
       aria-busy={refreshing}
       aria-pressed={hasTokenProgress ? displayMode === 'tokens' : undefined}
@@ -182,19 +194,19 @@ export function QuotaBars({ quotaDisplay, t, showDivider = true }: QuotaBarsProp
         return (
           <div key={window.id} className="account-card-quota-row grid min-w-0 gap-1.5">
             <div className="account-card-quota-heading flex min-w-0 items-baseline justify-between gap-2">
-              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
                 {window.label}
               </div>
-              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-[0.08em] text-[var(--gt-ink-primary)]">
                 {valueLabel}
               </div>
             </div>
             <div className="grid min-w-0 gap-1">
               <div
-                className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
+                className="relative h-4 overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]"
                 style={{
                   backgroundImage: window.remainingPercent === null
-                    ? 'repeating-linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 0 8px, transparent 8px 14px)'
+                    ? 'repeating-linear-gradient(to right, color-mix(in srgb, var(--gt-border-subtle) 12%, transparent) 0 8px, transparent 8px 14px)'
                     : 'none',
                 }}
               >
@@ -211,9 +223,9 @@ export function QuotaBars({ quotaDisplay, t, showDivider = true }: QuotaBarsProp
                   />
                 ) : null}
               </div>
-              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-medium  text-[var(--gt-ink-muted)]">
                 <span className="shrink-0">{t('accounts.quota_reset')}</span>
-                <span className="min-w-0 truncate text-right text-[var(--text-primary)]">{resetTime}</span>
+                <span className="min-w-0 truncate text-right text-[var(--gt-ink-primary)]">{resetTime}</span>
               </div>
             </div>
           </div>
@@ -263,19 +275,19 @@ export function BillingBalance({ billing }: BillingBalanceProps) {
   if (!billing?.isAvailable || !billing?.balances?.length) return null;
 
   return (
-    <div className="space-y-2 border-b border-dashed border-[var(--border-color)] px-4 py-3">
-      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+    <div className="space-y-2 border-b border-dashed border-[var(--gt-border-subtle)] px-4 py-3">
+      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-medium  text-[var(--gt-ink-muted)]">
         BALANCE
       </div>
       {billing.balances.map((b, i) => (
         <div key={i} className="account-card-billing-grid grid gap-2 text-[length:var(--font-size-ui-xs)]">
-          <div className="flex items-center justify-between border border-[var(--border-color)] px-2 py-1">
-            <span className="font-mono font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">Total</span>
-            <span className="font-mono font-black text-[var(--text-primary)]">{b.totalBalance} {b.currency}</span>
+          <div className="flex items-center justify-between border border-[var(--gt-border-subtle)] px-2 py-1">
+            <span className="font-mono font-medium  text-[var(--gt-ink-muted)]">Total</span>
+            <span className="font-mono font-black text-[var(--gt-ink-primary)]">{b.totalBalance} {b.currency}</span>
           </div>
-          <div className="flex items-center justify-between border border-[var(--border-color)] px-2 py-1">
-            <span className="font-mono font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">Granted</span>
-            <span className="font-mono font-black text-[var(--text-primary)]">{b.grantedBalance} {b.currency}</span>
+          <div className="flex items-center justify-between border border-[var(--gt-border-subtle)] px-2 py-1">
+            <span className="font-mono font-medium  text-[var(--gt-ink-muted)]">Granted</span>
+            <span className="font-mono font-black text-[var(--gt-ink-primary)]">{b.grantedBalance} {b.currency}</span>
           </div>
         </div>
       ))}
@@ -332,11 +344,11 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
       ) : null}
       {hasRows ? (
         <div className="flex items-center justify-between gap-3">
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-medium  text-[var(--gt-ink-muted)]">
             ROUTE GUARD
           </div>
-          <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
-            rateLimitStatus?.blocked ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
+          <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-medium  ${
+            rateLimitStatus?.blocked ? 'text-[var(--gt-status-danger)]' : 'text-[var(--gt-ink-muted)]'
           }`}>
             {statusLabel}
           </div>
@@ -359,19 +371,19 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
         </div>
       ) : null}
       {rows.map((row) => {
-        const fillClass = row.tone === 'critical' ? 'bg-[var(--color-status-danger)]' : 'bg-[var(--color-status-warning)]';
+        const fillClass = row.tone === 'critical' ? 'bg-[var(--gt-status-danger)]' : 'bg-[var(--gt-status-warning)]';
         return (
           <div key={row.id} className="account-card-rate-limit-row grid min-w-0 gap-1.5">
             <div className="account-card-rate-limit-heading flex min-w-0 items-baseline justify-between gap-2">
-              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
                 {row.label}
               </div>
-              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-[0.08em] text-[var(--gt-ink-primary)]">
                 {row.valueLabel}
               </div>
             </div>
             <div className="grid min-w-0 gap-1">
-              <div className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]">
+              <div className="relative h-4 overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]">
                 <div className={`absolute inset-y-0 left-0 ${fillClass}`} style={{ width: `${row.fillPercent}%` }} />
                 {refreshing ? (
                   <div
@@ -380,9 +392,9 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
                   />
                 ) : null}
               </div>
-              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-medium  text-[var(--gt-ink-muted)]">
                 <span className="shrink-0">{row.windowLabel}</span>
-                <span className="min-w-0 truncate text-right text-[var(--text-primary)]">{row.resetLabel || '--'}</span>
+                <span className="min-w-0 truncate text-right text-[var(--gt-ink-primary)]">{row.resetLabel || '--'}</span>
               </div>
             </div>
           </div>
@@ -406,18 +418,18 @@ function TrafficStatisticsRow({
   return (
     <div className="account-card-traffic-statistics-row grid min-w-0 gap-1.5">
       <div className="flex min-w-0 items-baseline justify-between gap-2">
-        <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
           {label}
         </div>
-        <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+        <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-[0.08em] text-[var(--gt-ink-primary)]">
           {value} / ∞
         </div>
       </div>
-      <div className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]">
+      <div className="relative h-4 overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]">
         <div
           aria-hidden="true"
           data-account-card-traffic-activity-fill
-          className="absolute inset-y-0 left-0 bg-[color-mix(in_srgb,var(--text-primary)_16%,transparent)]"
+          className="absolute inset-y-0 left-0 bg-[color-mix(in_srgb,var(--gt-ink-primary)_16%,transparent)]"
           style={{ width: `${activityPercent}%` }}
         />
         {refreshing ? (
@@ -452,8 +464,8 @@ export function UnsupportedQuotaPlaceholder({ quotaDisplay, billing, t }: Unsupp
   if (windows.length > 0 || hasDisplayableBilling(billing)) return null;
 
   return (
-    <section className="border-b border-dashed border-[var(--border-color)] px-4 py-4">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+    <section className="border-b border-dashed border-[var(--gt-border-subtle)] px-4 py-4">
+      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
         {quotaDisplay?.status === 'loading' ? t('accounts.quota_syncing') : t('accounts.quota_unsupported')}
       </div>
     </section>

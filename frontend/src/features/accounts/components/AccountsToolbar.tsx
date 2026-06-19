@@ -208,14 +208,15 @@ export default function AccountsToolbar({
             <button
               type="button"
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+              className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
             >
               {buildToolbarFilterLabel(t, filterSummaryParts)}
             </button>
             {isMenuOpen ? (
-              <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
+              <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 rounded-lg border p-4"
+                style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}>
                 <div className="grid gap-2">
-                  <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                  <p className="px-1 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
                     {t('accounts.filter_group_presets')}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -241,7 +242,7 @@ export default function AccountsToolbar({
                 </div>
                 {filterSummaryParts.length > 0 ? (
                   <div className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2">
-                    <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                    <p className="px-1 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
                       {t('accounts.filter_active_conditions')}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -250,7 +251,8 @@ export default function AccountsToolbar({
                           key={`${part.kind}-${part.label}-${index}`}
                           type="button"
                           onClick={() => removeFilterPart(index)}
-                          className="inline-flex h-8 max-w-[220px] items-center gap-1.5 border-2 border-[var(--border-color)] bg-[var(--text-primary)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--bg-main)]"
+                          className="inline-flex h-8 max-w-[220px] items-center gap-1.5 rounded border px-2 text-xs font-medium"
+                          style={{ borderColor: 'var(--gt-accent-primary)', backgroundColor: 'var(--gt-accent-primary)', color: 'var(--gt-ink-inverse)' }}
                           title={t('accounts.filter_remove_condition')}
                         >
                           <span className="truncate">{part.label}</span>
@@ -261,12 +263,12 @@ export default function AccountsToolbar({
                   </div>
                 ) : null}
                 <div className="space-y-2">
-                  <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                  <p className="text-xs font-medium" style={{ color: 'var(--gt-ink-muted)' }}>
                     {t('accounts.filter_group_plan_source')}
                   </p>
                   <div className="grid gap-2">
                     <div className="grid grid-cols-3 gap-1">
-                      <p className="col-span-3 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                      <p className="col-span-3 px-2.5 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
                         {t('accounts.filter_group_source')}
                       </p>
                       <FilterPillOption active={filters.source.authFile && filters.source.apiKey} onClick={() => setSourceMode('all')}>
@@ -281,7 +283,7 @@ export default function AccountsToolbar({
                     </div>
                     {planOptions.length > 0 || !planAvailabilityResolved ? (
                       <div className="grid grid-cols-2 gap-1">
-                        <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                        <p className="col-span-2 px-2.5 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
                           {t('accounts.filter_group_plan')}
                         </p>
                         {planOptions.map((planType) => (
@@ -300,7 +302,7 @@ export default function AccountsToolbar({
                 </div>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-1">
-                    <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                    <p className="col-span-2 px-2.5 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
                       {t('accounts.filter_group_status')}
                     </p>
                     <FilterCheckOption active={filters.status.error} onClick={() => setStatusOption('error')}>
@@ -315,7 +317,7 @@ export default function AccountsToolbar({
                   </div>
                   {availableRequestStatusCodes.length > 0 ? (
                     <div className="grid grid-cols-2 gap-1">
-                      <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                      <p className="col-span-2 px-2.5 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
                         {t('accounts.filter_group_request_status')}
                       </p>
                       {availableRequestStatusCodes.map((statusCode) => (
@@ -332,7 +334,7 @@ export default function AccountsToolbar({
                   ) : null}
                 </div>
                 <div className="space-y-2">
-                  <p className="px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                  <p className="px-2.5 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
                     {t('accounts.filter_group_other')}
                   </p>
                   <FilterTernaryOptionRow
@@ -364,7 +366,7 @@ export default function AccountsToolbar({
                   <button
                     type="button"
                     onClick={() => onFiltersChange({ ...defaultAccountsFilterState })}
-                    className="btn-swiss h-9 !px-2.5 !py-1 !text-[length:var(--font-size-ui-md-compact)]"
+                    className="parchment-toolbar-action-secondary h-9 !px-2.5 !py-1 !text-[length:var(--font-size-ui-md-compact)]"
                   >
                     {t('accounts.filter_reset')}
                   </button>
@@ -379,7 +381,8 @@ export default function AccountsToolbar({
                   key={`${part.kind}-${part.label}-${index}`}
                   type="button"
                   onClick={() => removeFilterPart(index)}
-                  className="inline-flex h-9 max-w-[210px] items-center gap-1.5 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-main)]"
+                  className="inline-flex h-9 max-w-[210px] items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-status-danger)] hover:text-white"
+                  style={{ borderColor: 'var(--gt-border-default)', backgroundColor: 'var(--gt-surface-muted)' }}
                   title={t('accounts.filter_remove_condition')}
                 >
                   <span className="truncate">{part.label}</span>
@@ -414,7 +417,8 @@ export default function AccountsToolbar({
               onChange={(value) => onSortModeChange(value as AccountSortMode)}
             />
             <div
-              className="grid h-10 shrink-0 grid-cols-2 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
+              className="grid h-10 shrink-0 grid-cols-2 overflow-hidden rounded-md border"
+              style={{ borderColor: 'var(--gt-border-default)', backgroundColor: 'var(--gt-surface-canvas)' }}
               data-account-card-ignore-click="true"
             >
               <DisplayModeButton active={displayMode === 'full'} bordered onClick={() => onDisplayModeChange('full')}>
@@ -424,7 +428,7 @@ export default function AccountsToolbar({
                 {t('accounts.display_mode_list')}
               </DisplayModeButton>
             </div>
-            <button onClick={onToggleSelectionMode} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]">
+            <button onClick={onToggleSelectionMode} className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]">
               {isSelectionMode ? t('accounts.cancel_selection') : t('accounts.selection_mode')}
             </button>
           </div>
@@ -572,8 +576,9 @@ export function AccountsSelectionActions({
 
   function renderBulkMenu() {
     return (
-      <div className="absolute right-0 top-full z-30 mt-3 grid min-w-[240px] gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[8px_8px_0_var(--shadow-color)]">
-        <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className="absolute right-0 top-full z-30 mt-3 grid min-w-[240px] gap-2 rounded-lg border p-3"
+        style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}>
+        <p className="px-1 text-xs font-medium" style={{ color: 'var(--gt-ink-muted)' }}>
           {t('common.more_actions')}
         </p>
         <BulkMenuAction
@@ -603,15 +608,15 @@ export function AccountsSelectionActions({
         />
 
         {isBulkDeleteConfirming ? (
-          <div className="mt-1 grid gap-2 border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] p-2">
-            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
+          <div className="mt-1 grid gap-2 rounded border p-2" style={{ borderColor: 'var(--gt-status-danger)', backgroundColor: 'color-mix(in srgb, var(--gt-status-danger) 10%, transparent)' }}>
+            <div className="text-xs font-medium text-[var(--gt-status-danger)]">
               {t('accounts.bulk_remove_confirm')} · {selectedAccountCount}
             </div>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setIsBulkDeleteConfirming(false)}
-                className="btn-swiss !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)]"
+                className="parchment-toolbar-action-secondary !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)]"
               >
                 {t('common.cancel')}
               </button>
@@ -623,7 +628,7 @@ export function AccountsSelectionActions({
                   onDeleteSelected?.();
                 }}
                 disabled={bulkActionPending !== null || !onDeleteSelected}
-                className="btn-swiss !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)] !text-[var(--color-status-danger)]"
+                className="parchment-toolbar-action-secondary !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)] !text-[var(--gt-status-danger)]"
               >
                 {bulkActionPending === 'delete' ? t('common.loading') : t('accounts.bulk_remove_confirm_action')}
               </button>
@@ -640,7 +645,7 @@ export function AccountsSelectionActions({
         type="button"
         onClick={handleRefreshSelected}
         disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onRefreshSelected}
-        className="btn-swiss flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+        className="parchment-toolbar-action-secondary flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
       >
         <RefreshCw size={14} strokeWidth={3} />
         {bulkActionPending === 'refresh' ? t('common.loading') : t('accounts.bulk_refresh_selected')}
@@ -689,33 +694,33 @@ export function AccountsSelectionActions({
         className="pointer-events-none absolute left-0 top-0 -z-10 flex w-max items-center gap-2 opacity-0"
         style={{ visibility: 'hidden' }}
       >
-        <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.1em] text-[var(--text-primary)]">
+        <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-sm font-medium" style={{ color: 'var(--gt-ink-primary)' }}>
           {selectedAccountCount} {t('accounts.selected_count')}
         </span>
-        <button type="button" className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        <button type="button" className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
           {t('accounts.cancel_selection')}
         </button>
-        <button type="button" className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        <button type="button" className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
           {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
         </button>
-        <button type="button" className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        <button type="button" className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
           {t('accounts.clear_selection')}
         </button>
         {renderInlineBulkActions()}
       </div>
-      <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.1em] text-[var(--text-primary)]">
+      <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-sm font-medium" style={{ color: 'var(--gt-ink-primary)' }}>
         {selectedAccountCount} {t('accounts.selected_count')}
       </span>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        <button onClick={handleCancelSelection} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        <button onClick={handleCancelSelection} className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
           {t('accounts.cancel_selection')}
         </button>
-        <button onClick={onToggleSelectAllFiltered} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        <button onClick={onToggleSelectAllFiltered} className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
           {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
         </button>
         <button
           onClick={onClearSelection}
-          className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]"
+          className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]"
           disabled={selectedAccountCount === 0}
         >
           {t('accounts.clear_selection')}
@@ -735,7 +740,7 @@ export function AccountsSelectionActions({
                 setIsBulkDeleteConfirming(false);
               }}
               disabled={selectedAccountCount === 0 || bulkActionPending !== null}
-              className="btn-swiss flex h-10 w-10 items-center justify-center !p-0 disabled:cursor-not-allowed disabled:opacity-50"
+              className="parchment-toolbar-action-secondary flex h-10 w-10 items-center justify-center !p-0 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <MoreVertical size={18} strokeWidth={3} />
             </button>
@@ -767,8 +772,8 @@ function BulkInlineAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`btn-swiss flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50 ${
-        tone === 'danger' ? '!text-[var(--color-status-danger)]' : ''
+      className={`parchment-toolbar-action-secondary flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50 ${
+        tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''
       }`}
     >
       {icon}
@@ -795,8 +800,8 @@ function BulkMenuAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`btn-swiss flex h-9 w-full items-center justify-start gap-2 !px-2.5 !py-2 !text-left !text-[length:var(--font-size-ui-2xs)] disabled:cursor-not-allowed disabled:opacity-50 ${
-        tone === 'danger' ? '!text-[var(--color-status-danger)]' : ''
+      className={`parchment-toolbar-action-secondary flex h-9 w-full items-center justify-start gap-2 !px-2.5 !py-2 !text-left !text-[length:var(--font-size-ui-2xs)] disabled:cursor-not-allowed disabled:opacity-50 ${
+        tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''
       }`}
     >
       {icon}
@@ -842,13 +847,14 @@ function ToolbarModeMenu<T extends string>({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]"
+        className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]"
       >
         {label} · {activeLabel}
       </button>
       {open ? (
-        <div className="absolute right-0 top-full z-20 mt-3 grid min-w-[220px] gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[8px_8px_0_var(--shadow-color)]">
-          <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <div className="absolute right-0 top-full z-20 mt-3 grid min-w-[220px] gap-2 rounded-lg border p-3"
+          style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}>
+          <p className="px-1 text-xs font-medium" style={{ color: 'var(--gt-ink-muted)' }}>
             {label}
           </p>
           {options.map(([optionValue, optionLabel]) => (
@@ -860,7 +866,7 @@ function ToolbarModeMenu<T extends string>({
                 onChange(optionValue);
                 setOpen(false);
               }}
-              className={`min-h-9 border-2 border-[var(--border-color)] px-2 text-left text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.1em] ${
+              className={`min-h-9 rounded border px-2 text-left text-xs font-medium leading-none ${
                 optionValue === value
                   ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
                   : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
@@ -890,7 +896,7 @@ function DisplayModeButton({
     <button
       type="button"
       onClick={onClick}
-      className={`h-full min-h-0 px-3 text-[length:var(--font-size-ui-sm-plus)] font-black uppercase leading-none tracking-[0.12em] ${
+      className={`h-full min-h-0 px-3 text-sm font-medium leading-none ${
         bordered ? 'border-r border-[var(--border-color)]' : ''
       } ${
         active
@@ -918,7 +924,7 @@ function FilterCheckOption({
 }) {
   return (
     <label
-      className={`flex min-h-9 cursor-pointer items-center gap-2.5 px-2.5 text-[length:var(--font-size-ui-md-compact)] font-black leading-none tracking-[0.06em] ${
+      className={`flex min-h-9 cursor-pointer items-center gap-2.5 px-2.5 text-xs font-medium leading-none ${
         uppercase ? 'uppercase' : ''
       } ${
         disabled
@@ -957,7 +963,7 @@ function FilterPillOption({
       aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
-      className={`h-8 min-w-16 border-2 border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.08em] disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`h-8 min-w-16 rounded border px-2 text-xs font-medium leading-none disabled:cursor-not-allowed disabled:opacity-50 ${
         active
           ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
           : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
@@ -985,7 +991,7 @@ function FilterTernaryOptionRow({
 }) {
   return (
     <div className="grid gap-1">
-      <p className="px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+      <p className="px-2.5 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
         {title}
       </p>
       <div className="grid grid-cols-3 gap-1">

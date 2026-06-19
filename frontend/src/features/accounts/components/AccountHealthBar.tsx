@@ -8,13 +8,13 @@ interface AccountHealthBarProps {
 function blockClass(block: AccountUsageSummary['statusBar']['blocks'][number]) {
   switch (block) {
     case 'success':
-      return 'bg-[var(--color-status-success)]';
+      return 'bg-[var(--gt-status-success)]';
     case 'failure':
-      return 'bg-[var(--color-status-danger)]';
+      return 'bg-[var(--gt-status-danger)]';
     case 'mixed':
-      return 'bg-[var(--color-status-warning)]';
+      return 'bg-[var(--gt-status-warning)]';
     default:
-      return 'bg-[var(--border-color)] opacity-40';
+      return 'bg-[var(--gt-border-default)] opacity-40';
   }
 }
 
@@ -72,7 +72,8 @@ export default function AccountHealthBar({ summary }: AccountHealthBarProps) {
           <span
             key={`${block}-${index}`}
             title={title}
-            className={`h-4 min-w-0 border border-[var(--bg-main)] ${blockClass(block)}`}
+            className={`h-3 min-w-0 rounded-sm border ${blockClass(block)}`}
+            style={{ borderColor: 'var(--gt-surface-raised)' }}
           />
         );
       })}

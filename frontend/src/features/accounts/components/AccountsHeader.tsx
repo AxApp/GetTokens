@@ -86,38 +86,38 @@ export default function AccountsHeader({
         title={t('accounts.title')}
         subtitle={
           <>
-            {t('accounts.subtitle')} / {accountCount} UNITS
+            {t('accounts.subtitle')} · {accountCount}
           </>
         }
         actions={
           <>
             <button
               onClick={onRefreshAccounts}
-              className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
+              className="parchment-toolbar-action-secondary flex h-10 w-10 items-center justify-center !px-0"
               disabled={!ready || loading}
               title={t('accounts.refresh_accounts')}
               aria-label={t('accounts.refresh_accounts')}
             >
-              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} strokeWidth={3} />
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2} />
             </button>
             <button
               onClick={onRefreshRuntime}
-              className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
+              className="parchment-toolbar-action-secondary flex h-10 w-10 items-center justify-center !px-0"
               disabled={!ready || loading}
               title={t('accounts.refresh_runtime_hint')}
               aria-label={t('accounts.refresh_runtime')}
             >
-              <Activity className={`h-5 w-5 ${loading ? 'animate-pulse' : ''}`} strokeWidth={3} />
+              <Activity className={`h-4 w-4 ${loading ? 'animate-pulse' : ''}`} strokeWidth={2} />
             </button>
             <div ref={headerActionsMenuRef} className="relative">
               <button
                 onClick={onToggleMenu}
-                className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
+                className="parchment-toolbar-action-secondary flex h-10 w-10 items-center justify-center !px-0"
                 aria-label={t('accounts.header_actions_menu')}
                 aria-expanded={isHeaderActionsMenuOpen}
                 aria-haspopup="menu"
               >
-                <Menu className="h-5 w-5" strokeWidth={3} />
+                <Menu className="h-4 w-4" strokeWidth={2} />
               </button>
               {isHeaderActionsMenuOpen ? (
                 <div className={ACCOUNT_HEADER_MENU_PANEL_CLASS}>
@@ -163,7 +163,7 @@ export default function AccountsHeader({
                             }
                           }}
                           disabled={item.disabled}
-                          className={`${ACCOUNT_HEADER_MENU_ITEM_CLASS} ${item.emphasis ? 'bg-[var(--bg-surface)]' : ''}`}
+                          className={`${ACCOUNT_HEADER_MENU_ITEM_CLASS} ${item.emphasis ? 'bg-[var(--gt-surface-muted)]' : ''}`}
                           data-account-header-menu-item={item.id}
                         >
                           {renderMenuIcon(item.icon)}
