@@ -18,6 +18,57 @@ interface AccountImportPageProps {
 
 type AccountImportSource = 'file' | 'paste';
 
+const accountImportPageShellClass =
+  'flex h-full flex-col overflow-hidden bg-[var(--gt-surface-muted)]';
+const accountImportHeaderClass =
+  'flex shrink-0 items-center justify-between border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-6 py-4';
+const accountImportBackButtonClass =
+  'inline-flex min-h-10 items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+const accountImportEyebrowClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountImportTitleClass =
+  'text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportMetaChipClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportErrorClass =
+  'shrink-0 border-t border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-6 py-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
+const accountImportMainClass =
+  'min-h-0 flex-1 overflow-auto';
+const accountImportGridClass =
+  'grid gap-5 p-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start';
+const accountImportPanelClass =
+  'grid min-w-0 gap-4 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4';
+const accountImportPanelSectionClass =
+  'grid gap-3 border-b border-[var(--gt-border-subtle)] pb-4';
+const accountImportPanelTitleClass =
+  'truncate text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportPanelMetaClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountImportDropzoneClass = (active: boolean) =>
+  `grid min-h-36 place-items-center rounded border px-5 py-6 text-center transition-[background-color,border-color,transform] active:scale-[0.99] disabled:opacity-45 ${
+    active
+      ? 'border-[var(--text-primary)] bg-[color-mix(in_srgb,var(--text-primary)_8%,var(--gt-surface-muted))]'
+      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
+  }`;
+const accountImportDropzoneTitleClass =
+  'text-sm font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportDropzoneHintClass =
+  'max-w-sm text-[length:var(--font-size-ui-xs)] font-medium leading-relaxed tracking-normal text-[var(--text-muted)]';
+const accountImportTextareaClass =
+  'min-h-36 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-xs text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+const accountImportButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+const accountImportPrimaryButtonClass =
+  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
+const accountImportQueueHeaderClass =
+  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
+const accountImportQueueEmptyClass =
+  'px-4 py-8 text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountImportFooterClass =
+  'flex shrink-0 flex-wrap items-center justify-between gap-4 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-6 py-4';
+const accountImportSummaryClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+
 export default function AccountImportPage({ onDone }: AccountImportPageProps) {
   const { t } = useI18n();
   const { submitAccountImport } = useAccountsPageStateContext();
@@ -147,34 +198,34 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-[var(--bg-surface)]">
+    <div data-account-import-page className={accountImportPageShellClass}>
       {/* Page header */}
-      <div className="flex shrink-0 items-center justify-between border-b-4 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-4">
+      <div data-account-import-header className={accountImportHeaderClass}>
         <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={onDone}
             disabled={submitting}
-            className="btn-swiss flex items-center gap-2"
+            className={accountImportBackButtonClass}
             aria-label="Back to accounts"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={3} />
             {t('common.back')}
           </button>
           <div>
-            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className={accountImportEyebrowClass}>
               {t('accounts.import_account_eyebrow')}
             </div>
-            <h2 className="text-xl font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+            <h2 className={accountImportTitleClass}>
               {t('accounts.import_account_title')}
             </h2>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2.5 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+          <span className={accountImportMetaChipClass}>
             AUTO DETECT
           </span>
-          <span className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2.5 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+          <span className={accountImportMetaChipClass}>
             JSON ARRAY
           </span>
         </div>
@@ -182,28 +233,28 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
 
       {/* Error bar */}
       {error ? (
-        <div className="shrink-0 border-t-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-6 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
+        <div className={accountImportErrorClass}>
           {error}
         </div>
       ) : null}
 
       {/* Main two-column layout */}
-      <div className="flex-1 overflow-auto">
-        <div className="grid gap-5 p-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start">
+      <div className={accountImportMainClass}>
+        <div className={accountImportGridClass}>
           {/* Left: input panel */}
           <section
             data-account-import-input-panel
-            className="grid min-w-0 gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+            className={accountImportPanelClass}
           >
-            <div className="grid gap-3 border-b-2 border-dashed border-[var(--border-color)] pb-4">
+            <div className={accountImportPanelSectionClass}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
                   <FilePlus className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
-                  <h4 className="truncate text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                  <h4 className={accountImportPanelTitleClass}>
                     {t('accounts.import_account_files')}
                   </h4>
                 </div>
-                <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                <span className={accountImportPanelMetaClass}>
                   MULTI
                 </span>
               </div>
@@ -227,18 +278,14 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                 onDragLeave={handleFileDragLeave}
                 onDrop={handleFileDrop}
                 disabled={readingFiles || submitting}
-                className={`grid min-h-36 place-items-center border-2 border-dashed px-5 py-6 text-center transition-[background-color,border-color,transform] active:scale-[0.99] disabled:opacity-45 ${
-                  isFileDragOver
-                    ? 'border-[var(--text-primary)] bg-[color-mix(in_srgb,var(--text-primary)_8%,var(--bg-surface))]'
-                    : 'border-[var(--border-color)] bg-[var(--bg-surface)]'
-                }`}
+                className={accountImportDropzoneClass(isFileDragOver)}
               >
                 <span className="grid justify-items-center gap-3">
                   {readingFiles ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" strokeWidth={3} />}
-                  <span className="text-sm font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                  <span className={accountImportDropzoneTitleClass}>
                     {t('accounts.import_account_choose_files')}
                   </span>
-                  <span className="max-w-sm text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                  <span className={accountImportDropzoneHintClass}>
                     {t('accounts.import_account_files_hint')}
                   </span>
                 </span>
@@ -249,11 +296,11 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
                   <ClipboardPaste className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
-                  <h4 className="truncate text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                  <h4 className={accountImportPanelTitleClass}>
                     {t('accounts.import_account_paste')}
                   </h4>
                 </div>
-                <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                <span className={accountImportPanelMetaClass}>
                   JSON
                 </span>
               </div>
@@ -264,19 +311,19 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                   setPasteContent(event.target.value);
                   setError('');
                 }}
-                className="input-swiss min-h-36 w-full resize-y font-mono text-xs"
+                className={accountImportTextareaClass}
                 placeholder={t('accounts.import_account_paste_placeholder')}
                 spellCheck={false}
               />
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={handleAddPaste} disabled={submitting} className="btn-swiss">
+                <button type="button" onClick={handleAddPaste} disabled={submitting} className={accountImportButtonClass}>
                   {t('accounts.import_account_add_paste')}
                 </button>
                 <button
                   type="button"
                   onClick={() => void handlePasteFromClipboard()}
                   disabled={submitting}
-                  className="btn-swiss"
+                  className={accountImportButtonClass}
                 >
                   {t('accounts.import_account_clear_paste')}
                 </button>
@@ -285,17 +332,17 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
           </section>
 
           {/* Right: candidate queue */}
-          <section className="grid min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-            <header className="border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-              <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+          <section data-account-import-queue-panel className={accountImportPanelClass}>
+            <header className={accountImportQueueHeaderClass}>
+              <div className={accountImportPanelTitleClass}>
                 {t('accounts.import_account_queue')}
               </div>
-              <div className="mt-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <div className={`mt-1 ${accountImportPanelMetaClass}`}>
                 {t('accounts.import_account_queue_hint')}
               </div>
             </header>
             {queueItems.length === 0 ? (
-              <div className="border-0 px-4 py-8 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-muted)]">
+              <div className={accountImportQueueEmptyClass}>
                 {t('accounts.import_account_queue_empty')}
               </div>
             ) : (
@@ -311,19 +358,19 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
       </div>
 
       {/* Footer */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-t-4 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-4">
-        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <div className={accountImportFooterClass}>
+        <div className={accountImportSummaryClass}>
           {formatQueueSummary(t, queueItems.length, queueSummary)}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={onDone} disabled={submitting} className="btn-swiss">
+          <button type="button" onClick={onDone} disabled={submitting} className={accountImportButtonClass}>
             {t('common.cancel')}
           </button>
           <button
             type="button"
             onClick={() => void handleSubmit()}
             disabled={submitting || queueItems.length === 0}
-            className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] disabled:opacity-45"
+            className={accountImportPrimaryButtonClass}
           >
             {submitting ? (
               <span className="flex items-center gap-2">

@@ -10,6 +10,14 @@ function node(tagName, parentElement = null, dataset) {
   return { tagName, parentElement, dataset };
 }
 
+function sourceBlock(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker);
+  assert.notEqual(start, -1, `missing source block start: ${startMarker}`);
+  const end = source.indexOf(endMarker, start);
+  assert.notEqual(end, -1, `missing source block end: ${endMarker}`);
+  return source.slice(start, end);
+}
+
 test('shouldOpenAccountDetailsFromTarget allows plain card body clicks', () => {
   const card = node('div');
   const content = node('div', card);
@@ -207,6 +215,37 @@ test('account import modal uses merged input panel beside account preview', asyn
   assert.match(pageSource, /data-account-import-dropzone/);
   assert.match(source, /accept="\.json,\.zip,\.tar,\.tar\.gz,\.tgz,\.gz,\.gzip,application\/json,application\/zip,application\/gzip,application\/x-tar"/);
   assert.match(pageSource, /accept="\.json,\.zip,\.tar,\.tar\.gz,\.tgz,\.gz,\.gzip,application\/json,application\/zip,application\/gzip,application\/x-tar"/);
+});
+
+test('account import page uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../../../pages/AccountImportPage.tsx', import.meta.url), 'utf8');
+  const targetSource = sourceBlock(source, 'export default function AccountImportPage', 'function createQueueItem');
+
+  assert.match(source, /const accountImportPageShellClass =/);
+  assert.match(source, /const accountImportHeaderClass =/);
+  assert.match(source, /const accountImportPanelClass =/);
+  assert.match(source, /const accountImportButtonClass =/);
+  assert.match(source, /const accountImportDropzoneClass =/);
+  assert.match(source, /const accountImportMetaChipClass =/);
+  assert.match(targetSource, /data-account-import-page/);
+  assert.match(targetSource, /data-account-import-header/);
+  assert.match(targetSource, /data-account-import-input-panel/);
+  assert.match(targetSource, /data-account-import-dropzone/);
+  assert.match(targetSource, /data-account-import-queue-panel/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(targetSource, /btn-swiss/);
+  assert.doesNotMatch(targetSource, /border-2|border-b-4|border-t-4|border-t-2|border-b-2/);
+  assert.doesNotMatch(targetSource, /border-dashed/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /color-status-/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-\[0\.14em\]|tracking-\[0\.2em\]/);
+  assert.doesNotMatch(targetSource, /shadow-\[/);
 });
 
 test('pasted codex api key copies use numbered duplicate titles', async () => {
