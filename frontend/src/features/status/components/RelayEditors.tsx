@@ -5,6 +5,27 @@ import {
   type RelayProviderEditorState,
 } from '../model/relayLocalState';
 
+const relayEditorBackdropClass =
+  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm';
+const relayEditorModalPanelClass =
+  'flex w-full max-w-xl flex-col overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-3)]';
+const relayEditorModalHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
+const relayEditorEyebrowClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const relayEditorTitleClass = 'mt-1 text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]';
+const relayEditorLabelClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const relayEditorInputClass =
+  'h-9 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-60';
+const relayEditorInlineButtonClass =
+  'absolute right-2 top-1/2 -translate-y-1/2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] active:scale-95';
+const relayEditorErrorClass =
+  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-status-danger)]';
+const relayEditorFooterClass =
+  'flex items-center justify-between border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
+const relayEditorSecondaryButtonClass =
+  'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const relayEditorPrimaryButtonClass =
+  'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
+
 interface RelayKeyEditorModalProps {
   editor: RelayKeyEditorState;
   t: (key: string) => string;
@@ -22,42 +43,43 @@ export function RelayKeyEditorModal({
 }: RelayKeyEditorModalProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm"
+      className={relayEditorBackdropClass}
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        data-status-relay-editor-modal="key"
+        className={relayEditorModalPanelClass}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        <header className={relayEditorModalHeaderClass}>
+          <div className={relayEditorEyebrowClass}>
             {t('status.service_api_keys')}
           </div>
-          <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+          <h3 className={relayEditorTitleClass}>
             {editor.mode === 'create' ? t('status.service_key_create_title') : t('status.service_key_rename')}
           </h3>
         </header>
         <div className="space-y-4 p-6">
           <label className="space-y-2">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className={relayEditorLabelClass}>
               {t('status.service_key_name_label')}
             </span>
             <input
               value={editor.name}
               onChange={(event) => onChange({ ...editor, name: event.target.value, error: '' })}
-              className="input-swiss w-full"
+              className={relayEditorInputClass}
               placeholder={t('status.service_key_name_placeholder')}
             />
           </label>
           <label className="space-y-2">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className={relayEditorLabelClass}>
               {t('status.service_key_value_label')}
             </span>
             <div className="relative">
               <input
                 value={editor.apiKey}
                 onChange={(event) => onChange({ ...editor, apiKey: event.target.value, error: '' })}
-                className="input-swiss w-full pr-24"
+                className={`${relayEditorInputClass} pr-24`}
                 placeholder={t('status.service_key_value_placeholder')}
                 type="text"
                 disabled={editor.mode === 'rename'}
@@ -66,7 +88,7 @@ export function RelayKeyEditorModal({
                 <button
                   type="button"
                   onClick={() => onChange({ ...editor, apiKey: generateRandomRelayKey(), error: '' })}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-primary)] active:scale-95"
+                  className={relayEditorInlineButtonClass}
                 >
                   {t('status.service_key_value_generate')}
                 </button>
@@ -74,16 +96,16 @@ export function RelayKeyEditorModal({
             </div>
           </label>
           {editor.error ? (
-            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
+            <div className={relayEditorErrorClass}>
               {editor.error}
             </div>
           ) : null}
         </div>
-        <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
+        <footer className={relayEditorFooterClass}>
+          <button onClick={onClose} className={relayEditorSecondaryButtonClass}>
             {t('common.cancel')}
           </button>
-          <button onClick={onSubmit} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+          <button onClick={onSubmit} className={relayEditorPrimaryButtonClass}>
             {editor.mode === 'create' ? t('status.service_key_create_submit') : t('common.save')}
           </button>
         </footer>
@@ -109,44 +131,45 @@ export function RelayProviderEditorModal({
 }: RelayProviderEditorModalProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm"
+      className={relayEditorBackdropClass}
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        data-status-relay-editor-modal="provider"
+        className={relayEditorModalPanelClass}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black tracking-[0.2em] text-[var(--text-muted)]">
+        <header className={relayEditorModalHeaderClass}>
+          <div className={relayEditorEyebrowClass}>
             {t('status.provider_title')}
           </div>
-          <h3 className="mt-1 text-sm font-black italic tracking-tight text-[var(--text-primary)]">
+          <h3 className={relayEditorTitleClass}>
             {t('status.provider_create_title')}
           </h3>
         </header>
         <div className="space-y-4 p-6">
           <label className="space-y-2">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black tracking-[0.18em] text-[var(--text-muted)]">
+            <span className={relayEditorLabelClass}>
               {t('status.provider_id_label')}
             </span>
             <input
               value={editor.providerID}
               onChange={(event) => onChange({ ...editor, providerID: event.target.value, error: '' })}
-              className="input-swiss w-full"
+              className={relayEditorInputClass}
               placeholder={t('status.provider_id_placeholder')}
             />
           </label>
           {editor.error ? (
-            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
+            <div className={relayEditorErrorClass}>
               {editor.error}
             </div>
           ) : null}
         </div>
-        <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
+        <footer className={relayEditorFooterClass}>
+          <button onClick={onClose} className={relayEditorSecondaryButtonClass}>
             {t('common.cancel')}
           </button>
-          <button onClick={onSubmit} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+          <button onClick={onSubmit} className={relayEditorPrimaryButtonClass}>
             {t('status.provider_create_submit')}
           </button>
         </footer>
@@ -172,44 +195,45 @@ export function RelayModelEditorModal({
 }: RelayModelEditorModalProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm"
+      className={relayEditorBackdropClass}
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        data-status-relay-editor-modal="model"
+        className={relayEditorModalPanelClass}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        <header className={relayEditorModalHeaderClass}>
+          <div className={relayEditorEyebrowClass}>
             {t('status.model_name_title')}
           </div>
-          <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+          <h3 className={relayEditorTitleClass}>
             {t('status.model_name_create_title')}
           </h3>
         </header>
         <div className="space-y-4 p-6">
           <label className="space-y-2">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className={relayEditorLabelClass}>
               {t('status.model_name_label')}
             </span>
             <input
               value={editor.value}
               onChange={(event) => onChange({ ...editor, value: event.target.value, error: '' })}
-              className="input-swiss w-full"
+              className={relayEditorInputClass}
               placeholder={t('status.model_name_placeholder')}
             />
           </label>
           {editor.error ? (
-            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
+            <div className={relayEditorErrorClass}>
               {editor.error}
             </div>
           ) : null}
         </div>
-        <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
+        <footer className={relayEditorFooterClass}>
+          <button onClick={onClose} className={relayEditorSecondaryButtonClass}>
             {t('common.cancel')}
           </button>
-          <button onClick={onSubmit} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+          <button onClick={onSubmit} className={relayEditorPrimaryButtonClass}>
             {t('status.model_name_create_submit')}
           </button>
         </footer>

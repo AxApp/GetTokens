@@ -74,6 +74,24 @@ test('status provider creation only asks for model_provider value', async () => 
   assert.match(statusFeatureSource, /providerName:\s*relayProviderEditor\.providerID/);
 });
 
+test('status relay editor modals use the quiet workspace shell', async () => {
+  const relayEditorsSource = await readFile(new URL('../components/RelayEditors.tsx', import.meta.url), 'utf8');
+
+  assert.match(relayEditorsSource, /const relayEditorModalPanelClass =/);
+  assert.match(relayEditorsSource, /const relayEditorPrimaryButtonClass =/);
+  assert.match(relayEditorsSource, /data-status-relay-editor-modal/);
+  assert.match(relayEditorsSource, /--gt-surface-canvas/);
+  assert.match(relayEditorsSource, /--gt-border-subtle/);
+  assert.match(relayEditorsSource, /--gt-status-danger/);
+  assert.doesNotMatch(relayEditorsSource, /btn-swiss/);
+  assert.doesNotMatch(relayEditorsSource, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(relayEditorsSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(relayEditorsSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(relayEditorsSource, /font-black/);
+  assert.doesNotMatch(relayEditorsSource, /uppercase/);
+  assert.doesNotMatch(relayEditorsSource, /shadow-hard/);
+});
+
 test('status model picker does not inject legacy GT fallback', async () => {
   const relayLocalStateSource = await readFile(new URL('../model/relayLocalState.ts', import.meta.url), 'utf8');
   const statusPanelSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
