@@ -9,6 +9,14 @@ import {
 } from '../model/accountDetailSelection.ts';
 import { normalizeQuotaTestDisplay } from '../model/accountQuota.ts';
 
+function sourceBlock(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker);
+  assert.notEqual(start, -1, `missing start marker: ${startMarker}`);
+  const end = source.indexOf(endMarker, start + startMarker.length);
+  assert.notEqual(end, -1, `missing end marker: ${endMarker}`);
+  return source.slice(start, end);
+}
+
 test('account detail no longer mounts runtime evidence overview sections', async () => {
   const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
@@ -111,11 +119,13 @@ test('api key credential module uses left-right credential and connection layout
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /export function AccountCredentialVerifySection/);
-  assert.match(source, /data-account-credential-verify-layout="v09-split"/);
+  assert.match(source, /data-account-credential-verify-layout="quiet-split"/);
   assert.match(source, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
   assert.match(source, /data-account-credential-left-pane="credential-connection"/);
   assert.match(source, /data-account-credential-right-pane="route"/);
-  assert.match(source, /lg:border-l-2/);
+  assert.match(source, /accountDetailCredentialPaneDividerClass/);
+  assert.match(source, /lg:border-l lg:border-t-0/);
+  assert.match(source, /--gt-border-subtle/);
   assert.match(source, /data-account-credential-fields="balanced-grid"/);
   assert.match(source, /label="账号名称"/);
   assert.match(source, /data-account-credential-field-label="above"/);
@@ -389,7 +399,7 @@ test('quota split layout removes quota window divider and stretches script card'
   const cardSectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 
   assert.match(cardSectionsSource, /showDivider = true/);
-  assert.match(cardSectionsSource, /showDivider \? 'border-b border-dashed border-\[var\(--border-color\)\]' : ''/);
+  assert.match(cardSectionsSource, /showDivider \? 'border-b border-dashed border-\[var\(--gt-border-subtle\)\]' : ''/);
   assert.match(sectionSource, /<QuotaBars quotaDisplay=\{visibleQuotaDisplay\} t=\{t\} showDivider=\{false\} \/>/);
   assert.match(sectionSource, /grid-rows-\[auto_minmax\(0,1fr\)\]/);
   assert.match(sectionSource, /const quotaScriptCardClassName = layoutMode === 'split'/);
@@ -796,18 +806,23 @@ test('real account detail modal uses v09 band row layout instead of card grid', 
   assert.match(modalSource, /<AccountDetailModuleStack layout="bands">/);
   assert.doesNotMatch(modalSource, /<AccountDetailModuleStack layout="cards">/);
 });
-test('real account detail header uses v09 compact two-column summary', async () => {
+test('real account detail header uses the quiet two-column summary', async () => {
   const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
-  assert.match(sectionSource, /data-account-detail-header="v09-compact"/);
+  assert.match(sectionSource, /const accountDetailHeaderShellClass =/);
+  assert.match(sectionSource, /const accountDetailHeaderRailClass =/);
+  assert.match(sectionSource, /const accountDetailHeaderPillClass =/);
+  assert.match(sectionSource, /data-account-detail-header="quiet"/);
   assert.match(sectionSource, /grid-cols-\[10\.5rem_minmax\(0,1fr\)\]/);
   assert.match(primitiveSource, /grid-cols-\[10\.5rem_minmax\(0,1fr\)\]/);
   assert.match(sectionSource, /data-account-detail-header-account-type/);
   assert.match(sectionSource, /\{accountTypeLabel\}/);
   assert.match(sectionSource, /data-account-detail-header-chips/);
   assert.match(sectionSource, /data-account-detail-header-description/);
+  assert.match(sectionSource, /--gt-border-subtle/);
+  assert.match(sectionSource, /--gt-surface-canvas/);
   assert.doesNotMatch(sectionSource, /data-account-detail-header-last/);
   assert.doesNotMatch(sectionSource, /Last<\/span><span>runtime/);
   assert.doesNotMatch(sectionSource, /Latency<\/span><span>—/);
@@ -815,21 +830,43 @@ test('real account detail header uses v09 compact two-column summary', async () 
   assert.match(sectionSource, /凭据/);
   assert.match(sectionSource, /验证/);
   assert.match(sectionSource, /路由/);
-  assert.match(sectionSource, /text-base font-black uppercase italic/);
+  assert.doesNotMatch(sectionSource, /text-base font-black uppercase italic/);
   assert.match(sectionSource, /whitespace-normal break-words \[overflow-wrap:break-word\]/);
   assert.doesNotMatch(sectionSource, /<span className="block truncate">\{primaryLabel\}/);
   assert.doesNotMatch(sectionSource, /onClick=\{\(\) => \(onRename \? setEditing\(true\) : null\)\}/);
   assert.match(modalSource, /headerClassName="p-0"/);
 });
 
-test('account detail shared primitives keep the modal readable at desktop density', async () => {
+test('account detail shell primitives use the quiet workspace shell', async () => {
   const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+  const targetSource = [
+    sourceBlock(primitiveSource, 'export function AccountDetailSectionHeader({', 'export function AccountDetailSection({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailSection({', 'export function AccountDetailBody({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailBody({', 'export function AccountDetailOverviewGrid({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailModuleGrid({', 'export function AccountDetailModuleStack({'),
+    sourceBlock(primitiveSource, 'export function AccountDetailModuleStack({', 'export function AccountDetailStatGrid({'),
+  ].join('\n');
 
-  assert.match(primitiveSource, /text-\[length:var\(--font-size-ui-lg-compact\)\] font-black uppercase italic/);
-  assert.match(primitiveSource, /text-\[length:var\(--font-size-ui-md-compact\)\] font-black uppercase italic/);
-  assert.match(primitiveSource, /text-\[length:var\(--font-size-ui-md\)\] font-black uppercase text-\[var\(--text-primary\)\]/);
-  assert.match(primitiveSource, /text-\[length:var\(--font-size-ui-xs\)\] font-black uppercase tracking-\[0\.12em\]/);
-  assert.doesNotMatch(primitiveSource, /AccountDetailPill[\s\S]*text-\[length:var\(--font-size-ui-2xs\)\]/);
+  assert.match(primitiveSource, /const accountDetailSectionHeaderDividerClass =/);
+  assert.match(primitiveSource, /const accountDetailBandShellClass =/);
+  assert.match(primitiveSource, /const accountDetailSectionShellBaseClass =/);
+  assert.match(primitiveSource, /const accountDetailBodyClass =/);
+  assert.match(primitiveSource, /const accountDetailModuleBandsClass =/);
+  assert.match(targetSource, /data-account-detail-section-layout="band"/);
+  assert.match(targetSource, /data-account-detail-body="module-surface"/);
+  assert.match(targetSource, /data-account-detail-module-layout=\{layout\}/);
+  assert.match(primitiveSource, /--gt-surface-canvas/);
+  assert.match(primitiveSource, /--gt-surface-muted/);
+  assert.match(primitiveSource, /--gt-border-subtle/);
+  assert.doesNotMatch(targetSource, /border-2/);
+  assert.doesNotMatch(targetSource, /border-t-2/);
+  assert.doesNotMatch(targetSource, /border-r-2/);
+  assert.doesNotMatch(targetSource, /border-l-2/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.14em\]|tracking-\[0\.06em\]/);
 });
 
 test('account detail header chips and description are spaced without an internal divider', async () => {

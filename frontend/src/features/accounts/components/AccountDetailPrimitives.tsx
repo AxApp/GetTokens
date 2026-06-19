@@ -32,6 +32,45 @@ const sectionBodyDensityClassNames: Record<AccountDetailSectionDensity, string> 
   hero: 'space-y-4',
 };
 
+const accountDetailSectionHeaderDividerClass =
+  'border-b border-[var(--gt-border-subtle)] pb-2';
+const accountDetailSectionTitleRowClass =
+  'flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1';
+const accountDetailSectionEyebrowClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailSectionTitleClass =
+  'text-[length:var(--font-size-ui-md-compact)] font-semibold italic leading-snug tracking-normal text-[var(--text-primary)]';
+const accountDetailSectionMetaClass =
+  'min-w-0 break-words font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailBandShellClass =
+  'grid min-w-0 grid-cols-[10.5rem_minmax(0,1fr)] border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const accountDetailBandMutedClass =
+  'bg-[var(--gt-surface-muted)]';
+const accountDetailBandRailClass =
+  'min-w-0 border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-4';
+const accountDetailBandRailTitleClass =
+  'mt-2 text-[length:var(--font-size-ui-lg-compact)] font-semibold italic leading-tight tracking-normal text-[var(--text-primary)]';
+const accountDetailBandContentClass =
+  'min-w-0 px-4 py-4';
+const accountDetailBandActionDividerClass =
+  'border-b border-[var(--gt-border-subtle)] pb-2';
+const accountDetailSectionCardBorderClass =
+  'border bg-[var(--gt-surface-canvas)]';
+const accountDetailSectionTopBorderClass =
+  'border-t';
+const accountDetailSectionNoTopBorderClass =
+  'border-t-0';
+const accountDetailSectionShellBaseClass =
+  'grid border-[var(--gt-border-subtle)]';
+const accountDetailSectionMutedClass =
+  'bg-[var(--gt-surface-muted)]';
+const accountDetailBodyClass =
+  'bg-[var(--gt-surface-canvas)]';
+const accountDetailModuleSideClass =
+  'min-w-0 border-t border-[var(--gt-border-subtle)] xl:border-l xl:border-t-0 xl:pl-6';
+const accountDetailModuleBandsClass =
+  'min-w-0 border-t border-[var(--gt-border-subtle)]';
+
 interface AccountDetailSectionProps {
   eyebrow?: ReactNode;
   title?: ReactNode;
@@ -68,26 +107,26 @@ export function AccountDetailSectionHeader({
   divider = true,
 }: AccountDetailSectionHeaderProps) {
   const dividerClassName = divider
-    ? 'border-b border-dashed border-[var(--border-color)] pb-2'
+    ? accountDetailSectionHeaderDividerClass
     : '';
   return (
     <div
       data-account-detail-section-header="standard"
       className={`flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${dividerClassName} ${className}`}
     >
-      <div data-account-detail-section-title-row="compact" className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+      <div data-account-detail-section-title-row="compact" className={accountDetailSectionTitleRowClass}>
         {eyebrow ? (
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          <div className={accountDetailSectionEyebrowClass}>
             {eyebrow}
           </div>
         ) : null}
         {title ? (
-          <h3 className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase italic leading-snug tracking-[0.04em] text-[var(--text-primary)]">
+          <h3 className={accountDetailSectionTitleClass}>
             {title}
           </h3>
         ) : null}
         {meta ? (
-          <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.06em] text-[var(--text-muted)]">
+          <div className={accountDetailSectionMetaClass}>
             {meta}
           </div>
         ) : null}
@@ -120,23 +159,23 @@ export function AccountDetailSection({
 
   if (isBandLayout) {
     const bandActionDividerClassName = bandActionDivider
-      ? 'border-b border-dashed border-[var(--border-color)] pb-2'
+      ? accountDetailBandActionDividerClass
       : '';
     return (
       <section
         data-design-system-component="true"
         data-design-system-component-name={componentName}
         data-account-detail-section-layout="band"
-        className={`grid min-w-0 grid-cols-[10.5rem_minmax(0,1fr)] border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] ${muted ? 'bg-[var(--bg-surface)]/35' : ''} ${className}`}
+        className={`${accountDetailBandShellClass} ${muted ? accountDetailBandMutedClass : ''} ${className}`}
       >
-        <aside data-account-detail-band-index="true" className="min-w-0 border-r-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4">
+        <aside data-account-detail-band-index="true" className={accountDetailBandRailClass}>
           {eyebrow ? (
-            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            <div className={accountDetailSectionEyebrowClass}>
               {eyebrow}
             </div>
           ) : null}
           {title ? (
-            <h3 className="mt-2 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase italic leading-tight tracking-normal text-[var(--text-primary)]">
+            <h3 className={accountDetailBandRailTitleClass}>
               {title}
             </h3>
           ) : null}
@@ -146,11 +185,11 @@ export function AccountDetailSection({
             </div>
           ) : null}
         </aside>
-        <div className="min-w-0 px-4 py-4">
+        <div className={accountDetailBandContentClass}>
           {meta || actions ? (
             <div className={`mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${bandActionDividerClassName}`}>
               {meta ? (
-                <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.06em] text-[var(--text-muted)]">
+                <div className={accountDetailSectionMetaClass}>
                   {meta}
                 </div>
               ) : <span />}
@@ -173,10 +212,10 @@ export function AccountDetailSection({
       ? `px-6 ${sectionDensityClassNames[density]}`
       : sectionDensityClassNames[density];
   const borderClassName = isCardLayout
-    ? 'border-2 bg-[var(--bg-main)]'
+    ? accountDetailSectionCardBorderClass
     : topBorder
-      ? 'border-t-2'
-      : 'border-t-0';
+      ? accountDetailSectionTopBorderClass
+      : accountDetailSectionNoTopBorderClass;
   const spanClassName = isCardLayout && span === 'wide' ? 'lg:col-span-2' : '';
   const heightClassName = isCardLayout ? 'h-full' : '';
 
@@ -184,7 +223,7 @@ export function AccountDetailSection({
     <section
       data-design-system-component="true"
       data-design-system-component-name={componentName}
-      className={`grid border-[var(--border-color)] ${borderClassName} ${shellClassName} ${spanClassName} ${heightClassName} ${muted ? 'bg-[var(--bg-surface)]/35' : ''} ${className}`}
+      className={`${accountDetailSectionShellBaseClass} ${borderClassName} ${shellClassName} ${spanClassName} ${heightClassName} ${muted ? accountDetailSectionMutedClass : ''} ${className}`}
     >
       {eyebrow || title || meta || actions ? (
         <AccountDetailSectionHeader
@@ -208,7 +247,7 @@ export function AccountDetailBody({
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div {...props} data-account-detail-body="module-surface" className={`bg-[var(--bg-main)] ${className}`}>
+    <div {...props} data-account-detail-body="module-surface" className={`${accountDetailBodyClass} ${className}`}>
       {children}
     </div>
   );
@@ -264,7 +303,7 @@ export function AccountDetailModuleGrid({
         {main}
       </div>
       {side ? (
-        <aside className="min-w-0 border-t-2 border-[var(--border-color)] xl:border-l-2 xl:border-t-0 xl:pl-6">
+        <aside className={accountDetailModuleSideClass}>
           {side}
         </aside>
       ) : null}
@@ -286,7 +325,7 @@ export function AccountDetailModuleStack({
   const layoutClassName = layout === 'cards'
     ? `grid min-w-0 gap-4 ${cardColumns === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2'}`
     : layout === 'bands'
-      ? 'min-w-0 border-t-2 border-[var(--border-color)]'
+      ? accountDetailModuleBandsClass
       : 'min-w-0';
 
   return (
