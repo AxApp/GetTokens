@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   buildPriorityUpdates,
@@ -264,4 +265,30 @@ test('canToggleRotationAccountDisabled requires accountKind for account store as
     }),
     false
   );
+});
+
+test('RotationConfigSection uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/account-rotation/RotationConfigSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const rotationConfigPanelClass =/);
+  assert.match(source, /const rotationConfigInputShellClass =/);
+  assert.match(source, /const rotationConfigInputClass =/);
+  assert.match(source, /const rotationConfigMetaClass =/);
+  assert.match(source, /data-account-rotation-config-section/);
+  assert.match(source, /data-account-rotation-strategy-menu/);
+  assert.match(source, /data-account-rotation-toggle-grid/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-warning/);
+  assert.doesNotMatch(source, /select-swiss/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-muted\)\]/);
+  assert.doesNotMatch(source, /border-l-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-\[0\.12em\]/);
+  assert.doesNotMatch(source, /tracking-\[0\.18em\]/);
 });
