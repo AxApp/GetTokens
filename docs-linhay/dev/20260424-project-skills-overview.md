@@ -66,6 +66,27 @@
 
 注意：这些是外部通用前端/图像生成 skills，不属于 GetTokens 领域规则本体。若后续出现 skill discovery 预算告警，应优先评估是否保留全量 taste-skill 包，或收敛为实际高频使用的子集。
 
+## 20260619 更新：Taste Skill 项目级 discovery 瘦身
+
+本次按用户要求推进 skill 合并/瘦身，将 Taste 外部包中 12 个视觉/图像生成子 skill 从项目级 `.agents/skills/` discovery 面移除：
+
+- `taste-skill`
+- `taste-skill-v1`
+- `gpt-tasteskill`
+- `image-to-code-skill`
+- `imagegen-frontend-web`
+- `imagegen-frontend-mobile`
+- `brandkit`
+- `redesign-skill`
+- `soft-skill`
+- `minimalist-skill`
+- `brutalist-skill`
+- `stitch-skill`
+
+保留 `output-skill`，因为它服务完整输出/防截断，和前端设计统一入口不重叠。
+
+后续 GetTokens 桌面/Wails 前端体验、设计审计、视觉 harden、Gemini handoff 默认使用 `.agents/skills/gettokens-frontend-design-quality/`。原 Taste 外部包内容作为参考保留在 `docs-linhay/references/taste-skill/skills/`，`.agents/skills/taste-skill.lock.json` 已记录 active / retired project discovery paths。
+
 ## 20260527 更新：安装外部 Waza Skill 包
 
 本次按用户要求将 `https://github.com/tw93/Waza.git` 的 8 个直接 coding skills 安装到项目级 `.agents/skills/`，并同步共享 `rules/` 到 `.agents/rules/`。

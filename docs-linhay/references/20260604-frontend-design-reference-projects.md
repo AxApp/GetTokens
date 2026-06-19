@@ -36,7 +36,7 @@
 
 ### GetTokens 使用建议
 
-- 新建或重做桌面 Web/Wails 页面视觉时，优先用 `design-taste-frontend` / `redesign-existing-projects` 产出方向；Codex 仍负责业务状态、接口契约、测试门禁和最终集成。
+- 新建或重做桌面 Web/Wails 页面视觉时，优先用项目级统一入口 `gettokens-frontend-design-quality` 产出方向；Codex 仍负责业务状态、接口契约、测试门禁和最终集成。原 `design-taste-frontend` / `redesign-existing-projects` 作为参考材料保留，不再直接参与项目级 skill discovery。
 - 对 GetTokens 这类密度较高的桌面工作台，应把 `VISUAL_DENSITY` 维持在中高区间，但避免牺牲可读性。
 - 移动端相关 skills 仅在用户明确提出移动端目标时使用；GetTokens 默认仍是 macOS/Wails 桌面产品。
 
@@ -104,6 +104,6 @@
 ## 5. 后续落地建议
 
 1. **参考资产保持轻量**：继续遵循“完整源码本机保留，仓库只提交索引/摘要”的规则。
-2. **设计流程入口**：GetTokens 后续前端任务优先触发 `gettokens-frontend-design-quality`，再按需要调用已有 `design-taste-frontend` / `redesign-existing-projects` 等视觉 skills。
+2. **设计流程入口**：GetTokens 后续前端任务优先触发 `gettokens-frontend-design-quality`。如需原始外部视觉 prompt，仅作为参考读取 `docs-linhay/references/taste-skill/skills/`，不再恢复多个相似项目级视觉 skills。
 3. **暂不新增 AGENTS 规则**：本轮已新增项目级 skill，但既有 `AGENTS.md` 已覆盖文档落位、前端分工、桌面验收和参考源码不入库规则，无需新增 repo-wide 约束。
 4. **暂不直接引入运行时依赖**：三个项目均未作为 GetTokens 生产依赖接入；若未来要引入 CLI、检测器或浏览器扩展，需要单独立项、测试和许可复核。

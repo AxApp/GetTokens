@@ -1,8 +1,10 @@
 # Taste Skill 项目级安装记录
 
+状态更新：2026-06-19 已完成项目级 discovery 瘦身。Taste 外部包仍保留来源记录和参考副本，但 `.agents/skills/` 只保留仍需直接发现的 `output-skill`；视觉/图像生成类入口统一改由 `.agents/skills/gettokens-frontend-design-quality/` 承接，原始内容可在 `docs-linhay/references/taste-skill/skills/` 查阅。
+
 ## 安装范围
 
-本次将 `Leonxlnx/taste-skill` 仓库中的全部 skill 安装到项目级目录 `.agents/skills/`，用于 GetTokens 仓库内的 Codex project skills 发现。
+2026-05-27 曾将 `Leonxlnx/taste-skill` 仓库中的全部 skill 安装到项目级目录 `.agents/skills/`，用于 GetTokens 仓库内的 Codex project skills 发现。2026-06-19 后，为减少 discovery 噪音，只保留高频且无 GetTokens 统一入口替代的子 skill。
 
 来源：
 
@@ -11,23 +13,30 @@
 - 固定 commit：`3c7017d636c3a4aad378433ea6d0cfa6c921da4a`
 - 本地锁文件：`.agents/skills/taste-skill.lock.json`
 
-## 已安装 Skill
+## 当前项目级保留 Skill
 
 | 本地目录 | skill name |
 | --- | --- |
-| `.agents/skills/taste-skill` | `design-taste-frontend` |
-| `.agents/skills/taste-skill-v1` | `design-taste-frontend-v1` |
-| `.agents/skills/gpt-tasteskill` | `gpt-taste` |
-| `.agents/skills/image-to-code-skill` | `image-to-code` |
-| `.agents/skills/imagegen-frontend-web` | `imagegen-frontend-web` |
-| `.agents/skills/imagegen-frontend-mobile` | `imagegen-frontend-mobile` |
-| `.agents/skills/brandkit` | `brandkit` |
-| `.agents/skills/redesign-skill` | `redesign-existing-projects` |
-| `.agents/skills/soft-skill` | `high-end-visual-design` |
 | `.agents/skills/output-skill` | `full-output-enforcement` |
-| `.agents/skills/minimalist-skill` | `minimalist-ui` |
-| `.agents/skills/brutalist-skill` | `industrial-brutalist-ui` |
-| `.agents/skills/stitch-skill` | `stitch-design-taste` |
+
+## 已从项目级 discovery 移除
+
+这些入口不再直接放在 `.agents/skills/` 下，避免和 GetTokens 统一前端设计入口重复。需要参考时读取 `docs-linhay/references/taste-skill/skills/<source-path>/`。
+
+| 原本地目录 | skill name | 现承接方式 |
+| --- | --- | --- |
+| `.agents/skills/taste-skill` | `design-taste-frontend` | `gettokens-frontend-design-quality` |
+| `.agents/skills/taste-skill-v1` | `design-taste-frontend-v1` | reference-only |
+| `.agents/skills/gpt-tasteskill` | `gpt-taste` | `gettokens-frontend-design-quality` |
+| `.agents/skills/image-to-code-skill` | `image-to-code` | reference-only / explicit image-to-code task |
+| `.agents/skills/imagegen-frontend-web` | `imagegen-frontend-web` | reference-only / explicit image generation |
+| `.agents/skills/imagegen-frontend-mobile` | `imagegen-frontend-mobile` | reference-only；GetTokens 默认不做移动端 |
+| `.agents/skills/brandkit` | `brandkit` | reference-only / explicit brand-kit task |
+| `.agents/skills/redesign-skill` | `redesign-existing-projects` | `gettokens-frontend-design-quality` |
+| `.agents/skills/soft-skill` | `high-end-visual-design` | `gettokens-frontend-design-quality` |
+| `.agents/skills/minimalist-skill` | `minimalist-ui` | `gettokens-frontend-design-quality` |
+| `.agents/skills/brutalist-skill` | `industrial-brutalist-ui` | `gettokens-frontend-design-quality` |
+| `.agents/skills/stitch-skill` | `stitch-design-taste` | reference-only |
 
 ## 后续更新流程
 
@@ -38,7 +47,7 @@ docs-linhay/scripts/update-taste-skill.sh --check
 docs-linhay/scripts/update-taste-skill.sh --update
 ```
 
-脚本默认只检查远端 `main` 是否有新 commit；只有传入 `--update` 时，才会按 `.agents/skills/taste-skill.lock.json` 的安装清单替换本地 skill 目录，并更新 lock 文件中的 commit。
+脚本默认只检查远端 `main` 是否有新 commit；只有传入 `--update` 时，才会按 `.agents/skills/taste-skill.lock.json` 的 `installedPaths` 安装清单替换仍保留的本地 skill 目录，并更新 lock 文件中的 commit。`retiredProjectDiscoveryPaths` 只记录已退出项目级 discovery 的来源，不会被脚本自动恢复。
 
 手动流程如下：
 
@@ -55,7 +64,7 @@ docs-linhay/scripts/update-taste-skill.sh --update
 
 ## 注意事项
 
-这些外部 skills 的 frontmatter 描述较长，可能增加 Codex skill discovery 的上下文预算压力。若后续出现 skill budget 告警，优先评估是否只保留 GetTokens 高频使用的 taste-skill 子集，而不是继续扩张项目级 skill 数量。
+这些外部 skills 的 frontmatter 描述较长，且大量入口和 GetTokens 前端设计质量统一 skill 重叠。后续如需恢复某个入口，必须先通过项目级 skill admission gate：重复任务或失败模式、清晰触发语、具体执行步骤和可验证结果。
 
 ## 会话沉淀
 

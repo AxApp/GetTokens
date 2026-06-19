@@ -8,71 +8,87 @@
   },
   "installedAt": "2026-05-27",
   "installedInto": ".agents/skills",
+  "discoverySlimmedAt": "2026-06-19",
+  "activePolicy": "Keep only project-level skills that still need direct discovery. Visual and image-generation Taste skills are retained as references under docs-linhay/references/taste-skill/ and routed through gettokens-frontend-design-quality.",
   "installedPaths": [
-    {
-      "sourcePath": "skills/taste-skill",
-      "localPath": ".agents/skills/taste-skill",
-      "skillName": "design-taste-frontend"
-    },
-    {
-      "sourcePath": "skills/taste-skill-v1",
-      "localPath": ".agents/skills/taste-skill-v1",
-      "skillName": "design-taste-frontend-v1"
-    },
-    {
-      "sourcePath": "skills/gpt-tasteskill",
-      "localPath": ".agents/skills/gpt-tasteskill",
-      "skillName": "gpt-taste"
-    },
-    {
-      "sourcePath": "skills/image-to-code-skill",
-      "localPath": ".agents/skills/image-to-code-skill",
-      "skillName": "image-to-code"
-    },
-    {
-      "sourcePath": "skills/imagegen-frontend-web",
-      "localPath": ".agents/skills/imagegen-frontend-web",
-      "skillName": "imagegen-frontend-web"
-    },
-    {
-      "sourcePath": "skills/imagegen-frontend-mobile",
-      "localPath": ".agents/skills/imagegen-frontend-mobile",
-      "skillName": "imagegen-frontend-mobile"
-    },
-    {
-      "sourcePath": "skills/brandkit",
-      "localPath": ".agents/skills/brandkit",
-      "skillName": "brandkit"
-    },
-    {
-      "sourcePath": "skills/redesign-skill",
-      "localPath": ".agents/skills/redesign-skill",
-      "skillName": "redesign-existing-projects"
-    },
-    {
-      "sourcePath": "skills/soft-skill",
-      "localPath": ".agents/skills/soft-skill",
-      "skillName": "high-end-visual-design"
-    },
     {
       "sourcePath": "skills/output-skill",
       "localPath": ".agents/skills/output-skill",
       "skillName": "full-output-enforcement"
+    }
+  ],
+  "retiredProjectDiscoveryPaths": [
+    {
+      "sourcePath": "skills/taste-skill",
+      "localPath": ".agents/skills/taste-skill",
+      "skillName": "design-taste-frontend",
+      "replacement": ".agents/skills/gettokens-frontend-design-quality"
+    },
+    {
+      "sourcePath": "skills/taste-skill-v1",
+      "localPath": ".agents/skills/taste-skill-v1",
+      "skillName": "design-taste-frontend-v1",
+      "replacement": "docs-linhay/references/taste-skill/skills/taste-skill-v1/"
+    },
+    {
+      "sourcePath": "skills/gpt-tasteskill",
+      "localPath": ".agents/skills/gpt-tasteskill",
+      "skillName": "gpt-taste",
+      "replacement": ".agents/skills/gettokens-frontend-design-quality"
+    },
+    {
+      "sourcePath": "skills/image-to-code-skill",
+      "localPath": ".agents/skills/image-to-code-skill",
+      "skillName": "image-to-code",
+      "replacement": "docs-linhay/references/taste-skill/skills/image-to-code-skill/"
+    },
+    {
+      "sourcePath": "skills/imagegen-frontend-web",
+      "localPath": ".agents/skills/imagegen-frontend-web",
+      "skillName": "imagegen-frontend-web",
+      "replacement": "docs-linhay/references/taste-skill/skills/imagegen-frontend-web/"
+    },
+    {
+      "sourcePath": "skills/imagegen-frontend-mobile",
+      "localPath": ".agents/skills/imagegen-frontend-mobile",
+      "skillName": "imagegen-frontend-mobile",
+      "replacement": "docs-linhay/references/taste-skill/skills/imagegen-frontend-mobile/"
+    },
+    {
+      "sourcePath": "skills/brandkit",
+      "localPath": ".agents/skills/brandkit",
+      "skillName": "brandkit",
+      "replacement": "docs-linhay/references/taste-skill/skills/brandkit/"
+    },
+    {
+      "sourcePath": "skills/redesign-skill",
+      "localPath": ".agents/skills/redesign-skill",
+      "skillName": "redesign-existing-projects",
+      "replacement": ".agents/skills/gettokens-frontend-design-quality"
+    },
+    {
+      "sourcePath": "skills/soft-skill",
+      "localPath": ".agents/skills/soft-skill",
+      "skillName": "high-end-visual-design",
+      "replacement": ".agents/skills/gettokens-frontend-design-quality"
     },
     {
       "sourcePath": "skills/minimalist-skill",
       "localPath": ".agents/skills/minimalist-skill",
-      "skillName": "minimalist-ui"
+      "skillName": "minimalist-ui",
+      "replacement": ".agents/skills/gettokens-frontend-design-quality"
     },
     {
       "sourcePath": "skills/brutalist-skill",
       "localPath": ".agents/skills/brutalist-skill",
-      "skillName": "industrial-brutalist-ui"
+      "skillName": "industrial-brutalist-ui",
+      "replacement": ".agents/skills/gettokens-frontend-design-quality"
     },
     {
       "sourcePath": "skills/stitch-skill",
       "localPath": ".agents/skills/stitch-skill",
-      "skillName": "stitch-design-taste"
+      "skillName": "stitch-design-taste",
+      "replacement": "docs-linhay/references/taste-skill/skills/stitch-skill/"
     }
   ]
 }

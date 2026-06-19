@@ -7,6 +7,29 @@ description: "GetTokens 桌面/Wails 前端设计质量统一 skill，合并 tas
 
 统一入口：把 `taste-skill`、`impeccable`、`frontend-system-design` 沉淀为一个 GetTokens 前端设计质量 skill。不要再拆成多个相似 frontend skills；按本文件的模式选择对应流程即可。
 
+## 0.1 Project Skill Discovery Boundary
+
+2026-06-19 起，Taste 外部包中的视觉风格和图像生成子 skill 不再作为项目级 `.agents/skills/*` 直接参与 discovery。GetTokens 前端/Wails 体验任务默认走本 skill；需要查阅原始外部 prompt 时，读取 `docs-linhay/references/taste-skill/skills/` 下的参考副本。
+
+保留在项目级 discovery 的 Taste 子 skill 只有：
+
+- `output-skill`：用于完整输出/防截断。
+
+已由本 skill 承接或转为参考的入口包括：
+
+- `taste-skill`
+- `taste-skill-v1`
+- `gpt-tasteskill`
+- `redesign-skill`
+- `soft-skill`
+- `minimalist-skill`
+- `brutalist-skill`
+- `stitch-skill`
+- `image-to-code-skill`
+- `imagegen-frontend-web`
+- `imagegen-frontend-mobile`
+- `brandkit`
+
 ## 0. GetTokens 固定边界
 
 - 默认目标是 **macOS/Wails 桌面工作台**，不是移动端或营销站。
