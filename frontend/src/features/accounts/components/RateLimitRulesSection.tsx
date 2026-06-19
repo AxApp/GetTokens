@@ -25,7 +25,6 @@ import {
 import type { Translator } from '../model/types';
 import {
   AccountDetailEmptyState,
-  AccountDetailNotice,
   AccountDetailSection,
 } from './AccountDetailPrimitives';
 
@@ -51,9 +50,24 @@ export interface RateLimitRulesAPI {
   delete: (input: { id: string }) => Promise<unknown>;
 }
 
-const RATE_LIMIT_RULE_SURFACE_CLASS = 'bg-[var(--bg-surface)]/35 py-2';
-const RATE_LIMIT_RULE_STACK_CLASS = 'space-y-2';
-const RATE_LIMIT_RULE_LIST_CLASS = 'space-y-2';
+const rateLimitRulesShellClass = 'grid min-w-0 gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+const rateLimitRulesPanelClass = 'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-3';
+const rateLimitRulesListClass = 'grid min-w-0 gap-2';
+const rateLimitRulesMetaClass = 'min-w-0 font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-[0.08em] text-[var(--gt-ink-muted)]';
+const rateLimitRulesTitleClass = 'truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-[0.03em] text-[var(--gt-ink-primary)]';
+const rateLimitRulesButtonClass = 'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const rateLimitRulesPrimaryButtonClass = `${rateLimitRulesButtonClass} bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-muted)]`;
+const rateLimitRulesIconButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-ink-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+const rateLimitRulesMenuItemClass = 'flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]';
+const rateLimitRulesDangerMenuItemClass = `${rateLimitRulesMenuItemClass} text-[var(--gt-status-danger)]`;
+const rateLimitRulesInputClass = 'h-9 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:opacity-60';
+const rateLimitRulesInlineInputClass = 'min-w-0 flex-1 bg-transparent px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] outline-none';
+const rateLimitRulesNoticeClass = 'rounded-md border px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium';
+const rateLimitRulesNoticeToneClass = {
+  danger: 'border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
+  neutral: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)]',
+  success: 'border-[color-mix(in_srgb,var(--gt-status-success)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_8%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
+} satisfies Record<'danger' | 'neutral' | 'success', string>;
 
 const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitRulesSectionProps>(function RateLimitRulesSection(
   {
@@ -294,30 +308,36 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
         <button
           type="button"
           onClick={addRateLimitRule}
-          className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+          className={rateLimitRulesPrimaryButtonClass}
           disabled={savingRules}
         >
           {t('accounts.rate_limit_add_rule')}
         </button>
       }
     >
-      <div className={RATE_LIMIT_RULE_STACK_CLASS}>
+      <div className={rateLimitRulesShellClass} data-rate-limit-rules-section>
         {dirty ? (
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className={rateLimitRulesMetaClass}>
             {t('accounts.rate_limit_dirty')}
           </div>
         ) : null}
 
         {rateLimitMessage ? (
-          <AccountDetailNotice tone={rateLimitMessageTone}>
+          <div
+            className={`${rateLimitRulesNoticeClass} ${rateLimitRulesNoticeToneClass[rateLimitMessageTone]}`}
+            data-rate-limit-rule-message={rateLimitMessageTone}
+          >
             {rateLimitMessage}
-          </AccountDetailNotice>
+          </div>
         ) : null}
 
         {legacyBindings.length > 0 ? (
-          <AccountDetailNotice tone="neutral">
+          <div
+            className={`${rateLimitRulesNoticeClass} ${rateLimitRulesNoticeToneClass.neutral}`}
+            data-rate-limit-rule-message="legacy"
+          >
             {t('accounts.rate_limit_legacy_key_warning')} {legacyBindings.length}
-          </AccountDetailNotice>
+          </div>
         ) : null}
 
         {ruleDrafts.length === 0 ? (
@@ -328,7 +348,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
               <button
                 type="button"
                 onClick={addRateLimitRule}
-                className="font-mono font-black uppercase tracking-[0.12em] text-[var(--text-primary)] underline decoration-dashed underline-offset-4"
+                className="font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] underline decoration-dotted underline-offset-4"
                 disabled={savingRules}
               >
                 {t('accounts.rate_limit_no_local_rule')}
@@ -336,7 +356,12 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
             </AccountDetailEmptyState>
           </div>
         ) : (
-          <div data-rate-limit-view-mode="config" className={RATE_LIMIT_RULE_LIST_CLASS} role="list">
+          <div
+            data-rate-limit-view-mode="config"
+            data-rate-limit-rules-list
+            className={rateLimitRulesListClass}
+            role="list"
+          >
             {ruleDrafts.map((draft, index) => {
               const strategy = strategies.find((item) => item.id === draft.strategy) || strategies[0];
               const windows = supportedWindowsForStrategy(strategy);
@@ -347,7 +372,8 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                 return (
                   <div
                     key={draft.id || `new-${index}`}
-                    className={`grid min-w-0 items-center gap-3 md:grid-cols-[auto_minmax(0,1fr)_auto] ${RATE_LIMIT_RULE_SURFACE_CLASS}`}
+                    className={`grid min-w-0 items-center gap-3 md:grid-cols-[auto_minmax(0,1fr)_auto] ${rateLimitRulesPanelClass}`}
+                    data-rate-limit-rule-card
                     role="listitem"
                   >
                     <label className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center" title={t('accounts.rate_limit_enabled')}>
@@ -356,21 +382,21 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                         checked={draft.enabled}
                         onChange={(event) => updateRateLimitDraft(index, { enabled: event.target.checked })}
                         disabled={savingRules}
-                        className="h-4 w-4 accent-[var(--text-primary)]"
+                        className="h-4 w-4 accent-[var(--gt-ink-primary)]"
                         aria-label={t('accounts.rate_limit_enabled')}
                       />
                     </label>
                     <div className="min-w-0">
                       <div
-                        className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]"
+                        className={rateLimitRulesTitleClass}
                         title={buildRateLimitRuleRowSummary(draft, strategy, t)}
                       >
                         {buildRateLimitRuleRowSummary(draft, strategy, t)}
                       </div>
                       {ruleState ? (
                         <div
-                          className={`mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] ${
-                            ruleState.exceeded ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
+                          className={`mt-1 truncate ${rateLimitRulesMetaClass} ${
+                            ruleState.exceeded ? 'text-[var(--gt-status-danger)]' : ''
                           }`}
                           title={`${Math.round(ruleState.usagePct)}% ${formatRateLimitMetric(ruleState.currentUsage)}/${formatRateLimitMetric(ruleState.rule.limitValue)}`}
                         >
@@ -385,7 +411,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                         aria-haspopup="menu"
                         aria-expanded={openRuleMenuIndex === index}
                         onClick={() => setOpenRuleMenuIndex((current) => (current === index ? null : index))}
-                        className="btn-swiss flex h-9 w-9 items-center justify-center !px-0 !py-0"
+                        className={rateLimitRulesIconButtonClass}
                         disabled={savingRules}
                         title={t('accounts.rate_limit_rule_actions')}
                       >
@@ -394,13 +420,13 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                       {openRuleMenuIndex === index ? (
                         <div
                           role="menu"
-                          className="absolute right-0 top-full z-30 mt-2 w-40 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
+                          className="absolute right-0 top-full z-30 mt-2 w-40 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-1 shadow-lg"
                         >
                           <button
                             type="button"
                             role="menuitem"
                             onClick={() => startEditingRateLimitRule(index)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                            className={rateLimitRulesMenuItemClass}
                           >
                             <Pencil size={14} strokeWidth={3} />
                             {t('accounts.rate_limit_rule_edit')}
@@ -409,7 +435,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                             type="button"
                             role="menuitem"
                             onClick={() => deleteRateLimitRule(index)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)]"
+                            className={rateLimitRulesDangerMenuItemClass}
                           >
                             <Trash2 size={14} strokeWidth={3} />
                             {t('common.delete')}
@@ -423,7 +449,8 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
               return (
                 <fieldset
                   key={draft.id || `new-${index}`}
-                  className={`grid min-w-0 gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)_minmax(8rem,0.8fr)] xl:grid-cols-[minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)_minmax(8rem,0.8fr)_auto] ${RATE_LIMIT_RULE_SURFACE_CLASS}`}
+                  className={`grid min-w-0 gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)_minmax(8rem,0.8fr)] xl:grid-cols-[minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)_minmax(8rem,0.8fr)_auto] ${rateLimitRulesPanelClass}`}
+                  data-rate-limit-rule-draft
                   role="listitem"
                   disabled={savingRules}
                 >
@@ -440,7 +467,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                           window: nextWindows.includes(draft.window) ? draft.window : nextWindows[0] || '24h',
                         });
                       }}
-                      className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
+                      className={rateLimitRulesInputClass}
                     >
                       {strategies.map((item) => (
                         <option key={item.id} value={item.id}>
@@ -454,7 +481,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                       id={`${ruleDomID}-window`}
                       value={draft.window}
                       onChange={(event) => updateRateLimitDraft(index, { window: event.target.value })}
-                      className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
+                      className={rateLimitRulesInputClass}
                     >
                       {windows.map((window) => (
                         <option key={window} value={window}>
@@ -464,7 +491,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                     </select>
                   </RuleField>
                   <RuleField label={t('accounts.rate_limit_limit')} htmlFor={`${ruleDomID}-limit`}>
-                    <div className="flex h-9 border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+                    <div className="flex h-9 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]">
                       <input
                         id={`${ruleDomID}-limit`}
                         type="number"
@@ -476,9 +503,9 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                             limitValue: parseRateLimitLimitDraftValue(draft.strategy, event.target.value),
                           })
                         }
-                        className="min-w-0 flex-1 bg-transparent px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)] outline-none"
+                        className={rateLimitRulesInlineInputClass}
                       />
-                      <span className="flex w-10 items-center justify-center border-l border-[var(--border-color)] text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      <span className="flex w-10 items-center justify-center border-l border-[var(--gt-border-subtle)] text-[length:var(--font-size-ui-2xs)] font-medium tracking-[0.08em] text-[var(--gt-ink-muted)]">
                         {draft.strategy === 'token-window' ? 'M' : t('accounts.rate_limit_count_unit')}
                       </span>
                     </div>
@@ -488,7 +515,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                       id={`${ruleDomID}-action`}
                       value={draft.action}
                       onChange={(event) => updateRateLimitDraft(index, { action: event.target.value })}
-                      className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
+                      className={rateLimitRulesInputClass}
                     >
                       <option value="block">{t('accounts.rate_limit_action_block')}</option>
                       <option value="warn">{t('accounts.rate_limit_action_warn')}</option>
@@ -498,7 +525,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                     <button
                       type="button"
                       onClick={() => finishEditingRateLimitRule(index)}
-                      className="btn-swiss h-9 !px-3 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+                      className={rateLimitRulesPrimaryButtonClass}
                       disabled={savingRules}
                     >
                       {t('accounts.rate_limit_rule_save')}
@@ -591,7 +618,7 @@ function buildRateLimitRuleRowSummary(
 function RuleField({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="block min-w-0 space-y-1">
-      <span className="block font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <span className="block font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-[0.08em] text-[var(--gt-ink-muted)]">
         {label}
       </span>
       {children}
