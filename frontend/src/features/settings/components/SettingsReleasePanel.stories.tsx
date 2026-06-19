@@ -18,8 +18,6 @@ type Story = StoryObj<typeof SettingsReleasePanel>;
 const baseProps = {
   currentVersionTitle: '当前版本',
   currentVersionLabel: '0.2.1',
-  releaseLabelTitle: '构建批次',
-  releaseLabel: '2026.05.23.11',
   gitHashTitle: 'Git Hash',
   gitHashLabel: '960ebd9fd83f',
   cliProxyApiGitHashTitle: 'CLIProxyAPI Git Hash',
@@ -27,10 +25,6 @@ const baseProps = {
   latestReleaseTitle: '最新版本',
   latestReleaseLabel: '0.2.2',
   latestReleaseGitHubURL: 'https://github.com/AxApp/GetTokens/releases/tag/v0.2.2',
-  updateAssetTitle: '更新包',
-  updateAssetName: 'GetTokens_macOS_AppleSilicon.dmg',
-  updateChannelTitle: '更新通道',
-  updateChannelHint: '自动下载并应用当前架构的 macOS 更新包。',
   currentReleaseGitHubURL: 'https://github.com/AxApp/GetTokens/releases/tag/v0.2.1',
   gitHashGitHubURL: 'https://github.com/AxApp/GetTokens/commit/960ebd9fd83f',
   cliProxyApiGitHashGitHubURL: 'https://github.com/AxApp/CLIProxyAPI/commit/7f1c2d9',
@@ -70,7 +64,6 @@ export const Overview: Story = {
         label="DS-SETTINGS-RELEASE-CHECKING"
         props={{
           latestReleaseLabel: '—',
-          updateAssetName: '—',
           isCheckingUpdate: true,
           primaryUpdateDisabled: true,
           updateMessage: '正在检查 GitHub Releases。',
@@ -80,7 +73,6 @@ export const Overview: Story = {
         label="DS-SETTINGS-RELEASE-NATIVE"
         props={{
           showPrimaryUpdateAction: false,
-          updateChannelHint: '当前包使用原生更新入口。',
           updateActionHint: '点击检查更新会唤起系统更新界面。',
           updateMessage: '已调用原生更新器。',
         }}

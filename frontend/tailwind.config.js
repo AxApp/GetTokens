@@ -14,11 +14,20 @@ export default {
       borderRadius: {
         'swiss': '2px',
         'none': '0px',
+        'parchment-xs': 'var(--gt-radius-xs)',
+        'parchment-sm': 'var(--gt-radius-sm)',
+        'parchment-md': 'var(--gt-radius-md)',
+        'parchment-lg': 'var(--gt-radius-lg)',
+        'parchment-pill': 'var(--gt-radius-pill)',
       },
       boxShadow: {
         'hard-sm': '2px 2px 0px 0px var(--tw-shadow-color)',
         'hard': '4px 4px 0px 0px var(--tw-shadow-color)',
         'hard-lg': '6px 6px 0px 0px var(--tw-shadow-color)',
+        'parchment-flat': 'var(--gt-elevation-flat)',
+        'parchment-1': 'var(--gt-elevation-raised-1)',
+        'parchment-2': 'var(--gt-elevation-raised-2)',
+        'parchment-3': 'var(--gt-elevation-raised-3)',
       },
       fontFamily: {
         mono: 'var(--font-family-mono)',

@@ -40,6 +40,7 @@ export type SessionManagementWorkspace = "codex" | "claude";
 export type UsageDeskWorkspace = "codex" | "claude";
 
 export type ThemeMode = "system" | "light" | "dark";
+export type ThemePreset = "classic" | "parchment-trust-console";
 
 export type LocaleCode = "zh" | "en";
 

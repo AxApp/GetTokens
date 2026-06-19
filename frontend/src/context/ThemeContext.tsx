@@ -1,33 +1,45 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { ThemeMode } from '../types';
+import type { ThemeMode, ThemePreset } from '../types';
+import {
+  persistThemeMode,
+  persistThemePreset,
+  readStoredThemeMode,
+  readStoredThemePreset,
+} from './theme';
 
 interface ThemeContextValue {
   themeMode: ThemeMode;
   setThemeMode: (value: ThemeMode) => void;
+  themePreset: ThemePreset;
+  setThemePreset: (value: ThemePreset) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function isThemeMode(value: string | null): value is ThemeMode {
-  return value === 'system' || value === 'light' || value === 'dark';
-}
-
 export function ThemeProvider({ children }: { children?: ReactNode }) {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    const storedThemeMode = localStorage.getItem('theme-mode');
-    return isThemeMode(storedThemeMode) ? storedThemeMode : 'system';
+    return readStoredThemeMode(typeof localStorage === 'undefined' ? null : localStorage);
+  });
+  const [themePreset, setThemePreset] = useState<ThemePreset>(() => {
+    return readStoredThemePreset(typeof localStorage === 'undefined' ? null : localStorage);
   });
 
   useEffect(() => {
-    localStorage.setItem('theme-mode', themeMode);
+    persistThemeMode(typeof localStorage === 'undefined' ? null : localStorage, themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    persistThemePreset(typeof localStorage === 'undefined' ? null : localStorage, themePreset);
+  }, [themePreset]);
 
   const value = useMemo(
     () => ({
       themeMode,
       setThemeMode,
+      themePreset,
+      setThemePreset,
     }),
-    [themeMode]
+    [themeMode, themePreset]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

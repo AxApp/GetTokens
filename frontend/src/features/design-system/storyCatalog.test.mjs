@@ -263,6 +263,18 @@ test('design system inspect mode is wired to the dev inspector runtime', async (
   assert.match(entrySource, /design_system\.inspect_elements/);
 });
 
+test('design system entry renders without theme preset switching UI', async () => {
+  const entrySource = await readFile(new URL('./DesignSystemEntryFeature.tsx', import.meta.url), 'utf8');
+  const colorTokenSource = await readFile(new URL('../../stories/tokens/ColorTokens.stories.tsx', import.meta.url), 'utf8');
+
+  // Theme preset switching has been removed — entry should not reference themePresetDefinitions
+  assert.ok(!entrySource.includes('themePresetDefinitions'), 'should not import themePresetDefinitions');
+  assert.ok(!entrySource.includes('setThemePreset'), 'should not use setThemePreset');
+  assert.match(entrySource, /WorkspacePageHeader/);
+  assert.match(colorTokenSource, /--gt-surface-canvas/);
+  assert.match(colorTokenSource, /--gt-accent-primary/);
+});
+
 test('vite dev retries Wails generated bindings during regeneration window', async () => {
   const viteSource = await readFile(new URL('../../../vite.config.js', import.meta.url), 'utf8');
 
@@ -342,7 +354,7 @@ test('runtime design system components expose project highlight markers', async 
   assert.match(appSource, /data-design-system-highlight=\{import\.meta\.env\.DEV \? 'project' : undefined\}/);
   assert.match(appSource, /copyDesignSystemComponentName/);
   assert.match(appSource, /isDesignSystemComponentLabelHit/);
-  assert.match(styleSource, /\[data-design-system-highlight='project'\] \[data-design-system-component='true'\]/);
+  assert.match(styleSource, /\[data-design-system-inspect-mode='active'\] \[data-design-system-highlight='project'\] \[data-design-system-component='true'\]/);
   assert.match(styleSource, /content: attr\(data-design-system-component-name\)/);
   assert.match(styleSource, /cursor: copy/);
   assert.match(styleSource, /data-design-system-component-copied='true'/);

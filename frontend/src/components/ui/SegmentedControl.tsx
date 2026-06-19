@@ -39,7 +39,7 @@ export default function SegmentedControl<T extends string>({
           aria-pressed={value === option.id}
           disabled={disabled}
           onClick={() => onChange(option.id)}
-          className={`relative flex min-h-[var(--gt-control-segmented-min-height,34px)] ${fitContent ? 'flex-none whitespace-nowrap' : 'flex-1'} items-center justify-center px-[var(--gt-control-segmented-padding-inline,10px)] text-[length:var(--gt-control-segmented-font-size,9px)] font-bold leading-none transition-colors focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--border-color)] disabled:cursor-not-allowed ${
+          className={`relative flex min-h-[var(--gt-control-segmented-min-height,34px)] ${fitContent ? 'flex-none whitespace-nowrap' : 'flex-1'} items-center justify-center px-[var(--gt-control-segmented-padding-inline,10px)] text-[length:var(--gt-control-segmented-font-size,9px)] font-bold leading-none transition-colors focus-visible:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--gt-focus-ring)] disabled:cursor-not-allowed ${
             index !== options.length - 1 ? 'border-r-[1px] border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)]' : ''
           } ${
             value === option.id

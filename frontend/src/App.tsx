@@ -29,7 +29,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 
 function AppShell() {
-  const { themeMode } = useTheme();
+  const { themeMode, themePreset } = useTheme();
   const { textScale } = useTextScale();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [sidebarUpdateError, setSidebarUpdateError] = useState('');
@@ -95,11 +95,22 @@ function AppShell() {
   }
 
   useEffect(() => {
-    const isDark =
-      themeMode === 'dark' ||
-      (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.classList.toggle('dark', isDark);
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    function applyResolvedThemeMode() {
+      const isDark = themeMode === 'dark' || (themeMode === 'system' && mediaQuery.matches);
+      document.documentElement.classList.toggle('dark', isDark);
+    }
+
+    applyResolvedThemeMode();
+    mediaQuery.addEventListener('change', applyResolvedThemeMode);
+    return () => {
+      mediaQuery.removeEventListener('change', applyResolvedThemeMode);
+    };
   }, [themeMode]);
+
+  useEffect(() => {
+    document.documentElement.dataset.themePreset = themePreset;
+  }, [themePreset]);
 
   useEffect(() => {
     document.documentElement.dataset.textScale = getTextScaleAttributeValue(textScale);
