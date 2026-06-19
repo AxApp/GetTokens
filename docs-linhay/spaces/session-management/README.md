@@ -49,3 +49,23 @@
 - 前端会话列表与详情弹窗主标题优先读 `displayTitle`，旧缓存或静态 preview 缺字段时回退 `title/fileLabel`。
 - 列表卡片标题可读两行，状态与 metadata rail 保持原扫描位置；卡片内不得出现同文案标题 + summary 重复。
 - 回归测试覆盖 `# AGENTS.MD INSTRUCTIONS FOR` 不抢标题，真实用户需求成为 `displayTitle`。
+
+## 2026-06-20 工作台新风格主视图收敛
+
+### 问题来源
+
+用户要求按账号池/代理池已经形成的新节奏和风格继续改完剩余界面。扫描真实运行页面后，`SessionManagementView.tsx` 是旧 `btn-swiss`、粗边框、反色 active 和大写重字重信号最集中的 workspace 之一。
+
+### 本轮范围
+
+- 会话管理页主壳层切换到 `--gt-surface-*` / `--gt-border-*` quiet workspace token。
+- 页头摘要进入 `WorkspacePageHeader.meta`，分析与刷新动作改为 40px 图标按钮，保留 `aria-label` / `title`。
+- 搜索 rail、项目列、会话列统一为轻描边、低背景噪声、内部滚动的两列工作台结构。
+- 会话行保留两行标题与 metadata rail，但将旧粗左边线、uppercase、heavy weight 和反色状态 pill 降级为更安静的列表样式。
+
+### 验收
+
+- `data-session-management-workbench`、`data-session-management-project-panel`、`data-session-management-session-panel` 固定主壳层与两列结构。
+- 主 workbench 高度不得被项目/会话列表内容撑爆；浏览器 bounding rect 应接近可视工作区高度，项目列和会话列内部滚动。
+- 页头分析/刷新按钮只显示图标，按钮尺寸 40x40，图标 20x20，且不使用旧 `btn-swiss`。
+- 聚焦测试、typecheck、diff check 通过；浏览器只读 DOM/计算样式复核无可见旧粗框壳层。

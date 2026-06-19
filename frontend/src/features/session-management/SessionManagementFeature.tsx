@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, RefreshCw, X } from 'lucide-react';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
 import { analyzeCodexSessions } from './api.ts';
@@ -332,17 +332,23 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   }
 
   return (
-    <section className="flex h-full min-h-0 flex-col bg-[var(--bg-surface)] px-6 py-6 text-[var(--text-primary)] select-text">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] select-text">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1480px] flex-1 flex-col gap-4 px-6 py-5">
       <WorkspacePageHeader
         title={t('session_management.title')}
-        subtitle={copy.headerSubtitleLine(stats)}
-        titleClassName="text-[length:var(--font-size-display-sm)] font-black uppercase italic tracking-tighter leading-[0.86] text-[var(--text-primary)]"
-        subtitleClassName="mt-3 truncate whitespace-nowrap text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]"
-        actionsClassName="flex items-center gap-3 self-start"
+        meta={
+          <span
+            className="block max-w-[min(62rem,70vw)] truncate text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]"
+            title={copy.headerSubtitleLine(stats)}
+          >
+            {copy.headerSubtitleLine(stats)}
+          </span>
+        }
+        actionsClassName="gap-2"
         actions={
           <>
             {snapshotRefreshing ? (
-              <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
                 {copy.refreshing}
               </div>
             ) : null}
@@ -350,6 +356,8 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
               <button
                 type="button"
                 ref={analysisButtonRef}
+                aria-label={copy.analysisOpen}
+                title={copy.analysisOpen}
                 onClick={() => {
                   if (!projects.length || analysisLoading) {
                     return;
@@ -357,33 +365,37 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                   setAnalysisSelectorOpen(true);
                 }}
                 aria-disabled={!projects.length || analysisLoading ? 'true' : undefined}
-                className={`btn-swiss inline-flex items-center gap-2 whitespace-nowrap ${
+                className={`inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] ${
                   !projects.length || analysisLoading ? 'cursor-not-allowed opacity-50' : ''
                 }`}
               >
-                <BarChart3 className="h-3.5 w-3.5" strokeWidth={2.5} />
-                <span>{copy.analysisOpen}</span>
+                <BarChart3 className="h-5 w-5" strokeWidth={2.4} />
               </button>
             ) : null}
             <button
               type="button"
+              aria-label={copy.refresh}
+              title={copy.refresh}
               onClick={() => void loadSnapshot('refresh')}
-              className="btn-swiss whitespace-nowrap"
+              className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
             >
-              {copy.refresh}
+              <RefreshCw className={`h-5 w-5 ${snapshotRefreshing ? 'animate-spin' : ''}`} strokeWidth={2.4} />
             </button>
           </>
         }
       />
 
-      <div className="mt-7 flex min-h-0 flex-1 flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
+      <div
+        data-session-management-workbench="true"
+        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]"
+      >
         <SessionManagementSearchBar
           copy={copy}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
         <div className={`flex min-h-0 flex-1 ${compactLayout ? 'flex-col' : 'flex-row'}`}>
-          <div className={`flex min-h-0 flex-col border-[var(--border-color)] ${compactLayout ? 'w-full border-b-2' : 'w-[20rem] shrink-0 border-r-2'}`}>
+          <div className={`flex min-h-0 flex-col border-[var(--gt-border-subtle)] ${compactLayout ? 'w-full border-b' : 'w-[20rem] shrink-0 border-r'}`}>
             <ProjectListPanel
               copy={copy}
               projects={filteredProjects}
@@ -443,9 +455,11 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
               <button
                 type="button"
                 onClick={() => setCompactSessionsOpen(false)}
-                className="btn-swiss"
+                aria-label={copy.close}
+                title={copy.close}
+                className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               >
-                {copy.close}
+                <X className="h-4 w-4" strokeWidth={2.4} />
               </button>
             </div>
             <SessionsPanel
@@ -556,6 +570,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
           renderRoleLabel={renderRoleLabel}
         />
       ) : null}
+      </div>
     </section>
   );
 }

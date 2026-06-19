@@ -255,15 +255,21 @@ test('session analysis opens from header through scope selector and detail modal
   assert.doesNotMatch(viewSource, /disabled=\{loading\}/, 'detail modal must not drop focus onto body by disabling its initial focus button');
 });
 
-test('session management workbench keeps brutalist hierarchy readable', async () => {
+test('session management workbench uses the current quiet workspace layout', async () => {
   const featureSource = await readFile(new URL('./SessionManagementFeature.tsx', import.meta.url), 'utf8');
   const viewSource = await readFile(new URL('./SessionManagementView.tsx', import.meta.url), 'utf8');
 
-  assert.match(featureSource, /titleClassName="text-\[length:var\(--font-size-display-sm\)\]/, 'page title must use the calibrated workspace display scale');
+  assert.match(featureSource, /bg-\[var\(--gt-surface-canvas\)\]/, 'page shell must use the current canvas token');
+  assert.match(featureSource, /data-session-management-workbench="true"/, 'main workbench shell must be addressable for layout checks');
+  assert.match(featureSource, /rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]/, 'main workbench must use the quiet rounded border shell');
+  assert.doesNotMatch(featureSource, /titleClassName="text-\[length:var\(--font-size-display-sm\)\]/, 'page title must not keep the old oversized brutalist display scale');
+  assert.doesNotMatch(featureSource, /className="btn-swiss/, 'feature header and compact shell actions must not use the old swiss button skin');
   assert.match(viewSource, /data-session-management-search-frame="true"/, 'search frame must be explicitly styled as a quiet utility rail');
-  assert.doesNotMatch(viewSource, /data-session-management-search-frame="true" className="[^"]*border-b-4/, 'search rail must not compete with the main workbench border');
-  assert.match(viewSource, /rounded-sm border-l-4 border-l-transparent/, 'session rows must have a subtle active affordance without another heavy box');
-  assert.match(viewSource, /border-t border-dashed border-\[var\(--border-color\)\]\/45/, 'session metadata must sit in a quiet footer rail');
+  assert.match(viewSource, /data-session-management-project-panel="true"/, 'project list panel must expose the current column shell');
+  assert.match(viewSource, /data-session-management-session-panel="true"/, 'session list panel must expose the current column shell');
+  assert.doesNotMatch(viewSource, /data-session-management-search-frame="true" className="[^"]*bg-\[var\(--bg-surface\)\]/, 'search rail must not keep the old surface block');
+  assert.match(viewSource, /rounded-sm border-l-2 border-l-transparent/, 'session rows must keep a subtle two-pixel active affordance');
+  assert.match(viewSource, /border-t border-\[var\(--gt-border-subtle\)\]/, 'session metadata must sit in a quiet footer rail');
   assert.match(viewSource, /line-clamp-2 min-w-0 flex-1 break-words/, 'session titles must allow two readable lines before truncating');
   assert.doesNotMatch(viewSource, /session\.summary \? \(/, 'session list rows must not repeat the derived title again as a summary line');
 });

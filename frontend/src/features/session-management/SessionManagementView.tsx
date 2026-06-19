@@ -199,12 +199,16 @@ export function StatePanel({
 }) {
   return (
     <div className="flex min-h-[10rem] flex-col items-start justify-center gap-2.5 px-6 py-8 text-left">
-      <div className="text-[length:var(--font-size-ui-lg-compact)] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">{title}</div>
+      <div className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">{title}</div>
       {description ? (
-        <div className="text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{description}</div>
+        <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">{description}</div>
       ) : null}
       {actionLabel && onAction ? (
-        <button type="button" onClick={onAction} className="btn-swiss mt-1">
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-1 inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+        >
           {actionLabel}
         </button>
       ) : null}
@@ -213,19 +217,19 @@ export function StatePanel({
 }
 
 export function LoadingBar({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-[var(--bg-surface)] ${className}`.trim()} />;
+  return <div className={`animate-pulse rounded-sm bg-[var(--gt-surface-muted)] ${className}`.trim()} />;
 }
 
 export function InitialLoadingShell({ copy }: { copy: SessionManagementCopy }) {
   return (
-    <div className="mt-6 grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)] border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
-      <section className="flex min-h-0 flex-col border-r-4 border-[var(--border-color)]">
-        <div className="flex h-14 items-center border-b-4 border-[var(--border-color)] px-5">
-          <h2 className="text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.25em]">{copy.projectListTitle}</h2>
+    <div className="mx-auto grid min-h-0 w-full max-w-[1480px] flex-1 grid-cols-[18rem_minmax(0,1fr)] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]">
+      <section className="flex min-h-0 flex-col border-r border-[var(--gt-border-subtle)]">
+        <div className="flex h-12 items-center border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
+          <h2 className="text-[length:var(--font-size-ui-md)] font-semibold">{copy.projectListTitle}</h2>
         </div>
         <div>
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={`project-loading-${index}`} className="border-b border-[var(--border-color)] px-5 py-4">
+            <div key={`project-loading-${index}`} className="border-b border-[var(--gt-border-subtle)] px-5 py-4">
               <LoadingBar className="h-4 w-36" />
               <div className="mt-2.5 flex items-center gap-1.5">
                 <LoadingBar className="h-3.5 w-10" />
@@ -238,12 +242,12 @@ export function InitialLoadingShell({ copy }: { copy: SessionManagementCopy }) {
       </section>
 
       <section className="flex min-h-0 flex-col">
-        <div className="flex h-14 items-center border-b-4 border-[var(--border-color)] px-5">
-          <h2 className="text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.25em]">{copy.projectSessionsTitle}</h2>
+        <div className="flex h-12 items-center border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
+          <h2 className="text-[length:var(--font-size-ui-md)] font-semibold">{copy.projectSessionsTitle}</h2>
         </div>
         <div>
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={`session-loading-${index}`} className="border-b border-[var(--border-color)] px-6 py-4">
+            <div key={`session-loading-${index}`} className="border-b border-[var(--gt-border-subtle)] px-6 py-4">
               <div className="flex items-center justify-between gap-4">
                 <LoadingBar className="h-4 w-48" />
                 <LoadingBar className="h-4 w-12" />
@@ -268,7 +272,7 @@ export function SessionManagementSearchBar({
   onSearchChange: (query: string) => void;
 }) {
   return (
-    <div data-session-management-search-frame="true" className="shrink-0 border-b border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
+    <div data-session-management-search-frame="true" className="shrink-0 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
       <SearchInput
         value={searchQuery}
         onChange={onSearchChange}
@@ -309,11 +313,11 @@ export function ProjectListPanel({
   onOpenProviderEditor?: (projectID: string) => void;
 }) {
   return (
-    <section className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[var(--border-color)] px-5">
-        <h2 className="text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.25em]">{copy.projectListTitle}</h2>
+    <section data-session-management-project-panel="true" className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
+        <h2 className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">{copy.projectListTitle}</h2>
         {snapshotRefreshing ? (
-          <span className="animate-pulse text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <span className="animate-pulse text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
             {copy.refreshing}
           </span>
         ) : null}
@@ -329,13 +333,12 @@ export function ProjectListPanel({
             return (
               <div
                 key={project.id}
-                className={`group flex w-full items-stretch border-b border-[var(--border-color)] transition-colors ${
-                  isActive ? 'bg-[var(--border-color)]' : 'hover:bg-[var(--bg-surface)]'
+                className={`group flex w-full items-stretch border-b border-[var(--gt-border-subtle)] transition-colors ${
+                  isActive ? 'bg-[var(--gt-surface-muted)]' : 'hover:bg-[var(--gt-surface-muted)]'
                 }`}
               >
-                {/* Left accent line */}
                 <div className={`w-0.5 shrink-0 self-stretch transition-colors ${
-                  isActive ? 'bg-[var(--bg-main)]' : 'bg-transparent group-hover:bg-[var(--text-muted)]/40'
+                  isActive ? 'bg-[var(--text-primary)]' : 'bg-transparent group-hover:bg-[var(--text-muted)]/35'
                 }`} />
 
                 <button
@@ -343,8 +346,8 @@ export function ProjectListPanel({
                   onClick={() => onSelectProject(project.id, compactLayout)}
                   className="flex min-w-0 flex-1 flex-col gap-2.5 py-4 pl-4 pr-3 text-left active:opacity-70"
                 >
-                  <div className={`truncate text-[length:var(--font-size-ui-lg)] font-black uppercase tracking-tight leading-none ${
-                    isActive ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'
+                  <div className={`truncate text-[length:var(--font-size-ui-lg)] font-semibold leading-none ${
+                    isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'
                   }`}>
                     {project.name}
                   </div>
@@ -356,17 +359,17 @@ export function ProjectListPanel({
                     ].map((tag) => (
                       <span
                         key={tag}
-                        className={`border px-1.5 py-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] leading-none ${
+                        className={`rounded border px-1.5 py-0.5 text-[length:var(--font-size-ui-2xs)] font-medium leading-none ${
                           isActive
-                            ? 'border-[var(--bg-main)]/60 text-[var(--bg-main)]'
-                            : 'border-[var(--border-color)]/60 text-[var(--text-muted)]'
+                            ? 'border-[var(--gt-border-strong)] text-[var(--text-primary)]'
+                            : 'border-[var(--gt-border-subtle)] text-[var(--text-muted)]'
                         }`}
                       >
                         {tag}
                       </span>
                     ))}
-                    <span className={`truncate text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] leading-none ${
-                      isActive ? 'text-[var(--bg-main)]/60' : 'text-[var(--text-muted)]/50'
+                    <span className={`truncate text-[length:var(--font-size-ui-2xs)] font-medium leading-none ${
+                      isActive ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]/70'
                     }`}>
                       {getProviderDisplayLabel(project.providerSummary, copy.unknownProvider)}
                     </span>
@@ -379,10 +382,10 @@ export function ProjectListPanel({
                     type="button"
                     onClick={() => onOpenProviderEditor(project.id)}
                     aria-label="Edit provider mapping"
-                    className={`flex h-7 w-7 items-center justify-center border transition-all active:scale-90 ${
+                    className={`flex h-7 w-7 items-center justify-center rounded border transition-all active:scale-90 ${
                       isActive
-                        ? 'border-[var(--bg-main)]/30 text-[var(--bg-main)] hover:border-[var(--bg-main)]'
-                        : 'border-transparent text-[var(--text-muted)]/40 hover:border-[var(--border-color)] hover:text-[var(--text-primary)]'
+                        ? 'border-[var(--gt-border-subtle)] text-[var(--text-primary)] hover:border-[var(--gt-border-strong)]'
+                        : 'border-transparent text-[var(--text-muted)]/45 hover:border-[var(--gt-border-subtle)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     <Pencil className="h-3 w-3" strokeWidth={2.5} />
@@ -886,15 +889,15 @@ export function SessionsPanel({
   }, [actionMenuOpen]);
 
   return (
-    <section ref={panelRef} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[var(--border-color)] bg-[var(--bg-surface)] px-5">
+    <section ref={panelRef} data-session-management-session-panel="true" className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <h2 className="shrink-0 text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.25em]">{copy.projectSessionsTitle}</h2>
-          <span className="truncate text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-            / {activeProjectName}
+          <h2 className="shrink-0 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">{copy.projectSessionsTitle}</h2>
+          <span className="truncate text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+            {activeProjectName}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 bg-[var(--bg-main)] p-1">
+        <div className="flex items-center gap-1.5 rounded bg-[var(--gt-surface-canvas)] p-1">
           {useActionMenu ? (
             <div ref={actionMenuRef} className="relative">
               <button
@@ -904,14 +907,14 @@ export function SessionsPanel({
                 aria-expanded={actionMenuOpen}
                 title={copy.sessionActions}
                 onClick={() => setActionMenuOpen((prev) => !prev)}
-                className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
+                className="flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--text-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] active:scale-90"
               >
                 <MoreVertical className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
               {actionMenuOpen ? (
                 <div
                   role="menu"
-                  className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-52 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
+                  className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-52 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-[var(--gt-elevation-raised-2)]"
                 >
                   {filters.map((filter) => {
                     const isActive = activeFilter === filter.id;
@@ -925,10 +928,10 @@ export function SessionsPanel({
                           onSelectFilter(filter.id);
                           setActionMenuOpen(false);
                         }}
-                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] transition-colors active:scale-95 ${
+                        className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-medium transition-colors active:scale-95 ${
                           isActive
-                            ? 'bg-[var(--border-color)] text-[var(--bg-main)]'
-                            : 'text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
+                            ? 'bg-[var(--gt-surface-muted)] text-[var(--text-primary)]'
+                            : 'text-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]'
                         }`}
                       >
                         <Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'opacity-100' : 'opacity-0'}`} strokeWidth={3} />
@@ -936,7 +939,7 @@ export function SessionsPanel({
                       </button>
                     );
                   })}
-                  <div className="my-1 border-t border-dashed border-[var(--border-color)]" />
+                  <div className="my-1 border-t border-[var(--gt-border-subtle)]" />
                   <button
                     type="button"
                     role="menuitem"
@@ -944,7 +947,7 @@ export function SessionsPanel({
                       setActionMenuOpen(false);
                       onRefresh();
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] active:scale-95"
+                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-95"
                   >
                     <RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                     <span>{copy.refresh}</span>
@@ -961,10 +964,10 @@ export function SessionsPanel({
                     key={filter.id}
                     type="button"
                     onClick={() => onSelectFilter(filter.id)}
-                    className={`border px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] transition-colors active:scale-95 ${
+                    className={`rounded px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium transition-colors active:scale-95 ${
                       isActive
-                        ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
-                        : 'border-transparent bg-transparent text-[var(--text-muted)] hover:border-[var(--border-color)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+                        ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
+                        : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {filter.label}
@@ -976,7 +979,7 @@ export function SessionsPanel({
                 onClick={onRefresh}
                 aria-label={copy.refresh}
                 title={copy.refresh}
-                  className="flex h-8 w-8 items-center justify-center border border-transparent text-[var(--text-muted)] transition-colors hover:border-[var(--border-color)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
+                  className="flex h-8 w-8 items-center justify-center rounded border border-transparent text-[var(--text-muted)] transition-colors hover:border-[var(--gt-border-subtle)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] active:scale-90"
               >
                 <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
@@ -989,7 +992,7 @@ export function SessionsPanel({
       ) : (
         <>
           {snapshotError ? (
-            <div className="border-b border-[var(--border-color)] px-5 py-2.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
+            <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]">
               {copy.loadFailed} / {snapshotError}
             </div>
           ) : null}
@@ -1000,23 +1003,23 @@ export function SessionsPanel({
                   key={session.id}
                   type="button"
                   onClick={() => onSelectSession(session.id)}
-                  className="group block w-full rounded-sm border-l-4 border-l-transparent border-b border-b-[var(--border-color)] px-6 py-4 text-left transition-colors hover:border-l-[var(--text-muted)]/45 hover:bg-[var(--bg-surface)] active:bg-[var(--bg-muted)]"
+                  className="group block w-full rounded-sm border-l-2 border-l-transparent border-b border-b-[var(--gt-border-subtle)] px-6 py-4 text-left transition-colors hover:border-l-[var(--text-muted)]/45 hover:bg-[var(--gt-surface-muted)] active:bg-[var(--gt-surface-muted)]"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="line-clamp-2 min-w-0 flex-1 break-words text-[length:var(--font-size-ui-lg)] font-black uppercase tracking-tight leading-tight text-[var(--text-primary)]">
+                    <div className="line-clamp-2 min-w-0 flex-1 break-words text-[length:var(--font-size-ui-lg)] font-semibold leading-tight text-[var(--text-primary)]">
                       {session.displayTitle || session.title || 'UNTITLED SESSION'}
                     </div>
-                    <span className={`shrink-0 border px-2 py-0.5 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.22em] leading-none ${
+                    <span className={`shrink-0 rounded border px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-medium leading-none ${
                       session.status === 'active'
-                        ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
-                        : 'border-[var(--border-color)]/50 text-[var(--text-muted)]'
+                        ? 'border-[color-mix(in_srgb,var(--gt-status-success)_35%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--text-primary)]'
+                        : 'border-[var(--gt-border-subtle)] text-[var(--text-muted)]'
                     }`}>
                       {session.status}
                     </span>
                   </div>
 
                   <div
-                    className={`mt-3 flex items-center border-t border-dashed border-[var(--border-color)]/45 pt-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]/60 ${
+                    className={`mt-3 flex items-center border-t border-[var(--gt-border-subtle)] pt-2 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)] ${
                       useCompactSessionMetadata ? 'justify-between gap-x-6' : 'gap-x-2'
                     }`}
                   >
