@@ -279,5 +279,118 @@ cron 只能表达“何时触发重算或 reset”，不能单独表达完整限
 
 ## 当前状态
 
-- 状态：technical-research
-- 最近更新：2026-06-18
+- 状态：implementation-tracer-bullet
+- 最近更新：2026-06-19
+
+## 2026-06-19 执行进展
+
+- 已按 mock-first 方式启动首个 sidecar tracer-bullet：typed quota-threshold 规则从 fake quota window fact 生成 `quota-threshold` route guard block，并复用现有 `account-route-guard` policy 在 HardFilter stage deny 对应 auth candidate。
+- 本轮 mock upstream facts：`AccountQuotaRuntimeState` fresh token window，包含 `Remaining`、`Limit`、`ResetAt`、`AuthIDs`、`AccountKey`；typed `AccountQuotaThresholdRule` 指定 `windowKey=tokens_5h`、`metric=remaining-percent`、`threshold=20`。
+- 本轮 mock downstream / spy outputs：`QuotaThresholdRouteGuardBlocks` 输出 `source=quota-threshold` block，`ExpiresAt` 取 window resetAt，reason 包含 rule/window/actual/threshold trace；`accountRouteGuardPolicy` 对命中账号输出 `DenyIDs`。
+- 已验证：
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaThresholdGuard|TestAccountRouteGuardPolicyDeniesQuotaThresholdCandidate' -count=1`
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaGuard|TestAccountRouteGuard|TestRouteGuard|TestQuotaThreshold' -count=1`
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1`
+- 剩余边界：当前只是运行态转换函数和 route guard source 接入，尚未完成规则持久化、management API、Wails DTO、前端编辑器、calibration ledger 与 quota refresh recovery writer。
+- 追加实现 slice：`QuotaRuntimeStore.Upsert` 已读取 `channel-routing/config.json` 顶层 `quotaThresholdRules`，fresh quota runtime 更新时同步 `quota-threshold` source；fresh quota 恢复到阈值外时只清 `quota-threshold`，不清 `rate-limit` 等其他 source。
+- 追加验证：
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaRuntimeStore(UpsertFeedsQuotaThresholdGuardFromConfig|FreshRecoveryClearsOnlyQuotaThreshold)' -count=1`
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1`
+- 更新后的剩余边界：规则目前通过 `channel-routing/config.json` 顶层 typed rule 存在，但还没有 management API / Wails DTO / 前端编辑器；manual calibration ledger 尚未接入 effective usage。
+- 追加实现 slice：已引入内存 `AccountQuotaUsageCalibration` 与 `ApplyQuotaUsageCalibrations`，支持 `delta` 和 `set-effective`。校准不会覆盖 observed usage：`set-effective` 默认不能低于已观测用量；过期或 revoked 的 calibration 不参与计算。
+- `QuotaRuntimeStore.Upsert` 已可通过 `SetUsageCalibrations` 将 calibration 应用于 runtime window，返回的 `QuotaRuntimeState.Windows` 会展示 effective remaining / used，quota-threshold 使用 effective remaining 触发阻断。
+- 追加验证：
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaRuntimeStoreAppliesManualCalibrationBeforeQuotaThreshold|TestQuotaThresholdGuardUsesManualCalibration|TestQuotaUsageCalibration' -count=1`
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1`
+- 更新后的剩余边界：calibration 当前是内存注入能力，尚未有 management API、持久化 ledger、撤销接口和前端“修改当前用量”入口。
+- 追加实现 slice：已为 quota runtime 增加 calibration ledger management routes：
+  - `GET /v0/management/gettokens/quota-calibrations?account_key=<accountKey>`
+  - `POST /v0/management/gettokens/quota-calibrations`
+  - `POST /v0/management/gettokens/quota-calibrations/:id/revoke`
+- add/list/revoke 已能驱动 `QuotaRuntimeStore` 内存 ledger；revoke 后下一次 fresh `QuotaRuntimeStore.Upsert` 不再使用该 calibration，`quota-threshold` 会恢复。
+- 追加验证：
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaRuntimeCalibrationRoutesAddListAndRevoke' -count=1`
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1`
+- 更新后的剩余边界：calibration routes 目前仍是内存 ledger，尚未写入文件或 SQLite；Wails DTO、前端“修改当前用量”入口、审计列表体验仍未完成。
+- 追加实现 slice：已补齐 calibration routes 的 App 桥接链路：
+  - `internal/cliproxyapi` client 新增 `ListQuotaCalibrations` / `AddQuotaCalibration` / `RevokeQuotaCalibration`，用 mock sidecar request 验证 path、query、payload。
+  - `internal/wailsapp.App` 与 root `main.App` 新增同名方法和 DTO/mappers，Wails 绑定暴露 `QuotaUsageCalibration` / `QuotaUsageCalibrationInput`。
+  - 前端账号域新增 `useQuotaCalibrations` hook 与 `quotaCalibration` model，提供 list/add/revoke 的可调用入口；当前不混入完整 UI 编辑器。
+- 追加验证：
+  - `go test ./internal/cliproxyapi -run 'TestQuota(RuntimeClientStatus|UsageCalibrationClientEndpoints)' -count=1`
+  - `go test . -run 'TestMap(CodexQuotaResponsePreservesBilling|QuotaUsageCalibrationPreservesManualCalibrationFields)' -count=1`
+  - `node --test frontend/src/features/accounts/tests/quotaCalibrationBindings.test.mjs`
+  - `go test ./internal/cliproxyapi ./internal/wailsapp . -count=1`
+  - `npm --prefix frontend run typecheck`
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1`
+- 更新后的剩余边界：calibration 仍未持久化到文件 / SQLite；typed quota-threshold rule 仍缺正式 management CRUD 和前端规则编辑器；当前前端只提供校准调用入口，未提供可见编辑 UI。
+- 追加实现 slice：已补齐 typed `quota-threshold` rule 的管理链路：
+  - sidecar 新增 `GET/POST/PUT/DELETE /v0/management/gettokens/quota-threshold-rules`，持久化到现有 `channel-routing/config.json` 顶层 `quotaThresholdRules`，与 runtime 读取位置保持单一真相。
+  - `AccountQuotaThresholdRule` API 使用 snake_case JSON；读取旧 config 时兼容 `accountKey/windowKey/thresholdPercent` camelCase。
+  - 主仓补齐 client / internal Wails / root App / generated bindings / accounts hook，前端已有 `useQuotaThresholdRules` 和 `quotaThresholdRule` model 可调用 list/create/update/delete。
+- 追加验证：
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaThresholdRuleManagementRoutes|TestQuotaRuntimeStoreUpsertFeedsQuotaThresholdGuardFromConfig' -count=1`
+  - `go test ./internal/cliproxyapi -run 'TestQuota(RuntimeClientStatus|UsageCalibrationClientEndpoints|ThresholdRuleClientEndpoints)' -count=1`
+  - `go test . -run 'TestMap(CodexQuotaResponsePreservesBilling|QuotaUsageCalibrationPreservesManualCalibrationFields|QuotaThresholdRulePreservesRuleFields)' -count=1`
+  - `node --test frontend/src/features/accounts/tests/quotaCalibrationBindings.test.mjs`
+  - `npm --prefix frontend run typecheck`
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1`
+  - `go test ./internal/cliproxyapi ./internal/wailsapp . -count=1`
+- 更新后的剩余边界：规则和 calibration 均已有可调用 API 入口，但还没有可见 UI 编辑器；calibration 仍是内存 ledger，需补文件/SQLite 持久化；rule 变更后当前按“保存配置 + bump routing epoch + 下一次 quota runtime upsert 生效”，尚未做全量历史 quota 立即重算。
+- 追加实现 slice：已把 quota calibration 从内存 ledger 升级为 profile 文件持久化：
+  - ledger path：`<profile-dir>/quota-calibrations/config.json`，默认 profile 路径为 `~/.config/gettokens-data/quota-calibrations/config.json`。
+  - `InstallRoutingPoliciesWithConfigPath` 会配置默认 `QuotaRuntimeStore` 的 calibration ledger path。
+  - `AddUsageCalibration` / `RevokeUsageCalibration` 会写回文件；新 store 设置同一路径后可恢复 created / revoked entries。
+- 追加验证：
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaRuntimeCalibrationLedgerPersistsAcrossStores|TestQuotaRuntimeCalibrationRoutesAddListAndRevoke|TestQuotaRuntimeStoreAppliesManualCalibrationBeforeQuotaThreshold' -count=1`
+  - `cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1`
+- 更新后的剩余边界：规则 CRUD、calibration CRUD、calibration 持久化和前端可调用入口已具备；仍未做可见 UI 编辑器和 rule 变更后的历史 quota 立即重算。
+- 追加实现 slice：已补齐 rule / calibration 变更后的当前 runtime state 即时重算：
+  - QuotaRuntimeStore 增加 raw/effective state 分层，最后一次真实 quota 观测值保存在 raw state，manual calibration 只生成 effective state，避免撤销或重复刷新时把 calibration 叠加到已经校准过的值上。
+  - AddUsageCalibration / RevokeUsageCalibration 会基于 raw state 立即刷新当前 effective usage 与 route guard；无需等待下一次 quota pull。
+  - quota-threshold-rules create/update/delete 保存成功后会立即刷新已有 quota runtime 的 quota-threshold guard，create 可立即 block，delete 可立即恢复。
+  - sidecar 测试补充 TestMain 运行时 HOME 隔离，并让 route resilience action 测试隔离 channel-routing explicit path，避免 mock 服务级测试读写真实 ~/.config/gettokens-data 或被持久化 runtimeStates 污染。
+- 追加验证：
+  - cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaThresholdRuleManagementRoutesRefreshRuntimeGuard|TestQuotaRuntimeStoreRefreshesCurrentStateWhenCalibrationChanges' -count=1
+  - cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1
+- 更新后的剩余边界：核心 sidecar 规则执行、CRUD、calibration 持久化、App/前端调用入口和当前状态即时重算已具备；仍未做可见 UI 规则编辑器 / calibration 历史体验，也未把单账号规则升级为完整通用 DSL AST。
+- 追加实现 slice：已在账号详情 Quota 区接入可见编辑入口：
+  - QuotaThresholdRulePanel：可为当前账号选择 quota window，配置 remaining-percent <= N% 时停止路由；支持启用/停用和删除。
+  - QuotaCalibrationPanel：可添加 delta / set-effective 校准，并撤销活跃校准。
+  - 当前 UI 仍是 typed rule 编辑器，不暴露完整 DSL AST；这是为了先覆盖“指定某个 Token 窗口到某个百分比停止 + 手动校准”的主场景。
+- 追加验证：
+  - node --test frontend/src/features/accounts/tests/quotaCalibrationBindings.test.mjs
+  - npm --prefix frontend run typecheck
+- 更新后的剩余边界：核心链路和最小可见编辑入口已具备；仍需进一步打磨 calibration 历史/审计展示、rule 冲突提示和完整 DSL AST。
+- 追加实现 slice：已补齐 DSL AST / 表达式引擎与编辑体验增强：
+  - sidecar quota-threshold rule 新增 condition AST，支持 all / any / not 组合和 leaf comparison：window_key、metric、comparator、value。
+  - condition metric 支持 remaining-percent、used-percent、remaining、used；legacy windowKey/metric/thresholdPercent 仍兼容。
+  - block reason 现在包含 DSL trace，便于 audit。
+  - management API 对重复启用规则返回 409 conflicts payload；非法 AST 返回 400。
+  - 前端规则编辑器支持结构化阈值编辑 + 高级 DSL JSON，保留启用/停用/删除错误反馈。
+  - calibration panel 增加历史 / Audit 区域，展示 revoked / expired entries 及时间。
+- 追加验证：
+  - cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaThresholdGuardEvaluatesDSLConditionAST|TestQuotaThresholdRuleManagementRoutesRejectConflictingEnabledRules|TestQuotaThresholdRuleManagementRoutesRejectInvalidRules|TestQuotaThresholdRuleManagementRoutesRefreshRuntimeGuard' -count=1
+  - go test ./internal/cliproxyapi -run 'TestQuotaThresholdRuleClientEndpoints' -count=1
+  - go test . -run 'TestMapQuotaThresholdRulePreservesRuleFields' -count=1
+  - node --test frontend/src/features/accounts/tests/quotaCalibrationBindings.test.mjs
+  - npm --prefix frontend run typecheck
+  - cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1
+  - go test ./internal/cliproxyapi ./internal/wailsapp . -count=1
+- 更新后的剩余边界：本期要求的 DSL AST、表达式引擎、前端规则编辑、校准历史/audit、冲突/错误体验已完成首版；后续可继续做视觉 polish、更多 fact 类型和更强的 AST 表单化编辑。
+- 追加实现 slice：已完成 runtime/simulator shared evaluator gate。sidecar 新增 `SimulationFacts` / `SimulationResult` / `AccountDecisionTrace` / `ReasonTraceStep`，quota-threshold runtime guard 与 simulator 复用同一 evaluator；`POST /v0/management/route-guard/rules/simulate` 输出稳定 code + data trace。
+- 追加实现 slice：已完成 simulator visible loop。主仓新增 `SimulateRouteGuardRule` client / Wails / root App / bindings；前端 `QuotaThresholdRulePanel` 支持“模拟当前规则”和单条规则模拟，展示 block / diagnostic / allow、matched rule、恢复/过期时间、account decision、reason trace data 与 diagnostics。
+- 追加验证：
+  - cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -count=1
+  - go test ./internal/cliproxyapi ./internal/wailsapp . -count=1
+  - node --test frontend/src/features/accounts/tests/quotaCalibrationBindings.test.mjs
+  - npm --prefix frontend run typecheck
+- 更新后的剩余边界：当前可见模拟闭环仍只覆盖 quota-threshold；单日/多日/起止时间 window、更完整的 all/any/not 可视化 builder，以及更细的 stale/degraded quota fact 仍是后续增强。
+- 追加实现 slice：已补齐 multi-window budget facts contract。simulator facts 支持 `quotaWindows[]`，同一账号可同时携带 daily / multi-day / bounded window；规则仍通过 `window_key` 精确命中目标窗口，runtime guard 与 simulator 继续使用同一 evaluator。
+- 追加修复：condition-only AST 持久化规则不再因缺少 legacy `windowKey` 被 runtime loader 过滤。
+- 追加验证：
+  - cd docs-linhay/references/CLIProxyAPI && GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/gettokenshooks -run 'TestQuotaThresholdSimulatorSupportsMultipleBudgetWindows|TestLoadQuotaThresholdRulesKeepsConditionOnlyRuntimeRule|TestQuotaThresholdSimulatorMatchesRuntimeGuardForSameFacts' -count=1
+  - go test ./internal/cliproxyapi . -run 'TestRouteGuardSimulationClientPreservesTraceData|TestMapSimulateRouteGuardRuleRequestPreservesMultipleQuotaWindows|TestMapSimulationResultPreservesTraceData' -count=1
+  - node --test frontend/src/features/accounts/tests/quotaCalibrationBindings.test.mjs
+  - npm --prefix frontend run typecheck
+- 更新后的剩余边界：真实 usage aggregator 尚未生成这些窗口，前端也未提供多窗口创建/选择 UI；当前只锁定 facts contract、shared evaluator 与桥接透传。

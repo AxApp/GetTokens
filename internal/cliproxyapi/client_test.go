@@ -536,6 +536,240 @@ func TestQuotaRuntimeClientStatus(t *testing.T) {
 	}
 }
 
+func TestQuotaUsageCalibrationClientEndpoints(t *testing.T) {
+	var requests []string
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		requests = append(requests, method+" "+path)
+		switch {
+		case method == "GET" && path == "/v0/management/gettokens/quota-calibrations":
+			if got := query.Get("account_key"); got != "acct_calibration_001" {
+				t.Fatalf("account_key query = %q, want acct_calibration_001", got)
+			}
+			return []byte("{\"items\":[{\"id\":\"qcal_1\",\"account_key\":\"acct_calibration_001\",\"window_key\":\"five-hour\",\"metric\":\"tokens\",\"mode\":\"delta\",\"value\":1200,\"created_at\":\"2026-06-19T08:00:00Z\"}]}"), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/quota-calibrations":
+			if contentType != "application/json" {
+				t.Fatalf("content type = %q", contentType)
+			}
+			payload, err := io.ReadAll(body)
+			if err != nil {
+				t.Fatalf("read body: %v", err)
+			}
+			if !strings.Contains(string(payload), "\"account_key\":\"acct_calibration_001\"") || !strings.Contains(string(payload), "\"mode\":\"set-effective\"") {
+				t.Fatalf("payload = %s", payload)
+			}
+			return []byte("{\"id\":\"qcal_2\",\"account_key\":\"acct_calibration_001\",\"window_key\":\"five-hour\",\"metric\":\"tokens\",\"mode\":\"set-effective\",\"value\":9000,\"created_at\":\"2026-06-19T08:05:00Z\"}"), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/quota-calibrations/qcal_2/revoke":
+			return []byte("{\"id\":\"qcal_2\",\"account_key\":\"acct_calibration_001\",\"window_key\":\"five-hour\",\"metric\":\"tokens\",\"mode\":\"set-effective\",\"value\":9000,\"created_at\":\"2026-06-19T08:05:00Z\",\"revoked_at\":\"2026-06-19T08:06:00Z\"}"), 200, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		return nil, 404, nil
+	})
+
+	items, err := client.ListQuotaCalibrations(" acct_calibration_001 ")
+	if err != nil || len(items) != 1 || items[0].ID != "qcal_1" || items[0].Value != 1200 {
+		t.Fatalf("ListQuotaCalibrations = %#v, err = %v", items, err)
+	}
+
+	created, err := client.AddQuotaCalibration(QuotaUsageCalibration{
+		AccountKey: "acct_calibration_001",
+		WindowKey:  "five-hour",
+		Metric:     "tokens",
+		Mode:       "set-effective",
+		Value:      9000,
+	})
+	if err != nil || created == nil || created.ID != "qcal_2" || created.Mode != "set-effective" {
+		t.Fatalf("AddQuotaCalibration = %#v, err = %v", created, err)
+	}
+
+	revoked, err := client.RevokeQuotaCalibration(" qcal_2 ")
+	if err != nil || revoked == nil || revoked.RevokedAt == "" {
+		t.Fatalf("RevokeQuotaCalibration = %#v, err = %v", revoked, err)
+	}
+
+	if strings.Join(requests, "\n") != "GET /v0/management/gettokens/quota-calibrations\nPOST /v0/management/gettokens/quota-calibrations\nPOST /v0/management/gettokens/quota-calibrations/qcal_2/revoke" {
+		t.Fatalf("requests = %#v", requests)
+	}
+}
+
+func TestBudgetWindowDefinitionClientEndpoints(t *testing.T) {
+	var requests []string
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		requests = append(requests, method+" "+path)
+		switch {
+		case method == "GET" && path == "/v0/management/gettokens/budget-window-definitions":
+			return []byte(`{"items":[{"id":"tokens_daily","kind":"daily","metric":"tokens","limit":100,"timezone":"Asia/Shanghai","enabled":true}]}`), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/budget-window-definitions":
+			if contentType != "application/json" {
+				t.Fatalf("content type = %q", contentType)
+			}
+			payload, _ := io.ReadAll(body)
+			if !strings.Contains(string(payload), `"id":"tokens_daily"`) || !strings.Contains(string(payload), `"timezone":"Asia/Shanghai"`) {
+				t.Fatalf("create payload = %s", payload)
+			}
+			return []byte(`{"items":[{"id":"tokens_daily","kind":"daily","metric":"tokens","limit":100,"timezone":"Asia/Shanghai","enabled":true}]}`), 200, nil
+		case method == "PUT" && path == "/v0/management/gettokens/budget-window-definitions/tokens_daily":
+			return []byte(`{"items":[{"id":"tokens_daily","kind":"multi-day","semantics":"calendar","days":7,"metric":"tokens","limit":700,"timezone":"Asia/Shanghai","enabled":true}]}`), 200, nil
+		case method == "DELETE" && path == "/v0/management/gettokens/budget-window-definitions/tokens_daily":
+			return []byte(`{"items":[{"id":"tokens_daily","kind":"multi-day","semantics":"calendar","days":7,"metric":"tokens","limit":700,"timezone":"Asia/Shanghai","enabled":false}]}`), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/budget-window-definitions/preview":
+			payload, _ := io.ReadAll(body)
+			if !strings.Contains(string(payload), `"account_key":"acct_budget_001"`) || !strings.Contains(string(payload), `"definitions"`) {
+				t.Fatalf("preview payload = %s", payload)
+			}
+			return []byte(`{"items":[{"windowId":"tokens_daily","kind":"daily","metric":"tokens","startsAt":"2026-06-19T16:00:00Z","endsAt":"2026-06-20T16:00:00Z","observedUsed":80,"observedLimit":100,"observedRemaining":20,"rawUsed":70,"calibrationDelta":10,"status":"fresh","source":"usage-aggregator"}]}`), 200, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		return nil, 404, nil
+	})
+
+	items, err := client.ListBudgetWindowDefinitions()
+	if err != nil || len(items) != 1 || items[0].ID != "tokens_daily" {
+		t.Fatalf("ListBudgetWindowDefinitions = %#v, err = %v", items, err)
+	}
+	items, err = client.CreateBudgetWindowDefinition(BudgetWindowDefinition{ID: "tokens_daily", Kind: "daily", Metric: "tokens", Limit: 100, Timezone: "Asia/Shanghai", Enabled: true})
+	if err != nil || len(items) != 1 || !items[0].Enabled {
+		t.Fatalf("CreateBudgetWindowDefinition = %#v, err = %v", items, err)
+	}
+	items, err = client.UpdateBudgetWindowDefinition(" tokens_daily ", BudgetWindowDefinition{ID: "tokens_daily", Kind: "multi-day", Semantics: "calendar", Days: 7, Metric: "tokens", Limit: 700, Timezone: "Asia/Shanghai", Enabled: true})
+	if err != nil || len(items) != 1 || items[0].Days != 7 {
+		t.Fatalf("UpdateBudgetWindowDefinition = %#v, err = %v", items, err)
+	}
+	items, err = client.DeleteBudgetWindowDefinition(" tokens_daily ")
+	if err != nil || len(items) != 1 || items[0].Enabled {
+		t.Fatalf("DeleteBudgetWindowDefinition = %#v, err = %v", items, err)
+	}
+	facts, err := client.PreviewBudgetWindowFacts(BudgetWindowFactsPreviewRequest{
+		AccountKey: "acct_budget_001",
+		Definitions: []BudgetWindowDefinition{{
+			ID:       "tokens_daily",
+			Kind:     "daily",
+			Metric:   "tokens",
+			Limit:    100,
+			Timezone: "Asia/Shanghai",
+			Enabled:  true,
+		}},
+	})
+	if err != nil || len(facts) != 1 || facts[0].RawUsed != 70 || facts[0].CalibrationDelta != 10 {
+		t.Fatalf("PreviewBudgetWindowFacts = %#v, err = %v", facts, err)
+	}
+	if strings.Join(requests, "\n") != "GET /v0/management/gettokens/budget-window-definitions\nPOST /v0/management/gettokens/budget-window-definitions\nPUT /v0/management/gettokens/budget-window-definitions/tokens_daily\nDELETE /v0/management/gettokens/budget-window-definitions/tokens_daily\nPOST /v0/management/gettokens/budget-window-definitions/preview" {
+		t.Fatalf("requests = %#v", requests)
+	}
+}
+
+func TestQuotaThresholdRuleClientEndpoints(t *testing.T) {
+	var requests []string
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		requests = append(requests, method+" "+path)
+		switch {
+		case method == "GET" && path == "/v0/management/gettokens/quota-threshold-rules":
+			if got := query.Get("account_key"); got != "acct_quota_threshold_001" {
+				t.Fatalf("account_key query = %q, want acct_quota_threshold_001", got)
+			}
+			return []byte("{\"items\":[{\"id\":\"qtr_1\",\"account_key\":\"acct_quota_threshold_001\",\"window_key\":\"tokens_5h\",\"metric\":\"remaining-percent\",\"comparator\":\"<=\",\"threshold_percent\":20,\"condition\":{\"window_key\":\"tokens_5h\",\"metric\":\"remaining-percent\",\"value\":20},\"enabled\":true}]}"), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/quota-threshold-rules":
+			if contentType != "application/json" {
+				t.Fatalf("content type = %q", contentType)
+			}
+			payload, err := io.ReadAll(body)
+			if err != nil {
+				t.Fatalf("read body: %v", err)
+			}
+			if !strings.Contains(string(payload), "\"window_key\":\"tokens_5h\"") || !strings.Contains(string(payload), "\"threshold_percent\":20") || !strings.Contains(string(payload), "\"condition\"") {
+				t.Fatalf("payload = %s", payload)
+			}
+			return []byte("{\"items\":[{\"id\":\"qtr_1\",\"account_key\":\"acct_quota_threshold_001\",\"window_key\":\"tokens_5h\",\"metric\":\"remaining-percent\",\"comparator\":\"<=\",\"threshold_percent\":20,\"condition\":{\"window_key\":\"tokens_5h\",\"metric\":\"remaining-percent\",\"value\":20},\"enabled\":true}]}"), 200, nil
+		case method == "PUT" && path == "/v0/management/gettokens/quota-threshold-rules/qtr_1":
+			return []byte("{\"items\":[{\"id\":\"qtr_1\",\"account_key\":\"acct_quota_threshold_001\",\"window_key\":\"tokens_5h\",\"metric\":\"used-percent\",\"comparator\":\">=\",\"threshold_percent\":85,\"enabled\":true}]}"), 200, nil
+		case method == "DELETE" && path == "/v0/management/gettokens/quota-threshold-rules/qtr_1":
+			return []byte("{\"ok\":true}"), 200, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		return nil, 404, nil
+	})
+
+	listed, err := client.ListQuotaThresholdRules(" acct_quota_threshold_001 ")
+	if err != nil || len(listed) != 1 || listed[0].ID != "qtr_1" || listed[0].ThresholdPercent != 20 {
+		t.Fatalf("ListQuotaThresholdRules = %#v, err = %v", listed, err)
+	}
+	created, err := client.CreateQuotaThresholdRule(QuotaThresholdRule{
+		AccountKey:       "acct_quota_threshold_001",
+		WindowKey:        "tokens_5h",
+		Metric:           "remaining-percent",
+		ThresholdPercent: 20,
+		Condition:        map[string]any{"window_key": "tokens_5h", "metric": "remaining-percent", "value": float64(20)},
+		Enabled:          true,
+	})
+	if err != nil || len(created) != 1 || created[0].Comparator != "<=" || created[0].Condition["window_key"] != "tokens_5h" {
+		t.Fatalf("CreateQuotaThresholdRule = %#v, err = %v", created, err)
+	}
+	updated, err := client.UpdateQuotaThresholdRule(" qtr_1 ", QuotaThresholdRule{
+		AccountKey:       "acct_quota_threshold_001",
+		WindowKey:        "tokens_5h",
+		Metric:           "used-percent",
+		ThresholdPercent: 85,
+		Enabled:          true,
+	})
+	if err != nil || len(updated) != 1 || updated[0].Metric != "used-percent" || updated[0].Comparator != ">=" {
+		t.Fatalf("UpdateQuotaThresholdRule = %#v, err = %v", updated, err)
+	}
+	if err := client.DeleteQuotaThresholdRule(" qtr_1 "); err != nil {
+		t.Fatalf("DeleteQuotaThresholdRule: %v", err)
+	}
+	if strings.Join(requests, "\n") != "GET /v0/management/gettokens/quota-threshold-rules\nPOST /v0/management/gettokens/quota-threshold-rules\nPUT /v0/management/gettokens/quota-threshold-rules/qtr_1\nDELETE /v0/management/gettokens/quota-threshold-rules/qtr_1" {
+		t.Fatalf("requests = %#v", requests)
+	}
+}
+
+func TestRouteGuardSimulationClientPreservesTraceData(t *testing.T) {
+	ruleID := "rule_1"
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		if method != "POST" || path != "/v0/management/route-guard/rules/simulate" {
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		if contentType != "application/json" {
+			t.Fatalf("content type = %q", contentType)
+		}
+		payload, err := io.ReadAll(body)
+		if err != nil {
+			t.Fatalf("read body: %v", err)
+		}
+		text := string(payload)
+		for _, want := range []string{"\"ruleIds\":[\"rule_1\"]", "\"accountId\":\"acct_1\"", "\"quotaWindows\"", "\"windowId\":\"tokens_5h\"", "\"windowId\":\"tokens_1d\"", "\"calibrationLedger\""} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("payload = %s, want %s", text, want)
+			}
+		}
+		return []byte(`{"decision":"block","matchedRule":{"id":"rule_1","name":"Low quota block"},"accountTrace":{"accountId":"acct_1","source":"quota-threshold","reason":"remaining quota below threshold","reasonTrace":[{"code":"quota.remaining_percent.lt","message":"remaining percent below threshold","data":{"remainingPercent":0.08,"threshold":0.1,"window":"current"}}]},"recoveryAt":"2026-06-20T00:00:00Z","expiresAt":"2026-06-19T20:00:00Z"}`), 200, nil
+	})
+
+	result, err := client.SimulateRouteGuardRule(SimulateRouteGuardRuleRequest{
+		RuleID: &ruleID,
+		Facts: SimulationFacts{
+			AccountID:          "acct_1",
+			Now:                "2026-06-19T17:00:00Z",
+			QuotaWindow:        &QuotaWindowFact{WindowID: "tokens_5h", StartsAt: "2026-06-19T00:00:00Z", EndsAt: "2026-06-20T00:00:00Z", ObservedUsed: 92, ObservedLimit: 100, ObservedRemaining: 8, Status: "fresh"},
+			QuotaWindows:       []QuotaWindowFact{{WindowID: "tokens_1d", Kind: "daily", StartsAt: "2026-06-19T00:00:00Z", EndsAt: "2026-06-20T00:00:00Z", ObservedUsed: 91, ObservedLimit: 100, ObservedRemaining: 9, Status: "fresh"}},
+			CalibrationEntries: []CalibrationFact{{ID: "cal_1", WindowID: "tokens_5h", Metric: "tokens", Mode: "delta", Value: 10, ExpiresAt: "2026-06-20T00:00:00Z"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SimulateRouteGuardRule: %v", err)
+	}
+	if result.Decision != "block" || result.MatchedRule == nil || result.MatchedRule.ID != "rule_1" || result.RecoveryAt == nil || result.ExpiresAt == nil {
+		t.Fatalf("result = %#v, want block with matched rule and recovery/expiry", result)
+	}
+	if len(result.AccountTrace.ReasonTrace) != 1 || result.AccountTrace.ReasonTrace[0].Code != "quota.remaining_percent.lt" {
+		t.Fatalf("reason trace = %#v, want code preserved", result.AccountTrace.ReasonTrace)
+	}
+	if got := result.AccountTrace.ReasonTrace[0].Data["remainingPercent"]; got != float64(0.08) {
+		t.Fatalf("remainingPercent data = %#v, want 0.08", got)
+	}
+}
+
 func TestQuotaRuntimeClientDecodesQuotaFactAliasesWithoutLocalInference(t *testing.T) {
 	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		if method != "GET" || path != "/v0/management/gettokens/quota-status" {

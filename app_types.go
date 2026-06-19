@@ -75,6 +75,135 @@ type CodexQuotaResponse struct {
 	QuotaFact       *CodexQuotaFact         `json:"quotaFact,omitempty"`
 }
 
+type QuotaUsageCalibrationInput struct {
+	ID         string  `json:"id,omitempty"`
+	AccountKey string  `json:"accountKey"`
+	WindowKey  string  `json:"windowKey"`
+	Metric     string  `json:"metric"`
+	Mode       string  `json:"mode"`
+	Value      float64 `json:"value"`
+	ExpiresAt  string  `json:"expiresAt,omitempty"`
+}
+
+type QuotaUsageCalibration struct {
+	ID         string  `json:"id,omitempty"`
+	AccountKey string  `json:"accountKey"`
+	WindowKey  string  `json:"windowKey"`
+	Metric     string  `json:"metric"`
+	Mode       string  `json:"mode"`
+	Value      float64 `json:"value"`
+	CreatedAt  string  `json:"createdAt,omitempty"`
+	ExpiresAt  string  `json:"expiresAt,omitempty"`
+	RevokedAt  string  `json:"revokedAt,omitempty"`
+}
+
+type BudgetWindowDefinition struct {
+	ID        string  `json:"id,omitempty"`
+	Kind      string  `json:"kind"`
+	Semantics string  `json:"semantics,omitempty"`
+	Days      int     `json:"days,omitempty"`
+	Metric    string  `json:"metric"`
+	Limit     float64 `json:"limit"`
+	Timezone  string  `json:"timezone,omitempty"`
+	StartsAt  string  `json:"startsAt,omitempty"`
+	EndsAt    string  `json:"endsAt,omitempty"`
+	Enabled   bool    `json:"enabled"`
+}
+
+type BudgetWindowFactsPreviewRequest struct {
+	AccountKey   string                   `json:"accountKey"`
+	Now          string                   `json:"now,omitempty"`
+	Definitions  []BudgetWindowDefinition `json:"definitions,omitempty"`
+	Calibrations []QuotaUsageCalibration  `json:"calibrations,omitempty"`
+}
+
+type QuotaThresholdRule struct {
+	ID               string         `json:"id,omitempty"`
+	AccountKey       string         `json:"accountKey"`
+	WindowKey        string         `json:"windowKey"`
+	Metric           string         `json:"metric"`
+	Comparator       string         `json:"comparator,omitempty"`
+	ThresholdPercent float64        `json:"thresholdPercent"`
+	Condition        map[string]any `json:"condition,omitempty"`
+	Enabled          bool           `json:"enabled"`
+}
+
+type SimulateRouteGuardRuleRequest struct {
+	RuleID *string             `json:"ruleId,omitempty"`
+	Rule   *QuotaThresholdRule `json:"rule,omitempty"`
+	Facts  SimulationFacts     `json:"facts"`
+}
+
+type SimulationFacts struct {
+	AccountID          string            `json:"accountId"`
+	Now                string            `json:"now"`
+	QuotaWindow        *QuotaWindowFact  `json:"quotaWindow,omitempty"`
+	QuotaWindows       []QuotaWindowFact `json:"quotaWindows,omitempty"`
+	CalibrationEntries []CalibrationFact `json:"calibrationEntries,omitempty"`
+	Metadata           map[string]any    `json:"metadata,omitempty"`
+}
+
+type QuotaWindowFact struct {
+	WindowID                 string  `json:"windowId"`
+	Kind                     string  `json:"kind,omitempty"`
+	Metric                   string  `json:"metric,omitempty"`
+	Timezone                 string  `json:"timezone,omitempty"`
+	StartsAt                 string  `json:"startsAt,omitempty"`
+	EndsAt                   string  `json:"endsAt,omitempty"`
+	ObservedUsed             float64 `json:"observedUsed"`
+	ObservedLimit            float64 `json:"observedLimit"`
+	ObservedRemaining        float64 `json:"observedRemaining"`
+	ObservedUsedPercent      float64 `json:"observedUsedPercent,omitempty"`
+	ObservedRemainingPercent float64 `json:"observedRemainingPercent,omitempty"`
+	RawUsed                  float64 `json:"rawUsed,omitempty"`
+	CalibrationDelta         float64 `json:"calibrationDelta,omitempty"`
+	CalibratedUsed           float64 `json:"calibratedUsed,omitempty"`
+	GeneratedAt              string  `json:"generatedAt,omitempty"`
+	Source                   string  `json:"source,omitempty"`
+	RecoverySource           string  `json:"recoverySource,omitempty"`
+	Status                   string  `json:"status"`
+}
+
+type CalibrationFact struct {
+	ID        string  `json:"id,omitempty"`
+	AccountID string  `json:"accountId,omitempty"`
+	WindowID  string  `json:"windowId,omitempty"`
+	Metric    string  `json:"metric,omitempty"`
+	Mode      string  `json:"mode,omitempty"`
+	Value     float64 `json:"value,omitempty"`
+	CreatedAt string  `json:"createdAt,omitempty"`
+	ExpiresAt string  `json:"expiresAt,omitempty"`
+	RevokedAt string  `json:"revokedAt,omitempty"`
+}
+
+type SimulationResult struct {
+	Decision     string               `json:"decision"`
+	MatchedRule  *MatchedRuleSummary  `json:"matchedRule,omitempty"`
+	AccountTrace AccountDecisionTrace `json:"accountTrace"`
+	RecoveryAt   *string              `json:"recoveryAt,omitempty"`
+	ExpiresAt    *string              `json:"expiresAt,omitempty"`
+	Diagnostics  []ReasonTraceStep    `json:"diagnostics,omitempty"`
+}
+
+type MatchedRuleSummary struct {
+	ID     string `json:"id"`
+	Name   string `json:"name,omitempty"`
+	Source string `json:"source,omitempty"`
+}
+
+type AccountDecisionTrace struct {
+	AccountID   string            `json:"accountId"`
+	Source      string            `json:"source"`
+	Reason      string            `json:"reason"`
+	ReasonTrace []ReasonTraceStep `json:"reasonTrace"`
+}
+
+type ReasonTraceStep struct {
+	Code    string         `json:"code"`
+	Message string         `json:"message,omitempty"`
+	Data    map[string]any `json:"data,omitempty"`
+}
+
 type CodexQuotaBatchRefreshInput struct {
 	AccountKeys    []string `json:"accountKeys"`
 	IncludeBilling bool     `json:"includeBilling"`

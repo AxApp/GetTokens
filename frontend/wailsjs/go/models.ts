@@ -572,6 +572,58 @@ export namespace codexbinary {
 
 export namespace main {
 
+	export class ReasonTraceStep {
+	    code: string;
+	    message?: string;
+	    data?: Record<string, any>;
+
+	    static createFrom(source: any = {}) {
+	        return new ReasonTraceStep(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.code = source["code"];
+	        this.message = source["message"];
+	        this.data = source["data"];
+	    }
+	}
+	export class AccountDecisionTrace {
+	    accountId: string;
+	    source: string;
+	    reason: string;
+	    reasonTrace: ReasonTraceStep[];
+
+	    static createFrom(source: any = {}) {
+	        return new AccountDecisionTrace(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountId = source["accountId"];
+	        this.source = source["source"];
+	        this.reason = source["reason"];
+	        this.reasonTrace = this.convertValues(source["reasonTrace"], ReasonTraceStep);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class AccountMigrationKindSummary {
 	    kind: string;
 	    count: number;
@@ -1083,6 +1135,128 @@ export namespace main {
 		    }
 		    return a;
 		}
+	}
+	export class BudgetWindowDefinition {
+	    id?: string;
+	    kind: string;
+	    semantics?: string;
+	    days?: number;
+	    metric: string;
+	    limit: number;
+	    timezone?: string;
+	    startsAt?: string;
+	    endsAt?: string;
+	    enabled: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new BudgetWindowDefinition(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.kind = source["kind"];
+	        this.semantics = source["semantics"];
+	        this.days = source["days"];
+	        this.metric = source["metric"];
+	        this.limit = source["limit"];
+	        this.timezone = source["timezone"];
+	        this.startsAt = source["startsAt"];
+	        this.endsAt = source["endsAt"];
+	        this.enabled = source["enabled"];
+	    }
+	}
+	export class QuotaUsageCalibration {
+	    id?: string;
+	    accountKey: string;
+	    windowKey: string;
+	    metric: string;
+	    mode: string;
+	    value: number;
+	    createdAt?: string;
+	    expiresAt?: string;
+	    revokedAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new QuotaUsageCalibration(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.accountKey = source["accountKey"];
+	        this.windowKey = source["windowKey"];
+	        this.metric = source["metric"];
+	        this.mode = source["mode"];
+	        this.value = source["value"];
+	        this.createdAt = source["createdAt"];
+	        this.expiresAt = source["expiresAt"];
+	        this.revokedAt = source["revokedAt"];
+	    }
+	}
+	export class BudgetWindowFactsPreviewRequest {
+	    accountKey: string;
+	    now?: string;
+	    definitions?: BudgetWindowDefinition[];
+	    calibrations?: QuotaUsageCalibration[];
+
+	    static createFrom(source: any = {}) {
+	        return new BudgetWindowFactsPreviewRequest(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	        this.now = source["now"];
+	        this.definitions = this.convertValues(source["definitions"], BudgetWindowDefinition);
+	        this.calibrations = this.convertValues(source["calibrations"], QuotaUsageCalibration);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CalibrationFact {
+	    id?: string;
+	    accountId?: string;
+	    windowId?: string;
+	    metric?: string;
+	    mode?: string;
+	    value?: number;
+	    createdAt?: string;
+	    expiresAt?: string;
+	    revokedAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CalibrationFact(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.accountId = source["accountId"];
+	        this.windowId = source["windowId"];
+	        this.metric = source["metric"];
+	        this.mode = source["mode"];
+	        this.value = source["value"];
+	        this.createdAt = source["createdAt"];
+	        this.expiresAt = source["expiresAt"];
+	        this.revokedAt = source["revokedAt"];
+	    }
 	}
 	export class ChannelAccountGroup {
 	    id: string;
@@ -5134,6 +5308,22 @@ export namespace main {
 	        this.refreshIntervalMinutes = source["refreshIntervalMinutes"];
 	    }
 	}
+	export class MatchedRuleSummary {
+	    id: string;
+	    name?: string;
+	    source?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new MatchedRuleSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.source = source["source"];
+	    }
+	}
 	export class OAuthStartResult {
 	    url: string;
 	    state?: string;
@@ -5668,6 +5858,103 @@ export namespace main {
 	        this.channel = source["channel"];
 	    }
 	}
+	export class QuotaThresholdRule {
+	    id?: string;
+	    accountKey: string;
+	    windowKey: string;
+	    metric: string;
+	    comparator?: string;
+	    thresholdPercent: number;
+	    condition?: Record<string, any>;
+	    enabled: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new QuotaThresholdRule(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.accountKey = source["accountKey"];
+	        this.windowKey = source["windowKey"];
+	        this.metric = source["metric"];
+	        this.comparator = source["comparator"];
+	        this.thresholdPercent = source["thresholdPercent"];
+	        this.condition = source["condition"];
+	        this.enabled = source["enabled"];
+	    }
+	}
+
+	export class QuotaUsageCalibrationInput {
+	    id?: string;
+	    accountKey: string;
+	    windowKey: string;
+	    metric: string;
+	    mode: string;
+	    value: number;
+	    expiresAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new QuotaUsageCalibrationInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.accountKey = source["accountKey"];
+	        this.windowKey = source["windowKey"];
+	        this.metric = source["metric"];
+	        this.mode = source["mode"];
+	        this.value = source["value"];
+	        this.expiresAt = source["expiresAt"];
+	    }
+	}
+	export class QuotaWindowFact {
+	    windowId: string;
+	    kind?: string;
+	    metric?: string;
+	    timezone?: string;
+	    startsAt?: string;
+	    endsAt?: string;
+	    observedUsed: number;
+	    observedLimit: number;
+	    observedRemaining: number;
+	    observedUsedPercent?: number;
+	    observedRemainingPercent?: number;
+	    rawUsed?: number;
+	    calibrationDelta?: number;
+	    calibratedUsed?: number;
+	    generatedAt?: string;
+	    source?: string;
+	    recoverySource?: string;
+	    status: string;
+
+	    static createFrom(source: any = {}) {
+	        return new QuotaWindowFact(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.windowId = source["windowId"];
+	        this.kind = source["kind"];
+	        this.metric = source["metric"];
+	        this.timezone = source["timezone"];
+	        this.startsAt = source["startsAt"];
+	        this.endsAt = source["endsAt"];
+	        this.observedUsed = source["observedUsed"];
+	        this.observedLimit = source["observedLimit"];
+	        this.observedRemaining = source["observedRemaining"];
+	        this.observedUsedPercent = source["observedUsedPercent"];
+	        this.observedRemainingPercent = source["observedRemainingPercent"];
+	        this.rawUsed = source["rawUsed"];
+	        this.calibrationDelta = source["calibrationDelta"];
+	        this.calibratedUsed = source["calibratedUsed"];
+	        this.generatedAt = source["generatedAt"];
+	        this.source = source["source"];
+	        this.recoverySource = source["recoverySource"];
+	        this.status = source["status"];
+	    }
+	}
 	export class RateLimitEvent {
 	    id: string;
 	    accountKey: string;
@@ -5908,6 +6195,7 @@ export namespace main {
 	        this.supportedWindows = source["supportedWindows"];
 	    }
 	}
+
 	export class RelayLocalApplyInput {
 	    preserveUnspecifiedFields?: boolean;
 	    apiKey: string;
@@ -7266,6 +7554,121 @@ export namespace main {
 	        this.generatedAt = source["generatedAt"];
 	        this.items = this.convertValues(source["items"], SidecarUsageAttributionItem);
 	        this.unresolved = this.convertValues(source["unresolved"], SidecarUsageAttributionItem);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SimulationFacts {
+	    accountId: string;
+	    now: string;
+	    quotaWindow?: QuotaWindowFact;
+	    quotaWindows?: QuotaWindowFact[];
+	    calibrationEntries?: CalibrationFact[];
+	    metadata?: Record<string, any>;
+
+	    static createFrom(source: any = {}) {
+	        return new SimulationFacts(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountId = source["accountId"];
+	        this.now = source["now"];
+	        this.quotaWindow = this.convertValues(source["quotaWindow"], QuotaWindowFact);
+	        this.quotaWindows = this.convertValues(source["quotaWindows"], QuotaWindowFact);
+	        this.calibrationEntries = this.convertValues(source["calibrationEntries"], CalibrationFact);
+	        this.metadata = source["metadata"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SimulateRouteGuardRuleRequest {
+	    ruleId?: string;
+	    rule?: QuotaThresholdRule;
+	    facts: SimulationFacts;
+
+	    static createFrom(source: any = {}) {
+	        return new SimulateRouteGuardRuleRequest(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ruleId = source["ruleId"];
+	        this.rule = this.convertValues(source["rule"], QuotaThresholdRule);
+	        this.facts = this.convertValues(source["facts"], SimulationFacts);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+	export class SimulationResult {
+	    decision: string;
+	    matchedRule?: MatchedRuleSummary;
+	    accountTrace: AccountDecisionTrace;
+	    recoveryAt?: string;
+	    expiresAt?: string;
+	    diagnostics?: ReasonTraceStep[];
+
+	    static createFrom(source: any = {}) {
+	        return new SimulationResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.decision = source["decision"];
+	        this.matchedRule = this.convertValues(source["matchedRule"], MatchedRuleSummary);
+	        this.accountTrace = this.convertValues(source["accountTrace"], AccountDecisionTrace);
+	        this.recoveryAt = source["recoveryAt"];
+	        this.expiresAt = source["expiresAt"];
+	        this.diagnostics = this.convertValues(source["diagnostics"], ReasonTraceStep);
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

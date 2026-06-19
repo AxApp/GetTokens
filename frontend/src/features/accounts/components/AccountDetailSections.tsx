@@ -34,6 +34,8 @@ import type { CodexQuotaState, QuotaDisplay } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import type { VendorCredentialField } from '../model/vendorPresets';
 import { QuotaBars } from './CardSections';
+import { QuotaCalibrationPanel } from './QuotaCalibrationPanel';
+import { QuotaThresholdRulePanel } from './QuotaThresholdRulePanel';
 import {
   AccountDetailEvidenceGrid,
   AccountDetailEmptyState,
@@ -1462,6 +1464,13 @@ export function AccountQuotaSection({
                 : hasQuotaScript ? '暂无额度数据，可测试额度脚本确认接口返回' : '暂无额度脚本，添加后可测试并展示额度'}
             </AccountDetailEmptyState>
           )}
+
+          {!readOnlyScripts && visibleQuotaWindows.length > 0 ? (
+            <>
+              <QuotaThresholdRulePanel accountKey={account.id} windows={visibleQuotaWindows} />
+              <QuotaCalibrationPanel accountKey={account.id} windows={visibleQuotaWindows} />
+            </>
+          ) : null}
 
           {testStatus === 'success' && testResult ? (
             <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-success)]">

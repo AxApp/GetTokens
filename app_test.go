@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 	"github.com/linhay/gettokens/internal/gettokensextensions"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 	"github.com/wailsapp/wails/v2/pkg/menu"
@@ -751,6 +752,179 @@ func TestMapCodexQuotaResponsePreservesBilling(t *testing.T) {
 	}
 	if result.Windows[0].RemainingTokens == nil || *result.Windows[0].RemainingTokens != 875 {
 		t.Fatalf("mapCodexQuotaResponse remaining tokens = %#v, want 875", result.Windows[0].RemainingTokens)
+	}
+}
+
+func TestMapQuotaUsageCalibrationPreservesManualCalibrationFields(t *testing.T) {
+	mapped := mapQuotaUsageCalibration(&cliproxyapi.QuotaUsageCalibration{
+		ID:         "qcal_1",
+		AccountKey: "acct_calibration_001",
+		WindowKey:  "five-hour",
+		Metric:     "tokens",
+		Mode:       "delta",
+		Value:      1200,
+		CreatedAt:  "2026-06-19T08:00:00Z",
+		ExpiresAt:  "2026-06-19T13:00:00Z",
+		RevokedAt:  "2026-06-19T09:00:00Z",
+	})
+	if mapped == nil || mapped.ID != "qcal_1" || mapped.AccountKey != "acct_calibration_001" || mapped.WindowKey != "five-hour" {
+		t.Fatalf("mapped calibration = %#v", mapped)
+	}
+	if mapped.Mode != "delta" || mapped.Value != 1200 || mapped.CreatedAt == "" || mapped.ExpiresAt == "" || mapped.RevokedAt == "" {
+		t.Fatalf("mapped calibration fields = %#v", mapped)
+	}
+
+	input := mapQuotaUsageCalibrationInput(QuotaUsageCalibrationInput{
+		AccountKey: "acct_calibration_001",
+		WindowKey:  "weekly",
+		Metric:     "tokens",
+		Mode:       "set-effective",
+		Value:      9000,
+		ExpiresAt:  "2026-06-20T00:00:00Z",
+	})
+	if input.AccountKey != "acct_calibration_001" || input.WindowKey != "weekly" || input.Mode != "set-effective" || input.Value != 9000 || input.ExpiresAt == "" {
+		t.Fatalf("mapped calibration input = %#v", input)
+	}
+}
+
+func TestMapQuotaThresholdRulePreservesRuleFields(t *testing.T) {
+	mapped := mapQuotaThresholdRuleFromProxy(cliproxyapi.QuotaThresholdRule{
+		ID:               "qtr_1",
+		AccountKey:       "acct_quota_threshold_001",
+		WindowKey:        "tokens_5h",
+		Metric:           "remaining-percent",
+		Comparator:       "<=",
+		ThresholdPercent: 20,
+		Condition:        map[string]any{"window_key": "tokens_5h", "metric": "remaining-percent", "value": float64(20)},
+		Enabled:          true,
+	})
+	if mapped.ID != "qtr_1" || mapped.AccountKey != "acct_quota_threshold_001" || mapped.WindowKey != "tokens_5h" || mapped.ThresholdPercent != 20 || !mapped.Enabled || mapped.Condition["window_key"] != "tokens_5h" {
+		t.Fatalf("mapped rule = %#v", mapped)
+	}
+	input := mapQuotaThresholdRule(QuotaThresholdRule{
+		AccountKey:       "acct_quota_threshold_001",
+		WindowKey:        "tokens_5h",
+		Metric:           "used-percent",
+		Comparator:       ">=",
+		ThresholdPercent: 85,
+		Condition:        map[string]any{"window_key": "tokens_5h", "metric": "used-percent", "value": float64(85)},
+		Enabled:          true,
+	})
+	if input.AccountKey != "acct_quota_threshold_001" || input.Metric != "used-percent" || input.Comparator != ">=" || input.ThresholdPercent != 85 || input.Condition["metric"] != "used-percent" {
+		t.Fatalf("mapped input rule = %#v", input)
+	}
+}
+
+func TestMapBudgetWindowDefinitionsAndPreviewFacts(t *testing.T) {
+	definitions := mapBudgetWindowDefinitions([]cliproxyapi.BudgetWindowDefinition{{
+		ID:        "tokens_7d",
+		Kind:      "multi-day",
+		Semantics: "calendar",
+		Days:      7,
+		Metric:    "tokens",
+		Limit:     700,
+		Timezone:  "Asia/Shanghai",
+		Enabled:   true,
+	}})
+	if len(definitions) != 1 || definitions[0].ID != "tokens_7d" || definitions[0].Days != 7 || !definitions[0].Enabled {
+		t.Fatalf("definitions = %#v", definitions)
+	}
+	request := mapBudgetWindowFactsPreviewRequest(BudgetWindowFactsPreviewRequest{
+		AccountKey: "acct_budget_001",
+		Definitions: []BudgetWindowDefinition{{
+			ID:       "tokens_daily",
+			Kind:     "daily",
+			Metric:   "tokens",
+			Limit:    100,
+			Timezone: "Asia/Shanghai",
+			Enabled:  true,
+		}},
+		Calibrations: []QuotaUsageCalibration{{ID: "cal_1", AccountKey: "acct_budget_001", WindowKey: "tokens_daily", Metric: "tokens", Mode: "delta", Value: 10}},
+	})
+	if request.AccountKey != "acct_budget_001" || len(request.Definitions) != 1 || request.Definitions[0].Timezone != "Asia/Shanghai" || len(request.Calibrations) != 1 {
+		t.Fatalf("preview request = %#v", request)
+	}
+	facts := mapQuotaWindowFactsFromProxy([]cliproxyapi.QuotaWindowFact{{
+		WindowID:                 "tokens_daily",
+		Kind:                     "daily",
+		Metric:                   "tokens",
+		Timezone:                 "Asia/Shanghai",
+		ObservedUsed:             80,
+		ObservedLimit:            100,
+		ObservedRemaining:        20,
+		ObservedRemainingPercent: 20,
+		RawUsed:                  70,
+		CalibrationDelta:         10,
+		Source:                   "usage-aggregator",
+		Status:                   "fresh",
+	}})
+	if len(facts) != 1 || facts[0].RawUsed != 70 || facts[0].CalibrationDelta != 10 || facts[0].ObservedRemainingPercent != 20 || facts[0].Source != "usage-aggregator" {
+		t.Fatalf("facts = %#v", facts)
+	}
+}
+
+func TestMapSimulationResultPreservesTraceData(t *testing.T) {
+	recoveryAt := "2026-06-20T00:00:00Z"
+	expiresAt := "2026-06-19T20:00:00Z"
+	mapped := mapSimulationResult(&cliproxyapi.SimulationResult{
+		Decision:    "block",
+		MatchedRule: &cliproxyapi.MatchedRuleSummary{ID: "rule_1", Name: "Low quota block", Source: "quota-threshold"},
+		AccountTrace: cliproxyapi.AccountDecisionTrace{
+			AccountID: "acct_1",
+			Source:    "quota-threshold",
+			Reason:    "remaining quota below threshold",
+			ReasonTrace: []cliproxyapi.ReasonTraceStep{{
+				Code:    "quota.remaining_percent.lt",
+				Message: "remaining percent below threshold",
+				Data:    map[string]any{"remainingPercent": float64(0.08), "threshold": float64(0.1), "window": "current"},
+			}},
+		},
+		RecoveryAt:  &recoveryAt,
+		ExpiresAt:   &expiresAt,
+		Diagnostics: []cliproxyapi.ReasonTraceStep{{Code: "quota.window.missing", Data: map[string]any{"windowId": "tokens_5h"}}},
+	})
+	if mapped == nil || mapped.Decision != "block" || mapped.MatchedRule == nil || mapped.MatchedRule.ID != "rule_1" || mapped.RecoveryAt == nil || mapped.ExpiresAt == nil {
+		t.Fatalf("mapped result = %#v, want block result with matched rule and times", mapped)
+	}
+	if mapped.AccountTrace.Source != "quota-threshold" || mapped.AccountTrace.Reason == "" || len(mapped.AccountTrace.ReasonTrace) != 1 {
+		t.Fatalf("mapped account trace = %#v, want source/reason/trace", mapped.AccountTrace)
+	}
+	if got := mapped.AccountTrace.ReasonTrace[0].Data["remainingPercent"]; got != float64(0.08) {
+		t.Fatalf("trace data = %#v, want numeric data preserved", mapped.AccountTrace.ReasonTrace[0].Data)
+	}
+	if len(mapped.Diagnostics) != 1 || mapped.Diagnostics[0].Data["windowId"] != "tokens_5h" {
+		t.Fatalf("diagnostics = %#v, want preserved diagnostics", mapped.Diagnostics)
+	}
+}
+
+func TestMapSimulateRouteGuardRuleRequestPreservesMultipleQuotaWindows(t *testing.T) {
+	mapped := mapSimulateRouteGuardRuleRequest(SimulateRouteGuardRuleRequest{
+		Facts: SimulationFacts{
+			AccountID: "acct_1",
+			Now:       "2026-06-19T10:00:00Z",
+			QuotaWindow: &QuotaWindowFact{
+				WindowID:          "tokens_5h",
+				Kind:              "tokens",
+				ObservedUsed:      82,
+				ObservedLimit:     100,
+				ObservedRemaining: 18,
+				Status:            "fresh",
+			},
+			QuotaWindows: []QuotaWindowFact{{
+				WindowID:          "tokens_1d",
+				Kind:              "daily",
+				ObservedUsed:      91,
+				ObservedLimit:     100,
+				ObservedRemaining: 9,
+				Status:            "fresh",
+			}},
+		},
+	})
+	if mapped.Facts.QuotaWindow == nil || mapped.Facts.QuotaWindow.Kind != "tokens" {
+		t.Fatalf("quotaWindow = %#v, want kind preserved", mapped.Facts.QuotaWindow)
+	}
+	if len(mapped.Facts.QuotaWindows) != 1 || mapped.Facts.QuotaWindows[0].WindowID != "tokens_1d" || mapped.Facts.QuotaWindows[0].Kind != "daily" {
+		t.Fatalf("quotaWindows = %#v, want multiple windows preserved", mapped.Facts.QuotaWindows)
 	}
 }
 

@@ -74,5 +74,6 @@
 2. 再用 mock downstream / spy 验证输出行为：route decision sink、fake executor、fake runtime source store、calibration ledger、Wails/frontend fixture DTO。
 3. 第一批测试优先覆盖 daily / multi-day / bounded window、手动有效用量修改、quota threshold、stale/degraded 不强阻断、drain 不中断已有 stream、block 不调用 executor、calibration revoke、provider quota-empty 优先级。
 4. 真实 dev App、真实账号、真实 OpenAI quota、真实 Codex 请求只作为后置 smoke，不作为第一验证路径。
+5. sidecar 服务级测试必须隔离 HOME / profile / config path。优先使用 package-level TestMain、per-test 临时 profile config，或 helper 级 explicit path reset；测试不得读写真实 ~/.config/gettokens*，也不得让一个测试写入的 persisted runtime state 进入另一个测试的 mock evidence。
 
 这一条不是只服务 Account Budget Guard。后续所有涉及 sidecar 热路径、路由决策、quota / usage、live sessions、route guard 回写的流程，都应优先按此方式先构造可复现测试。

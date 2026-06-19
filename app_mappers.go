@@ -485,6 +485,304 @@ func mapQuotaRuntimeStates(items []cliproxyapi.QuotaRuntimeState) []CodexQuotaRe
 	return out
 }
 
+func mapQuotaUsageCalibrationInput(input QuotaUsageCalibrationInput) cliproxyapi.QuotaUsageCalibration {
+	return cliproxyapi.QuotaUsageCalibration{
+		ID:         input.ID,
+		AccountKey: input.AccountKey,
+		WindowKey:  input.WindowKey,
+		Metric:     input.Metric,
+		Mode:       input.Mode,
+		Value:      input.Value,
+		ExpiresAt:  input.ExpiresAt,
+	}
+}
+
+func mapQuotaUsageCalibrations(items []cliproxyapi.QuotaUsageCalibration) []QuotaUsageCalibration {
+	out := make([]QuotaUsageCalibration, 0, len(items))
+	for index := range items {
+		if mapped := mapQuotaUsageCalibration(&items[index]); mapped != nil {
+			out = append(out, *mapped)
+		}
+	}
+	return out
+}
+
+func mapQuotaUsageCalibration(item *cliproxyapi.QuotaUsageCalibration) *QuotaUsageCalibration {
+	if item == nil {
+		return nil
+	}
+	return &QuotaUsageCalibration{
+		ID:         item.ID,
+		AccountKey: item.AccountKey,
+		WindowKey:  item.WindowKey,
+		Metric:     item.Metric,
+		Mode:       item.Mode,
+		Value:      item.Value,
+		CreatedAt:  item.CreatedAt,
+		ExpiresAt:  item.ExpiresAt,
+		RevokedAt:  item.RevokedAt,
+	}
+}
+
+func mapBudgetWindowDefinition(input BudgetWindowDefinition) cliproxyapi.BudgetWindowDefinition {
+	return cliproxyapi.BudgetWindowDefinition{
+		ID:        input.ID,
+		Kind:      input.Kind,
+		Semantics: input.Semantics,
+		Days:      input.Days,
+		Metric:    input.Metric,
+		Limit:     input.Limit,
+		Timezone:  input.Timezone,
+		StartsAt:  input.StartsAt,
+		EndsAt:    input.EndsAt,
+		Enabled:   input.Enabled,
+	}
+}
+
+func mapBudgetWindowDefinitions(items []cliproxyapi.BudgetWindowDefinition) []BudgetWindowDefinition {
+	out := make([]BudgetWindowDefinition, 0, len(items))
+	for _, item := range items {
+		out = append(out, BudgetWindowDefinition{
+			ID:        item.ID,
+			Kind:      item.Kind,
+			Semantics: item.Semantics,
+			Days:      item.Days,
+			Metric:    item.Metric,
+			Limit:     item.Limit,
+			Timezone:  item.Timezone,
+			StartsAt:  item.StartsAt,
+			EndsAt:    item.EndsAt,
+			Enabled:   item.Enabled,
+		})
+	}
+	return out
+}
+
+func mapBudgetWindowFactsPreviewRequest(input BudgetWindowFactsPreviewRequest) cliproxyapi.BudgetWindowFactsPreviewRequest {
+	definitions := make([]cliproxyapi.BudgetWindowDefinition, 0, len(input.Definitions))
+	for _, definition := range input.Definitions {
+		definitions = append(definitions, mapBudgetWindowDefinition(definition))
+	}
+	calibrations := make([]cliproxyapi.QuotaUsageCalibration, 0, len(input.Calibrations))
+	for _, calibration := range input.Calibrations {
+		calibrations = append(calibrations, cliproxyapi.QuotaUsageCalibration{
+			ID:         calibration.ID,
+			AccountKey: calibration.AccountKey,
+			WindowKey:  calibration.WindowKey,
+			Metric:     calibration.Metric,
+			Mode:       calibration.Mode,
+			Value:      calibration.Value,
+			CreatedAt:  calibration.CreatedAt,
+			ExpiresAt:  calibration.ExpiresAt,
+			RevokedAt:  calibration.RevokedAt,
+		})
+	}
+	return cliproxyapi.BudgetWindowFactsPreviewRequest{
+		AccountKey:   input.AccountKey,
+		Now:          input.Now,
+		Definitions:  definitions,
+		Calibrations: calibrations,
+	}
+}
+
+func mapQuotaThresholdRule(input QuotaThresholdRule) cliproxyapi.QuotaThresholdRule {
+	return cliproxyapi.QuotaThresholdRule{
+		ID:               input.ID,
+		AccountKey:       input.AccountKey,
+		WindowKey:        input.WindowKey,
+		Metric:           input.Metric,
+		Comparator:       input.Comparator,
+		ThresholdPercent: input.ThresholdPercent,
+		Condition:        cloneStringAnyMap(input.Condition),
+		Enabled:          input.Enabled,
+	}
+}
+
+func mapQuotaThresholdRules(items []cliproxyapi.QuotaThresholdRule) []QuotaThresholdRule {
+	out := make([]QuotaThresholdRule, 0, len(items))
+	for index := range items {
+		out = append(out, mapQuotaThresholdRuleFromProxy(items[index]))
+	}
+	return out
+}
+
+func mapQuotaThresholdRuleFromProxy(item cliproxyapi.QuotaThresholdRule) QuotaThresholdRule {
+	return QuotaThresholdRule{
+		ID:               item.ID,
+		AccountKey:       item.AccountKey,
+		WindowKey:        item.WindowKey,
+		Metric:           item.Metric,
+		Comparator:       item.Comparator,
+		ThresholdPercent: item.ThresholdPercent,
+		Condition:        cloneStringAnyMap(item.Condition),
+		Enabled:          item.Enabled,
+	}
+}
+
+func mapSimulateRouteGuardRuleRequest(input SimulateRouteGuardRuleRequest) cliproxyapi.SimulateRouteGuardRuleRequest {
+	var rule *cliproxyapi.QuotaThresholdRule
+	if input.Rule != nil {
+		mapped := mapQuotaThresholdRule(*input.Rule)
+		rule = &mapped
+	}
+	return cliproxyapi.SimulateRouteGuardRuleRequest{
+		RuleID: cloneStringPointer(input.RuleID),
+		Rule:   rule,
+		Facts: cliproxyapi.SimulationFacts{
+			AccountID:          input.Facts.AccountID,
+			Now:                input.Facts.Now,
+			QuotaWindow:        mapQuotaWindowFactInput(input.Facts.QuotaWindow),
+			QuotaWindows:       mapQuotaWindowFactsInput(input.Facts.QuotaWindows),
+			CalibrationEntries: mapCalibrationFactsInput(input.Facts.CalibrationEntries),
+			Metadata:           cloneStringAnyMap(input.Facts.Metadata),
+		},
+	}
+}
+
+func mapQuotaWindowFactInput(input *QuotaWindowFact) *cliproxyapi.QuotaWindowFact {
+	if input == nil {
+		return nil
+	}
+	return &cliproxyapi.QuotaWindowFact{
+		WindowID:                 input.WindowID,
+		Kind:                     input.Kind,
+		Metric:                   input.Metric,
+		Timezone:                 input.Timezone,
+		StartsAt:                 input.StartsAt,
+		EndsAt:                   input.EndsAt,
+		ObservedUsed:             input.ObservedUsed,
+		ObservedLimit:            input.ObservedLimit,
+		ObservedRemaining:        input.ObservedRemaining,
+		ObservedUsedPercent:      input.ObservedUsedPercent,
+		ObservedRemainingPercent: input.ObservedRemainingPercent,
+		RawUsed:                  input.RawUsed,
+		CalibrationDelta:         input.CalibrationDelta,
+		CalibratedUsed:           input.CalibratedUsed,
+		GeneratedAt:              input.GeneratedAt,
+		Source:                   input.Source,
+		RecoverySource:           input.RecoverySource,
+		Status:                   input.Status,
+	}
+}
+
+func mapQuotaWindowFactFromProxy(input cliproxyapi.QuotaWindowFact) QuotaWindowFact {
+	return QuotaWindowFact{
+		WindowID:                 input.WindowID,
+		Kind:                     input.Kind,
+		Metric:                   input.Metric,
+		Timezone:                 input.Timezone,
+		StartsAt:                 input.StartsAt,
+		EndsAt:                   input.EndsAt,
+		ObservedUsed:             input.ObservedUsed,
+		ObservedLimit:            input.ObservedLimit,
+		ObservedRemaining:        input.ObservedRemaining,
+		ObservedUsedPercent:      input.ObservedUsedPercent,
+		ObservedRemainingPercent: input.ObservedRemainingPercent,
+		RawUsed:                  input.RawUsed,
+		CalibrationDelta:         input.CalibrationDelta,
+		CalibratedUsed:           input.CalibratedUsed,
+		GeneratedAt:              input.GeneratedAt,
+		Source:                   input.Source,
+		RecoverySource:           input.RecoverySource,
+		Status:                   input.Status,
+	}
+}
+
+func mapQuotaWindowFactsFromProxy(items []cliproxyapi.QuotaWindowFact) []QuotaWindowFact {
+	out := make([]QuotaWindowFact, 0, len(items))
+	for _, item := range items {
+		out = append(out, mapQuotaWindowFactFromProxy(item))
+	}
+	return out
+}
+
+func mapQuotaWindowFactsInput(items []QuotaWindowFact) []cliproxyapi.QuotaWindowFact {
+	out := make([]cliproxyapi.QuotaWindowFact, 0, len(items))
+	for _, item := range items {
+		mapped := mapQuotaWindowFactInput(&item)
+		if mapped == nil {
+			continue
+		}
+		out = append(out, *mapped)
+	}
+	return out
+}
+
+func mapCalibrationFactsInput(items []CalibrationFact) []cliproxyapi.CalibrationFact {
+	out := make([]cliproxyapi.CalibrationFact, 0, len(items))
+	for _, item := range items {
+		out = append(out, cliproxyapi.CalibrationFact{
+			ID:        item.ID,
+			AccountID: item.AccountID,
+			WindowID:  item.WindowID,
+			Metric:    item.Metric,
+			Mode:      item.Mode,
+			Value:     item.Value,
+			CreatedAt: item.CreatedAt,
+			ExpiresAt: item.ExpiresAt,
+			RevokedAt: item.RevokedAt,
+		})
+	}
+	return out
+}
+
+func mapSimulationResult(result *cliproxyapi.SimulationResult) *SimulationResult {
+	if result == nil {
+		return nil
+	}
+	return &SimulationResult{
+		Decision:     result.Decision,
+		MatchedRule:  mapMatchedRuleSummary(result.MatchedRule),
+		AccountTrace: mapAccountDecisionTrace(result.AccountTrace),
+		RecoveryAt:   cloneStringPointer(result.RecoveryAt),
+		ExpiresAt:    cloneStringPointer(result.ExpiresAt),
+		Diagnostics:  mapReasonTraceSteps(result.Diagnostics),
+	}
+}
+
+func mapMatchedRuleSummary(input *cliproxyapi.MatchedRuleSummary) *MatchedRuleSummary {
+	if input == nil {
+		return nil
+	}
+	return &MatchedRuleSummary{ID: input.ID, Name: input.Name, Source: input.Source}
+}
+
+func mapAccountDecisionTrace(input cliproxyapi.AccountDecisionTrace) AccountDecisionTrace {
+	return AccountDecisionTrace{
+		AccountID:   input.AccountID,
+		Source:      input.Source,
+		Reason:      input.Reason,
+		ReasonTrace: mapReasonTraceSteps(input.ReasonTrace),
+	}
+}
+
+func mapReasonTraceSteps(items []cliproxyapi.ReasonTraceStep) []ReasonTraceStep {
+	out := make([]ReasonTraceStep, 0, len(items))
+	for _, item := range items {
+		out = append(out, ReasonTraceStep{Code: item.Code, Message: item.Message, Data: cloneStringAnyMap(item.Data)})
+	}
+	return out
+}
+
+func cloneStringPointer(input *string) *string {
+	if input == nil {
+		return nil
+	}
+	value := *input
+	return &value
+}
+
+func cloneStringAnyMap(input map[string]any) map[string]any {
+	if len(input) == 0 {
+		return nil
+	}
+	out := make(map[string]any, len(input))
+	for key, value := range input {
+		out[key] = value
+	}
+	return out
+}
+
 func mapQuotaRuntimeState(result *cliproxyapi.QuotaRuntimeState) *CodexQuotaResponse {
 	if result == nil {
 		return &CodexQuotaResponse{Windows: []CodexQuotaWindow{}}

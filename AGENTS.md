@@ -102,7 +102,9 @@
 1. 任何功能改动都要有对应测试（新增或更新）。
 2. 未运行测试时必须明确说明原因与风险。
 3. 禁止“只改代码不验证”。
-4. 纯文档或治理规则调整若无可执行测试，至少要完成结构自检、路径校对与引用校对，并在交付说明中明确写明“未运行自动化测试”的原因。
+4. 涉及 sidecar 热路径、路由决策、账号选择、route guard、quota / usage、live sessions、Codex WebSocket 或 management API 状态回写的功能，默认先用 mock upstream + mock downstream / spy 构造服务级测试：先固定上游事实输入，再断言下游行为、状态写入或决策 trace；真实账号、真实外部服务、真实 dev App 只作为后置 smoke。
+5. 每个上述实现 slice 开工前必须点名本轮 mock upstream facts 与 mock downstream / spy outputs；如果上下游 pair 说不清，说明 seam 未打开，只能停在调研、space 或技术方案，不得直接接真实服务推进实现。
+6. 纯文档或治理规则调整若无可执行测试，至少要完成结构自检、路径校对与引用校对，并在交付说明中明确写明“未运行自动化测试”的原因。
 
 ## 4. 文档系统规则（docs-linhay）
 `docs-linhay/` 是项目文档系统目录，按类型分文件夹：

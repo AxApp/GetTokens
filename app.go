@@ -1301,6 +1301,106 @@ func (a *App) GetQuotaStatus(accountKey string) (*CodexQuotaResponse, error) {
 	return mapQuotaRuntimeState(result), nil
 }
 
+func (a *App) ListQuotaCalibrations(accountKey string) ([]QuotaUsageCalibration, error) {
+	result, err := a.core.ListQuotaCalibrations(accountKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaUsageCalibrations(result), nil
+}
+
+func (a *App) AddQuotaCalibration(input QuotaUsageCalibrationInput) (*QuotaUsageCalibration, error) {
+	result, err := a.core.AddQuotaCalibration(mapQuotaUsageCalibrationInput(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaUsageCalibration(result), nil
+}
+
+func (a *App) RevokeQuotaCalibration(id string) (*QuotaUsageCalibration, error) {
+	result, err := a.core.RevokeQuotaCalibration(id)
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaUsageCalibration(result), nil
+}
+
+func (a *App) ListBudgetWindowDefinitions() ([]BudgetWindowDefinition, error) {
+	result, err := a.core.ListBudgetWindowDefinitions()
+	if err != nil {
+		return nil, err
+	}
+	return mapBudgetWindowDefinitions(result), nil
+}
+
+func (a *App) CreateBudgetWindowDefinition(input BudgetWindowDefinition) ([]BudgetWindowDefinition, error) {
+	result, err := a.core.CreateBudgetWindowDefinition(mapBudgetWindowDefinition(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapBudgetWindowDefinitions(result), nil
+}
+
+func (a *App) UpdateBudgetWindowDefinition(id string, input BudgetWindowDefinition) ([]BudgetWindowDefinition, error) {
+	result, err := a.core.UpdateBudgetWindowDefinition(id, mapBudgetWindowDefinition(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapBudgetWindowDefinitions(result), nil
+}
+
+func (a *App) DeleteBudgetWindowDefinition(id string) ([]BudgetWindowDefinition, error) {
+	result, err := a.core.DeleteBudgetWindowDefinition(id)
+	if err != nil {
+		return nil, err
+	}
+	return mapBudgetWindowDefinitions(result), nil
+}
+
+func (a *App) PreviewBudgetWindowFacts(input BudgetWindowFactsPreviewRequest) ([]QuotaWindowFact, error) {
+	result, err := a.core.PreviewBudgetWindowFacts(mapBudgetWindowFactsPreviewRequest(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaWindowFactsFromProxy(result), nil
+}
+
+func (a *App) ListQuotaThresholdRules(accountKey string) ([]QuotaThresholdRule, error) {
+	result, err := a.core.ListQuotaThresholdRules(accountKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaThresholdRules(result), nil
+}
+
+func (a *App) CreateQuotaThresholdRule(input QuotaThresholdRule) ([]QuotaThresholdRule, error) {
+	result, err := a.core.CreateQuotaThresholdRule(mapQuotaThresholdRule(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaThresholdRules(result), nil
+}
+
+func (a *App) UpdateQuotaThresholdRule(id string, input QuotaThresholdRule) ([]QuotaThresholdRule, error) {
+	result, err := a.core.UpdateQuotaThresholdRule(id, mapQuotaThresholdRule(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaThresholdRules(result), nil
+}
+
+func (a *App) DeleteQuotaThresholdRule(id string) error {
+	return a.core.DeleteQuotaThresholdRule(id)
+}
+
+func (a *App) SimulateRouteGuardRule(input SimulateRouteGuardRuleRequest) (*SimulationResult, error) {
+	result, err := a.core.SimulateRouteGuardRule(mapSimulateRouteGuardRuleRequest(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapSimulationResult(result), nil
+}
+
 func (a *App) GetOpenAIQuotaResetCredit(accountKey string) (*OpenAIQuotaResetCreditInfo, error) {
 	result, err := a.core.GetOpenAIQuotaResetCredit(accountKey)
 	if err != nil {

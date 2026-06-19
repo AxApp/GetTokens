@@ -53,6 +53,15 @@ export type AuthFile = main.AuthFileItem & {
   planType?: string;
 };
 export type CodexQuota = main.CodexQuotaResponse;
+export type QuotaThresholdRule = main.QuotaThresholdRule;
+export type QuotaUsageCalibration = main.QuotaUsageCalibration;
+export type QuotaUsageCalibrationInput = main.QuotaUsageCalibrationInput;
+export type BudgetWindowDefinition = main.BudgetWindowDefinition;
+export type BudgetWindowFactsPreviewRequest = main.BudgetWindowFactsPreviewRequest;
+export type QuotaWindowFact = main.QuotaWindowFact;
+export type RouteGuardSimulationRequest = main.SimulateRouteGuardRuleRequest;
+export type RouteGuardSimulationResult = main.SimulationResult;
+export type RouteGuardReasonTraceStep = main.ReasonTraceStep;
 
 export interface BillingDisplay {
   isAvailable: boolean;

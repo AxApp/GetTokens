@@ -3,6 +3,7 @@ package cliproxyapi
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/url"
 	"strconv"
@@ -902,6 +903,374 @@ func (c *Client) GetQuotaStatus(accountKey string) (*QuotaRuntimeState, error) {
 	}
 	normalizeQuotaRuntimeStateSlices(&response)
 	return &response, nil
+}
+
+func (c *Client) ListQuotaCalibrations(accountKey string) ([]QuotaUsageCalibration, error) {
+	query := url.Values{}
+	if trimmed := strings.TrimSpace(accountKey); trimmed != "" {
+		query.Set("account_key", trimmed)
+	}
+	body, _, err := c.request("GET", "/v0/management/gettokens/quota-calibrations", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []QuotaUsageCalibration `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []QuotaUsageCalibration{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) AddQuotaCalibration(input QuotaUsageCalibration) (*QuotaUsageCalibration, error) {
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/gettokens/quota-calibrations", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response QuotaUsageCalibration
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
+
+func (c *Client) RevokeQuotaCalibration(id string) (*QuotaUsageCalibration, error) {
+	body, _, err := c.request("POST", "/v0/management/gettokens/quota-calibrations/"+url.PathEscape(strings.TrimSpace(id))+"/revoke", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response QuotaUsageCalibration
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
+
+func (c *Client) ListBudgetWindowDefinitions() ([]BudgetWindowDefinition, error) {
+	body, _, err := c.request("GET", "/v0/management/gettokens/budget-window-definitions", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []BudgetWindowDefinition `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []BudgetWindowDefinition{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) CreateBudgetWindowDefinition(input BudgetWindowDefinition) ([]BudgetWindowDefinition, error) {
+	return c.writeBudgetWindowDefinition("POST", "/v0/management/gettokens/budget-window-definitions", input)
+}
+
+func (c *Client) UpdateBudgetWindowDefinition(id string, input BudgetWindowDefinition) ([]BudgetWindowDefinition, error) {
+	return c.writeBudgetWindowDefinition("PUT", "/v0/management/gettokens/budget-window-definitions/"+url.PathEscape(strings.TrimSpace(id)), input)
+}
+
+func (c *Client) DeleteBudgetWindowDefinition(id string) ([]BudgetWindowDefinition, error) {
+	body, _, err := c.request("DELETE", "/v0/management/gettokens/budget-window-definitions/"+url.PathEscape(strings.TrimSpace(id)), nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []BudgetWindowDefinition `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []BudgetWindowDefinition{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) PreviewBudgetWindowFacts(input BudgetWindowFactsPreviewRequest) ([]QuotaWindowFact, error) {
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/gettokens/budget-window-definitions/preview", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []QuotaWindowFact `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []QuotaWindowFact{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) ListQuotaThresholdRules(accountKey string) ([]QuotaThresholdRule, error) {
+	query := url.Values{}
+	if trimmed := strings.TrimSpace(accountKey); trimmed != "" {
+		query.Set("account_key", trimmed)
+	}
+	body, _, err := c.request("GET", "/v0/management/gettokens/quota-threshold-rules", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []QuotaThresholdRule
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []QuotaThresholdRule{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) CreateQuotaThresholdRule(input QuotaThresholdRule) ([]QuotaThresholdRule, error) {
+	return c.writeQuotaThresholdRule("POST", "/v0/management/gettokens/quota-threshold-rules", input)
+}
+
+func (c *Client) UpdateQuotaThresholdRule(id string, input QuotaThresholdRule) ([]QuotaThresholdRule, error) {
+	return c.writeQuotaThresholdRule("PUT", "/v0/management/gettokens/quota-threshold-rules/"+url.PathEscape(strings.TrimSpace(id)), input)
+}
+
+func (c *Client) DeleteQuotaThresholdRule(id string) error {
+	_, _, err := c.request("DELETE", "/v0/management/gettokens/quota-threshold-rules/"+url.PathEscape(strings.TrimSpace(id)), nil, nil, "")
+	return err
+}
+
+func (c *Client) SimulateRouteGuardRule(input SimulateRouteGuardRuleRequest) (*SimulationResult, error) {
+	payload, err := json.Marshal(routeGuardSimulationSidecarRequest(input))
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/route-guard/rules/simulate", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	return decodeRouteGuardSimulationResult(body)
+}
+
+func (c *Client) writeQuotaThresholdRule(method string, path string, input QuotaThresholdRule) ([]QuotaThresholdRule, error) {
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request(method, path, nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []QuotaThresholdRule
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []QuotaThresholdRule{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) writeBudgetWindowDefinition(method string, path string, input BudgetWindowDefinition) ([]BudgetWindowDefinition, error) {
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request(method, path, nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []BudgetWindowDefinition `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []BudgetWindowDefinition{}, nil
+	}
+	return response.Items, nil
+}
+
+func routeGuardSimulationSidecarRequest(input SimulateRouteGuardRuleRequest) map[string]any {
+	ruleIDs := []string{}
+	if input.RuleID != nil {
+		if ruleID := strings.TrimSpace(*input.RuleID); ruleID != "" {
+			ruleIDs = append(ruleIDs, ruleID)
+		}
+	}
+	request := map[string]any{}
+	for _, key := range []string{"channel", "model", "project"} {
+		if value, ok := input.Facts.Metadata[key]; ok {
+			if text := strings.TrimSpace(toStringValue(value)); text != "" {
+				request[key] = text
+			}
+		}
+	}
+	account := map[string]any{"accountId": strings.TrimSpace(input.Facts.AccountID)}
+	if input.Facts.QuotaWindow != nil {
+		account["quotaWindow"] = input.Facts.QuotaWindow
+	}
+	if len(input.Facts.QuotaWindows) > 0 {
+		account["quotaWindows"] = input.Facts.QuotaWindows
+	}
+	if len(input.Facts.CalibrationEntries) > 0 {
+		entries := make([]map[string]any, 0, len(input.Facts.CalibrationEntries))
+		for _, entry := range input.Facts.CalibrationEntries {
+			entries = append(entries, routeGuardSimulationCalibrationEntry(entry, input.Facts.AccountID))
+		}
+		account["calibrationLedger"] = entries
+	}
+	return map[string]any{
+		"ruleIds": ruleIDs,
+		"rule":    input.Rule,
+		"facts": map[string]any{
+			"now":      strings.TrimSpace(input.Facts.Now),
+			"request":  request,
+			"accounts": []map[string]any{account},
+		},
+	}
+}
+
+func routeGuardSimulationCalibrationEntry(input CalibrationFact, defaultAccountID string) map[string]any {
+	entry := map[string]any{
+		"id":        strings.TrimSpace(input.ID),
+		"accountId": strings.TrimSpace(input.AccountID),
+		"windowId":  strings.TrimSpace(input.WindowID),
+		"metric":    strings.TrimSpace(input.Metric),
+		"mode":      strings.TrimSpace(input.Mode),
+		"value":     input.Value,
+	}
+	if entry["accountId"] == "" {
+		entry["accountId"] = strings.TrimSpace(defaultAccountID)
+	}
+	if createdAt := strings.TrimSpace(input.CreatedAt); createdAt != "" {
+		entry["createdAt"] = createdAt
+	}
+	if expiresAt := strings.TrimSpace(input.ExpiresAt); expiresAt != "" {
+		entry["expiresAt"] = expiresAt
+	}
+	if revokedAt := strings.TrimSpace(input.RevokedAt); revokedAt != "" {
+		entry["revokedAt"] = revokedAt
+	}
+	return entry
+}
+
+func decodeRouteGuardSimulationResult(body []byte) (*SimulationResult, error) {
+	var direct SimulationResult
+	if err := json.Unmarshal(body, &direct); err == nil {
+		if strings.TrimSpace(direct.Decision) != "" || strings.TrimSpace(direct.AccountTrace.AccountID) != "" {
+			return &direct, nil
+		}
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return nil, err
+	}
+	accounts := anySlice(raw["accounts"])
+	if len(accounts) == 0 {
+		return &SimulationResult{Decision: "allow", AccountTrace: AccountDecisionTrace{Reason: "no account simulation result"}}, nil
+	}
+	account := anyMap(accounts[0])
+	decision := anyMap(account["decision"])
+	matched := anyMap(account["matchedRule"])
+	reasonTrace := reasonTraceStepsFromAny(account["reasonTrace"])
+	source := strings.TrimSpace(stringFromMap(decision, "denySource"))
+	if source == "" {
+		source = strings.TrimSpace(stringFromMap(matched, "kind"))
+	}
+	result := &SimulationResult{
+		Decision: strings.TrimSpace(stringFromMap(decision, "action")),
+		AccountTrace: AccountDecisionTrace{
+			AccountID:   stringFromMap(account, "accountId"),
+			Source:      source,
+			Reason:      stringFromMap(decision, "reason"),
+			ReasonTrace: reasonTrace,
+		},
+		RecoveryAt: optionalStringFromMap(account, "recoveryAt"),
+		ExpiresAt:  optionalStringFromMap(account, "expiresAt"),
+	}
+	if result.Decision == "" {
+		result.Decision = "allow"
+	}
+	if len(matched) > 0 {
+		result.MatchedRule = &MatchedRuleSummary{ID: stringFromMap(matched, "ruleId"), Name: stringFromMap(matched, "ruleName"), Source: stringFromMap(matched, "kind")}
+	}
+	for _, step := range reasonTrace {
+		if strings.Contains(step.Code, "diagnostic") || strings.Contains(step.Code, "missing") || strings.Contains(step.Code, "ignored") {
+			result.Diagnostics = append(result.Diagnostics, step)
+		}
+	}
+	return result, nil
+}
+
+func reasonTraceStepsFromAny(value any) []ReasonTraceStep {
+	items := anySlice(value)
+	out := make([]ReasonTraceStep, 0, len(items))
+	for _, item := range items {
+		entry := anyMap(item)
+		step := ReasonTraceStep{Code: stringFromMap(entry, "code"), Message: stringFromMap(entry, "message")}
+		if data := anyMap(entry["data"]); len(data) > 0 {
+			step.Data = data
+		}
+		if step.Code != "" {
+			out = append(out, step)
+		}
+	}
+	return out
+}
+
+func anySlice(value any) []any {
+	if typed, ok := value.([]any); ok {
+		return typed
+	}
+	return nil
+}
+
+func anyMap(value any) map[string]any {
+	if typed, ok := value.(map[string]any); ok {
+		return typed
+	}
+	return nil
+}
+
+func stringFromMap(input map[string]any, key string) string {
+	if len(input) == 0 {
+		return ""
+	}
+	return strings.TrimSpace(toStringValue(input[key]))
+}
+
+func optionalStringFromMap(input map[string]any, key string) *string {
+	value := stringFromMap(input, key)
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func toStringValue(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	case fmt.Stringer:
+		return typed.String()
+	default:
+		return ""
+	}
 }
 
 func (c *Client) UpsertQuotaStatus(accountKey string, state QuotaRuntimeState) (*QuotaRuntimeState, error) {

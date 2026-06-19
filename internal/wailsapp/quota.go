@@ -61,6 +61,58 @@ func (a *App) GetQuotaStatus(accountKey string) (*cliproxyapi.QuotaRuntimeState,
 	return a.managementClient().GetQuotaStatus(accountKey)
 }
 
+func (a *App) ListQuotaCalibrations(accountKey string) ([]cliproxyapi.QuotaUsageCalibration, error) {
+	return a.managementClient().ListQuotaCalibrations(accountKey)
+}
+
+func (a *App) AddQuotaCalibration(input cliproxyapi.QuotaUsageCalibration) (*cliproxyapi.QuotaUsageCalibration, error) {
+	return a.managementClient().AddQuotaCalibration(input)
+}
+
+func (a *App) RevokeQuotaCalibration(id string) (*cliproxyapi.QuotaUsageCalibration, error) {
+	return a.managementClient().RevokeQuotaCalibration(id)
+}
+
+func (a *App) ListBudgetWindowDefinitions() ([]cliproxyapi.BudgetWindowDefinition, error) {
+	return a.managementClient().ListBudgetWindowDefinitions()
+}
+
+func (a *App) CreateBudgetWindowDefinition(input cliproxyapi.BudgetWindowDefinition) ([]cliproxyapi.BudgetWindowDefinition, error) {
+	return a.managementClient().CreateBudgetWindowDefinition(input)
+}
+
+func (a *App) UpdateBudgetWindowDefinition(id string, input cliproxyapi.BudgetWindowDefinition) ([]cliproxyapi.BudgetWindowDefinition, error) {
+	return a.managementClient().UpdateBudgetWindowDefinition(id, input)
+}
+
+func (a *App) DeleteBudgetWindowDefinition(id string) ([]cliproxyapi.BudgetWindowDefinition, error) {
+	return a.managementClient().DeleteBudgetWindowDefinition(id)
+}
+
+func (a *App) PreviewBudgetWindowFacts(input cliproxyapi.BudgetWindowFactsPreviewRequest) ([]cliproxyapi.QuotaWindowFact, error) {
+	return a.managementClient().PreviewBudgetWindowFacts(input)
+}
+
+func (a *App) ListQuotaThresholdRules(accountKey string) ([]cliproxyapi.QuotaThresholdRule, error) {
+	return a.managementClient().ListQuotaThresholdRules(accountKey)
+}
+
+func (a *App) CreateQuotaThresholdRule(input cliproxyapi.QuotaThresholdRule) ([]cliproxyapi.QuotaThresholdRule, error) {
+	return a.managementClient().CreateQuotaThresholdRule(input)
+}
+
+func (a *App) UpdateQuotaThresholdRule(id string, input cliproxyapi.QuotaThresholdRule) ([]cliproxyapi.QuotaThresholdRule, error) {
+	return a.managementClient().UpdateQuotaThresholdRule(id, input)
+}
+
+func (a *App) DeleteQuotaThresholdRule(id string) error {
+	return a.managementClient().DeleteQuotaThresholdRule(id)
+}
+
+func (a *App) SimulateRouteGuardRule(input cliproxyapi.SimulateRouteGuardRuleRequest) (*cliproxyapi.SimulationResult, error) {
+	return a.managementClient().SimulateRouteGuardRule(input)
+}
+
 func (a *App) GetOpenAIQuotaResetCredit(accountKey string) (*OpenAIQuotaResetCreditInfo, error) {
 	result, err := a.managementClient().GetOpenAIQuotaResetCredit(accountKey)
 	if err != nil {

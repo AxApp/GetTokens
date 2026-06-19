@@ -5,6 +5,8 @@ import {updater} from '../models';
 import {codexbinary} from '../models';
 import {sidecar} from '../models';
 
+export function AddQuotaCalibration(arg1:main.QuotaUsageCalibrationInput):Promise<main.QuotaUsageCalibration>;
+
 export function AnalyzeCodexSessions(arg1:main.AnalyzeCodexSessionsInput):Promise<main.SessionAnalysisResult>;
 
 export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:main.ClaudeCodeLocalApplyOptions):Promise<main.ClaudeCodeLocalApplyResult>;
@@ -31,17 +33,23 @@ export function ConsumeOpenAIQuotaResetCredit(arg1:string):Promise<main.OpenAIQu
 
 export function ConsumePendingDeepLinks():Promise<Array<string>>;
 
+export function CreateBudgetWindowDefinition(arg1:main.BudgetWindowDefinition):Promise<Array<main.BudgetWindowDefinition>>;
+
 export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void>;
 
 export function CreateOpenAICompatibleProvider(arg1:main.CreateOpenAICompatibleProviderInput):Promise<void>;
 
 export function CreateProjectCandidatePoolRule(arg1:main.ProjectCandidatePoolRule):Promise<Array<main.ProjectCandidatePoolRule>>;
 
+export function CreateQuotaThresholdRule(arg1:main.QuotaThresholdRule):Promise<Array<main.QuotaThresholdRule>>;
+
 export function CreateRateLimitRule(arg1:main.RateLimitRule):Promise<Array<main.RateLimitRule>>;
 
 export function DeleteAccountsBatch(arg1:main.DeleteAccountsBatchInput):Promise<main.DeleteAccountsBatchResult>;
 
 export function DeleteAuthFiles(arg1:Array<string>):Promise<void>;
+
+export function DeleteBudgetWindowDefinition(arg1:string):Promise<Array<main.BudgetWindowDefinition>>;
 
 export function DeleteClaudeCodeSubagent(arg1:main.DeleteClaudeCodeSubagentInputDTO):Promise<void>;
 
@@ -54,6 +62,8 @@ export function DeleteLegacyAccountSources():Promise<main.AccountMigrationDelete
 export function DeleteOpenAICompatibleProvider(arg1:string):Promise<void>;
 
 export function DeleteProjectCandidatePoolRule(arg1:main.DeleteProjectCandidatePoolRuleInput):Promise<void>;
+
+export function DeleteQuotaThresholdRule(arg1:string):Promise<void>;
 
 export function DeleteRateLimitRule(arg1:main.DeleteRateLimitRuleInput):Promise<void>;
 
@@ -187,6 +197,8 @@ export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
+export function ListBudgetWindowDefinitions():Promise<Array<main.BudgetWindowDefinition>>;
+
 export function ListCachedAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListChannelRouteDecisions(arg1:main.ChannelRouteDecisionsInput):Promise<Array<main.ChannelRouteDecision>>;
@@ -202,6 +214,10 @@ export function ListOAuthModelAliases(arg1:string):Promise<Array<main.OpenAIComp
 export function ListOpenAICompatibleProviders():Promise<Array<main.OpenAICompatibleProvider>>;
 
 export function ListProjectCandidatePoolRules(arg1:main.ProjectCandidatePoolRulesInput):Promise<Array<main.ProjectCandidatePoolRule>>;
+
+export function ListQuotaCalibrations(arg1:string):Promise<Array<main.QuotaUsageCalibration>>;
+
+export function ListQuotaThresholdRules(arg1:string):Promise<Array<main.QuotaThresholdRule>>;
 
 export function ListRateLimitEvents(arg1:main.RateLimitEventsInput):Promise<Array<main.RateLimitEvent>>;
 
@@ -226,6 +242,8 @@ export function PatchClaudeCodeSettings(arg1:main.PatchClaudeCodeSettingsInputDT
 export function PreflightCodexMcpServer(arg1:main.PreflightCodexMcpServerInput):Promise<main.CodexMcpPreflightResult>;
 
 export function PrepareGetTokensExtensionCodexConfigApply(arg1:main.PrepareGetTokensExtensionCodexConfigApplyInput):Promise<main.GetTokensExtensionCodexConfigStagedApplyPlan>;
+
+export function PreviewBudgetWindowFacts(arg1:main.BudgetWindowFactsPreviewRequest):Promise<Array<main.QuotaWindowFact>>;
 
 export function PreviewCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
 
@@ -263,6 +281,8 @@ export function RemoveCodexSkill(arg1:main.RemoveCodexSkillInput):Promise<main.R
 
 export function RevealCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<void>;
 
+export function RevokeQuotaCalibration(arg1:string):Promise<main.QuotaUsageCalibration>;
+
 export function RunRouteResilienceAction(arg1:main.RouteResilienceActionInput):Promise<main.RouteResilienceActionResult>;
 
 export function SaveChannelRoutingConfig(arg1:main.ChannelRoutingConfig):Promise<main.ChannelRoutingConfig>;
@@ -289,6 +309,8 @@ export function SetCodexModelCatalogSyncEnabled(arg1:boolean):Promise<main.AppRu
 
 export function SetGetTokensExtensionEnabled(arg1:main.SetGetTokensExtensionEnabledInput):Promise<main.GetTokensExtensionEnableStateFile>;
 
+export function SimulateRouteGuardRule(arg1:main.SimulateRouteGuardRuleRequest):Promise<main.SimulationResult>;
+
 export function StartCodexOAuth():Promise<main.OAuthStartResult>;
 
 export function StartCodexQuotasBatchRefreshJob(arg1:main.CodexQuotaBatchRefreshInput):Promise<main.CodexQuotaBatchRefreshJob>;
@@ -300,6 +322,8 @@ export function TestCodexAPIKeyQuotaCurl(arg1:main.TestCodexAPIKeyQuotaCurlInput
 export function UpdateAccountPriority(arg1:main.UpdateAccountPriorityInput):Promise<void>;
 
 export function UpdateAppRuntimeSettings(arg1:main.AppRuntimeSettings):Promise<main.AppRuntimeSettings>;
+
+export function UpdateBudgetWindowDefinition(arg1:string,arg2:main.BudgetWindowDefinition):Promise<Array<main.BudgetWindowDefinition>>;
 
 export function UpdateCodexAPIKeyConfig(arg1:main.UpdateCodexAPIKeyConfigInput):Promise<void>;
 
@@ -316,6 +340,8 @@ export function UpdateOAuthModelAliases(arg1:main.UpdateOAuthModelAliasesInput):
 export function UpdateOpenAICompatibleProvider(arg1:main.UpdateOpenAICompatibleProviderInput):Promise<void>;
 
 export function UpdateProjectCandidatePoolRule(arg1:main.ProjectCandidatePoolRule):Promise<Array<main.ProjectCandidatePoolRule>>;
+
+export function UpdateQuotaThresholdRule(arg1:string,arg2:main.QuotaThresholdRule):Promise<Array<main.QuotaThresholdRule>>;
 
 export function UpdateRateLimitRule(arg1:main.RateLimitRule):Promise<Array<main.RateLimitRule>>;
 
