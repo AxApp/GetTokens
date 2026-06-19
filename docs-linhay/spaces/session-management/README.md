@@ -63,6 +63,7 @@
 - 搜索 rail、项目列、会话列统一为轻描边、低背景噪声、内部滚动的两列工作台结构。
 - 会话行保留两行标题与 metadata rail，但将旧粗左边线、uppercase、heavy weight 和反色状态 pill 降级为更安静的列表样式。
 - 追加收敛 4 个 modal：分析范围选择、分析结果详情、Provider 归并、会话详情，统一使用轻描边 `--gt-*` modal shell 和新按钮样式。
+- 追加收敛设计系统中的 `SessionPluginConsolePanel`：插件列表、scope、执行状态、会话队列和输出面板统一使用轻描边组件壳层，移除旧 thick border / Swiss button / heavy uppercase。
 
 ### 验收
 
@@ -70,4 +71,5 @@
 - 主 workbench 高度不得被项目/会话列表内容撑爆；浏览器 bounding rect 应接近可视工作区高度，项目列和会话列内部滚动。
 - 页头分析/刷新按钮只显示图标，按钮尺寸 40x40，图标 20x20，且不使用旧 `btn-swiss`。
 - 4 个 modal 固定 `data-session-management-modal`，不再使用旧 `btn-swiss` 或 `border-4` 粗描边外壳。
+- 插件控制台固定 `data-session-plugin-console-*` 结构，新增源码测试确保不回退到旧 `btn-swiss`、粗边框和大写重字重。
 - 聚焦测试、typecheck、diff check 通过；浏览器只读 DOM/计算样式复核无可见旧粗框壳层。
