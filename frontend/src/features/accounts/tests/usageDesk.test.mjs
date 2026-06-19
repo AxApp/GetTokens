@@ -279,6 +279,32 @@ test('usage desk explicit fact still renders authority while missing state has i
   assert.match(panelsSource, /'view' in evidence/);
 });
 
+test('UsageDeskPanels uses the quiet workspace shell', async () => {
+  const panelsSource = await readFile(new URL('../components/usage-desk/UsageDeskPanels.tsx', import.meta.url), 'utf8');
+
+  assert.match(panelsSource, /const usageDeskPanelClass =/);
+  assert.match(panelsSource, /const usageDeskMutedPanelClass =/);
+  assert.match(panelsSource, /const usageDeskMetaClass =/);
+  assert.match(panelsSource, /const usageDeskTableHeaderClass =/);
+  assert.match(panelsSource, /data-usage-desk-state-panel/);
+  assert.match(panelsSource, /data-usage-desk-info-card/);
+  assert.match(panelsSource, /data-usage-desk-session-drilldown/);
+  assert.match(panelsSource, /data-usage-desk-project-drilldown/);
+  assert.match(panelsSource, /--gt-surface-canvas/);
+  assert.match(panelsSource, /--gt-surface-muted/);
+  assert.match(panelsSource, /--gt-border-subtle/);
+  assert.match(panelsSource, /--gt-status-danger/);
+  assert.doesNotMatch(panelsSource, /border-2/);
+  assert.doesNotMatch(panelsSource, /border-b-2/);
+  assert.doesNotMatch(panelsSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(panelsSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(panelsSource, /font-black/);
+  assert.doesNotMatch(panelsSource, /uppercase/);
+  assert.doesNotMatch(panelsSource, /tracking-\[0\.12em\]/);
+  assert.doesNotMatch(panelsSource, /tracking-\[0\.18em\]/);
+  assert.doesNotMatch(panelsSource, /shadow-\[/);
+});
+
 test('usage desk chart grid fills the scroll viewport', async () => {
   const chartSource = await readFile(new URL('../components/usage-desk/UsageDeskChart.tsx', import.meta.url), 'utf8');
 

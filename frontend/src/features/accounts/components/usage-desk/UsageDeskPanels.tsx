@@ -8,26 +8,39 @@ import {
   type UsageDeskStatusEvidence,
 } from '../../model/usageDesk';
 
+const usageDeskPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const usageDeskMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const usageDeskMetaClass = 'text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]';
+const usageDeskStrongMetaClass = 'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+const usageDeskBadgeClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
+const usageDeskCountBadgeClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1 text-[length:var(--font-size-ui-md-compact)] font-medium text-[var(--text-primary)]';
+const usageDeskTableHeaderClass =
+  'sticky top-0 z-10 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]';
+const usageDeskTableCellClass = 'px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-medium leading-4 text-[var(--text-primary)]';
+
 export function StatePanel({ title, body, tone = 'default' }: { title: string; body: ReactNode; tone?: 'default' | 'error' }) {
   return (
     <div
-      className={`border-2 px-4 py-4 ${
+      data-usage-desk-state-panel={tone}
+      className={`px-4 py-4 ${
         tone === 'error'
-          ? 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]'
-          : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
+          ? 'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]'
+          : `${usageDeskMutedPanelClass} text-[var(--text-primary)]`
       }`}
     >
-      <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em]">{title}</div>
-      <div className={`mt-2 text-[length:var(--font-size-ui-md-compact)] leading-6 ${tone === 'error' ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'}`}>{body}</div>
+      <div className="text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal">{title}</div>
+      <div className={`mt-2 text-[length:var(--font-size-ui-md-compact)] leading-6 ${tone === 'error' ? 'text-[var(--gt-status-danger)]' : 'text-[var(--text-muted)]'}`}>{body}</div>
     </div>
   );
 }
 
 export function InfoCard({ title, highlight, body }: { title: string; highlight: string; body: string }) {
   return (
-    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-4 shadow-[4px_4px_0_var(--shadow-color)]">
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{title}</div>
-      <div className="mt-3 text-[length:var(--font-size-ui-4xl)] font-black uppercase italic tracking-tight text-[var(--text-primary)]">{highlight}</div>
+    <div data-usage-desk-info-card="true" className={`${usageDeskPanelClass} px-4 py-4`}>
+      <div className={usageDeskMetaClass}>{title}</div>
+      <div className="mt-3 text-[length:var(--font-size-ui-4xl)] font-semibold tracking-normal text-[var(--text-primary)]">{highlight}</div>
       <p className="mt-3 text-[length:var(--font-size-ui-md-compact)] leading-6 text-[var(--text-muted)]">{body}</p>
     </div>
   );
@@ -38,13 +51,13 @@ export function UsageDeskEvidenceStatus({ evidence }: { evidence: UsageDeskStatu
     return (
       <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3" data-usage-desk-evidence-status="missing-quota-fact">
         <div className="min-w-0 flex-1">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={usageDeskMetaClass}>
             NON-AUTHORITATIVE
           </div>
-          <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+          <div className={`mt-1 ${usageDeskStrongMetaClass}`}>
             {evidence.title}
           </div>
-          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+          <div className={`mt-1 ${usageDeskMetaClass}`}>
             {evidence.summary}
           </div>
           <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-muted)]">
@@ -67,10 +80,10 @@ export function UsageDeskEvidenceStatus({ evidence }: { evidence: UsageDeskStatu
   return (
     <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3" data-usage-desk-evidence-status="quota-fact">
       <div className="min-w-0 flex-1">
-        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+        <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]">
           {evidence.title}
         </div>
-        <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+        <div className={`mt-1 ${usageDeskStrongMetaClass}`}>
           {evidence.summary}
         </div>
         {evidence.view.explanation ? (
@@ -83,7 +96,7 @@ export function UsageDeskEvidenceStatus({ evidence }: { evidence: UsageDeskStatu
         {metaItems.map((item) => (
           <span
             key={item}
-            className="border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]"
+            className={usageDeskBadgeClass}
           >
             {item}
           </span>
@@ -91,7 +104,7 @@ export function UsageDeskEvidenceStatus({ evidence }: { evidence: UsageDeskStatu
         {evidence.view.evidenceRefs.length > 0 ? (
           <span
             title={evidenceRefsTitle}
-            className="border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]"
+            className={usageDeskBadgeClass}
           >
             refs {evidence.view.evidenceRefs.length}
           </span>
@@ -111,13 +124,13 @@ export function UsageSessionDrilldownPanel({
   embedded?: boolean;
 }) {
   return (
-    <section className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden' : 'border-2 border-[var(--border-color)]'} bg-[var(--bg-main)]`}>
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-[var(--border-color)] px-4 py-3">
+    <section data-usage-desk-session-drilldown="true" className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden bg-[var(--gt-surface-canvas)]' : usageDeskPanelClass}`}>
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] px-4 py-3">
         <div>
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">LOCAL SESSIONS</div>
-          <h3 className="mt-1 text-[length:var(--font-size-ui-xl)] font-black uppercase text-[var(--text-primary)]">{title}</h3>
+          <div className={usageDeskMetaClass}>LOCAL SESSIONS</div>
+          <h3 className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]">{title}</h3>
         </div>
-        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
+        <div className={usageDeskCountBadgeClass}>
           {new Intl.NumberFormat('zh-CN').format(rows.length)} 个会话
         </div>
       </div>
@@ -126,11 +139,11 @@ export function UsageSessionDrilldownPanel({
         <div className={`${embedded ? 'flex-1 overflow-auto' : 'overflow-x-auto'}`}>
           <table className="w-full min-w-[920px] border-collapse">
             <thead>
-              <tr className="bg-[var(--bg-surface)]">
+              <tr className="bg-[var(--gt-surface-muted)]">
                 {usageDeskSessionDrilldownColumnLabels.map((label) => (
                   <th
                     key={label}
-                    className="sticky top-0 z-10 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
+                    className={usageDeskTableHeaderClass}
                   >
                     {label}
                   </th>
@@ -143,7 +156,7 @@ export function UsageSessionDrilldownPanel({
                 return (
                   <tr key={row.sessionID} className="border-t border-dashed border-[var(--border-color)] first:border-t-0">
                     <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] leading-4 text-[var(--text-primary)]" title={row.sessionID}>
-                      <div className="truncate font-black">{sourceLabel}</div>
+                      <div className="truncate font-medium">{sourceLabel}</div>
                     </td>
                     <SessionUsageCell value={row.model || '--'} />
                     <SessionUsageCell value={formatUsageDeskChartValue(row.requests, 'count')} />
@@ -176,13 +189,13 @@ export function UsageProjectDrilldownPanel({
   embedded?: boolean;
 }) {
   return (
-    <section className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden' : 'border-2 border-[var(--border-color)]'} bg-[var(--bg-main)]`}>
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-[var(--border-color)] px-4 py-3">
+    <section data-usage-desk-project-drilldown="true" className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden bg-[var(--gt-surface-canvas)]' : usageDeskPanelClass}`}>
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] px-4 py-3">
         <div>
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">PROJECT TOTALS</div>
-          <h3 className="mt-1 text-[length:var(--font-size-ui-xl)] font-black uppercase text-[var(--text-primary)]">{title}</h3>
+          <div className={usageDeskMetaClass}>PROJECT TOTALS</div>
+          <h3 className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]">{title}</h3>
         </div>
-        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
+        <div className={usageDeskCountBadgeClass}>
           {new Intl.NumberFormat('zh-CN').format(rows.length)} 个项目
         </div>
       </div>
@@ -191,11 +204,11 @@ export function UsageProjectDrilldownPanel({
         <div className={`${embedded ? 'flex-1 overflow-auto' : 'overflow-x-auto'}`}>
           <table className="w-full min-w-[920px] border-collapse">
             <thead>
-              <tr className="bg-[var(--bg-surface)]">
+              <tr className="bg-[var(--gt-surface-muted)]">
                 {usageDeskProjectDrilldownColumnLabels.map((label) => (
                   <th
                     key={label}
-                    className="sticky top-0 z-10 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
+                    className={usageDeskTableHeaderClass}
                   >
                     {label}
                   </th>
@@ -205,7 +218,7 @@ export function UsageProjectDrilldownPanel({
             <tbody>
               {rows.map((project) => (
                 <tr key={project.projectName} className="border-t border-dashed border-[var(--border-color)] first:border-t-0">
-                  <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black leading-4 text-[var(--text-primary)]">
+                  <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-medium leading-4 text-[var(--text-primary)]">
                     <div className="truncate">{project.projectName}</div>
                   </td>
                   <ProjectUsageCell value={formatUsageDeskChartValue(project.sessions, 'count').replace('次', '个')} />
@@ -231,7 +244,7 @@ export function UsageProjectDrilldownPanel({
 
 function SessionUsageCell({ value }: { value: string }) {
   return (
-    <td className="px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black leading-4 text-[var(--text-primary)]">
+    <td className={usageDeskTableCellClass}>
       <div className="truncate">{value}</div>
     </td>
   );
@@ -239,7 +252,7 @@ function SessionUsageCell({ value }: { value: string }) {
 
 function ProjectUsageCell({ value }: { value: string }) {
   return (
-    <td className="px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black leading-4 text-[var(--text-primary)]">
+    <td className={usageDeskTableCellClass}>
       <div className="truncate">{value}</div>
     </td>
   );
