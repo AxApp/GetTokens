@@ -77,3 +77,42 @@ test('account credential detail editor uses the quiet workspace shell', async ()
   assert.doesNotMatch(targetSource, /tracking-\[0\.18em\]/);
   assert.doesNotMatch(targetSource, /shadow-hard|shadow-\[/);
 });
+
+test('account quota and billing editors use the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const targetSource = [
+    sourceBlock(source, 'export function AccountQuotaSection', 'function OpenAIQuotaResetConfirmationModal'),
+    sourceBlock(source, 'export function AccountBillingSection', 'function RuntimeKV'),
+    sourceBlock(source, 'function RuntimeKV', 'export function AccountDetailFooter'),
+  ].join('\n');
+
+  assert.match(source, /const accountDetailResourcePaneDividerClass =/);
+  assert.match(source, /const accountDetailResourceScriptCardClass =/);
+  assert.match(source, /const accountDetailResourceButtonClass =/);
+  assert.match(source, /const accountDetailResourceHeadingClass =/);
+  assert.match(source, /const accountDetailResourceMessageClass =/);
+  assert.match(source, /const accountDetailResourceKvLabelClass =/);
+  assert.match(targetSource, /data-account-quota-layout=\{layoutMode\}/);
+  assert.match(targetSource, /data-account-quota-pane="script"/);
+  assert.match(targetSource, /data-account-quota-script-preview="two-line"/);
+  assert.match(targetSource, /data-openai-quota-reset-credit-panel="true"/);
+  assert.match(targetSource, /AccountCurlEditorModal/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-success/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(targetSource, /btn-swiss/);
+  assert.doesNotMatch(targetSource, /border-2/);
+  assert.doesNotMatch(targetSource, /border-t-2/);
+  assert.doesNotMatch(targetSource, /border-l-2/);
+  assert.doesNotMatch(targetSource, /border-y border-dashed/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /color-status-/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.08em\]|tracking-\[0\.18em\]/);
+  assert.doesNotMatch(targetSource, /border-dashed/);
+  assert.doesNotMatch(targetSource, /shadow-\[/);
+});

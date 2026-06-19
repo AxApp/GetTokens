@@ -211,6 +211,42 @@ const accountDetailCredentialStatusClass = (status?: APIKeyVerifyState['status']
         ? 'text-[var(--color-status-danger)]'
         : 'text-[var(--text-muted)]'
   }`;
+const accountDetailResourcePaneDividerClass =
+  'grid min-w-0 grid-rows-[auto_minmax(0,1fr)] gap-3 self-stretch border-t border-[var(--gt-border-subtle)] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0';
+const accountDetailResourcePaneCompactClass =
+  'grid min-w-0 content-start gap-3 border-t border-[var(--gt-border-subtle)] pt-3';
+const accountDetailResourceScriptCardClass =
+  'grid h-full min-h-[8.75rem] content-start gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+const accountDetailResourceCompactCardClass =
+  'grid gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+const accountDetailResourceButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+const accountDetailResourcePrimaryButtonClass =
+  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+const accountDetailResourceHeadingClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailResourcePanelClass =
+  'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+const accountDetailResourcePanelValueClass =
+  'mt-1 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]';
+const accountDetailResourceHelpClass =
+  'text-[length:var(--font-size-ui-xs)] font-medium leading-relaxed text-[var(--text-muted)]';
+const accountDetailResourceEmptyScriptClass =
+  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-4 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const accountDetailResourceDataRowClass =
+  'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2 md:grid-cols-3';
+const accountDetailResourceMessageClass = (tone: 'neutral' | 'success' | 'danger') =>
+  `text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal ${
+    tone === 'success'
+      ? 'text-[var(--gt-status-success)]'
+      : tone === 'danger'
+        ? 'text-[var(--gt-status-danger)]'
+        : 'text-[var(--text-muted)]'
+  }`;
+const accountDetailResourceKvLabelClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailResourceKvValueClass =
+  'mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
 
 export function AccountDetailHeader({
   account,
@@ -1306,11 +1342,11 @@ export function AccountQuotaSection({
     ? 'grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'
     : 'grid min-w-0 gap-3';
   const quotaScriptPaneClassName = layoutMode === 'split'
-    ? 'grid min-w-0 grid-rows-[auto_minmax(0,1fr)] gap-3 self-stretch border-t-2 border-[var(--border-color)] pt-4 lg:border-l-2 lg:border-t-0 lg:pl-4 lg:pt-0'
-    : 'grid min-w-0 content-start gap-3 border-t-2 border-[var(--border-color)] pt-3';
+    ? accountDetailResourcePaneDividerClass
+    : accountDetailResourcePaneCompactClass;
   const quotaScriptCardClassName = layoutMode === 'split'
-    ? 'grid h-full min-h-[8.75rem] content-start gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3'
-    : 'grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3';
+    ? accountDetailResourceScriptCardClass
+    : accountDetailResourceCompactCardClass;
 
   function openEditor() {
     if (onOpenEditor) {
@@ -1431,7 +1467,7 @@ export function AccountQuotaSection({
           type="button"
           onClick={queryOpenAIQuotaResetCredit}
           disabled={resetQueryStatus === 'loading' || !account.quotaKey}
-          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+          className={accountDetailResourceButtonClass}
         >
           {resetQueryStatus === 'loading' ? '查询中...' : '查询重置次数'}
         </button>
@@ -1440,14 +1476,14 @@ export function AccountQuotaSection({
           onClick={openResetConfirmation}
           disabled={!account.quotaKey || resetQueryStatus === 'loading' || !resetCreditAvailable}
           title={resetCreditAvailable ? '消耗 1 次 OpenAI reset credit' : resetCreditKnown ? '无可用重置次数' : '请先查询重置次数'}
-          className="btn-swiss !border-[var(--text-primary)] !bg-[var(--text-primary)] !text-[length:var(--font-size-ui-2xs)] !text-[var(--bg-main)]"
+          className={accountDetailResourcePrimaryButtonClass}
         >
           重置额度窗口
         </button>
       </>
     ) : readOnlyScripts ? null : <>
       {hasQuotaScript ? (
-        <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+        <button type="button" onClick={openEditor} className={accountDetailResourceButtonClass}>
           编辑脚本
         </button>
       ) : null}
@@ -1455,7 +1491,7 @@ export function AccountQuotaSection({
         type="button"
         onClick={runQuotaTest}
         disabled={testStatus === 'loading' || !hasQuotaScript || !onTestQuotaCurl}
-        className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+        className={accountDetailResourceButtonClass}
       >
         {testStatus === 'loading' ? '测试中...' : '测试'}
       </button>
@@ -1463,7 +1499,7 @@ export function AccountQuotaSection({
         <button
           type="button"
           onClick={openEditor}
-          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+          className={accountDetailResourceButtonClass}
         >
           添加
         </button>
@@ -1485,13 +1521,13 @@ export function AccountQuotaSection({
       <div data-account-quota-layout={layoutMode} className={quotaLayoutClassName}>
         <div data-account-quota-pane="windows" className="grid min-w-0 content-start gap-3">
           {isOpenAIAuthFileQuotaReset ? (
-            <div data-openai-quota-reset-credit-panel="true" className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+            <div data-openai-quota-reset-credit-panel="true" className={accountDetailResourcePanelClass}>
               <div className="flex min-w-0 items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <div className={accountDetailResourceHeadingClass}>
                     RESET CREDITS
                   </div>
-                  <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                  <div className={accountDetailResourcePanelValueClass}>
                     {resetCreditLabel}
                   </div>
                 </div>
@@ -1499,7 +1535,7 @@ export function AccountQuotaSection({
                   {resetQueryStatus === 'loading' ? 'LOADING' : resetQueryStatus === 'success' ? 'LIVE' : resetQueryStatus === 'error' ? 'ERROR' : 'READY'}
                 </AccountDetailPill>
               </div>
-              <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+              <div className={accountDetailResourceHelpClass}>
                 {resetQueryStatus === 'error'
                   ? resetQueryMessage
                   : resetInfo
@@ -1511,13 +1547,13 @@ export function AccountQuotaSection({
 
           {visibleQuotaWindows.length > 0 ? (
             <div className="grid gap-2">
-              <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className={accountDetailResourceHeadingClass}>
                 {visibleQuotaSource === 'test' ? 'QUOTA (TEST)' : 'QUOTA'}
               </div>
               {visibleQuotaDisplay ? <QuotaBars quotaDisplay={visibleQuotaDisplay} t={t} showDivider={false} /> : null}
             </div>
           ) : (
-            <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+            <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)]">
               {readOnlyScripts
                 ? '暂无额度数据'
                 : hasQuotaScript ? '暂无额度数据，可测试额度脚本确认接口返回' : '暂无额度脚本，添加后可测试并展示额度'}
@@ -1532,17 +1568,17 @@ export function AccountQuotaSection({
           ) : null}
 
           {testStatus === 'success' && testResult ? (
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-success)]">
+            <div className={accountDetailResourceMessageClass('success')}>
               OK - {testResult.planType ?? 'quota'} {testResult.windows?.length ? `${testResult.windows.length} windows` : ''}
             </div>
           ) : null}
           {testStatus === 'error' ? (
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
+            <div className={accountDetailResourceMessageClass('danger')}>{testMessage}</div>
           ) : null}
         </div>
 
         {isOpenAIAuthFileQuotaReset ? null : <aside data-account-quota-pane="script" className={quotaScriptPaneClassName}>
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={accountDetailResourceHeadingClass}>
             SCRIPT
           </div>
           {hasQuotaScript ? (
@@ -1556,7 +1592,7 @@ export function AccountQuotaSection({
               </div>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-4 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+            <div className={accountDetailResourceEmptyScriptClass}>
               暂无额度脚本
             </div>
           )}
@@ -1823,7 +1859,7 @@ export function AccountBillingSection({
   const billingActions = (
     readOnlyScripts ? null : <>
       {hasBillingScript ? (
-        <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+        <button type="button" onClick={openEditor} className={accountDetailResourceButtonClass}>
           编辑脚本
         </button>
       ) : null}
@@ -1831,7 +1867,7 @@ export function AccountBillingSection({
         type="button"
         onClick={runBillingTest}
         disabled={testStatus === 'loading' || !hasBillingScript || !onTestBillingCurl}
-        className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+        className={accountDetailResourceButtonClass}
       >
         {testStatus === 'loading' ? '测试中...' : '测试余额'}
       </button>
@@ -1839,7 +1875,7 @@ export function AccountBillingSection({
         <button
           type="button"
           onClick={openEditor}
-          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+          className={accountDetailResourceButtonClass}
         >
           添加
         </button>
@@ -1860,11 +1896,11 @@ export function AccountBillingSection({
 
       {liveBalances.length > 0 ? (
         <div className="grid gap-2 content-start">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={accountDetailResourceHeadingClass}>
             BALANCE
           </div>
           {liveBalances.map((balance, index) => (
-            <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
+            <div key={`${balance.currency}-${index}`} className={accountDetailResourceDataRowClass}>
               <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
               <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
               <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
@@ -1872,7 +1908,7 @@ export function AccountBillingSection({
           ))}
         </div>
       ) : (
-        <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+        <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)]">
           {readOnlyScripts
             ? '暂无余额数据'
             : hasBillingScript ? '暂无余额数据，可测试余额脚本确认接口返回' : '暂无余额脚本，添加后可测试并展示余额'}
@@ -1880,7 +1916,7 @@ export function AccountBillingSection({
       )}
 
       {hasBillingScript ? (
-        <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+        <div className={accountDetailResourceCompactCardClass}>
           <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.billingCurl || undefined}>
             {draft.billingCurl || '未配置余额脚本'}
           </div>
@@ -1889,11 +1925,11 @@ export function AccountBillingSection({
 
       {testStatus === 'success' && testBilling ? (
         <div className="grid gap-2 content-start">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={accountDetailResourceHeadingClass}>
             BALANCE (TEST)
           </div>
           {testBilling.balances.map((balance, index) => (
-            <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
+            <div key={`${balance.currency}-${index}`} className={accountDetailResourceDataRowClass}>
               <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
               <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
               <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
@@ -1902,10 +1938,10 @@ export function AccountBillingSection({
         </div>
       ) : null}
       {testStatus === 'success' && testMessage ? (
-        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">{testMessage}</div>
+        <div className={accountDetailResourceMessageClass('neutral')}>{testMessage}</div>
       ) : null}
       {testStatus === 'error' ? (
-        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
+        <div className={accountDetailResourceMessageClass('danger')}>{testMessage}</div>
       ) : null}
 
       {editorOpen ? (
@@ -1930,10 +1966,10 @@ export function AccountBillingSection({
 function RuntimeKV({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+      <div className={accountDetailResourceKvLabelClass}>
         {label}
       </div>
-      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
+      <div className={accountDetailResourceKvValueClass}>
         {value}
       </div>
     </div>
