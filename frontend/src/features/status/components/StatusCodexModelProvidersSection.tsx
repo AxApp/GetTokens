@@ -15,6 +15,18 @@ function resolveCodexModelProviderDescription(t: (key: string) => string, row: C
   return row.description || t('status.codex_model_providers_no_description');
 }
 
+const codexConfigSectionPanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const codexConfigSectionHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const codexConfigSectionGroupHeaderClass =
+  'flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2';
+const codexConfigSectionChipClass =
+  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)]';
+const codexConfigSectionSecondaryButtonClass =
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const codexConfigSectionPrimaryButtonClass =
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+
 interface StatusCodexModelProvidersSectionProps {
   t: (key: string) => string;
   snapshot: CodexFeatureConfigSnapshot | null;
@@ -58,28 +70,28 @@ export default function StatusCodexModelProvidersSection({
   }
 
   return (
-    <section className="relative overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-      <div className="grid gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+    <section className={`${codexConfigSectionPanelClass} relative overflow-hidden`}>
+      <div className={`${codexConfigSectionHeaderClass} grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start`}>
         <div className="min-w-0">
-          <div className="text-[length:var(--font-size-ui-sm)] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
+          <div className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">
             {t('status.codex_model_providers_title')}
           </div>
-          <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+          <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
             {snapshot?.configPath || t('status.codex_model_providers_unavailable')}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+          <div className={codexConfigSectionChipClass}>
             {rows.length} {t('status.codex_model_providers_visible')}
           </div>
-          <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+          <div className={codexConfigSectionChipClass}>
             {dirtyCount} {t('status.codex_model_providers_changed')}
           </div>
           <button
             type="button"
             onClick={onReload}
             disabled={isBusy}
-            className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={codexConfigSectionSecondaryButtonClass}
           >
             {isLoading ? t('status.codex_model_providers_loading') : t('common.refresh')}
           </button>
@@ -87,19 +99,19 @@ export default function StatusCodexModelProvidersSection({
       </div>
 
       {message ? (
-        <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
+        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">
           {message}
         </div>
       ) : null}
 
       <div>
         {groupedRows.map((group, groupIndex) => (
-          <div key={group.id} className={`${groupIndex > 0 ? 'border-t-2 border-[var(--border-color)]' : ''}`}>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
-              <div className="text-[length:var(--font-size-ui-xs)] font-black italic uppercase tracking-[0.18em] text-[var(--text-primary)]">
+          <div key={group.id} className={`${groupIndex > 0 ? 'border-t border-[var(--gt-border-subtle)]' : ''}`}>
+            <div className={codexConfigSectionGroupHeaderClass}>
+              <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                 {resolveGroupTitle(group.id)}
               </div>
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
                 {group.rows.length} {t('design_system.items')}
               </div>
             </div>
@@ -115,22 +127,22 @@ export default function StatusCodexModelProvidersSection({
           </div>
         ))}
         {rows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className="px-4 py-8 text-center text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
             {isLoading ? t('status.codex_model_providers_loading') : t('status.codex_model_providers_empty')}
           </div>
         ) : null}
       </div>
 
       {preview ? (
-        <div className="border-t-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-          <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+        <div className="border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4">
+          <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
             {t('status.codex_model_providers_preview_title')}: {preview.summary}
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {preview.changes.map((change) => (
               <div
                 key={`${change.id}-${change.kind}`}
-                className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]"
+                className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]"
               >
                 <span className="font-mono">{change.path.join('.')}</span>
                 <span className="text-[var(--text-muted)]"> / {change.kind} / </span>
@@ -141,8 +153,8 @@ export default function StatusCodexModelProvidersSection({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3">
-        <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
+        <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
           {t('status.codex_model_providers_save_hint')}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -150,7 +162,7 @@ export default function StatusCodexModelProvidersSection({
             type="button"
             onClick={onReset}
             disabled={isBusy || !snapshot}
-            className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={codexConfigSectionSecondaryButtonClass}
           >
             {t('status.codex_model_providers_reset')}
           </button>
@@ -158,7 +170,7 @@ export default function StatusCodexModelProvidersSection({
             type="button"
             onClick={onPreview}
             disabled={isBusy || dirtyCount === 0}
-            className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={codexConfigSectionSecondaryButtonClass}
           >
             {t('status.codex_model_providers_preview')}
           </button>
@@ -166,7 +178,7 @@ export default function StatusCodexModelProvidersSection({
             type="button"
             onClick={onSave}
             disabled={isBusy || dirtyCount === 0}
-            className="btn-swiss bg-[var(--border-color)] !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={codexConfigSectionPrimaryButtonClass}
           >
             {isSaving ? t('status.codex_model_providers_saving') : t('common.save')}
           </button>

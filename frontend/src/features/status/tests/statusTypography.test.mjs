@@ -226,10 +226,39 @@ test('codex config rows render as a settings table rather than heavy nested card
   assert.match(configRowsSource, /data-codex-config-table="settings"/);
   assert.match(configRowsSource, /data-codex-config-table-row=\{row\.id\}/);
   assert.match(configRowsSource, /md:grid-cols-\[minmax\(0,1fr\)_minmax\(16rem,22rem\)\]/);
-  assert.match(configRowsSource, /divide-y-2 divide-\[var\(--border-color\)\]/);
-  assert.match(configRowsSource, /border-2 border-\[var\(--border-color\)\]/);
+  assert.match(configRowsSource, /const codexConfigRowsChipClass =/);
+  assert.match(configRowsSource, /--gt-border-subtle/);
+  assert.match(configRowsSource, /--gt-surface-muted/);
+  assert.match(configRowsSource, /divide-y divide-\[var\(--gt-border-subtle\)\]/);
+  assert.doesNotMatch(configRowsSource, /divide-y-2 divide-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(configRowsSource, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(configRowsSource, /bg-\[var\(--bg-main\)\]/);
   assert.doesNotMatch(configRowsSource, /--codex-panel-border/);
   assert.doesNotMatch(configRowsSource, /border-l-4 border-\[var\(--border-color\)\]/);
+});
+
+test('codex config sibling sections use the quiet workspace shell', async () => {
+  const sectionPaths = [
+    '../components/StatusCodexRootSettingsSection.tsx',
+    '../components/StatusCodexModelProvidersSection.tsx',
+    '../components/StatusCodexNoticeSection.tsx',
+  ];
+  const sources = await Promise.all(
+    sectionPaths.map((path) => readFile(new URL(path, import.meta.url), 'utf8'))
+  );
+
+  for (const source of sources) {
+    assert.match(source, /const codexConfigSectionPanelClass =/);
+    assert.match(source, /const codexConfigSectionPrimaryButtonClass =/);
+    assert.match(source, /--gt-surface-canvas/);
+    assert.match(source, /--gt-border-subtle/);
+    assert.doesNotMatch(source, /btn-swiss/);
+    assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+    assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+    assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+    assert.doesNotMatch(source, /font-black/);
+    assert.doesNotMatch(source, /uppercase/);
+  }
 });
 
 test('codex feature rows render a settings table and a grouped multi_agent_v2 complex panel', async () => {
