@@ -62,4 +62,4 @@
 
 - Codex Binary 需求：优先使用 `gettokens-codex-binary-management`。
 - 文档、space、memory、qmd：继续使用 `gettokens-ops-governance`。
-- 会话整理：继续使用 `gettokens-session-skill-distill`。
+- 会话整理：继续使用 `gettokens-ops-governance` 的 `Session Skill Distillation`。

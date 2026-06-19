@@ -3,7 +3,7 @@
 日期：2026-06-16
 状态：已落地为 GetTokens agent / skills 治理补充
 
-通用 skill：`.agents/skills/external-workflow-intake/SKILL.md`
+通用入口：`.agents/skills/gettokens-ops-governance/SKILL.md` 的 `External Workflow Intake` 章节
 
 ## 背景
 
@@ -98,7 +98,7 @@ sidecar authority -> internal/cliproxyapi DTO -> internal/wailsapp -> root App b
 
 ## 多方案仲裁
 
-当外部 workflow、多个 agent、多个计划文档、PR 策略或设计方向互相竞争时，先使用 `.agents/skills/gettokens-plan-arbiter/SKILL.md`，再进入执行。
+当外部 workflow、多个 agent、多个计划文档、PR 策略或设计方向互相竞争时，先使用 `.agents/skills/gettokens-ops-governance/SKILL.md` 的 `Plan Arbitration` 章节，再进入执行。
 
 仲裁不是把所有方案平均混合，而是输出一个明确结果：
 
@@ -108,14 +108,14 @@ sidecar authority -> internal/cliproxyapi DTO -> internal/wailsapp -> root App b
 
 仲裁前必须把每个方案归一成目标、假设、触碰面、实施顺序、验证方式、回滚/迁移风险和执行者建议。关键结论要回到当前仓库文件、space、dev 文档、测试、截图或运行态证据，不能只引用 agent 的总结。
 
-本规则来自 `BuilderIO/skills` 的 `plan-arbiter`，已翻译为 GetTokens 项目级 skill，不直接安装外部包。
+本规则来自 `BuilderIO/skills` 的 `plan-arbiter`，已翻译进 GetTokens `gettokens-ops-governance`，不直接安装外部包。
 
 ## 验收
 
 本工作流的验收方式：
 
 1. `gettokens-ops-governance` 能指向本文件和领域词汇表。
-2. `external-workflow-intake` 能作为跨项目复用入口；GetTokens 专属落位继续由 `gettokens-ops-governance` 承接。
+2. `gettokens-ops-governance` 的 `External Workflow Intake` 能作为外部 workflow 吸收入口，并把 GetTokens 专属落位收敛在同一治理 skill 内。
 3. 纯治理/文档沉淀至少运行：
 
 ```bash

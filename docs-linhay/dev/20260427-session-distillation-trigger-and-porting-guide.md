@@ -9,8 +9,7 @@
 当前规则来源：
 
 1. `AGENTS.md`
-2. `.agents/skills/gettokens-session-skill-distill/SKILL.md`
-3. `.agents/skills/gettokens-ops-governance/SKILL.md`
+2. `.agents/skills/gettokens-ops-governance/SKILL.md` 的 `Session Skill Distillation`
 
 ## 2. 触发条件
 

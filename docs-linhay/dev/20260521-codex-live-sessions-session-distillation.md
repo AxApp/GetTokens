@@ -100,7 +100,7 @@ GetTokens 不应宣称可以在同一个已降级会话中透明恢复 WebSocket
 
 - 运行时观测、Codex workspace 新 tab、CLIProxyAPI fork 运行链路：使用 `.agents/skills/gettokens-domain-engineering`。
 - space、memory、qmd 和收尾整理：使用 `.agents/skills/gettokens-ops-governance`。
-- 明确说“整理会话”：先使用 `.agents/skills/gettokens-session-skill-distill`，再按稳定边界写回 skill / docs / memory。
+- 明确说“整理会话”：先使用 `.agents/skills/gettokens-ops-governance` 的 `Session Skill Distillation`，再按稳定边界写回 skill / docs / memory。
 
 ## 验证记录
 

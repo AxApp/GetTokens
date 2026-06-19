@@ -18,15 +18,15 @@
 
 ## Intake 结论
 
-BuilderIO/skills 的主要价值是 agent 工作流组织：方案仲裁、跨 agent 审计、计划/复盘 artifact、自治执行边界和预算意识。GetTokens 已有 `.agents/skills/`、`docs-linhay/spaces/`、dev docs、memory、subagent 和 review 治理，因此本次不直接安装外部 skill 包，而是按 `external-workflow-intake` 的 admission gate 翻译为本仓规则。
+BuilderIO/skills 的主要价值是 agent 工作流组织：方案仲裁、跨 agent 审计、计划/复盘 artifact、自治执行边界和预算意识。GetTokens 已有 `.agents/skills/`、`docs-linhay/spaces/`、dev docs、memory、subagent 和 review 治理，因此本次不直接安装外部 skill 包，而是按 `gettokens-ops-governance` 的 `External Workflow Intake` admission gate 翻译为本仓规则。
 
 ## 已吸收
 
-### 1. Plan Arbiter -> `gettokens-plan-arbiter`
+### 1. Plan Arbiter -> `gettokens-ops-governance / Plan Arbitration`
 
-新增项目级 skill：
+已吸收到项目级治理 skill：
 
-- `.agents/skills/gettokens-plan-arbiter/SKILL.md`
+- `.agents/skills/gettokens-ops-governance/SKILL.md`
 
 适用场景：
 
@@ -39,7 +39,7 @@ BuilderIO/skills 的主要价值是 agent 工作流组织：方案仲裁、跨 a
 - 输出决策备忘录时必须写清 scope、assumptions、files/surfaces、validation、rollback 和 rejected alternatives。
 - 高风险结论必须回到当前仓库文件、space、dev 文档、测试或截图证据。
 
-### 2. Agent Watchdog -> `gettokens-subagent-supervision`
+### 2. Agent Watchdog -> `gettokens-ops-governance / Subagent Delivery Loop`
 
 已补入 watchdog audit loop。后续主控 agent 监督另一个 agent、session、PR、branch 或 subagent 输出时，必须先重建用户请求和验收条件，再检查实际 diff / 测试 / CI / 截图 / 日志 / docs，最后把问题分成：
 
@@ -111,7 +111,7 @@ BuilderIO 的 visual-plan 强调“计划是可评论、可审批 artifact，而
 
 不新增同名 skill。原因：
 
-- 当前系统和 `external-workflow-intake` / `gettokens-ops-governance` 已要求外部 API、当前行为、官方文档优先查证。
+- 当前系统和 `gettokens-ops-governance` 的 `External Workflow Intake` 已要求外部 API、当前行为、官方文档优先查证。
 - OpenAI、AntD、release、CLIProxyAPI 等已有更具体的项目或全局 skill。
 
 ## 为什么不全量安装
@@ -123,10 +123,10 @@ BuilderIO 的 visual-plan 强调“计划是可评论、可审批 artifact，而
 
 ## 后续使用入口
 
-- 方案比较：`gettokens-plan-arbiter`
-- subagent 监督和 agent 产物审计：`gettokens-subagent-supervision`
+- 方案比较：`gettokens-ops-governance` 的 `Plan Arbitration`
+- subagent 监督和 agent 产物审计：`gettokens-ops-governance` 的 `Subagent Delivery Loop`
 - 大 PR / 多文件变更复盘：`check` 的 `Large Change Recap Gate`
-- 外部 workflow 再吸收：`external-workflow-intake` + `gettokens-ops-governance`
+- 外部 workflow 再吸收：`gettokens-ops-governance` 的 `External Workflow Intake`
 
 ## 验收
 

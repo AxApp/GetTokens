@@ -47,7 +47,7 @@
 
 1. 账号模板、本机 CLI 应用、Codex/Claude Code 配置写入：先用 `gettokens-domain-engineering`。
 2. release / tag / GitHub Release / DMG 分发验收：先用 `gettokens-ops-governance`。
-3. 用户再次说“整理”：先用 `gettokens-session-skill-distill`，再判断是否更新 skill、dev 文档、memory 或 AGENTS。
+3. 用户再次说“整理”：先用 `gettokens-ops-governance` 的 `Session Skill Distillation`，再判断是否更新 skill、dev 文档、memory 或 AGENTS。
 
 ## AGENTS 判断
 

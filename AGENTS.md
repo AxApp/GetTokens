@@ -40,7 +40,7 @@
 7. 涉及 Web / 前端体验优化时，默认由 Gemini 主导前端实现；Codex 负责业务逻辑、接口契约、状态流转、测试门禁、回归验收与最终集成。
 8. 前端改动若影响后端接口、领域模型或关键交互闭环，必须先由 Codex 明确边界，再交给 Gemini 落地，避免只改视觉不改业务完成度。
 9. 当一次会话中出现“有用且重复出现”的行为模式、排障路径或交付动作时，必须先识别复用边界，再优先新增或更新项目级 `skills`；只有当规则已经上升为 repo-wide、长期稳定的约束时，才同步更新 `AGENTS.md`。
-10. 当用户明确说“整理”、暂停当前修复、要求剩余项进入下期，或一轮长会话/重要修复/subagent 交付即将收尾时，默认自动触发一次会话沉淀审计：先按 `gettokens-session-skill-distill` 提炼可复用模式，再按是否属于领域 skill、跨领域 workflow、repo-wide 规则或 memory-only 记录，决定是否同步更新 `.agents/skills/`、`docs-linhay/dev/`、`AGENTS.md`、`docs-linhay/memory/`；不需要等用户额外追问“有什么可以沉淀”。
+10. 当用户明确说“整理”、暂停当前修复、要求剩余项进入下期，或一轮长会话/重要修复/subagent 交付即将收尾时，默认自动触发一次会话沉淀审计：先按 `gettokens-ops-governance` 的 `Session Skill Distillation` 提炼可复用模式，再按是否属于领域 skill、跨领域 workflow、repo-wide 规则或 memory-only 记录，决定是否同步更新 `.agents/skills/`、`docs-linhay/dev/`、`AGENTS.md`、`docs-linhay/memory/`；不需要等用户额外追问“有什么可以沉淀”。
 11. 自动触发不以用户口令为唯一条件：只要当前轮已经形成稳定边界、重要失败模式、重复执行步骤、发版/验收/止血流程，主控 agent 在最终回复前就必须主动执行一次沉淀审计，并在交付说明中明确“已沉淀什么”或“为什么这轮不沉淀”。
 12. 多份独立需求稿并行推进时，默认按“一个需求单元一个 `space`，必要时再配一个同 key 的 branch 与 `worktree`”组织，不按个人姓名或临时阶段单独命名工作目录。
 13. 当用户明确要求“由 subagent 去做、主控 agent 负责监督”时，主控 agent 必须承担需求边界、任务拆分、集成、验收、文档与最终完成判断，不得在“代码已改完”但截图、实机验证、文档写回等验收环节仍未完成时提前停止。
@@ -84,7 +84,7 @@
 4. 当前轮出现了新的稳定边界、重复失败模式、重复验证步骤、可复用交付动作或明确的“不该再踩”的坑。
 
 标准动作顺序固定为：
-1. 先用 `gettokens-session-skill-distill` 审计本轮候选模式。
+1. 先用 `gettokens-ops-governance` 的 `Session Skill Distillation` 审计本轮候选模式。
 2. 判断每个候选应落在哪一层：
    - 临时现象：不沉淀，但要在最终说明或 memory 里写明原因。
    - 单领域复用：更新对应 `.agents/skills/`。
@@ -144,16 +144,16 @@ Git `worktree` 治理：
 GetTokens 项目级 skill 以本仓 `.agents/skills/<skill-name>/SKILL.md` 为准；触发到项目级 skill 时先读本仓版本，再考虑全局技能目录中的通用补充。
 1. 涉及 `space` 创建、命名、README 模板或截图归档时，优先使用 `gettokens-ops-governance`。
 2. 涉及文档写回或 memory 写回时，优先使用 `gettokens-ops-governance`。
-3. 涉及 AGENTS 级长期治理规则时，优先使用 `gettokens-ops-governance`；若用户明确说“整理”，同时使用 `gettokens-session-skill-distill`。
+3. 涉及 AGENTS 级长期治理规则、整理、会话沉淀或 memory 写回时，优先使用 `gettokens-ops-governance`。
 4. 涉及账号池、quota、视觉系统、前端调试归因或 CLIProxyAPI fork 维护时，优先使用 `gettokens-domain-engineering`。
 5. 涉及 Codex 账号列表、请求顺序、路由探测、OAuth/openai-compatible 模型映射时，优先使用 `gettokens-codex-account-list`。
 6. 涉及“主控 agent 监督、subagent 实做、直到完整需求闭环才停止”的执行模式时，优先使用 `gettokens-ops-governance` 中的 `Subagent Delivery Loop`。
-7. 若用户希望用显式 skill 名称触发该模式，使用 `gettokens-subagent-supervision`；它是监督交付模式的轻量触发入口。
+7. 当用户口头点名旧入口 `gettokens-subagent-supervision` 时，也按 `gettokens-ops-governance` 的 `Subagent Delivery Loop` 执行；该旧入口已合并。
 8. 涉及 Codex Skills / MCP Servers、`[[skills.config]]`、`tk://github.com` / `tk://gitlab.com` Skill source、`~/.codex/config.toml` MCP 解析与保存时，优先使用 `gettokens-codex-extensions-management`。
 9. 涉及项目级 Codex custom agents、`.codex/config.toml`、`.codex/agents/*.toml` 或 subagent 任务分工配置时，优先参考 `docs-linhay/dev/20260530-codex-project-subagents.md`。
 10. 涉及项目级 Codex subagent 的新增、删除、合并、拆分、验证或生命周期治理时，优先使用 `gettokens-subagent-lifecycle`。
-11. 涉及多个 agent 方案、计划草案、PR 策略、设计方向或外部 workflow 候选之间的比较、合并、仲裁时，优先使用 `gettokens-plan-arbiter`。
-12. 涉及外部 skills / prompt library / agent workflow 吸收时，优先使用 `external-workflow-intake`；若需要落到 GetTokens 的 spaces、memory、AGENTS 或领域规则，再配合 `gettokens-ops-governance`。
+11. 涉及多个 agent 方案、计划草案、PR 策略、设计方向或外部 workflow 候选之间的比较、合并、仲裁时，优先使用 `gettokens-ops-governance` 的 `Plan Arbitration`。
+12. 涉及外部 skills / prompt library / agent workflow 吸收时，优先使用 `gettokens-ops-governance` 的 `External Workflow Intake`，并落到 GetTokens 的 spaces、memory、AGENTS、dev 文档或领域规则。
 
 ## 5. 记忆系统规则（必须）
 

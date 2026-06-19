@@ -181,7 +181,7 @@ Live sessions 是高频轮询页面，刷新时不能把每秒变化的时钟字
 
 - Codex live sessions / runtime observability：`.agents/skills/gettokens-domain-engineering`
 - 文档与 memory 写回：`.agents/skills/gettokens-ops-governance`
-- 会话沉淀：`.agents/skills/gettokens-session-skill-distill`
+- 会话沉淀：`.agents/skills/gettokens-ops-governance` 的 `Session Skill Distillation`
 
 ## 验证记录
 

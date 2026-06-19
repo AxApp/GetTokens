@@ -48,7 +48,7 @@ docs-linhay/scripts/check-docs.sh
 
 ## 与其它 skill 的关系
 
-1. 监督交付流程使用 `gettokens-subagent-supervision`。
+1. 监督交付流程使用 `gettokens-ops-governance` 的 `Subagent Delivery Loop`。
 2. spaces、memory 和 AGENTS 同步使用 `gettokens-ops-governance`。
 3. Codex Skills / MCP 工作台使用 `gettokens-codex-extensions-management`。
 4. 本 skill 只负责项目级 `.codex/agents` 的生命周期，不负责业务实现。
