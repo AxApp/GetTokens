@@ -52,6 +52,17 @@ type ClaudeTextField =
 type ClaudeBooleanField = 'disableNonEssentialTraffic' | 'claudeCodeAttributionHeader';
 type CodexBooleanField = 'supportsWebsockets';
 
+const accountLocalCliPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const accountLocalCliMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const accountLocalCliButtonClass =
+  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
+const accountLocalCliPrimaryButtonClass =
+  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
+const accountLocalCliInputClass =
+  'min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
+const accountLocalCliMetaClass = 'font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]';
+const accountLocalCliToggleClass = 'h-4 w-4 accent-[var(--gt-status-warning)]';
+
 export default function AccountLocalCliApplyConfirm({
   draft,
   relayKeyItems,
@@ -178,10 +189,10 @@ export default function AccountLocalCliApplyConfirm({
       header={
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="min-w-0">
-            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className={accountLocalCliMetaClass}>
               FILE PREVIEW CONFIRM
             </div>
-            <h2 className="mt-1 text-xl font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+            <h2 className="mt-1 text-xl font-semibold tracking-normal text-[var(--text-primary)]">
               {title}
             </h2>
             <div className="mt-3 flex max-w-full flex-wrap gap-2">
@@ -192,38 +203,38 @@ export default function AccountLocalCliApplyConfirm({
               {previewMode ? <SummaryBadge label="运行环境" value="PREVIEW ONLY" tone="warning" /> : null}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="btn-swiss active:scale-95">
+          <button type="button" onClick={onClose} className={accountLocalCliButtonClass}>
             关闭
           </button>
         </div>
       }
       footer={
         <>
-          <button type="button" onClick={onClose} className="btn-swiss active:scale-95">
+          <button type="button" onClick={onClose} className={accountLocalCliButtonClass}>
             取消
           </button>
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
-            <div className="max-w-xl truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+            <div className="max-w-xl truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-primary)]">
               {resultMessage || (blockingWarnings[0]?.message ?? (previewMode ? 'PREVIEW ONLY / 未写入' : '等待确认 / 未写入'))}
             </div>
             <button
               type="button"
               disabled={!canApply}
               onClick={() => onApply(draft)}
-              className="btn-swiss bg-[var(--border-color)] !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              className={accountLocalCliPrimaryButtonClass}
             >
               {applying ? '正在应用' : canApply ? '确认并应用' : '无法应用'}
             </button>
           </div>
         </>
       }
-      bodyClassName="bg-[var(--bg-surface)]"
+      bodyClassName="bg-[var(--gt-surface-muted)]"
     >
-      <div className="grid h-[clamp(24rem,calc(100vh-12rem),38rem)] min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <div className="grid min-h-0 content-start gap-3 overflow-auto border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:border-b-0 lg:border-r-2">
+      <div data-account-local-cli-apply-confirm="true" className="grid h-[clamp(24rem,calc(100vh-12rem),38rem)] min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <div data-account-local-cli-apply-rail="true" className="grid min-h-0 content-start gap-3 overflow-auto border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 lg:border-b-0 lg:border-r lg:border-[var(--gt-border-subtle)]">
           {draft.target === 'codex' ? (
-            <div className="grid gap-3 border-2 border-[var(--border-muted)] bg-[var(--bg-surface)] p-3">
-              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className={`${accountLocalCliMutedPanelClass} grid gap-3 p-3`}>
+              <div className={accountLocalCliMetaClass}>
                 Codex 配置
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -259,13 +270,13 @@ export default function AccountLocalCliApplyConfirm({
                 ))}
               </datalist>
               <label className="grid gap-1">
-                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                <span className={accountLocalCliMetaClass}>
                   Auth Strategy
                 </span>
                 <select
                   value={draft.codex.authStrategy}
                   onChange={(event) => handleCodexAuthStrategyChange(event.target.value as CodexAuthStrategy)}
-                  className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--accent-red)]"
+                  className={accountLocalCliInputClass}
                 >
                   <option value="replace_auth_with_apikey">覆盖为 API Key</option>
                   <option value="replace_auth_with_oauth">覆盖为 OAuth</option>
@@ -274,29 +285,29 @@ export default function AccountLocalCliApplyConfirm({
               </label>
               <ReadOnlyCodexSetting label="本地 auth 状态" value={draft.codex.localAuthStatus || '未检测到本地 auth 状态'} />
               <ReadOnlyCodexSetting label="Wire API" value={draft.codex.wireAPI || 'responses'} />
-              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]">
                 <span>supports_websockets</span>
                 <input
                   type="checkbox"
                   checked={draft.codex.supportsWebsockets}
                   onChange={(event) => handleCodexBooleanChange('supportsWebsockets', event.target.checked)}
-                  className="h-5 w-5 accent-[var(--accent-red)]"
+                  className={accountLocalCliToggleClass}
                 />
               </label>
-              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]">
                 <span>sync_model_catalog</span>
                 <input
                   type="checkbox"
                   checked={draft.codex.modelCatalogProjectionMode === 'gettokens'}
                   onChange={(event) => handleCodexModelCatalogChange(event.target.checked ? 'gettokens' : 'off')}
-                  className="h-5 w-5 accent-[var(--accent-red)]"
+                  className={accountLocalCliToggleClass}
                 />
               </label>
             </div>
           ) : null}
           {draft.target === 'claude' ? (
-            <div className="grid gap-3 border-2 border-[var(--border-muted)] bg-[var(--bg-surface)] p-3">
-              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className={`${accountLocalCliMutedPanelClass} grid gap-3 p-3`}>
+              <div className={accountLocalCliMetaClass}>
                 Claude Code 配置
               </div>
               <ClaudeSettingsField
@@ -358,54 +369,54 @@ export default function AccountLocalCliApplyConfirm({
                 />
               </div>
               <label className="grid gap-1">
-                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                <span className={accountLocalCliMetaClass}>
                   AUTH FIELD
                 </span>
                 <select
                   value={draft.claude.authField}
                   onChange={(event) => handleClaudeAuthFieldChange(event.target.value as ClaudeDraft['authField'])}
-                  className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--accent-red)]"
+                  className={accountLocalCliInputClass}
                 >
                   <option value="ANTHROPIC_API_KEY">ANTHROPIC_API_KEY</option>
                   <option value="ANTHROPIC_AUTH_TOKEN">ANTHROPIC_AUTH_TOKEN</option>
                 </select>
               </label>
-              <label className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+              <label className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]">
                 <input
                   type="checkbox"
                   checked={draft.claude.disableNonEssentialTraffic}
                   onChange={(event) => handleClaudeBooleanChange('disableNonEssentialTraffic', event.target.checked)}
-                  className="h-4 w-4 accent-[var(--accent-red)]"
+                  className={accountLocalCliToggleClass}
                 />
                 Disable nonessential traffic
               </label>
-              <label className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+              <label className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]">
                 <input
                   type="checkbox"
                   checked={draft.claude.claudeCodeAttributionHeader}
                   onChange={(event) => handleClaudeBooleanChange('claudeCodeAttributionHeader', event.target.checked)}
-                  className="h-4 w-4 accent-[var(--accent-red)]"
+                  className={accountLocalCliToggleClass}
                 />
                 Attribution header
               </label>
             </div>
           ) : null}
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={accountLocalCliMetaClass}>
             文件列表
           </div>
-          <div className="grid gap-2">
+          <div data-account-local-cli-file-list="true" className="grid gap-2">
             {previewFiles.map((file) => (
               <button
                 key={file.id}
                 type="button"
                 onClick={() => setSelectedFileID(file.id)}
-                className={`grid border-2 px-3 py-3 text-left active:scale-[0.99] ${
+                className={`grid rounded border px-3 py-3 text-left transition active:scale-[0.99] ${
                   selectedFile?.id === file.id
-                    ? 'border-[var(--border-color)] bg-[var(--bg-surface)] shadow-[4px_4px_0_var(--shadow-color)]'
-                    : 'border-[var(--border-muted)] bg-[var(--bg-main)] hover:bg-[var(--bg-surface)]'
+                    ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-muted)]'
+                    : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] hover:bg-[var(--gt-surface-muted)]'
                 }`}
               >
-                <span className="break-all font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                <span className="break-all font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">
                   {file.path}
                 </span>
               </button>
@@ -413,7 +424,7 @@ export default function AccountLocalCliApplyConfirm({
           </div>
         </div>
 
-        <div className="min-h-0 min-w-0 overflow-auto p-4">
+        <div className={`${accountLocalCliPanelClass} min-h-0 min-w-0 overflow-auto p-4`}>
           {selectedFile ? (
             <StatusSnippetPanel
               title={`文件改动 / ${selectedFile.path}`}
@@ -444,7 +455,7 @@ function ClaudeSettingsField({
 }) {
   return (
     <label className="grid min-w-0 gap-1">
-      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <span className={accountLocalCliMetaClass}>
         {label}
       </span>
       <input
@@ -452,7 +463,7 @@ function ClaudeSettingsField({
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(field, event.target.value)}
-        className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-[var(--accent-red)]"
+        className={accountLocalCliInputClass}
       />
     </label>
   );
@@ -473,7 +484,7 @@ function CodexSettingsField({
 }) {
   return (
     <label className="grid min-w-0 gap-1">
-      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <span className={accountLocalCliMetaClass}>
         {label}
       </span>
       <input
@@ -481,7 +492,7 @@ function CodexSettingsField({
         value={value}
         list={listID}
         onChange={(event) => onChange(field, event.target.value)}
-        className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-[var(--accent-red)]"
+        className={accountLocalCliInputClass}
       />
     </label>
   );
@@ -490,10 +501,10 @@ function CodexSettingsField({
 function ReadOnlyCodexSetting({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-1">
-      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <span className={accountLocalCliMetaClass}>
         {label}
       </span>
-      <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
+      <div className="min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)]">
         {value}
       </div>
     </div>
@@ -511,10 +522,10 @@ function SummaryBadge({
 }) {
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-2 border-2 px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
+      className={`inline-flex max-w-full items-center gap-2 rounded border px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal ${
         tone === 'warning'
-          ? 'border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] text-[var(--color-status-warning)]'
-          : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
+          ? 'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] text-[var(--gt-status-warning)]'
+          : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)]'
       }`}
     >
       <span className="text-[var(--text-muted)]">{label}</span>

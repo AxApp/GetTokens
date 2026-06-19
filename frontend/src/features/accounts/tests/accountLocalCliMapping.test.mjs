@@ -669,6 +669,32 @@ test('AccountLocalCliApplyConfirm exposes editable Codex local apply settings', 
   assert.match(featureSource, /modelCatalogProjectionMode:\s*draft\.codex\.modelCatalogProjectionMode/);
 });
 
+test('AccountLocalCliApplyConfirm uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/AccountLocalCliApplyConfirm.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const accountLocalCliPanelClass =/);
+  assert.match(source, /const accountLocalCliButtonClass =/);
+  assert.match(source, /const accountLocalCliInputClass =/);
+  assert.match(source, /const accountLocalCliMetaClass =/);
+  assert.match(source, /data-account-local-cli-apply-confirm/);
+  assert.match(source, /data-account-local-cli-apply-rail/);
+  assert.match(source, /data-account-local-cli-file-list/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-warning/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-r-2/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-\[0\.12em\]/);
+  assert.doesNotMatch(source, /tracking-\[0\.18em\]/);
+});
+
 test('deep link account import confirm renders batch account preview and result summary', async () => {
   const confirmSource = await readFile(new URL('../components/DeepLinkAccountImportConfirm.tsx', import.meta.url), 'utf8');
   const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
