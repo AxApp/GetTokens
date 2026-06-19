@@ -13,6 +13,9 @@ function node(tagName, parentElement = null, dataset) {
 function sourceBlock(source, startMarker, endMarker) {
   const start = source.indexOf(startMarker);
   assert.notEqual(start, -1, `missing source block start: ${startMarker}`);
+  if (!endMarker) {
+    return source.slice(start);
+  }
   const end = source.indexOf(endMarker, start);
   assert.notEqual(end, -1, `missing source block end: ${endMarker}`);
   return source.slice(start, end);
@@ -276,6 +279,38 @@ test('account import modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-\[0\.14em\]|tracking-\[0\.18em\]|tracking-\[0\.2em\]/);
   assert.doesNotMatch(targetSource, /shadow-\[/);
+});
+
+test('api key compose modal uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/ApiKeyComposeModal.tsx', import.meta.url), 'utf8');
+  const targetSource = sourceBlock(source, 'export default function ApiKeyComposeModal', null);
+
+  assert.match(source, /const apiKeyComposeOverlayClass =/);
+  assert.match(source, /const apiKeyComposePanelClass =/);
+  assert.match(source, /const apiKeyComposeInputClass =/);
+  assert.match(source, /const apiKeyComposeButtonClass =/);
+  assert.match(source, /const apiKeyComposePrimaryButtonClass =/);
+  assert.match(source, /const apiKeyComposeStatusClass =/);
+  assert.match(targetSource, /data-api-key-compose-modal/);
+  assert.match(targetSource, /data-api-key-compose-header/);
+  assert.match(targetSource, /data-api-key-compose-body/);
+  assert.match(targetSource, /data-api-key-compose-probe/);
+  assert.match(targetSource, /data-api-key-compose-footer/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-success/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(targetSource, /btn-swiss|input-swiss/);
+  assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
+  assert.doesNotMatch(targetSource, /border-dashed/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /color-status-/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.12em\]|tracking-\[0\.18em\]|tracking-\[0\.2em\]|tracking-wide/);
+  assert.doesNotMatch(targetSource, /shadow-hard|shadow-\[/);
 });
 
 test('pasted codex api key copies use numbered duplicate titles', async () => {

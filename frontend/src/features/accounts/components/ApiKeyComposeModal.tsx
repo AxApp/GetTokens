@@ -3,6 +3,43 @@ import { Loader2 } from 'lucide-react';
 import type { ApiKeyFormState, ClickEventLike, TextInputEvent, Translator } from '../model/types';
 
 const DEFAULT_PROBE_MODEL = 'gpt-5.4-mini';
+const apiKeyComposeOverlayClass =
+  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm';
+const apiKeyComposePanelClass =
+  'flex max-h-[calc(100vh-4rem)] w-full max-w-xl flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const apiKeyComposeHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-6 py-4';
+const apiKeyComposeBodyClass = 'space-y-4 overflow-y-auto p-6';
+const apiKeyComposeFooterClass =
+  'flex items-center justify-between border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
+const apiKeyComposeLabelClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const apiKeyComposeInputClass =
+  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-faint)] focus:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+const apiKeyComposeTextareaClass = `${apiKeyComposeInputClass} min-h-28 resize-y font-mono`;
+const apiKeyComposeToggleClass =
+  'flex items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
+const apiKeyComposeProbeClass =
+  'space-y-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-4';
+const apiKeyComposeButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
+const apiKeyComposePrimaryButtonClass =
+  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_88%,transparent)] disabled:cursor-not-allowed disabled:opacity-45';
+const apiKeyComposeModelChipClass =
+  'rounded border px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal transition-colors';
+const apiKeyComposeModelChipActiveClass =
+  'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]';
+const apiKeyComposeModelChipInactiveClass =
+  'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-muted)] hover:border-[var(--text-primary)]';
+const apiKeyComposeErrorClass =
+  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
+const apiKeyComposeStatusClass = (status: FetchModelsState['status'] | ProbeVerifyState['status']) =>
+  `text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal ${
+    status === 'success'
+      ? 'text-[var(--gt-status-success)]'
+      : status === 'error'
+        ? 'text-[var(--gt-status-danger)]'
+        : 'text-[var(--text-muted)]'
+  }`;
 
 interface FetchModelsState {
   status: 'idle' | 'loading' | 'success' | 'error';
@@ -87,81 +124,81 @@ export default function ApiKeyComposeModal({
   const showProbeSection = Boolean(onFetchModels || onVerify);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm" onClick={onClose}>
+    <div className={apiKeyComposeOverlayClass} data-api-key-compose-modal onClick={onClose}>
       <div
-        className="flex w-full max-w-xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        className={apiKeyComposePanelClass}
         onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
-        <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        <header className={apiKeyComposeHeaderClass} data-api-key-compose-header>
+          <div className={apiKeyComposeLabelClass}>
             {t('accounts.source_api_key')}
           </div>
-          <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+          <h3 className="mt-1 text-sm font-semibold tracking-normal text-[var(--text-primary)]">
             {t('accounts.add_codex_api_key')}
           </h3>
         </header>
-        <div className="space-y-4 overflow-y-auto p-6">
+        <div className={apiKeyComposeBodyClass} data-api-key-compose-body>
           <div className="grid gap-4">
             <label className="space-y-2">
-              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className={apiKeyComposeLabelClass}>
                 {t('accounts.api_key_label')}
               </span>
               <input
                 value={form.label}
                 onChange={(event: TextInputEvent) => onChange('label', event.target.value)}
-                className="input-swiss w-full"
+                className={apiKeyComposeInputClass}
                 placeholder={t('accounts.api_key_label_placeholder')}
               />
             </label>
             <label className="space-y-2">
-              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className={apiKeyComposeLabelClass}>
                 {t('accounts.api_key_value')}
               </span>
               <input
                 value={form.apiKey}
                 onChange={(event: TextInputEvent) => onChange('apiKey', event.target.value)}
-                className="input-swiss w-full"
+                className={apiKeyComposeInputClass}
                 placeholder={t('accounts.api_key_value_placeholder')}
                 type="password"
               />
             </label>
             <label className="space-y-2">
-              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className={apiKeyComposeLabelClass}>
                 Base URL
               </span>
               <input
                 value={form.baseUrl}
                 onChange={(event: TextInputEvent) => onChange('baseUrl', event.target.value)}
-                className="input-swiss w-full"
+                className={apiKeyComposeInputClass}
                 placeholder="https://api.openai.com/v1"
               />
             </label>
-            <label className="flex items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2">
+            <label className={apiKeyComposeToggleClass}>
               <input
                 type="checkbox"
                 checked={form.quotaEnabled}
                 onChange={(event) => onChange('quotaEnabled', event.target.checked)}
               />
-              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className={apiKeyComposeLabelClass}>
                 {t('accounts.quota_curl_enabled')}
               </span>
             </label>
             <label className="space-y-2">
-              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className={apiKeyComposeLabelClass}>
                 {t('accounts.quota_curl')}
               </span>
               <textarea
                 value={form.quotaCurl}
                 onChange={(event) => onChange('quotaCurl', event.target.value)}
-                className="input-swiss min-h-28 w-full resize-y font-mono"
+                className={apiKeyComposeTextareaClass}
                 placeholder='curl -sS "https://example.com/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"'
               />
             </label>
           </div>
 
           {showProbeSection ? (
-            <div className="space-y-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-4 py-4">
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className={apiKeyComposeProbeClass} data-api-key-compose-probe>
+              <div className={apiKeyComposeLabelClass}>
                 {t('accounts.api_key_probe')}
               </div>
 
@@ -172,7 +209,7 @@ export default function ApiKeyComposeModal({
                       type="button"
                       onClick={() => void handleFetchModels()}
                       disabled={!probeEnabled || fetchModelsState.status === 'loading'}
-                      className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                      className={apiKeyComposeButtonClass}
                     >
                       {fetchModelsState.status === 'loading' ? (
                         <span className="flex items-center gap-1.5">
@@ -184,15 +221,7 @@ export default function ApiKeyComposeModal({
                       )}
                     </button>
                     {fetchModelsState.status !== 'idle' ? (
-                      <span
-                        className={`text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
-                          fetchModelsState.status === 'success'
-                            ? 'text-[var(--color-status-success)]'
-                            : fetchModelsState.status === 'error'
-                              ? 'text-[var(--color-status-danger)]'
-                              : 'text-[var(--text-muted)]'
-                        }`}
-                      >
+                      <span className={apiKeyComposeStatusClass(fetchModelsState.status)}>
                         {fetchModelsState.status === 'success'
                           ? fetchModelsState.models.length > 0
                             ? `${fetchModelsState.models.length} models`
@@ -208,17 +237,17 @@ export default function ApiKeyComposeModal({
                           key={name}
                           type="button"
                           onClick={() => setVerifyModel(name)}
-                          className={`border px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] transition-colors ${
+                          className={`${apiKeyComposeModelChipClass} ${
                             verifyModel === name
-                              ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                              : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-primary)]'
+                              ? apiKeyComposeModelChipActiveClass
+                              : apiKeyComposeModelChipInactiveClass
                           }`}
                         >
                           {name}
                         </button>
                       ))}
                       {fetchModelsState.models.length > 12 ? (
-                        <span className="self-center text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                        <span className="self-center text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]">
                           +{fetchModelsState.models.length - 12}
                         </span>
                       ) : null}
@@ -239,14 +268,14 @@ export default function ApiKeyComposeModal({
                       value={verifyModel}
                       onChange={(e: TextInputEvent) => setVerifyModel(e.target.value)}
                       list="api-key-compose-probe-models"
-                      className="input-swiss min-w-0 flex-1"
+                      className={`${apiKeyComposeInputClass} min-w-0 flex-1`}
                       placeholder={DEFAULT_PROBE_MODEL}
                     />
                     <button
                       type="button"
                       onClick={() => void handleVerify()}
                       disabled={!probeEnabled || !verifyModel.trim() || verifyState.status === 'loading'}
-                      className="btn-swiss whitespace-nowrap !py-2 !text-[length:var(--font-size-ui-xs)]"
+                      className={`${apiKeyComposeButtonClass} whitespace-nowrap`}
                     >
                       {verifyState.status === 'loading' ? (
                         <span className="flex items-center gap-1.5">
@@ -259,15 +288,7 @@ export default function ApiKeyComposeModal({
                     </button>
                   </div>
                   {verifyState.status !== 'idle' ? (
-                    <div
-                      className={`text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
-                        verifyState.status === 'success'
-                          ? 'text-[var(--color-status-success)]'
-                          : verifyState.status === 'error'
-                            ? 'text-[var(--color-status-danger)]'
-                            : 'text-[var(--text-muted)]'
-                      }`}
-                    >
+                    <div className={apiKeyComposeStatusClass(verifyState.status)}>
                       {verifyState.message}
                     </div>
                   ) : null}
@@ -277,16 +298,16 @@ export default function ApiKeyComposeModal({
           ) : null}
 
           {error ? (
-            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
+            <div className={apiKeyComposeErrorClass}>
               {error}
             </div>
           ) : null}
         </div>
-        <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
+        <footer className={apiKeyComposeFooterClass} data-api-key-compose-footer>
+          <button onClick={onClose} className={apiKeyComposeButtonClass}>
             {t('common.cancel')}
           </button>
-          <button onClick={onSubmit} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+          <button onClick={onSubmit} className={apiKeyComposePrimaryButtonClass}>
             {t('accounts.add_codex_api_key')}
           </button>
         </footer>
