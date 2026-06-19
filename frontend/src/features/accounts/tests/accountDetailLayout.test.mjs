@@ -698,6 +698,27 @@ test('account detail footer status copy stays on a single line', async () => {
   assert.match(source, /overflow-hidden/);
   assert.match(source, /text-ellipsis/);
 });
+
+test('account detail footer uses the quiet workspace action shell', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const targetSource = sourceBlock(source, 'export function AccountDetailFooter', 'function normalizeBillingDisplay');
+
+  assert.match(source, /const accountDetailFooterStatusClass =/);
+  assert.match(source, /const accountDetailFooterActionsClass =/);
+  assert.match(source, /const accountDetailFooterButtonClass =/);
+  assert.match(source, /const accountDetailFooterPrimaryButtonClass =/);
+  assert.match(targetSource, /data-account-detail-footer-status="single-line"/);
+  assert.match(targetSource, /data-account-detail-footer-actions/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.doesNotMatch(targetSource, /btn-swiss/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.08em\]/);
+});
+
 test('account detail credential fields are plaintext and use balanced grid spacing hooks', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
 

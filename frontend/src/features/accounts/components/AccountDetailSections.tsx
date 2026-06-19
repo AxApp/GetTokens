@@ -247,6 +247,13 @@ const accountDetailResourceKvLabelClass =
   'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
 const accountDetailResourceKvValueClass =
   'mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountDetailFooterStatusClass =
+  'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailFooterActionsClass = 'flex items-center gap-2';
+const accountDetailFooterButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+const accountDetailFooterPrimaryButtonClass =
+  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 
 export function AccountDetailHeader({
   account,
@@ -1999,21 +2006,21 @@ export function AccountDetailFooter({
     <>
       <div
         data-account-detail-footer-status="single-line"
-        className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]"
+        className={accountDetailFooterStatusClass}
       >
         {isApiKey && missingFields.length > 0
           ? `缺少：${missingFields.join(', ')}`
           : dirtyMessage}
       </div>
-      <div className="flex items-center gap-2">
-        <button onClick={onClose} className="btn-swiss text-[length:var(--font-size-ui-xs)]">
+      <div data-account-detail-footer-actions className={accountDetailFooterActionsClass}>
+        <button onClick={onClose} className={accountDetailFooterButtonClass}>
           {t('common.close')}
         </button>
         {isApiKey || rateLimitDirty ? (
           <button
             onClick={onSaveConfig}
             disabled={!hasDirtyChanges || missingFields.length > 0 || savingConfig}
-            className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] !text-[length:var(--font-size-ui-xs)]"
+            className={accountDetailFooterPrimaryButtonClass}
           >
             {savingConfig ? '保存中...' : '保存改动'}
           </button>
