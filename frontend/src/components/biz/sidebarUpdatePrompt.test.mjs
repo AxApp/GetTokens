@@ -67,8 +67,8 @@ test('sidebar update prompt delegates to native updater UI when present', () => 
 test('sidebar update prompt UI uses green success styling and carries the release version', async () => {
   const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /bg-\[var\(--accent-green\)\]/);
-  assert.match(source, /text-\[var\(--text-on-accent\)\]/);
+  assert.match(source, /--gt-status-success/);
+  assert.match(source, /color:\s*'#ffffff'/);
   assert.match(source, /updateButtonLabel[\s\S]*updatePrompt\?\.releaseVersion/);
   assert.doesNotMatch(source, /\{t\('nav\.update_available'\)\}\s*\{updatePrompt\.releaseVersion\}/);
 });

@@ -38,7 +38,7 @@ test('extension registry feature consumes snapshot plus local enable-state bindi
   assert.match(codexPageSource, /workspace === 'extension-registry'/);
   assert.match(codexPageSource, /<GetTokensExtensionRegistryFeature \/>/);
   assert.match(sidebarSource, /id: 'extension-registry'/);
-  assert.match(sidebarSource, /labelText: 'Extension Registry'/);
+  assert.match(sidebarSource, /label: 'nav\.codex_extension_registry'/);
   assert.match(source, /data-gettokens-extension-registry-panel="true"/);
   assert.match(source, /data-gettokens-extension-registry-root=/);
   assert.match(source, /data-gettokens-extension-registry-diagnostic=/);

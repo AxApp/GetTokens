@@ -105,16 +105,13 @@ export default function Sidebar({
 
   function handleNavItemClick(item: { id: string; label: string }) {
     if (isSectionId(item.id)) {
+      setActivePage(item.id as AppPage);
       if (isExpanded) {
-        // 展开时：只 toggle 子菜单，不切换页面
         setOpenSection((prev) => prev === item.id ? null : (item.id as OpenSection));
       } else {
-        // 折叠时：点击直接导航到该 section（accounts/codex/claude）
-        setActivePage(item.id as AppPage);
         setOpenSection(null);
       }
     } else {
-      // 普通页面：直接导航
       setActivePage(item.id as AppPage);
       setOpenSection(null);
     }
@@ -260,9 +257,21 @@ export default function Sidebar({
                     </button>
                   ))}
                   {item.id === 'accounts' && (
-                    <div className="px-3 py-1.5 text-xs" style={{ color: 'var(--gt-ink-muted)' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActivePage('accounts');
+                        if (isExpanded) setOpenSection(null);
+                      }}
+                      className="w-full rounded-md px-3 py-1.5 text-left text-sm font-medium transition duration-150 active:scale-[0.98]"
+                      style={{
+                        color: activePage === 'accounts' ? 'var(--gt-accent-primary)' : 'var(--gt-ink-secondary)',
+                        backgroundColor: activePage === 'accounts' ? 'color-mix(in srgb, var(--gt-accent-primary) 8%, transparent)' : 'transparent',
+                        fontFamily: 'var(--gt-font-family-sans)',
+                      }}
+                    >
                       {t('nav.accounts_all')}
-                    </div>
+                    </button>
                   )}
                 </Submenu>
               )}

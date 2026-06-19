@@ -133,7 +133,7 @@ test('doctor entry is wired to CodexPage and uses Wails runtime before preview f
   assert.match(codexPageSource, /workspace === 'doctor-workbench'/);
   assert.match(codexPageSource, /<DoctorWorkbenchFeature \/>/);
   assert.match(sidebarSource, /id: 'doctor-workbench'/);
-  assert.match(sidebarSource, /labelText: 'Doctor Workbench'/);
+  assert.match(sidebarSource, /label: 'nav\.codex_doctor_workbench'/);
   assert.match(featureSource, /import \{ GetDoctorSnapshot, RunRouteResilienceAction \} from '..\/..\/..\/wailsjs\/go\/main\/App'/);
   assert.match(featureSource, /hasDoctorSnapshotRuntime/);
   assert.match(featureSource, /GetDoctorSnapshot\?: unknown/);

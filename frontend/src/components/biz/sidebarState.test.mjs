@@ -63,10 +63,18 @@ test('submenu motion state matches placement and visibility', () => {
 test('sidebar typography keeps the brand and nav labels readable', async () => {
   const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /text-3xl/);
-  assert.match(source, /text-sm font-bold uppercase tracking-widest/);
-  assert.match(source, /font-size-ui-lg/);
-  assert.match(source, /font-size-ui-sm/);
+  assert.match(source, /text-2xl font-bold/);
+  assert.match(source, /text-sm font-medium/);
+  assert.match(source, /--gt-font-family-sans/);
+  assert.match(source, /--gt-ink-primary/);
+});
+
+test('sidebar section clicks still select the section page before opening submenu', async () => {
+  const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /if \(isSectionId\(item\.id\)\) \{\n\s*setActivePage\(item\.id as AppPage\)/);
+  assert.match(source, /setActivePage\('accounts'\)/);
+  assert.doesNotMatch(source, /展开时：只 toggle 子菜单，不切换页面/);
 });
 
 test('app shell publishes sidebar width for fixed modal layout', async () => {
