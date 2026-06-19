@@ -381,3 +381,24 @@ Score: <0-20> / 20
 - 图标按钮删除文字后没有 `aria-label`，或按钮仍保留文字按钮宽度。
 - AntD AutoComplete 只改 input class，却忽略 options 自定义 label 的实际显示字号。
 - 连续微调只靠手看浏览器，没有把最终布局写进可回归的 DOM/源码断言。
+
+### 4.14 Quiet workspace migration loop
+
+当一轮视觉收敛从单点微调扩展到多个真实工作台页面时，按“扫描旧样式信号 -> 选一个独立页面 -> 加门禁 -> 最小迁移 -> 验证 -> 提交”的小步节奏推进，避免一次性重写所有页面。
+
+适用模块：代理池、会话管理、扩展注册表、Doctor workbench、状态页、账号详情等桌面工作台页面。
+
+执行顺序：
+1. 先用源码扫描定位旧样式高信号入口，例如粗描边、hard shadow、`bg-main/bg-surface`、heavy uppercase、旧 Swiss button 或局部硬编码色。
+2. 每轮只选一个可独立验收的真实页面或一组强相关 modal；不要把多个业务域放进同一提交。
+3. 先补轻量源码/DOM 测试并确认会因旧壳层失败，断言应覆盖新 shell 标记、共享 class 常量和旧样式禁止项。
+4. 迁移时优先定义页面内共享 class 常量，如 panel、muted panel、button、chip、meta row；复用 `--gt-surface-*`、`--gt-border-*`、`--gt-text-*`、`--gt-elevation-*` token。
+5. 页头摘要进入 `WorkspacePageHeader.meta`；主操作优先使用 40px icon-only 按钮并保留 `aria-label/title`；列表和详情区用轻描边、内部滚动和稳定 `min-h-0`。
+6. 验证按风险选择 focused tests、typecheck、组件 lint、无头 preview 或浏览器 computed style；若某个 preview gate 有环境限制，记录替代证据而不是跳过说明。
+7. 每个提交同步更新对应 space 和 memory，说明本轮页面、门禁、验证命令、剩余旧样式扫描结果；收尾整理时再判断是否需要扩写本 skill。
+
+常见反例：
+- 一次性把多个页面改到半成品，最后只能靠截图主观判断。
+- 先改视觉再补测试，导致旧 wrapper、旧文案或旧按钮宽度悄悄回归。
+- 页面主容器缺 `min-h-0` / `overflow-hidden`，列表内容把工作台撑到远超 viewport。
+- 只在 memory 记录完成页面，没有把可复用迁移节奏沉淀到前端设计 skill。
