@@ -136,13 +136,26 @@ const stateMeta: Record<
 
 const toneClass: Record<'ready' | 'warning' | 'danger' | 'neutral', string> = {
   ready:
-    'border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]',
+    'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]',
   warning:
-    'border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_12%,transparent)] text-[var(--color-status-warning)]',
+    'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] text-[var(--gt-status-warning)]',
   danger:
-    'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]',
-  neutral: 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)]',
+    'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]',
+  neutral: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-muted)]',
 };
+
+const claudeAssetPanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const claudeAssetMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const claudeAssetButtonClass =
+  'inline-flex min-h-8 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const claudeAssetPrimaryButtonClass =
+  'inline-flex min-h-8 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const claudeAssetInputClass =
+  'min-h-10 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] outline-none transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
+const claudeAssetMetaTextClass = 'font-mono text-[10px] font-medium tracking-normal text-[var(--text-muted)]';
+const claudeAssetBadgeClass =
+  'inline-flex items-center justify-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-normal text-[var(--text-muted)]';
 
 export function ClaudeCodeAssetWorkbench({
   state,
@@ -179,6 +192,7 @@ export function ClaudeCodeAssetWorkbench({
     <div
       data-design-system-component="true"
       data-design-system-component-name="ClaudeCodeAssetWorkbench"
+      data-claude-asset-workbench-shell="true"
       className="h-full w-full"
     >
       <AssetWorkbenchShell
@@ -250,31 +264,27 @@ export function ClaudeCodeAssetWorkbench({
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
-      <div className="font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)]">{label}</div>
-      <div className="mt-1 text-xl font-black tabular-nums">{value}</div>
+    <div className={`${claudeAssetMutedPanelClass} px-3 py-2`}>
+      <div className={claudeAssetMetaTextClass}>{label}</div>
+      <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
 
 function Badge({ children }: { children: ReactNode }) {
-  return (
-    <span className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 font-mono text-[10px] font-black uppercase tracking-normal">
-      {children}
-    </span>
-  );
+  return <span className={claudeAssetBadgeClass}>{children}</span>;
 }
 
 function SectionTitle({ icon, title, note }: { icon: ReactNode; title: string; note: string }) {
   return (
     <div className="flex min-w-0 items-start justify-between gap-3">
       <div className="flex min-w-0 items-center gap-2">
-        <span className="grid h-8 w-8 shrink-0 place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)]">
           {icon}
         </span>
         <div className="min-w-0">
-          <h3 className="text-sm font-black uppercase italic tracking-normal">{title}</h3>
-          <p className="mt-0.5 text-xs font-bold leading-5 text-[var(--text-muted)]">{note}</p>
+          <h3 className="text-sm font-semibold italic tracking-normal">{title}</h3>
+          <p className="mt-0.5 text-xs font-medium leading-5 text-[var(--text-muted)]">{note}</p>
         </div>
       </div>
     </div>
@@ -283,11 +293,11 @@ function SectionTitle({ icon, title, note }: { icon: ReactNode; title: string; n
 
 function StatusStrip({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
   return (
-    <div className="flex min-w-0 items-start gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-      <span className="grid h-8 w-8 shrink-0 place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-main)]">{icon}</span>
+    <div className="flex min-w-0 items-start gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)]">{icon}</span>
       <div className="min-w-0">
-        <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide">{title}</div>
-        <div className="mt-1 font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">{detail}</div>
+        <div className="text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal">{title}</div>
+        <div className="mt-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">{detail}</div>
       </div>
     </div>
   );
@@ -299,31 +309,29 @@ function SkillAssetMatrix({ skills }: { skills: readonly ClaudeCodeSkillAsset[] 
   }
 
   return (
-    <div>
-      <div className="border-b-2 border-[var(--border-color)] px-4 py-3">
+    <div data-claude-asset-skill-matrix="true">
+      <div className="border-b border-[var(--gt-border-subtle)] px-4 py-3">
         <SectionTitle icon={<Boxes className="h-4 w-4" />} title="Skills / Commands" note="Claude frontmatter replaces Codex enabled overrides." />
       </div>
-      <div className="scrollbar-stable min-h-0 flex-1 overflow-auto divide-y-2 divide-[var(--border-color)]">
+      <div className="scrollbar-stable min-h-0 flex-1 overflow-auto divide-y divide-[var(--gt-border-subtle)]">
         {skills.map((skill) => (
-          <article key={skill.id} className="group grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--bg-surface)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <article key={skill.id} className="group grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--gt-surface-muted)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black">{skill.name}</span>
+                <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-semibold">{skill.name}</span>
                 <ScopeBadge scope={skill.scope} />
-                <span className={`border px-1.5 py-0.5 font-mono text-[10px] font-black uppercase tracking-normal ${frontmatterTone(skill.frontmatterStatus)}`}>
+                <span className={`${claudeAssetBadgeClass} ${frontmatterTone(skill.frontmatterStatus)}`}>
                   {skill.frontmatterStatus}
                 </span>
-                <span className="border border-[var(--border-color)] px-1.5 py-0.5 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)]">
-                  {skill.invocation}
-                </span>
+                <Badge>{skill.invocation}</Badge>
               </div>
-              <p className="mt-1 line-clamp-2 text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--text-muted)]">{skill.description}</p>
-              <div className="mt-2 grid gap-1 font-mono text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-muted)]">
+              <p className="mt-1 line-clamp-2 text-[length:var(--font-size-ui-sm)] font-medium leading-snug text-[var(--text-muted)]">{skill.description}</p>
+              <div className="mt-2 grid gap-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-muted)]">
                 <span className="truncate">path: {skill.path}</span>
-                {skill.risk ? <span className="text-[var(--color-status-warning)]">risk: {skill.risk}</span> : null}
+                {skill.risk ? <span className="text-[var(--gt-status-warning)]">risk: {skill.risk}</span> : null}
               </div>
             </div>
-            <div className="grid content-center gap-1 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)] md:text-right">
+            <div className={`${claudeAssetMetaTextClass} grid content-center gap-1 md:text-right`}>
               <span>{skill.fileCount} files</span>
               <span>model {skill.modelInvocation}</span>
               <span>{skill.removable ? 'removable' : 'locked'}</span>
@@ -367,55 +375,53 @@ function McpAssetMatrix({
   }
 
   return (
-    <div>
-      <div className="border-b-2 border-[var(--border-color)] px-4 py-3">
+    <div data-claude-asset-mcp-matrix="true">
+      <div className="border-b border-[var(--gt-border-subtle)] px-4 py-3">
         <SectionTitle icon={<Server className="h-4 w-4" />} title="MCP Servers" note="Local > project > user precedence is visible before any save." />
       </div>
-      <div className="divide-y-2 divide-[var(--border-color)]">
+      <div className="divide-y divide-[var(--gt-border-subtle)]">
         {mcpServers.map((server) => (
           <article
             key={mcpServerEditKey(server)}
-            className={`grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--bg-surface)] ${
-              server.active ? '' : 'bg-[color-mix(in_srgb,var(--color-status-warning)_6%,transparent)]'
+            className={`grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--gt-surface-muted)] ${
+              server.active ? '' : 'bg-[color-mix(in_srgb,var(--gt-status-warning)_6%,transparent)]'
             }`}
           >
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg-compact)] font-black">{server.label}</span>
+                  <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg-compact)] font-semibold">{server.label}</span>
                   <ScopeBadge scope={server.scope} />
-                  <span className="border border-[var(--border-color)] px-1.5 py-0.5 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)]">
-                    {server.transport}
-                  </span>
+                  <Badge>{server.transport}</Badge>
                   <span
-                    className={`border px-1.5 py-0.5 font-mono text-[10px] font-black uppercase tracking-normal ${
+                    className={`${claudeAssetBadgeClass} ${
                       server.active
-                        ? 'border-[var(--color-status-success)] text-[var(--color-status-success)]'
-                        : 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]'
+                        ? 'border-[var(--gt-status-success)] text-[var(--gt-status-success)]'
+                        : 'border-[var(--gt-status-warning)] text-[var(--gt-status-warning)]'
                     }`}
                   >
                     {server.active ? 'active' : 'shadowed'}
                   </span>
                   {server.dirty ? (
-                    <span className="border border-[var(--accent-red)] px-1.5 py-0.5 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--accent-red)]">
+                    <span className={`${claudeAssetBadgeClass} border-[var(--gt-status-danger)] text-[var(--gt-status-danger)]`}>
                       dirty
                     </span>
                   ) : null}
                 </div>
-                <div className="mt-2 grid gap-1 font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-5 text-[var(--text-muted)]">
+                <div className="mt-2 grid gap-1 font-mono text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
                   <span className="truncate">endpoint: {server.endpoint}</span>
                   <span className="truncate">source: {server.sourcePath}</span>
-                  {server.shadowedBy ? <span className="text-[var(--color-status-warning)]">shadowed by: {server.shadowedBy}</span> : null}
+                  {server.shadowedBy ? <span className="text-[var(--gt-status-warning)]">shadowed by: {server.shadowedBy}</span> : null}
                 </div>
               </div>
               <div className="grid content-center gap-2 md:justify-items-end">
-                <div className="grid gap-1 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)] md:text-right">
+                <div className={`${claudeAssetMetaTextClass} grid gap-1 md:text-right`}>
                   <span>{server.secretState === 'redacted' ? 'secret redacted' : 'no secret'}</span>
                   <span>{server.scope} scope</span>
                 </div>
                 <button
                   type="button"
-                  className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                  className={claudeAssetButtonClass}
                   onClick={() => onStartEdit?.(server)}
                   disabled={!onStartEdit}
                 >
@@ -425,27 +431,27 @@ function McpAssetMatrix({
               </div>
             </div>
             {editingServerID === mcpServerEditKey(server) ? (
-              <div className="grid gap-3 border-t-2 border-[var(--border-color)] pt-3 md:grid-cols-[minmax(12rem,18rem)_minmax(0,1fr)_auto] md:items-end">
+              <div className="grid gap-3 border-t border-[var(--gt-border-subtle)] pt-3 md:grid-cols-[minmax(12rem,18rem)_minmax(0,1fr)_auto] md:items-end">
                 <SegmentedControl options={mcpTransportOptions} value={draftTransport} onChange={onDraftTransportChange ?? (() => undefined)} />
-                <label className="grid gap-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-normal text-[var(--text-muted)]">
+                <label className="grid gap-1 text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]">
                   Endpoint
                   <input
-                    className="min-h-10 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-color)]"
+                    className={claudeAssetInputClass}
                     value={draftEndpoint}
                     onChange={(event) => onDraftEndpointChange?.(event.target.value)}
                   />
                 </label>
                 <div className="flex flex-wrap gap-2 md:justify-end">
-                  <button type="button" className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]" onClick={() => onSaveDraft?.(server)} disabled={!onSaveDraft || savingServerID === mcpServerEditKey(server)}>
+                  <button type="button" className={claudeAssetPrimaryButtonClass} onClick={() => onSaveDraft?.(server)} disabled={!onSaveDraft || savingServerID === mcpServerEditKey(server)}>
                     <Save className="h-3.5 w-3.5" />
                     {savingServerID === mcpServerEditKey(server) ? 'Saving' : 'Save'}
                   </button>
-                  <button type="button" className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]" onClick={onCancelEdit}>
+                  <button type="button" className={claudeAssetButtonClass} onClick={onCancelEdit}>
                     <X className="h-3.5 w-3.5" />
                     Cancel
                   </button>
                 </div>
-                {saveMessage ? <div className="font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)] md:col-span-3">{saveMessage}</div> : null}
+                {saveMessage ? <div className="font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)] md:col-span-3">{saveMessage}</div> : null}
               </div>
             ) : null}
           </article>
@@ -461,17 +467,17 @@ function mcpServerEditKey(server: ClaudeCodeMcpAsset) {
 
 function DiffPanel({ diffPreview }: { diffPreview?: ClaudeCodeDiffPreview }) {
   return (
-    <section className="border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+    <section data-claude-asset-diff-panel="true" className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3">
       <SectionTitle icon={<Save className="h-4 w-4" />} title="Patch Preview" note="Preserve unknown fields before write" />
       {diffPreview ? (
         <div className="mt-3 grid gap-2">
-          <div className="font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)]">{diffPreview.sourcePath}</div>
-          <SnippetPre className="mt-2 bg-[var(--bg-main)] p-3 text-[11px] leading-5">
+          <div className={claudeAssetMetaTextClass}>{diffPreview.sourcePath}</div>
+          <SnippetPre className="mt-2 bg-[var(--gt-surface-canvas)] p-3 text-[11px] leading-5">
             {diffPreview.lines.map((line) => (
               <span
                 key={line}
                 className={`block whitespace-pre ${
-                  line.startsWith('+') ? 'text-[var(--color-status-success)]' : line.startsWith('-') ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
+                  line.startsWith('+') ? 'text-[var(--gt-status-success)]' : line.startsWith('-') ? 'text-[var(--gt-status-danger)]' : 'text-[var(--text-muted)]'
                 }`}
               >
                 {line}
@@ -480,7 +486,7 @@ function DiffPanel({ diffPreview }: { diffPreview?: ClaudeCodeDiffPreview }) {
           </SnippetPre>
         </div>
       ) : (
-        <p className="mt-3 text-sm font-bold leading-6 text-[var(--text-muted)]">No pending diff. Writes stay disabled until a target scope and server are selected.</p>
+        <p className="mt-3 text-sm font-medium leading-6 text-[var(--text-muted)]">No pending diff. Writes stay disabled until a target scope and server are selected.</p>
       )}
     </section>
   );
@@ -488,19 +494,17 @@ function DiffPanel({ diffPreview }: { diffPreview?: ClaudeCodeDiffPreview }) {
 
 function PlanPanel({ plannedAssets }: { plannedAssets: readonly ClaudeCodeAssetPlanItem[] }) {
   return (
-    <section className="bg-[var(--bg-surface)] p-3">
+    <section data-claude-asset-plan-panel="true" className="bg-[var(--gt-surface-muted)] p-3">
       <SectionTitle icon={<GitBranch className="h-4 w-4" />} title="Next Assets" note="Candidate and deferred states stay visible" />
       <div className="mt-3 grid gap-2">
         {plannedAssets.map((item) => (
-          <article key={item.id} className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3">
+          <article key={item.id} className={`${claudeAssetPanelClass} p-3`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm font-black">{item.name}</span>
-              <span className="border border-[var(--border-color)] px-1.5 py-0.5 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)]">
-                {item.status}
-              </span>
+              <span className="text-sm font-semibold">{item.name}</span>
+              <Badge>{item.status}</Badge>
             </div>
-            <div className="mt-2 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)]">{item.owner}</div>
-            <p className="mt-2 text-xs font-bold leading-5 text-[var(--text-muted)]">{item.note}</p>
+            <div className={`mt-2 ${claudeAssetMetaTextClass}`}>{item.owner}</div>
+            <p className="mt-2 text-xs font-medium leading-5 text-[var(--text-muted)]">{item.note}</p>
           </article>
         ))}
       </div>
@@ -510,11 +514,11 @@ function PlanPanel({ plannedAssets }: { plannedAssets: readonly ClaudeCodeAssetP
 
 function EmptyPanel({ title, detail }: { title: string; detail: string }) {
   return (
-    <div className="grid min-h-48 place-items-center border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-6 text-center">
+    <div className="grid min-h-48 place-items-center rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-6 text-center">
       <div className="max-w-md">
         <FileCode2 className="mx-auto h-8 w-8 text-[var(--text-muted)]" />
-        <h3 className="mt-3 text-sm font-black uppercase italic tracking-normal">{title}</h3>
-        <p className="mt-2 text-sm font-bold leading-6 text-[var(--text-muted)]">{detail}</p>
+        <h3 className="mt-3 text-sm font-semibold italic tracking-normal">{title}</h3>
+        <p className="mt-2 text-sm font-medium leading-6 text-[var(--text-muted)]">{detail}</p>
       </div>
     </div>
   );
@@ -525,7 +529,7 @@ function ScopeBadge({ scope }: { scope: ClaudeCodeAssetScope }) {
     scope === 'project' ? <Layers3 className="h-3 w-3" /> : scope === 'local' ? <KeyRound className="h-3 w-3" /> : <Braces className="h-3 w-3" />;
 
   return (
-    <span className="inline-flex min-w-[5.5rem] items-center justify-center gap-1 border border-[var(--border-color)] px-1.5 py-0.5 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)]">
+    <span className={`${claudeAssetBadgeClass} min-w-[5.5rem]`}>
       {icon}
       {scope}
     </span>
@@ -534,10 +538,10 @@ function ScopeBadge({ scope }: { scope: ClaudeCodeAssetScope }) {
 
 function frontmatterTone(status: ClaudeCodeSkillAsset['frontmatterStatus']) {
   if (status === 'valid') {
-    return 'border-[var(--color-status-success)] text-[var(--color-status-success)]';
+    return 'border-[var(--gt-status-success)] text-[var(--gt-status-success)]';
   }
   if (status === 'invalid') {
-    return 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]';
+    return 'border-[var(--gt-status-danger)] text-[var(--gt-status-danger)]';
   }
-  return 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]';
+  return 'border-[var(--gt-status-warning)] text-[var(--gt-status-warning)]';
 }

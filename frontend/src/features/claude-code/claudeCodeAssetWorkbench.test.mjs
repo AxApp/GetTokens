@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const featurePath = fileURLToPath(new URL('./ClaudeCodeAssetWorkbenchFeature.tsx', import.meta.url));
+const componentPath = fileURLToPath(new URL('./components/ClaudeCodeAssetWorkbench.tsx', import.meta.url));
 const pagePath = fileURLToPath(new URL('../../pages/ClaudePage.tsx', import.meta.url));
 const wailsAppBindingsPath = fileURLToPath(new URL('../../../wailsjs/go/main/App.js', import.meta.url));
 const wailsAppTypesPath = fileURLToPath(new URL('../../../wailsjs/go/main/App.d.ts', import.meta.url));
@@ -48,4 +49,37 @@ test('Claude page exposes Skills and MCP as separate secondary pages', () => {
   assert.doesNotMatch(featureSource, /workspaceToAssetTab/, 'secondary pages must not be implemented as a route-synced tab');
   assert.doesNotMatch(featureSource, /assetTabToWorkspace/, 'page-internal tab changes must not drive Claude workspace routing');
   assert.doesNotMatch(featureSource, /onWorkspaceChange/, 'Claude asset pages should follow the Codex workspace split, not a local tab router');
+});
+
+test('Claude Code asset workbench uses the quiet workspace shell', () => {
+  const source = readFileSync(componentPath, 'utf8');
+
+  assert.match(source, /const claudeAssetPanelClass =/);
+  assert.match(source, /const claudeAssetButtonClass =/);
+  assert.match(source, /const claudeAssetInputClass =/);
+  assert.match(source, /data-claude-asset-workbench-shell/);
+  assert.match(source, /data-claude-asset-skill-matrix/);
+  assert.match(source, /data-claude-asset-mcp-matrix/);
+  assert.match(source, /data-claude-asset-diff-panel/);
+  assert.match(source, /data-claude-asset-plan-panel/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-success/);
+  assert.match(source, /--gt-status-warning/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /card-swiss/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /input-swiss/);
+  assert.doesNotMatch(source, /select-swiss/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /shadow-\[8px_8px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /shadow-hard/);
 });
