@@ -120,6 +120,31 @@ test('account quota section exposes calibration and threshold rule editors', () 
   assert.match(thresholdPanel, /Diagnostics \/ ignored facts/);
 });
 
+test('quota calibration panel uses the quiet workspace shell', () => {
+  const panel = readFileSync(path.join(repoRoot, 'frontend/src/features/accounts/components/QuotaCalibrationPanel.tsx'), 'utf8');
+
+  assert.match(panel, /const quotaCalibrationPanelClass =/);
+  assert.match(panel, /const quotaCalibrationItemClass =/);
+  assert.match(panel, /const quotaCalibrationButtonClass =/);
+  assert.match(panel, /const quotaCalibrationInputClass =/);
+  assert.match(panel, /const quotaCalibrationMetaClass =/);
+  assert.match(panel, /const quotaCalibrationErrorClass =/);
+  assert.match(panel, /data-account-quota-calibration-panel/);
+  assert.match(panel, /data-quota-calibration-item="active"/);
+  assert.match(panel, /data-quota-calibration-history/);
+  assert.match(panel, /data-quota-calibration-form/);
+  assert.match(panel, /--gt-surface-canvas/);
+  assert.match(panel, /--gt-surface-muted/);
+  assert.match(panel, /--gt-border-subtle/);
+  assert.match(panel, /--gt-status-danger/);
+  assert.doesNotMatch(panel, /btn-swiss|input-swiss|select-swiss|card-swiss/);
+  assert.doesNotMatch(panel, /border-2|border-t-2|border-b-2|border-dashed/);
+  assert.doesNotMatch(panel, /bg-\[var\(--bg-main\)\]|bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(panel, /color-status-/);
+  assert.doesNotMatch(panel, /font-black|\buppercase\b|shadow-hard|shadow-\[/);
+  assert.doesNotMatch(panel, /tracking-\[0\.12em\]|tracking-\[0\.16em\]|tracking-\[0\.18em\]/);
+});
+
 test('quota threshold rule panel uses the quiet workspace shell', () => {
   const panel = readFileSync(path.join(repoRoot, 'frontend/src/features/accounts/components/QuotaThresholdRulePanel.tsx'), 'utf8');
 

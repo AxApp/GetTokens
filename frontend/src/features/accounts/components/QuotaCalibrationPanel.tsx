@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDebug } from '../../../context/useDebug';
-import type { QuotaUsageCalibration } from '../../../types';
 import { buildQuotaCalibrationInput, isQuotaCalibrationActive, type QuotaCalibrationMode } from '../model/quotaCalibration';
 import type { QuotaWindowDisplay } from '../model/types';
 import useQuotaCalibrations from '../hooks/useQuotaCalibrations';
@@ -12,6 +11,17 @@ interface QuotaCalibrationPanelProps {
   accountKey: string;
   windows: QuotaWindowDisplay[];
 }
+
+const quotaCalibrationPanelClass = 'grid gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+const quotaCalibrationHeaderClass = 'flex min-w-0 items-center justify-between gap-2';
+const quotaCalibrationItemClass = 'flex min-w-0 items-center justify-between gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1.5';
+const quotaCalibrationButtonClass = 'inline-flex min-h-8 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const quotaCalibrationPrimaryButtonClass = `${quotaCalibrationButtonClass} bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-muted)]`;
+const quotaCalibrationInputClass = 'h-8 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:opacity-60';
+const quotaCalibrationMetaClass = 'font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-[0.08em] text-[var(--gt-ink-muted)]';
+const quotaCalibrationValueClass = 'font-mono text-[length:var(--font-size-ui-xs)] font-medium tabular-nums text-[var(--gt-ink-primary)]';
+const quotaCalibrationDividerClass = 'grid gap-2 border-t border-[var(--gt-border-subtle)] pt-2';
+const quotaCalibrationErrorClass = 'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-status-danger)]';
 
 export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationPanelProps) {
   const { trackRequest } = useDebug();
@@ -100,14 +110,14 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
   }
 
   return (
-    <div data-account-quota-calibration-panel="true" className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="flex min-w-0 items-center justify-between gap-2">
+    <div data-account-quota-calibration-panel="true" className={quotaCalibrationPanelClass}>
+      <div className={quotaCalibrationHeaderClass}>
         <div className="min-w-0">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={quotaCalibrationMetaClass}>
             CALIBRATION
           </div>
           {activeCalibrations.length > 0 ? (
-            <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
+            <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)]">
               {activeCalibrations.length} 个活跃校准
             </div>
           ) : null}
@@ -123,22 +133,22 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
             <div
               key={cal.id}
               data-quota-calibration-item="active"
-              className="flex min-w-0 items-center justify-between gap-2 border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1.5"
+              className={quotaCalibrationItemClass}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
                   <AccountDetailPill tone={cal.mode === 'delta' ? 'warning' : 'success'} className="!min-h-0 !px-1.5 !py-0 !text-[length:var(--font-size-ui-2xs)]">
                     {cal.mode === 'delta' ? 'DELTA' : 'SET'}
                   </AccountDetailPill>
-                  <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black tabular-nums text-[var(--text-primary)]">
+                  <span className={quotaCalibrationValueClass}>
                     {cal.mode === 'delta' ? (cal.value >= 0 ? '+' : '') : ''}{cal.value}
                   </span>
-                  <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-muted)]">
+                  <span className={quotaCalibrationMetaClass}>
                     {cal.windowKey}
                   </span>
                 </div>
                 {cal.expiresAt ? (
-                  <div className="mt-0.5 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+                  <div className="mt-0.5 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--gt-ink-muted)]">
                     created {formatCalibrationTime(cal.createdAt)} · expires {formatCalibrationTime(cal.expiresAt)}
                   </div>
                 ) : null}
@@ -146,7 +156,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
               <button
                 type="button"
                 onClick={() => cal.id && handleRevoke(cal.id)}
-                className="btn-swiss !min-h-0 !px-1.5 !py-0.5 !text-[length:var(--font-size-ui-2xs)]"
+                className={quotaCalibrationButtonClass}
                 title="撤销校准"
               >
                 撤销
@@ -156,48 +166,50 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
         </div>
       ) : (
         !formOpen ? (
-          <div className="text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-2xs)] text-[var(--gt-ink-muted)]">
             暂无活跃校准，可手动调整额度显示值
           </div>
         ) : null
       )}
 
       {historicalCalibrations.length > 0 ? (
-        <div data-quota-calibration-history="true" className="grid gap-1 border-t border-[var(--border-color)] pt-2">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div data-quota-calibration-history="true" className={quotaCalibrationDividerClass}>
+          <div className={quotaCalibrationMetaClass}>
             校准历史 / Audit
           </div>
-          {historicalCalibrations.map((cal) => (
-            <div key={cal.id} className="flex min-w-0 items-center justify-between gap-2 text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
-              <span className="min-w-0 truncate font-mono">
-                {cal.windowKey} · {cal.mode} · {cal.value}
-              </span>
-              <span className="shrink-0 font-mono">
-                {cal.revokedAt ? `revoked ${formatCalibrationTime(cal.revokedAt)}` : `expired ${formatCalibrationTime(cal.expiresAt)}`}
-              </span>
-            </div>
-          ))}
+          <div className="grid gap-1">
+            {historicalCalibrations.map((cal) => (
+              <div key={cal.id} className="flex min-w-0 items-center justify-between gap-2 text-[length:var(--font-size-ui-2xs)] text-[var(--gt-ink-muted)]">
+                <span className="min-w-0 truncate font-mono">
+                  {cal.windowKey} · {cal.mode} · {cal.value}
+                </span>
+                <span className="shrink-0 font-mono">
+                  {cal.revokedAt ? `revoked ${formatCalibrationTime(cal.revokedAt)}` : `expired ${formatCalibrationTime(cal.expiresAt)}`}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
 
       {formOpen ? (
-        <div data-quota-calibration-form="true" className="grid gap-2 border-t border-[var(--border-color)] pt-2">
-          <div className="grid grid-cols-3 gap-2">
+        <div data-quota-calibration-form="true" className={quotaCalibrationDividerClass}>
+          <div className="grid gap-2 md:grid-cols-3">
             <label className="grid gap-1">
-              <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <span className={quotaCalibrationMetaClass}>
                 模式
               </span>
               <select
                 value={mode}
                 onChange={(e) => setMode(e.target.value as QuotaCalibrationMode)}
-                className="input-swiss font-mono !text-[length:var(--font-size-ui-xs)] !py-1"
+                className={quotaCalibrationInputClass}
               >
                 <option value="delta">Delta (差值)</option>
                 <option value="set-effective">Set (设定值)</option>
               </select>
             </label>
             <label className="grid gap-1">
-              <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <span className={quotaCalibrationMetaClass}>
                 数值
               </span>
               <input
@@ -205,17 +217,17 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
                 value={value}
                 onChange={(e) => { setValue(e.target.value); setError(''); }}
                 placeholder={mode === 'delta' ? '±1200' : '50000'}
-                className="input-swiss font-mono !text-[length:var(--font-size-ui-xs)] !py-1"
+                className={quotaCalibrationInputClass}
               />
             </label>
             <label className="grid gap-1">
-              <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <span className={quotaCalibrationMetaClass}>
                 窗口
               </span>
               <select
                 value={windowKey}
                 onChange={(e) => setWindowKey(e.target.value)}
-                className="input-swiss font-mono !text-[length:var(--font-size-ui-xs)] !py-1"
+                className={quotaCalibrationInputClass}
               >
                 {windowOptions.length > 0 ? (
                   windowOptions.map((w) => (
@@ -228,7 +240,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
             </label>
           </div>
           {error ? (
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--color-status-danger)]">
+            <div className={quotaCalibrationErrorClass}>
               {error}
             </div>
           ) : null}
@@ -237,7 +249,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
               type="button"
               onClick={() => void handleSubmit()}
               disabled={submitting || !value.trim()}
-              className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+              className={quotaCalibrationPrimaryButtonClass}
             >
               {submitting ? '提交中...' : '确认添加'}
             </button>
@@ -245,7 +257,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
               type="button"
               onClick={() => { setFormOpen(false); setValue(''); setError(''); }}
               disabled={submitting}
-              className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+              className={quotaCalibrationButtonClass}
             >
               取消
             </button>
@@ -255,7 +267,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
         <button
           type="button"
           onClick={() => setFormOpen(true)}
-          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+          className={quotaCalibrationButtonClass}
         >
           添加校准
         </button>
