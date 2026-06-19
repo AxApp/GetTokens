@@ -106,4 +106,4 @@ And 截图命名遵守项目规范。
 - 设计规范：Parchment 迁移先定义组件 anatomy 和状态矩阵，再迁移页面；当前 Settings / Design System 首版视觉属于过渡稿，后续需按组件规范重做。
 - 页面迁移规则：信息默认不改，布局和呈现方式可以调整；涉及删除、合并、重命名、降级或新增派生信息时，必须先写 `Information Change Ledger` 并核对。
 - 推进状态：Wave 0-2 已进入实现验证，Settings 页已开始 AntD adapter 试点；已补 Settings AntD 执行交接文档，下一步由执行者按 handoff 收敛 wrapper、状态矩阵、Parchment component anatomy 和体积边界。
-- 工作台收敛进展：2026-06-20 已按 quiet workspace loop 小步迁移代理池、会话管理、扩展注册表、Doctor workbench、状态页主面板、状态页 Codex features section、状态页 Codex config sibling sections、状态页 Relay editor modals、Vendor Status 页面、Codex live session 详情页、Channel Routing 工作台、Codex extensions modals 和 Claude Code asset workbench，并将复用节奏沉淀到 `gettokens-frontend-design-quality`；下一轮可继续从账号详情、Codex route probe card 等旧样式高信号入口推进。
+- 工作台收敛进展：2026-06-20 已按 quiet workspace loop 小步迁移代理池、会话管理、扩展注册表、Doctor workbench、状态页主面板、状态页 Codex features section、状态页 Codex config sibling sections、状态页 Relay editor modals、Vendor Status 页面、Codex live session 详情页、Channel Routing 工作台、Codex extensions modals、Claude Code asset workbench 和 Codex route probe modal，并将复用节奏沉淀到 `gettokens-frontend-design-quality`；下一轮可继续从账号详情、Quota threshold panel 等旧样式高信号入口推进。

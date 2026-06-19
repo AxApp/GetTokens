@@ -1126,7 +1126,9 @@ test('Codex account order cards reuse the account pool card and drag the whole c
   assert.match(accountCardSource, /showFooterReauthAction = true/);
   assert.match(accountCardSource, /showFooterReauthAction && canReauth/);
   assert.match(accountCardSource, /eyebrowPrefix = ''/);
-  assert.match(accountCardFrameSource, /flex h-full w-full/);
+  assert.match(accountCardFrameSource, /<Card/);
+  assert.match(accountCardFrameSource, /body: \{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' \}/);
+  assert.match(accountCardFrameSource, /height: '100%'/);
   assert.match(accountCardSource, /extraBadges = \[\]/);
   assert.match(accountCardSource, /onToggleDisabled\(account\)/);
 });
@@ -1243,6 +1245,33 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.match(source, /btn-swiss h-9 !px-2\.5 !py-1 !text-\[length:var\(--font-size-ui-md-compact\)\]/);
   assert.doesNotMatch(source, /function SourceFilterButton/);
   assert.doesNotMatch(source, /function ActionControlCluster/);
+});
+
+test('Codex route probe modal uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('./components/CodexRouteProbeCard.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const codexRouteProbePanelClass =/);
+  assert.match(source, /const codexRouteProbeButtonClass =/);
+  assert.match(source, /const codexRouteProbeBadgeClass =/);
+  assert.match(source, /data-codex-route-probe-shell/);
+  assert.match(source, /data-codex-route-probe-control-panel/);
+  assert.match(source, /data-codex-route-probe-candidate-queue/);
+  assert.match(source, /data-codex-route-probe-terminal/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-r-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /xl:border-r-2/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-\[0\.16em\]/);
+  assert.doesNotMatch(source, /shadow-hard/);
 });
 
 test('routing probe model helpers prefer configured codex aliases, hide aliased real names, and keep fallback', () => {
