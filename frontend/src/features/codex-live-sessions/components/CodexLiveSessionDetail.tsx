@@ -38,6 +38,17 @@ import {
   type CodexLiveTimingTrendMetric,
 } from '../model/requestTimingTrend';
 
+const codexLivePanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const codexLiveMutedPanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const codexLiveHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const codexLiveChipClass =
+  'inline-flex h-6 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)]';
+const codexLiveSecondaryButtonClass =
+  'inline-flex h-8 w-fit items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const codexLiveMetaTextClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+
 export function SessionDetail({
   session,
   request,
@@ -96,16 +107,16 @@ export function SessionDetail({
   const timeline = request?.timeline ?? session.recentEvents;
 
   return (
-    <div className="grid max-h-[calc(100vh-13rem)] min-w-0 w-full gap-5 overflow-y-auto overscroll-contain pr-1 scrollbar-stable" data-codex-session-detail-root="true">
+    <div className="grid max-h-[calc(100vh-13rem)] min-w-0 w-full gap-5 overflow-y-auto overscroll-contain pr-1 scrollbar-stable" data-codex-session-detail-root="true" data-codex-live-detail-shell="true">
       <div className="grid min-w-0 gap-3" data-codex-detail-section="analysis">
         {loading || errorMessage ? (
           <div className="overflow-hidden" data-codex-detail-slot="status">
-            <div className="flex min-h-10 items-center justify-between gap-3 border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase">
+            <div className={`${codexLiveMutedPanelClass} flex min-h-10 items-center justify-between gap-3 border-dashed px-3 py-2 ${codexLiveMetaTextClass}`}>
               <span className="text-[var(--text-muted)]">
                 {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
               </span>
               {errorMessage ? (
-                <span className="min-w-0 truncate text-right text-[var(--color-status-warning)]">{errorMessage}</span>
+                <span className="min-w-0 truncate text-right text-[var(--gt-status-warning)]">{errorMessage}</span>
               ) : null}
             </div>
           </div>
@@ -180,17 +191,17 @@ function SessionOverview({
   const overviewRequests = requestRows.flatMap((row) => (row.request ? [row.request] : []));
 
   return (
-    <section className="grid min-w-0 gap-5" data-codex-live-overview="true">
+    <section className="grid min-w-0 gap-5" data-codex-live-overview="true" data-codex-live-overview-shell="true">
       <div
         className="relative grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)]"
         data-codex-overview-summary-cards="true"
       >
-        <section className="grid min-h-[5.75rem] min-w-0 content-between border border-[color:color-mix(in_srgb,var(--border-color)_28%,transparent)] bg-[var(--bg-main)] p-2.5" data-codex-overview-card="identity">
+        <section className={`${codexLivePanelClass} grid min-h-[5.75rem] min-w-0 content-between p-2.5`} data-codex-overview-card="identity">
           <div className="min-w-0">
-            <p className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <p className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
               {t('codex_live_sessions.overview_kicker')}
             </p>
-            <h3 className="mt-1.5 font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+            <h3 className="mt-1.5 font-mono text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]">
               {t('codex_live_sessions.overview_title')}
             </h3>
           </div>
@@ -256,10 +267,10 @@ function HistoryWindowControl({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em]" data-codex-history-window-control="true">
+    <div className={`${codexLiveMutedPanelClass} flex flex-wrap items-center justify-between gap-3 border-dashed px-3 py-2 ${codexLiveMetaTextClass}`} data-codex-history-window-control="true">
       <span className="text-[var(--text-muted)]">{label || t('codex_live_sessions.history_recent_window')}</span>
       {canLoadMore ? (
-        <button type="button" className="btn-swiss h-8 !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]" onClick={onLoadMore} disabled={loading}>
+        <button type="button" className={codexLiveSecondaryButtonClass} onClick={onLoadMore} disabled={loading}>
           {loading ? t('common.loading') : t('codex_live_sessions.history_load_more')}
         </button>
       ) : null}
@@ -274,7 +285,7 @@ function OverviewStatusNotice({ loading, errorMessage, t }: { loading?: boolean;
 
   return (
     <div
-      className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-10 flex max-w-[min(32rem,100%)] items-center gap-3 bg-[var(--bg-main)] px-2.5 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase shadow-[0_0_0_1px_color-mix(in_srgb,var(--border-color)_28%,transparent),3px_3px_0_color-mix(in_srgb,var(--shadow-color)_42%,transparent)]"
+      className={`${codexLiveMutedPanelClass} pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-10 flex max-w-[min(32rem,100%)] items-center gap-3 px-2.5 py-1 text-[length:var(--font-size-ui-2xs)] font-medium`}
       data-codex-overview-status-overlay="true"
       role="status"
       aria-live="polite"
@@ -282,7 +293,7 @@ function OverviewStatusNotice({ loading, errorMessage, t }: { loading?: boolean;
       <span className="shrink-0 text-[var(--text-muted)]">
         {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
       </span>
-      {errorMessage ? <span className="min-w-0 truncate text-right text-[var(--color-status-warning)]">{errorMessage}</span> : null}
+      {errorMessage ? <span className="min-w-0 truncate text-right text-[var(--gt-status-warning)]">{errorMessage}</span> : null}
     </div>
   );
 }
@@ -302,29 +313,29 @@ function OverviewSummaryCard({
 }) {
   const accentClass = {
     neutral: 'bg-[color:color-mix(in_srgb,var(--text-muted)_18%,transparent)]',
-    success: 'bg-[var(--color-status-success)]',
-    warning: 'bg-[var(--color-status-warning)]',
-    danger: 'bg-[var(--color-status-danger)]',
+    success: 'bg-[var(--gt-status-success)]',
+    warning: 'bg-[var(--gt-status-warning)]',
+    danger: 'bg-[var(--gt-status-danger)]',
   }[accent];
 
   return (
-    <section className="grid min-h-[5.75rem] min-w-0 content-between border border-[color:color-mix(in_srgb,var(--border-color)_28%,transparent)] bg-[var(--bg-main)] p-2.5" data-codex-overview-card="metric">
+    <section className={`${codexLivePanelClass} grid min-h-[5.75rem] min-w-0 content-between p-2.5`} data-codex-overview-card="metric">
       <div className="flex min-w-0 items-center justify-between gap-3">
-        <p className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <p className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
           {label}
         </p>
         <span className={`h-2.5 w-2.5 shrink-0 ${accentClass}`} />
       </div>
       <div className="min-w-0">
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="font-mono text-[length:var(--font-size-ui-2xl)] font-black leading-none text-[var(--text-primary)]">
+          <span className="font-mono text-[length:var(--font-size-ui-2xl)] font-semibold leading-none text-[var(--text-primary)]">
             {primaryValue}
           </span>
-          <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+          <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
             {primaryLabel}
           </span>
         </div>
-        <p className="mt-2 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
+        <p className="mt-2 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
           {secondaryValue}
         </p>
       </div>
@@ -357,19 +368,19 @@ function OverviewTimingTrend({
 
   return (
     <section
-      className="min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[var(--bg-main)] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]"
+      className={`${codexLivePanelClass} min-w-0 overflow-hidden`}
       aria-label={t('codex_live_sessions.request_timing_trend')}
       data-codex-overview-trend-shell="session-style"
     >
-      <div className="grid w-full gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+      <div className={`${codexLiveHeaderClass} grid w-full gap-1 px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end`}>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="badge-swiss">{t('codex_live_sessions.overview_kicker')}</span>
-            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
+            <span className={codexLiveChipClass}>{t('codex_live_sessions.overview_kicker')}</span>
+            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
               {latestPoint?.requestID || t('codex_live_sessions.timing_trend_empty')}
             </span>
           </div>
-          <h3 className="mt-1 font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+          <h3 className="mt-1 font-mono text-[length:var(--font-size-ui-xl)] font-semibold tracking-[0.12em] text-[var(--text-primary)]">
             {t('codex_live_sessions.request_timing_trend')}
           </h3>
         </div>
@@ -384,17 +395,17 @@ function OverviewTimingTrend({
           t={t}
         />
 
-        <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--border-color)_22%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
+        <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--gt-border-subtle)_22%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
           <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-2">
             <TimingTrendFooterItem label={t('codex_live_sessions.requests')} value={`${requests.length}`} />
             <TimingTrendFooterItem label={t('codex_live_sessions.latest_sample')} value={latestPoint?.label || t('codex_live_sessions.timing_trend_empty')} />
           </div>
 
           <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
-            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] uppercase">
+            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)]">
               <span className="h-2 w-2" style={{ backgroundColor: selectedSeries.color }} />
-              <span className="font-black text-[var(--text-muted)]">{t(selectedSeries.labelKey)}</span>
-              <span className="font-black text-[var(--text-primary)]">
+              <span className="font-semibold text-[var(--text-muted)]">{t(selectedSeries.labelKey)}</span>
+              <span className="font-semibold text-[var(--text-primary)]">
                 {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}
               </span>
             </div>
@@ -422,10 +433,10 @@ function TimingMetricSelector({
           <button
             key={series.id}
             type="button"
-            className={`h-7 border px-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase transition-colors ${
+            className={`h-7 border px-2 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold transition-colors ${
               active
-                ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                : 'border-[color:color-mix(in_srgb,var(--border-color)_42%,transparent)] text-[var(--text-muted)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]'
+                ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
+                : 'border-[color:color-mix(in_srgb,var(--gt-border-subtle)_42%,transparent)] text-[var(--text-muted)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]'
             }`}
             onClick={() => onSelectMetric(series.id)}
           >
@@ -440,12 +451,12 @@ function TimingMetricSelector({
 const timingTrendSeries: Array<{ id: CodexLiveTimingTrendMetric; labelKey: string; color: string }> = [
   { id: 'firstEventMs', labelKey: 'codex_live_sessions.timing_ttft', color: 'var(--color-chart-blue)' },
   { id: 'firstTokenMs', labelKey: 'codex_live_sessions.timing_first_token', color: 'var(--color-chart-peak)' },
-  { id: 'streamDurationMs', labelKey: 'codex_live_sessions.timing_stream', color: 'var(--color-status-success)' },
-  { id: 'queueWaitMs', labelKey: 'codex_live_sessions.timing_queue', color: 'var(--color-status-warning)' },
+  { id: 'streamDurationMs', labelKey: 'codex_live_sessions.timing_stream', color: 'var(--gt-status-success)' },
+  { id: 'queueWaitMs', labelKey: 'codex_live_sessions.timing_queue', color: 'var(--gt-status-warning)' },
   { id: 'authSelectMs', labelKey: 'codex_live_sessions.timing_auth', color: 'var(--color-chart-attribution)' },
   { id: 'upstreamConnectMs', labelKey: 'codex_live_sessions.timing_connect', color: 'var(--color-chart-secondary)' },
-  { id: 'averageEventGapMs', labelKey: 'codex_live_sessions.timing_avg_gap', color: 'var(--color-status-warning-soft)' },
-  { id: 'longestEventGapMs', labelKey: 'codex_live_sessions.timing_max_gap', color: 'var(--color-status-danger)' },
+  { id: 'averageEventGapMs', labelKey: 'codex_live_sessions.timing_avg_gap', color: 'var(--gt-status-warning)' },
+  { id: 'longestEventGapMs', labelKey: 'codex_live_sessions.timing_max_gap', color: 'var(--gt-status-danger)' },
 ];
 const requestTimelineVisibleLimit = 15;
 const timingTrendPointStepPx = 16;
@@ -478,24 +489,24 @@ function RequestTimingTrend({
 
   return (
     <section
-      className="min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[var(--bg-main)] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]"
+      className={`${codexLivePanelClass} min-w-0 overflow-hidden`}
       aria-label={t('codex_live_sessions.request_timing_trend')}
       data-codex-request-timing-trend-shell="session-style"
     >
-      <div className="grid w-full gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+      <div className={`${codexLiveHeaderClass} grid w-full gap-1 px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end`}>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={session.status} t={t} />
-            {session.fallbackInferred ? <span className="badge-swiss">{t('codex_live_sessions.inferred')}</span> : null}
-            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
+            {session.fallbackInferred ? <span className={codexLiveChipClass}>{t('codex_live_sessions.inferred')}</span> : null}
+            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
               {currentRequestID}
             </span>
           </div>
-          <h3 className="mt-1 font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+          <h3 className="mt-1 font-mono text-[length:var(--font-size-ui-xl)] font-semibold tracking-[0.12em] text-[var(--text-primary)]">
             {t('codex_live_sessions.request_timing_trend')}
           </h3>
         </div>
-        <div className="flex min-w-0 max-w-full flex-nowrap items-center justify-start gap-2 overflow-hidden whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_68%,var(--text-primary))] md:justify-end md:text-right">
+        <div className="flex min-w-0 max-w-full flex-nowrap items-center justify-start gap-2 overflow-hidden whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[color:color-mix(in_srgb,var(--text-muted)_68%,var(--text-primary))] md:justify-end md:text-right">
           <span className="shrink-0 text-[var(--text-primary)]">{session.model}</span>
           <span className="shrink-0 text-[color:color-mix(in_srgb,var(--text-muted)_54%,var(--text-primary))]">·</span>
           <span className="min-w-0 truncate">{session.downstreamTransport} → {session.upstreamTransport}</span>
@@ -510,7 +521,7 @@ function RequestTimingTrend({
           t={t}
         />
 
-        <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--border-color)_22%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
+        <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--gt-border-subtle)_22%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
           <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-2">
             <TimingTrendFooterItem label={t('codex_live_sessions.duration')} value={formatDuration(session.durationMs)} />
             <TimingTrendFooterItem label={t('codex_live_sessions.requests')} value={`${session.requestCount}`} />
@@ -518,10 +529,10 @@ function RequestTimingTrend({
           </div>
 
           <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
-            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] uppercase">
+            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)]">
               <span className="h-2 w-2" style={{ backgroundColor: selectedSeries.color }} />
-              <span className="font-black text-[var(--text-muted)]">{t(selectedSeries.labelKey)}</span>
-              <span className="font-black text-[var(--text-primary)]">
+              <span className="font-semibold text-[var(--text-muted)]">{t(selectedSeries.labelKey)}</span>
+              <span className="font-semibold text-[var(--text-primary)]">
                 {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}
               </span>
             </div>
@@ -534,9 +545,9 @@ function RequestTimingTrend({
 
 function TimingTrendFooterItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 font-mono text-[length:var(--font-size-ui-xs)] uppercase">
-      <span className="mr-2 font-black text-[var(--text-muted)]">{label}</span>
-      <span className="font-black text-[var(--text-primary)]">{value}</span>
+    <div className="min-w-0 font-mono text-[length:var(--font-size-ui-xs)]">
+      <span className="mr-2 font-semibold text-[var(--text-muted)]">{label}</span>
+      <span className="font-semibold text-[var(--text-primary)]">{value}</span>
     </div>
   );
 }
@@ -590,7 +601,7 @@ function TimingTrendChart({
 
   if (!trend.hasData || selectedMetricMaxMs <= 0) {
     return (
-      <div className="grid h-[230px] place-items-center border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_90%,var(--bg-surface))] font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
+      <div className={`${codexLiveMutedPanelClass} grid h-[230px] place-items-center border-dashed text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]`}>
         {t('codex_live_sessions.timing_trend_empty')}
       </div>
     );
@@ -598,7 +609,7 @@ function TimingTrendChart({
 
   return (
     <div
-      className="overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_92%,var(--bg-surface))]"
+      className={`${codexLiveMutedPanelClass} overflow-hidden`}
       data-codex-timing-latency-chart="true"
       role="img"
       aria-label={t('codex_live_sessions.request_timing_trend')}
@@ -652,7 +663,7 @@ function TimingTrendChart({
                     x={padding.left - 8}
                     y={y + 3}
                     textAnchor="end"
-                    className="fill-[var(--text-muted)] font-mono text-[9px] font-black"
+                    className="fill-[var(--text-muted)] font-mono text-[9px] font-semibold"
                     opacity="0.52"
                   >
                     {formatDuration(selectedMetricMaxMs * (1 - ratio))}
@@ -680,7 +691,7 @@ function TimingTrendChart({
                       x={x}
                       y={height - 8}
                       textAnchor="middle"
-                      className="fill-[var(--text-muted)] font-mono text-[9px] font-black"
+                      className="fill-[var(--text-muted)] font-mono text-[9px] font-semibold"
                       opacity={point.requestID === selectedRequestID || point.isLive ? 0.92 : 0.48}
                     >
                       #{point.sequence}
@@ -712,7 +723,7 @@ function TimingTrendChart({
                   cx={x}
                   cy={y}
                   r={emphasized ? 4.5 : 2.5}
-                  fill={emphasized ? selectedSeries.color : 'var(--bg-main)'}
+                  fill={emphasized ? selectedSeries.color : 'var(--gt-surface-canvas)'}
                   stroke={selectedSeries.color}
                   strokeWidth={emphasized ? 2 : 1.25}
                   opacity={emphasized ? 0.95 : 0.58}
@@ -877,13 +888,13 @@ function TransportLane({ events, t }: { events: readonly CodexLiveTimelineEvent[
 
   return (
     <div className="grid gap-3">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
         {t('codex_live_sessions.transport_lane')}
       </div>
       <div className="grid gap-2 xl:grid-cols-4">
         {laneItems.map(([lane, label]) => (
-          <div key={lane} className="min-h-[86px] border border-[color:color-mix(in_srgb,var(--border-color)_55%,transparent)] bg-[var(--bg-surface)] p-3">
-            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
+          <div key={lane} className="min-h-[86px] border border-[color:color-mix(in_srgb,var(--gt-border-subtle)_55%,transparent)] bg-[var(--gt-surface-muted)] p-3">
+            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
               {label}
             </div>
             <div className="mt-2 grid gap-1">
@@ -930,27 +941,27 @@ function TimingMetrics({
   const metrics = buildTimingMetricRows(averages, t);
 
   return (
-    <div className="border border-[color:color-mix(in_srgb,var(--border-color)_32%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_70%,var(--bg-surface))] p-4">
+    <div className={`${codexLiveMutedPanelClass} p-4`}>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
           {t('codex_live_sessions.timing_average')}
         </div>
       </div>
       <div className="mt-3 grid gap-2 md:grid-cols-3 xl:grid-cols-5">
         {metrics.map((metric) => {
           const selected = metric.trendMetric === selectedMetric;
-          const rowClassName = `grid min-h-12 min-w-0 grid-cols-[1fr_auto] items-end gap-2 border px-2.5 py-2 font-mono text-[length:var(--font-size-ui-xs)] uppercase transition-colors ${
+          const rowClassName = `grid min-h-12 min-w-0 grid-cols-[1fr_auto] items-end gap-2 border px-2.5 py-2 font-mono text-[length:var(--font-size-ui-xs)] transition-colors ${
             selected
-              ? 'border-[var(--text-primary)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-[0_1px_0_var(--shadow-color)]'
-              : 'border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_58%,transparent)] text-[var(--text-muted)] hover:border-[color:color-mix(in_srgb,var(--border-color)_46%,transparent)] hover:bg-[var(--bg-surface)]'
+              ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] shadow-[var(--gt-elevation-raised-1)]'
+              : 'border-[color:color-mix(in_srgb,var(--gt-border-subtle)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--gt-surface-canvas)_58%,transparent)] text-[var(--text-muted)] hover:border-[color:color-mix(in_srgb,var(--gt-border-subtle)_46%,transparent)] hover:bg-[var(--gt-surface-muted)]'
           }`;
 
           const trendMetric = metric.trendMetric;
           if (!trendMetric) {
             return (
               <div key={metric.key} className={rowClassName}>
-                <span className="min-w-0 truncate font-black">{metric.label}</span>
-                <span className="font-black tabular-nums text-[var(--text-primary)]">{metric.value}</span>
+                <span className="min-w-0 truncate font-semibold">{metric.label}</span>
+                <span className="font-semibold tabular-nums text-[var(--text-primary)]">{metric.value}</span>
               </div>
             );
           }
@@ -963,8 +974,8 @@ function TimingMetrics({
               aria-pressed={selected}
               onClick={() => onSelectMetric(trendMetric)}
             >
-              <span className="min-w-0 truncate font-black">{metric.label}</span>
-              <span className="font-black tabular-nums text-[var(--text-primary)]">{metric.value}</span>
+              <span className="min-w-0 truncate font-semibold">{metric.label}</span>
+              <span className="font-semibold tabular-nums text-[var(--text-primary)]">{metric.value}</span>
             </button>
           );
         })}
@@ -1142,14 +1153,14 @@ function SessionCard({ session, request, t }: { session: CodexLiveSession; reque
   );
 
   return (
-    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+    <div className={`${codexLiveMutedPanelClass} p-3`}>
+      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
         {t('codex_live_sessions.local_session')}
       </div>
       <div className="mt-3 grid gap-x-5 gap-y-2 md:grid-cols-2">
         {rows.map(([label, value]) => (
-          <div key={label} className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] py-1 text-[length:var(--font-size-ui-sm)]">
-            <span className="shrink-0 font-mono font-black uppercase text-[var(--text-muted)]">{label}</span>
+          <div key={label} className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_30%,transparent)] py-1 text-[length:var(--font-size-ui-sm)]">
+            <span className="shrink-0 font-mono font-semibold text-[var(--text-muted)]">{label}</span>
             <span className="truncate font-mono font-bold text-[var(--text-primary)]">{value}</span>
           </div>
         ))}
@@ -1183,13 +1194,14 @@ function Timeline({
 
   return (
     <section
-      className="min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[var(--bg-main)] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]"
+      className={`${codexLivePanelClass} min-w-0 overflow-hidden`}
       data-codex-timeline-shell="session-style"
+      data-codex-live-timeline-shell="true"
       aria-label={title ?? t('codex_live_sessions.request_timeline')}
     >
-      <div className="grid w-full gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+      <div className={`${codexLiveHeaderClass} grid w-full gap-1 px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end`}>
         <div className="min-w-0">
-          <h3 className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+          <h3 className="font-mono text-[length:var(--font-size-ui-xl)] font-semibold tracking-[0.12em] text-[var(--text-primary)]">
             {title ?? t('codex_live_sessions.request_timeline')}
           </h3>
           {title ? (
@@ -1198,12 +1210,12 @@ function Timeline({
             </p>
           ) : null}
         </div>
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
           {countLabel ?? `${visibleRowCount} ${t('codex_live_sessions.rows')}`}
         </div>
       </div>
 
-      <div className="max-h-[clamp(12rem,42vh,34rem)] overflow-y-auto bg-[var(--bg-main)] scrollbar-stable">
+      <div className="max-h-[clamp(12rem,42vh,34rem)] overflow-y-auto bg-[var(--gt-surface-canvas)] scrollbar-stable">
         {requests.length === 0 ? (
           <TimelineFallbackRow
             summary={fallbackSummary}
@@ -1288,19 +1300,19 @@ function TimelineSummaryRow({
     <button
       type="button"
       onClick={onOpen}
-      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--border-color)_20%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--bg-surface)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
+      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_20%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
       title={t('codex_live_sessions.detail')}
       aria-label={t('codex_live_sessions.detail')}
     >
-      <span className="shrink-0 whitespace-nowrap font-mono font-black text-[var(--text-primary)]">
+      <span className="shrink-0 whitespace-nowrap font-mono font-semibold text-[var(--text-primary)]">
         {summary.sequenceLabel} · {summary.modelLabel}
       </span>
-      <span className="shrink-0 whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+      <span className="shrink-0 whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
         {requestIDLabel}
       </span>
-      <span className="flex min-w-0 items-center gap-2 truncate whitespace-nowrap font-mono font-black text-[var(--text-primary)]">
+      <span className="flex min-w-0 items-center gap-2 truncate whitespace-nowrap font-mono font-semibold text-[var(--text-primary)]">
         {historicalStatusLabel ? (
-          <span className="shrink-0 border border-[var(--border-color)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-[length:var(--font-size-ui-2xs)] uppercase text-[var(--text-muted)]">
+          <span className="shrink-0 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-1.5 py-0.5 text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
             {historicalStatusLabel}
           </span>
         ) : null}
@@ -1340,7 +1352,7 @@ function isTimelineValuePresent(value: string): boolean {
 function TimelineMetricPill({ label, value, priority }: { label: string; value: string; priority: number }) {
   const visibilityClass = priority >= 3 ? 'hidden xl:inline-flex' : 'inline-flex';
   return (
-    <span className={`${visibilityClass} h-6 shrink-0 items-center gap-1 bg-[color:color-mix(in_srgb,var(--border-color)_9%,transparent)] px-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]`}>
+    <span className={`${visibilityClass} h-6 shrink-0 items-center gap-1 bg-[color:color-mix(in_srgb,var(--gt-border-subtle)_9%,transparent)] px-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]`}>
       <span className="text-[var(--text-muted)]">{label}</span>
       <span>{value}</span>
     </span>
@@ -1385,20 +1397,20 @@ function RequestTimelineDetailModal({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
+              <span className="border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
                 {request.historyState === 'historical_unclosed'
                   ? t('codex_live_sessions.status_historical_unclosed')
                   : t(statusLabelKeys[request.status])}
               </span>
-              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                 #{request.sequence} · {request.model}
               </span>
             </div>
-            <div className="mt-2 truncate font-mono text-[length:var(--font-size-ui-xl)] font-black text-[var(--text-primary)]">
+            <div className="mt-2 truncate font-mono text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
               {request.requestID}
             </div>
           </div>
-          <div className="shrink-0 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] sm:text-right">
+          <div className="shrink-0 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)] sm:text-right">
             <div>{request.startedAt}</div>
             <div>{request.completedAt || (request.historyState === 'historical_unclosed' ? t('codex_live_sessions.status_historical_unclosed') : t('codex_live_sessions.status_streaming'))}</div>
           </div>
@@ -1406,7 +1418,7 @@ function RequestTimelineDetailModal({
       }
       footer={
         <div className="ml-auto">
-          <button type="button" onClick={onClose} className="btn-swiss active:scale-95">
+          <button type="button" onClick={onClose} className={codexLiveSecondaryButtonClass}>
             {t('common.close')}
           </button>
         </div>
@@ -1427,7 +1439,7 @@ function RequestTimelineDetailModal({
         </div>
 
         {request.error ? (
-          <div className="border-2 border-[var(--color-danger)] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--bg-main))] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--color-danger)]">
+          <div className="border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--gt-status-danger)]">
             {request.error.statusCode ? `${request.error.statusCode} ` : ''}
             {request.error.code ? `${request.error.code}: ` : ''}
             {request.error.message}
@@ -1456,17 +1468,17 @@ function FallbackTimelineDetailModal({
       ariaLabel={t('codex_live_sessions.unknown_request')}
       header={
         <div>
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
             {t('codex_live_sessions.request_timeline')}
           </div>
-          <div className="mt-2 font-mono text-[length:var(--font-size-ui-xl)] font-black text-[var(--text-primary)]">
+          <div className="mt-2 font-mono text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
             {t('codex_live_sessions.unknown_request')}
           </div>
         </div>
       }
       footer={
         <div className="ml-auto">
-          <button type="button" onClick={onClose} className="btn-swiss active:scale-95">
+          <button type="button" onClick={onClose} className={codexLiveSecondaryButtonClass}>
             {t('common.close')}
           </button>
         </div>
@@ -1481,8 +1493,8 @@ function FallbackTimelineDetailModal({
 
 function TimelineEventsPanel({ events, t }: { events: readonly CodexLiveTimelineEvent[]; t: Translate }) {
   return (
-    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+    <div className={`${codexLiveMutedPanelClass} p-3`}>
+      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
         {t('codex_live_sessions.request_timeline')}
       </div>
       <div className="mt-3 grid gap-2">
@@ -1500,8 +1512,8 @@ function TimelineEventsPanel({ events, t }: { events: readonly CodexLiveTimeline
 
 function RequestInfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid min-w-0 gap-2 border-b border-[color:color-mix(in_srgb,var(--border-color)_28%,transparent)] py-1 font-mono text-[length:var(--font-size-ui-sm)] md:grid-cols-[9.5rem_1fr]">
-      <span className="font-black uppercase text-[var(--text-muted)]">{label}</span>
+    <div className="grid min-w-0 gap-2 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_28%,transparent)] py-1 font-mono text-[length:var(--font-size-ui-sm)] md:grid-cols-[9.5rem_1fr]">
+      <span className="font-semibold text-[var(--text-muted)]">{label}</span>
       <span className="min-w-0 truncate font-bold text-[var(--text-primary)]">{value}</span>
     </div>
   );
@@ -1509,19 +1521,19 @@ function RequestInfoRow({ label, value }: { label: string; value: string }) {
 
 function MetricCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 border border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] bg-[var(--bg-main)] p-2">
-      <div className="truncate font-mono text-[length:var(--font-size-ui-lg)] font-black text-[var(--text-primary)]">{value}</div>
-      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">{label}</div>
+    <div className={`${codexLiveMutedPanelClass} min-w-0 p-2`}>
+      <div className="truncate font-mono text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">{value}</div>
+      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">{label}</div>
     </div>
   );
 }
 
 function EventDetailLine({ event }: { event: CodexLiveTimelineEvent }) {
   return (
-    <div className="grid min-w-0 grid-cols-[5.8rem_8px_minmax(8rem,10rem)_1fr] gap-2 border-b border-[color:color-mix(in_srgb,var(--border-color)_28%,transparent)] pb-2 text-[length:var(--font-size-ui-sm)] last:border-b-0 last:pb-0">
-      <span className="font-mono font-black text-[var(--text-muted)]">{event.at}</span>
+    <div className="grid min-w-0 grid-cols-[5.8rem_8px_minmax(8rem,10rem)_1fr] gap-2 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_28%,transparent)] pb-2 text-[length:var(--font-size-ui-sm)] last:border-b-0 last:pb-0">
+      <span className="font-mono font-semibold text-[var(--text-muted)]">{event.at}</span>
       <span className={`mt-1.5 h-2 w-2 ${severityDotClass(event.severity)}`} />
-      <span className="truncate font-mono font-black uppercase text-[var(--text-primary)]">
+      <span className="truncate font-mono font-semibold text-[var(--text-primary)]">
         {event.lane}.{event.kind}
       </span>
       <span className="min-w-0">
@@ -1539,14 +1551,14 @@ function EventDetailLine({ event }: { event: CodexLiveTimelineEvent }) {
 function StatusBadge({ status, t }: { status: CodexLiveSessionStatus; t: Translate }) {
   const tone =
     status === 'failed' || status === 'cancelled'
-      ? 'bg-[color-mix(in_srgb,var(--color-danger)_14%,var(--bg-main))]'
+      ? 'bg-[color-mix(in_srgb,var(--gt-status-danger)_14%,var(--gt-surface-canvas))]'
       : status === 'degraded_http' || status === 'reconnecting' || status === 'upstream_disconnected'
-        ? 'bg-[color-mix(in_srgb,var(--color-warning)_14%,var(--bg-main))]'
+        ? 'bg-[color-mix(in_srgb,var(--gt-status-warning)_14%,var(--gt-surface-canvas))]'
         : status === 'active' || status === 'streaming'
-          ? 'bg-[color-mix(in_srgb,var(--color-success)_12%,var(--bg-main))]'
-          : 'bg-[var(--bg-surface)]';
+          ? 'bg-[color-mix(in_srgb,var(--gt-status-success)_12%,var(--gt-surface-canvas))]'
+          : 'bg-[var(--gt-surface-muted)]';
   return (
-    <span className={`shrink-0 border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase ${tone}`}>
+    <span className={`shrink-0 rounded border border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] ${tone}`}>
       {t(statusLabelKeys[status])}
     </span>
   );

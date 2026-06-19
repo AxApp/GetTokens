@@ -1126,7 +1126,7 @@ test('codex live session detail uses fluid regions with bounded live growth and 
   assert.match(detailSource, /className="min-w-0" data-codex-detail-slot="session"/);
   assert.match(detailSource, /className="min-w-0 2xl:col-span-2" data-codex-detail-slot="transport"/);
   assert.match(detailSource, /data-codex-timeline-shell="session-style"/);
-  assert.match(detailSource, /max-h-\[clamp\(12rem,42vh,34rem\)\] overflow-y-auto bg-\[var\(--bg-main\)\] scrollbar-stable/);
+  assert.match(detailSource, /max-h-\[clamp\(12rem,42vh,34rem\)\] overflow-y-auto bg-\[var\(--gt-surface-canvas\)\] scrollbar-stable/);
   assert.doesNotMatch(detailSource, /grid min-h-\[320px\] max-h-\[clamp\(360px,42vh,560px\)\]/);
   assert.match(workbenchSource, /xl:grid-cols-\[minmax\(280px,340px\)_minmax\(0,1fr\)\]/);
   assert.doesNotMatch(workbenchSource, /xl:sticky/);
@@ -1656,7 +1656,7 @@ test('codex live session timing chart uses a fixed viewport without horizontal p
   assert.match(detailSource, /resolveTimingTrendVisibleRequestCount/);
   assert.match(detailSource, /timingTrendMinVisiblePoints/);
   assert.match(detailSource, /timingTrendPointStepPx/);
-  assert.match(detailSource, /className="overflow-hidden border border-\[color:color-mix\(in_srgb,var\(--border-color\)_24%,transparent\)\] bg-\[color:color-mix\(in_srgb,var\(--bg-main\)_92%,var\(--bg-surface\)\)\]"/);
+  assert.match(detailSource, /className=\{`\$\{codexLiveMutedPanelClass\} overflow-hidden`\}/);
   assert.doesNotMatch(detailSource, /resolveTimingTrendVisibleWindowMs/);
   assert.doesNotMatch(detailSource, /timingTrendStripFullWindowWidthPx/);
   assert.doesNotMatch(detailSource, /overflow-x-auto/);
