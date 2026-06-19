@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const featurePath = fileURLToPath(new URL('./ClaudeCodeAssetWorkbenchFeature.tsx', import.meta.url));
 const componentPath = fileURLToPath(new URL('./components/ClaudeCodeAssetWorkbench.tsx', import.meta.url));
+const accountListWorkbenchPath = fileURLToPath(new URL('./components/ClaudeCodeAccountListWorkbench.tsx', import.meta.url));
 const pagePath = fileURLToPath(new URL('../../pages/ClaudePage.tsx', import.meta.url));
 const wailsAppBindingsPath = fileURLToPath(new URL('../../../wailsjs/go/main/App.js', import.meta.url));
 const wailsAppTypesPath = fileURLToPath(new URL('../../../wailsjs/go/main/App.d.ts', import.meta.url));
@@ -82,4 +83,35 @@ test('Claude Code asset workbench uses the quiet workspace shell', () => {
   assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
   assert.doesNotMatch(source, /shadow-\[8px_8px_0_var\(--shadow-color\)\]/);
   assert.doesNotMatch(source, /shadow-hard/);
+});
+
+test('Claude Code account list workbench uses the quiet workspace shell', () => {
+  const source = readFileSync(accountListWorkbenchPath, 'utf8');
+
+  assert.match(source, /const claudeAccountWorkbenchShellClass =/);
+  assert.match(source, /const claudeAccountPanelClass =/);
+  assert.match(source, /const claudeAccountButtonClass =/);
+  assert.match(source, /const claudeAccountStatusToneClass =/);
+  assert.match(source, /data-claude-account-workbench-shell/);
+  assert.match(source, /data-claude-account-workbench-header/);
+  assert.match(source, /data-claude-account-queue/);
+  assert.match(source, /data-claude-account-queue-row/);
+  assert.match(source, /data-claude-account-mapping-panel/);
+  assert.match(source, /data-claude-account-probe-panel/);
+  assert.match(source, /data-claude-account-profile-list/);
+  assert.match(source, /data-claude-account-profile-card/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-success/);
+  assert.match(source, /--gt-status-warning/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /btn-swiss|input-swiss|select-swiss|card-swiss/);
+  assert.doesNotMatch(source, /border-2|border-t-2|border-b-2/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /color-status-/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /shadow-hard|shadow-\[/);
 });
