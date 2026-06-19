@@ -143,6 +143,39 @@ const CAPABILITY_ENDPOINTS: Array<{ format: ApiFormat; label: string; hint: stri
   { format: 'anthropic', label: 'Anthropic', hint: 'Messages' },
 ];
 
+const accountDetailHeaderShellClass =
+  'grid min-w-0 grid-cols-[10.5rem_minmax(0,1fr)] rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const accountDetailHeaderRailClass =
+  'flex min-w-0 items-center border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
+const accountDetailHeaderTypeClass =
+  'w-full min-w-0 text-left text-base font-semibold italic leading-tight tracking-normal text-[var(--text-primary)]';
+const accountDetailHeaderPillClass =
+  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[length:var(--font-size-ui-2xs)] !font-semibold !text-[var(--text-primary)]';
+const accountDetailHeaderPrimaryPillClass =
+  '!min-h-0 !border !border-[var(--text-primary)] !bg-[var(--text-primary)] !py-1 !text-[length:var(--font-size-ui-2xs)] !font-semibold !text-[var(--gt-surface-canvas)]';
+const accountDetailHeaderDescriptionClass =
+  'flex min-w-0 items-center pl-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-semibold leading-tight text-[var(--text-muted)]';
+const accountDetailRuntimeMetaLabelClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailRuntimeMetaSmallClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailRuntimeDecisionTitleClass =
+  'min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountDetailRuntimeDecisionMetaClass =
+  'mt-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailRuntimeDecisionDetailClass =
+  'mt-1 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]';
+const accountDetailRuntimeEvidenceClass =
+  'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
+const accountDetailRuntimeReasonDetailClass =
+  'grid gap-1 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1.5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center';
+const accountDetailRuntimeDecisionClass = (unresolved: boolean) =>
+  `border px-3 py-2 ${
+    unresolved
+      ? 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_6%,var(--gt-surface-muted))]'
+      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
+  }`;
+
 export function AccountDetailHeader({
   account,
 }: AccountDetailHeaderProps) {
@@ -161,22 +194,22 @@ export function AccountDetailHeader({
       : 'API Key provider · custom headers · model mapping · short-message verification';
 
   return (
-    <div data-account-detail-header="v09-compact" className="grid min-w-0 grid-cols-[10.5rem_minmax(0,1fr)] bg-[var(--bg-surface)]">
-      <div data-account-detail-header-account-type="true" className="flex min-w-0 items-center border-r-2 border-[var(--border-color)] px-4 py-3">
-        <div className="w-full min-w-0 text-left text-base font-black uppercase italic leading-tight tracking-tight">
+    <div data-account-detail-header="quiet" className={accountDetailHeaderShellClass}>
+      <div data-account-detail-header-account-type="true" className={accountDetailHeaderRailClass}>
+        <div className={accountDetailHeaderTypeClass}>
           <span className="block whitespace-normal break-words [overflow-wrap:break-word]">{accountTypeLabel}</span>
         </div>
       </div>
 
       <div className="grid min-w-0 content-center gap-1 px-2.5 py-2">
         <div data-account-detail-header-chips="true" className="flex min-w-0 items-center gap-1.5 overflow-hidden">
-          <AccountDetailPill className="!min-h-0 !border-2 !bg-[var(--text-primary)] !py-1 !text-[length:var(--font-size-ui-2xs)] !text-[var(--bg-main)]">类型: {account.credentialSource === 'auth-file' ? 'Codex Auth-file / OAuth' : account.provider === 'codex' ? 'Codex API Key' : 'OpenAI-compatible'}</AccountDetailPill>
-          <AccountDetailPill className="!min-h-0 !border-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">凭据: {credentialLabel}</AccountDetailPill>
-          <AccountDetailPill className="!min-h-0 !border-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">验证: Short Message</AccountDetailPill>
-          <AccountDetailPill className="!min-h-0 !border-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">路由: {routeLabel}</AccountDetailPill>
-          <AccountDetailPill className="!min-h-0 !border-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">余额/额度: {balanceLabel}</AccountDetailPill>
+          <AccountDetailPill className={accountDetailHeaderPrimaryPillClass}>类型: {account.credentialSource === 'auth-file' ? 'Codex Auth-file / OAuth' : account.provider === 'codex' ? 'Codex API Key' : 'OpenAI-compatible'}</AccountDetailPill>
+          <AccountDetailPill className={accountDetailHeaderPillClass}>凭据: {credentialLabel}</AccountDetailPill>
+          <AccountDetailPill className={accountDetailHeaderPillClass}>验证: Short Message</AccountDetailPill>
+          <AccountDetailPill className={accountDetailHeaderPillClass}>路由: {routeLabel}</AccountDetailPill>
+          <AccountDetailPill className={accountDetailHeaderPillClass}>余额/额度: {balanceLabel}</AccountDetailPill>
         </div>
-        <div data-account-detail-header-description="true" className="flex min-w-0 items-center pl-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-black leading-tight text-[var(--text-muted)]">
+        <div data-account-detail-header-description="true" className={accountDetailHeaderDescriptionClass}>
           <span className="truncate">{description}</span>
         </div>
       </div>
@@ -310,7 +343,7 @@ export function AccountRuntimeRouteSection({
           </div>
           {repairRows.length > 0 ? (
             <div data-account-runtime-route-repair="diagnostics" className="grid gap-2">
-              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <div className={accountDetailRuntimeMetaLabelClass}>
                 Bounded Reconcile
               </div>
               <AccountDetailEvidenceGrid rows={repairRows} />
@@ -318,21 +351,17 @@ export function AccountRuntimeRouteSection({
           ) : null}
           {routeDecisions.length > 0 ? (
             <div data-account-runtime-route-decisions="recent" className="grid gap-2">
-              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <div className={accountDetailRuntimeMetaLabelClass}>
                 最近真实路由
               </div>
               {routeDecisions.map((decision) => (
                 <div
                   key={decision.id}
                   data-account-runtime-route-decision={decision.matchedAs}
-                  className={`border-2 px-3 py-2 ${
-                    decision.unresolved
-                      ? 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_6%,var(--bg-surface))]'
-                      : 'border-[var(--border-color)] bg-[var(--bg-surface)]'
-                  }`}
+                  className={accountDetailRuntimeDecisionClass(decision.unresolved)}
                 >
                   <div className="flex min-w-0 items-center justify-between gap-3">
-                    <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                    <div className={accountDetailRuntimeDecisionTitleClass}>
                       {decision.title}
                     </div>
                     <AccountDetailPill tone={decision.unresolved ? 'danger' : 'neutral'} className="!min-h-0 !py-0.5 !text-[length:var(--font-size-ui-2xs)]">
@@ -340,12 +369,12 @@ export function AccountRuntimeRouteSection({
                     </AccountDetailPill>
                   </div>
                   {decision.meta ? (
-                    <div className="mt-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                    <div className={accountDetailRuntimeDecisionMetaClass}>
                       {decision.meta}
                     </div>
                   ) : null}
                   {decision.detail ? (
-                    <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-secondary)]">
+                    <div className={accountDetailRuntimeDecisionDetailClass}>
                       {decision.detail}
                     </div>
                   ) : null}
@@ -493,10 +522,10 @@ function RuntimeRouteResilienceEvidenceMarker({
   return (
     <div
       data-account-runtime-route-resilience-marker={evidence.digestDisplayMode}
-      className="grid gap-2 border border-[var(--border-color)] bg-[color-mix(in_srgb,var(--bg-muted)_72%,transparent)] px-3 py-2"
+      className={accountDetailRuntimeEvidenceClass}
     >
       <div className="flex min-w-0 items-center justify-between gap-3">
-        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        <div className={accountDetailRuntimeMetaLabelClass}>
           Route Resilience Evidence
         </div>
         <AccountDetailPill
@@ -582,7 +611,7 @@ function RuntimeRouteResilienceEvidenceMarker({
       />
       {evidence.matchedReasonDetails?.length ? (
         <div data-account-runtime-route-reason-details="current-decision" className="grid gap-1">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          <div className={accountDetailRuntimeMetaSmallClass}>
             Reason Details
           </div>
           <div className="grid gap-1">
@@ -590,7 +619,7 @@ function RuntimeRouteResilienceEvidenceMarker({
               <div
                 key={`${reasonDetail.reason}-${reasonDetail.routeBlocking ? 'blocking' : 'observe'}-${index}`}
                 data-account-runtime-route-reason-detail={reasonDetail.routeBlocking ? 'blocking' : 'observe'}
-                className="grid gap-1 border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1.5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center"
+                className={accountDetailRuntimeReasonDetailClass}
               >
                 <AccountDetailPill
                   tone={reasonDetail.routeBlocking ? 'danger' : 'neutral'}
