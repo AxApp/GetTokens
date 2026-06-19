@@ -248,6 +248,36 @@ test('account import page uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /shadow-\[/);
 });
 
+test('account import modal uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/AccountImportModal.tsx', import.meta.url), 'utf8');
+  const targetSource = sourceBlock(source, 'export default function AccountImportModal', 'function createQueueItem');
+
+  assert.match(source, /const accountImportModalHeaderClass =/);
+  assert.match(source, /const accountImportModalPanelClass =/);
+  assert.match(source, /const accountImportModalButtonClass =/);
+  assert.match(source, /const accountImportModalDropzoneClass =/);
+  assert.match(source, /const accountImportModalMetaChipClass =/);
+  assert.match(targetSource, /data-account-import-modal-header/);
+  assert.match(targetSource, /data-account-import-modal-body/);
+  assert.match(targetSource, /data-account-import-input-panel/);
+  assert.match(targetSource, /data-account-import-dropzone/);
+  assert.match(targetSource, /data-account-import-queue-panel/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(targetSource, /btn-swiss/);
+  assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
+  assert.doesNotMatch(targetSource, /border-dashed/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /color-status-/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-\[0\.14em\]|tracking-\[0\.18em\]|tracking-\[0\.2em\]/);
+  assert.doesNotMatch(targetSource, /shadow-\[/);
+});
+
 test('pasted codex api key copies use numbered duplicate titles', async () => {
   const source = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
 

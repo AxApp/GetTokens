@@ -13,6 +13,49 @@ import AccountImportQueueList, { type AccountImportQueueItem } from './AccountIm
 
 type AccountImportSource = 'file' | 'paste';
 
+const accountImportModalHeaderClass =
+  'flex flex-wrap items-start justify-between gap-4';
+const accountImportModalEyebrowClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountImportModalTitleClass =
+  'mt-1 text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportModalMetaChipClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportModalErrorClass =
+  'border-t border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-6 py-4 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
+const accountImportModalSummaryClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountImportModalButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+const accountImportModalPrimaryButtonClass =
+  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
+const accountImportModalBodyClass =
+  'grid gap-5 p-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start';
+const accountImportModalPanelClass =
+  'grid min-w-0 gap-4 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4';
+const accountImportModalPanelSectionClass =
+  'grid gap-3 border-b border-[var(--gt-border-subtle)] pb-4';
+const accountImportModalPanelTitleClass =
+  'truncate text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportModalPanelMetaClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountImportModalDropzoneClass = (active: boolean) =>
+  `grid min-h-36 place-items-center rounded border px-5 py-6 text-center transition-[background-color,border-color,transform] active:scale-[0.99] disabled:opacity-45 ${
+    active
+      ? 'border-[var(--text-primary)] bg-[color-mix(in_srgb,var(--text-primary)_8%,var(--gt-surface-muted))]'
+      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
+  }`;
+const accountImportModalDropzoneTitleClass =
+  'text-sm font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportModalDropzoneHintClass =
+  'max-w-sm text-[length:var(--font-size-ui-xs)] font-medium leading-relaxed tracking-normal text-[var(--text-muted)]';
+const accountImportModalTextareaClass =
+  'min-h-36 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-xs text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+const accountImportModalQueueHeaderClass =
+  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
+const accountImportModalQueueEmptyClass =
+  'px-4 py-8 text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
+
 interface AccountImportModalProps {
   t: Translator;
   initialPasteContent?: string;
@@ -167,20 +210,20 @@ export default function AccountImportModal({
       size="xl"
       ariaLabel={t('accounts.import_account_title')}
       header={
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div data-account-import-modal-header className={accountImportModalHeaderClass}>
           <div className="min-w-0">
-            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className={accountImportModalEyebrowClass}>
               {t('accounts.import_account_eyebrow')}
             </div>
-            <h3 className="mt-1 text-lg font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+            <h3 className={accountImportModalTitleClass}>
               {t('accounts.import_account_title')}
             </h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            <span className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2.5 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+            <span className={accountImportModalMetaChipClass}>
               AUTO DETECT
             </span>
-            <span className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2.5 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+            <span className={accountImportModalMetaChipClass}>
               JSON ARRAY
             </span>
           </div>
@@ -188,25 +231,25 @@ export default function AccountImportModal({
       }
       error={
         error ? (
-          <div className="border-t-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-6 py-4 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
+          <div className={accountImportModalErrorClass}>
             {error}
           </div>
         ) : undefined
       }
       footer={
         <>
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          <div className={accountImportModalSummaryClass}>
             {formatQueueSummary(t, queueItems.length, queueSummary)}
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={onClose} disabled={submitting} className="btn-swiss">
+            <button type="button" onClick={onClose} disabled={submitting} className={accountImportModalButtonClass}>
               {t('common.cancel')}
             </button>
             <button
               type="button"
               onClick={() => void handleSubmit()}
               disabled={submitting || queueItems.length === 0}
-              className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] disabled:opacity-45"
+              className={accountImportModalPrimaryButtonClass}
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
@@ -221,20 +264,20 @@ export default function AccountImportModal({
         </>
       }
     >
-      <div className="grid gap-5 p-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start">
+      <div data-account-import-modal-body className={accountImportModalBodyClass}>
         <section
           data-account-import-input-panel
-          className="grid min-w-0 gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+          className={accountImportModalPanelClass}
         >
-          <div className="grid gap-3 border-b-2 border-dashed border-[var(--border-color)] pb-4">
+          <div className={accountImportModalPanelSectionClass}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
                 <FilePlus className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
-                <h4 className="truncate text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                <h4 className={accountImportModalPanelTitleClass}>
                   {t('accounts.import_account_files')}
                 </h4>
               </div>
-              <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <span className={accountImportModalPanelMetaClass}>
                 MULTI
               </span>
             </div>
@@ -259,18 +302,14 @@ export default function AccountImportModal({
               onDragLeave={handleFileDragLeave}
               onDrop={handleFileDrop}
               disabled={readingFiles || submitting}
-              className={`grid min-h-36 place-items-center border-2 border-dashed px-5 py-6 text-center transition-[background-color,border-color,transform] active:scale-[0.99] disabled:opacity-45 ${
-                isFileDragOver
-                  ? 'border-[var(--text-primary)] bg-[color-mix(in_srgb,var(--text-primary)_8%,var(--bg-surface))]'
-                  : 'border-[var(--border-color)] bg-[var(--bg-surface)]'
-              }`}
+              className={accountImportModalDropzoneClass(isFileDragOver)}
             >
               <span className="grid justify-items-center gap-3">
                 {readingFiles ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" strokeWidth={3} />}
-                <span className="text-sm font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                <span className={accountImportModalDropzoneTitleClass}>
                   {t('accounts.import_account_choose_files')}
                 </span>
-                <span className="max-w-sm text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                <span className={accountImportModalDropzoneHintClass}>
                   {t('accounts.import_account_files_hint')}
                 </span>
               </span>
@@ -281,11 +320,11 @@ export default function AccountImportModal({
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
                 <ClipboardPaste className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
-                <h4 className="truncate text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                <h4 className={accountImportModalPanelTitleClass}>
                   {t('accounts.import_account_paste')}
                 </h4>
               </div>
-              <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <span className={accountImportModalPanelMetaClass}>
                 JSON
               </span>
             </div>
@@ -296,19 +335,19 @@ export default function AccountImportModal({
                 setPasteContent(event.target.value);
                 setError('');
               }}
-              className="input-swiss min-h-36 w-full resize-y font-mono text-xs"
+              className={accountImportModalTextareaClass}
               placeholder={t('accounts.import_account_paste_placeholder')}
               spellCheck={false}
             />
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={handleAddPaste} disabled={submitting} className="btn-swiss">
+              <button type="button" onClick={handleAddPaste} disabled={submitting} className={accountImportModalButtonClass}>
                 {t('accounts.import_account_add_paste')}
               </button>
               <button
                 type="button"
                 onClick={() => void handlePasteFromClipboard()}
                 disabled={submitting}
-                className="btn-swiss"
+                className={accountImportModalButtonClass}
               >
                 {t('accounts.import_account_clear_paste')}
               </button>
@@ -316,17 +355,17 @@ export default function AccountImportModal({
           </div>
         </section>
 
-        <section className="grid min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-          <header className="border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-            <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+        <section data-account-import-queue-panel className={accountImportModalPanelClass}>
+          <header className={accountImportModalQueueHeaderClass}>
+            <div className={accountImportModalPanelTitleClass}>
               {t('accounts.import_account_queue')}
             </div>
-            <div className="mt-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            <div className={`mt-1 ${accountImportModalPanelMetaClass}`}>
               {t('accounts.import_account_queue_hint')}
             </div>
           </header>
           {queueItems.length === 0 ? (
-            <div className="border-0 px-4 py-8 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-muted)]">
+            <div className={accountImportModalQueueEmptyClass}>
               {t('accounts.import_account_queue_empty')}
             </div>
           ) : (
