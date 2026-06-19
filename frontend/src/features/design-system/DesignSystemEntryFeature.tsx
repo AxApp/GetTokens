@@ -1,12 +1,8 @@
-import type { MouseEvent } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
 import { hasWailsRuntime } from '../../utils/previewMode';
-import {
-  businessDesignSystemPreviews,
-} from './businessComponentPreviews';
-import { getBusinessDesignSystemPreviewStats } from './businessComponentPreviewCatalog';
 import {
   DESIGN_SYSTEM_SCREENSHOT_PATH,
   DESIGN_SYSTEM_STORYBOOK_COMMAND,
@@ -19,10 +15,221 @@ import {
   resolveDesignSystemWebOpenURL,
 } from './storyCatalog';
 
+/* ─── Token reading ─── */
+
+const COLOR_TOKENS = [
+  { label: 'Canvas', var: '--gt-surface-canvas' },
+  { label: 'Panel', var: '--gt-surface-panel' },
+  { label: 'Raised', var: '--gt-surface-raised' },
+  { label: 'Muted', var: '--gt-surface-muted' },
+  { label: 'Inverse', var: '--gt-surface-inverse' },
+  { label: 'Ink Primary', var: '--gt-ink-primary' },
+  { label: 'Ink Secondary', var: '--gt-ink-secondary' },
+  { label: 'Ink Muted', var: '--gt-ink-muted' },
+  { label: 'Border Subtle', var: '--gt-border-subtle' },
+  { label: 'Border Default', var: '--gt-border-default' },
+  { label: 'Border Strong', var: '--gt-border-strong' },
+  { label: 'Focus Ring', var: '--gt-focus-ring' },
+  { label: 'Accent Primary', var: '--gt-accent-primary' },
+  { label: 'Accent Hover', var: '--gt-accent-hover' },
+  { label: 'Status Success', var: '--gt-status-success' },
+  { label: 'Status Warning', var: '--gt-status-warning' },
+  { label: 'Status Danger', var: '--gt-status-danger' },
+  { label: 'Status Info', var: '--gt-status-info' },
+];
+
+const RADIUS_TOKENS = [
+  { label: 'xs', var: '--gt-radius-xs' },
+  { label: 'sm', var: '--gt-radius-sm' },
+  { label: 'md', var: '--gt-radius-md' },
+  { label: 'lg', var: '--gt-radius-lg' },
+  { label: 'pill', var: '--gt-radius-pill' },
+];
+
+const ELEVATION_TOKENS = [
+  { label: 'flat', var: '--gt-elevation-flat' },
+  { label: 'raised-1', var: '--gt-elevation-raised-1' },
+  { label: 'raised-2', var: '--gt-elevation-raised-2' },
+  { label: 'raised-3', var: '--gt-elevation-raised-3' },
+];
+
+function useTokenValue(varName: string): string {
+  const [value, setValue] = useState('');
+  useEffect(() => {
+    const el = document.documentElement;
+    const computed = getComputedStyle(el).getPropertyValue(varName).trim();
+    setValue(computed);
+  }, [varName]);
+  return value;
+}
+
+function ColorSwatch({ label, varName }: { label: string; varName: string }) {
+  const value = useTokenValue(varName);
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className="h-10 w-10 shrink-0 rounded border"
+        style={{ backgroundColor: value, borderColor: 'var(--gt-border-default)' }}
+      />
+      <div className="min-w-0">
+        <div className="text-xs font-medium" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
+        <div className="text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function RadiusSwatch({ label, varName }: { label: string; varName: string }) {
+  const value = useTokenValue(varName);
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div
+        className="h-12 w-12 border"
+        style={{ borderRadius: value, backgroundColor: 'var(--gt-surface-raised)', borderColor: 'var(--gt-border-default)' }}
+      />
+      <div className="text-center">
+        <div className="text-xs font-medium" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
+        <div className="text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function ElevationSwatch({ label, varName }: { label: string; varName: string }) {
+  const value = useTokenValue(varName);
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div
+        className="h-16 w-24 rounded-lg"
+        style={{ boxShadow: value || 'none', backgroundColor: 'var(--gt-surface-raised)', border: '1px solid var(--gt-border-subtle)' }}
+      />
+      <div className="text-center">
+        <div className="text-xs font-medium" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
+        <div className="max-w-[10rem] break-all text-center text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>{value || 'none'}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Anatomy previews ─── */
+
+function AnatomySettingsRow() {
+  return (
+    <div className="parchment-settings-row" style={{ border: '1px solid var(--gt-border-subtle)', borderRadius: 'var(--gt-radius-md)', backgroundColor: 'var(--gt-surface-raised)' }}>
+      <div className="min-w-0 flex-1">
+        <div className="parchment-settings-row-label">Setting Label</div>
+        <div className="parchment-settings-row-description">Description text for this setting</div>
+      </div>
+      <div className="parchment-settings-row-control">
+        <div className="h-5 w-9 rounded-full" style={{ backgroundColor: 'var(--gt-status-success)' }} />
+      </div>
+    </div>
+  );
+}
+
+function AnatomySectionCard() {
+  return (
+    <div className="parchment-section-card">
+      <div className="parchment-section-card-header">
+        <span className="parchment-section-card-header-title">Section Title</span>
+      </div>
+      <div className="parchment-section-card-body text-sm" style={{ color: 'var(--gt-ink-secondary)' }}>
+        Card body content goes here.
+      </div>
+    </div>
+  );
+}
+
+function AnatomyMetricTile() {
+  return (
+    <div className="parchment-metric-tile">
+      <div className="parchment-metric-tile-label">Spend</div>
+      <div className="parchment-metric-tile-value">$12.40</div>
+      <div className="parchment-metric-tile-delta parchment-metric-tile-delta-success">+2.1%</div>
+    </div>
+  );
+}
+
+function AnatomyStatusPill() {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <span className="parchment-status-pill parchment-status-pill-healthy">Healthy</span>
+      <span className="parchment-status-pill parchment-status-pill-degraded">Degraded</span>
+      <span className="parchment-status-pill parchment-status-pill-error">Error</span>
+      <span className="parchment-status-pill parchment-status-pill-info">Info</span>
+      <span className="parchment-status-pill parchment-status-pill-neutral">Neutral</span>
+    </div>
+  );
+}
+
+function AnatomyToolbar() {
+  return (
+    <div className="parchment-toolbar" style={{ height: 'auto', padding: '0.5rem 1rem' }}>
+      <div className="parchment-toolbar-search" style={{ maxWidth: '12rem', height: '28px' }}>Search…</div>
+      <div className="parchment-toolbar-action-primary" style={{ minHeight: '28px', padding: '0 0.75rem', fontSize: '11px' }}>New</div>
+      <div className="parchment-toolbar-action-secondary" style={{ minHeight: '28px', padding: '0 0.75rem', fontSize: '11px' }}>Export</div>
+    </div>
+  );
+}
+
+function AnatomyTabs() {
+  return (
+    <div className="parchment-tabs">
+      <button type="button" className="parchment-tab">Overview</button>
+      <button type="button" className="parchment-tab parchment-tab-active">Details</button>
+      <button type="button" className="parchment-tab">History</button>
+    </div>
+  );
+}
+
+function AnatomyModalShell() {
+  return (
+    <div className="parchment-detail-modal-shell" style={{ width: '100%', maxHeight: '10rem', position: 'relative' }}>
+      <div className="parchment-detail-modal-header">
+        <span className="text-sm font-semibold" style={{ color: 'var(--gt-ink-primary)' }}>Detail Modal</span>
+        <span className="text-xs" style={{ color: 'var(--gt-ink-muted)' }}>✕</span>
+      </div>
+      <div className="parchment-detail-modal-body text-xs" style={{ color: 'var(--gt-ink-secondary)' }}>
+        Modal body content area. Supports 2-column grid layout on wide screens.
+      </div>
+      <div className="parchment-detail-modal-footer">
+        <div className="parchment-toolbar-action-secondary" style={{ minHeight: '24px', padding: '0 0.5rem', fontSize: '11px' }}>Cancel</div>
+        <div className="parchment-toolbar-action-primary" style={{ minHeight: '24px', padding: '0 0.5rem', fontSize: '11px' }}>Save</div>
+      </div>
+    </div>
+  );
+}
+
+const ANATOMY_ITEMS = [
+  { name: 'parchment-settings-row', desc: '设置行：label + description + control', preview: <AnatomySettingsRow /> },
+  { name: 'parchment-section-card', desc: '分区卡片：header + body', preview: <AnatomySectionCard /> },
+  { name: 'parchment-metric-tile', desc: '指标卡：label + value + delta', preview: <AnatomyMetricTile /> },
+  { name: 'parchment-status-pill', desc: '状态胶囊：5 种语义状态', preview: <AnatomyStatusPill /> },
+  { name: 'parchment-toolbar', desc: '工具栏：search + actions', preview: <AnatomyToolbar /> },
+  { name: 'parchment-tabs', desc: '下划线 tab：active 用 accent underline', preview: <AnatomyTabs /> },
+  { name: 'parchment-detail-modal-shell', desc: '详情弹窗：overlay + shell + header/body/footer', preview: <AnatomyModalShell /> },
+];
+
+/* ─── State matrix ─── */
+
+const STATE_MATRIX = [
+  { component: 'settings-row', states: { default: true, hover: true, active: false, disabled: true, error: true } },
+  { component: 'section-card', states: { default: true, hover: false, active: false, disabled: false, error: false } },
+  { component: 'metric-tile', states: { default: true, hover: false, active: false, disabled: false, error: true } },
+  { component: 'status-pill', states: { default: true, hover: false, active: false, disabled: true, error: true } },
+  { component: 'toolbar', states: { default: true, hover: false, active: false, disabled: false, error: false } },
+  { component: 'tabs', states: { default: true, hover: true, active: true, disabled: true, error: false } },
+  { component: 'detail-modal', states: { default: true, hover: false, active: false, disabled: false, error: false } },
+  { component: 'app-shell', states: { default: true, hover: false, active: false, disabled: false, error: false } },
+];
+
+const STATE_COLUMNS = ['default', 'hover', 'active', 'disabled', 'error'] as const;
+
+/* ─── Main component ─── */
+
 export default function DesignSystemEntryFeature() {
   const { t } = useI18n();
   const stats = getDesignSystemStoryStats();
-  const businessStats = getBusinessDesignSystemPreviewStats();
   const storybookOpenURL = resolveDesignSystemStorybookOpenURL({
     origin: typeof window === 'undefined' ? undefined : window.location.origin,
   });
@@ -48,20 +255,18 @@ export default function DesignSystemEntryFeature() {
 
   return (
     <div
-      className="design-system-trust-console h-full overflow-auto px-8 py-7 text-[var(--text-primary)]"
-      data-design-system-redesign="parchment-trust-console"
+      className="h-full overflow-auto text-[var(--text-primary)]"
+      style={{ backgroundColor: 'var(--gt-surface-canvas)', padding: '1.75rem 2rem' }}
     >
-      <div className="mx-auto flex max-w-[86rem] flex-col gap-6">
+      <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <WorkspacePageHeader
           title={t('design_system.title')}
           subtitle={t('design_system.subtitle')}
-          className="design-system-trust-header"
-          titleClassName="design-system-trust-title"
-          subtitleClassName="design-system-trust-subtitle"
           actions={
-            <div className="design-system-action-dock">
+            <div className="flex flex-wrap gap-2">
               <a
-                className="btn-swiss bg-[var(--border-color)] !text-[var(--bg-main)]"
+                className="parchment-toolbar-action-primary"
+                style={{ minHeight: 'auto', padding: '0.5rem 1rem', fontSize: '12px', textDecoration: 'none' }}
                 href={storybookOpenURL}
                 onClick={(event) => openExternalURL(event, storybookOpenURL)}
                 target="_blank"
@@ -72,7 +277,8 @@ export default function DesignSystemEntryFeature() {
               {showDevWebOpen ? (
                 <>
                   <a
-                    className="btn-swiss"
+                    className="parchment-toolbar-action-secondary"
+                    style={{ minHeight: 'auto', padding: '0.5rem 1rem', fontSize: '12px', textDecoration: 'none' }}
                     href={inspectOpenURL}
                     onClick={(event) => openExternalURL(event, inspectOpenURL)}
                     target="_blank"
@@ -81,7 +287,8 @@ export default function DesignSystemEntryFeature() {
                     {t('design_system.inspect_elements')}
                   </a>
                   <a
-                    className="btn-swiss bg-[var(--accent-blue)] !text-white"
+                    className="parchment-toolbar-action-secondary"
+                    style={{ minHeight: 'auto', padding: '0.5rem 1rem', fontSize: '12px', textDecoration: 'none' }}
                     href={viteOpenURL}
                     onClick={(event) => openExternalURL(event, viteOpenURL)}
                     target="_blank"
@@ -89,153 +296,145 @@ export default function DesignSystemEntryFeature() {
                   >
                     {t('design_system.open_5173_web')}
                   </a>
-                  <a
-                    className="btn-swiss"
-                    href={webOpenURL}
-                    onClick={(event) => openExternalURL(event, webOpenURL)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {t('design_system.open_web')}
-                  </a>
                 </>
               ) : null}
             </div>
           }
         />
 
-        <section className="design-system-hero-grid">
-          <div className="card-swiss design-system-command-card">
-            <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal text-[var(--text-muted)]">
-              {t('design_system.primary_entry')}
-            </div>
-            <div className="mt-3 text-3xl font-black uppercase italic tracking-tight">
-              Storybook
-            </div>
-            <p className="mt-2 max-w-2xl text-[length:var(--font-size-ui-sm)] font-bold leading-relaxed text-[var(--text-muted)]">
-              Theme baseline, component coverage, and browser preview entry stay visible before drilling into individual stories.
-            </p>
-            <div className="mt-5 grid gap-3">
-              <InfoRow label={t('design_system.command')} value={DESIGN_SYSTEM_STORYBOOK_COMMAND} />
-              <InfoRow label={t('design_system.url')} value={DESIGN_SYSTEM_STORYBOOK_URL} />
-              <InfoRow label={t('design_system.screenshot_path')} value={DESIGN_SYSTEM_SCREENSHOT_PATH} />
-            </div>
-          </div>
-
-          <aside className="card-swiss design-system-coverage-card">
-            <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal text-[var(--text-muted)]">
-              {t('design_system.coverage')}
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Metric label={t('design_system.groups')} value={stats.groupCount} />
-              <Metric label={t('design_system.stories')} value={stats.storyCount} />
-              <Metric label="业务预览" value={businessStats.previewCount} />
-              <Metric label="业务状态" value={businessStats.stateCount} />
-            </div>
-          </aside>
+        {/* ── Coverage metrics ── */}
+        <section className="grid grid-cols-2 gap-3">
+          <MetricTile label={t('design_system.groups')} value={stats.groupCount} />
+          <MetricTile label={t('design_system.stories')} value={stats.storyCount} />
         </section>
 
-        <section className="grid gap-4">
-          <div className="card-swiss !p-0">
-            <div className="design-system-section-header px-5 py-4">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <h3 className="text-xl font-black uppercase italic tracking-normal">业务组件预览</h3>
-                  <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-normal text-[var(--text-muted)]">
-                    业务组件在 5173 应用内设计系统直接渲染，不进入 6006 Storybook。
-                  </p>
-                </div>
-                <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black">
-                  {businessDesignSystemPreviews.length} {t('design_system.items')}
-                </span>
-              </div>
+        {/* ── Token Swatches ── */}
+        <section>
+          <h2 className="settings-section-title">Token Contract</h2>
+          <div className="settings-group" style={{ padding: '1.25rem' }}>
+            <h3 className="mb-3 text-xs font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>Color</h3>
+            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {COLOR_TOKENS.map((token) => (
+                <ColorSwatch key={token.var} label={token.label} varName={token.var} />
+              ))}
             </div>
-            <div className="design-system-business-grid grid gap-6 bg-[var(--bg-surface)] p-5">
-              {businessDesignSystemPreviews.map((preview) => (
-                <section key={preview.id} className="grid gap-4">
-                  <div className="design-system-preview-intro grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-                    <div className="text-lg font-black uppercase italic tracking-normal">{preview.title}</div>
-                    <p className="text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
-                      {preview.description}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {preview.states.map((state) => (
-                        <span
-                          key={`${preview.id}-${state}`}
-                          className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em]"
-                        >
-                          {state}
-                        </span>
-                      ))}
-                    </div>
-                    <code className="break-all font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
-                      {preview.sourcePath}
-                    </code>
-                  </div>
-                  <div className="min-w-0">{preview.render()}</div>
-                </section>
+
+            <h3 className="mb-3 text-xs font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>Radius</h3>
+            <div className="mb-6 flex flex-wrap gap-5">
+              {RADIUS_TOKENS.map((token) => (
+                <RadiusSwatch key={token.var} label={token.label} varName={token.var} />
+              ))}
+            </div>
+
+            <h3 className="mb-3 text-xs font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>Elevation</h3>
+            <div className="flex flex-wrap gap-5">
+              {ELEVATION_TOKENS.map((token) => (
+                <ElevationSwatch key={token.var} label={token.label} varName={token.var} />
               ))}
             </div>
           </div>
         </section>
 
-        <section className="grid gap-4">
-          {designSystemStoryGroups.map((group) => (
-            <div key={group.id} className="card-swiss !p-0">
-              <div className="design-system-section-header px-5 py-4">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div>
-                    <h3 className="text-xl font-black uppercase italic tracking-normal">{group.title}</h3>
-                    <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-normal text-[var(--text-muted)]">
-                      {group.description}
-                    </p>
+        {/* ── Component Anatomy ── */}
+        <section>
+          <h2 className="settings-section-title">Component Anatomy</h2>
+          <div className="settings-group" style={{ padding: '1.25rem' }}>
+            <div className="grid gap-4">
+              {ANATOMY_ITEMS.map((item) => (
+                <div key={item.name} style={{ borderTop: '1px solid var(--gt-border-subtle)', paddingTop: '1rem' }}>
+                  <div className="mb-1 flex items-baseline gap-2">
+                    <code className="text-xs font-semibold" style={{ color: 'var(--gt-accent-primary)', fontFamily: 'var(--gt-font-family-mono)' }}>
+                      .{item.name}
+                    </code>
+                    <span className="text-xs" style={{ color: 'var(--gt-ink-muted)' }}>{item.desc}</span>
                   </div>
-                  <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black">
-                    {group.stories.length} {t('design_system.items')}
-                  </span>
+                  <div style={{ paddingTop: '0.5rem' }}>{item.preview}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── State Matrix ── */}
+        <section>
+          <h2 className="settings-section-title">State Matrix</h2>
+          <div className="settings-group" style={{ overflow: 'hidden' }}>
+            <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
+                  <th className="px-4 py-2 text-left font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>Component</th>
+                  {STATE_COLUMNS.map((col) => (
+                    <th key={col} className="px-4 py-2 text-center font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>{col}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {STATE_MATRIX.map((row) => (
+                  <tr key={row.component} style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
+                    <td className="px-4 py-2 font-medium" style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-mono)' }}>
+                      {row.component}
+                    </td>
+                    {STATE_COLUMNS.map((col) => (
+                      <td key={col} className="px-4 py-2 text-center">
+                        {row.states[col] ? (
+                          <span className="inline-block h-4 w-4 rounded-sm" style={{ backgroundColor: 'var(--gt-status-success)', opacity: 0.7 }} />
+                        ) : (
+                          <span className="text-xs" style={{ color: 'var(--gt-ink-muted)' }}>—</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* ── Story Groups ── */}
+        <section>
+          <h2 className="settings-section-title">Story Catalog</h2>
+          <div className="grid gap-4">
+            {designSystemStoryGroups.map((group) => (
+              <div key={group.id} className="settings-group" style={{ overflow: 'hidden' }}>
+                <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <span className="text-sm font-semibold" style={{ color: 'var(--gt-ink-primary)' }}>{group.title}</span>
+                      <span className="ml-2 text-xs" style={{ color: 'var(--gt-ink-muted)' }}>{group.description}</span>
+                    </div>
+                    <span className="text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>
+                      {group.stories.length}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  {group.stories.map((story) => (
+                    <div
+                      key={story.id}
+                      className="flex items-baseline justify-between px-4 py-2"
+                      style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}
+                    >
+                      <span className="text-xs font-medium" style={{ color: 'var(--gt-ink-primary)' }}>{story.title}</span>
+                      <span className="truncate text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)', maxWidth: '60%' }}>
+                        {story.storybookTitle}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="design-system-story-list divide-y-2 divide-[var(--border-color)]">
-                {group.stories.map((story) => (
-                  <div key={story.id} className="grid gap-2 px-5 py-4 md:grid-cols-[13rem_minmax(0,1fr)] md:items-center">
-                    <div className="font-black uppercase italic tracking-normal">{story.title}</div>
-                    <div className="min-w-0">
-                      <div className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
-                        {story.storybookTitle}
-                      </div>
-                      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]/70">
-                        {story.path}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
       </div>
     </div>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function MetricTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="design-system-info-row grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-normal text-[var(--text-muted)]">
-        {label}
-      </div>
-      <code className="break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-bold">{value}</code>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="font-mono text-2xl font-black">{value}</div>
-      <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-normal text-[var(--text-muted)]">
-        {label}
-      </div>
+    <div className="parchment-metric-tile">
+      <div className="parchment-metric-tile-label">{label}</div>
+      <div className="parchment-metric-tile-value">{value}</div>
     </div>
   );
 }

@@ -378,7 +378,8 @@ test('settings release panel exposes current project git hash metadata', async (
 
   assert.match(source, /data-design-system-component-name="SettingsReleasePanel"/);
   assert.match(source, /data-design-system-git-hash=\{gitHashLabel\}/);
-  assert.match(source, /lg:grid-cols-4/);
+  assert.match(source, /<ReleaseRow/);
+  assert.match(source, /cliProxyApiGitHashLabel/);
   assert.match(featureSource, /gitHashLabel=\{buildGitHashLabel\}/);
   assert.match(featureSource, /gitHashGitHubURL = buildGitHubCommitURL\(getTokensGitHubRepositoryURL, buildGitHashCommit\)/);
   assert.match(featureSource, /const cliProxyApiGitHashLabel = formatBuildGitHash\(sidecarStatus\.gitHash\);/);
