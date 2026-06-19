@@ -11,6 +11,39 @@ interface CurlTemplateOption {
   description: string;
 }
 
+const accountCurlEditorHeaderClass = 'grid gap-1';
+const accountCurlEditorEyebrowClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountCurlEditorTitleClass =
+  'text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountCurlEditorFooterNoteClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountCurlEditorButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+const accountCurlEditorBodyClass =
+  'grid min-h-[28rem] gap-0 bg-[var(--gt-surface-canvas)] lg:grid-cols-[minmax(0,1fr)_22rem]';
+const accountCurlEditorPanelClass =
+  'min-w-0 border-b border-[var(--gt-border-subtle)] p-4 lg:border-b-0 lg:border-r';
+const accountCurlEditorToolbarClass =
+  'mb-3 flex flex-wrap items-center justify-between gap-3';
+const accountCurlEditorToggleLabelClass =
+  'text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountCurlEditorMetaClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountCurlEditorTextareaClass =
+  'min-h-[23rem] w-full resize-none rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] leading-relaxed text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--text-primary)]';
+const accountCurlEditorSectionLabelClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountCurlEditorVariableButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-left transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] active:scale-[0.99]';
+const accountCurlEditorGuidePanelClass =
+  'grid gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+const accountCurlEditorAsideClass = 'grid content-start gap-4 p-4';
+const accountCurlEditorTemplateButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-left transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] active:scale-[0.99]';
+const accountCurlEditorTemplateTitleClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+
 export function AccountCurlEditorModal({
   title,
   value,
@@ -113,40 +146,40 @@ export function AccountCurlEditorModal({
       onClose={onClose}
       size="xl"
       header={
-        <div className="space-y-1">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        <div data-account-curl-editor-header className={accountCurlEditorHeaderClass}>
+          <div className={accountCurlEditorEyebrowClass}>
             CURL EDITOR
           </div>
-          <div className="text-lg font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+          <div className={accountCurlEditorTitleClass}>
             {title}
           </div>
         </div>
       }
       footer={
         <>
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+          <div className={accountCurlEditorFooterNoteClass}>
             内容已写入详情页草稿，返回后由底部保存改动统一提交。
           </div>
-          <button onClick={onClose} className="btn-swiss text-[length:var(--font-size-ui-xs)]">
+          <button onClick={onClose} className={accountCurlEditorButtonClass}>
             关闭
           </button>
         </>
       }
     >
-      <div className="grid min-h-[28rem] gap-0 bg-[var(--bg-main)] lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="min-w-0 border-b-2 border-[var(--border-color)] p-4 lg:border-b-0 lg:border-r-2">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <div data-account-curl-editor-body className={accountCurlEditorBodyClass}>
+        <div data-account-curl-editor-script-panel className={accountCurlEditorPanelClass}>
+          <div className={accountCurlEditorToolbarClass}>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={enabled}
                 onChange={(event) => onEnabledChange(event.target.checked)}
               />
-              <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className={accountCurlEditorToggleLabelClass}>
                 启用
               </span>
             </label>
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            <div className={accountCurlEditorMetaClass}>
               支持 {'{{apiKey}}'} / {'{{baseUrl}}'} / {'{{prefix}}'} 及厂商变量
             </div>
           </div>
@@ -159,15 +192,15 @@ export function AccountCurlEditorModal({
             onFocus={rememberCursor}
             onKeyUp={rememberCursor}
             onSelect={rememberCursor}
-            className="input-swiss min-h-[23rem] w-full resize-none font-mono !text-[length:var(--font-size-ui-xs)] leading-relaxed"
+            className={accountCurlEditorTextareaClass}
             placeholder={placeholder}
             spellCheck={false}
           />
           <section className="mt-3 grid gap-2">
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className={accountCurlEditorSectionLabelClass}>
               DEFAULT VARIABLES
             </div>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div data-account-curl-editor-variable-grid className="grid gap-2 sm:grid-cols-3">
               {variables.map((variable) => {
                 const token = `{{${variable.label}}}`;
                 return (
@@ -180,15 +213,15 @@ export function AccountCurlEditorModal({
                       }
                     }}
                     onClick={() => void insertOrCopyVariable(variable.label)}
-                    className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-left hover:bg-[var(--bg-main)] active:scale-[0.99]"
+                    className={accountCurlEditorVariableButtonClass}
                   >
-                    <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    <div className={accountCurlEditorMetaClass}>
                       {variable.label}
                     </div>
                     <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)]">
                       {variable.value || '未填写'}
                     </div>
-                    <div className="mt-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                    <div className={`mt-2 ${accountCurlEditorMetaClass}`}>
                       {hasCursor ? '插入' : copiedToken === token ? '已复制' : '复制'}
                     </div>
                   </button>
@@ -197,10 +230,10 @@ export function AccountCurlEditorModal({
             </div>
           </section>
         </div>
-        <aside className="grid content-start gap-4 p-4">
+        <aside className={accountCurlEditorAsideClass}>
           {setupGuide?.length ? (
-            <section className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-              <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <section className={accountCurlEditorGuidePanelClass}>
+              <div className={accountCurlEditorSectionLabelClass}>
                 获取 Cookie 指引
               </div>
               <ol className="list-decimal space-y-1 pl-4 text-[length:var(--font-size-ui-xs)] font-bold leading-relaxed text-[var(--text-primary)]">
@@ -210,8 +243,8 @@ export function AccountCurlEditorModal({
               </ol>
             </section>
           ) : null}
-          <section className="grid gap-2">
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <section data-account-curl-editor-template-panel className="grid gap-2">
+            <div className={accountCurlEditorSectionLabelClass}>
               TEMPLATES
             </div>
             <div className="grid gap-2">
@@ -220,12 +253,12 @@ export function AccountCurlEditorModal({
                   key={template.id}
                   type="button"
                   onClick={() => onApplyTemplate(template.body)}
-                  className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-left hover:bg-[var(--bg-surface)] active:scale-[0.99]"
+                  className={accountCurlEditorTemplateButtonClass}
                 >
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                  <div className={accountCurlEditorTemplateTitleClass}>
                     {template.title}
                   </div>
-                  <div className="mt-1 font-mono text-[length:var(--font-size-ui-2xs)] uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                  <div className={`mt-1 ${accountCurlEditorMetaClass}`}>
                     {template.description}
                   </div>
                 </button>

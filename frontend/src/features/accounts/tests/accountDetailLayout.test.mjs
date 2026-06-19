@@ -344,6 +344,34 @@ test('quota and billing curl editors are modal draft editors without local save 
   assert.doesNotMatch(modalSource, /保存模板/);
 });
 
+test('account curl editor modal uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/AccountCurlEditorModal.tsx', import.meta.url), 'utf8');
+  const targetSource = sourceBlock(source, 'export function AccountCurlEditorModal', 'export function buildCurlVariables');
+
+  assert.match(source, /const accountCurlEditorHeaderClass =/);
+  assert.match(source, /const accountCurlEditorPanelClass =/);
+  assert.match(source, /const accountCurlEditorButtonClass =/);
+  assert.match(source, /const accountCurlEditorTextareaClass =/);
+  assert.match(source, /const accountCurlEditorVariableButtonClass =/);
+  assert.match(targetSource, /data-account-curl-editor-header/);
+  assert.match(targetSource, /data-account-curl-editor-body/);
+  assert.match(targetSource, /data-account-curl-editor-script-panel/);
+  assert.match(targetSource, /data-account-curl-editor-variable-grid/);
+  assert.match(targetSource, /data-account-curl-editor-template-panel/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.doesNotMatch(targetSource, /btn-swiss/);
+  assert.doesNotMatch(targetSource, /input-swiss/);
+  assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2|border-r-2/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.08em\]|tracking-\[0\.14em\]|tracking-\[0\.18em\]|tracking-\[0\.2em\]/);
+  assert.doesNotMatch(targetSource, /shadow-\[/);
+});
+
 test('quota and billing script controls live in section headers', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountBillingSection/)?.[0] ?? '';
