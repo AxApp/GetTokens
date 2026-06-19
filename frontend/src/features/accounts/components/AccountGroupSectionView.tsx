@@ -215,9 +215,16 @@ export default function AccountGroupSectionView({
   }, [displayMode, group.accounts.length, shouldVirtualize]);
 
   return (
-    <section className="space-y-4" data-account-group-collapsed={isCollapsed ? 'true' : 'false'}>
-      <div className="flex items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--gt-border-subtle)' }}>
-        <div className="flex min-w-0 items-center gap-3">
+    <section className="space-y-3" data-account-group-collapsed={isCollapsed ? 'true' : 'false'}>
+      <div
+        data-account-group-header="true"
+        className="flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
+        style={{
+          borderColor: 'var(--gt-border-subtle)',
+          backgroundColor: 'color-mix(in srgb, var(--gt-surface-muted) 54%, transparent)',
+        }}
+      >
+        <div className="flex min-w-0 items-center gap-2">
           {onToggleCollapsed ? (
             <button
               type="button"
@@ -225,7 +232,7 @@ export default function AccountGroupSectionView({
               aria-controls={groupBodyID}
               aria-expanded={!isCollapsed}
               onClick={() => onToggleCollapsed(group.id)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-canvas)]"
               style={{ color: 'var(--gt-ink-secondary)' }}
               title={collapseLabel}
             >
@@ -237,16 +244,16 @@ export default function AccountGroupSectionView({
             </button>
           ) : null}
           <h3
-            className="min-w-0 truncate text-lg font-semibold leading-none"
+            className="min-w-0 truncate text-sm font-semibold leading-tight"
             style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
           >
             {group.label}
           </h3>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
           <p
-            className="text-xs"
-            style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
+            className="font-mono text-[length:var(--font-size-ui-xs)] font-medium leading-none"
+            style={{ color: 'var(--gt-ink-muted)' }}
           >
             {group.accounts.length} {t('accounts.plan_group_meta')}
           </p>
@@ -256,7 +263,7 @@ export default function AccountGroupSectionView({
               aria-pressed={allGroupSelected}
               onClick={() => groupSelectionAction(group.accounts)}
               disabled={!hasAccounts}
-              className="parchment-toolbar-action-secondary flex h-8 items-center gap-1.5 !px-2.5 !py-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-7 items-center gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <SquareCheckBig size={13} strokeWidth={2} />
               {allGroupSelected ? t('accounts.unselect_group') : t('accounts.select_group')}
@@ -265,12 +272,14 @@ export default function AccountGroupSectionView({
           {onRefreshGroup ? (
             <button
               type="button"
+              aria-label={t('accounts.refresh_group')}
               onClick={() => onRefreshGroup(group.accounts)}
               disabled={!canRefreshGroup}
-              className="parchment-toolbar-action-secondary flex h-8 items-center gap-1.5 !px-2.5 !py-1 text-xs disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
+              style={{ color: 'var(--gt-ink-secondary)' }}
+              title={t('accounts.refresh_group')}
             >
               <RefreshCw size={13} strokeWidth={2} />
-              {t('accounts.refresh_group')}
             </button>
           ) : null}
           {showGroupActionsMenu ? (
@@ -281,7 +290,7 @@ export default function AccountGroupSectionView({
                 aria-haspopup="menu"
                 aria-expanded={isMenuOpen}
                 onClick={toggleGroupActionsMenu}
-                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-muted)]"
+                className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-muted)]"
                 style={{ color: 'var(--gt-ink-secondary)' }}
                 title={t('accounts.group_actions')}
               >
