@@ -3,7 +3,10 @@ import { useI18n } from '../../../context/I18nContext';
 export default function DebugEmptyState() {
   const { t } = useI18n();
   return (
-    <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center font-black uppercase italic text-[var(--text-muted)]">
+    <div
+      className="rounded-lg border border-dashed p-20 text-center text-sm font-medium"
+      style={{ borderColor: 'var(--gt-border-default)', color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
+    >
       {t('debug.empty')}
     </div>
   );

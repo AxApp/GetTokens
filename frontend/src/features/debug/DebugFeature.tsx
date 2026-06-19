@@ -20,8 +20,12 @@ export default function DebugFeature() {
   } = useDebugFeature();
 
   return (
-    <div className="h-full w-full overflow-auto p-12" data-collaboration-id="PAGE_DEBUG">
-      <div className="mx-auto max-w-6xl space-y-8 pb-24">
+    <div
+      className="h-full w-full overflow-auto"
+      style={{ backgroundColor: 'var(--gt-surface-canvas)', padding: '2.5rem' }}
+      data-collaboration-id="PAGE_DEBUG"
+    >
+      <div className="mx-auto max-w-6xl space-y-6 pb-24">
         <DebugHeader
           count={sortedEntries.length}
           allSelected={allSelected}
@@ -36,7 +40,7 @@ export default function DebugFeature() {
         {sortedEntries.length === 0 ? (
           <DebugEmptyState />
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {entryViewModels.map((entry) => (
               <DebugEntryCard
                 key={entry.id}

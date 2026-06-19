@@ -114,8 +114,8 @@ export function Combobox({
     open && canOpen ? (
       <div
         ref={dropdownRef}
-        style={dropdownStyle}
-        className={`z-[9999] overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5 shadow-[4px_4px_0_var(--shadow-color)]`}
+        className={`z-[9999] overflow-auto rounded-lg border p-1.5`}
+        style={{ ...dropdownStyle, borderColor: 'var(--gt-border-default)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}
         role="listbox"
       >
         <div className="space-y-1">
@@ -128,12 +128,12 @@ export function Combobox({
               role="option"
               aria-selected={option === value}
               title={option}
-              className={`block w-full min-w-0 border-2 px-2.5 py-1.5 font-mono text-[length:var(--font-size-ui-sm)] font-bold normal-case tracking-normal transition-transform ${
+              className={`block w-full min-w-0 rounded-md border px-2.5 py-1.5 text-sm normal-case tracking-normal transition-colors ${
                 align === 'right' ? 'text-right' : 'text-left'
               } ${
                 option === value
-                  ? 'border-[var(--text-primary)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
-                  : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)] hover:-translate-x-px hover:-translate-y-px hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+                  ? 'border-[var(--gt-accent-primary)] bg-[color-mix(in_srgb,var(--gt-accent-primary)_8%,transparent)] text-[var(--gt-ink-primary)]'
+                  : 'border-transparent text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
               }`}
             >
               <span className="block min-w-0 truncate">{option}</span>
@@ -177,9 +177,10 @@ export function Combobox({
             setOpen(true);
           }
         }}
-        className={`input-swiss w-full min-w-0 !px-2 !py-1.5 !pr-8 !text-[length:var(--font-size-ui-sm)] disabled:opacity-50 ${
+        className={`w-full min-w-0 rounded-md border px-2 py-1.5 pr-8 text-sm disabled:opacity-50 ${
           align === 'right' ? 'text-right' : ''
         }`}
+        style={{ borderColor: 'var(--gt-border-default)', backgroundColor: 'var(--gt-surface-canvas)', color: 'var(--gt-ink-primary)' }}
       />
       <button
         type="button"
@@ -191,7 +192,8 @@ export function Combobox({
             setOpen((prev) => !prev);
           }
         }}
-        className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center border-l border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-35"
+        className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center border-l text-[var(--gt-ink-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-35"
+        style={{ borderColor: 'var(--gt-border-subtle)' }}
         aria-label="Toggle options"
         tabIndex={-1}
       >

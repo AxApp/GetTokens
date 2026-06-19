@@ -38,13 +38,13 @@ export default function ToggleSwitch({
       className={`flex min-h-[2.25rem] items-center justify-center transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
       <span
-        className={`relative h-7 w-14 shrink-0 overflow-hidden border-2 border-[var(--border-color)] transition-colors duration-200 ease-out ${
-          checked ? 'bg-[var(--gt-status-success,var(--color-status-success))]' : 'bg-[var(--bg-surface)]'
+        className={`relative h-7 w-14 shrink-0 overflow-hidden border border-[var(--gt-border-default)] transition-colors duration-200 ease-out rounded-full ${
+          checked ? 'bg-[var(--gt-status-success)]' : 'bg-[var(--gt-surface-muted)]'
         }`}
       >
         <span
-          className={`absolute left-0.5 top-0.5 h-5 w-5 border-2 border-[var(--border-color)] transition-transform duration-200 ease-out ${
-            checked ? 'translate-x-7 bg-[var(--bg-main)]' : 'translate-x-0 bg-[var(--text-primary)]'
+          className={`absolute left-0.5 top-0.5 h-5 w-5 border border-[var(--gt-border-default)] transition-transform duration-200 ease-out rounded-full ${
+            checked ? 'translate-x-7 bg-[var(--gt-surface-raised)]' : 'translate-x-0 bg-[var(--gt-ink-muted)]'
           }`}
         />
       </span>

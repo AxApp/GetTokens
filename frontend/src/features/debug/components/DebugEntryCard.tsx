@@ -25,73 +25,100 @@ export default function DebugEntryCard({
 }: DebugEntryCardProps) {
   const { t } = useI18n();
 
+  const statusColor =
+    entry.status === 'success' ? 'var(--gt-status-success)'
+    : entry.status === 'error' ? 'var(--gt-status-danger)'
+    : 'var(--gt-ink-muted)';
+
   return (
     <section
-      className={`card-swiss flex max-h-[600px] flex-col !p-0 overflow-hidden ${
-        isSelected ? 'ring-2 ring-[var(--accent-red)]' : ''
-      }`}
+      className="parchment-section-card flex max-h-[600px] flex-col overflow-hidden"
+      style={isSelected ? { boxShadow: '0 0 0 2px var(--gt-accent-primary)' } : undefined}
     >
-      <div className="sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-4">
-        <div className="flex items-start gap-4">
-          <label className="mt-1 flex cursor-pointer items-center">
+      {/* Header */}
+      <div
+        className="sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-5 py-3"
+        style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}
+      >
+        <div className="flex items-start gap-3">
+          <label className="mt-0.5 flex cursor-pointer items-center">
             <input
               type="checkbox"
               checked={isSelected}
               onChange={() => onToggleEntry(entry.id)}
-              className="h-4 w-4 accent-[var(--accent-red)]"
+              className="h-4 w-4 rounded accent-[var(--gt-accent-primary)]"
             />
           </label>
-          <div className="space-y-1">
-            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-              {entry.transport} / {entry.startedAt}
+          <div className="space-y-0.5">
+            <div
+              className="text-xs"
+              style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
+            >
+              {entry.transport} · {entry.startedAt}
             </div>
-            <div className="text-sm font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
+            <div
+              className="text-sm font-semibold"
+              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
+            >
               {entry.name}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest">
-            <div
-              className={
-                entry.status === 'success'
-                  ? 'text-[var(--color-status-success)]'
-                  : entry.status === 'error'
-                    ? 'text-[var(--color-status-danger)]'
-                    : 'text-[var(--text-muted)]'
-              }
-            >
-              {entry.status}
-            </div>
-            <div className="mt-1 text-[var(--text-muted)]">{entry.durationMs ?? 0} MS</div>
+        <div className="flex items-center gap-3">
+          <div className="text-right text-xs" style={{ fontFamily: 'var(--gt-font-family-mono)' }}>
+            <div style={{ color: statusColor, fontWeight: 600 }}>{entry.status}</div>
+            <div className="mt-0.5" style={{ color: 'var(--gt-ink-muted)' }}>{entry.durationMs ?? 0}ms</div>
           </div>
-          <button onClick={() => onToggleExpanded(entry.id)} className="btn-swiss">
+          <button
+            onClick={() => onToggleExpanded(entry.id)}
+            className="parchment-toolbar-action-secondary"
+            style={{ minHeight: 'auto', padding: '0.3rem 0.6rem', fontSize: '11px' }}
+          >
             {entry.isExpanded ? t('debug.collapse') : t('debug.expand')}
           </button>
         </div>
       </div>
 
+      {/* Body */}
       {entry.isExpanded ? (
-        <div className="grid flex-grow grid-cols-1 overflow-y-auto gap-0 md:grid-cols-2">
-          <div className="border-b-2 border-[var(--border-color)] p-5 md:border-b-0 md:border-r-2">
-            <div className="mb-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest text-[var(--text-muted)]">
+        <div className="grid flex-grow grid-cols-1 overflow-y-auto md:grid-cols-2">
+          <div
+            className="border-b p-4 md:border-b-0 md:border-r"
+            style={{ borderColor: 'var(--gt-border-subtle)' }}
+          >
+            <div
+              className="mb-2 text-xs font-semibold"
+              style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
+            >
               {t('debug.request')}
             </div>
-            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]">
+            <pre
+              className="overflow-auto whitespace-pre-wrap break-all text-sm leading-relaxed"
+              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-mono)' }}
+            >
               {entry.requestText}
             </pre>
           </div>
-          <div className="p-5">
-            <div className="mb-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest text-[var(--text-muted)]">
+          <div className="p-4">
+            <div
+              className="mb-2 text-xs font-semibold"
+              style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
+            >
               {entry.status === 'error' ? t('debug.response_error') : t('debug.response')}
             </div>
-            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]">
+            <pre
+              className="overflow-auto whitespace-pre-wrap break-all text-sm leading-relaxed"
+              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-mono)' }}
+            >
               {entry.responseText}
             </pre>
           </div>
         </div>
       ) : (
-        <div className="px-6 py-4 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest text-[var(--text-muted)]">
+        <div
+          className="px-5 py-3 text-xs"
+          style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
+        >
           {t('debug.collapsed_hint')}
         </div>
       )}

@@ -85,8 +85,8 @@ export default function ModalFrame({
 
   const modal = (
     <div
-      className={`${position} inset-0 ${zIndexClassName} grid min-w-0 bg-[var(--overlay-scrim-80)] backdrop-blur-sm ${overlayLayoutClassName} ${overlayClassName}`}
-      style={overlayStyle}
+      className={`${position} inset-0 ${zIndexClassName} grid min-w-0 backdrop-blur-sm ${overlayLayoutClassName} ${overlayClassName}`}
+      style={{ backgroundColor: 'var(--gt-shadow-overlay)', ...overlayStyle }}
       onClick={handleBackdropClick}
     >
       <div
@@ -97,17 +97,19 @@ export default function ModalFrame({
         aria-modal="true"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
-        className={`flex w-full min-w-0 ${sizeClassNames[size]} ${panelViewportClassName} flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-hard shadow-[var(--shadow-color)] ${panelClassName}`}
+        className={`flex w-full min-w-0 ${sizeClassNames[size]} ${panelViewportClassName} flex-col overflow-hidden rounded-xl border bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] ${panelClassName}`}
+        style={{ borderColor: 'var(--gt-border-subtle)', boxShadow: 'var(--gt-elevation-raised-3)' }}
         onClick={stopPanelClick}
       >
         {hasSlots ? (
           <>
-            {header ? <header className={`shrink-0 border-b-2 border-[var(--border-color)] ${headerClassName}`}>{header}</header> : null}
+            {header ? <header className={`shrink-0 border-b ${headerClassName}`} style={{ borderColor: 'var(--gt-border-subtle)' }}>{header}</header> : null}
             <div className={`min-h-0 flex-1 overflow-auto ${bodyClassName}`}>{children}</div>
             {error}
             {footer ? (
               <footer
-                className={`flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between ${footerClassName}`}
+                className={`flex shrink-0 flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between ${footerClassName}`}
+                style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-panel)' }}
               >
                 {footer}
               </footer>
