@@ -37,9 +37,9 @@ const statusTone: Record<DoctorCheckStatus, string> = {
   critical: 'border-red-500/80 bg-red-500/10 text-red-700 dark:text-red-200',
   warning: 'border-amber-500/80 bg-amber-500/10 text-amber-700 dark:text-amber-200',
   degraded: 'border-orange-500/80 bg-orange-500/10 text-orange-700 dark:text-orange-200',
-  not_ready: 'border-[var(--border-color)] bg-[var(--bg-muted)] text-[var(--text-muted)]',
+  not_ready: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
   ok: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
-  skipped: 'border-[var(--border-color)] bg-[var(--bg-muted)] text-[var(--text-muted)]',
+  skipped: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
 };
 
 const statusIcon = {
@@ -54,7 +54,7 @@ const statusIcon = {
 const signalTone: Record<OmniRouteWorkbenchSignalStatus, string> = {
   critical: 'border-red-500/80 bg-red-500/10 text-red-700 dark:text-red-200',
   warning: 'border-amber-500/80 bg-amber-500/10 text-amber-700 dark:text-amber-200',
-  missing: 'border-[var(--border-color)] bg-[var(--bg-muted)] text-[var(--text-muted)]',
+  missing: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
   preview: 'border-sky-500/70 bg-sky-500/10 text-sky-700 dark:text-sky-200',
   ready: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
 };
@@ -71,9 +71,18 @@ const actionTone: Record<OmniRouteWorkbenchActionStatus, string> = {
   pending: 'border-sky-500/70 bg-sky-500/10 text-sky-700 dark:text-sky-200',
   success: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
   warning: 'border-amber-500/80 bg-amber-500/10 text-amber-700 dark:text-amber-200',
-  blocked: 'border-[var(--border-color)] bg-[var(--bg-muted)] text-[var(--text-muted)]',
+  blocked: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
   failed: 'border-red-500/80 bg-red-500/10 text-red-700 dark:text-red-200',
 };
+
+const doctorPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const doctorMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const doctorInsetPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const doctorSectionEyebrowClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const doctorTinyMetaClass = 'text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)]';
+const doctorMetaClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const doctorStatusBadgeClass = 'inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-semibold';
+const doctorLinkButtonClass = 'inline-flex items-center justify-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 
 function formatPreviewTime(unixMs: number) {
   return new Intl.DateTimeFormat('en-US', {
@@ -101,10 +110,10 @@ function renderRouteEvidenceField(marker: string, label: string, value?: string)
   }
   return (
     <div data-doctor-route-evidence-field={marker} className="space-y-1">
-      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className={doctorTinyMetaClass}>
         {label}
       </div>
-      <div className="text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-primary)]">
+      <div className="text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-primary)]">
         {value}
       </div>
     </div>
@@ -238,6 +247,7 @@ export default function DoctorWorkbenchFeature() {
     <div
       data-collaboration-id="PAGE_DOCTOR_WORKBENCH"
       data-doctor-mode="read-only"
+      data-doctor-workbench-shell="quiet"
       className="h-full w-full overflow-auto p-6 lg:p-8 select-text"
     >
       <div className="w-full space-y-6">
@@ -247,7 +257,7 @@ export default function DoctorWorkbenchFeature() {
           align="center"
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <span className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <span className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
                 Sidecar {view.sidecarReady ? 'ready in snapshot' : 'not ready'}
               </span>
               <RefreshActionButton
@@ -263,21 +273,21 @@ export default function DoctorWorkbenchFeature() {
           aria-label="OmniRoute workbench summary"
           data-omniroute-workbench-summary="true"
           data-omniroute-workbench-status={omniRouteView.primaryStatus}
-          className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+          className={`${doctorPanelClass} p-4`}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className={doctorSectionEyebrowClass}>
                 OmniRoute Workbench
               </div>
-              <h2 className="mt-1 text-[length:var(--font-size-ui-2xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+              <h2 className="mt-1 text-[length:var(--font-size-ui-2xl)] font-semibold text-[var(--text-primary)]">
                 Failure explanation surface
               </h2>
-              <p className="mt-2 max-w-4xl text-[length:var(--font-size-ui-sm)] font-bold leading-6 text-[var(--text-secondary)]">
+              <p className="mt-2 max-w-4xl text-[length:var(--font-size-ui-sm)] font-medium leading-6 text-[var(--text-secondary)]">
                 {omniRouteView.subtitle}
               </p>
             </div>
-            <div className={`border-2 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] ${signalTone[omniRouteView.primaryStatus]}`}>
+            <div className={`rounded border px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-semibold ${signalTone[omniRouteView.primaryStatus]}`}>
               {omniRouteView.primaryStatus} / {omniRouteView.sourceLabel}
             </div>
           </div>
@@ -290,45 +300,45 @@ export default function DoctorWorkbenchFeature() {
                   key={signal.kind}
                   data-omniroute-workbench-signal={signal.kind}
                   data-omniroute-workbench-signal-status={signal.status}
-                  className="block border-2 border-[var(--border-color)] bg-[var(--bg-muted)] p-3"
+                  className={`${doctorMutedPanelClass} block p-3`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className={`inline-flex items-center gap-1.5 border-2 px-2 py-1 text-[10px] font-black uppercase tracking-widest ${signalTone[signal.status]}`}>
-                      <Icon className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+                    <div className={`${doctorStatusBadgeClass} ${signalTone[signal.status]}`}>
+                      <Icon className="h-3.5 w-3.5" strokeWidth={2.4} aria-hidden="true" />
                       {signal.status}
                     </div>
                     <a
                       href={signal.navigationHash}
                       data-omniroute-workbench-signal-primary-action={signal.kind}
-                      className="inline-flex h-7 w-7 shrink-0 items-center justify-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-main)] hover:text-[var(--text-primary)]"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--text-primary)]"
                       aria-label={`${signal.title}: ${signal.actionLabel}`}
                     >
-                      <ArrowUpRight className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
+                      <ArrowUpRight className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" />
                     </a>
                   </div>
-                  <div className="mt-3 text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
+                  <div className="mt-3 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                     {signal.title}
                   </div>
-                  <p className="mt-2 min-h-12 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-secondary)]">
+                  <p className="mt-2 min-h-12 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]">
                     {signal.summary}
                   </p>
-                  <div className="mt-3 space-y-1 border-t border-[var(--border-color)] pt-3 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <div className={`mt-3 space-y-1 border-t border-[var(--gt-border-subtle)] pt-3 ${doctorTinyMetaClass}`}>
                     <div>source={signal.sourceLabel}</div>
                     <div className="truncate">evidence={signal.evidenceLabel}</div>
                     <div>{signal.actionLabel}</div>
                     {signal.blockedReason ? <div className="text-amber-700 dark:text-amber-200">{signal.blockedReason}</div> : null}
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--border-color)] pt-3">
+                  <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--gt-border-subtle)] pt-3">
                     {signal.actionLinks.map((action) => (
                       <a
                         key={`${signal.kind}-${action.id}`}
                         href={action.hash}
                         data-omniroute-workbench-signal-action={action.id}
                         data-omniroute-workbench-signal-action-kind={signal.kind}
-                        className="inline-flex items-center gap-1.5 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-main)]"
+                        className={doctorLinkButtonClass}
                       >
                         {action.label}
-                        <ArrowUpRight className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+                        <ArrowUpRight className="h-3 w-3" strokeWidth={2.4} aria-hidden="true" />
                       </a>
                     ))}
                   </div>
@@ -341,17 +351,17 @@ export default function DoctorWorkbenchFeature() {
         <section
           aria-label="OmniRoute safe action surface"
           data-omniroute-workbench-action-surface="true"
-          className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+          className={`${doctorPanelClass} p-4`}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className={doctorSectionEyebrowClass}>
                 Safe actions
               </div>
-              <h2 className="mt-1 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+              <h2 className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
                 Controlled next steps
               </h2>
-              <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-bold leading-6 text-[var(--text-secondary)]">
+              <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-medium leading-6 text-[var(--text-secondary)]">
                 Route actions are sidecar-owned and only run with a stable target. Extension config apply remains preview/staged-only until an explicit temp target is supplied.
               </p>
             </div>
@@ -362,17 +372,17 @@ export default function DoctorWorkbenchFeature() {
                 key={action.id}
                 data-omniroute-workbench-action={action.id}
                 data-omniroute-workbench-action-status={action.status}
-                className="border-2 border-[var(--border-color)] bg-[var(--bg-muted)] p-3"
+                className={`${doctorMutedPanelClass} p-3`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className={`inline-flex border-2 px-2 py-1 text-[10px] font-black uppercase tracking-widest ${actionTone[action.status]}`}>
+                    <div className={`${doctorStatusBadgeClass} ${actionTone[action.status]}`}>
                       {action.status}
                     </div>
-                    <div className="mt-3 text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
+                    <div className="mt-3 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                       {action.title}
                     </div>
-                    <p className="mt-2 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-secondary)]">
+                    <p className="mt-2 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]">
                       {action.summary}
                     </p>
                   </div>
@@ -388,15 +398,15 @@ export default function DoctorWorkbenchFeature() {
                   ) : (
                     <a
                       href="#frame=codex&workspace=extension-registry"
-                      className="inline-flex shrink-0 items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] hover:bg-[var(--bg-main)]"
+                      className={`${doctorLinkButtonClass} shrink-0`}
                     >
-                      Review <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+                      Review <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.4} aria-hidden="true" />
                     </a>
                   )}
                 </div>
-                <div className="mt-3 grid gap-2 border-t border-[var(--border-color)] pt-3 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                <div className={`mt-3 grid gap-2 border-t border-[var(--gt-border-subtle)] pt-3 ${doctorTinyMetaClass}`}>
                   <div>result={action.resultLabel}</div>
-                  <div className="normal-case tracking-normal text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-secondary)]">
+                  <div className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-secondary)]">
                     {action.resultDetail}
                   </div>
                   <div>{action.rollbackLabel}</div>
@@ -409,13 +419,13 @@ export default function DoctorWorkbenchFeature() {
           </div>
           <div
             data-omniroute-workbench-ledger="true"
-            className="mt-4 border-2 border-[var(--border-color)] bg-[var(--bg-muted)] p-3"
+            className={`${doctorMutedPanelClass} mt-4 p-3`}
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
+              <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                 Evidence ledger
               </div>
-              <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <div className={doctorTinyMetaClass}>
                 diagnostics / route action / extension config
               </div>
             </div>
@@ -425,21 +435,21 @@ export default function DoctorWorkbenchFeature() {
                   key={entry.id}
                   data-omniroute-workbench-ledger-entry={entry.id}
                   data-omniroute-workbench-ledger-entry-status={entry.status}
-                  className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3"
+                  className={`${doctorInsetPanelClass} px-3 py-3`}
                 >
-                  <div className={`inline-flex border-2 px-2 py-1 text-[10px] font-black uppercase tracking-widest ${actionTone[entry.status]}`}>
+                  <div className={`${doctorStatusBadgeClass} ${actionTone[entry.status]}`}>
                     {entry.status}
                   </div>
-                  <div className="mt-3 text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
+                  <div className="mt-3 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
                     {entry.title}
                   </div>
-                  <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-secondary)]">
+                  <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]">
                     {entry.summary}
                   </div>
                   <div className="mt-2 break-words text-[length:var(--font-size-ui-xs)] font-semibold leading-5 text-[var(--text-muted)]">
                     {entry.detail}
                   </div>
-                  <div className="mt-3 grid gap-1 border-t border-[var(--border-color)] pt-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <div className={`mt-3 grid gap-1 border-t border-[var(--gt-border-subtle)] pt-2 ${doctorTinyMetaClass}`}>
                     <div>source={entry.sourceLabel}</div>
                     <div>result={entry.resultLabel}</div>
                   </div>
@@ -452,20 +462,20 @@ export default function DoctorWorkbenchFeature() {
         <section
           aria-label="Doctor source boundary"
           data-doctor-mutation-surface="none"
-          className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+          className={`${doctorPanelClass} p-4`}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className={doctorSectionEyebrowClass}>
                 Source boundary
               </div>
-              <p className="mt-1 max-w-3xl text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-secondary)]">
+              <p className="mt-1 max-w-3xl text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-secondary)]">
                 {previewOnly
                   ? 'This workbench consumes the explicit preview doctor snapshot because Wails runtime is unavailable.'
                   : 'This workbench consumes the read-only Wails Doctor snapshot and surfaces sidecar authority facts without repair mutations.'}
                 {runtimeError ? ` Runtime fallback: ${runtimeError}` : ''}
               </p>
-              <div className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className={`mt-2 ${doctorTinyMetaClass}`}>
                 Mutation surface: none. Evidence only, no repair handler.
               </div>
             </div>
@@ -473,11 +483,11 @@ export default function DoctorWorkbenchFeature() {
               {Object.entries(view.statusCounts).map(([status, count]) => (
                 <div
                   key={status}
-                  className={`min-w-20 border-2 px-3 py-2 text-center ${statusTone[status as DoctorCheckStatus]}`}
+                  className={`min-w-20 rounded border px-3 py-2 text-center ${statusTone[status as DoctorCheckStatus]}`}
                   data-testid={`doctor-count-${status}`}
                 >
-                  <div className="text-lg font-black leading-none">{count}</div>
-                  <div className="mt-1 text-[10px] font-black uppercase tracking-widest">{statusLabel[status as DoctorCheckStatus]}</div>
+                  <div className="text-lg font-semibold leading-none">{count}</div>
+                  <div className="mt-1 text-[length:var(--font-size-ui-2xs)] font-medium">{statusLabel[status as DoctorCheckStatus]}</div>
                 </div>
               ))}
             </div>
@@ -489,18 +499,18 @@ export default function DoctorWorkbenchFeature() {
           data-omniroute-workbench-check-filter-surface="true"
           data-omniroute-workbench-check-filter-active={checkFilter}
           data-omniroute-workbench-check-filter-count={visibleChecks.length}
-          className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+          className={`${doctorPanelClass} p-4`}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className={doctorSectionEyebrowClass}>
                 Check filters
               </div>
-              <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-secondary)]">
+              <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-secondary)]">
                 Narrow the evidence list without changing sidecar authority or local inference rules.
               </div>
             </div>
-            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className={doctorTinyMetaClass}>
               showing={visibleChecks.length}/{view.checks.length}
             </div>
           </div>
@@ -512,10 +522,10 @@ export default function DoctorWorkbenchFeature() {
                 data-omniroute-workbench-check-filter={option.id}
                 data-omniroute-workbench-check-filter-selected={option.id === checkFilter}
                 onClick={() => setCheckFilter(option.id)}
-                className={`border-2 px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] transition-colors ${
+                className={`rounded border px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium transition-colors ${
                   option.id === checkFilter
-                    ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
-                    : 'border-[var(--border-color)] bg-[var(--bg-muted)] text-[var(--text-primary)] hover:bg-[var(--bg-main)]'
+                    ? 'border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                    : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]'
                 }`}
               >
                 {option.label} · {option.count}
@@ -524,7 +534,11 @@ export default function DoctorWorkbenchFeature() {
           </div>
         </section>
 
-        <section aria-label="Doctor acceptance checks" className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <section
+          aria-label="Doctor acceptance checks"
+          data-doctor-workbench-check-list="true"
+          className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"
+        >
           <div className="space-y-3">
             {visibleChecks.map((check) => {
               const Icon = statusIcon[check.status];
@@ -532,27 +546,27 @@ export default function DoctorWorkbenchFeature() {
                 <article
                   key={check.id}
                   data-doctor-check-id={check.id}
-                  className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 shadow-[3px_3px_0_var(--shadow-color)]"
+                  className={`${doctorPanelClass} p-4`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={`inline-flex items-center gap-1.5 border-2 px-2 py-1 text-[10px] font-black uppercase tracking-widest ${statusTone[check.status]}`}>
-                          <Icon className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+                        <span className={`${doctorStatusBadgeClass} ${statusTone[check.status]}`}>
+                          <Icon className="h-3.5 w-3.5" strokeWidth={2.4} aria-hidden="true" />
                           {statusLabel[check.status]}
                         </span>
-                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                        <span className={doctorTinyMetaClass}>
                           {check.kind}
                         </span>
                       </div>
-                      <h3 className="mt-3 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+                      <h3 className="mt-3 text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
                         {check.title}
                       </h3>
                       <p className="mt-2 text-[length:var(--font-size-ui-sm)] font-semibold leading-6 text-[var(--text-secondary)]">
                         {check.reason}
                       </p>
                     </div>
-                    <div className="grid min-w-52 gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    <div className={`grid min-w-52 gap-2 ${doctorMetaClass}`}>
                       <div>repairability={check.repairability}</div>
                       <div>authority={check.authority}</div>
                       <div>evidence={check.evidenceCount}</div>
@@ -565,18 +579,18 @@ export default function DoctorWorkbenchFeature() {
                         <div
                           key={`${check.id}-${item.refID}`}
                           data-doctor-route-evidence-fallback={item.routeFallbackState || ''}
-                          className="border border-[var(--border-color)] bg-[var(--bg-muted)] px-3 py-2"
+                          className={`${doctorMutedPanelClass} px-3 py-2`}
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+                            <span className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
                               {item.label}
                             </span>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                            <span className={doctorTinyMetaClass}>
                               {item.kind} / {item.sourceLabel}
                             </span>
                           </div>
                           {item.routeFallbackState ? (
-                            <div className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                            <div className={`mt-2 ${doctorTinyMetaClass}`}>
                               {item.routeFallbackState === 'unknown-non-authoritative'
                                 ? 'Unknown non-authoritative evidence'
                                 : 'Partial identity fallback'}
@@ -588,22 +602,22 @@ export default function DoctorWorkbenchFeature() {
                           {item.targetKey ? (
                             <div
                               data-doctor-route-evidence-target={item.targetKey}
-                              className="mt-3 border border-[var(--border-color)] bg-[var(--bg-surface)] p-3"
+                              className={`${doctorInsetPanelClass} mt-3 p-3`}
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                                <div className={doctorTinyMetaClass}>
                                   Structured route evidence
                                 </div>
-                                <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                                <div className={doctorTinyMetaClass}>
                                   Read only
                                 </div>
                               </div>
                               <div className="mt-3 grid gap-3 md:grid-cols-2">
                                 <div data-doctor-route-evidence-target={item.targetKey} className="space-y-1">
-                                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                                  <div className={doctorTinyMetaClass}>
                                     Target key
                                   </div>
-                                  <div className="break-all text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-primary)]">
+                                  <div className="break-all text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-primary)]">
                                     {item.targetKey}
                                   </div>
                                 </div>
@@ -611,10 +625,10 @@ export default function DoctorWorkbenchFeature() {
                                   data-doctor-route-evidence-blocking={item.routeBlockingLabel || 'unknown'}
                                   className="space-y-1"
                                 >
-                                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                                  <div className={doctorTinyMetaClass}>
                                     Route blocking
                                   </div>
-                                  <div className="text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-primary)]">
+                                  <div className="text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-primary)]">
                                     {item.routeBlockingLabel || 'Unknown'}
                                   </div>
                                 </div>
@@ -642,10 +656,10 @@ export default function DoctorWorkbenchFeature() {
                           key={`${check.id}-${target.hash}`}
                           href={target.hash}
                           data-doctor-navigation-hash={target.hash}
-                          className="flex items-center justify-between gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-muted)]"
+                          className="flex items-center justify-between gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
                         >
                           <span className="min-w-0 truncate">{target.label}</span>
-                          <ArrowUpRight className="h-4 w-4 shrink-0" strokeWidth={3} aria-hidden="true" />
+                          <ArrowUpRight className="h-4 w-4 shrink-0" strokeWidth={2.4} aria-hidden="true" />
                         </a>
                       ))}
                     </div>
@@ -655,15 +669,18 @@ export default function DoctorWorkbenchFeature() {
             })}
           </div>
 
-          <aside className="h-fit border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 shadow-[3px_3px_0_var(--shadow-color)]">
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <aside
+            data-doctor-workbench-core-acceptance="true"
+            className={`${doctorPanelClass} h-fit p-4`}
+          >
+            <div className={doctorSectionEyebrowClass}>
               Core acceptance
             </div>
             <div className="mt-3 space-y-3">
               {acceptanceChecks.map((check) => (
-                <div key={`acceptance-${check.id}`} className="border border-[var(--border-color)] bg-[var(--bg-muted)] p-3">
-                  <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">{check.title}</div>
-                  <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-secondary)]">
+                <div key={`acceptance-${check.id}`} className={`${doctorMutedPanelClass} p-3`}>
+                  <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">{check.title}</div>
+                  <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]">
                     status={check.status}; repairability={check.repairability}; navigation={check.primaryNavigation?.hash ?? 'none'}
                   </div>
                 </div>

@@ -146,3 +146,18 @@ test('doctor entry is wired to CodexPage and uses Wails runtime before preview f
   assert.doesNotMatch(featureSource, /RepairDoctorSnapshot|ApplyDoctorRepair|MutateDoctorSnapshot/);
   assert.doesNotMatch(featureSource, /PrepareGetTokensExtensionCodexConfigApply|ApplyGetTokensExtensionCodexConfigTransaction/);
 });
+
+test('doctor workbench uses the quiet workspace shell', async () => {
+  const featureSource = await readFile(new URL('../DoctorWorkbenchFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /const doctorPanelClass = 'rounded border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]/);
+  assert.match(featureSource, /const doctorMutedPanelClass = 'rounded border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-muted\)\]/);
+  assert.match(featureSource, /data-doctor-workbench-shell="quiet"/);
+  assert.match(featureSource, /data-doctor-workbench-core-acceptance="true"/);
+  assert.match(featureSource, /data-doctor-workbench-check-list="true"/);
+  assert.doesNotMatch(featureSource, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(featureSource, /shadow-\[[34]px_[34]px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(featureSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(featureSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(featureSource, /font-black uppercase/);
+});
