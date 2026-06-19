@@ -35,6 +35,8 @@
     "claude": "Claude",
     "codex_feature_config": "功能开关",
     "codex_binary_management": "二进制管理",
+    "codex_doctor_workbench": "Doctor Workbench",
+    "codex_extension_registry": "Extension Registry",
     "codex_skills": "Skills",
     "codex_mcp_servers": "MCP Servers",
     "codex_account_list": "账号列表",

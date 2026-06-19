@@ -35,6 +35,8 @@
     "claude": "CLAUDE",
     "codex_feature_config": "Feature Flags",
     "codex_binary_management": "Binary",
+    "codex_doctor_workbench": "Doctor Workbench",
+    "codex_extension_registry": "Extension Registry",
     "codex_skills": "Skills",
     "codex_mcp_servers": "MCP Servers",
     "codex_account_list": "Accounts",
