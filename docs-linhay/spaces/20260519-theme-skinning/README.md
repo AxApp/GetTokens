@@ -84,11 +84,25 @@ And 截图命名遵守项目规范。
 ## 相关链接
 - 历史 React 迁移文档：[React Migration Guide](../../dev/20260424-react-migration-guide.md)
 - UI 框架选型研判：[UI Framework Evaluation v01](plans/20260519-ui-framework-evaluation-v01.md)
+- 长期换肤规划：[Theme Skinning Long-Term Plan v02](plans/20260619-theme-skinning-long-term-plan-v02.md)
+- Parchment 组件规范：[Parchment Trust Console Component Spec v01](plans/20260619-parchment-trust-console-component-spec-v01.md)
+- AntD 设置页试点：[AntD Settings Spike v01](plans/20260619-antd-settings-spike-v01.md)
+- Settings AntD 执行交接：[Settings AntD Handoff v01](plans/20260619-settings-antd-handoff-v01.md)
+- 界面迁移顺序：[UI Migration Sequence v01](plans/20260619-ui-migration-sequence-v01.md)
+- Wave 0-2 实施记录：[Wave 0-2 Implementation Notes](plans/20260619-wave-0-2-implementation-notes.md)
+- Wave 0-2 浏览器验收：[Wave 0-2 Preview Snapshot](plans/20260619-wave-0-2-preview-snapshot-v01.md)
+- 执行计划草案：[Theme Skinning Plan v01](plans/20260519-theme-skinning-plan-v01.md)
+- Wave 0-2 验收脚本：`docs-linhay/scripts/check-theme-skinning-wave02-preview.mjs`
 - 当前主题上下文：`frontend/src/context/ThemeContext.tsx`
 - 当前主题应用入口：`frontend/src/App.tsx`
 - 当前设置页入口：`frontend/src/features/settings/SettingsFeature.tsx`
 - 当前类型定义：`frontend/src/types.ts`
 
 ## 当前状态
-- 状态：scheduled
-- 最近更新：2026-05-19
+- 状态：Settings AntD adapter spike
+- 最近更新：2026-06-19
+- 已确认方向：不默认全站接入完整预设 UI 框架；允许 AntD 作为受控 adapter 先在 Settings 页试点，仍由 `ThemeMode + ThemePreset + Semantic Tokens + Component Skin Contracts` 驱动。
+- 首套非默认风格：`Parchment Trust Console`。
+- 设计规范：Parchment 迁移先定义组件 anatomy 和状态矩阵，再迁移页面；当前 Settings / Design System 首版视觉属于过渡稿，后续需按组件规范重做。
+- 页面迁移规则：信息默认不改，布局和呈现方式可以调整；涉及删除、合并、重命名、降级或新增派生信息时，必须先写 `Information Change Ledger` 并核对。
+- 推进状态：Wave 0-2 已进入实现验证，Settings 页已开始 AntD adapter 试点；已补 Settings AntD 执行交接文档，下一步由执行者按 handoff 收敛 wrapper、状态矩阵、Parchment component anatomy 和体积边界。
