@@ -48,6 +48,9 @@
 4. `.agents/skills/gettokens-subagent-supervision`
    **监督交付触发入口**。当用户明确要求“用 subagent 做、主控 agent 监督到完成”时，用这个 skill 直接把会话切到监督交付模式；具体执行细节继续复用 `gettokens-ops-governance`。
 
+5. `.agents/skills/gettokens-plan-arbiter`
+   **方案仲裁入口**。当多个 agent、计划文档、PR 策略、设计方向或外部 workflow 候选需要比较时，用它把方案归一成同一组字段，复核当前仓库事实，并输出 Adopt / Hybrid / Revise first 决策。
+
 ## 20260527 更新：安装外部 Taste Skill 包
 
 本次按用户要求将 `https://github.com/Leonxlnx/taste-skill.git` 的全部 `skills/` 子目录安装到项目级 `.agents/skills/`。
@@ -92,6 +95,24 @@
 1. 外部 skills repo 默认先用 `external-workflow-intake` 做模式提炼，不直接安装全量。
 2. 新增项目级 skill 必须通过重复性、触发语、执行步骤和验证路径四项门禁。
 3. 术语冲突优先补 glossary；执行细节保留在 `gettokens-ops-governance` 和 dev workflow，`AGENTS.md` 只保留项目级硬入口。
+
+## 20260619 更新：吸收 BuilderIO/skills 的可复用工作流
+
+本次阅读 `https://github.com/BuilderIO/skills` 后，继续沿用“吸收模式，不全量安装”的策略。GetTokens 已有项目级 skills、spaces、memory 和 subagent 治理，因此不引入 hosted Agent-Native Plan 依赖，也不直接安装 BuilderIO 全量 skills。
+
+落地内容：
+
+1. 新增 `.agents/skills/gettokens-plan-arbiter`，吸收 `plan-arbiter` 的方案比较、交叉复核和 Adopt / Hybrid / Revise first 决策结构。
+2. 更新 `.agents/skills/gettokens-subagent-supervision`，吸收 `agent-watchdog` 的 audit loop：重建原始请求、核查实际改动和验证证据、分类 gap / bug / verification miss / scope drift。
+3. 更新 `.agents/skills/check`，吸收 `visual-recap` 的复盘结构，但转换为本地 Markdown / docs / review recap，不依赖 Agent-Native hosted Plan。
+4. 更新 `.agents/skills/gettokens-ops-governance`，挂载 plan arbitration 和 watchdog audit 入口。
+5. 新增 `docs-linhay/dev/20260619-builderio-skills-intake.md`，记录 admission gate、吸收内容和不吸收内容。
+
+不吸收内容：
+
+1. 不安装 BuilderIO 全量 skill 包，避免重复和 skill discovery 预算膨胀。
+2. 不启用 hosted Agent-Native Plan 作为默认依赖；若未来需要结构化计划/复盘，优先用 GetTokens space、design HTML、截图和 dev 文档承载。
+3. 不采用 `quick-recap` 的 emoji 结尾约定；GetTokens 最终回复继续遵循当前 Codex 风格，只明确 done / pending / blocked 状态。
 
 ## 为什么进行整合
 

@@ -224,6 +224,27 @@ Drift signals (examples, not exhaustive -- any one is enough to label drift):
 - A new abstraction or helper was introduced that is not required by the goal
 - A maintainability, review, or cleanup change quietly adds user-visible UI, default config, workflow permissions, or release behavior
 
+## Large Change Recap Gate
+
+When reviewing or preparing a large branch, PR, subagent delivery, or multi-file UI/API/schema change, produce a compact recap before line-level findings. This is a GetTokens-local version of a visual recap; do not require hosted Agent-Native Plan tooling unless the user explicitly asks for it.
+
+Use this gate when any of these are true:
+
+- The diff touches rendered UI, interaction states, routes, modals, menus, design tokens, API contracts, Wails bindings, SQLite/schema, sidecar management APIs, or release packaging.
+- The change spans more than 8 files or crosses frontend/backend/sidecar/native boundaries.
+- A reviewer needs to understand the shape of the change before raw line review.
+
+Recap shape:
+
+1. Outcome: what user-visible or system behavior changed.
+2. Surface/state inventory: pages, modals, popovers, empty/error/loading states, role/access variants, DTO/API/schema surfaces.
+3. File map: changed files grouped by responsibility.
+4. Key changes: 3-8 load-bearing diffs or code paths with one-line summaries.
+5. Verification evidence: commands, screenshots, DOM checks, CI, Wails build, sidecar mock tests, or explicit unverified gaps.
+6. Risk: compatibility, migration, rollback, stale generated artifacts, or runtime-only behavior.
+
+For UI-impacting diffs, screenshots or DOM/headless browser evidence should be considered review evidence when feasible. Prose about "looks fine" is not enough for layout, density, modal, menu, or interaction changes.
+
 ## Pattern-Fix Completeness
 
 When the diff fixes one instance of a class-of-bug (a missing validation, a wrong selector, an off-by-one, a missing lock), the same shape often lives elsewhere. Extract the pattern signature, `grep -rn` it across the repo (exclude generated dirs), and confirm sibling instances were also handled. List any unswept sibling: flag it as a hard stop when it carries the same risk, advisory when lower-risk. For a deeper sweep playbook, see hunt's Scope Blast Mode.

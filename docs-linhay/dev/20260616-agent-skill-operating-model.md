@@ -96,6 +96,20 @@ sidecar authority -> internal/cliproxyapi DTO -> internal/wailsapp -> root App b
 4. 不默认安装全量外部 skill 包，除非用户明确要求，且已记录来源、版本和更新流程。
 5. 若只得到思想启发，落地为 dev workflow 或 glossary；若产生稳定执行入口，再更新 skill。
 
+## 多方案仲裁
+
+当外部 workflow、多个 agent、多个计划文档、PR 策略或设计方向互相竞争时，先使用 `.agents/skills/gettokens-plan-arbiter/SKILL.md`，再进入执行。
+
+仲裁不是把所有方案平均混合，而是输出一个明确结果：
+
+1. `Adopt`：采纳某一方案，允许少量修正。
+2. `Hybrid`：明确从各方案保留哪些部分，形成一个新的执行计划。
+3. `Revise first`：关键事实缺失或冲突，退回补计划。
+
+仲裁前必须把每个方案归一成目标、假设、触碰面、实施顺序、验证方式、回滚/迁移风险和执行者建议。关键结论要回到当前仓库文件、space、dev 文档、测试、截图或运行态证据，不能只引用 agent 的总结。
+
+本规则来自 `BuilderIO/skills` 的 `plan-arbiter`，已翻译为 GetTokens 项目级 skill，不直接安装外部包。
+
 ## 验收
 
 本工作流的验收方式：

@@ -152,7 +152,8 @@ GetTokens 项目级 skill 以本仓 `.agents/skills/<skill-name>/SKILL.md` 为�
 8. 涉及 Codex Skills / MCP Servers、`[[skills.config]]`、`tk://github.com` / `tk://gitlab.com` Skill source、`~/.codex/config.toml` MCP 解析与保存时，优先使用 `gettokens-codex-extensions-management`。
 9. 涉及项目级 Codex custom agents、`.codex/config.toml`、`.codex/agents/*.toml` 或 subagent 任务分工配置时，优先参考 `docs-linhay/dev/20260530-codex-project-subagents.md`。
 10. 涉及项目级 Codex subagent 的新增、删除、合并、拆分、验证或生命周期治理时，优先使用 `gettokens-subagent-lifecycle`。
-11. 涉及外部 skills / prompt library / agent workflow 吸收时，优先使用 `external-workflow-intake`；若需要落到 GetTokens 的 spaces、memory、AGENTS 或领域规则，再配合 `gettokens-ops-governance`。
+11. 涉及多个 agent 方案、计划草案、PR 策略、设计方向或外部 workflow 候选之间的比较、合并、仲裁时，优先使用 `gettokens-plan-arbiter`。
+12. 涉及外部 skills / prompt library / agent workflow 吸收时，优先使用 `external-workflow-intake`；若需要落到 GetTokens 的 spaces、memory、AGENTS 或领域规则，再配合 `gettokens-ops-governance`。
 
 ## 5. 记忆系统规则（必须）
 

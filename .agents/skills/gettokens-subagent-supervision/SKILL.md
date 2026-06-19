@@ -52,6 +52,21 @@ description: GetTokens 监督交付模式：当用户说“用 subagent 做、�
 4. 每轮结束自动更新 unfixed backlog、acceptance、memory，并按自动沉淀审计判断是否更新 skill / workflow / AGENTS。
 5. 若用户暂停或要求剩余项下期实现，撤回半成品代码，只保留证据和下期需求文档。
 
+## Watchdog Audit Loop
+
+当需要监督另一个 agent、session、PR、branch、报告或 subagent 输出时，主控 agent 不能只转述对方结论。必须先做一次 watchdog 审计：
+
+1. 重建原始用户请求、后续 scope 变化、硬约束和验收条件。
+2. 读取对方实际改动、报告、截图、测试输出、CI、日志或最终声明。
+3. 将问题分为：
+   - `gap`：用户要求的行为缺失或未完成。
+   - `bug`：实现可能失败或引入回归。
+   - `verification miss`：实现可能正确，但证据不足。
+   - `scope drift`：改动超出范围或跳过约束。
+   - `no issue`：已有证据证明完成。
+4. 只有用户授权修复时才做窄修；修复仍要保留无关脏改动，不移动 branch，不做推测性重写。
+5. 最终报告必须区分“对方声称做了什么”和“主控复核证据证明了什么”。
+
 ## 停止条件
 
 只有以下情况可以停止：

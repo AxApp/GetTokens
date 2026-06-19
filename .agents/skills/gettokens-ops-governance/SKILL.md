@@ -13,6 +13,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Domain language**: Use `docs-linhay/dev/20260616-gettokens-domain-glossary.md` as the canonical glossary for repeated terms such as sidecar, channel routing, route guard, live sessions, usage attribution, dev bridge, preview mode, and modal hash. Add new terms there when inconsistent names start appearing across code, docs, tests, or agent prompts.
 - **External skill intake**: Use `external-workflow-intake` for the generic workflow. Then translate accepted patterns into GetTokens artifacts instead of installing blindly. Prefer updating an existing project skill and a `docs-linhay/dev/` workflow. Create a new GetTokens-specific skill only when there is a durable trigger gap that cannot be expressed through existing skills without making them unclear.
 - **Skill admission gate**: A new or expanded skill needs all four signals: repeated task or failure mode, clear trigger wording, concrete execution steps, and a validation path. One-off advice, temporary vendor findings, and chat-only conclusions go to memory or dev docs, not to a new skill.
+- **Plan arbitration**: When multiple agents, plans, PR strategies, design directions, or external workflow proposals compete, use `gettokens-plan-arbiter` before implementation. The arbiter must normalize each option, verify key claims against current repo facts, choose Adopt / Hybrid / Revise first, and name rejected alternatives.
 - **Tracer-bullet delivery**: For cross-layer work, prefer one narrow end-to-end behavior that proves the chain from sidecar/Wails/frontend/test evidence before broad implementation. Avoid large batches of disconnected tests or UI changes that do not prove the requested behavior.
 - **Detailed workflow**: Use `docs-linhay/dev/20260616-agent-skill-operating-model.md` when deciding whether to update AGENTS, a skill, dev docs, glossary, memory, or a space.
 
@@ -180,6 +181,10 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
      - screenshots or other acceptance artifacts
      - docs + memory write-back
   6. If something remains blocked, report the exact blocker and why the requirement cannot yet be considered done.
+- **Watchdog audit**:
+  - When supervising an agent transcript, subagent output, PR, branch, or final claim, reconstruct the original request before judging the result.
+  - Compare claims against actual diffs, tests, screenshots, CI, logs, and docs. Classify findings as gap, bug, verification miss, scope drift, or no issue.
+  - Do not treat another agent's summary as evidence. Reopen important cited files and rerun or spot-check the validation that matters before closing the loop.
 - **Stop Rule**:
   - “Implemented first pass” is not completion.
   - The controller only stops when the user’s requirement is fully closed, the user explicitly pauses, or there is a concrete blocker that cannot be resolved within the current environment.
