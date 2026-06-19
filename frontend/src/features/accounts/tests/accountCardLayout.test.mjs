@@ -256,6 +256,13 @@ test('account card footer only renders the reauth action when required', async (
   assert.doesNotMatch(styleSource, /account-card-action-grid|account-card-action-grid-span/);
 });
 
+test('account card top action buttons render without inner gap', async () => {
+  const cardSource = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+
+  assert.match(cardSource, /<div className="flex shrink-0 items-center" data-account-card-ignore-click="true">/);
+  assert.doesNotMatch(cardSource, /<div className="flex shrink-0 items-center gap-\d" data-account-card-ignore-click="true">/);
+});
+
 test('quota bars can toggle from percent to token progress when token counts exist', async () => {
   const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 

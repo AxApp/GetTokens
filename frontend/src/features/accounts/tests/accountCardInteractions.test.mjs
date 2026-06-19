@@ -155,10 +155,10 @@ test('account card exposes refresh as a top icon action only', async () => {
   assert.match(source, /title=\{t\(refreshAction\.labelKey\)\}/);
   assert.match(source, /onClick=\{\(\) => onRefreshQuota\(account\)\}/);
   assert.match(source, /<MoreVertical size=\{16\} strokeWidth=\{2\} \/>/);
-  assert.match(source, /className="flex shrink-0 items-center gap-1"/);
+  assert.match(source, /className="flex shrink-0 items-center"/);
   assert.doesNotMatch(source, /className="-mr-4 flex shrink-0 items-center gap-1"/);
   assert.doesNotMatch(source, /account-card-footer-refresh-button/);
-  assert.match(attributionSource, /topActions \? <div className="shrink-0 justify-self-end">\{topActions\}<\/div> : null/);
+  assert.match(attributionSource, /topActions \? <div className="col-start-2 shrink-0 justify-self-end">\{topActions\}<\/div> : null/);
   assert.match(attributionSource, /topActions \? <div className="shrink-0">\{topActions\}<\/div> : null/);
 });
 

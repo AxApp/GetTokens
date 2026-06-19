@@ -264,7 +264,7 @@ export default function AccountCard({
       }
       topActions={
         !isSelectionMode && !isPendingDelete ? (
-          <div className="flex shrink-0 items-center gap-1" data-account-card-ignore-click="true">
+          <div className="flex shrink-0 items-center" data-account-card-ignore-click="true">
             {refreshAction.visible ? (
               <button
                 type="button"
