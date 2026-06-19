@@ -37,6 +37,36 @@ const CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS =
   'min-w-0';
 const CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS =
   'pt-4';
+const CODEX_ACCOUNT_ORDER_FILTER_BUTTON_CLASS =
+  'h-10 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+const CODEX_ACCOUNT_ORDER_FILTER_MENU_CLASS =
+  'absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 shadow-[var(--gt-elevation-raised-2)]';
+const CODEX_ACCOUNT_ORDER_FILTER_TITLE_CLASS =
+  'px-1 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-subtle)]';
+const CODEX_ACCOUNT_ORDER_FILTER_SECTION_TITLE_CLASS =
+  'px-2.5 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-subtle)]';
+const CODEX_ACCOUNT_ORDER_FILTER_SECTION_DIVIDER_CLASS =
+  'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2';
+const CODEX_ACCOUNT_ORDER_FILTER_FOOTER_CLASS =
+  'flex justify-end border-t border-[var(--gt-border-subtle)] pt-2';
+const CODEX_ACCOUNT_ORDER_FILTER_CHIP_CLASS =
+  'inline-flex h-8 max-w-[180px] items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+const CODEX_ACCOUNT_ORDER_FILTER_ACTIVE_CHIP_CLASS =
+  'inline-flex h-8 max-w-[220px] items-center gap-1.5 rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-2 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--gt-surface-canvas)]';
+const CODEX_ACCOUNT_ORDER_FILTER_OPTION_CLASS =
+  'flex min-h-9 cursor-pointer items-center gap-2.5 rounded px-2.5 text-[length:var(--font-size-ui-md-compact)] font-semibold leading-none tracking-normal transition-colors';
+const CODEX_ACCOUNT_ORDER_FILTER_PILL_CLASS =
+  'h-8 min-w-16 rounded border border-[var(--gt-border-subtle)] px-2 text-[length:var(--font-size-ui-2xs)] font-semibold leading-none tracking-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+const CODEX_ACCOUNT_ORDER_FILTER_RESET_BUTTON_CLASS =
+  'h-9 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1 text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+const CODEX_ACCOUNT_ORDER_STATUS_TEXT_CLASS = (saving: boolean) =>
+  `shrink-0 text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal ${
+    saving ? 'text-[var(--text-muted)]' : 'text-[var(--gt-status-danger)]'
+  }`;
+const CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS =
+  'grid h-10 shrink-0 grid-cols-2 overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const CODEX_ACCOUNT_ORDER_DISPLAY_BUTTON_CLASS =
+  'h-full min-w-12 border-r border-[var(--gt-border-subtle)] px-2 text-center text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal last:border-r-0 transition-colors';
 
 export function CodexAccountOrderSection({
   ready,
@@ -333,15 +363,15 @@ function InlineActionControls({
             type="button"
             onClick={() => setIsFilterMenuOpen((prev) => !prev)}
             disabled={disabled}
-            className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={CODEX_ACCOUNT_ORDER_FILTER_BUTTON_CLASS}
             aria-expanded={isFilterMenuOpen}
           >
             {buildToolbarFilterLabel(t, filterSummaryParts)}
           </button>
           {isFilterMenuOpen ? (
-            <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
+            <div className={CODEX_ACCOUNT_ORDER_FILTER_MENU_CLASS}>
               <div className="grid gap-2">
-                <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                <p className={CODEX_ACCOUNT_ORDER_FILTER_TITLE_CLASS}>
                   {t('accounts.filter_group_presets')}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -366,8 +396,8 @@ function InlineActionControls({
                 </div>
               </div>
               {filterSummaryParts.length > 0 ? (
-                <div className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2">
-                  <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                <div className={CODEX_ACCOUNT_ORDER_FILTER_SECTION_DIVIDER_CLASS}>
+                  <p className={CODEX_ACCOUNT_ORDER_FILTER_TITLE_CLASS}>
                     {t('accounts.filter_active_conditions')}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -376,7 +406,7 @@ function InlineActionControls({
                         key={`${part.kind}-${part.id}-${index}`}
                         type="button"
                         onClick={() => removeFilterPart(index)}
-                        className="inline-flex h-8 max-w-[220px] items-center gap-1.5 border-2 border-[var(--border-color)] bg-[var(--text-primary)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--bg-main)]"
+                        className={CODEX_ACCOUNT_ORDER_FILTER_ACTIVE_CHIP_CLASS}
                         title={t('accounts.filter_remove_condition')}
                       >
                         <span className="truncate">{part.label}</span>
@@ -388,7 +418,7 @@ function InlineActionControls({
               ) : null}
               <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-1">
-                  <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                  <p className={`col-span-2 ${CODEX_ACCOUNT_ORDER_FILTER_SECTION_TITLE_CLASS}`}>
                     {t('codex.account_list_filter_group_route')}
                   </p>
                   <FilterCheckOption active={accountFilter.requiresParticipating} onClick={() => toggleFilter('requiresParticipating')}>
@@ -400,11 +430,11 @@ function InlineActionControls({
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                <p className="text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--text-muted)]">
                   {t('accounts.filter_group_plan_source')}
                 </p>
                 <div className="grid grid-cols-4 gap-1">
-                  <p className="col-span-4 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                  <p className={`col-span-4 ${CODEX_ACCOUNT_ORDER_FILTER_SECTION_TITLE_CLASS}`}>
                     {t('accounts.filter_group_source')}
                   </p>
                   <FilterPillOption active={accountFilter.source === 'all'} onClick={() => setSourceFilter('all')}>
@@ -423,7 +453,7 @@ function InlineActionControls({
               </div>
               <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-1">
-                  <p className="col-span-2 px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                  <p className={`col-span-2 ${CODEX_ACCOUNT_ORDER_FILTER_SECTION_TITLE_CLASS}`}>
                     {t('accounts.filter_group_status')}
                   </p>
                   <FilterCheckOption active={accountFilter.requiresRequestable} onClick={() => toggleFilter('requiresRequestable')}>
@@ -441,7 +471,7 @@ function InlineActionControls({
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+                <p className={CODEX_ACCOUNT_ORDER_FILTER_SECTION_TITLE_CLASS}>
                   {t('accounts.filter_group_other')}
                 </p>
                 <FilterBinaryOptionRow
@@ -459,11 +489,11 @@ function InlineActionControls({
                   onChange={(active) => updateFilter({ hasLongestQuota: active })}
                 />
               </div>
-              <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-2">
+              <div className={CODEX_ACCOUNT_ORDER_FILTER_FOOTER_CLASS}>
                 <button
                   type="button"
                   onClick={() => onAccountFilterChange({ ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER })}
-                  className="btn-swiss h-9 !px-2.5 !py-1 !text-[length:var(--font-size-ui-md-compact)]"
+                  className={CODEX_ACCOUNT_ORDER_FILTER_RESET_BUTTON_CLASS}
                 >
                   {t('accounts.filter_reset')}
                 </button>
@@ -480,7 +510,7 @@ function InlineActionControls({
           className="min-w-[18rem] flex-1"
         />
         {saving || orderChanged ? (
-          <div className={`shrink-0 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${saving ? 'text-[var(--text-muted)]' : 'text-[var(--accent-red)]'}`}>
+          <div className={CODEX_ACCOUNT_ORDER_STATUS_TEXT_CLASS(saving)}>
             {saving ? savingLabel : unsavedLabel}
           </div>
         ) : null}
@@ -491,7 +521,7 @@ function InlineActionControls({
                 key={`${part.kind}-${part.id}-${index}`}
                 type="button"
                 onClick={() => removeFilterPart(index)}
-                className="inline-flex h-8 max-w-[180px] items-center gap-1.5 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]"
+                className={CODEX_ACCOUNT_ORDER_FILTER_CHIP_CLASS}
                 title={t('accounts.filter_remove_condition')}
               >
                 <span className="truncate">{part.label}</span>
@@ -510,7 +540,7 @@ function InlineActionControls({
             iconOnly
             className="!min-h-10"
           />
-          <div className="grid h-10 shrink-0 grid-cols-2 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+          <div className={CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS}>
             <DisplayModeButton id="full" active={density === 'full'} onClick={onDensityChange}>
               {t('codex.account_list_density_full')}
             </DisplayModeButton>
@@ -528,25 +558,21 @@ function FilterCheckOption({
   active,
   children,
   disabled = false,
-  uppercase = true,
   onClick,
 }: {
   active: boolean;
   children: ReactNode;
   disabled?: boolean;
-  uppercase?: boolean;
   onClick: () => void;
 }) {
   return (
     <label
-      className={`flex min-h-9 cursor-pointer items-center gap-2.5 px-2.5 text-[length:var(--font-size-ui-md-compact)] font-black leading-none tracking-[0.06em] ${
-        uppercase ? 'uppercase' : ''
-      } ${
+      className={`${CODEX_ACCOUNT_ORDER_FILTER_OPTION_CLASS} ${
         disabled
-          ? 'cursor-not-allowed bg-[var(--bg-main)] text-[var(--text-muted)] opacity-50'
+          ? 'cursor-not-allowed bg-[var(--gt-surface-muted)] text-[var(--text-muted)] opacity-50'
           : active
-            ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]'
-            : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+            ? 'bg-[var(--gt-surface-muted)] text-[var(--text-primary)]'
+            : 'bg-[var(--gt-surface-canvas)] text-[var(--text-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)]'
       }`}
     >
       <input
@@ -578,10 +604,10 @@ function FilterPillOption({
       aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
-      className={`h-8 min-w-16 border-2 border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.08em] disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`${CODEX_ACCOUNT_ORDER_FILTER_PILL_CLASS} ${
         active
-          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-          : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+          ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
+          : 'bg-[var(--gt-surface-canvas)] text-[var(--text-muted)] hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)]'
       }`}
     >
       <span className="block truncate">{children}</span>
@@ -604,7 +630,7 @@ function FilterBinaryOptionRow({
 }) {
   return (
     <div className="grid gap-1">
-      <p className="px-2.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-subtle)]">
+      <p className={CODEX_ACCOUNT_ORDER_FILTER_SECTION_TITLE_CLASS}>
         {title}
       </p>
       <div className="grid grid-cols-2 gap-1">
@@ -634,10 +660,10 @@ function DisplayModeButton({
     <button
       type="button"
       onClick={() => onClick(id)}
-      className={`h-full min-w-12 border-r-2 border-[var(--border-color)] px-2 text-center text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] last:border-r-0 ${
+      className={`${CODEX_ACCOUNT_ORDER_DISPLAY_BUTTON_CLASS} ${
         active
-          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-          : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+          ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
+          : 'bg-[var(--gt-surface-muted)] text-[var(--text-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--text-primary)]'
       }`}
     >
       {children}

@@ -47,6 +47,14 @@ import {
 import { getCodexAccountListPreviewRows } from './previewData.ts';
 import { buildQuotaDisplay, supportsQuota } from '../accounts/model/accountQuota.ts';
 
+function sourceBlock(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker);
+  assert.notEqual(start, -1, `missing source block start: ${startMarker}`);
+  const end = source.indexOf(endMarker, start);
+  assert.notEqual(end, -1, `missing source block end: ${endMarker}`);
+  return source.slice(start, end);
+}
+
 test('buildCodexAccountRows merges codex auth files, codex api keys, and openai-compatible providers by priority', () => {
   const rows = buildCodexAccountRows({
     accounts: [
@@ -1192,9 +1200,18 @@ test('Codex account order row no longer exposes separate top and bottom card act
 test('Codex account order toolbar uses the unified filter menu instead of separate scope clusters', async () => {
   const source = await readFile(new URL('./components/CodexAccountOrderSection.tsx', import.meta.url), 'utf8');
   const refreshButtonSource = await readFile(new URL('../../components/ui/RefreshActionButton.tsx', import.meta.url), 'utf8');
+  const toolbarSource = sourceBlock(source, 'function InlineActionControls', 'function buildToolbarFilterLabel');
 
   assert.match(source, /CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS/);
   assert.match(source, /'pt-4'/);
+  assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_BUTTON_CLASS =/);
+  assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_MENU_CLASS =/);
+  assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_TITLE_CLASS =/);
+  assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_CHIP_CLASS =/);
+  assert.match(source, /const CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS =/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
   assert.match(source, /flex w-full flex-wrap items-center gap-2/);
   assert.match(source, /className="min-w-\[18rem\] flex-1"/);
   assert.match(source, /ml-auto flex shrink-0 items-center gap-2/);
@@ -1239,10 +1256,20 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.match(source, /accounts\.filter_group_plan_source/);
   assert.match(source, /accounts\.filter_group_other/);
   assert.match(source, /function FilterBinaryOptionRow/);
-  assert.match(source, /h-8 min-w-16/);
   assert.match(source, /aria-pressed=\{active\}/);
-  assert.match(source, /min-h-9 cursor-pointer items-center gap-2\.5/);
-  assert.match(source, /btn-swiss h-9 !px-2\.5 !py-1 !text-\[length:var\(--font-size-ui-md-compact\)\]/);
+  assert.match(source, /CODEX_ACCOUNT_ORDER_FILTER_OPTION_CLASS/);
+  assert.match(source, /CODEX_ACCOUNT_ORDER_FILTER_PILL_CLASS/);
+  assert.doesNotMatch(toolbarSource, /btn-swiss/);
+  assert.doesNotMatch(toolbarSource, /border-2/);
+  assert.doesNotMatch(toolbarSource, /border-t-2|border-r-2|border-l-2/);
+  assert.doesNotMatch(toolbarSource, /border-y border-dashed/);
+  assert.doesNotMatch(toolbarSource, /border-t border-dashed/);
+  assert.doesNotMatch(toolbarSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(toolbarSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(toolbarSource, /font-black/);
+  assert.doesNotMatch(toolbarSource, /uppercase/);
+  assert.doesNotMatch(toolbarSource, /tracking-\[0\.08em\]|tracking-\[0\.1em\]|tracking-\[0\.16em\]/);
+  assert.doesNotMatch(toolbarSource, /shadow-\[/);
   assert.doesNotMatch(source, /function SourceFilterButton/);
   assert.doesNotMatch(source, /function ActionControlCluster/);
 });
