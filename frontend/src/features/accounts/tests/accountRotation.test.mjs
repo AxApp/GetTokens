@@ -292,3 +292,34 @@ test('RotationConfigSection uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /tracking-\[0\.12em\]/);
   assert.doesNotMatch(source, /tracking-\[0\.18em\]/);
 });
+
+test('AccountRotationModal uses the quiet workspace modal shell', async () => {
+  const source = await readFile(new URL('../components/AccountRotationModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const accountRotationModalOverlayClass =/);
+  assert.match(source, /const accountRotationModalPanelClass =/);
+  assert.match(source, /const accountRotationModalHeaderClass =/);
+  assert.match(source, /const accountRotationModalSectionHeaderClass =/);
+  assert.match(source, /const accountRotationModalButtonClass =/);
+  assert.match(source, /const accountRotationModalPrimaryButtonClass =/);
+  assert.match(source, /data-account-rotation-modal/);
+  assert.match(source, /data-account-rotation-modal-header/);
+  assert.match(source, /data-account-rotation-modal-body/);
+  assert.match(source, /data-account-rotation-modal-priority/);
+  assert.match(source, /data-account-rotation-modal-config/);
+  assert.match(source, /data-account-rotation-modal-footer/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-4 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-b-4 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-2 border-dashed/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /shadow-\[/);
+});
