@@ -309,6 +309,44 @@ test('unified compose quota and billing use account-detail curl script card patt
   assert.doesNotMatch(source, /componentName="UnifiedComposeBillingSection"[\s\S]*?<textarea/);
 });
 
+test('unified compose modal uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/UnifiedComposeModal.tsx', import.meta.url), 'utf8');
+  const targetSource = [
+    sourceBlock(source, 'export default function UnifiedComposeModal', 'function UnifiedComposeCredentialFieldsSection'),
+    sourceBlock(source, 'function CredentialFieldGroup', 'function readUnifiedComposeCredentialField'),
+    sourceBlock(source, 'function UnifiedComposeCurlConfigSection', 'function UnifiedComposeHeader'),
+    sourceBlock(source, 'function UnifiedComposeHeader', 'function UnifiedComposeFooter'),
+    sourceBlock(source, 'function UnifiedComposeFooter', null),
+  ].join('\n');
+
+  assert.match(source, /const unifiedComposeProviderCardClass =/);
+  assert.match(source, /const unifiedComposeProviderChipClass =/);
+  assert.match(source, /const unifiedComposeEndpointRowClass =/);
+  assert.match(source, /const unifiedComposeCurlButtonClass =/);
+  assert.match(source, /const unifiedComposeFooterPrimaryButtonClass =/);
+  assert.match(targetSource, /data-unified-compose-provider-picker/);
+  assert.match(targetSource, /data-unified-compose-provider-grid/);
+  assert.match(targetSource, /data-unified-compose-provider-card/);
+  assert.match(targetSource, /data-unified-compose-endpoint-row/);
+  assert.match(targetSource, /data-unified-compose-curl-card=\{kind\}/);
+  assert.match(targetSource, /data-unified-compose-header/);
+  assert.match(targetSource, /data-unified-compose-footer/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(targetSource, /AccountDetailPill/);
+  assert.doesNotMatch(targetSource, /btn-swiss|input-swiss|select-swiss/);
+  assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
+  assert.doesNotMatch(targetSource, /border-dashed/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /color-status-/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.08em\]|tracking-\[0\.12em\]|tracking-\[0\.14em\]|tracking-\[0\.18em\]|tracking-\[0\.2em\]/);
+  assert.doesNotMatch(targetSource, /shadow-hard|shadow-\[/);
+});
+
 test('unified compose submits third-party vendors as openai-compatible accounts', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
   const submitStart = source.indexOf('const handleUnifiedComposeSubmit = useCallback(async () => {');

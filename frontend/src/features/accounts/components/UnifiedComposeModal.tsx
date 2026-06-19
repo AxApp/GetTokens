@@ -40,6 +40,44 @@ const CATEGORY_ORDER: VendorPreset["category"][] = [
   "cloud_provider",
 ];
 
+const unifiedComposeProviderPickerClass = "space-y-4";
+const unifiedComposeProviderSectionStackClass = "space-y-4";
+const unifiedComposeProviderGridClass = "grid grid-cols-3 gap-2";
+const unifiedComposeProviderCardClass =
+  "group grid min-h-[7.25rem] grid-rows-[auto_1fr_auto] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-left transition-[border-color,background-color,transform] hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] active:scale-[0.98]";
+const unifiedComposeProviderChipClass =
+  "max-w-[6.75rem] truncate rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+const unifiedComposeProviderNameClass =
+  "truncate text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]";
+const unifiedComposeProviderVariantClass =
+  "inline-flex max-w-full rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-semibold tracking-normal text-[var(--gt-surface-canvas)]";
+const unifiedComposeProviderFormatPillClass =
+  "!min-h-0 bg-[var(--gt-surface-canvas)] !px-1.5 !py-0.5 !text-[length:var(--font-size-ui-3xs)]";
+const unifiedComposeEndpointRowClass =
+  "grid min-w-0 gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 xl:grid-cols-[10rem_minmax(0,1fr)] xl:items-end";
+const unifiedComposeEndpointMetaClass =
+  "truncate text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+const unifiedComposeSubheadingClass =
+  "font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+const unifiedComposeHelpClass =
+  "text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+const unifiedComposeCurlButtonClass =
+  "rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]";
+const unifiedComposeCurlCardClass =
+  "grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3";
+const unifiedComposeCurlEmptyClass = "py-4 text-left !text-[length:var(--font-size-ui-xs)]";
+const unifiedComposeHeaderEyebrowClass =
+  "text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+const unifiedComposeHeaderTitleClass =
+  "truncate text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]";
+const unifiedComposeHeaderPillClass = "!min-h-0 !py-0.5";
+const unifiedComposeHeaderButtonClass =
+  "shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]";
+const unifiedComposeFooterButtonClass =
+  "rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50";
+const unifiedComposeFooterPrimaryButtonClass =
+  "rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_88%,transparent)] disabled:cursor-not-allowed disabled:opacity-50";
+
 export interface UnifiedComposeFormState extends ApiKeyFormState {
   formatBaseUrls: Partial<Record<string, string>>;
   billingCurl: string;
@@ -159,7 +197,7 @@ export default function UnifiedComposeModal({
     >
       <AccountDetailBody>
         {showPresets ? (
-          <div className="space-y-4">
+          <div className={unifiedComposeProviderPickerClass} data-unified-compose-provider-picker>
             <SearchInput
               clearLabel={copy.searchClearLabel}
               value={presetSearch}
@@ -168,7 +206,7 @@ export default function UnifiedComposeModal({
               aria-label={copy.searchPlaceholder}
             />
 
-            <div className="space-y-4">
+            <div className={unifiedComposeProviderSectionStackClass}>
               {Array.from(presetsByCategory.entries()).map(
                 ([category, items]) => (
                   <AccountDetailSection
@@ -179,7 +217,7 @@ export default function UnifiedComposeModal({
                     meta={`${items.length}`}
                     density="dense"
                   >
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className={unifiedComposeProviderGridClass} data-unified-compose-provider-grid>
                       {items.map((preset) => (
                         <button
                           key={preset.id}
@@ -189,21 +227,22 @@ export default function UnifiedComposeModal({
                             t,
                             preset.name,
                           )}
-                          className="group grid min-h-[7.25rem] grid-rows-[auto_1fr_auto] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3 text-left transition-[border-color,box-shadow,transform] hover:border-[var(--text-primary)] hover:shadow-[4px_4px_0_var(--shadow-color)] active:scale-[0.98]"
+                          className={unifiedComposeProviderCardClass}
+                          data-unified-compose-provider-card
                         >
                           <div className="flex min-w-0 items-start justify-between gap-2">
                             <VendorLogoMark preset={preset} />
-                            <span className="max-w-[6.75rem] truncate border border-dashed border-[var(--border-color)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                            <span className={unifiedComposeProviderChipClass}>
                               {copy.categoryLabels[preset.category]}
                             </span>
                           </div>
                           <div className="mt-3 flex min-w-0 items-end">
                             <div className="min-w-0 space-y-1">
-                              <div className="truncate text-[length:var(--font-size-ui-lg)] font-black tracking-normal text-[var(--text-primary)]">
+                              <div className={unifiedComposeProviderNameClass}>
                                 {preset.name}
                               </div>
                               {preset.variantLabel ? (
-                                <div className="inline-flex max-w-full border border-[var(--text-primary)] bg-[var(--text-primary)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.12em] text-[var(--bg-main)]">
+                                <div className={unifiedComposeProviderVariantClass}>
                                   <span className="truncate">
                                     {preset.variantLabel}
                                   </span>
@@ -215,7 +254,7 @@ export default function UnifiedComposeModal({
                             {preset.supportedFormats.map((fmt) => (
                               <AccountDetailPill
                                 key={fmt}
-                                className="!min-h-0 bg-[var(--bg-main)] !px-1.5 !py-0.5 !text-[length:var(--font-size-ui-3xs)] !tracking-[0.08em]"
+                                className={unifiedComposeProviderFormatPillClass}
                               >
                                 {copy.formatTargetLabels[fmt]}
                               </AccountDetailPill>
@@ -302,16 +341,17 @@ export default function UnifiedComposeModal({
                     return (
                       <div
                         key={fmt}
-                        className="grid min-w-0 gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3 xl:grid-cols-[10rem_minmax(0,1fr)] xl:items-end"
+                        className={unifiedComposeEndpointRowClass}
+                        data-unified-compose-endpoint-row
                       >
                         <div className="min-w-0 space-y-1">
                           <AccountDetailPill
                             tone="success"
-                            className="!min-h-0 !py-0.5 !tracking-[0.12em]"
+                            className={unifiedComposeHeaderPillClass}
                           >
                             {formatShortLabel(fmt)}
                           </AccountDetailPill>
-                          <div className="truncate text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                          <div className={unifiedComposeEndpointMetaClass}>
                             {copy.formatTargetLabels[fmt]}
                           </div>
                         </div>
@@ -451,7 +491,7 @@ function CredentialFieldGroup({
 }) {
   return (
     <section className="grid gap-3">
-      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className={unifiedComposeSubheadingClass}>
         {title}
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
@@ -468,7 +508,7 @@ function CredentialFieldGroup({
         ))}
       </div>
       {fields.map((field) => field.help ? (
-        <div key={`${field.id}-help`} className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+        <div key={`${field.id}-help`} className={unifiedComposeHelpClass}>
           {field.help}
         </div>
       ) : null)}
@@ -572,7 +612,7 @@ function UnifiedComposeCurlConfigSection({
         <button
           type="button"
           onClick={() => setEditorOpen(true)}
-          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+          className={unifiedComposeCurlButtonClass}
         >
           {hasScript ? editLabel : addLabel}
         </button>
@@ -582,7 +622,7 @@ function UnifiedComposeCurlConfigSection({
       {hasScript ? (
         <div
           data-unified-compose-curl-card={kind}
-          className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3"
+          className={unifiedComposeCurlCardClass}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="flex items-center gap-2">
@@ -591,11 +631,11 @@ function UnifiedComposeCurlConfigSection({
                 checked={enabled}
                 onChange={(event) => onEnabledChange(event.target.checked)}
               />
-              <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className={unifiedComposeSubheadingClass}>
                 {enabledLabel}
               </span>
             </label>
-            <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className={unifiedComposeSubheadingClass}>
               {configuredLabel}
             </span>
           </div>
@@ -607,7 +647,7 @@ function UnifiedComposeCurlConfigSection({
           </div>
         </div>
       ) : (
-        <AccountDetailEmptyState className="py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+        <AccountDetailEmptyState className={unifiedComposeCurlEmptyClass}>
           {emptyMessage}
         </AccountDetailEmptyState>
       )}
@@ -651,8 +691,8 @@ function UnifiedComposeHeader({
         : copy.configureTitle;
 
   return (
-    <div className="space-y-3">
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+    <div className="space-y-3" data-unified-compose-header>
+      <div className={unifiedComposeHeaderEyebrowClass}>
         {copy.title}
       </div>
       <div className="flex min-w-0 items-start justify-between gap-4">
@@ -661,23 +701,23 @@ function UnifiedComposeHeader({
             <VendorLogoMark preset={selectedPreset} />
           ) : null}
           <div className="min-w-0">
-            <h3 className="truncate text-[length:var(--font-size-ui-xl)] font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+            <h3 className={unifiedComposeHeaderTitleClass}>
               {primaryTitle}
             </h3>
             {!showPresets ? (
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {selectedPreset ? (
                   <>
-                    <AccountDetailPill className="!min-h-0 !py-0.5 !tracking-[0.12em]">
+                    <AccountDetailPill className={unifiedComposeHeaderPillClass}>
                       {copy.configureTitle}
                     </AccountDetailPill>
-                    <AccountDetailPill className="!min-h-0 !py-0.5 !tracking-[0.12em]">
+                    <AccountDetailPill className={unifiedComposeHeaderPillClass}>
                       {copy.categoryLabels[selectedPreset.category]}
                     </AccountDetailPill>
                     {selectedPreset.variantLabel ? (
                       <AccountDetailPill
                         tone="success"
-                        className="!min-h-0 !py-0.5 !tracking-[0.12em]"
+                        className={unifiedComposeHeaderPillClass}
                       >
                         {selectedPreset.variantLabel}
                       </AccountDetailPill>
@@ -685,14 +725,14 @@ function UnifiedComposeHeader({
                     {selectedPreset.supportedFormats.map((fmt) => (
                       <AccountDetailPill
                         key={fmt}
-                        className="!min-h-0 !py-0.5 !tracking-[0.12em]"
+                        className={unifiedComposeHeaderPillClass}
                       >
                         {formatShortLabel(fmt)}
                       </AccountDetailPill>
                     ))}
                   </>
                 ) : (
-                  <AccountDetailPill className="!min-h-0 !py-0.5 !tracking-[0.12em]">
+                  <AccountDetailPill className={unifiedComposeHeaderPillClass}>
                     {copy.customEntryLabel}
                   </AccountDetailPill>
                 )}
@@ -704,7 +744,7 @@ function UnifiedComposeHeader({
           <button
             type="button"
             onClick={onBackToPresets}
-            className="btn-swiss shrink-0 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+            className={unifiedComposeHeaderButtonClass}
           >
             {copy.changeLabel}
           </button>
@@ -737,15 +777,15 @@ function UnifiedComposeFooter({
   onSubmit: () => void;
 }) {
   return (
-    <>
-      <button type="button" onClick={onClose} className="btn-swiss">
+    <div className="contents" data-unified-compose-footer>
+      <button type="button" onClick={onClose} className={unifiedComposeFooterButtonClass}>
         {t("common.cancel")}
       </button>
       {showPresets ? (
         <button
           type="button"
           onClick={onCustomEntry}
-          className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]"
+          className={unifiedComposeFooterPrimaryButtonClass}
         >
           {copy.customEntryLabel}
         </button>
@@ -754,11 +794,11 @@ function UnifiedComposeFooter({
           type="button"
           onClick={onSubmit}
           disabled={!canSubmit}
-          className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+          className={unifiedComposeFooterPrimaryButtonClass}
         >
           {copy.submitLabel}
         </button>
       )}
-    </>
+    </div>
   );
 }
