@@ -11,6 +11,40 @@ import {
   resolveOpenAICompatibleVerifyMessage,
 } from '../model/openAICompatibleCard';
 
+const openAICompatibleProviderCardBodyClass =
+  'grid min-h-[15rem] grid-cols-[minmax(0,1fr)_8rem] grid-rows-[4.75rem_minmax(0,1fr)] bg-[var(--gt-surface-canvas)]';
+const openAICompatibleProviderCardTopCellClass = 'border-b border-[var(--gt-border-subtle)] px-3 py-3';
+const openAICompatibleProviderCardTopCellDividerClass = `${openAICompatibleProviderCardTopCellClass} border-r`;
+const openAICompatibleProviderCardPanelClass =
+  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3';
+const openAICompatibleProviderCardModelPanelClass =
+  'grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3';
+const openAICompatibleProviderCardModelRowClass =
+  'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2';
+const openAICompatibleProviderCardLabelClass =
+  'text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const openAICompatibleProviderCardMonoValueClass =
+  'font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--text-primary)]';
+const openAICompatibleProviderCardSmallMonoClass =
+  'font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+const openAICompatibleProviderCardMetaClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const openAICompatibleProviderCardEmptyClass =
+  'font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
+const openAICompatibleProviderCardFooterClass = 'grid grid-cols-3 gap-2 border-t border-[var(--gt-border-subtle)] pt-3';
+const openAICompatibleProviderCardButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
+const openAICompatibleProviderCardDangerButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-status-danger)] transition-colors hover:border-[var(--gt-status-danger)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-muted))] disabled:cursor-not-allowed disabled:opacity-45';
+const openAICompatibleProviderCardStatusClass = (status: ProviderVerifyState['status']) =>
+  `mt-2 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal ${
+    status === 'success'
+      ? 'text-[var(--gt-status-success)]'
+      : status === 'error'
+        ? 'text-[var(--gt-status-danger)]'
+        : 'text-[var(--text-primary)]'
+  }`;
+
 interface OpenAICompatibleProviderCardProps {
   t: Translator;
   provider: OpenAICompatibleProvider;
@@ -60,15 +94,16 @@ export default function OpenAICompatibleProviderCard({
       style={{ minHeight: '48rem' }}
       customBody={
         <div
-          className="grid min-h-[15rem] grid-cols-[minmax(0,1fr)_8rem] grid-rows-[4.75rem_minmax(0,1fr)] bg-[var(--bg-surface)]"
+          className={openAICompatibleProviderCardBodyClass}
           data-account-card-ignore-click="true"
+          data-openai-compatible-provider-card-body
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <div className="border-r border-b border-[var(--border-color)] px-3 py-3">
+          <div className={openAICompatibleProviderCardTopCellDividerClass}>
             <RegionHead label={t('accounts.ui_base_url')} value={provider.baseUrl} wrap />
           </div>
-          <div className="border-b border-[var(--border-color)] px-3 py-3">
+          <div className={openAICompatibleProviderCardTopCellClass}>
             <RegionHead
               label={t('codex.account_list_runtime')}
               value={provider.disabled ? t('common.disable') : t('common.enable')}
@@ -83,8 +118,11 @@ export default function OpenAICompatibleProviderCard({
                 value={provider.hasHeaders ? t('accounts.ui_headers_configured') : '—'}
               />
             </div>
-            <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-3 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-3">
-              <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div
+              className={openAICompatibleProviderCardModelPanelClass}
+              data-openai-compatible-provider-card-models
+            >
+              <div className={openAICompatibleProviderCardLabelClass}>
                 {t('accounts.ui_models')}
               </div>
               <div className="grid gap-2">
@@ -92,41 +130,33 @@ export default function OpenAICompatibleProviderCard({
                   provider.models.slice(0, 3).map((model, index) => (
                     <div
                       key={`${model.name}-${model.alias || index}`}
-                      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2"
+                      className={openAICompatibleProviderCardModelRowClass}
                     >
-                      <code className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                      <code className={`truncate ${openAICompatibleProviderCardSmallMonoClass}`}>
                         {model.name}
                       </code>
-                      <b className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                      <b className={`truncate ${openAICompatibleProviderCardSmallMonoClass}`}>
                         {model.alias || model.name}
                       </b>
                     </div>
                   ))
                 ) : (
-                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                  <div className={openAICompatibleProviderCardEmptyClass}>
                     {t('accounts.ui_no_data_available')}
                   </div>
                 )}
               </div>
             </div>
-            <div className="border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-3">
+            <div className={openAICompatibleProviderCardPanelClass}>
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                <div className={openAICompatibleProviderCardLabelClass}>
                   {t('accounts.openai_provider_test_summary')}
                 </div>
-                <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                <div className={openAICompatibleProviderCardMetaClass}>
                   {verifyState.model || '—'}
                 </div>
               </div>
-              <div
-                className={`mt-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.04em] ${
-                  verifyState.status === 'success'
-                    ? 'text-[var(--color-status-success)]'
-                    : verifyState.status === 'error'
-                      ? 'text-[var(--color-status-danger)]'
-                      : 'text-[var(--text-primary)]'
-                }`}
-              >
+              <div className={openAICompatibleProviderCardStatusClass(verifyState.status)}>
                 {verifyMessage}
               </div>
             </div>
@@ -135,18 +165,19 @@ export default function OpenAICompatibleProviderCard({
       }
       footer={
         <div
-          className="grid grid-cols-3 gap-2 border-t border-dashed border-[var(--border-color)] pt-3"
+          className={openAICompatibleProviderCardFooterClass}
           data-account-card-ignore-click="true"
+          data-openai-compatible-provider-card-actions
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <button type="button" onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]">
+          <button type="button" onClick={() => onOpenDetail(provider)} className={openAICompatibleProviderCardButtonClass}>
             {t('accounts.openai_provider_manage')}
           </button>
           <button
             type="button"
             onClick={() => onToggleDisabled(provider)}
-            className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+            className={openAICompatibleProviderCardButtonClass}
             disabled={pendingStatus}
           >
             {pendingStatus ? t('common.loading') : provider.disabled ? t('common.enable') : t('common.disable')}
@@ -154,7 +185,7 @@ export default function OpenAICompatibleProviderCard({
           <button
             type="button"
             onClick={() => onDelete(openAICompatibleProviderIdentity(provider))}
-            className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]"
+            className={openAICompatibleProviderCardDangerButtonClass}
             disabled={pendingDelete}
           >
             {pendingDelete ? t('common.loading') : t('common.delete')}
@@ -178,9 +209,9 @@ function openAICompatibleProviderIdentity(provider: OpenAICompatibleProvider): s
 function RegionHead({ label, value, wrap = false }: { label: string; value: string; wrap?: boolean }) {
   return (
     <div className="grid gap-2">
-      <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</span>
+      <span className={openAICompatibleProviderCardLabelClass}>{label}</span>
       <b
-        className={`${wrap ? 'break-all' : 'truncate'} font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]`}
+        className={`${wrap ? 'break-all' : 'truncate'} ${openAICompatibleProviderCardMonoValueClass}`}
       >
         {value}
       </b>
@@ -190,9 +221,9 @@ function RegionHead({ label, value, wrap = false }: { label: string; value: stri
 
 function MetricPanel({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-3">
-      <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</div>
-      <div className={`mt-2 ${mono ? 'font-mono' : ''} text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]`}>
+    <div className={openAICompatibleProviderCardPanelClass}>
+      <div className={openAICompatibleProviderCardLabelClass}>{label}</div>
+      <div className={`mt-2 ${mono ? 'font-mono' : ''} text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]`}>
         {value}
       </div>
     </div>

@@ -44,6 +44,17 @@ const t = (key) =>
     'accounts.openai_provider_last_verified': '最近验证时间',
   })[key] || key;
 
+function sourceBlock(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker);
+  assert.notEqual(start, -1, `missing start marker: ${startMarker}`);
+  if (!endMarker) {
+    return source.slice(start);
+  }
+  const end = source.indexOf(endMarker, start + startMarker.length);
+  assert.notEqual(end, -1, `missing end marker: ${endMarker}`);
+  return source.slice(start, end);
+}
+
 test('maskProviderAPIKey keeps short keys and masks long keys', () => {
   assert.equal(maskProviderAPIKey(''), '—');
   assert.equal(maskProviderAPIKey('sk-1234'), 'sk-1234');
@@ -90,6 +101,39 @@ test('openai-compatible card helpers expose disabled warning state', () => {
     { label: '兼容 OpenAI' },
     { label: '已禁用', tone: 'warning' },
   ]);
+});
+
+test('openai compatible provider card uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/OpenAICompatibleProviderCard.tsx', import.meta.url), 'utf8');
+  const targetSource = [
+    sourceBlock(source, 'export default function OpenAICompatibleProviderCard', 'function openAICompatibleProviderIdentity'),
+    sourceBlock(source, 'function RegionHead', 'function MetricPanel'),
+    sourceBlock(source, 'function MetricPanel', null),
+  ].join('\n');
+
+  assert.match(source, /const openAICompatibleProviderCardBodyClass =/);
+  assert.match(source, /const openAICompatibleProviderCardPanelClass =/);
+  assert.match(source, /const openAICompatibleProviderCardButtonClass =/);
+  assert.match(source, /const openAICompatibleProviderCardDangerButtonClass =/);
+  assert.match(source, /const openAICompatibleProviderCardStatusClass =/);
+  assert.match(targetSource, /data-openai-compatible-provider-card-body/);
+  assert.match(targetSource, /data-openai-compatible-provider-card-models/);
+  assert.match(targetSource, /data-openai-compatible-provider-card-actions/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-success/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(targetSource, /btn-swiss/);
+  assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
+  assert.doesNotMatch(targetSource, /border-dashed/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /color-status-/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /tracking-\[0\.04em\]|tracking-\[0\.06em\]|tracking-\[0\.08em\]|tracking-\[0\.16em\]/);
+  assert.doesNotMatch(targetSource, /shadow-\[/);
 });
 
 test('emptyOpenAICompatibleProviderForm starts with blank fields', () => {
