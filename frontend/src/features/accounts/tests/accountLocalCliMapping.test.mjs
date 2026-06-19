@@ -24,6 +24,17 @@ const localCodexAuthState = {
   hasTokens: true,
 };
 
+function sourceBlock(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker);
+  assert.notEqual(start, -1, `missing start marker: ${startMarker}`);
+  if (!endMarker) {
+    return source.slice(start);
+  }
+  const end = source.indexOf(endMarker, start + startMarker.length);
+  assert.notEqual(end, -1, `missing end marker: ${endMarker}`);
+  return source.slice(start, end);
+}
+
 test('unknown accounts without compatible local CLI formats do not generate local cli actions', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
@@ -709,6 +720,35 @@ test('deep link account import confirm renders batch account preview and result 
   assert.match(featureSource, /PreviewDeepLinkImport/);
   assert.match(featureSource, /ApplyDeepLinkImport/);
   assert.doesNotMatch(featureSource, /buildDeepLinkAccountImportItems/);
+});
+
+test('deep link account import confirm uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/DeepLinkAccountImportConfirm.tsx', import.meta.url), 'utf8');
+  const targetSource = sourceBlock(source, 'export default function DeepLinkAccountImportConfirm', 'function SummaryTile');
+
+  assert.match(source, /const deepLinkImportHeaderClass =/);
+  assert.match(source, /const deepLinkImportButtonClass =/);
+  assert.match(source, /const deepLinkImportPanelClass =/);
+  assert.match(source, /const deepLinkImportSummaryTileClass =/);
+  assert.match(source, /const deepLinkImportNoticeToneClass =/);
+  assert.match(targetSource, /data-deep-link-import-confirm-header/);
+  assert.match(targetSource, /data-deep-link-import-confirm-body/);
+  assert.match(targetSource, /data-deep-link-import-confirm-summary/);
+  assert.match(targetSource, /data-deep-link-import-confirm-url/);
+  assert.match(targetSource, /data-deep-link-import-confirm-account-list/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-success/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(targetSource, /btn-swiss/);
+  assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(targetSource, /color-status-/);
+  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /uppercase/);
+  assert.doesNotMatch(targetSource, /shadow-\[/);
 });
 
 test('account import preview redacts auth-file and api-key secrets', () => {

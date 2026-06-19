@@ -11,6 +11,42 @@ interface DeepLinkAccountImportConfirmProps {
   onClose: () => void;
 }
 
+const deepLinkImportHeaderClass = 'grid gap-1';
+const deepLinkImportTitleClass =
+  'text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]';
+const deepLinkImportMetaClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const deepLinkImportButtonClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
+const deepLinkImportPrimaryButtonClass =
+  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
+const deepLinkImportBodyClass =
+  'grid gap-5 p-0 text-[length:var(--font-size-ui-sm)]';
+const deepLinkImportSummaryGridClass = 'grid gap-3 md:grid-cols-4';
+const deepLinkImportPanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4';
+const deepLinkImportSummaryTileClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+const deepLinkImportSummaryLabelClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const deepLinkImportSummaryValueClass =
+  'mt-1 truncate font-semibold tracking-normal text-[var(--text-primary)]';
+const deepLinkImportUrlClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]';
+const deepLinkImportAccountTitleClass =
+  'font-semibold tracking-normal text-[var(--text-primary)]';
+const deepLinkImportAccountMetaClass =
+  'mt-1 flex flex-wrap gap-2 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const deepLinkImportResultClass =
+  'mt-3 rounded border px-3 py-2 font-semibold tracking-normal';
+const deepLinkImportNoticeClass =
+  'rounded border px-4 py-3 font-semibold tracking-normal';
+const deepLinkImportNoticeToneClass = {
+  success: 'border-[var(--gt-status-success)] text-[var(--gt-status-success)]',
+  warning: 'border-[var(--gt-status-warning)] text-[var(--gt-status-warning)]',
+  error: 'border-[var(--gt-status-danger)] text-[var(--gt-status-danger)]',
+} as const;
+
 export default function DeepLinkAccountImportConfirm({
   preview,
   result,
@@ -32,21 +68,21 @@ export default function DeepLinkAccountImportConfirm({
       onClose={onClose}
       size="xl"
       header={(
-        <div>
-          <div className="text-[length:var(--font-size-ui-lg)] font-black uppercase text-[var(--text-primary)]">导入账号</div>
-          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+        <div data-deep-link-import-confirm-header className={deepLinkImportHeaderClass}>
+          <div className={deepLinkImportTitleClass}>导入账号</div>
+          <div className={deepLinkImportMetaClass}>
             {preview.source?.name || 'GT DEEP LINK'} / {accountCount} 个账号
           </div>
         </div>
       )}
       footer={(
         <>
-          <button type="button" className="btn-swiss !border-[var(--border-color)]" onClick={onClose}>
+          <button type="button" className={deepLinkImportButtonClass} onClick={onClose}>
             关闭
           </button>
           <button
             type="button"
-            className="btn-swiss"
+            className={deepLinkImportPrimaryButtonClass}
             disabled={!canApply}
             onClick={onApply}
           >
@@ -55,15 +91,15 @@ export default function DeepLinkAccountImportConfirm({
         </>
       )}
     >
-      <div className="space-y-5 text-[length:var(--font-size-ui-sm)]">
-        <section className="grid gap-3 md:grid-cols-4">
+      <div data-deep-link-import-confirm-body className={deepLinkImportBodyClass}>
+        <section data-deep-link-import-confirm-summary className={deepLinkImportSummaryGridClass}>
           <SummaryTile label="protocol" value={preview.protocol || 'gt'} />
           <SummaryTile label="accounts" value={String(accountCount)} />
           <SummaryTile label="warnings" value={String((preview.warnings?.length ?? 0) + blockingCount)} />
           <SummaryTile label="source" value={preview.source?.name || 'external'} />
         </section>
 
-        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+        <div data-deep-link-import-confirm-url className={deepLinkImportUrlClass}>
           {preview.redactedURL}
         </div>
 
@@ -80,18 +116,18 @@ export default function DeepLinkAccountImportConfirm({
           <Notice tone={failed > 0 ? 'warning' : 'success'} message={resultMessage} />
         ) : null}
 
-        <section className="space-y-3">
+        <section data-deep-link-import-confirm-account-list className="grid gap-3">
           {(preview.accounts || []).map((account) => {
             const itemResult = result?.accounts?.find((item) => item.index === account.index);
             return (
               <article
                 key={`${account.index}:${account.ref || account.title}`}
-                className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4"
+                className={deepLinkImportPanelClass}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="font-black uppercase text-[var(--text-primary)]">{account.title || account.kind}</div>
-                    <div className="mt-1 flex flex-wrap gap-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-muted)]">
+                    <div className={deepLinkImportAccountTitleClass}>{account.title || account.kind}</div>
+                    <div className={deepLinkImportAccountMetaClass}>
                       <span>{account.kind}</span>
                       {account.provider ? <span>{account.provider}</span> : null}
                       {account.ref ? <span>ref:{account.ref}</span> : null}
@@ -104,10 +140,10 @@ export default function DeepLinkAccountImportConfirm({
                   </div>
                 </div>
                 {itemResult ? (
-                  <div className={`mt-3 border px-3 py-2 font-black uppercase ${
+                  <div className={`${deepLinkImportResultClass} ${
                     itemResult.status === 'created'
-                      ? 'border-[var(--color-status-success)] text-[var(--color-status-success)]'
-                      : 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
+                      ? deepLinkImportNoticeToneClass.success
+                      : deepLinkImportNoticeToneClass.error
                   }`}>
                     {itemResult.status === 'created'
                       ? `created ${itemResult.accountKey || ''}`
@@ -133,21 +169,17 @@ export default function DeepLinkAccountImportConfirm({
 
 function SummaryTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3">
-      <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-muted)]">{label}</div>
-      <div className="mt-1 truncate font-black uppercase text-[var(--text-primary)]">{value}</div>
+    <div className={deepLinkImportSummaryTileClass}>
+      <div className={deepLinkImportSummaryLabelClass}>{label}</div>
+      <div className={deepLinkImportSummaryValueClass}>{value}</div>
     </div>
   );
 }
 
 function Notice({ tone, message }: { tone: 'success' | 'warning' | 'error'; message: string }) {
-  const toneClass = tone === 'error'
-    ? 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
-    : tone === 'warning'
-      ? 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]'
-      : 'border-[var(--color-status-success)] text-[var(--color-status-success)]';
+  const toneClass = deepLinkImportNoticeToneClass[tone];
   return (
-    <div className={`border-2 px-4 py-3 font-black uppercase ${toneClass}`}>
+    <div className={`${deepLinkImportNoticeClass} ${toneClass}`}>
       {message}
     </div>
   );
