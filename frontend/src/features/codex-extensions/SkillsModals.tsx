@@ -16,19 +16,34 @@ interface TProps {
   t: (key: string) => string;
 }
 
+const codexSkillModalPanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const codexSkillModalHeaderClass =
+  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const codexSkillModalFooterClass =
+  'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const codexSkillModalButtonClass =
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const codexSkillModalPrimaryButtonClass =
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const codexSkillModalDangerButtonClass =
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-status-danger)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-status-danger)] transition hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,transparent)] disabled:cursor-not-allowed disabled:opacity-50';
+const codexSkillModalFieldClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
+
 export function SuccessHud({ title, detail }: { title: string; detail: string }) {
   return (
     <div className="pointer-events-none fixed left-1/2 top-5 z-[80] w-[min(92vw,28rem)] -translate-x-1/2" role="status" aria-live="polite">
-      <div className="codex-success-hud flex items-center gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 shadow-[8px_8px_0_var(--shadow-color)]">
-        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-          <span className="codex-success-hud-ring absolute inset-0 border-2 border-[var(--border-color)]" />
-          <CheckCircle2 className="codex-success-hud-icon h-6 w-6 text-[var(--text-primary)]" />
+      <div className={`${codexSkillModalPanelClass} codex-success-hud flex items-center gap-3 px-4 py-3`}>
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded border border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)]">
+          <span className="codex-success-hud-ring absolute inset-0 rounded border border-[var(--gt-status-success)]" />
+          <CheckCircle2 className="codex-success-hud-icon h-6 w-6 text-[var(--gt-status-success)]" />
         </div>
         <div className="min-w-0">
-          <div className="font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
+          <div className="font-mono text-[length:var(--font-size-ui-md)] font-semibold tracking-[0.16em] text-[var(--text-primary)]">
             {title}
           </div>
-          <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+          <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
             {detail}
           </div>
         </div>
@@ -61,34 +76,35 @@ export function GitSkillInstallModal({
         role="dialog"
         aria-modal="true"
         aria-label={t('codex_extensions.add_skill')}
-        className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-3rem)]"
+        data-codex-extension-skill-install-modal="true"
+        className={`${codexSkillModalPanelClass} flex max-h-[calc(100vh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden sm:max-h-[calc(100vh-3rem)]`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-4">
+        <header className={`${codexSkillModalHeaderClass} flex shrink-0 items-start justify-between gap-4 px-5 py-4`}>
           <div className="min-w-0">
-            <div className="font-mono text-xl font-black italic tracking-tighter text-[var(--text-primary)]">
+            <div className="font-mono text-xl font-semibold italic tracking-tighter text-[var(--text-primary)]">
               {t('codex_extensions.add_skill')}
             </div>
-            <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
               {t('codex_extensions.git_source')}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
+          <button type="button" onClick={onClose} className={codexSkillModalButtonClass}>
             {t('common.close')}
           </button>
         </header>
 
         <main className="scrollbar-stable min-h-0 flex-1 overflow-auto p-5">
           <label className="grid gap-2">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
               {t('codex_extensions.git_source')}
             </span>
-            <input value={gitSource} onChange={(event) => onChange(event.target.value)} className="input-swiss w-full font-mono" />
+            <input value={gitSource} onChange={(event) => onChange(event.target.value)} className={`${codexSkillModalFieldClass} w-full font-mono`} />
           </label>
 
-          <div className="mt-4 border-t-2 border-[var(--border-color)] pt-4">
+          <div className="mt-4 border-t border-[var(--gt-border-subtle)] pt-4">
             {parsedGitSource ? (
-              <div className="divide-y-2 divide-[var(--border-color)]">
+              <div className="divide-y divide-[var(--gt-border-subtle)]">
                 <GitSourceValue label={t('codex_extensions.git_source_schema')} value={gitSource.trim()} />
                 <GitSourceValue label={t('codex_extensions.git_provider')} value={parsedGitSource.provider} />
                 <GitSourceValue label={t('codex_extensions.git_host')} value={parsedGitSource.host} />
@@ -97,22 +113,22 @@ export function GitSkillInstallModal({
                 <GitSourceValue label={t('codex_extensions.git_path')} value={parsedGitSource.path} />
               </div>
             ) : (
-              <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+              <div className="text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--gt-status-danger)]">
                 {t('codex_extensions.git_hint')}
               </div>
             )}
           </div>
         </main>
 
-        <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-4">
-          <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
+        <footer className={`${codexSkillModalFooterClass} flex shrink-0 flex-wrap items-center justify-end gap-2 px-5 py-4`}>
+          <button type="button" onClick={onClose} className={codexSkillModalButtonClass}>
             {t('common.cancel')}
           </button>
           <button
             type="button"
             onClick={onInstall}
             disabled={!parsedGitSource}
-            className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={codexSkillModalPrimaryButtonClass}
           >
             <Download className="h-3.5 w-3.5" />
             {t('codex_extensions.install_update')}
@@ -230,15 +246,16 @@ export function SkillPreviewModal({
           role="dialog"
           aria-modal="true"
           aria-label={skill.name}
-          className="flex h-[calc(100vh-3rem)] max-h-[48rem] w-full max-w-6xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)] sm:h-[calc(100vh-5rem)]"
+          data-codex-extension-skill-preview-modal="true"
+          className={`${codexSkillModalPanelClass} flex h-[calc(100vh-3rem)] max-h-[48rem] w-full max-w-6xl flex-col sm:h-[calc(100vh-5rem)]`}
           onClick={(event) => event.stopPropagation()}
         >
-          <header className="grid shrink-0 gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
+          <header className={`${codexSkillModalHeaderClass} grid shrink-0 gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center`}>
             <div className="min-w-0">
-              <div className="font-mono text-xl font-black italic tracking-tighter text-[var(--text-primary)]">
+              <div className="font-mono text-xl font-semibold italic tracking-tighter text-[var(--text-primary)]">
                 {skill.name}
               </div>
-              <div className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              <div className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
                 {skill.rootPath}
               </div>
             </div>
@@ -248,46 +265,46 @@ export function SkillPreviewModal({
               disabled={loading}
               onChange={onToggle}
             />
-            <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
+            <button type="button" onClick={onClose} className={codexSkillModalButtonClass}>
               {t('common.close')}
             </button>
           </header>
 
           <div className="grid min-h-0 flex-1 grid-rows-[minmax(10rem,16rem)_minmax(0,1fr)] overflow-hidden lg:grid-cols-[minmax(14rem,18rem)_minmax(0,1fr)] lg:grid-rows-none">
-            <aside className="scrollbar-stable min-h-0 overflow-y-auto border-b-2 border-[var(--border-color)] p-4 lg:border-b-0 lg:border-r-2">
+            <aside className="scrollbar-stable min-h-0 overflow-y-auto border-b border-[var(--gt-border-subtle)] p-4 lg:border-b-0 lg:border-r">
               <MetaLine label={t('codex_extensions.source')} value={skill.origin || '-'} />
               <MetaLine label={t('codex_extensions.root')} value={skill.rootLabel || '-'} />
               <MetaLine label={t('codex_extensions.skill_enabled_source')} value={formatSkillEnabledSource(skill, t)} />
               <MetaLine label={t('codex_extensions.version')} value={skill.versionLabel || '-'} />
               {skill.warnings && skill.warnings.length > 0 ? (
-                <div className="mt-4 border-2 border-[var(--accent-red)] bg-[color-mix(in_srgb,var(--accent-red)_10%,transparent)] p-3">
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--accent-red)]">
+                <div className="mt-4 border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-3">
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--gt-status-danger)]">
                     {t('codex_extensions.skill_scan_warnings')}
                   </div>
-                  <ul className="mt-2 grid gap-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+                  <ul className="mt-2 grid gap-1 text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--gt-status-danger)]">
                     {skill.warnings.map((warning) => (
                       <li key={warning}>{warning}</li>
                     ))}
                   </ul>
                 </div>
               ) : null}
-              <div className="mt-5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className="mt-5 text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
                 {t('codex_extensions.files')}
               </div>
-              <div className="mt-2 divide-y divide-[var(--border-color)] border-2 border-[var(--border-color)]">
+              <div className="mt-2 divide-y divide-[var(--gt-border-subtle)] border border-[var(--gt-border-subtle)]">
                 {skill.files.map((file) => (
                   <button
                     key={file.path}
                     type="button"
                     onClick={() => setSelectedFilePath(file.path)}
                     className={`block w-full px-2 py-2 text-left transition-colors ${
-                      selectedFile?.path === file.path ? 'bg-[var(--border-color)] text-[var(--bg-main)]' : 'hover:bg-[var(--bg-surface)]'
+                      selectedFile?.path === file.path ? 'bg-[var(--gt-border-subtle)] text-[var(--gt-surface-canvas)]' : 'hover:bg-[var(--gt-surface-muted)]'
                     }`}
                   >
-                    <div className={`break-all font-mono text-[length:var(--font-size-ui-sm)] font-black ${selectedFile?.path === file.path ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'}`}>
+                    <div className={`break-all font-mono text-[length:var(--font-size-ui-sm)] font-semibold ${selectedFile?.path === file.path ? 'text-[var(--gt-surface-canvas)]' : 'text-[var(--text-primary)]'}`}>
                       {file.path}
                     </div>
-                    <div className={`mt-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] ${selectedFile?.path === file.path ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'}`}>
+                    <div className={`mt-0.5 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-[0.14em] ${selectedFile?.path === file.path ? 'text-[var(--gt-surface-canvas)]' : 'text-[var(--text-muted)]'}`}>
                       {file.kind} / {file.previewable || file.path === 'SKILL.md' ? t('codex_extensions.file_previewable') : t('codex_extensions.file_not_previewable')}
                     </div>
                   </button>
@@ -297,17 +314,17 @@ export function SkillPreviewModal({
 
             <main className="min-h-0 overflow-hidden p-4">
               <div className="flex h-full min-h-0 flex-col">
-                <div className="mb-3 flex min-w-0 shrink-0 items-center gap-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="mb-3 flex min-w-0 shrink-0 items-center gap-2 text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
                   <Eye className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{selectedFile?.path || t('codex_extensions.skill_preview')}</span>
                 </div>
-                <div className="scrollbar-stable min-h-0 flex-1 overflow-y-auto break-words border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-4 text-[length:var(--font-size-ui-md)] font-bold leading-relaxed text-[var(--text-primary)] [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--border-color)] [&_blockquote]:pl-3 [&_code]:font-mono [&_code]:font-black [&_h1]:mb-4 [&_h1]:font-mono [&_h1]:text-xl [&_h1]:font-black [&_h1]:italic [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:font-mono [&_h2]:text-base [&_h2]:font-black [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-mono [&_h3]:font-black [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:mb-4 [&_pre]:overflow-auto [&_pre]:border-2 [&_pre]:border-[var(--border-color)] [&_pre]:bg-[var(--bg-main)] [&_pre]:p-3 [&_ul]:list-disc">
+                <div className="scrollbar-stable min-h-0 flex-1 overflow-y-auto break-words border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 text-[length:var(--font-size-ui-md)] font-bold leading-relaxed text-[var(--text-primary)] [&_blockquote]:border-l [&_blockquote]:border-[var(--gt-border-subtle)] [&_blockquote]:pl-3 [&_code]:font-mono [&_code]:font-semibold [&_h1]:mb-4 [&_h1]:font-mono [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:italic [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:font-mono [&_h2]:text-base [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-mono [&_h3]:font-semibold [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:mb-4 [&_pre]:overflow-auto [&_pre]:border [&_pre]:border-[var(--gt-border-subtle)] [&_pre]:bg-[var(--gt-surface-canvas)] [&_pre]:p-3 [&_ul]:list-disc">
                   {filePreviewLoading ? (
-                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
                       {t('common.loading')}
                     </div>
                   ) : filePreviewError ? (
-                    <div className="flex min-h-full items-center justify-center px-4 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--color-status-danger)]">
+                    <div className="flex min-h-full items-center justify-center px-4 text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--gt-status-danger)]">
                       {filePreviewError}
                     </div>
                   ) : canPreviewSelectedFile ? (
@@ -316,12 +333,12 @@ export function SkillPreviewModal({
                         {selectedFile?.path === 'SKILL.md' ? stripSkillFrontmatter(selectedFileContent) : selectedFileContent}
                       </ReactMarkdown>
                     ) : (
-                      <pre className="whitespace-pre-wrap break-words font-mono text-[length:var(--font-size-ui-md-compact)] font-black leading-relaxed">
+                      <pre className="whitespace-pre-wrap break-words font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold leading-relaxed">
                         {selectedFileContent}
                       </pre>
                     )
                   ) : (
-                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
                       {t('codex_extensions.file_preview_unavailable')}
                     </div>
                   )}
@@ -329,8 +346,8 @@ export function SkillPreviewModal({
               </div>
             </main>
           </div>
-          <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <footer className={`${codexSkillModalFooterClass} flex shrink-0 flex-wrap items-center justify-between gap-3 px-4 py-3`}>
+            <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
               {canRemove
                 ? t('codex_extensions.skill_remove_hint')
                 : skill.sourceKind === 'system'
@@ -338,7 +355,7 @@ export function SkillPreviewModal({
                   : t('codex_extensions.skill_remove_desktop_required')}
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <button type="button" onClick={onOpenFinder} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
+              <button type="button" onClick={onOpenFinder} className={codexSkillModalButtonClass}>
                 <FolderOpen className="h-3.5 w-3.5" />
                 {t('codex_extensions.open_in_finder')}
               </button>
@@ -346,7 +363,7 @@ export function SkillPreviewModal({
                 type="button"
                 disabled={!canRemove || loading}
                 onClick={() => setRemoveAlertOpen(true)}
-                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--color-status-danger)] disabled:cursor-not-allowed disabled:opacity-50"
+                className={codexSkillModalDangerButtonClass}
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {t('codex_extensions.remove_skill')}
@@ -362,16 +379,17 @@ export function SkillPreviewModal({
             aria-modal="true"
             aria-labelledby="codex-skill-remove-alert-title"
             aria-describedby="codex-skill-remove-alert-body"
-            className="w-full max-w-md border-2 border-[var(--accent-red)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
+            data-codex-extension-skill-remove-alert="true"
+            className={`${codexSkillModalPanelClass} w-full max-w-md border-[var(--gt-status-danger)]`}
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="flex items-start gap-3 border-b-2 border-[var(--accent-red)] bg-[var(--bg-surface)] p-4">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-status-danger)]" />
+            <header className="flex items-start gap-3 border-b border-[var(--gt-status-danger)] bg-[var(--gt-surface-muted)] p-4">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--gt-status-danger)]" />
               <div className="min-w-0">
-                <div id="codex-skill-remove-alert-title" className="font-mono text-base font-black italic text-[var(--text-primary)]">
+                <div id="codex-skill-remove-alert-title" className="font-mono text-base font-semibold italic text-[var(--text-primary)]">
                   {t('codex_extensions.skill_remove_alert_title')}
                 </div>
-                <div id="codex-skill-remove-alert-body" className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                <div id="codex-skill-remove-alert-body" className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
                   {skill.rootPath}
                 </div>
               </div>
@@ -380,12 +398,12 @@ export function SkillPreviewModal({
               <p className="text-sm font-bold leading-relaxed text-[var(--text-primary)]">
                 {t('codex_extensions.skill_remove_confirm')}
               </p>
-              <p className="break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-muted)]">
+              <p className="break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-muted)]">
                 {skill.id}
               </p>
             </div>
-            <footer className="flex flex-wrap justify-end gap-2 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-              <button type="button" onClick={() => setRemoveAlertOpen(false)} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
+            <footer className={`${codexSkillModalFooterClass} flex flex-wrap justify-end gap-2 p-3`}>
+              <button type="button" onClick={() => setRemoveAlertOpen(false)} className={codexSkillModalButtonClass}>
                 {t('common.cancel')}
               </button>
               <button
@@ -395,7 +413,7 @@ export function SkillPreviewModal({
                   setRemoveAlertOpen(false);
                   onRemove();
                 }}
-                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--color-status-danger)] disabled:cursor-not-allowed disabled:opacity-50"
+                className={codexSkillModalDangerButtonClass}
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {t('common.delete')}
@@ -411,10 +429,10 @@ export function SkillPreviewModal({
 function GitSourceValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-1 py-2 md:grid-cols-[8rem_minmax(0,1fr)] md:gap-3">
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+      <div className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
         {value || '-'}
       </div>
     </div>
@@ -424,8 +442,8 @@ function GitSourceValue({ label, value }: { label: string; value: string }) {
 function MetaLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="mb-3 min-w-0">
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</div>
-      <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">{value}</div>
+      <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">{label}</div>
+      <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">{value}</div>
     </div>
   );
 }

@@ -23,6 +23,23 @@ interface TProps {
   t: (key: string) => string;
 }
 
+const codexExtensionModalPanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const codexExtensionModalHeaderClass =
+  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const codexExtensionModalFooterClass =
+  'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const codexExtensionModalButtonClass =
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const codexExtensionModalPrimaryButtonClass =
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const codexExtensionModalIconButtonClass =
+  'inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const codexExtensionModalFieldClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
+const codexExtensionModalSelectClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
+
 export function McpServerEditorModal({
   draft,
   preview,
@@ -92,15 +109,16 @@ export function McpServerEditorModal({
         role="dialog"
         aria-modal="true"
         aria-label={draft.label}
-        className="scrollbar-stable mx-auto max-h-[calc(100vh-3rem)] w-full max-w-6xl overflow-y-auto border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-7rem)]"
+        data-codex-extension-mcp-modal="true"
+        className={`${codexExtensionModalPanelClass} scrollbar-stable mx-auto max-h-[calc(100vh-3rem)] w-full max-w-6xl overflow-y-auto sm:max-h-[calc(100vh-7rem)]`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="grid gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center">
+        <header className={`${codexExtensionModalHeaderClass} grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center`}>
           <div className="min-w-0">
-            <div className="font-mono text-xl font-black italic tracking-tighter text-[var(--text-primary)]">
+            <div className="font-mono text-xl font-semibold italic tracking-tighter text-[var(--text-primary)]">
               {draft.label}
             </div>
-            <div className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+            <div className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
               {draft.sourcePath || '-'}
             </div>
           </div>
@@ -109,13 +127,13 @@ export function McpServerEditorModal({
             checked={draft.enabled}
             onChange={(checked) => onPatch({ enabled: checked, status: checked ? draft.status : 'disabled' })}
           />
-          <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
+          <button type="button" onClick={onClose} className={codexExtensionModalButtonClass}>
             {t('common.close')}
           </button>
         </header>
 
         <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
-          <main className="divide-y-2 divide-[var(--border-color)]">
+          <main className="divide-y divide-[var(--gt-border-subtle)]">
             <McpEditorSection
               title={t('codex_extensions.mcp_identity_section')}
               meta={draft.transport}
@@ -123,12 +141,12 @@ export function McpServerEditorModal({
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label={t('codex_extensions.server_id')} value={draft.id} onChange={(value) => onPatch({ id: value, label: value })} />
                 <label className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
                     {t('common.type')}
                   </span>
                   <select
                     value={draft.transport}
-                    className="select-swiss"
+                    className={codexExtensionModalSelectClass}
                     onChange={(event) => patchTransport(event.target.value as McpTransport)}
                   >
                     {transportNeedsResolution ? (
@@ -146,7 +164,7 @@ export function McpServerEditorModal({
                 title={t('codex_extensions.mcp_transport_resolution_section')}
                 meta={draft.transport}
               >
-                <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+                <div className="border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--gt-status-danger)]">
                   {t('codex_extensions.mcp_transport_resolution_hint')}
                 </div>
               </McpEditorSection>
@@ -199,12 +217,12 @@ export function McpServerEditorModal({
                 <Field label={t('codex_extensions.startup_timeout_sec')} value={draft.startupTimeoutSec || ''} onChange={(value) => onPatch({ startupTimeoutSec: value })} />
                 <Field label={t('codex_extensions.tool_timeout_sec')} value={draft.toolTimeoutSec || ''} onChange={(value) => onPatch({ toolTimeoutSec: value })} />
                 <label className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
                     {t('codex_extensions.default_tools_approval_mode')}
                   </span>
                   <select
                     value={draft.defaultToolsApprovalMode || ''}
-                    className="select-swiss"
+                    className={codexExtensionModalSelectClass}
                     onChange={(event) => onPatch({ defaultToolsApprovalMode: event.target.value })}
                   >
                     <option value="">-</option>
@@ -228,14 +246,14 @@ export function McpServerEditorModal({
               </div>
             </McpEditorSection>
 
-            <div className="flex flex-wrap gap-2 bg-[var(--bg-surface)] p-4">
+            <div className="flex flex-wrap gap-2 bg-[var(--gt-surface-muted)] p-4">
               {envValidationIssues.length > 0 ? (
-                <div className="basis-full border-2 border-[var(--accent-red)] bg-[color-mix(in_srgb,var(--accent-red)_10%,transparent)] p-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+                <div className="basis-full border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--gt-status-danger)]">
                   {t('codex_extensions.mcp_env_validation_error')}: {formatMcpEnvValidationIssues(envValidationIssues, t)}
                 </div>
               ) : null}
               {toolValidationIssues.length > 0 ? (
-                <div className="basis-full border-2 border-[var(--accent-red)] bg-[color-mix(in_srgb,var(--accent-red)_10%,transparent)] p-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+                <div className="basis-full border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--gt-status-danger)]">
                   {t('codex_extensions.mcp_tool_validation_error')}: {formatMcpToolValidationIssues(toolValidationIssues, t)}
                 </div>
               ) : null}
@@ -243,7 +261,7 @@ export function McpServerEditorModal({
                 type="button"
                 onClick={onPreflight}
                 disabled={loading || preflightLoading || transportNeedsResolution}
-                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50"
+                className={codexExtensionModalButtonClass}
               >
                 <Activity className="h-3.5 w-3.5" />
                 {preflightLoading ? t('codex_extensions.mcp_preflight_running') : t('codex_extensions.mcp_preflight')}
@@ -252,39 +270,39 @@ export function McpServerEditorModal({
                 type="button"
                 onClick={onSave}
                 disabled={preview.length === 0 || loading || transportNeedsResolution || envValidationIssues.length > 0 || toolValidationIssues.length > 0}
-                className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+                className={codexExtensionModalPrimaryButtonClass}
               >
                 <Save className="h-3.5 w-3.5" />
                 {t('common.save')}
               </button>
-              <button type="button" onClick={onReset} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
+              <button type="button" onClick={onReset} className={codexExtensionModalButtonClass}>
                 {t('common.cancel')}
               </button>
               {preflight ? <McpPreflightPanel result={preflight} t={t} /> : null}
             </div>
           </main>
-          <aside className="border-t-2 border-[var(--border-color)] p-4 xl:border-l-2 xl:border-t-0">
-            <div className="mb-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <aside className="border-t border-[var(--gt-border-subtle)] p-4 xl:border-l xl:border-t-0">
+            <div className="mb-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
               {t('codex_extensions.mcp_current_values')}
             </div>
-            <pre className="scrollbar-stable max-h-[28rem] overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3 text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]">
-              <code className="whitespace-pre font-mono font-black">{currentValueToml}</code>
+            <pre className="scrollbar-stable max-h-[28rem] overflow-auto border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]">
+              <code className="whitespace-pre font-mono font-semibold">{currentValueToml}</code>
             </pre>
 
-            <div className="mb-3 mt-6 flex items-center gap-2 border-t-2 border-[var(--border-color)] pt-4 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className="mb-3 mt-6 flex items-center gap-2 border-t border-[var(--gt-border-subtle)] pt-4 text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
               <GitBranch className="h-3.5 w-3.5" />
               {t('codex_extensions.change_preview')}
             </div>
-            <div className="divide-y-2 divide-[var(--border-color)] border-t-2 border-[var(--border-color)]">
+            <div className="divide-y divide-[var(--gt-border-subtle)] border-t border-[var(--gt-border-subtle)]">
               {preview.length > 0 ? preview.map((change) => (
                 <div key={change.key} className="py-2">
-                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">{change.key}</div>
-                  <div className="mt-1 break-all text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">{change.key}</div>
+                  <div className="mt-1 break-all text-[length:var(--font-size-ui-xs)] font-bold tracking-wide text-[var(--text-muted)]">
                     {change.before} -&gt; {change.after}
                   </div>
                 </div>
               )) : (
-                <div className="py-8 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="py-8 text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
                   {t('codex_extensions.no_changes')}
                 </div>
               )}
@@ -318,31 +336,31 @@ function formatMcpToolValidationIssues(
 
 function McpPreflightPanel({ result, t }: { result: McpPreflightResult; t: (key: string) => string }) {
   const statusClass = {
-    ok: 'border-[var(--color-status-success)] text-[var(--color-status-success)]',
-    warning: 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]',
-    error: 'border-[var(--accent-red)] text-[var(--accent-red)]',
+    ok: 'border-[var(--gt-status-success)] text-[var(--gt-status-success)]',
+    warning: 'border-[var(--gt-status-warning)] text-[var(--gt-status-warning)]',
+    error: 'border-[var(--gt-status-danger)] text-[var(--gt-status-danger)]',
   }[result.status];
 
   return (
-    <section className="basis-full border-2 border-[var(--border-color)] bg-[var(--bg-main)]" data-codex-mcp-preflight-result="true">
-      <header className={`flex items-center justify-between gap-3 border-b-2 px-3 py-2 ${statusClass}`}>
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em]">
+    <section className="basis-full border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]" data-codex-mcp-preflight-result="true">
+      <header className={`flex items-center justify-between gap-3 border-b px-3 py-2 ${statusClass}`}>
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.18em]">
           {t('codex_extensions.mcp_preflight_result')}
         </div>
-        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em]">
+        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em]">
           {t(`codex_extensions.mcp_preflight_status_${result.status}`)}
         </div>
       </header>
-      <div className="divide-y-2 divide-[var(--border-color)]">
+      <div className="divide-y divide-[var(--gt-border-subtle)]">
         {result.checks.map((check) => (
           <div key={check.id} className="grid gap-1 px-3 py-2 md:grid-cols-[8rem_minmax(0,1fr)_6rem] md:items-center">
-            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
               {check.label}
             </div>
             <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)]">
               {check.detail || '-'}
             </div>
-            <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] ${preflightCheckClass(check.status)}`}>
+            <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] ${preflightCheckClass(check.status)}`}>
               {t(`codex_extensions.mcp_preflight_status_${check.status}`)}
             </div>
           </div>
@@ -354,12 +372,12 @@ function McpPreflightPanel({ result, t }: { result: McpPreflightResult; t: (key:
 
 function preflightCheckClass(status: McpPreflightResult['status']): string {
   if (status === 'error') {
-    return 'text-[var(--accent-red)]';
+    return 'text-[var(--gt-status-danger)]';
   }
   if (status === 'warning') {
-    return 'text-[var(--color-status-warning)]';
+    return 'text-[var(--gt-status-warning)]';
   }
-  return 'text-[var(--color-status-success)]';
+  return 'text-[var(--gt-status-success)]';
 }
 
 export function ConfigTomlEditorModal({
@@ -389,22 +407,23 @@ export function ConfigTomlEditorModal({
       onClick={onClose}
     >
       <div
-        className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-3rem)]"
+        data-codex-extension-config-modal="true"
+        className={`${codexExtensionModalPanelClass} flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden sm:max-h-[calc(100vh-3rem)]`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b-2 border-[var(--border-color)] px-5 py-4">
+        <header className={`${codexExtensionModalHeaderClass} flex shrink-0 items-start justify-between gap-4 px-5 py-4`}>
           <div className="min-w-0">
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.2em] text-[var(--text-muted)]">
               {t('codex_extensions.config_editor_title')}
             </div>
-            <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
+            <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">
               {configPath}
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]"
+            className={codexExtensionModalIconButtonClass}
             aria-label={t('common.close')}
           >
             <X className="h-4 w-4" strokeWidth={4} />
@@ -413,7 +432,7 @@ export function ConfigTomlEditorModal({
 
         <div className="min-h-0 flex-1 p-4">
           {loading ? (
-            <div className="flex min-h-[24rem] items-center justify-center text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className="flex min-h-[24rem] items-center justify-center text-[length:var(--font-size-ui-md)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
               {t('common.loading')}
             </div>
           ) : (
@@ -421,25 +440,25 @@ export function ConfigTomlEditorModal({
               value={content}
               onChange={(event) => onChange(event.target.value)}
               spellCheck={false}
-              className="scrollbar-stable input-swiss min-h-[24rem] w-full resize-none overflow-auto font-mono !text-[length:var(--font-size-ui-md)] leading-relaxed"
+              className={`${codexExtensionModalFieldClass} scrollbar-stable min-h-[24rem] w-full resize-none overflow-auto font-mono text-[length:var(--font-size-ui-md)] leading-relaxed`}
               placeholder={t('codex_extensions.config_editor_placeholder')}
             />
           )}
         </div>
 
-        <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-4">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <footer className={`${codexExtensionModalFooterClass} flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 py-4`}>
+          <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
             {dirty ? t('codex_extensions.config_dirty') : t('codex_extensions.config_clean')}
           </div>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
+            <button type="button" onClick={onClose} className={codexExtensionModalButtonClass}>
               {t('common.cancel')}
             </button>
             <button
               type="button"
               onClick={onSave}
               disabled={!dirty || loading || saving}
-              className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+              className={codexExtensionModalPrimaryButtonClass}
             >
               <Save className="h-3.5 w-3.5" />
               {saving ? t('common.loading') : t('common.save')}
@@ -456,12 +475,12 @@ export function McpStatusBadge({ status }: { status: McpServerRecord['status'] }
   const isDisabled = status === 'disabled';
   return (
     <div
-      className={`border-2 px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] ${
+      className={`border px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.16em] ${
         isReady
-          ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+          ? 'border-[var(--gt-border-subtle)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
           : isDisabled
-            ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)]'
-            : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--accent-red)]'
+            ? 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]'
+            : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-status-danger)]'
       }`}
     >
       {status}
@@ -473,11 +492,11 @@ function McpEditorSection({ title, meta, children }: { title: string; meta?: str
   return (
     <section className="grid gap-4 p-4 lg:grid-cols-[9rem_minmax(0,1fr)]">
       <div className="min-w-0">
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.18em] text-[var(--text-primary)]">
           {title}
         </div>
         {meta ? (
-          <div className="mt-1 break-all text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          <div className="mt-1 break-all text-[length:var(--font-size-ui-2xs)] font-semibold tracking-[0.14em] text-[var(--text-muted)]">
             {meta}
           </div>
         ) : null}
@@ -490,10 +509,10 @@ function McpEditorSection({ title, meta, children }: { title: string; meta?: str
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="grid gap-2">
-      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <span className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
         {label}
       </span>
-      <input value={value} onChange={(event) => onChange(event.target.value)} className="input-swiss w-full font-mono" />
+      <input value={value} onChange={(event) => onChange(event.target.value)} className={`${codexExtensionModalFieldClass} w-full font-mono`} />
     </label>
   );
 }
@@ -501,11 +520,11 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
     <div className="grid gap-2">
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="input-swiss flex h-10 items-center justify-between gap-3 !py-1">
-        <span className="font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
+      <div className={`${codexExtensionModalFieldClass} flex h-10 items-center justify-between gap-3 py-1`}>
+        <span className="font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">
           {String(checked)}
         </span>
         <ToggleSwitch
@@ -522,13 +541,13 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
 function TextareaField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="grid gap-2">
-      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <span className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
         {label}
       </span>
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="input-swiss min-h-28 w-full resize-y font-mono"
+        className={`${codexExtensionModalFieldClass} min-h-28 w-full resize-y font-mono`}
       />
     </label>
   );
