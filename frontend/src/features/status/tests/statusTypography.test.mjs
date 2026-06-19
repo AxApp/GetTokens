@@ -252,7 +252,7 @@ test('codex feature rows render a settings table and a grouped multi_agent_v2 co
 test('codex feature panel suppresses project design-system highlight overlays', async () => {
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
-  assert.match(styleSource, /\[data-design-system-highlight='project'\] \[data-codex-feature-config-panel='true'\] \[data-design-system-component='true'\]/);
+  assert.match(styleSource, /\[data-design-system-inspect-mode='active'\] \[data-design-system-highlight='project'\] \[data-codex-feature-config-panel='true'\] \[data-design-system-component='true'\]/);
   assert.match(styleSource, /outline:\s*none/);
   assert.match(styleSource, /\[data-codex-feature-config-panel='true'\] \[data-design-system-component='true'\]\[data-design-system-component-name\]::before/);
   assert.match(styleSource, /content:\s*none/);

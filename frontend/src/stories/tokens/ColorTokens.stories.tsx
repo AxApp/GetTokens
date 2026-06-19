@@ -15,6 +15,14 @@ interface FixedColor {
 }
 
 const themeTokens: ColorToken[] = [
+  { name: '--gt-surface-canvas', usage: '主题画布背景，映射到 --bg-main' },
+  { name: '--gt-surface-panel', usage: '面板和页面二级表面，映射到 --bg-surface' },
+  { name: '--gt-surface-muted', usage: '弱化块背景，映射到 --bg-muted' },
+  { name: '--gt-ink-primary', usage: '主文本和强对比图形，映射到 --text-primary' },
+  { name: '--gt-ink-muted', usage: '辅助文本和弱 meta，映射到 --text-muted' },
+  { name: '--gt-border-strong', usage: '主要结构线，映射到 --border-color' },
+  { name: '--gt-focus-ring', usage: '键盘焦点和高优先级可操作控件描边' },
+  { name: '--gt-accent-primary', usage: '当前皮肤的品牌强调色' },
   { name: '--bg-main', usage: '主应用背景、输入框背景、按钮默认背景' },
   { name: '--bg-surface', usage: '二级页面表面、Storybook 画布背景、卡片外层背景' },
   { name: '--bg-muted', usage: '弱化内嵌表面、骨架屏、低权重块背景' },
@@ -95,23 +103,31 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function useResolvedColor(cssValue: string, themeClass = '') {
+function useResolvedColor(cssValue: string, themeClass = '', themePreset = '') {
   const ref = useRef<HTMLDivElement | null>(null);
   const [resolved, setResolved] = useState('');
 
   useEffect(() => {
     if (!ref.current) return;
     setResolved(window.getComputedStyle(ref.current).backgroundColor);
-  }, [cssValue, themeClass]);
+  }, [cssValue, themeClass, themePreset]);
 
   return { ref, resolved };
 }
 
-function TokenSwatch({ token, themeClass }: { token: ColorToken; themeClass?: string }) {
-  const { ref, resolved } = useResolvedColor(`var(${token.name})`, themeClass);
+function TokenSwatch({
+  token,
+  themeClass,
+  themePreset,
+}: {
+  token: ColorToken;
+  themeClass?: string;
+  themePreset?: string;
+}) {
+  const { ref, resolved } = useResolvedColor(`var(${token.name})`, themeClass, themePreset);
 
   return (
-    <div className={themeClass}>
+    <div className={themeClass} data-theme-preset={themePreset}>
       <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-[var(--text-primary)]">
         <div
           ref={ref}
@@ -197,7 +213,7 @@ function PaletteSample() {
         title="主题 token"
         description="同一组 CSS 变量在浅色和深色主题下分别解析，组件应优先引用这些 token。"
       >
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-3">
           <div className="grid gap-3">
             <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
               浅色主题
@@ -215,6 +231,20 @@ function PaletteSample() {
             <div className="grid gap-3 md:grid-cols-2">
               {themeTokens.map((token) => (
                 <TokenSwatch key={`dark-${token.name}`} token={token} themeClass="dark" />
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-3">
+            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              Parchment Trust Console
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {themeTokens.map((token) => (
+                <TokenSwatch
+                  key={`parchment-${token.name}`}
+                  token={token}
+                  themePreset="parchment-trust-console"
+                />
               ))}
             </div>
           </div>
