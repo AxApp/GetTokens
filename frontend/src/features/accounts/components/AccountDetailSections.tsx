@@ -175,6 +175,42 @@ const accountDetailRuntimeDecisionClass = (unresolved: boolean) =>
       ? 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_6%,var(--gt-surface-muted))]'
       : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
   }`;
+const accountDetailCredentialPaneDividerClass =
+  'grid min-w-0 content-start gap-4 border-t border-[var(--gt-border-subtle)] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0';
+const accountDetailCredentialSectionTitleClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountDetailCredentialMetaLabelClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailCredentialSubheadingClass =
+  'mt-1 text-[length:var(--font-size-ui-xs)] font-semibold italic tracking-normal text-[var(--text-primary)]';
+const accountDetailCredentialPillClass =
+  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[length:var(--font-size-ui-2xs)] !font-semibold !text-[var(--text-primary)]';
+const accountDetailCredentialFieldLabelClass =
+  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailCredentialHelpClass =
+  'text-[length:var(--font-size-ui-2xs)] font-medium leading-relaxed text-[var(--text-muted)]';
+const accountDetailCredentialInputClass =
+  'min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--text-primary)]';
+const accountDetailCredentialButtonClass =
+  'shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+const accountDetailCredentialPrimaryButtonClass =
+  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+const accountDetailCredentialMenuClass =
+  'absolute left-0 top-full z-20 mt-1 max-h-48 w-full overflow-auto rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const accountDetailCredentialMenuItemClass = (active: boolean) =>
+  `block w-full px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal transition-colors ${
+    active
+      ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
+      : 'text-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]'
+  }`;
+const accountDetailCredentialStatusClass = (status?: APIKeyVerifyState['status']) =>
+  `text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal ${
+    status === 'success'
+      ? 'text-[var(--color-status-success)]'
+      : status === 'error'
+        ? 'text-[var(--color-status-danger)]'
+        : 'text-[var(--text-muted)]'
+  }`;
 
 export function AccountDetailHeader({
   account,
@@ -758,10 +794,10 @@ export function AccountCredentialVerifySection({
       title="凭据与验证"
       span={span}
     >
-      <div data-account-credential-verify-layout="v09-split" className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div data-account-credential-verify-layout="quiet-split" className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div data-account-credential-left-pane="credential-connection" className="grid content-start gap-4 lg:pr-4">
           <section data-account-credential-list-item="credential" className="grid content-start gap-3">
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+            <div className={accountDetailCredentialSectionTitleClass}>
               账号凭据
             </div>
             <div data-account-credential-fields="balanced-grid" className="grid gap-3">
@@ -807,7 +843,7 @@ export function AccountCredentialVerifySection({
           />
         </div>
 
-        <div data-account-credential-right-pane="route" className="grid min-w-0 content-start gap-4 border-t-2 border-[var(--border-color)] pt-4 lg:border-l-2 lg:border-t-0 lg:pl-4 lg:pt-0">
+        <div data-account-credential-right-pane="route" className={accountDetailCredentialPaneDividerClass}>
           <CapabilityEndpointsPanel draft={draft} setDraft={setDraft} />
 
           <CredentialProxyRoutePanel
@@ -832,17 +868,17 @@ function CapabilityEndpointsPanel({
     <section data-account-credential-list-item="capability-endpoints" className="grid gap-3">
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
         <div>
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={accountDetailCredentialMetaLabelClass}>
             ENDPOINTS
           </div>
-          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase italic tracking-[0.06em] text-[var(--text-primary)]">
+          <div className={accountDetailCredentialSubheadingClass}>
             协议端点
           </div>
-          <p className="mt-2 max-w-[42rem] text-[length:var(--font-size-ui-2xs)] font-bold leading-relaxed text-[var(--text-muted)]">
+          <p className="mt-2 max-w-[42rem] text-[length:var(--font-size-ui-2xs)] font-medium leading-relaxed text-[var(--text-muted)]">
             留空使用默认基础 URL。
           </p>
         </div>
-        <AccountDetailPill className="!border-2 !text-[var(--text-primary)]">
+        <AccountDetailPill className={accountDetailCredentialPillClass}>
           {CAPABILITY_ENDPOINTS.length} 端
         </AccountDetailPill>
       </div>
@@ -958,14 +994,14 @@ function CredentialProxyRoutePanel({
     <section data-account-credential-list-item="proxy-route" className="grid gap-3 pt-4">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={accountDetailCredentialMetaLabelClass}>
             ROUTE
           </div>
-          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase italic tracking-[0.06em] text-[var(--text-primary)]">
+          <div className={accountDetailCredentialSubheadingClass}>
             {t('accounts.proxy_route_title')}
           </div>
         </div>
-        <AccountDetailPill className="!border-2 !text-[var(--text-primary)]">
+        <AccountDetailPill className={accountDetailCredentialPillClass}>
           {summary.label}
         </AccountDetailPill>
       </div>
@@ -1046,7 +1082,7 @@ function CredentialInputField({
     <label data-account-credential-field="plaintext" className={`grid min-w-0 gap-1.5 ${className}`}>
       <span
         data-account-credential-field-label="above"
-        className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]"
+        className={accountDetailCredentialFieldLabelClass}
       >
         {label}
       </span>
@@ -1056,20 +1092,20 @@ function CredentialInputField({
           value={value}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
-          className="input-swiss min-w-0 flex-1 font-mono !text-[length:var(--font-size-ui-xs)]"
+          className={`${accountDetailCredentialInputClass} flex-1`}
         />
         {onCopy ? (
           <button
             type="button"
             onClick={onCopy}
-            className="btn-swiss shrink-0 !px-3 !py-2 !text-[length:var(--font-size-ui-2xs)]"
+            className={accountDetailCredentialButtonClass}
           >
             复制
           </button>
         ) : null}
       </div>
       {help ? (
-        <span className="text-[length:var(--font-size-ui-2xs)] font-bold leading-relaxed text-[var(--text-muted)]">
+        <span className={accountDetailCredentialHelpClass}>
           {help}
         </span>
       ) : null}
@@ -1120,12 +1156,12 @@ function VerifyConnectionPanel({
   }, [isModelMenuOpen]);
 
   return (
-    <section data-account-credential-list-item="connection" className="grid gap-3 border-t-2 border-[var(--border-color)] pt-4">
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+    <section data-account-credential-list-item="connection" className="grid gap-3 border-t border-[var(--gt-border-subtle)] pt-4">
+      <div className={accountDetailCredentialSectionTitleClass}>
         连通验证
       </div>
       {vs.lastVerifiedAt ? (
-        <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        <div className="text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]">
           上次发送：{new Date(vs.lastVerifiedAt).toLocaleString()}
         </div>
       ) : null}
@@ -1140,17 +1176,17 @@ function VerifyConnectionPanel({
                 setModelMenuMode('custom');
               }}
               onFocus={() => setIsModelMenuOpen(true)}
-              className="input-swiss flex-1 font-mono !text-[length:var(--font-size-ui-xs)]"
+              className={`${accountDetailCredentialInputClass} flex-1`}
               placeholder={DEFAULT_VERIFY_MODEL}
             />
             {modelNames && modelNames.length > 0 ? (
-              <button onClick={() => setIsModelMenuOpen((prev) => !prev)} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+              <button type="button" onClick={() => setIsModelMenuOpen((prev) => !prev)} className={accountDetailCredentialButtonClass}>
                 ▼
               </button>
             ) : null}
           </div>
           {isModelMenuOpen && displayedModelNames.length > 0 ? (
-            <div className="absolute left-0 top-full z-20 mt-1 max-h-48 w-full overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard">
+            <div className={accountDetailCredentialMenuClass}>
               {displayedModelNames.map((name) => (
                 <button
                   key={name}
@@ -1158,11 +1194,7 @@ function VerifyConnectionPanel({
                     setVerifyModel(name);
                     setIsModelMenuOpen(false);
                   }}
-                  className={`block w-full px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] transition-colors ${
-                    verifyModel === name
-                      ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-                      : 'text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
-                  }`}
+                  className={accountDetailCredentialMenuItemClass(verifyModel === name)}
                 >
                   {name}
                 </button>
@@ -1174,16 +1206,14 @@ function VerifyConnectionPanel({
         <button
           onClick={() => onVerify?.({ apiKey: draft.apiKey, baseUrl: draft.baseUrl, model: verifyModel })}
           disabled={vs.status === 'loading'}
-          className="btn-swiss whitespace-nowrap !text-[length:var(--font-size-ui-xs)]"
+          className={`${accountDetailCredentialPrimaryButtonClass} whitespace-nowrap`}
         >
           {vs.status === 'loading' ? '发送中...' : '发送验证'}
         </button>
       </div>
 
       {vs.status !== 'idle' ? (
-        <div className={`text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
-          vs.status === 'success' ? 'text-[var(--color-status-success)]' : vs.status === 'error' ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
-        }`}>
+        <div className={accountDetailCredentialStatusClass(vs.status)}>
           {vs.status === 'loading' ? 'sending short message…' : vs.message}
         </div>
       ) : null}
