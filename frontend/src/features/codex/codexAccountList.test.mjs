@@ -205,7 +205,8 @@ test('codex account detail header keeps labeled identity and metadata blocks', a
   assert.match(summaryBlock, /flex min-w-0 flex-wrap/);
   assert.doesNotMatch(summaryBlock, /grid/);
   assert.doesNotMatch(summaryBlock, /sm:grid-cols/);
-  assert.match(metaBlock, /inline-flex max-w-full items-center/);
+  assert.match(source, /const codexAccountDetailMetaClass =[\s\S]*inline-flex max-w-full items-center/);
+  assert.match(metaBlock, /codexAccountDetailMetaClass/);
   assert.match(metaBlock, /<dt/);
   assert.match(metaBlock, /<dd/);
   assert.doesNotMatch(metaBlock, /mt-1/);
@@ -214,6 +215,36 @@ test('codex account detail header keeps labeled identity and metadata blocks', a
   assert.match(source, /t\('codex\.account_list_route'\)/);
   assert.match(source, /t\('codex\.account_list_priority'\)/);
   assert.match(source, /t\('common\.enable'\)/);
+});
+
+test('CodexAccountDetailModal uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const codexAccountDetailHeaderClass =/);
+  assert.match(source, /const codexAccountDetailMetaClass =/);
+  assert.match(source, /const codexAccountDetailButtonClass =/);
+  assert.match(source, /const codexAccountDetailPrimaryButtonClass =/);
+  assert.match(source, /const codexModelRoutingPanelClass =/);
+  assert.match(source, /const codexModelRoutingErrorClass =/);
+  assert.match(source, /data-codex-account-detail-header="quiet"/);
+  assert.match(source, /data-codex-account-detail-footer/);
+  assert.match(source, /data-codex-account-detail-body/);
+  assert.match(source, /data-codex-model-routing-section/);
+  assert.match(source, /data-codex-model-routing-table/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-2/);
+  assert.doesNotMatch(source, /border-l-2/);
+  assert.doesNotMatch(source, /border-b-2/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-\[0\.14em\]|tracking-\[0\.15em\]|tracking-\[0\.16em\]|tracking-\[0\.18em\]/);
+  assert.doesNotMatch(source, /shadow-\[/);
 });
 
 test('codex account detail folds proxy route into credential section', async () => {

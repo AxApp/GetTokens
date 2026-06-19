@@ -41,6 +41,43 @@ import {
 } from '../model/codexAccountList';
 import { sourceKindLabel } from './codexAccountPresentation';
 
+const codexAccountDetailHeaderClass = 'flex items-start justify-between gap-4';
+const codexAccountDetailIdentityClass =
+  'flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-mono font-semibold tracking-normal text-[var(--text-muted)]';
+const codexAccountDetailTitleClass =
+  'truncate text-lg font-semibold italic tracking-normal text-[var(--text-primary)]';
+const codexAccountDetailMetaClass =
+  'inline-flex max-w-full items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1.5';
+const codexAccountDetailMetaLabelClass =
+  'shrink-0 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const codexAccountDetailMetaValueClass =
+  'min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold leading-snug text-[var(--text-primary)]';
+const codexAccountDetailButtonClass =
+  'inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50';
+const codexAccountDetailIconButtonClass =
+  'inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-[var(--text-muted)] transition hover:border-[var(--gt-border-subtle)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)]';
+const codexAccountDetailPrimaryButtonClass =
+  `${codexAccountDetailButtonClass} border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)] hover:bg-[color-mix(in_srgb,var(--text-primary)_88%,transparent)]`;
+const codexAccountDetailFooterClass =
+  'flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between';
+const codexAccountDetailFooterStatusClass =
+  'min-w-0 text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)] sm:max-w-[70%]';
+const codexAuthFileSummaryMetaClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const codexModelRoutingPanelClass =
+  'overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const codexModelRoutingHeaderClass =
+  'grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const codexModelRoutingRowClass =
+  'grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] last:border-b-0';
+const codexModelRoutingValueClass =
+  'min-w-0 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]';
+const codexModelRoutingArrowClass = 'text-center font-semibold text-[var(--text-muted)]';
+const codexModelRoutingErrorClass =
+  'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-status-danger)]';
+const codexModelRoutingStatusClass =
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+
 export function CodexAccountDetailHeader({
   row,
   t,
@@ -53,16 +90,16 @@ export function CodexAccountDetailHeader({
   const endpointLabel = buildEndpointLabel(row);
 
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div data-codex-account-detail-header="quiet" className={codexAccountDetailHeaderClass}>
       <div className="min-w-0 space-y-4">
-        <div className="flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-mono uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <div className={codexAccountDetailIdentityClass}>
           <span>{sourceKindLabel(t, row.sourceKind)}</span>
           <span>·</span>
           <span className="break-all">{row.id}</span>
         </div>
 
         <div className="flex min-w-0 flex-wrap items-center gap-3">
-          <h3 className="truncate text-lg font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
+          <h3 className={codexAccountDetailTitleClass}>
             {row.label}
           </h3>
           <AccountDetailPill tone={row.requestable ? 'success' : 'danger'}>
@@ -88,8 +125,8 @@ export function CodexAccountDetailHeader({
         </dl>
       </div>
 
-      <button type="button" onClick={onClose} className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]" aria-label={t('common.close')}>
-        <X className="h-4 w-4" strokeWidth={4} />
+      <button type="button" onClick={onClose} className={codexAccountDetailIconButtonClass} aria-label={t('common.close')}>
+        <X className="h-4 w-4" strokeWidth={2.5} />
       </button>
     </div>
   );
@@ -103,11 +140,11 @@ function AccountDetailHeaderMeta({
   value: string;
 }) {
   return (
-    <div className="inline-flex max-w-full items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2.5 py-1.5">
-      <dt className="shrink-0 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+    <div className={codexAccountDetailMetaClass}>
+      <dt className={codexAccountDetailMetaLabelClass}>
         {label}
       </dt>
-      <dd className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-bold leading-snug text-[var(--text-primary)]">
+      <dd className={codexAccountDetailMetaValueClass}>
         {value}
       </dd>
     </div>
@@ -372,8 +409,8 @@ export function CodexAccountDetailModal({
       header={<CodexAccountDetailHeader row={row} t={t} onClose={onClose} />}
       footer={
         isApiLikeAccount || editableModelMappings || rateLimitDirty ? (
-          <>
-            <div className="min-w-0 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
+          <div data-codex-account-detail-footer className={codexAccountDetailFooterClass}>
+            <div className={codexAccountDetailFooterStatusClass}>
               {missingFields.length > 0
                 ? `缺少字段 ${missingFields.join(', ')}`
                 : mappingError || modelMappingError || modelOptionError || (loadingModelOptions ? t('accounts.openai_provider_models_fetch_running') : hasDetailChanges ? t('codex.account_list_unsaved') : modelSectionTitle)}
@@ -383,19 +420,19 @@ export function CodexAccountDetailModal({
                 type="button"
                 onClick={() => void saveDetail()}
                 disabled={savingMappings || savingDetail || missingFields.length > 0}
-                className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] disabled:cursor-wait disabled:opacity-50"
+                className={codexAccountDetailPrimaryButtonClass}
               >
                 {savingMappings || savingDetail ? t('codex.account_list_saving') : t('common.save')}
               </button>
-              <button type="button" onClick={onClose} className="btn-swiss">
+              <button type="button" onClick={onClose} className={codexAccountDetailButtonClass}>
                 {t('common.cancel')}
               </button>
             </div>
-          </>
+          </div>
         ) : undefined
       }
     >
-      <AccountDetailBody data-collaboration-id="MODAL_CODEX_ACCOUNT_DETAIL">
+      <AccountDetailBody data-collaboration-id="MODAL_CODEX_ACCOUNT_DETAIL" data-codex-account-detail-body="true">
         {!row.requestable ? (
           <AccountDetailNotice tone="danger">
             {blockedLabel}
@@ -457,7 +494,7 @@ function CodexAuthFileSummarySection({ account }: { account: ReturnType<typeof b
   return (
     <AccountDetailSection componentName="CodexAuthFileSummarySection" eyebrow="Auth File" title="文件摘要">
       <div className="grid gap-3">
-        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className={codexAuthFileSummaryMetaClass}>
           {account.name || account.displayName || account.id}
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -548,122 +585,118 @@ function CodexModelRoutingSection({
               type="button"
               onClick={onFetchModelOptions}
               disabled={fetchingModels}
-              className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)] disabled:cursor-wait disabled:opacity-50"
+              className={codexAccountDetailButtonClass}
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${fetchingModels ? 'animate-spin' : ''}`} strokeWidth={4} />
+              <RefreshCw className={`h-3.5 w-3.5 ${fetchingModels ? 'animate-spin' : ''}`} strokeWidth={2.5} />
               {fetchingModels ? t('accounts.openai_provider_models_fetch_running') : t('accounts.openai_provider_models_fetch')}
             </button>
           ) : null}
           <button
             type="button"
             onClick={onAddMapping}
-            className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+            className={codexAccountDetailButtonClass}
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={4} />
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
             {t('accounts.openai_provider_add_model')}
           </button>
         </>
       ) : undefined}
     >
-      {showModelMappings ? (
-        loadingModelMappings ? (
-          <AccountDetailEmptyState>
-            {t('accounts.ui_loading_short')}
-          </AccountDetailEmptyState>
-        ) : displayedModelMappings.length > 0 ? (
-          <div className="border-2 border-[var(--border-color)]">
-            <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              <span>{t('codex.account_list_real_model')}</span>
-              <span className="text-center">-&gt;</span>
-              <span className="text-right">{t('codex.account_list_codex_model')}</span>
-              <span />
+      <div data-codex-model-routing-section="true" className="space-y-3">
+        {showModelMappings ? (
+          loadingModelMappings ? (
+            <AccountDetailEmptyState>
+              {t('accounts.ui_loading_short')}
+            </AccountDetailEmptyState>
+          ) : displayedModelMappings.length > 0 ? (
+            <div data-codex-model-routing-table="true" className={codexModelRoutingPanelClass}>
+              <div className={codexModelRoutingHeaderClass}>
+                <span>{t('codex.account_list_real_model')}</span>
+                <span className="text-center">-&gt;</span>
+                <span className="text-right">{t('codex.account_list_codex_model')}</span>
+                <span />
+              </div>
+              <div>
+                {displayedModelMappings.map((mapping, index) => (
+                  <div
+                    key={`mapping-${index}`}
+                    className={codexModelRoutingRowClass}
+                  >
+                    {editableModelMappings ? (
+                      <ModelCombobox
+                        value={mapping.realModel}
+                        options={modelOptionNames}
+                        onChange={(value) => onUpdateMapping(index, { realModel: value })}
+                        placeholder={modelOptionNames[0] || 'deepseek-v4-flash'}
+                      />
+                    ) : (
+                      <span className={codexModelRoutingValueClass}>
+                        {mapping.realModel}
+                      </span>
+                    )}
+                    <span className={codexModelRoutingArrowClass}>-&gt;</span>
+                    {editableModelMappings ? (
+                      <ModelCombobox
+                        value={mapping.codexModel}
+                        options={codexModelOptionNames}
+                        onChange={(value) => onUpdateMapping(index, { codexModel: value })}
+                        placeholder={codexModelOptionNames[0] || mapping.realModel || 'deepseek-v4-flash'}
+                        align="right"
+                      />
+                    ) : (
+                      <span className={`${codexModelRoutingValueClass} text-right`}>
+                        {mapping.codexModel}
+                      </span>
+                    )}
+                    {editableModelMappings ? (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveMapping(index)}
+                        className={codexAccountDetailIconButtonClass}
+                        aria-label={t('common.delete')}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      </button>
+                    ) : (
+                      <span />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="divide-y divide-[var(--border-color)]">
-              {displayedModelMappings.map((mapping, index) => (
-                <div
-                  key={`mapping-${index}`}
-                  className="grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)]"
-                >
-                  {editableModelMappings ? (
-                    <ModelCombobox
-                      value={mapping.realModel}
-                      options={modelOptionNames}
-                      onChange={(value) => onUpdateMapping(index, { realModel: value })}
-                      placeholder={modelOptionNames[0] || 'deepseek-v4-flash'}
-                    />
-                  ) : (
-                    <span className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
-                      {mapping.realModel}
-                    </span>
-                  )}
-                  <span className="text-center font-black text-[var(--text-muted)]">-&gt;</span>
-                  {editableModelMappings ? (
-                    <ModelCombobox
-                      value={mapping.codexModel}
-                      options={codexModelOptionNames}
-                      onChange={(value) => onUpdateMapping(index, { codexModel: value })}
-                      placeholder={codexModelOptionNames[0] || mapping.realModel || 'deepseek-v4-flash'}
-                      align="right"
-                    />
-                  ) : (
-                    <span className="min-w-0 break-all text-right font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
-                      {mapping.codexModel}
-                    </span>
-                  )}
-                  {editableModelMappings ? (
-                    <button
-                      type="button"
-                      onClick={() => onRemoveMapping(index)}
-                      className="btn-swiss !p-1.5 !shadow-none hover:bg-[var(--bg-surface)]"
-                      aria-label={t('common.delete')}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" strokeWidth={3} />
-                    </button>
-                  ) : (
-                    <span />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          ) : (
+            <AccountDetailEmptyState>
+              {row.sourceKind === 'codex-auth-file'
+                ? t('codex.account_list_oauth_passthrough_mapping')
+                : editableModelMappings
+                  ? t('codex.account_list_no_model_mapping')
+                  : t('codex.account_list_default_model_mapping')}
+            </AccountDetailEmptyState>
+          )
         ) : (
           <AccountDetailEmptyState>
-            {row.sourceKind === 'codex-auth-file'
-              ? t('codex.account_list_oauth_passthrough_mapping')
-              : editableModelMappings
-                ? t('codex.account_list_no_model_mapping')
-                : t('codex.account_list_default_model_mapping')}
+            {t('codex.account_list_default_model_mapping')}
           </AccountDetailEmptyState>
-        )
-      ) : (
-        <AccountDetailEmptyState>
-          {t('codex.account_list_default_model_mapping')}
-        </AccountDetailEmptyState>
-      )}
+        )}
 
-      {modelMappingError ? (
-        <div className="border-l-2 border-[var(--accent-red)] pl-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
-          {modelMappingError}
-        </div>
-      ) : null}
+        {modelMappingError ? (
+          <div className={codexModelRoutingErrorClass}>
+            {modelMappingError}
+          </div>
+        ) : null}
 
-      {editableModelMappings && (loadingModelOptions || modelOptionError) ? (
-        <div
-          className={`border-l-2 pl-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
-            modelOptionError
-              ? 'border-[var(--accent-red)] text-[var(--accent-red)]'
-              : 'border-[var(--border-color)] text-[var(--text-muted)]'
-          }`}
-        >
-          {modelOptionError || t('accounts.openai_provider_models_fetch_running')}
-        </div>
-      ) : null}
+        {editableModelMappings && (loadingModelOptions || modelOptionError) ? (
+          <div className={modelOptionError ? codexModelRoutingErrorClass : codexModelRoutingStatusClass}>
+            {modelOptionError || t('accounts.openai_provider_models_fetch_running')}
+          </div>
+        ) : null}
 
-      {editableModelMappings && mappingError ? (
-        <div className="border-l-2 border-[var(--accent-red)] pl-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
-          {mappingError}
-        </div>
-      ) : null}
+        {editableModelMappings && mappingError ? (
+          <div className={codexModelRoutingErrorClass}>
+            {mappingError}
+          </div>
+        ) : null}
+      </div>
     </AccountDetailSection>
   );
 }
