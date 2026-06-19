@@ -65,6 +65,22 @@ const routeModes: Array<{
   { mode: 'balanced', icon: Shuffle, label: '均衡', cue: '空闲优先' },
 ];
 
+const channelRoutingPanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const channelRoutingMutedPanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const channelRoutingHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const channelRoutingSecondaryButtonClass =
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-60';
+const channelRoutingPrimaryButtonClass =
+  'inline-flex min-h-11 w-full items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-md)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60';
+const channelRoutingFieldClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]';
+const channelRoutingSelectClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+const channelRoutingMetaTextClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-wide text-[var(--text-muted)]';
+
 export default function ChannelRoutingWorkbench({
   channel,
   config,
@@ -168,16 +184,17 @@ export default function ChannelRoutingWorkbench({
   return (
     <section
       aria-label={`${channel} 请求模式`}
-      className="overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
+      data-channel-routing-shell="true"
+      className={`${channelRoutingPanelClass} overflow-hidden`}
     >
-      <header className="p-4">
+      <header className={`${channelRoutingHeaderClass} p-4`}>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]">
               <Split className="h-4 w-4" strokeWidth={4} />
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h2 className="min-w-0 text-[length:var(--font-size-ui-lg)] font-black leading-5 tracking-[0] text-[var(--text-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
+              <h2 className="min-w-0 text-[length:var(--font-size-ui-lg)] font-semibold leading-5 tracking-[0] text-[var(--text-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
                 请求模式
               </h2>
               <button
@@ -186,10 +203,10 @@ export default function ChannelRoutingWorkbench({
                 aria-label="查看请求模式说明"
                 title="查看请求模式说明"
                 aria-pressed={helpOpen}
-                className={`flex h-8 w-8 shrink-0 items-center justify-center border-2 transition-colors active:scale-95 ${
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded border transition-colors active:scale-95 ${
                   helpOpen
-                    ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                    : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
+                    ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
+                    : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
                 }`}
               >
                 <CircleHelp className="h-4 w-4" strokeWidth={4} />
@@ -202,7 +219,7 @@ export default function ChannelRoutingWorkbench({
                 type="button"
                 onClick={onOpenProjectConfig}
                 disabled={disabled || saving}
-                className="btn-swiss flex min-h-10 shrink-0 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
+                className={channelRoutingSecondaryButtonClass}
               >
                 <Settings2 className="h-3.5 w-3.5" strokeWidth={4} />
                 项目配置
@@ -227,16 +244,16 @@ export default function ChannelRoutingWorkbench({
       </header>
 
       {message ? (
-        <p className="border-t-2 border-[var(--border-color)] px-4 py-3 text-[length:var(--font-size-ui-sm)] text-[var(--text-secondary)]">
+        <p className="border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--font-size-ui-sm)] text-[var(--text-secondary)]">
           {message}
         </p>
       ) : null}
 
-      <details className="group border-t-2 border-[var(--border-color)] p-4">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)] [&::-webkit-details-marker]:hidden">
+      <details data-channel-routing-diagnostics="true" className="group border-t border-[var(--gt-border-subtle)] p-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] [&::-webkit-details-marker]:hidden">
           <span>高级诊断</span>
           <span className="flex items-center gap-2">
-            <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+            <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-wide text-[var(--text-muted)]">
               {hasExplain ? '有结果' : '可选'}
             </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" strokeWidth={4} />
@@ -247,8 +264,8 @@ export default function ChannelRoutingWorkbench({
           <section className="grid gap-4 lg:grid-cols-[minmax(14rem,0.72fr)_minmax(0,1.7fr)]">
             <aside className="min-w-0 py-1">
               <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
-                <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">条件列表</span>
-                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                <span className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">条件列表</span>
+                <span className={channelRoutingMetaTextClass}>
                   INPUT
                 </span>
               </div>
@@ -257,11 +274,11 @@ export default function ChannelRoutingWorkbench({
                   type="button"
                   onClick={onExplain}
                   disabled={disabled}
-                  className="btn-swiss min-h-11 w-full justify-start bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-md)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-60"
+                  className={channelRoutingPrimaryButtonClass}
                 >
                   <Play className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
-                  <span className="min-w-0 flex-1 truncate text-left font-black">运行预演</span>
-                  <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide opacity-70">
+                  <span className="min-w-0 flex-1 truncate text-left font-semibold">运行预演</span>
+                  <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide opacity-70">
                     RUN
                   </span>
                 </button>
@@ -293,7 +310,7 @@ export default function ChannelRoutingWorkbench({
             </aside>
 
             <section className="grid min-w-0 gap-4 lg:grid-cols-2">
-              <div className="min-w-0 border-l-2 border-[var(--border-color)] py-1 pl-4 lg:pr-3">
+              <div className="min-w-0 border-l border-[var(--gt-border-subtle)] py-1 pl-4 lg:pr-3">
                 <DiagnosticRouteColumn
                   title="当前模式"
                   modeLabel={explainView.modeLabel}
@@ -305,14 +322,14 @@ export default function ChannelRoutingWorkbench({
                 />
               </div>
 
-              <div className="min-w-0 border-l-2 border-[var(--border-color)] py-1 pl-4">
+              <div className="min-w-0 border-l border-[var(--gt-border-subtle)] py-1 pl-4">
                 <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
-                  <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">对比模式</span>
+                  <span className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">对比模式</span>
                   <select
                     value={config.shadowRouteMode}
                     disabled={disabled}
                     onChange={(event) => onShadowModeChange(event.currentTarget.value as ChannelRouteMode)}
-                    className="select-swiss h-[1.625rem] w-[4.25rem] font-mono !px-2 !py-1 text-center !text-[length:var(--font-size-ui-sm)] [text-align-last:center] !shadow-none hover:!translate-x-0 hover:!translate-y-0 hover:!shadow-none disabled:cursor-not-allowed disabled:opacity-60"
+                    className={`${channelRoutingSelectClass} h-[1.625rem] w-[4.25rem] px-2 py-1 text-center font-mono text-[length:var(--font-size-ui-sm)] [text-align-last:center]`}
                   >
                     {routeModes.map((item) => (
                       <option key={item.mode} value={item.mode}>
@@ -333,10 +350,10 @@ export default function ChannelRoutingWorkbench({
             </section>
           </section>
 
-          <section className="border-t-2 border-[var(--border-color)] pt-4">
+          <section className="border-t border-[var(--gt-border-subtle)] pt-4">
             <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
-              <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">最近真实决策</span>
-              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              <span className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">最近真实决策</span>
+              <span className={channelRoutingMetaTextClass}>
                 SIDE CAR
               </span>
             </div>
@@ -345,25 +362,25 @@ export default function ChannelRoutingWorkbench({
                 routeDecisionRows.map((row) => (
                   <div
                     key={row.id}
-                    className={`input-swiss min-w-0 !px-3 !py-2 ${
-                      row.unresolved ? 'border-[var(--color-status-danger)]' : ''
+                    className={`${channelRoutingFieldClass} min-w-0 ${
+                      row.unresolved ? 'border-[var(--gt-status-danger)]' : ''
                     }`}
                   >
                     <div className="flex min-w-0 items-center justify-between gap-3">
-                      <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
+                      <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
                         {row.title}
                       </span>
-                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
                         {row.unresolved ? 'UNRESOLVED' : 'SELECTED'}
                       </span>
                     </div>
                     {row.meta ? (
-                      <div className="mt-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-secondary)]">
+                      <div className="mt-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-secondary)]">
                         {row.meta}
                       </div>
                     ) : null}
                     {row.detail ? (
-                      <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-muted)]">
+                      <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-semibold leading-5 text-[var(--text-muted)]">
                         {row.detail}
                       </div>
                     ) : null}
@@ -375,10 +392,10 @@ export default function ChannelRoutingWorkbench({
             </div>
           </section>
 
-          <section className="border-t-2 border-[var(--border-color)] pt-4">
+          <section data-channel-routing-route-resilience="true" className="border-t border-[var(--gt-border-subtle)] pt-4">
             <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
-              <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">Route Resilience</span>
-              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              <span className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">Route Resilience</span>
+              <span className={channelRoutingMetaTextClass}>
                 BRIDGE
               </span>
             </div>
@@ -388,8 +405,8 @@ export default function ChannelRoutingWorkbench({
                 <div className="grid gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)]">
                   <div className="grid gap-2">
                     <div className="flex min-w-0 items-center justify-between gap-3">
-                      <span className="text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">Action Targets</span>
-                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                      <span className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">Action Targets</span>
+                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
                         {routeActionTargets.length} 个
                       </span>
                     </div>
@@ -400,27 +417,27 @@ export default function ChannelRoutingWorkbench({
                           key={target.id}
                           type="button"
                           onClick={() => setSelectedRouteActionTargetID(target.id)}
-                          className={`w-full border-2 px-3 py-2 text-left transition-colors active:scale-[0.99] ${
+                          className={`w-full rounded border px-3 py-2 text-left transition-colors active:scale-[0.99] ${
                             active
-                              ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                              : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
+                              ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
+                              : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
                           }`}
                         >
                           <div className="flex min-w-0 items-center justify-between gap-3">
-                            <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-black">
+                            <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-semibold">
                               {target.title}
                             </span>
                             <span
-                              className={`font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
-                                active ? 'text-[var(--bg-main)] opacity-70' : 'text-[var(--text-muted)]'
+                              className={`font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide ${
+                                active ? 'text-[var(--gt-surface-canvas)] opacity-70' : 'text-[var(--text-muted)]'
                               }`}
                             >
                               {target.sourceLabel}
                             </span>
                           </div>
                           <div
-                            className={`mt-1 min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-black leading-5 ${
-                              active ? 'text-[var(--bg-main)] opacity-80' : 'text-[var(--text-secondary)]'
+                            className={`mt-1 min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-semibold leading-5 ${
+                              active ? 'text-[var(--gt-surface-canvas)] opacity-80' : 'text-[var(--text-secondary)]'
                             }`}
                           >
                             {target.meta}
@@ -428,7 +445,7 @@ export default function ChannelRoutingWorkbench({
                           {target.detail ? (
                             <div
                               className={`mt-1 min-w-0 truncate text-[length:var(--font-size-ui-xs)] leading-5 ${
-                                active ? 'text-[var(--bg-main)] opacity-80' : 'text-[var(--text-muted)]'
+                                active ? 'text-[var(--gt-surface-canvas)] opacity-80' : 'text-[var(--text-muted)]'
                               }`}
                             >
                               {target.detail}
@@ -440,16 +457,16 @@ export default function ChannelRoutingWorkbench({
                   </div>
 
                   <div className="grid gap-3">
-                    <div className="input-swiss min-w-0 !px-3 !py-2">
+                    <div className={`${channelRoutingFieldClass} min-w-0`}>
                       <div className="flex min-w-0 items-center justify-between gap-3">
-                        <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
+                        <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
                           {routeActionTarget.accountTitle}
                         </span>
-                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
                           {routeActionTarget.sourceLabel}
                         </span>
                       </div>
-                      <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-secondary)]">
+                      <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-semibold leading-5 text-[var(--text-secondary)]">
                         {[
                           routeActionTarget.accountKey ? `account:${routeActionTarget.accountKey}` : '',
                           routeActionTarget.authId ? `auth:${routeActionTarget.authId}` : '',
@@ -470,15 +487,15 @@ export default function ChannelRoutingWorkbench({
                           type="button"
                           onClick={() => void runRouteResilienceAction(item.action)}
                           disabled={!item.enabled || Boolean(routeActionPending) || disabled}
-                          className="btn-swiss flex min-h-11 min-w-0 items-center gap-2 !px-3 !py-2 text-left disabled:cursor-not-allowed disabled:opacity-60"
+                          className={`${channelRoutingSecondaryButtonClass} min-w-0 justify-start text-left`}
                           title={item.disabledReason || item.helper}
                         >
                           <RefreshCcw className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                            <span className="block truncate text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                               {item.title}
                             </span>
-                            <span className="block truncate text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-secondary)]">
+                            <span className="block truncate text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-secondary)]">
                               {item.enabled ? item.helper : item.disabledReason || item.helper}
                             </span>
                           </span>
@@ -487,27 +504,27 @@ export default function ChannelRoutingWorkbench({
                     </div>
 
                     {routeActionError ? (
-                      <div className="border-2 border-[var(--color-status-danger)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--color-status-danger)]">
+                      <div className="border border-[var(--gt-status-danger)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold leading-5 text-[var(--gt-status-danger)]">
                         {routeActionError}
                       </div>
                     ) : null}
 
                     <div
-                      className={`border-2 px-3 py-3 ${
+                      className={`rounded border bg-[var(--gt-surface-muted)] px-3 py-3 ${
                         routeActionHistoryEntry?.tone === 'success'
-                          ? 'border-[var(--text-primary)]'
+                          ? 'border-[var(--gt-status-success)]'
                           : routeActionHistoryEntry?.tone === 'warning'
-                            ? 'border-[var(--color-status-warning)]'
+                            ? 'border-[var(--gt-status-warning)]'
                             : routeActionHistoryEntry?.tone === 'danger'
-                              ? 'border-[var(--color-status-danger)]'
-                              : 'border-[var(--border-color)]'
+                              ? 'border-[var(--gt-status-danger)]'
+                              : 'border-[var(--gt-border-subtle)]'
                       }`}
                     >
                       <div className="flex min-w-0 items-center justify-between gap-3">
-                        <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
+                        <span className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
                           {routeActionHistoryEntry?.actionTitle || 'Action Response'}
                         </span>
-                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
                           {routeActionPending ? 'RUNNING' : routeActionHistoryEntry?.statusLabel || '未执行'}
                         </span>
                       </div>
@@ -529,26 +546,26 @@ export default function ChannelRoutingWorkbench({
                       )}
                     </div>
 
-                    <div className="border-t-2 border-[var(--border-color)] pt-3">
+                    <div className="border-t border-[var(--gt-border-subtle)] pt-3">
                       <div className="mb-2 flex min-w-0 items-center justify-between gap-3">
-                        <span className="text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">Action History</span>
-                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                        <span className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">Action History</span>
+                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
                           {routeActionHistory.length} 条
                         </span>
                       </div>
                       <div className="grid gap-2">
                         {routeActionHistory.length > 0 ? (
                           routeActionHistory.map((entry) => (
-                            <div key={entry.id} className="input-swiss min-w-0 !px-3 !py-2">
+                            <div key={entry.id} className={`${channelRoutingFieldClass} min-w-0`}>
                               <div className="flex min-w-0 items-center justify-between gap-3">
-                                <span className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                                <span className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                                   {entry.targetTitle} · {entry.actionTitle}
                                 </span>
-                                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
                                   {entry.statusLabel}
                                 </span>
                               </div>
-                              <div className="mt-1 min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-secondary)]">
+                              <div className="mt-1 min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-semibold leading-5 text-[var(--text-secondary)]">
                                 {entry.targetMeta}
                               </div>
                               <div className="mt-1 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-muted)]">
@@ -599,35 +616,35 @@ function DiagnosticRouteColumn({
     <div className="min-w-0">
       {title ? (
         <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
-          <span className="text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">{title}</span>
-          <span className="input-swiss max-w-[9rem] truncate !px-2 !py-1 text-right font-mono !text-[length:var(--font-size-ui-sm)] !font-black uppercase tracking-wide !text-[var(--text-secondary)]">
+          <span className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">{title}</span>
+          <span className={`${channelRoutingFieldClass} max-w-[9rem] truncate px-2 py-1 text-right font-mono text-[length:var(--font-size-ui-sm)] tracking-wide text-[var(--text-secondary)]`}>
             {modeLabel || '未知'}
           </span>
         </div>
       ) : null}
       <div
         className={[
-          'input-swiss min-w-0 !px-3 !py-2',
-          emphasis ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : 'bg-[var(--bg-main)] !text-[var(--text-primary)]',
+          `${channelRoutingFieldClass} min-w-0`,
+          emphasis ? 'bg-[var(--text-primary)] !text-[var(--gt-surface-canvas)]' : 'bg-[var(--gt-surface-canvas)] !text-[var(--text-primary)]',
         ].join(' ')}
       >
         <span
           className={[
-            'block font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide',
-            emphasis ? 'text-[var(--bg-main)] opacity-70' : 'text-[var(--text-muted)]',
+            'block font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide',
+            emphasis ? 'text-[var(--gt-surface-canvas)] opacity-70' : 'text-[var(--text-muted)]',
           ].join(' ')}
         >
           命中
         </span>
-        <span className="mt-1 block min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black">
+        <span className="mt-1 block min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-semibold">
           {selectedTitle || '—'}
         </span>
       </div>
       <div className="mt-3 flex min-w-0 items-center justify-between gap-3">
-        <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+        <span className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
           账号顺序
         </span>
-        <span className="min-w-0 truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-secondary)]">
+        <span className="min-w-0 truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-secondary)]">
           {summaryLabel}
         </span>
       </div>
@@ -636,16 +653,16 @@ function DiagnosticRouteColumn({
           rows.map((row) => (
             <div
               key={`${row.rank}-${row.id}`}
-              className="input-swiss grid min-h-[3.25rem] min-w-0 grid-cols-[2.5rem_minmax(0,1fr)] items-center !px-0 !py-0"
+              className={`${channelRoutingFieldClass} grid min-h-[3.25rem] min-w-0 grid-cols-[2.5rem_minmax(0,1fr)] items-center px-0 py-0`}
             >
-              <span className="flex h-full items-center justify-center border-r-2 border-[var(--border-color)] font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-muted)]">
+              <span className="flex h-full items-center justify-center border-r border-[var(--gt-border-subtle)] font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
                 {String(row.rank).padStart(2, '0')}
               </span>
               <span className="min-w-0 px-2 py-1.5">
-                <span className="block min-w-0 truncate text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
+                <span className="block min-w-0 truncate text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
                   {row.title}
                 </span>
-                <span className="mt-0.5 block min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                <span className="mt-0.5 block min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
                   {row.meta}
                 </span>
               </span>
@@ -672,7 +689,7 @@ function RouteModeHelpModal({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             aria-label="关闭请求模式说明"
-            className="btn-swiss flex min-h-9 items-center gap-2 !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]"
+            className={channelRoutingSecondaryButtonClass}
           >
             <X className="h-3.5 w-3.5" strokeWidth={4} />
             关闭
@@ -681,8 +698,8 @@ function RouteModeHelpModal({ onClose }: { onClose: () => void }) {
       }
       bodyClassName="p-4 sm:p-5"
     >
-      <div className="border-y-2 border-[var(--border-color)] py-3">
-        <p className="max-w-3xl text-[length:var(--font-size-ui-sm)] font-black leading-6 text-[var(--text-primary)]">
+      <div className="border-y border-[var(--gt-border-subtle)] py-3">
+        <p className="max-w-3xl text-[length:var(--font-size-ui-sm)] font-semibold leading-6 text-[var(--text-primary)]">
           顺序模式决定的是“每次路由怎么排序”，不是“只消耗一个账号”的独占开关。
         </p>
         <p className="mt-1 max-w-3xl text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
@@ -692,8 +709,8 @@ function RouteModeHelpModal({ onClose }: { onClose: () => void }) {
 
       <div className="mt-4 grid gap-3 lg:grid-cols-2">
         {CHANNEL_ROUTE_MODE_HELP_SECTIONS.map((section) => (
-          <article key={section.title} className="min-w-0 border-2 border-[var(--border-color)] p-3">
-            <h3 className="text-[length:var(--font-size-ui-md)] font-black leading-5 text-[var(--text-primary)]">
+          <article key={section.title} className={`${channelRoutingMutedPanelClass} min-w-0 p-3`}>
+            <h3 className="text-[length:var(--font-size-ui-md)] font-semibold leading-5 text-[var(--text-primary)]">
               {section.title}
             </h3>
             <p className="mt-2 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
@@ -702,7 +719,7 @@ function RouteModeHelpModal({ onClose }: { onClose: () => void }) {
             <ul className="mt-3 space-y-2">
               {section.points.map((point) => (
                 <li key={point} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-2 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-primary)]">
-                  <span className="mt-1 h-2 w-2 border-2 border-[var(--text-primary)]" aria-hidden="true" />
+                  <span className="mt-1 h-2 w-2 border border-[var(--gt-border-strong)]" aria-hidden="true" />
                   <span>{point}</span>
                 </li>
               ))}
@@ -737,14 +754,14 @@ function StrategyButton({
       onClick={() => onModeChange(mode)}
       disabled={disabled}
       aria-pressed={active}
-      className={`grid min-h-10 grid-cols-[1.5rem_minmax(0,1fr)] items-center gap-2 border-2 px-3 py-2 text-left transition-colors active:scale-[0.98] ${
+      className={`grid min-h-10 grid-cols-[1.5rem_minmax(0,1fr)] items-center gap-2 rounded border px-3 py-2 text-left transition-colors active:scale-[0.98] ${
         active
-          ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-          : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
+          ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
+          : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
       }`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
-      <span className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-black">{label}</span>
+      <span className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-semibold">{label}</span>
     </button>
   );
 }
@@ -764,14 +781,14 @@ function DiagnosticSelect({
 }) {
   return (
     <label className="grid min-w-0 gap-1">
-      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
         {label}
       </span>
       <select
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.currentTarget.value)}
-        className="select-swiss h-11 min-w-0 font-mono !px-3 !py-2 !pr-8 !text-[length:var(--font-size-ui-md)] disabled:cursor-not-allowed disabled:opacity-60"
+        className={`${channelRoutingSelectClass} h-11 min-w-0 px-3 py-2 pr-8 font-mono text-[length:var(--font-size-ui-md)]`}
       >
         {options.map((option) => (
           <option key={`${option.value}-${option.label}`} value={option.value}>
@@ -806,7 +823,7 @@ function SectionHeading({ icon: Icon, label }: { icon: LucideIcon; label: string
   return (
     <div className="flex items-center gap-2">
       <Icon className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={3} />
-      <div className="min-w-0 text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+      <div className="min-w-0 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
         {label}
       </div>
     </div>
@@ -815,7 +832,7 @@ function SectionHeading({ icon: Icon, label }: { icon: LucideIcon; label: string
 
 function Placeholder({ text }: { text: string }) {
   return (
-    <div className="px-2 py-3 text-[length:var(--font-size-ui-xs)] font-black leading-5 text-[var(--text-muted)]">
+    <div className="px-2 py-3 text-[length:var(--font-size-ui-xs)] font-semibold leading-5 text-[var(--text-muted)]">
       {text}
     </div>
   );
