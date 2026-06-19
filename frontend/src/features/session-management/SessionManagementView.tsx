@@ -220,6 +220,16 @@ export function LoadingBar({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse rounded-sm bg-[var(--gt-surface-muted)] ${className}`.trim()} />;
 }
 
+const sessionManagementModalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-4 backdrop-blur-sm sm:p-6';
+const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-3)]';
+const sessionManagementModalHeaderClass = 'flex items-start justify-between gap-4 border-b border-[var(--gt-border-subtle)] px-5 py-4';
+const sessionManagementModalFooterClass = 'flex items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-3';
+const sessionManagementModalButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--bg-main)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const sessionManagementModalIconButtonClass = 'flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--text-muted)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] active:scale-90';
+const sessionManagementModalLabelClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const sessionManagementModalErrorClass = 'border-b border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]';
+
 export function InitialLoadingShell({ copy }: { copy: SessionManagementCopy }) {
   return (
     <div className="mx-auto grid min-h-0 w-full max-w-[1480px] flex-1 grid-cols-[18rem_minmax(0,1fr)] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]">
@@ -438,29 +448,30 @@ export function SessionAnalysisScopeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-70)] p-4 sm:p-6"
+      className={sessionManagementModalBackdropClass}
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-5xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
+        data-session-management-modal="analysis-scope"
+        className={`${sessionManagementModalPanelClass} max-h-[90vh] max-w-5xl`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="session-analysis-scope-title"
       >
-        <div className="flex items-start justify-between gap-4 border-b-4 border-[var(--border-color)] px-5 py-4">
+        <div className={sessionManagementModalHeaderClass}>
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
+            <div className="flex items-center gap-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
               <BarChart3 className="h-3.5 w-3.5" strokeWidth={2.5} />
               <span>{copy.analysisTitle}</span>
             </div>
             <h3
               id="session-analysis-scope-title"
-              className="mt-1 text-[length:var(--font-size-ui-3xl)] font-black uppercase tracking-tight leading-none"
+              className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold leading-tight text-[var(--text-primary)]"
             >
               {copy.analysisSelectorTitle}
             </h3>
-            <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
               {copy.analysisSelectorHint}
             </p>
           </div>
@@ -469,15 +480,15 @@ export function SessionAnalysisScopeModal({
             onClick={onClose}
             aria-label={copy.close}
             title={copy.close}
-            className="flex h-7 w-7 shrink-0 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] active:scale-90"
+            className={sessionManagementModalIconButtonClass}
           >
             <X className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
         </div>
 
         <div className="grid min-h-0 gap-0 overflow-y-auto lg:grid-cols-[18rem_minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="border-b-4 border-[var(--border-color)] p-4 lg:border-b-0 lg:border-r-4">
-            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+          <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 lg:border-b-0 lg:border-r">
+            <div className={sessionManagementModalLabelClass}>
               {copy.pluginHostTitle}
             </div>
             <div className="mt-3 grid gap-2">
@@ -486,7 +497,7 @@ export function SessionAnalysisScopeModal({
                 ref={initialFocusRef}
                 onClick={onAnalyzeAll}
                 disabled={!projects.length}
-                className="btn-swiss w-full justify-center text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+                className={`${sessionManagementModalButtonClass} w-full justify-center`}
               >
                 {copy.analysisAll}
               </button>
@@ -494,19 +505,19 @@ export function SessionAnalysisScopeModal({
                 type="button"
                 onClick={onAnalyzeRecent}
                 disabled={!recentSessions.length}
-                className="btn-swiss w-full justify-center text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+                className={`${sessionManagementModalButtonClass} w-full justify-center`}
               >
                 {copy.analysisRecent(recentLimit)}
               </button>
             </div>
-            <div className="mt-4 border-t border-dashed border-[var(--border-color)] pt-4 text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            <div className="mt-4 border-t border-[var(--gt-border-subtle)] pt-4 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
               {copy.analysisPluginName} / {activeProjectName}
             </div>
           </div>
 
-          <div className="min-h-0 border-b-4 border-[var(--border-color)] lg:border-b-0 lg:border-r-4">
-            <div className="sticky top-0 z-10 border-b border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3">
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.22em]">
+          <div className="min-h-0 border-b border-[var(--gt-border-subtle)] lg:border-b-0 lg:border-r">
+            <div className="sticky top-0 z-10 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-4 py-3">
+              <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                 {copy.analysisSelectProject}
               </div>
             </div>
@@ -518,15 +529,15 @@ export function SessionAnalysisScopeModal({
                     key={project.id}
                     type="button"
                     onClick={() => onAnalyzeProject(project)}
-                    className={`block w-full border-b border-[var(--border-color)] px-4 py-3 text-left transition-colors active:opacity-70 ${
-                      active ? 'bg-[var(--border-color)] text-[var(--bg-main)]' : 'hover:bg-[var(--bg-surface)]'
+                    className={`block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors active:opacity-70 ${
+                      active ? 'bg-[var(--gt-surface-muted)] text-[var(--text-primary)]' : 'hover:bg-[var(--gt-surface-muted)]'
                     }`}
                   >
-                    <div className="truncate text-[length:var(--font-size-ui-md)] font-black uppercase tracking-tight">
+                    <div className="truncate text-[length:var(--font-size-ui-md)] font-semibold">
                       {project.name}
                     </div>
-                    <div className={`mt-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] ${
-                      active ? 'text-[var(--bg-main)]/70' : 'text-[var(--text-muted)]'
+                    <div className={`mt-1 text-[length:var(--font-size-ui-xs)] font-medium ${
+                      active ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'
                     }`}>
                       {copy.projectStatusLine(project)}
                     </div>
@@ -540,8 +551,8 @@ export function SessionAnalysisScopeModal({
           </div>
 
           <div className="min-h-0">
-            <div className="sticky top-0 z-10 border-b border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3">
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.22em]">
+            <div className="sticky top-0 z-10 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-4 py-3">
+              <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                 {copy.analysisSelectSession}
               </div>
             </div>
@@ -551,12 +562,12 @@ export function SessionAnalysisScopeModal({
                   key={session.id}
                   type="button"
                   onClick={() => onAnalyzeSession(session)}
-                  className="block w-full border-b border-[var(--border-color)] px-4 py-3 text-left transition-colors hover:bg-[var(--bg-surface)] active:opacity-70"
+                  className="block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors hover:bg-[var(--gt-surface-muted)] active:opacity-70"
                 >
-                  <div className="truncate text-[length:var(--font-size-ui-md)] font-black uppercase tracking-tight">
+                  <div className="truncate text-[length:var(--font-size-ui-md)] font-semibold">
                     {session.displayTitle || session.title || getFileName(session.fileLabel, session.id)}
                   </div>
-                  <div className="mt-1 flex min-w-0 items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <div className="mt-1 flex min-w-0 items-center gap-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
                     <span>{session.messageCount} {copy.metaMessages}</span>
                     <span>·</span>
                     <span className="truncate">{formatSessionMetadataDate(session.updatedAt)}</span>
@@ -595,28 +606,29 @@ export function SessionAnalysisDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-4 sm:p-6"
+      className={sessionManagementModalBackdropClass}
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-6xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
+        data-session-management-modal="analysis-detail"
+        className={`${sessionManagementModalPanelClass} max-h-[90vh] max-w-6xl`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="session-analysis-detail-title"
       >
-        <div className="flex items-start justify-between gap-4 border-b-4 border-[var(--border-color)] px-5 py-4">
+        <div className={sessionManagementModalHeaderClass}>
           <div className="min-w-0 flex-1">
-            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
+            <div className={sessionManagementModalLabelClass}>
               {copy.analysisTitle}
             </div>
             <h3
               id="session-analysis-detail-title"
-              className="mt-1 truncate text-[length:var(--font-size-ui-3xl)] font-black uppercase tracking-tight leading-none"
+              className="mt-1 truncate text-[length:var(--font-size-ui-xl)] font-semibold leading-tight text-[var(--text-primary)]"
             >
               {copy.analysisDetailTitle}
             </h3>
-            <div className="mt-2 truncate text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="mt-2 truncate text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
               {result
                 ? `${scopeLabel} / ${result.analyzedSessionCount} ${copy.sessionsUnit} / ${result.totalMessages} ${copy.metaMessages} / ${result.generatedAt}`
                 : scopeLabel}
@@ -624,7 +636,7 @@ export function SessionAnalysisDetailModal({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {loading ? (
-              <span className="animate-pulse text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <span className="animate-pulse text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
                 {copy.analysisRunning}
               </span>
             ) : null}
@@ -633,7 +645,7 @@ export function SessionAnalysisDetailModal({
               ref={initialFocusRef}
               onClick={loading ? undefined : onBackToSelection}
               aria-disabled={loading ? 'true' : undefined}
-              className={`btn-swiss text-[length:var(--font-size-ui-xs)] ${
+              className={`${sessionManagementModalButtonClass} ${
                 loading ? 'cursor-not-allowed opacity-50' : ''
               }`}
             >
@@ -641,19 +653,19 @@ export function SessionAnalysisDetailModal({
             </button>
             <button
               type="button"
-              onClick={onClose}
-              aria-label={copy.close}
-              title={copy.close}
-              className="flex h-7 w-7 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] active:scale-90"
-            >
-              <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-            </button>
+            onClick={onClose}
+            aria-label={copy.close}
+            title={copy.close}
+            className={sessionManagementModalIconButtonClass}
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </button>
           </div>
         </div>
 
         <div className="min-h-0 overflow-y-auto">
           {error ? (
-            <div className="border-b border-[var(--border-color)] px-5 py-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
+            <div className={sessionManagementModalErrorClass}>
               {copy.loadFailed} / {error}
             </div>
           ) : null}
@@ -1081,29 +1093,29 @@ export function ProviderMergeModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-70)] p-4 sm:p-6"
+      className={sessionManagementModalBackdropClass}
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
+        data-session-management-modal="provider-merge"
+        className={`${sessionManagementModalPanelClass} max-w-xl`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="session-management-provider-merge-title"
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b-4 border-[var(--border-color)] px-5 py-4">
+        <div className={sessionManagementModalHeaderClass}>
           <div>
-            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
+            <div className={sessionManagementModalLabelClass}>
               Provider 归并
             </div>
             <h3
               id="session-management-provider-merge-title"
-              className="mt-1 text-[length:var(--font-size-ui-3xl)] font-black uppercase tracking-tight leading-none"
+              className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold leading-tight text-[var(--text-primary)]"
             >
               {projectName}
             </h3>
-            <p className="mt-2 text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            <p className="mt-2 text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
               将来源 Provider 统一映射到目标标签，不同来源可归并到同一个目标
             </p>
           </div>
@@ -1112,23 +1124,22 @@ export function ProviderMergeModal({
             onClick={onClose}
             aria-label={copy.close}
             title={copy.close}
-            className="flex h-7 w-7 shrink-0 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] active:scale-90"
+            className={sessionManagementModalIconButtonClass}
           >
             <X className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* Mapping rows */}
-        <div className="max-h-[60vh] overflow-y-auto divide-y divide-[var(--border-color)]">
+        <div className="max-h-[60vh] overflow-y-auto divide-y divide-[var(--gt-border-subtle)]">
           {rows.map((row) => {
             const sourceLabel = getProviderDisplayLabel(row.sourceProvider, copy.unknownProvider);
             return (
               <div key={row.sourceKey} className="flex items-center gap-3 px-5 py-4">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[length:var(--font-size-ui-lg-compact)] font-black normal-case tracking-tight">
+                  <div className="truncate text-[length:var(--font-size-ui-lg)] font-semibold">
                     {sourceLabel}
                   </div>
-                  <div className="mt-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <div className="mt-0.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
                     {row.count} 条会话
                   </div>
                 </div>
@@ -1146,26 +1157,24 @@ export function ProviderMergeModal({
             );
           })}
           {rows.length === 0 ? (
-            <div className="px-5 py-8 text-center text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="px-5 py-8 text-center text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
               暂无可归并的 Provider
             </div>
           ) : null}
         </div>
 
-        {/* Error */}
         {error ? (
-          <div className="border-t border-[var(--border-color)] px-5 py-3 text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.14em] text-[var(--accent-red)]">
+          <div className="border-t border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]">
             {error}
           </div>
         ) : null}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-3 border-t-4 border-[var(--border-color)] px-5 py-3">
+        <div className={sessionManagementModalFooterClass}>
           <button
             type="button"
             onClick={onReset}
             disabled={saving}
-            className="btn-swiss text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+            className={sessionManagementModalButtonClass}
           >
             重置
           </button>
@@ -1174,7 +1183,7 @@ export function ProviderMergeModal({
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="btn-swiss text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+              className={sessionManagementModalButtonClass}
             >
               {copy.close}
             </button>
@@ -1183,7 +1192,7 @@ export function ProviderMergeModal({
               onClick={onSave}
               disabled={saving}
               aria-busy={saving}
-              className="btn-swiss inline-flex items-center gap-1.5 text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+              className={`${sessionManagementModalPrimaryButtonClass} gap-1.5`}
             >
               {saving ? <RefreshCw className="h-3 w-3 animate-spin" strokeWidth={2.5} aria-hidden="true" /> : null}
               <span>{saving ? '保存中…' : '保存'}</span>
@@ -1252,29 +1261,30 @@ export function SessionDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-4 sm:p-6"
+      className={sessionManagementModalBackdropClass}
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-5xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)] select-text"
+        data-session-management-modal="session-detail"
+        className={`${sessionManagementModalPanelClass} max-h-[90vh] max-w-5xl select-text`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="session-management-dialog-title"
       >
-        <div className="flex items-start justify-between gap-4 border-b-4 border-[var(--border-color)] px-5 py-4">
+        <div className={sessionManagementModalHeaderClass}>
           <div className="min-w-0 flex-1">
-            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
+            <div className={sessionManagementModalLabelClass}>
               {copy.modalTitle}
             </div>
-            <h3 id="session-management-dialog-title" className="mt-1 truncate text-xl font-black uppercase tracking-tight">
+            <h3 id="session-management-dialog-title" className="mt-1 truncate text-[length:var(--font-size-ui-xl)] font-semibold leading-tight text-[var(--text-primary)]">
               {selectedSessionDetail?.displayTitle ??
                 selectedSessionSummary?.displayTitle ??
                 selectedSessionDetail?.title ??
                 selectedSessionSummary?.title ??
                 getFileName(selectedSessionDetail?.fileLabel ?? selectedSessionSummary?.fileLabel, copy.unavailable)}
             </h3>
-            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
               <span>{modalProjectName}</span>
               <span className="opacity-40">·</span>
               <span>
@@ -1307,7 +1317,7 @@ export function SessionDetailModal({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {detailState.refreshing ? (
-              <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+              <span className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
                 {copy.refreshing}
               </span>
             ) : null}
@@ -1316,7 +1326,7 @@ export function SessionDetailModal({
               onClick={onRefresh}
               aria-label={copy.refresh}
               title={copy.refresh}
-              className="flex h-7 w-7 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
+              className={sessionManagementModalIconButtonClass}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${detailState.refreshing ? 'animate-spin' : ''}`} strokeWidth={2.5} />
             </button>
@@ -1325,14 +1335,14 @@ export function SessionDetailModal({
               onClick={onClose}
               aria-label={copy.close}
               title={copy.close}
-              className="flex h-7 w-7 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
+              className={sessionManagementModalIconButtonClass}
             >
               <X className="h-3.5 w-3.5" strokeWidth={2.5} />
             </button>
           </div>
         </div>
         {detailState.error ? (
-          <div className="border-b border-[var(--border-color)] px-5 py-2.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
+          <div className={sessionManagementModalErrorClass}>
             {copy.loadFailed} / {detailState.error}
           </div>
         ) : null}
@@ -1342,7 +1352,7 @@ export function SessionDetailModal({
               {Array.from({ length: 5 }).map((_, index) => (
                 <div
                   key={`placeholder-${index}`}
-                  className="border-b border-[var(--border-color)] py-3"
+                  className="border-b border-[var(--gt-border-subtle)] py-3"
                 >
                   <div className="flex items-center gap-3">
                     <LoadingBar className="h-2.5 w-8" />
@@ -1360,7 +1370,7 @@ export function SessionDetailModal({
                 <div
                   key={message.id}
                   onClick={() => onViewRawJSON(message)}
-                  className="cursor-pointer border-b border-[var(--border-color)] px-5 py-3 transition-colors hover:bg-[var(--bg-surface)]"
+                  className="cursor-pointer border-b border-[var(--gt-border-subtle)] px-5 py-3 transition-colors hover:bg-[var(--gt-surface-muted)]"
                 >
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em]">
                     <span className="text-[var(--text-muted)]/50">#{String(index + 1).padStart(2, '0')}</span>
@@ -1392,16 +1402,16 @@ export function SessionDetailModal({
                 </div>
               ))}
               {detailState.rawJSONError ? (
-                <div className="border-b border-[var(--border-color)] px-5 py-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
+                <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]">
                   {copy.loadFailed} / {detailState.rawJSONError}
                 </div>
               ) : null}
               <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
                   {copy.messageLoadedLine(selectedSessionDetail.messages.length, selectedSessionDetail.messageCount)}
                 </div>
                 {detailState.messagePageError ? (
-                  <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
+                  <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]">
                     {copy.loadFailed} / {detailState.messagePageError}
                   </div>
                 ) : null}
@@ -1410,7 +1420,7 @@ export function SessionDetailModal({
                     type="button"
                     onClick={onLoadMoreMessages}
                     disabled={detailState.messagePageLoading}
-                    className="btn-swiss text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+                    className={sessionManagementModalButtonClass}
                   >
                     {detailState.messagePageLoading ? copy.messagePageLoading : copy.loadMoreMessages}
                   </button>

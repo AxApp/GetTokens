@@ -251,6 +251,13 @@ test('session analysis opens from header through scope selector and detail modal
   assert.match(viewSource, /analysisCommonPhrases/, 'analysis detail must render common phrases');
   assert.match(viewSource, /useModalInitialFocus/, 'analysis modals must move keyboard focus into the dialog');
   assert.match(viewSource, /event\.key === 'Escape'/, 'analysis modals must close from Escape');
+  assert.match(viewSource, /data-session-management-modal="analysis-scope"/, 'analysis selector must use the current modal shell contract');
+  assert.match(viewSource, /data-session-management-modal="analysis-detail"/, 'analysis detail must use the current modal shell contract');
+  assert.match(viewSource, /data-session-management-modal="provider-merge"/, 'provider merge must use the current modal shell contract');
+  assert.match(viewSource, /data-session-management-modal="session-detail"/, 'session detail must use the current modal shell contract');
+  assert.match(viewSource, /const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] shadow-\[var\(--gt-elevation-raised-3\)\]'/);
+  assert.doesNotMatch(viewSource, /className="btn-swiss/, 'session-management modals must not use the old swiss button skin');
+  assert.doesNotMatch(viewSource, /flex max-h-\[90vh\] w-full max-w-[^"]+ border-4 border-\[var\(--border-color\)\]/, 'modals must not keep the old thick border shell');
   assert.match(viewSource, /aria-disabled=\{loading \? 'true' : undefined\}/, 'detail modal back control must stay focusable while analysis is loading');
   assert.doesNotMatch(viewSource, /disabled=\{loading\}/, 'detail modal must not drop focus onto body by disabling its initial focus button');
 });
