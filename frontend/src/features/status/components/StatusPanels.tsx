@@ -25,6 +25,29 @@ import { RELAY_CODEX_DEFAULT_MODEL } from '../../accounts/model/accountConfig';
 
 type LocalCliPanelTarget = 'codex' | 'claude';
 
+const statusPanelClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const statusMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const statusInsetPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)]';
+const statusFieldBoxClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2';
+const statusEyebrowClass = 'text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]';
+const statusTitleClass = 'text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]';
+const statusMetaClass = 'font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const statusValueClass = 'font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]';
+const statusSecondaryButtonClass =
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const statusPrimaryButtonClass =
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--bg-main)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const statusCompactButtonClass =
+  'inline-flex h-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const statusNoticeClass =
+  'rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]';
+const statusDangerNoticeClass =
+  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_9%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium leading-snug text-[var(--gt-status-danger)]';
+const statusToggleRowClass =
+  'flex items-center justify-between gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 md:min-h-[2.875rem]';
+
 export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEvidenceSectionState }) {
   if (state.items.length === 0 && !state.notice) {
     return null;
@@ -32,32 +55,32 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
 
   return (
     <section
-      className="card-swiss grid gap-4 p-4"
+      className={`${statusPanelClass} grid gap-4 p-4`}
       data-status-quota-evidence-section="true"
     >
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={statusEyebrowClass}>
             QUOTA EVIDENCE
           </div>
-          <div className="mt-1 font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+          <div className="mt-1 text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">
             Runtime authority facts
           </div>
         </div>
-        <div className="shrink-0 border-2 border-[var(--border-color)] px-3 py-1 text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+        <div className={`${statusMutedPanelClass} shrink-0 px-3 py-1 text-right ${statusMetaClass}`}>
           {state.items.length} FACT{state.items.length === 1 ? '' : 'S'}
         </div>
       </div>
 
       {state.notice ? (
         <div
-          className="grid gap-2 border border-[var(--border-color)] bg-[var(--bg-elevated)] px-4 py-3"
+          className={`${statusMutedPanelClass} grid gap-2 px-4 py-3`}
           data-status-quota-evidence-empty="true"
         >
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={statusEyebrowClass}>
             {state.notice.eyebrow}
           </div>
-          <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+          <div className={statusTitleClass}>
             {state.notice.title}
           </div>
           <div className="font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-muted)]">
@@ -65,19 +88,19 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
           </div>
           {state.notice.unscopedMissingFactCount > 0 ? (
             <div
-              className="grid gap-1 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2"
+              className={`${statusInsetPanelClass} grid gap-1 px-3 py-2`}
               data-status-quota-evidence-missing-unscoped="true"
             >
-              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className={statusEyebrowClass}>
                 UNSCOPED PAYLOADS MISSING EXPLICIT FACT
               </div>
-              <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+              <div className={statusValueClass}>
                 {state.notice.unscopedMissingFactCount} UNSCOPED PAYLOAD
                 {state.notice.unscopedMissingFactCount === 1 ? '' : 'S'} MISSING EXPLICIT FACT
               </div>
               {state.notice.unscopedMissingFactSamples?.length ? (
                 <div className="grid gap-2 pt-1" data-status-quota-evidence-unscoped-samples="true">
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <div className={statusEyebrowClass}>
                     UNSCOPED TRACE SAMPLES
                   </div>
                   <ul className="grid gap-1">
@@ -90,7 +113,7 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
                       </li>
                     ))}
                   </ul>
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <div className={statusMetaClass}>
                     NON-AUTHORITATIVE TRACE
                   </div>
                 </div>
@@ -98,8 +121,8 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
             </div>
           ) : null}
           {state.notice.accountKeys?.length ? (
-            <div className="grid gap-2 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
-              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className={`${statusInsetPanelClass} grid gap-2 px-3 py-2`}>
+              <div className={statusEyebrowClass}>
                 MISSING EXPLICIT FACT
               </div>
               <ul className="grid gap-1" data-status-quota-evidence-missing-accounts="true">
@@ -132,20 +155,20 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
           return (
             <article
               key={`${item.accountKey || 'unknown'}:${item.updatedAt || evidence.summary}`}
-              className="grid gap-3 border border-[var(--border-color)] bg-[var(--bg-elevated)] p-3"
+              className={`${statusInsetPanelClass} grid gap-3 p-3`}
               data-status-quota-evidence-item="true"
             >
               <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                 <div className="min-w-0">
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <div className={statusEyebrowClass}>
                     {evidence.title}
                   </div>
-                  <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                  <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                     {item.accountKey || 'UNSCOPED'}
                   </div>
                 </div>
                 {item.updatedAt ? (
-                  <div className="shrink-0 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <div className={`${statusMetaClass} shrink-0`}>
                     UPDATED {item.updatedAt}
                   </div>
                 ) : null}
@@ -153,11 +176,11 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
 
               <dl className="grid gap-2 md:grid-cols-2">
                 {rows.map(([label, value]) => (
-                  <div key={label} className="grid gap-1 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
-                    <dt className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <div key={label} className={`${statusMutedPanelClass} grid gap-1 px-3 py-2`}>
+                    <dt className={statusEyebrowClass}>
                       {label}
                     </dt>
-                    <dd className="font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                    <dd className={statusValueClass}>
                       {value}
                     </dd>
                   </div>
@@ -165,8 +188,8 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
               </dl>
 
               {evidence.view.explanation ? (
-                <div className="grid gap-1 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className={`${statusMutedPanelClass} grid gap-1 px-3 py-2`}>
+                  <div className={statusEyebrowClass}>
                     EXPLANATION
                   </div>
                   <div className="font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)]">
@@ -176,8 +199,8 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
               ) : null}
 
               {evidence.view.evidenceRefs.length > 0 ? (
-                <div className="grid gap-2 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className={`${statusMutedPanelClass} grid gap-2 px-3 py-2`}>
+                  <div className={statusEyebrowClass}>
                     EVIDENCE REFS
                   </div>
                   <ul className="grid gap-1">
@@ -557,7 +580,11 @@ export function StatusApplyLocalSection({
       <div className="mb-2 flex w-full">
         <SegmentedControl options={localCliTargetOptions} value={activeTarget} onChange={setActiveTarget} />
       </div>
-      <section className="relative overflow-visible border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+      <section
+        className={`${statusPanelClass} relative overflow-visible`}
+        data-status-local-cli-panel="true"
+        data-status-local-cli-target={activeTarget}
+      >
         {activeTarget === 'codex' ? (
           <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
             <div className="space-y-4">
@@ -612,7 +639,7 @@ export function StatusApplyLocalSection({
                 />
 
                 <FormField title={t('status.codex_local_auth_state_title')} as="div">
-                  <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">
+                  <div className={`${statusFieldBoxClass} text-[length:var(--font-size-ui-md-compact)] font-medium text-[var(--text-primary)]`}>
                     <div>{codexLocalAuthSummary}</div>
                     {localCodexAuthState?.accountEmail ? (
                       <div className="mt-1 font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-muted)]">
@@ -650,7 +677,7 @@ export function StatusApplyLocalSection({
                     />
                   </div>
                   {localCodexProviderWebsocketRisk ? (
-                    <div className="border-2 border-[var(--color-status-danger)] bg-[var(--bg-main)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--color-status-danger)]">
+                    <div className={statusDangerNoticeClass}>
                       {supportsWebsockets
                         ? t('status.local_cli_websocket_risk_opt_in')
                         : t('status.local_cli_websocket_risk_detected')}
@@ -669,7 +696,7 @@ export function StatusApplyLocalSection({
                   <span className="text-[length:var(--font-size-ui-lg)] font-bold tracking-[0.08em] text-[var(--text-primary)] underline-offset-4 hover:underline">
                     sync_model_catalog
                     {isDisablingModelCatalog ? (
-                      <span className="ml-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      <span className={`ml-2 ${statusMetaClass}`}>
                         正在停用
                       </span>
                     ) : null}
@@ -685,22 +712,22 @@ export function StatusApplyLocalSection({
               </div>
 
               {codexLocalAuthStrategy === 'preserve_chatgpt_auth' && codexLocalCanApply ? (
-                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
+                <div className={statusNoticeClass}>
                   {t('status.codex_local_preserve_hint')}
                   {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
                 </div>
               ) : null}
 
               {codexLocalApplyGuidance ? (
-                <div className="grid gap-3 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                  <div className="text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
+                <div className={`${statusNoticeClass} grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center`}>
+                  <div>
                     {codexLocalApplyGuidance}
                     {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
                   </div>
                   {codexLocalApplyState.recoveryAction === 'create_relay_key' ? (
                     <button
                       type="button"
-                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                      className={statusSecondaryButtonClass}
                       onClick={onOpenCreateRelayKeyEditor}
                     >
                       {t('status.codex_local_recovery_create_key')}
@@ -708,7 +735,7 @@ export function StatusApplyLocalSection({
                   ) : codexLocalApplyState.recoveryAction === 'switch_auth_to_apikey' ? (
                     <button
                       type="button"
-                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                      className={statusSecondaryButtonClass}
                       onClick={() => onSelectCodexLocalAuthStrategy('replace_auth_with_apikey')}
                     >
                       {t('status.codex_local_recovery_use_apikey')}
@@ -717,7 +744,7 @@ export function StatusApplyLocalSection({
                     codexLocalApplyState.nextProviderID ? (
                     <button
                       type="button"
-                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                      className={statusSecondaryButtonClass}
                       onClick={() => onSelectRelayProviderID(codexLocalApplyState.nextProviderID || '')}
                     >
                       {t('status.codex_local_recovery_switch_provider')}{' '}
@@ -726,7 +753,7 @@ export function StatusApplyLocalSection({
                   ) : codexLocalApplyState.recoveryAction === 'create_provider' ? (
                     <button
                       type="button"
-                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                      className={statusSecondaryButtonClass}
                       onClick={onOpenCreateRelayProviderEditor}
                     >
                       {t('status.codex_local_recovery_create_provider')}
@@ -736,7 +763,7 @@ export function StatusApplyLocalSection({
               ) : null}
 
               {localApplyMessage ? (
-                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
+                <div className={statusNoticeClass}>
                   {localApplyMessage}
                 </div>
               ) : null}
@@ -752,7 +779,7 @@ export function StatusApplyLocalSection({
                   type="button"
                   onClick={onApplyRelayConfigToLocal}
                   disabled={!codexLocalApplyState.canApply}
-                  className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className={statusPrimaryButtonClass}
                 >
                   {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local_codex')}
                 </button>
@@ -872,8 +899,8 @@ export function StatusApplyLocalSection({
               </div>
 
               <div className={fieldPairGridClass}>
-                <div className="flex items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 md:min-h-[2.875rem]">
-                  <span className="text-[length:var(--font-size-ui-sm)] font-black tracking-[0.12em] text-[var(--text-primary)]">
+                <div className={statusToggleRowClass}>
+                  <span className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">
                     {t('status.claude_disable_nonessential_traffic')}
                   </span>
                   <ToggleSwitch
@@ -884,8 +911,8 @@ export function StatusApplyLocalSection({
                     onChange={(checked) => updateClaudeDraft({ disableNonEssentialTraffic: checked })}
                   />
                 </div>
-                <div className="flex items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 md:min-h-[2.875rem]">
-                  <span className="text-[length:var(--font-size-ui-sm)] font-black tracking-[0.12em] text-[var(--text-primary)]">
+                <div className={statusToggleRowClass}>
+                  <span className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">
                     {t('status.claude_code_attribution_header')}
                   </span>
                   <ToggleSwitch
@@ -899,7 +926,7 @@ export function StatusApplyLocalSection({
               </div>
 
               {claudeApplyMessage ? (
-                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
+                <div className={statusNoticeClass}>
                   {claudeApplyMessage}
                 </div>
               ) : null}
@@ -915,7 +942,7 @@ export function StatusApplyLocalSection({
                   type="button"
                   onClick={() => onApplyClaude({ ...claudeDraft, baseUrl: selectedEndpointBaseUrl })}
                   disabled={isApplyingClaude || !isReady || !selectedClaudeRelayKey.trim()}
-                  className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className={statusPrimaryButtonClass}
                 >
                   {isApplyingClaude ? t('status.applying_local') : t('status.apply_local_claude')}
                 </button>
@@ -946,39 +973,39 @@ export function StatusApplyLocalSection({
           header={
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
               <div className="min-w-0">
-                <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className={statusEyebrowClass}>
                   CODEX MODEL CATALOG
                 </div>
-                <h3 className="mt-1 text-sm font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                <h3 className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
                   Codex /model 模型目录预览
                 </h3>
               </div>
-              <button type="button" onClick={() => setModelCatalogPreviewOpen(false)} className="btn-swiss active:scale-95">
+              <button type="button" onClick={() => setModelCatalogPreviewOpen(false)} className={statusSecondaryButtonClass}>
                 关闭
               </button>
             </div>
           }
-          bodyClassName="bg-[var(--bg-surface)]"
+          bodyClassName="bg-[var(--gt-surface-canvas)]"
         >
           <table className="w-max min-w-full border-collapse">
-            <thead className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+            <thead className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]">
               <tr>
-                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                   /model slug
                 </th>
-                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                   real model
                 </th>
-                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                   reasoning
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y-2 divide-[var(--border-color)]">
+            <tbody className="divide-y divide-[var(--gt-border-subtle)]">
               {modelCatalogPreviewModels.map((model) => (
                 <tr key={model.slug}>
                   <td className="px-4 py-3 align-top">
-                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
+                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                       {model.slug}
                     </div>
                   </td>
@@ -988,7 +1015,7 @@ export function StatusApplyLocalSection({
                     </div>
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    <div className={statusMetaClass}>
                       {model.reasoning}
                     </div>
                   </td>
@@ -996,7 +1023,7 @@ export function StatusApplyLocalSection({
               ))}
               {modelCatalogPreviewModels.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <td colSpan={3} className="px-4 py-8 text-center font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
                     暂无可同步模型
                   </td>
                 </tr>
@@ -1078,8 +1105,8 @@ function StatusEndpointPicker({
         <button
           type="button"
           onClick={onToggleLANAccess}
-          className={`btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-sm)] ${
-            isLANAccessEnabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
+          className={`${statusSecondaryButtonClass} ${
+            isLANAccessEnabled ? '!border-[var(--gt-border-strong)] !bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
           }`}
         >
           {isLANAccessEnabled ? t('status.lan_access_on') : t('status.lan_access_off')}
@@ -1100,10 +1127,10 @@ function StatusEndpointPicker({
               key={endpoint.id}
               type="button"
               onClick={() => onSelectEndpointID(endpoint.id)}
-              className={`border-2 px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.18em] ${
+              className={`rounded border px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium transition ${
                 isSelected
-                  ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                  : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
+                  ? 'border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                  : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)] hover:border-[var(--gt-border-strong)]'
               }`}
             >
               {endpointLabel}
@@ -1111,11 +1138,11 @@ function StatusEndpointPicker({
           );
         })}
       </div>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
-        <span className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2">
+        <span className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
           {selectedEndpointBaseUrl}
         </span>
-        <button type="button" onClick={onCopyEndpointBaseUrl} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-xs)]">
+        <button type="button" onClick={onCopyEndpointBaseUrl} className={statusCompactButtonClass}>
           {t('common.copy')}
         </button>
       </div>

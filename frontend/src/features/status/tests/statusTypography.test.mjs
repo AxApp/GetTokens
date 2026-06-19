@@ -95,7 +95,7 @@ test('status model catalog sync label opens a preview modal', async () => {
   assert.match(statusPanelSource, /modelCatalogPreviewModels\.map/);
   assert.match(statusPanelSource, /<table className="w-max min-w-full border-collapse"/);
   assert.match(statusPanelSource, /<th scope="col"/);
-  assert.match(statusPanelSource, /<tbody className="divide-y-2/);
+  assert.match(statusPanelSource, /<tbody className="divide-y divide-\[var\(--gt-border-subtle\)\]"/);
   assert.match(statusPanelSource, /whitespace-nowrap/);
   assert.doesNotMatch(statusPanelSource, /md:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)_10rem\]/);
   assert.doesNotMatch(statusPanelSource, /md:grid-cols-\[max-content_max-content_max-content\]/);
@@ -109,6 +109,29 @@ test('status model catalog toggle writes config in both directions', async () =>
   assert.match(statusFeatureSource, /enableCodexModelCatalogProjection/);
   assert.match(statusFeatureSource, /disableCodexModelCatalogProjection/);
   assert.doesNotMatch(statusFeatureSource, /if \(nextValue\) \{\s*setSyncCodexModelCatalog\(true\);\s*return;/);
+});
+
+test('status panels use the quiet workspace shell', async () => {
+  const statusPanelSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
+  const actionSelectSource = await readFile(new URL('../../../components/ui/ActionSelect.tsx', import.meta.url), 'utf8');
+  const snippetPanelSource = await readFile(new URL('../components/StatusSnippetPanel.tsx', import.meta.url), 'utf8');
+
+  assert.match(statusPanelSource, /const statusPanelClass =/);
+  assert.match(statusPanelSource, /const statusMutedPanelClass =/);
+  assert.match(statusPanelSource, /const statusPrimaryButtonClass =/);
+  assert.match(statusPanelSource, /data-status-local-cli-panel="true"/);
+  assert.match(statusPanelSource, /data-status-local-cli-target=\{activeTarget\}/);
+  assert.match(statusPanelSource, /data-status-quota-evidence-section="true"/);
+  assert.match(statusPanelSource, /--gt-surface-canvas/);
+  assert.match(statusPanelSource, /--gt-border-subtle/);
+  assert.doesNotMatch(statusPanelSource, /card-swiss grid gap-4 p-4/);
+  assert.doesNotMatch(statusPanelSource, /btn-swiss/);
+  assert.doesNotMatch(statusPanelSource, /border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(statusPanelSource, /relative overflow-visible border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-surface\)\]/);
+  assert.match(actionSelectSource, /--gt-surface-raised/);
+  assert.match(snippetPanelSource, /--gt-border-subtle/);
+  assert.doesNotMatch(actionSelectSource, /btn-swiss/);
+  assert.doesNotMatch(snippetPanelSource, /btn-swiss/);
 });
 
 test('codex model provider option descriptions are localized in Chinese', async () => {

@@ -29,7 +29,7 @@ export default function StatusSnippetPanel({
       case 'hunk':
         return 'text-[var(--text-muted)]';
       case 'file':
-        return 'font-black text-[var(--text-primary)]';
+        return 'font-semibold text-[var(--text-primary)]';
       case 'meta':
         return 'text-[var(--text-muted)]';
       default:
@@ -39,14 +39,18 @@ export default function StatusSnippetPanel({
 
   return (
     <div className="min-h-0 overflow-hidden">
-      <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] px-1 pb-2">
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-widest text-[var(--text-primary)]">
+      <div className="flex items-center justify-between border-b border-[var(--gt-border-subtle)] px-1 pb-2">
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
           {title}
         </div>
         {onCopy || headerAction ? (
           <div className="flex items-center gap-2">
             {onCopy ? (
-              <button onClick={onCopy} className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)]">
+              <button
+                type="button"
+                onClick={onCopy}
+                className="inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+              >
                 复制
               </button>
             ) : null}
