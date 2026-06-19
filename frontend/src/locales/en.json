@@ -1638,6 +1638,7 @@
     "local_usage_refresh_loading": "Loading the current refresh policy…",
     "local_usage_refresh_saving": "Saving the refresh policy…",
     "local_usage_refresh_saved": "Background refresh interval updated",
+    "local_usage_refresh_preview_saved": "Browser preview updated the refresh interval; real persistence requires the desktop app.",
     "local_usage_refresh_failed": "Failed to update background refresh interval",
     "network_proxy": "Network Proxy",
     "system_proxy": "Follow System Proxy",
@@ -1646,6 +1647,7 @@
     "system_proxy_saving": "Saving sidecar proxy policy…",
     "system_proxy_saved_live": "System proxy policy saved and applied to the running sidecar.",
     "system_proxy_saved_restart": "System proxy policy saved. It will take effect after the sidecar starts again.",
+    "system_proxy_preview_saved": "Browser preview updated the system proxy toggle; real persistence requires the desktop app.",
     "system_proxy_failed": "Failed to save system proxy policy"
   },
   "debug": {

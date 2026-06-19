@@ -1638,6 +1638,7 @@
     "local_usage_refresh_loading": "正在读取当前刷新策略…",
     "local_usage_refresh_saving": "正在保存刷新策略…",
     "local_usage_refresh_saved": "后台刷新间隔已更新",
+    "local_usage_refresh_preview_saved": "浏览器预览已更新刷新间隔；真实保存需在桌面 App 中完成。",
     "local_usage_refresh_failed": "后台刷新间隔保存失败",
     "network_proxy": "网络代理",
     "system_proxy": "跟随系统代理",
@@ -1646,6 +1647,7 @@
     "system_proxy_saving": "正在保存 sidecar 代理策略…",
     "system_proxy_saved_live": "系统代理策略已保存，并已应用到运行中的 sidecar。",
     "system_proxy_saved_restart": "系统代理策略已保存；sidecar 下次启动后生效。",
+    "system_proxy_preview_saved": "浏览器预览已更新系统代理开关；真实保存需在桌面 App 中完成。",
     "system_proxy_failed": "系统代理策略保存失败"
   },
   "debug": {

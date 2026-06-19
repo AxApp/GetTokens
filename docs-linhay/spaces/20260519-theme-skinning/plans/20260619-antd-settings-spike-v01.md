@@ -17,7 +17,7 @@
 
 - Settings 页局部接入 AntD。
 - 新增 GetTokens AntD theme adapter，先覆盖 `classic` 与 `parchment-trust-console`。
-- Settings 页将分段控件、开关、按钮或卡片层迁移到 AntD 组件。
+- Settings 页将分段控件和开关直接迁移到 AntD 组件。
 - 更新浏览器预览脚本，固定 Settings 页 AntD 试点证据。
 - 更新单元测试、typecheck、frontend build 与文档校验。
 
@@ -52,7 +52,7 @@
 
 1. `SettingsFeature.tsx` 使用 GetTokens AntD provider 包裹 Settings 页面。
 2. Settings 页 DOM 带有 `data-settings-antd-spike="true"`。
-3. Settings 页至少渲染 AntD `Card`、`Segmented`、`Switch`、`Button` 之一的真实 class。
+3. Settings 页至少渲染 AntD `Segmented` 与 `Switch` 的真实 class。
 4. AntD theme adapter 对 `classic` 与 `parchment-trust-console` 均有测试。
 5. Settings Parchment 截图通过 headless Chrome 检查，无横向溢出。
 6. `npm --prefix frontend run typecheck` 与 `npm --prefix frontend run build` 通过。

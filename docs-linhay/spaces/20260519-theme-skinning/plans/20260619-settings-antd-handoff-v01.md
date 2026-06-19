@@ -17,21 +17,21 @@
 1. 已安装当前 npm `antd`，并同步 `frontend/package-lock.json` 与 `frontend/package.json.md5`。
 2. 已新增 `frontend/src/context/antdTheme.ts`，通过 `buildGetTokensAntdTheme` 将 `classic` 与 `parchment-trust-console` 映射到 AntD token。
 3. 已新增 `frontend/src/context/AntdThemeProvider.tsx`，Settings 页通过 GetTokens provider 接入 AntD `ConfigProvider`。
-4. `frontend/src/features/settings/SettingsFeature.tsx` 已真实使用 AntD `Card`、`Segmented`、`Switch`、`Button`。
+4. `frontend/src/features/settings/SettingsFeature.tsx` 已真实直接使用 AntD `Segmented` 与 `Switch`。
 5. `docs-linhay/scripts/check-theme-skinning-wave02-preview.mjs` 已增加 Settings AntD DOM 断言。
 6. 已有截图证据：`screenshots/20260619/theme-skinning/20260619-theme-skinning-settings-after-v01.png`。
 
 ## 执行者任务
 
-### Task 1：收敛 Settings 页组件结构
+### Task 1：收敛 Settings 页 AntD 使用边界
 
-目标：让 Settings 页的 AntD 使用从“页面内直接 import 组件”逐步收敛为 GetTokens wrapper。
+目标：Settings 页先直接使用 AntD 基础组件，不额外抽 wrapper；后续是否抽象由更多页面迁移后再决定。
 
 建议动作：
 
-1. 新增或扩展 `frontend/src/components/ui/` 下的 GetTokens wrapper，例如 `ThemeSegmented`、`ThemeSwitch`、`ThemeCard`。
-2. Settings 页只消费 wrapper，不直接在每个区域里写 AntD 细节。
-3. wrapper 必须保留 `aria-label`、disabled、loading/pending 文案外显能力。
+1. Settings 页继续直接从 `antd` import `Segmented`、`Switch` 等基础控件。
+2. 不引入旧的 `ThemePresetPicker` 或卡片式自研入口。
+3. AntD 控件必须保留 disabled、loading/pending 文案外显能力。
 4. 不要把 `ConfigProvider` 散落到多个页面；仍由 `GetTokensAntdThemeProvider` 作为唯一入口。
 
 验收：
@@ -181,7 +181,7 @@ npm --prefix frontend run build-storybook
 
 1. Settings 页仍能打开、滚动、跳转 section。
 2. Settings 页 DOM 带有 `data-settings-antd-spike="true"`。
-3. Settings 页至少渲染 AntD `Card`、`Segmented`、`Switch`、`Button` 或其 GetTokens wrapper。
+3. Settings 页至少渲染 AntD `Segmented` 与 `Switch`。
 4. Parchment 和 Classic 两套主题下 Settings 页无横向溢出。
 5. 所有设置项信息未丢失，保存逻辑未改变。
 6. 预览截图和 snapshot 已更新。

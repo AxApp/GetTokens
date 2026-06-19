@@ -41,12 +41,17 @@ import {
 import { toErrorMessage } from '../../utils/error';
 import { hasWailsAppBindings, hasWailsRuntime } from '../../utils/previewMode';
 import { formatAppVersion } from '../../utils/version';
-import type { LocaleCode, ReleaseInfo, SegmentedOption, SidecarStatus, ThemeMode } from '../../types';
+import type { LocaleCode, ReleaseInfo, SegmentedOption, SidecarStatus, ThemeMode, ThemePreset } from '../../types';
 
 const themes: ReadonlyArray<SegmentedOption<ThemeMode>> = [
   { id: 'system', label: 'SYSTEM' },
   { id: 'light', label: 'LIGHT' },
   { id: 'dark', label: 'DARK' },
+];
+
+const themePresets: ReadonlyArray<SegmentedOption<ThemePreset>> = [
+  { id: 'classic', label: 'CLASSIC' },
+  { id: 'parchment-trust-console', label: 'PARCHMENT' },
 ];
 
 const languages: ReadonlyArray<SegmentedOption<LocaleCode>> = [
@@ -83,7 +88,7 @@ export default function SettingsFeature({
   setAvailableRelease,
 }: SettingsFeatureProps) {
   const pageRef = useRef<HTMLDivElement | null>(null);
-  const { themeMode, setThemeMode } = useTheme();
+  const { themeMode, setThemeMode, themePreset, setThemePreset } = useTheme();
   const { textScale, setTextScale } = useTextScale();
   const { locale, setLocale, t } = useI18n();
   const { trackRequest } = useDebug();
@@ -173,6 +178,12 @@ export default function SettingsFeature({
     async function loadLocalUsageSettings() {
       setIsLoadingLocalUsageSettings(true);
       setLocalUsageMessage('');
+      if (!hasWailsAppBindings()) {
+        setLocalUsageInterval('15');
+        setLocalUsageMessage('');
+        setIsLoadingLocalUsageSettings(false);
+        return;
+      }
       try {
         const settings = await trackRequest<any>(
           'GetLocalProjectedUsageSettings',
@@ -204,6 +215,13 @@ export default function SettingsFeature({
     async function loadSidecarProxySettings() {
       setIsLoadingSidecarProxySettings(true);
       setSidecarProxyMessage('');
+      if (!hasWailsAppBindings()) {
+        setUseSystemProxy(false);
+        setSidecarProxyConfigPath('');
+        setSidecarProxyMessage('');
+        setIsLoadingSidecarProxySettings(false);
+        return;
+      }
       try {
         const settings = await trackRequest<any>(
           'GetSidecarProxySettings',
@@ -314,6 +332,11 @@ export default function SettingsFeature({
     setLocalUsageInterval(value);
     setIsSavingLocalUsageSettings(true);
     setLocalUsageMessage('');
+    if (!hasWailsAppBindings()) {
+      setLocalUsageMessage(t('settings.local_usage_refresh_preview_saved'));
+      setIsSavingLocalUsageSettings(false);
+      return;
+    }
     try {
       const settings = await trackRequest<any>(
         'UpdateLocalProjectedUsageSettings',
@@ -336,6 +359,11 @@ export default function SettingsFeature({
     setUseSystemProxy(checked);
     setIsSavingSidecarProxySettings(true);
     setSidecarProxyMessage('');
+    if (!hasWailsAppBindings()) {
+      setSidecarProxyMessage(t('settings.system_proxy_preview_saved'));
+      setIsSavingSidecarProxySettings(false);
+      return;
+    }
     try {
       const settings = await trackRequest<any>(
         'UpdateSidecarProxySettings',
@@ -445,6 +473,22 @@ export default function SettingsFeature({
                   options={toAntdSegmentedOptions(themes)}
                   value={themeMode}
                   onChange={(value) => setThemeMode(value as ThemeMode)}
+                />
+              </div>
+            </div>
+            <div className="parchment-settings-row">
+              <div className="min-w-0 flex-1">
+                <div className="parchment-settings-row-label">{t('settings.theme_preset')}</div>
+                <div className="parchment-settings-row-description">
+                  {t('settings.theme_preset_hint')}
+                </div>
+              </div>
+              <div className="parchment-settings-row-control">
+                <Segmented<ThemePreset>
+                  data-theme-preset-control="true"
+                  value={themePreset}
+                  options={toAntdSegmentedOptions(themePresets)}
+                  onChange={(value) => setThemePreset(value)}
                 />
               </div>
             </div>

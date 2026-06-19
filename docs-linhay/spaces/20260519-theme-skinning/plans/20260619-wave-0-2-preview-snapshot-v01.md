@@ -1,6 +1,6 @@
 # Wave 0-2 preview snapshot
 
-- Captured: `2026-06-19T00:00:15.026Z`
+- Captured: `2026-06-19T03:47:36.344Z`
 - Base URL: `http://127.0.0.1:5173`
 - Browser: headless Chrome via DevTools Protocol
 - Scope: Settings theme preset picker and Design System theme preset baseline.
