@@ -136,6 +136,32 @@ test('openai compatible provider card uses the quiet workspace shell', async () 
   assert.doesNotMatch(targetSource, /shadow-\[/);
 });
 
+test('openai compatible compose modal uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/OpenAICompatibleComposeModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const openAICompatibleComposeOverlayClass =/);
+  assert.match(source, /const openAICompatibleComposePanelClass =/);
+  assert.match(source, /const openAICompatibleComposeHeaderClass =/);
+  assert.match(source, /const openAICompatibleComposeInputClass =/);
+  assert.match(source, /const openAICompatibleComposeButtonClass =/);
+  assert.match(source, /const openAICompatibleComposeErrorClass =/);
+  assert.match(source, /data-openai-compatible-compose-modal/);
+  assert.match(source, /data-openai-compatible-compose-header/);
+  assert.match(source, /data-openai-compatible-compose-body/);
+  assert.match(source, /data-openai-compatible-compose-error/);
+  assert.match(source, /data-openai-compatible-compose-footer/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /btn-swiss|input-swiss|select-swiss|card-swiss/);
+  assert.doesNotMatch(source, /border-2|border-t-2|border-b-2|border-dashed/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]|bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /color-status-/);
+  assert.doesNotMatch(source, /font-black|\buppercase\b|shadow-hard|shadow-\[/);
+  assert.doesNotMatch(source, /tracking-\[0\.16em\]|tracking-\[0\.2em\]/);
+});
+
 test('emptyOpenAICompatibleProviderForm starts with blank fields', () => {
   assert.deepEqual(emptyOpenAICompatibleProviderForm, {
     name: '',
