@@ -10,6 +10,10 @@ test('ProxyPoolFeature uses the current workspace table layout', async () => {
   assert.match(source, /data-proxy-pool-summary="true"/);
   assert.match(source, /data-proxy-pool-toolbar="true"/);
   assert.match(source, /data-proxy-pool-table="true"/);
+  assert.match(source, /data-proxy-pool-modal="compose"/);
+  assert.match(source, /data-proxy-pool-modal="import"/);
+  assert.match(source, /data-proxy-pool-modal="subscription"/);
+  assert.match(source, /data-proxy-pool-modal="subscription-manager"/);
   assert.match(headerSource, /meta\?: ReactNode;/);
   assert.match(headerSource, /\{meta \? <div className=\{`mt-2 min-w-0 \$\{metaClassName\}`\.trim\(\)\}>\{meta\}<\/div> : null\}/);
   assert.match(source, /import \{ AutoComplete, Button \} from 'antd'/);
@@ -33,6 +37,11 @@ test('ProxyPoolFeature uses the current workspace table layout', async () => {
   assert.match(source, /className="overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]"/);
   assert.match(source, /className="flex h-8 w-8 items-center justify-center rounded bg-transparent text-\[var\(--text-primary\)\] transition hover:bg-\[var\(--gt-surface-muted\)\] disabled:cursor-not-allowed disabled:opacity-50"/);
   assert.match(source, /className="flex h-8 w-8 items-center justify-center rounded bg-transparent text-\[var\(--text-primary\)\] transition hover:bg-\[var\(--gt-surface-muted\)\] active:scale-95"/);
+  assert.match(source, /const proxyPoolModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] shadow-\[var\(--gt-elevation-raised-3\)\]'/);
+  assert.match(source, /const proxyPoolInputClass = 'h-10 w-full rounded border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]/);
+  assert.match(source, /const proxyPoolPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--text-primary\)\]/);
+  assert.match(source, /<h3 className="text-sm font-semibold text-\[var\(--text-primary\)\]">导入代理订阅<\/h3>/);
+  assert.match(source, /<section key=\{source\.id\} className="rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]">/);
   assert.match(styleSource, /\.proxy-pool-probe-target-autocomplete\.ant-select \{[\s\S]*height: 2\.75rem;/);
   assert.match(styleSource, /\.proxy-pool-probe-target-autocomplete\.ant-select \{[\s\S]*font-size: var\(--font-size-ui-lg\);/);
   assert.match(styleSource, /\.proxy-pool-probe-target-autocomplete \.ant-select-selector \{[\s\S]*background: var\(--gt-surface-canvas\) !important;/);
@@ -40,6 +49,11 @@ test('ProxyPoolFeature uses the current workspace table layout', async () => {
   assert.match(styleSource, /\.proxy-pool-probe-target-button\.ant-btn \{[\s\S]*height: 2\.75rem;[\s\S]*width: 2\.75rem;[\s\S]*padding: 0;[\s\S]*font-size: var\(--font-size-ui-lg\);/);
   assert.doesNotMatch(source, /<Button[\s\S]{0,500}\n\s*执行\n\s*<\/Button>/);
   assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /shadow-hard/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /input-swiss/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /font-black uppercase/);
   assert.doesNotMatch(source, /subtitle=\{`网络代理池 \/ 本地维护/);
   assert.doesNotMatch(source, /subtitle="本地代理池 \/ 节点维护 \/ 可用性检测"/);
   assert.doesNotMatch(source, /<datalist id="proxy-probe-target-history">/);

@@ -1061,6 +1061,16 @@ function ProxyNodeActionsMenu({
   );
 }
 
+const proxyPoolModalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm';
+const proxyPoolModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-3)]';
+const proxyPoolModalHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-6 py-4';
+const proxyPoolModalFooterClass = 'flex items-center justify-between border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
+const proxyPoolInputClass = 'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-lg)] font-medium text-[var(--text-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
+const proxyPoolTextareaClass = 'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-lg)] font-medium text-[var(--text-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
+const proxyPoolSecondaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const proxyPoolPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--bg-main)] transition hover:opacity-90';
+const proxyPoolErrorClass = 'rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-status-danger)]';
+
 function ProxyNodeComposeModal({
   draft,
   error,
@@ -1077,23 +1087,23 @@ function ProxyNodeComposeModal({
   onSubmit: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className={proxyPoolModalBackdropClass} onClick={onClose}>
       <div
-        className="flex w-full max-w-4xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        data-proxy-pool-modal="compose"
+        className={`${proxyPoolModalPanelClass} max-w-4xl`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Proxy Node</div>
-          <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+        <header className={proxyPoolModalHeaderClass}>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
             {isEditing ? '编辑本地代理节点' : '新增本地代理节点'}
           </h3>
         </header>
         <div className="grid gap-4 p-6 md:grid-cols-2">
           <FormField label="节点名称">
-            <input value={draft.name} onChange={(event) => onChange('name', event.target.value)} className="input-swiss w-full" placeholder="例如：首尔 Lambda" />
+            <input value={draft.name} onChange={(event) => onChange('name', event.target.value)} className={proxyPoolInputClass} placeholder="例如：首尔 Lambda" />
           </FormField>
           <FormField label="分组">
-            <select value={draft.group} onChange={(event) => onChange('group', event.target.value)} className="input-swiss w-full">
+            <select value={draft.group} onChange={(event) => onChange('group', event.target.value)} className={proxyPoolInputClass}>
               {proxyNodeGroups.map((group) => (
                 <option key={group} value={group}>
                   {group}
@@ -1102,7 +1112,7 @@ function ProxyNodeComposeModal({
             </select>
           </FormField>
           <FormField label="协议">
-            <select value={draft.protocol} onChange={(event) => onChange('protocol', event.target.value)} className="input-swiss w-full">
+            <select value={draft.protocol} onChange={(event) => onChange('protocol', event.target.value)} className={proxyPoolInputClass}>
               {proxyNodeProtocols.map((protocol) => (
                 <option key={protocol} value={protocol}>
                   {protocol}
@@ -1111,31 +1121,31 @@ function ProxyNodeComposeModal({
             </select>
           </FormField>
           <FormField label="来源标签">
-            <input value={draft.sourceLabel} onChange={(event) => onChange('sourceLabel', event.target.value)} className="input-swiss w-full" placeholder="例如：hookzof/socks5_list" />
+            <input value={draft.sourceLabel} onChange={(event) => onChange('sourceLabel', event.target.value)} className={proxyPoolInputClass} placeholder="例如：hookzof/socks5_list" />
           </FormField>
           <FormField label="来源链接">
-            <input value={draft.sourceURL} onChange={(event) => onChange('sourceURL', event.target.value)} className="input-swiss w-full" placeholder="例如：https://example.com/proxy.txt" />
+            <input value={draft.sourceURL} onChange={(event) => onChange('sourceURL', event.target.value)} className={proxyPoolInputClass} placeholder="例如：https://example.com/proxy.txt" />
           </FormField>
           <FormField label="代理地址">
-            <input value={draft.host} onChange={(event) => onChange('host', event.target.value)} className="input-swiss w-full" placeholder="例如：127.0.0.1" />
+            <input value={draft.host} onChange={(event) => onChange('host', event.target.value)} className={proxyPoolInputClass} placeholder="例如：127.0.0.1" />
           </FormField>
           <FormField label="端口">
-            <input value={draft.port} onChange={(event) => onChange('port', event.target.value)} className="input-swiss w-full" inputMode="numeric" placeholder="1080" />
+            <input value={draft.port} onChange={(event) => onChange('port', event.target.value)} className={proxyPoolInputClass} inputMode="numeric" placeholder="1080" />
           </FormField>
           <FormField label="状态">
-            <select value={draft.status} onChange={(event) => onChange('status', event.target.value)} className="input-swiss w-full">
+            <select value={draft.status} onChange={(event) => onChange('status', event.target.value)} className={proxyPoolInputClass}>
               <option value="available">可用</option>
               <option value="review">待复查</option>
             </select>
           </FormField>
           <FormField label="延时（ms）">
-            <input value={draft.latencyMs} onChange={(event) => onChange('latencyMs', event.target.value)} className="input-swiss w-full" inputMode="numeric" placeholder="180" />
+            <input value={draft.latencyMs} onChange={(event) => onChange('latencyMs', event.target.value)} className={proxyPoolInputClass} inputMode="numeric" placeholder="180" />
           </FormField>
           <FormField label="可用率（%）">
             <input
               value={draft.availabilityRate}
               onChange={(event) => onChange('availabilityRate', event.target.value)}
-              className="input-swiss w-full"
+              className={proxyPoolInputClass}
               inputMode="numeric"
               placeholder="95"
             />
@@ -1144,21 +1154,21 @@ function ProxyNodeComposeModal({
             <textarea
               value={draft.note}
               onChange={(event) => onChange('note', event.target.value)}
-              className="input-swiss min-h-28 w-full resize-y !text-[length:var(--font-size-ui-md)] leading-6"
+              className={`${proxyPoolTextareaClass} min-h-28 resize-y leading-6`}
               placeholder="补充这条本地节点的用途、风险或说明。"
             />
           </FormField>
           {error ? (
-            <div className="md:col-span-2 border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
+            <div className={`${proxyPoolErrorClass} md:col-span-2`}>
               {error}
             </div>
           ) : null}
         </div>
-        <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
+        <footer className={proxyPoolModalFooterClass}>
+          <button type="button" onClick={onClose} className={proxyPoolSecondaryButtonClass}>
             取消
           </button>
-          <button onClick={onSubmit} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+          <button type="button" onClick={onSubmit} className={proxyPoolPrimaryButtonClass}>
             {isEditing ? '保存修改' : '添加节点'}
           </button>
         </footer>
@@ -1187,14 +1197,14 @@ function ProxyPoolImportModal({
   onSubmit: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className={proxyPoolModalBackdropClass} onClick={onClose}>
       <div
-        className="flex w-full max-w-3xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        data-proxy-pool-modal="import"
+        className={`${proxyPoolModalPanelClass} max-w-3xl`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Import</div>
-          <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">导入本地代理列表</h3>
+        <header className={proxyPoolModalHeaderClass}>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">导入本地代理列表</h3>
         </header>
         <div className="space-y-4 p-6">
           <div className="grid gap-4 md:grid-cols-2">
@@ -1202,7 +1212,7 @@ function ProxyPoolImportModal({
               <input
                 value={options.sourceLabel ?? ''}
                 onChange={(event) => onChangeOptions({ ...options, sourceLabel: event.target.value })}
-                className="input-swiss w-full"
+                className={proxyPoolInputClass}
                 placeholder="例如：hookzof/socks5_list"
               />
             </FormField>
@@ -1210,16 +1220,16 @@ function ProxyPoolImportModal({
               <input
                 value={options.sourceURL ?? ''}
                 onChange={(event) => onChangeOptions({ ...options, sourceURL: event.target.value })}
-                className="input-swiss w-full"
+                className={proxyPoolInputClass}
                 placeholder="例如：https://example.com/proxy.txt"
               />
             </FormField>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={onOpenFilePicker} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={onOpenFilePicker} className={proxyPoolSecondaryButtonClass}>
               读取本地 JSON 文件
             </button>
-            <div className="text-[length:var(--font-size-ui-sm)] font-bold leading-6 text-[var(--text-muted)]">
+            <div className="min-w-0 flex-1 text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
               支持粘贴导出的 JSON 数组，也支持逐行填写 `scheme://host:port` 或 `host:port`。重复 ID 会在导入时自动覆盖。
             </div>
           </div>
@@ -1227,16 +1237,16 @@ function ProxyPoolImportModal({
             autoFocus
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            className="input-swiss h-72 w-full resize-none font-mono text-xs leading-6"
+            className={`${proxyPoolTextareaClass} h-72 resize-none font-mono text-sm leading-6`}
             placeholder={'[{"id":"proxy-sha-01","name":"上海 Alpha",...}]\n或\nsocks5://127.0.0.1:1080\n10.0.0.8:8080'}
           />
-          {error ? <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">{error}</div> : null}
+          {error ? <div className={proxyPoolErrorClass}>{error}</div> : null}
         </div>
-        <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
+        <footer className={proxyPoolModalFooterClass}>
+          <button type="button" onClick={onClose} className={proxyPoolSecondaryButtonClass}>
             取消
           </button>
-          <button onClick={onSubmit} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+          <button type="button" onClick={onSubmit} className={proxyPoolPrimaryButtonClass}>
             导入列表
           </button>
         </footer>
@@ -1263,14 +1273,14 @@ function ProxyPoolSubscriptionModal({
   onSubmit: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className={proxyPoolModalBackdropClass} onClick={onClose}>
       <div
-        className="flex w-full max-w-3xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        data-proxy-pool-modal="subscription"
+        className={`${proxyPoolModalPanelClass} max-w-3xl`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Subscription</div>
-          <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">导入代理订阅</h3>
+        <header className={proxyPoolModalHeaderClass}>
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">导入代理订阅</h3>
         </header>
         <div className="grid gap-4 p-6">
           <FormField label="订阅链接">
@@ -1278,7 +1288,7 @@ function ProxyPoolSubscriptionModal({
               autoFocus
               value={url}
               onChange={(event) => onChangeURL(event.target.value)}
-              className="input-swiss w-full"
+              className={proxyPoolInputClass}
               placeholder="例如：https://raw.githubusercontent.com/hookzof/socks5_list/master/proxy.txt"
             />
           </FormField>
@@ -1286,20 +1296,20 @@ function ProxyPoolSubscriptionModal({
             <input
               value={sourceLabel}
               onChange={(event) => onChangeSourceLabel(event.target.value)}
-              className="input-swiss w-full"
+              className={proxyPoolInputClass}
               placeholder="例如：hookzof/socks5_list"
             />
           </FormField>
-          <div className="text-[length:var(--font-size-ui-sm)] font-bold leading-6 text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
             当前支持拉取纯文本订阅，每行一条 `scheme://host:port` 或 `host:port`。导入后的所有节点都会打上这个来源标签。
           </div>
-          {error ? <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">{error}</div> : null}
+          {error ? <div className={proxyPoolErrorClass}>{error}</div> : null}
         </div>
-        <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
+        <footer className={proxyPoolModalFooterClass}>
+          <button type="button" onClick={onClose} className={proxyPoolSecondaryButtonClass}>
             取消
           </button>
-          <button onClick={onSubmit} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+          <button type="button" onClick={onSubmit} className={proxyPoolPrimaryButtonClass}>
             拉取并导入
           </button>
         </footer>
@@ -1322,29 +1332,29 @@ function ProxyPoolSubscriptionManagerModal({
   onDeleteSource: (source: ProxySubscriptionSourceRecord, deleteNodes: boolean) => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className={proxyPoolModalBackdropClass} onClick={onClose}>
       <div
-        className="flex w-full max-w-4xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        data-proxy-pool-modal="subscription-manager"
+        className={`${proxyPoolModalPanelClass} max-w-4xl`}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-[var(--border-color)] px-6 py-4">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--gt-border-subtle)] px-6 py-4">
           <div className="min-w-0">
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Subscriptions</div>
-            <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">订阅源管理</h3>
-            <p className="mt-2 text-[length:var(--font-size-ui-sm)] font-bold leading-5 text-[var(--text-muted)]">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">订阅源管理</h3>
+            <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
               管理本地订阅源，集中查看同步状态，并执行刷新或删除。
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{sources.length} 个订阅源</span>
-            <button onClick={onRefreshAll} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
+          <div className="flex items-center gap-2">
+            <span className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">{sources.length} 个订阅源</span>
+            <button type="button" onClick={onRefreshAll} className={proxyPoolSecondaryButtonClass}>
               刷新全部
             </button>
           </div>
         </header>
         <div className="max-h-[70vh] overflow-auto p-4 md:p-6">
           {sources.length === 0 ? (
-            <div className="py-16 text-center text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="py-16 text-center text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
               当前没有已保存的订阅源
             </div>
           ) : (
@@ -1352,17 +1362,17 @@ function ProxyPoolSubscriptionManagerModal({
               {sources.map((source) => {
                 const isHealthy = !source.lastError;
                 return (
-                  <section key={source.id} className="border border-[var(--border-color)] bg-[var(--bg-main)]">
+                  <section key={source.id} className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]">
                     <div className="flex flex-col gap-4 p-4 md:p-5">
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{source.label}</h4>
+                            <h4 className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">{source.label}</h4>
                             <span
-                              className={`border px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] ${
+                              className={`rounded-full border px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-medium ${
                                 isHealthy
-                                  ? 'border-[var(--border-color)] text-[var(--text-primary)]'
-                                  : 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
+                                  ? 'border-[color-mix(in_srgb,var(--gt-status-success)_30%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]'
+                                  : 'border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]'
                               }`}
                             >
                               {isHealthy ? '正常' : '异常'}
@@ -1371,27 +1381,32 @@ function ProxyPoolSubscriptionManagerModal({
                           <p className="mt-2 break-all font-mono text-[length:var(--font-size-ui-sm)] leading-5 text-[var(--text-muted)]">{source.url}</p>
                         </div>
                         <div className="flex flex-wrap gap-2 md:justify-end">
-                          <ActionButton onClick={() => onRefresh(source)}>刷新</ActionButton>
+                          <ActionButton onClick={() => onRefresh(source)}>
+                            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.4} />
+                            <span>刷新</span>
+                          </ActionButton>
                           <ActionButton onClick={() => onDeleteSource(source, false)} tone="danger">
-                            删源
+                            <Trash2 className="h-3.5 w-3.5" strokeWidth={2.4} />
+                            <span>删源</span>
                           </ActionButton>
                           <ActionButton onClick={() => onDeleteSource(source, true)} tone="danger">
-                            删源并清节点
+                            <Trash2 className="h-3.5 w-3.5" strokeWidth={2.4} />
+                            <span>删源并清节点</span>
                           </ActionButton>
                         </div>
                       </div>
-                      <div className="grid gap-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)] md:grid-cols-3">
-                        <div className="border-t border-dashed border-[var(--border-color)] pt-3">
-                          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">最近同步</div>
+                      <div className="grid gap-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)] md:grid-cols-3">
+                        <div className="border-t border-[var(--gt-border-subtle)] pt-3">
+                          <div className="text-[length:var(--font-size-ui-xs)] font-medium">最近同步</div>
                           <div className="mt-1 text-[length:var(--font-size-ui-md-compact)] text-[var(--text-primary)]">{formatTableTime(source.lastSyncedAt)}</div>
                         </div>
-                        <div className="border-t border-dashed border-[var(--border-color)] pt-3">
-                          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">上次导入</div>
+                        <div className="border-t border-[var(--gt-border-subtle)] pt-3">
+                          <div className="text-[length:var(--font-size-ui-xs)] font-medium">上次导入</div>
                           <div className="mt-1 text-[length:var(--font-size-ui-md-compact)] text-[var(--text-primary)]">{source.lastImportCount} 条</div>
                         </div>
-                        <div className="border-t border-dashed border-[var(--border-color)] pt-3">
-                          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">状态详情</div>
-                          <div className={`mt-1 text-[length:var(--font-size-ui-md-compact)] ${isHealthy ? 'text-[var(--text-primary)]' : 'text-[var(--color-status-danger)]'}`}>
+                        <div className="border-t border-[var(--gt-border-subtle)] pt-3">
+                          <div className="text-[length:var(--font-size-ui-xs)] font-medium">状态详情</div>
+                          <div className={`mt-1 text-[length:var(--font-size-ui-md-compact)] ${isHealthy ? 'text-[var(--text-primary)]' : 'text-[var(--gt-status-danger)]'}`}>
                             {isHealthy ? '最近一次同步正常' : source.lastError}
                           </div>
                         </div>
@@ -1403,8 +1418,8 @@ function ProxyPoolSubscriptionManagerModal({
             </div>
           )}
         </div>
-        <footer className="flex items-center justify-end border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
+        <footer className="flex items-center justify-end border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4">
+          <button type="button" onClick={onClose} className={proxyPoolSecondaryButtonClass}>
             关闭
           </button>
         </footer>
@@ -1517,7 +1532,7 @@ function FormField({
 }) {
   return (
     <label className={`space-y-2 ${className}`}>
-      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</span>
+      <span className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">{label}</span>
       {children}
     </label>
   );
