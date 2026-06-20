@@ -39,6 +39,27 @@ test('Memory Files Panel component renders all file states', () => {
   assert.match(source, /gitignored/, 'must show gitignored status');
 });
 
+test('ClaudeCodeMemoryFilesPanel uses the quiet workspace shell', () => {
+  const source = readFileSync(componentPath, 'utf8');
+
+  assert.match(source, /const memoryFilesPanelActionButtonClass =/);
+  assert.match(source, /const memoryFilesPanelRowClass =/);
+  assert.match(source, /const memoryFilesPanelPanelClass =/);
+  assert.match(source, /const memoryFilesPanelTextareaClass =/);
+  assert.match(source, /data-claude-memory-files-panel="quiet"/);
+  assert.match(source, /data-claude-memory-file-row=\{file\.path\}/);
+  assert.match(source, /data-claude-memory-editor="quiet"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-subtle\)\]/);
+});
+
 test('Preview data covers all CLAUDE.md scenarios', () => {
   const source = readFileSync(previewDataPath, 'utf8');
 
