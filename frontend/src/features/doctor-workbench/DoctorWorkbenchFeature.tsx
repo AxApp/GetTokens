@@ -75,7 +75,7 @@ const actionTone: Record<OmniRouteWorkbenchActionStatus, string> = {
   failed: 'border-red-500/80 bg-red-500/10 text-red-700 dark:text-red-200',
 };
 
-const doctorPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const doctorPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const doctorMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const doctorInsetPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const doctorSectionEyebrowClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
@@ -524,8 +524,8 @@ export default function DoctorWorkbenchFeature() {
                 onClick={() => setCheckFilter(option.id)}
                 className={`rounded border px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium transition-colors ${
                   option.id === checkFilter
-                    ? 'border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                    : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]'
+                    ? 'border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+                    : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]'
                 }`}
               >
                 {option.label} · {option.count}
