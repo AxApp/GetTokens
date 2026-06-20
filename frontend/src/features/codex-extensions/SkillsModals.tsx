@@ -40,10 +40,10 @@ export function SuccessHud({ title, detail }: { title: string; detail: string })
           <CheckCircle2 className="codex-success-hud-icon h-6 w-6 text-[var(--gt-status-success)]" />
         </div>
         <div className="min-w-0">
-          <div className="font-mono text-[length:var(--font-size-ui-md)] font-semibold tracking-[0.16em] text-[var(--text-primary)]">
+          <div className="font-mono text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
             {title}
           </div>
-          <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
+          <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
             {detail}
           </div>
         </div>
@@ -82,10 +82,10 @@ export function GitSkillInstallModal({
       >
         <header className={`${codexSkillModalHeaderClass} flex shrink-0 items-start justify-between gap-4 px-5 py-4`}>
           <div className="min-w-0">
-            <div className="font-mono text-xl font-semibold italic tracking-tighter text-[var(--text-primary)]">
+            <div className="font-mono text-xl font-semibold italic text-[var(--text-primary)]">
               {t('codex_extensions.add_skill')}
             </div>
-            <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
               {t('codex_extensions.git_source')}
             </div>
           </div>
@@ -96,7 +96,7 @@ export function GitSkillInstallModal({
 
         <main className="scrollbar-stable min-h-0 flex-1 overflow-auto p-5">
           <label className="grid gap-2">
-            <span className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
               {t('codex_extensions.git_source')}
             </span>
             <input value={gitSource} onChange={(event) => onChange(event.target.value)} className={`${codexSkillModalFieldClass} w-full font-mono`} />
@@ -113,7 +113,7 @@ export function GitSkillInstallModal({
                 <GitSourceValue label={t('codex_extensions.git_path')} value={parsedGitSource.path} />
               </div>
             ) : (
-              <div className="text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--gt-status-danger)]">
+              <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-status-danger)]">
                 {t('codex_extensions.git_hint')}
               </div>
             )}
@@ -252,10 +252,10 @@ export function SkillPreviewModal({
         >
           <header className={`${codexSkillModalHeaderClass} grid shrink-0 gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center`}>
             <div className="min-w-0">
-              <div className="font-mono text-xl font-semibold italic tracking-tighter text-[var(--text-primary)]">
+              <div className="font-mono text-xl font-semibold italic text-[var(--text-primary)]">
                 {skill.name}
               </div>
-              <div className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
+              <div className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
                 {skill.rootPath}
               </div>
             </div>
@@ -278,17 +278,17 @@ export function SkillPreviewModal({
               <MetaLine label={t('codex_extensions.version')} value={skill.versionLabel || '-'} />
               {skill.warnings && skill.warnings.length > 0 ? (
                 <div className="mt-4 border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-3">
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--gt-status-danger)]">
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-status-danger)]">
                     {t('codex_extensions.skill_scan_warnings')}
                   </div>
-                  <ul className="mt-2 grid gap-1 text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--gt-status-danger)]">
+                  <ul className="mt-2 grid gap-1 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-status-danger)]">
                     {skill.warnings.map((warning) => (
                       <li key={warning}>{warning}</li>
                     ))}
                   </ul>
                 </div>
               ) : null}
-              <div className="mt-5 text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
+              <div className="mt-5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                 {t('codex_extensions.files')}
               </div>
               <div className="mt-2 divide-y divide-[var(--gt-border-subtle)] border border-[var(--gt-border-subtle)]">
@@ -304,7 +304,7 @@ export function SkillPreviewModal({
                     <div className={`break-all font-mono text-[length:var(--font-size-ui-sm)] font-semibold ${selectedFile?.path === file.path ? 'text-[var(--gt-surface-canvas)]' : 'text-[var(--text-primary)]'}`}>
                       {file.path}
                     </div>
-                    <div className={`mt-0.5 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-[0.14em] ${selectedFile?.path === file.path ? 'text-[var(--gt-surface-canvas)]' : 'text-[var(--text-muted)]'}`}>
+                    <div className={`mt-0.5 text-[length:var(--font-size-ui-2xs)] font-semibold ${selectedFile?.path === file.path ? 'text-[var(--gt-surface-canvas)]' : 'text-[var(--text-muted)]'}`}>
                       {file.kind} / {file.previewable || file.path === 'SKILL.md' ? t('codex_extensions.file_previewable') : t('codex_extensions.file_not_previewable')}
                     </div>
                   </button>
@@ -314,17 +314,17 @@ export function SkillPreviewModal({
 
             <main className="min-h-0 overflow-hidden p-4">
               <div className="flex h-full min-h-0 flex-col">
-                <div className="mb-3 flex min-w-0 shrink-0 items-center gap-2 text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="mb-3 flex min-w-0 shrink-0 items-center gap-2 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
                   <Eye className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{selectedFile?.path || t('codex_extensions.skill_preview')}</span>
                 </div>
                 <div className="scrollbar-stable min-h-0 flex-1 overflow-y-auto break-words border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 text-[length:var(--font-size-ui-md)] font-bold leading-relaxed text-[var(--text-primary)] [&_blockquote]:border-l [&_blockquote]:border-[var(--gt-border-subtle)] [&_blockquote]:pl-3 [&_code]:font-mono [&_code]:font-semibold [&_h1]:mb-4 [&_h1]:font-mono [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:italic [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:font-mono [&_h2]:text-base [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-mono [&_h3]:font-semibold [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:mb-4 [&_pre]:overflow-auto [&_pre]:border [&_pre]:border-[var(--gt-border-subtle)] [&_pre]:bg-[var(--gt-surface-canvas)] [&_pre]:p-3 [&_ul]:list-disc">
                   {filePreviewLoading ? (
-                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
                       {t('common.loading')}
                     </div>
                   ) : filePreviewError ? (
-                    <div className="flex min-h-full items-center justify-center px-4 text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--gt-status-danger)]">
+                    <div className="flex min-h-full items-center justify-center px-4 text-center text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-status-danger)]">
                       {filePreviewError}
                     </div>
                   ) : canPreviewSelectedFile ? (
@@ -338,7 +338,7 @@ export function SkillPreviewModal({
                       </pre>
                     )
                   ) : (
-                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
                       {t('codex_extensions.file_preview_unavailable')}
                     </div>
                   )}
@@ -347,7 +347,7 @@ export function SkillPreviewModal({
             </main>
           </div>
           <footer className={`${codexSkillModalFooterClass} flex shrink-0 flex-wrap items-center justify-between gap-3 px-4 py-3`}>
-            <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
               {canRemove
                 ? t('codex_extensions.skill_remove_hint')
                 : skill.sourceKind === 'system'
@@ -389,7 +389,7 @@ export function SkillPreviewModal({
                 <div id="codex-skill-remove-alert-title" className="font-mono text-base font-semibold italic text-[var(--text-primary)]">
                   {t('codex_extensions.skill_remove_alert_title')}
                 </div>
-                <div id="codex-skill-remove-alert-body" className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
+                <div id="codex-skill-remove-alert-body" className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
                   {skill.rootPath}
                 </div>
               </div>
@@ -429,7 +429,7 @@ export function SkillPreviewModal({
 function GitSourceValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-1 py-2 md:grid-cols-[8rem_minmax(0,1fr)] md:gap-3">
-      <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
+      <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
         {label}
       </div>
       <div className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
@@ -442,7 +442,7 @@ function GitSourceValue({ label, value }: { label: string; value: string }) {
 function MetaLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="mb-3 min-w-0">
-      <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">{label}</div>
+      <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">{label}</div>
       <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">{value}</div>
     </div>
   );
