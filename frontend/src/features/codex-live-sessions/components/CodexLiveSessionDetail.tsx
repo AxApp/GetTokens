@@ -39,7 +39,7 @@ import {
 } from '../model/requestTimingTrend';
 
 const codexLivePanelClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const codexLiveMutedPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
@@ -957,7 +957,7 @@ function TimingMetrics({
           const selected = metric.trendMetric === selectedMetric;
           const rowClassName = `grid min-h-12 min-w-0 grid-cols-[1fr_auto] items-end gap-2 border px-2.5 py-2 font-mono text-[length:var(--font-size-ui-xs)] transition-colors ${
             selected
-              ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] shadow-[var(--gt-elevation-raised-1)]'
+              ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] shadow-sm'
               : 'border-[color:color-mix(in_srgb,var(--gt-border-subtle)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--gt-surface-canvas)_58%,transparent)] text-[var(--text-muted)] hover:border-[color:color-mix(in_srgb,var(--gt-border-subtle)_46%,transparent)] hover:bg-[var(--gt-surface-muted)]'
           }`;
 

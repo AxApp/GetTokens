@@ -24,5 +24,6 @@ test('codex live session detail uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /shadow-\[/);
   assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
 });
