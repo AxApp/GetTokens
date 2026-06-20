@@ -68,6 +68,27 @@ test('claude account list detail and account-list modals are hash-routed', async
   assert.match(source, /accountListModal === 'project-config'/);
 });
 
+test('ClaudeCodeAccountListFeature uses the quiet workspace page shell', async () => {
+  const source = await readFile(new URL('./ClaudeCodeAccountListFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const claudeAccountListPageShellClass =/);
+  assert.match(source, /const claudeAccountListRouteProbeButtonClass =/);
+  assert.match(source, /const claudeAccountListSummaryShellClass =/);
+  assert.match(source, /const claudeAccountListSummaryCardClass =/);
+  assert.match(source, /data-claude-account-list-feature="quiet"/);
+  assert.match(source, /data-claude-account-list-summary="quiet"/);
+  assert.match(source, /--gt-surface-page/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-(wide|wider|widest|tight|tighter|tightest|\[)/);
+});
+
 test('disabled and errored Claude Code accounts stay ordered but are not requestable', () => {
   const rows = buildClaudeCodeAccountRows([
     {

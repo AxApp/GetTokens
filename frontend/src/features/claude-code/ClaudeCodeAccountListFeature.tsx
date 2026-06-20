@@ -82,6 +82,18 @@ import { getClaudeCodeAccountListPreviewAccounts, getClaudeCodeAccountListPrevie
 const DEFAULT_CLAUDE_CODE_PROBE_MODEL = 'claude-sonnet-4-6';
 const CLAUDE_OAUTH_MODEL_ALIAS_CHANNEL = 'claude';
 const PROJECT_CANDIDATE_POOL_PROJECT_SYNC_INTERVAL_MS = 15_000;
+const claudeAccountListPageShellClass =
+  'h-full w-full overflow-auto bg-[var(--gt-surface-page)] p-6 lg:p-8';
+const claudeAccountListRouteProbeButtonClass =
+  'inline-flex min-h-10 items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const claudeAccountListSummaryShellClass =
+  'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 sm:grid-cols-4';
+const claudeAccountListSummaryCardClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+const claudeAccountListSummaryLabelClass =
+  'text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]';
+const claudeAccountListSummaryValueClass =
+  'mt-1 text-[length:var(--font-size-ui-2xl)] font-semibold tabular-nums text-[var(--text-primary)]';
 
 interface ClaudeCodeAccountListFeatureProps {
   sidecarStatus: SidecarStatus;
@@ -964,7 +976,11 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   }
 
   return (
-    <div className="h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_CLAUDE_CODE_ACCOUNT_LIST">
+    <div
+      className={claudeAccountListPageShellClass}
+      data-collaboration-id="PAGE_CLAUDE_CODE_ACCOUNT_LIST"
+      data-claude-account-list-feature="quiet"
+    >
       <div className="mx-auto w-full max-w-6xl min-w-0 space-y-8">
         <WorkspacePageHeader
           title={t('claude_code.account_list_title')}
@@ -974,7 +990,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
             <button
               type="button"
               onClick={openRouteProbeModal}
-              className="btn-swiss flex min-h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
+              className={claudeAccountListRouteProbeButtonClass}
             >
               <Terminal className="h-3.5 w-3.5" strokeWidth={4} />
               {t('claude_code.account_list_probe_open')}
@@ -982,7 +998,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           }
         />
 
-        <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 sm:grid-cols-4">
+        <section className={claudeAccountListSummaryShellClass} data-claude-account-list-summary="quiet">
           <SummaryMetric label={t('claude_code.account_list_total')} value={summary.total} />
           <SummaryMetric label={t('claude_code.account_list_anthropic')} value={summary.anthropic} />
           <SummaryMetric label={t('claude_code.account_list_requestable')} value={summary.requestable} />
@@ -1095,9 +1111,9 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
 
 function SummaryMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)]">{label}</div>
-      <div className="mt-1 text-2xl font-black tabular-nums">{value}</div>
+    <div className={claudeAccountListSummaryCardClass}>
+      <div className={claudeAccountListSummaryLabelClass}>{label}</div>
+      <div className={claudeAccountListSummaryValueClass}>{value}</div>
     </div>
   );
 }
