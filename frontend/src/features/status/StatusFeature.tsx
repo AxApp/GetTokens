@@ -83,37 +83,54 @@ const defaultSidecarStatus: SidecarStatus = {
   startedAtUnix: 0,
 };
 
+const statusDiagnosticsPanelClass =
+  'grid gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4';
+const statusDiagnosticsTitleClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const statusDiagnosticsHeadlineClass =
+  'mt-1 truncate text-[length:var(--font-size-ui-md)] font-semibold tracking-normal text-[var(--text-primary)]';
+const statusDiagnosticsToneClass =
+  'shrink-0 rounded border px-3 py-1 text-right text-[length:var(--font-size-ui-xs)] font-medium tracking-normal';
+const statusDiagnosticsErrorClass =
+  'min-w-0 overflow-hidden rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-status-warning)]';
+const statusHeaderHealthClass =
+  'flex items-center gap-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]';
+const statusHeaderStatusDotClass =
+  'h-2.5 w-2.5 shrink-0 rounded-full border border-[var(--gt-border-subtle)]';
+const statusHeaderStatusBadgeClass =
+  'max-w-[18rem] rounded border px-4 py-1 text-right text-[length:var(--font-size-ui-xs)] font-medium tracking-normal';
+
 function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildAccountStoreDiagnosticsView> }) {
   const toneClass =
     view.tone === 'critical'
-      ? 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
+      ? 'border-[var(--gt-status-danger)] text-[var(--gt-status-danger)]'
       : view.tone === 'warning'
-        ? 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]'
+        ? 'border-[var(--gt-status-warning)] text-[var(--gt-status-warning)]'
         : view.tone === 'success'
-          ? 'border-[var(--color-status-success)] text-[var(--color-status-success)]'
-          : 'border-[var(--border-color)] text-[var(--text-muted)]';
+          ? 'border-[var(--gt-status-success)] text-[var(--gt-status-success)]'
+          : 'border-[var(--gt-border-subtle)] text-[var(--text-muted)]';
 
   return (
     <section
-      className="card-swiss grid gap-4 p-4"
-      data-account-store-diagnostics-panel
+      className={statusDiagnosticsPanelClass}
+      data-account-store-diagnostics-panel="quiet"
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className={statusDiagnosticsTitleClass}>
             ACCOUNT STORE
           </div>
-          <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+          <div className={statusDiagnosticsHeadlineClass}>
             {view.headline}
           </div>
         </div>
-        <div className={`shrink-0 border-2 px-3 py-1 text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] ${toneClass}`}>
+        <div className={`${statusDiagnosticsToneClass} ${toneClass}`}>
           {view.recoveryLine}
         </div>
       </div>
       {view.errorSummary ? (
         <div
-          className="min-w-0 overflow-hidden border border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--color-status-warning)]"
+          className={statusDiagnosticsErrorClass}
           title={view.fullError}
           data-account-store-diagnostics-error
         >
@@ -1101,13 +1118,14 @@ export default function StatusFeature({
         <WorkspacePageHeader
           title={t('status.title')}
           subtitle={
-            <span className="flex items-center gap-2">
+            <span className={statusHeaderHealthClass} data-status-header-health="quiet">
               <span
-                className={`h-2.5 w-2.5 shrink-0 border border-[var(--border-color)] ${
-                  sidecarStatus.code === 'ready' ? 'bg-[var(--color-status-success)]' : 'bg-[var(--color-status-danger)]'
+                className={`${statusHeaderStatusDotClass} ${
+                  sidecarStatus.code === 'ready' ? 'bg-[var(--gt-status-success)]' : 'bg-[var(--gt-status-danger)]'
                 }`}
-              ></span>
-              <span className="font-mono tracking-[0.04em] text-[var(--text-primary)]">{healthz}</span>
+                aria-hidden="true"
+              />
+              <span className="truncate">{healthz}</span>
             </span>
           }
           align="center"
@@ -1115,11 +1133,12 @@ export default function StatusFeature({
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
               <div
-                className={`max-w-[18rem] border-2 px-4 py-1 text-right text-xs font-black tracking-widest ${
+                className={`${statusHeaderStatusBadgeClass} ${
                   sidecarStatus.code === 'ready' && !healthzHasError
-                    ? 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
-                    : 'border-[var(--color-status-danger)] bg-[var(--bg-main)] text-[var(--color-status-danger)]'
+                    ? 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]'
+                    : 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]'
                 }`}
+                data-status-header-state="quiet"
               >
                 {statusHeadline}
               </div>

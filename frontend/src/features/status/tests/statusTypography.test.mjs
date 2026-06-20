@@ -344,3 +344,30 @@ test('status page exposes account-store diagnostics panel with summarized errors
   assert.match(source, /data-account-store-diagnostics-error/);
   assert.match(source, /title=\{view\.fullError\}/);
 });
+
+test('status page diagnostics and header status use the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
+  const diagnosticsBlock = source.match(/function AccountStoreDiagnosticsPanel[\s\S]*?function normalizeRelayEndpointURL/)?.[0] || '';
+  const headerBlock = source.match(/<WorkspacePageHeader[\s\S]*?<section className="space-y-6">/)?.[0] || '';
+
+  assert.match(source, /const statusDiagnosticsPanelClass =/);
+  assert.match(source, /const statusDiagnosticsToneClass =/);
+  assert.match(source, /const statusHeaderHealthClass =/);
+  assert.match(source, /const statusHeaderStatusBadgeClass =/);
+  assert.match(source, /data-account-store-diagnostics-panel="quiet"/);
+  assert.match(source, /data-status-header-health="quiet"/);
+  assert.match(source, /data-status-header-state="quiet"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+
+  for (const block of [diagnosticsBlock, headerBlock]) {
+    assert.doesNotMatch(block, /card-swiss/);
+    assert.doesNotMatch(block, /border-2/);
+    assert.doesNotMatch(block, /bg-\[var\(--bg-main\)\]/);
+    assert.doesNotMatch(block, /font-black/);
+    assert.doesNotMatch(block, /\buppercase\b/);
+    assert.doesNotMatch(block, /tracking-\[0\.(04|08|14|18)em\]|tracking-widest/);
+    assert.doesNotMatch(block, /color-status-/);
+  }
+});
