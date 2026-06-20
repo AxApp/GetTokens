@@ -223,6 +223,8 @@ test('quota rows keep label and percentage together above the progress bar', asy
   assert.match(source, /showDivider = true/);
   assert.match(source, /showDivider \? 'border-b border-dashed border-\[var\(--gt-border-subtle\)\]' : ''/);
   assert.match(source, /className="account-card-quota-row grid min-w-0 gap-1\.5"/);
+  assert.doesNotMatch(source, /tracking-\[0\.08em\]/, 'account card quota, balance, and rate-limit values must not use wide tracking');
+  assert.doesNotMatch(source, /\bfont-black\b/, 'account card quota and balance values must not use heavy brutalist weight');
   assert.doesNotMatch(styleSource, /\.account-card-quota-row\s*\{[^}]*grid-template-columns:\s*4\.25rem/s);
 });
 

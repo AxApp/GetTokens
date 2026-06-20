@@ -197,7 +197,7 @@ export function QuotaBars({ quotaDisplay, t, showDivider = true }: QuotaBarsProp
               <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
                 {window.label}
               </div>
-              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-[0.08em] text-[var(--gt-ink-primary)]">
+              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                 {valueLabel}
               </div>
             </div>
@@ -283,11 +283,11 @@ export function BillingBalance({ billing }: BillingBalanceProps) {
         <div key={i} className="account-card-billing-grid grid gap-2 text-[length:var(--font-size-ui-xs)]">
           <div className="flex items-center justify-between border border-[var(--gt-border-subtle)] px-2 py-1">
             <span className="font-mono font-medium  text-[var(--gt-ink-muted)]">Total</span>
-            <span className="font-mono font-black text-[var(--gt-ink-primary)]">{b.totalBalance} {b.currency}</span>
+            <span className="font-mono font-semibold text-[var(--gt-ink-primary)]">{b.totalBalance} {b.currency}</span>
           </div>
           <div className="flex items-center justify-between border border-[var(--gt-border-subtle)] px-2 py-1">
             <span className="font-mono font-medium  text-[var(--gt-ink-muted)]">Granted</span>
-            <span className="font-mono font-black text-[var(--gt-ink-primary)]">{b.grantedBalance} {b.currency}</span>
+            <span className="font-mono font-semibold text-[var(--gt-ink-primary)]">{b.grantedBalance} {b.currency}</span>
           </div>
         </div>
       ))}
@@ -378,7 +378,7 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
               <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
                 {row.label}
               </div>
-              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-[0.08em] text-[var(--gt-ink-primary)]">
+              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                 {row.valueLabel}
               </div>
             </div>
@@ -421,7 +421,7 @@ function TrafficStatisticsRow({
         <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
           {label}
         </div>
-        <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-[0.08em] text-[var(--gt-ink-primary)]">
+        <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
           {value} / ∞
         </div>
       </div>
