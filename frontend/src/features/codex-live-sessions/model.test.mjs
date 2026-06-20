@@ -1100,6 +1100,32 @@ test('codex live session surfaces avoid nested card shells in the dense workbenc
   assert.doesNotMatch(filterSource, /border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] p-3/);
 });
 
+test('codex live sessions workbench uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('./components/CodexLiveSessionsWorkbench.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const codexLiveWorkbenchShellClass =/);
+  assert.match(source, /const codexLiveWorkbenchActionButtonClass =/);
+  assert.match(source, /const codexLiveWorkbenchSegmentClass =/);
+  assert.match(source, /const codexLiveWorkbenchFilterMenuClass =/);
+  assert.match(source, /const codexLiveWorkbenchFilterOptionClass =/);
+  assert.match(source, /data-codex-live-sessions-workbench-shell="quiet"/);
+  assert.match(source, /data-codex-live-sessions-header-actions="quiet"/);
+  assert.match(source, /data-codex-live-sessions-filter-menu="quiet"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-elevation-card/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-2/);
+  assert.doesNotMatch(source, /border-dashed/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /shadow-\[/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /\buppercase\b/);
+  assert.doesNotMatch(source, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-\[0\.18em\]/);
+});
+
 test('codex live session detail uses fluid regions with bounded live growth and contained scrolling', async () => {
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
   const workbenchSource = await readFile(new URL('./components/CodexLiveSessionsWorkbench.tsx', import.meta.url), 'utf8');
