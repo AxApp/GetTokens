@@ -48,6 +48,11 @@ const codexLiveChipClass =
 const codexLiveSecondaryButtonClass =
   'inline-flex h-8 w-fit items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexLiveMetaTextClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const codexLiveKickerTextClass = 'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const codexLiveSectionLabelClass = 'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
+const codexLiveTitleTextClass = 'text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]';
+const codexLiveMetaPanelClass = `${codexLiveMutedPanelClass} flex min-h-10 items-center justify-between gap-3 px-3 py-2 ${codexLiveMetaTextClass}`;
+const codexLiveInlineMetaClass = 'min-w-0 max-w-full truncate text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]';
 
 export function SessionDetail({
   session,
@@ -107,11 +112,11 @@ export function SessionDetail({
   const timeline = request?.timeline ?? session.recentEvents;
 
   return (
-    <div className="grid max-h-[calc(100vh-13rem)] min-w-0 w-full gap-5 overflow-y-auto overscroll-contain pr-1 scrollbar-stable" data-codex-session-detail-root="true" data-codex-live-detail-shell="true">
+    <div className="grid max-h-[calc(100vh-13rem)] min-w-0 w-full gap-5 overflow-y-auto overscroll-contain pr-1 scrollbar-stable" data-codex-session-detail-root="true" data-codex-live-detail-shell="true" data-codex-live-detail-typography="quiet">
       <div className="grid min-w-0 gap-3" data-codex-detail-section="analysis">
         {loading || errorMessage ? (
           <div className="overflow-hidden" data-codex-detail-slot="status">
-            <div className={`${codexLiveMutedPanelClass} flex min-h-10 items-center justify-between gap-3 border-dashed px-3 py-2 ${codexLiveMetaTextClass}`}>
+            <div className={codexLiveMetaPanelClass}>
               <span className="text-[var(--text-muted)]">
                 {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
               </span>
@@ -196,12 +201,12 @@ function SessionOverview({
         className="relative grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)]"
         data-codex-overview-summary-cards="true"
       >
-        <section className={`${codexLivePanelClass} grid min-h-[5.75rem] min-w-0 content-between p-2.5`} data-codex-overview-card="identity">
+        <section className={`${codexLivePanelClass} grid min-h-[5.75rem] min-w-0 content-between p-2.5`} data-codex-overview-card="identity" data-codex-live-overview-identity="quiet">
           <div className="min-w-0">
-            <p className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.18em] text-[var(--text-muted)]">
+            <p className={codexLiveKickerTextClass}>
               {t('codex_live_sessions.overview_kicker')}
             </p>
-            <h3 className="mt-1.5 font-mono text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]">
+            <h3 className={`mt-1.5 ${codexLiveTitleTextClass}`}>
               {t('codex_live_sessions.overview_title')}
             </h3>
           </div>
@@ -267,7 +272,7 @@ function HistoryWindowControl({
   }
 
   return (
-    <div className={`${codexLiveMutedPanelClass} flex flex-wrap items-center justify-between gap-3 border-dashed px-3 py-2 ${codexLiveMetaTextClass}`} data-codex-history-window-control="true">
+    <div className={`${codexLiveMetaPanelClass} flex-wrap`} data-codex-history-window-control="true">
       <span className="text-[var(--text-muted)]">{label || t('codex_live_sessions.history_recent_window')}</span>
       {canLoadMore ? (
         <button type="button" className={codexLiveSecondaryButtonClass} onClick={onLoadMore} disabled={loading}>
@@ -321,7 +326,7 @@ function OverviewSummaryCard({
   return (
     <section className={`${codexLivePanelClass} grid min-h-[5.75rem] min-w-0 content-between p-2.5`} data-codex-overview-card="metric">
       <div className="flex min-w-0 items-center justify-between gap-3">
-        <p className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+        <p className={codexLiveKickerTextClass}>
           {label}
         </p>
         <span className={`h-2.5 w-2.5 shrink-0 ${accentClass}`} />
@@ -376,11 +381,11 @@ function OverviewTimingTrend({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className={codexLiveChipClass}>{t('codex_live_sessions.overview_kicker')}</span>
-            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
+            <span className={codexLiveInlineMetaClass}>
               {latestPoint?.requestID || t('codex_live_sessions.timing_trend_empty')}
             </span>
           </div>
-          <h3 className="mt-1 font-mono text-[length:var(--font-size-ui-xl)] font-semibold tracking-[0.12em] text-[var(--text-primary)]">
+          <h3 className={`mt-1 ${codexLiveTitleTextClass}`} data-codex-live-timing-title="quiet">
             {t('codex_live_sessions.request_timing_trend')}
           </h3>
         </div>
@@ -498,11 +503,11 @@ function RequestTimingTrend({
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={session.status} t={t} />
             {session.fallbackInferred ? <span className={codexLiveChipClass}>{t('codex_live_sessions.inferred')}</span> : null}
-            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
+            <span className={codexLiveInlineMetaClass}>
               {currentRequestID}
             </span>
           </div>
-          <h3 className="mt-1 font-mono text-[length:var(--font-size-ui-xl)] font-semibold tracking-[0.12em] text-[var(--text-primary)]">
+          <h3 className={`mt-1 ${codexLiveTitleTextClass}`} data-codex-live-timing-title="quiet">
             {t('codex_live_sessions.request_timing_trend')}
           </h3>
         </div>
@@ -601,7 +606,7 @@ function TimingTrendChart({
 
   if (!trend.hasData || selectedMetricMaxMs <= 0) {
     return (
-      <div className={`${codexLiveMutedPanelClass} grid h-[230px] place-items-center border-dashed text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]`}>
+      <div className={`${codexLiveMutedPanelClass} grid h-[230px] place-items-center text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]`}>
         {t('codex_live_sessions.timing_trend_empty')}
       </div>
     );
@@ -888,7 +893,7 @@ function TransportLane({ events, t }: { events: readonly CodexLiveTimelineEvent[
 
   return (
     <div className="grid gap-3">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+      <div className={codexLiveSectionLabelClass}>
         {t('codex_live_sessions.transport_lane')}
       </div>
       <div className="grid gap-2 xl:grid-cols-4">
@@ -943,7 +948,7 @@ function TimingMetrics({
   return (
     <div className={`${codexLiveMutedPanelClass} p-4`}>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+        <div className={codexLiveSectionLabelClass}>
           {t('codex_live_sessions.timing_average')}
         </div>
       </div>
@@ -1154,7 +1159,7 @@ function SessionCard({ session, request, t }: { session: CodexLiveSession; reque
 
   return (
     <div className={`${codexLiveMutedPanelClass} p-3`}>
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+      <div className={codexLiveSectionLabelClass}>
         {t('codex_live_sessions.local_session')}
       </div>
       <div className="mt-3 grid gap-x-5 gap-y-2 md:grid-cols-2">
@@ -1201,7 +1206,7 @@ function Timeline({
     >
       <div className={`${codexLiveHeaderClass} grid w-full gap-1 px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end`}>
         <div className="min-w-0">
-          <h3 className="font-mono text-[length:var(--font-size-ui-xl)] font-semibold tracking-[0.12em] text-[var(--text-primary)]">
+          <h3 className={codexLiveTitleTextClass}>
             {title ?? t('codex_live_sessions.request_timeline')}
           </h3>
           {title ? (
@@ -1276,7 +1281,7 @@ function TimelineFallbackRow({
   t: Translate;
   onOpen: () => void;
 }) {
-  return <TimelineSummaryRow summary={summary} t={t} onOpen={onOpen} dashed />;
+  return <TimelineSummaryRow summary={summary} t={t} onOpen={onOpen} fallback />;
 }
 
 function TimelineSummaryRow({
@@ -1284,13 +1289,13 @@ function TimelineSummaryRow({
   t,
   onOpen,
   historicalStatusLabel = '',
-  dashed = false,
+  fallback = false,
 }: {
   summary: RequestTimelineSummary | FallbackTimelineSummary;
   t: Translate;
   onOpen: () => void;
   historicalStatusLabel?: string;
-  dashed?: boolean;
+  fallback?: boolean;
 }) {
   const timeRangeLabel = buildTimelineTimeRange(summary);
   const metricItems = buildTimelineMetricItems(summary);
@@ -1300,7 +1305,7 @@ function TimelineSummaryRow({
     <button
       type="button"
       onClick={onOpen}
-      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_20%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
+      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_20%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-[0.995] last:border-b-0 ${fallback ? 'bg-[color:color-mix(in_srgb,var(--gt-surface-muted)_54%,transparent)]' : ''}`}
       title={t('codex_live_sessions.detail')}
       aria-label={t('codex_live_sessions.detail')}
     >
@@ -1468,7 +1473,7 @@ function FallbackTimelineDetailModal({
       ariaLabel={t('codex_live_sessions.unknown_request')}
       header={
         <div>
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+          <div className={codexLiveKickerTextClass}>
             {t('codex_live_sessions.request_timeline')}
           </div>
           <div className="mt-2 font-mono text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
@@ -1494,7 +1499,7 @@ function FallbackTimelineDetailModal({
 function TimelineEventsPanel({ events, t }: { events: readonly CodexLiveTimelineEvent[]; t: Translate }) {
   return (
     <div className={`${codexLiveMutedPanelClass} p-3`}>
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-[0.16em] text-[var(--text-muted)]">
+      <div className={codexLiveSectionLabelClass}>
         {t('codex_live_sessions.request_timeline')}
       </div>
       <div className="mt-3 grid gap-2">
