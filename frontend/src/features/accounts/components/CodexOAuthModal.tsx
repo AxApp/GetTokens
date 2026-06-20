@@ -13,6 +13,31 @@ interface CodexOAuthModalProps {
   initialCopyState?: 'idle' | 'success' | 'error';
 }
 
+const codexOAuthModalHeaderClass =
+  'grid gap-1';
+const codexOAuthModalEyebrowClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const codexOAuthModalTitleClass =
+  'text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]';
+const codexOAuthModalHintClass =
+  'text-[length:var(--font-size-ui-md-compact)] font-medium leading-relaxed text-[var(--text-secondary)]';
+const codexOAuthModalFooterClass =
+  'flex flex-wrap items-center justify-end gap-2';
+const codexOAuthModalButtonClass =
+  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]';
+const codexOAuthModalPrimaryButtonClass =
+  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
+const codexOAuthModalLabelClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const codexOAuthModalUrlClass =
+  'break-all rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 font-mono text-[length:var(--font-size-ui-md-compact)] leading-relaxed text-[var(--text-primary)]';
+const codexOAuthModalStatusBaseClass =
+  'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal';
+const codexOAuthModalStatusToneClass = {
+  success: 'text-[var(--gt-status-success)]',
+  error: 'text-[var(--gt-status-danger)]',
+} satisfies Record<'success' | 'error', string>;
+
 export default function CodexOAuthModal({
   t,
   existingName,
@@ -46,47 +71,46 @@ export default function CodexOAuthModal({
       zIndexClassName="z-[70]"
       ariaLabel={buildCodexOAuthDialogTitle(t, existingName)}
       header={
-        <>
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        <div data-codex-oauth-dialog-header="quiet" className={codexOAuthModalHeaderClass}>
+          <div className={codexOAuthModalEyebrowClass}>
             {t('accounts.login_chatgpt')}
           </div>
-          <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+          <h3 className={codexOAuthModalTitleClass}>
             {buildCodexOAuthDialogTitle(t, existingName)}
           </h3>
-        </>
+        </div>
       }
       headerClassName="px-6 py-4"
       bodyClassName="space-y-4 p-6"
       footerClassName="sm:!justify-end"
       footer={
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <button onClick={onClose} className="btn-swiss">
+        <div className={codexOAuthModalFooterClass}>
+          <button onClick={onClose} className={codexOAuthModalButtonClass}>
             {t('common.close')}
           </button>
-          <button onClick={() => void handleCopy()} className="btn-swiss">
+          <button onClick={() => void handleCopy()} className={codexOAuthModalButtonClass}>
             {t('accounts.oauth_dialog_copy_url')}
           </button>
-          <button onClick={onOpenInBrowser} className="btn-swiss">
+          <button onClick={onOpenInBrowser} className={codexOAuthModalPrimaryButtonClass}>
             {t('accounts.oauth_dialog_open_url')}
           </button>
         </div>
       }
     >
-      <p className="text-[length:var(--font-size-ui-md-compact)] font-bold leading-relaxed text-[var(--text-secondary)]">
+      <p className={codexOAuthModalHintClass}>
         {buildCodexOAuthDialogHint(t, existingName)}
       </p>
       <div className="space-y-2">
-        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <div className={codexOAuthModalLabelClass}>
           {t('accounts.oauth_dialog_url_label')}
         </div>
-        <div className="break-all border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 font-mono text-[length:var(--font-size-ui-md-compact)] leading-relaxed text-[var(--text-primary)]">
+        <div data-codex-oauth-dialog-url="quiet" className={codexOAuthModalUrlClass}>
           {url}
         </div>
         {copyState !== 'idle' ? (
           <div
-            className={`text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide ${
-              copyState === 'success' ? 'text-[var(--color-status-success)]' : 'text-[var(--color-status-danger)]'
-            }`}
+            data-codex-oauth-dialog-copy-state={copyState}
+            className={`${codexOAuthModalStatusBaseClass} ${codexOAuthModalStatusToneClass[copyState]}`}
           >
             {copyState === 'success' ? t('accounts.oauth_dialog_copy_success') : t('accounts.oauth_dialog_copy_failed')}
           </div>
