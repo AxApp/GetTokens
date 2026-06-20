@@ -211,6 +211,23 @@ test('asset workbench shell is shared by Codex and Claude extension surfaces', a
   assert.match(claudeSource, /AssetWorkbenchShell/, 'Claude Code assets must use the shared asset workbench shell');
 });
 
+test('asset workbench shell uses the quiet workspace shell tokens', async () => {
+  const source = await readFile(new URL('../../components/ui/AssetWorkbenchShell.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-design-system-component-name="AssetWorkbenchShell"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-ink-primary/);
+  assert.match(source, /shadow-sm/);
+  assert.doesNotMatch(source, /border-2/);
+  assert.doesNotMatch(source, /border-b-2/);
+  assert.doesNotMatch(source, /border-t-2/);
+  assert.doesNotMatch(source, /border-l-2/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /--bg-main/);
+  assert.doesNotMatch(source, /shadow-\[/);
+});
+
 test('storybook locale globals default to Chinese and accept English', () => {
   assert.deepEqual(storybookLocaleOptions.map((option) => option.value), ['zh', 'en']);
   assert.equal(resolveStorybookLocale('zh'), 'zh');

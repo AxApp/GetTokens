@@ -41,7 +41,7 @@ export default function AssetWorkbenchShell({
       data-collaboration-id={dataCollaborationId}
       data-design-system-component="true"
       data-design-system-component-name="AssetWorkbenchShell"
-      className={`scrollbar-stable h-full w-full overflow-auto p-6 text-[var(--text-primary)] lg:p-8 ${className}`.trim()}
+      className={`scrollbar-stable h-full w-full overflow-auto p-6 text-[var(--gt-ink-primary)] lg:p-8 ${className}`.trim()}
     >
       <div className="w-full space-y-6">
         <WorkspacePageHeader
@@ -53,10 +53,10 @@ export default function AssetWorkbenchShell({
         />
 
         <section
-          className={`flex ${minHeightClassName} flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)] ${panelClassName}`.trim()}
+          className={`flex ${minHeightClassName} flex-col border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm ${panelClassName}`.trim()}
         >
           {toolbar ? (
-            <div className={`grid gap-3 border-b-2 border-[var(--border-color)] p-3 lg:grid-cols-[minmax(0,24rem)_minmax(16rem,1fr)] ${toolbarClassName}`.trim()}>
+            <div className={`grid gap-3 border-b border-[var(--gt-border-subtle)] p-3 lg:grid-cols-[minmax(0,24rem)_minmax(16rem,1fr)] ${toolbarClassName}`.trim()}>
               {toolbar}
             </div>
           ) : null}
@@ -64,7 +64,7 @@ export default function AssetWorkbenchShell({
           {aside ? (
             <div className={`grid min-h-0 flex-1 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] ${contentClassName}`.trim()}>
               <main className="min-w-0">{children}</main>
-              <aside className={`grid content-start gap-0 border-t-2 border-[var(--border-color)] xl:border-l-2 xl:border-t-0 ${asideClassName}`.trim()}>
+              <aside className={`grid content-start gap-0 border-t border-[var(--gt-border-subtle)] xl:border-l xl:border-t-0 ${asideClassName}`.trim()}>
                 {aside}
               </aside>
             </div>
