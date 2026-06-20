@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   buildCodexBinaryRows,
@@ -251,4 +252,30 @@ test('filterCodexBinaryRows separates stable and alpha releases', () => {
   assert.deepEqual(filterCodexBinaryRows(rows, 'alpha').map((row) => row.version), ['0.131.0-alpha.9']);
   assert.deepEqual(filterCodexBinaryRows(rows, 'stable').map((row) => row.version), ['0.121.0', '0.120.0']);
   assert.equal(filterCodexBinaryRows(rows, 'all').length, 4);
+});
+
+test('CodexBinaryVersionCell uses the quiet workspace shell', () => {
+  const source = readFileSync(new URL('./components/CodexBinaryVersionCell.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const codexBinaryVersionCellShellClass =/);
+  assert.match(source, /const codexBinaryVersionCellButtonClass =/);
+  assert.match(source, /const codexBinaryVersionCellMenuClass =/);
+  assert.match(source, /data-codex-binary-version-cell="quiet"/);
+  assert.match(source, /data-codex-binary-version-progress/);
+  assert.match(source, /data-codex-binary-version-notes/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-success/);
+  assert.match(source, /--gt-status-warning/);
+
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /\buppercase\b/);
+  assert.doesNotMatch(source, /tracking-\[/);
 });
