@@ -873,7 +873,7 @@ test('auth-file config management keeps apply API boundary explicit', async () =
   const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
   const authFileBlock = source.match(/function AuthFileSummarySection[\s\S]*?\nfunction CompatibleModelsSection/)?.[0] ?? '';
 
-  assert.match(source, /data-auth-file-config-management="ui-placeholder"/);
+  assert.match(source, /data-auth-file-config-management="quiet"/);
   assert.match(source, /data-auth-file-config-action="preview"/);
   assert.match(source, /data-auth-file-config-action="download"/);
   assert.match(source, /data-auth-file-config-action="apply"/);
@@ -1104,6 +1104,35 @@ test('balance rail exposes quota and billing module checkboxes instead of a top-
   assert.doesNotMatch(quotaToggleBlock, /onOpenScriptEditor/);
   assert.doesNotMatch(billingToggleBlock, /onOpenScriptEditor/);
   assert.match(source, /onOpenEditor=\{\(\) => props\.onOpenScriptEditor\?\.\('billing'\)\}/);
+});
+
+test('unified account detail modal internals use the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const unifiedAccountDetailButtonClass =/);
+  assert.match(source, /const unifiedAccountDetailInputClass =/);
+  assert.match(source, /const unifiedAccountDetailRailToggleClass =/);
+  assert.match(source, /const unifiedAccountDetailModelCardClass =/);
+  assert.match(source, /const unifiedAccountDetailNoticeClass =/);
+  assert.match(source, /data-account-balance-rail-toggle="quota"/);
+  assert.match(source, /data-auth-file-config-management="quiet"/);
+  assert.match(source, /data-auth-file-config-notice/);
+  assert.match(source, /data-account-model-mapping-grid="source-route"/);
+  assert.match(source, /data-account-model-mapping-card/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /input-swiss/);
+  assert.doesNotMatch(source, /border-2/);
+  assert.doesNotMatch(source, /border-dashed/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /color-status-/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /\buppercase\b/);
+  assert.doesNotMatch(source, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-\[0\.16em\]/);
 });
 
 test('openai compatible account detail uses the single unified detail page', async () => {

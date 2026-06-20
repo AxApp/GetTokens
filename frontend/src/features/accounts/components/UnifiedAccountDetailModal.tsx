@@ -57,6 +57,29 @@ import type { ChannelRouteDecisionSnapshot } from '../../channel-routing/model/c
 
 export type { APIKeyVerifyState } from './AccountDetailSections';
 
+const unifiedAccountDetailButtonClass =
+  'inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const unifiedAccountDetailIconButtonClass =
+  'inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-muted)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+const unifiedAccountDetailInputClass =
+  'w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] outline-none';
+const unifiedAccountDetailLabelClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const unifiedAccountDetailRailToggleClass =
+  'flex items-center gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const unifiedAccountDetailNoticeClass =
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
+const unifiedAccountDetailModelCardClass =
+  'grid min-h-14 grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)_auto] items-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-2';
+const unifiedAccountDetailModelArrowClass =
+  'grid h-full place-items-center border-x border-[var(--gt-border-subtle)] text-[var(--text-muted)]';
+const unifiedAccountDetailModelValueClass =
+  'truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]';
+const unifiedAccountDetailFetchStatusClass =
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
+const unifiedAccountDetailFetchErrorClass =
+  'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-3 py-2 font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--gt-status-danger)]';
+
 export interface UnifiedAccountDetailProps {
   account: AccountRecord;
   quotaState?: CodexQuotaState;
@@ -312,7 +335,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                 };
                 const balanceRailControls = (
                   <div className="grid gap-2">
-                    <label data-account-balance-rail-toggle="quota" className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                    <label data-account-balance-rail-toggle="quota" className={unifiedAccountDetailRailToggleClass}>
                       <input
                         type="checkbox"
                         checked={configDraft.quotaEnabled}
@@ -320,7 +343,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                       />
                       <span>额度模块</span>
                     </label>
-                    <label data-account-balance-rail-toggle="billing" className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                    <label data-account-balance-rail-toggle="billing" className={unifiedAccountDetailRailToggleClass}>
                       <input
                         type="checkbox"
                         checked={hasBillingModule}
@@ -372,7 +395,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                   >
                     {showBalanceSplit ? (
                       <div data-account-balance-panel="quota-billing" className="relative grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                        <span data-account-balance-divider="full-height" className="pointer-events-none absolute bottom-0 left-1/2 top-0 w-0.5 -translate-x-1/2 bg-[var(--border-color)]" />
+                        <span data-account-balance-divider="full-height" className="pointer-events-none absolute bottom-0 left-1/2 top-0 w-px -translate-x-1/2 bg-[var(--gt-border-subtle)]" />
                         <div data-account-balance-pane="quota-left" className="min-w-0 pr-4">
                           {quotaSection}
                         </div>
@@ -524,25 +547,25 @@ function AuthFileSummarySection({ account }: { account: AccountRecord }) {
       bandActionDivider={false}
       actions={
         <>
-          <button data-auth-file-config-action="preview" onClick={handleSanitize} disabled={sanitizing || loading} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+          <button data-auth-file-config-action="preview" onClick={handleSanitize} disabled={sanitizing || loading} className={unifiedAccountDetailButtonClass}>
             {sanitizing ? '...' : '预览配置'}
           </button>
-          <button data-auth-file-config-action="download" onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+          <button data-auth-file-config-action="download" onClick={handleCopy} disabled={!displayed} className={unifiedAccountDetailButtonClass}>
             {copyState === 'success' ? '已下载' : copyState === 'error' ? '失败' : '下载配置'}
           </button>
-          <button data-auth-file-config-action="apply" onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+          <button data-auth-file-config-action="apply" onClick={handleCopy} disabled={!displayed} className={unifiedAccountDetailButtonClass}>
             应用配置
           </button>
         </>
       }
     >
-      <div data-auth-file-config-management="ui-placeholder" className="grid gap-3">
+      <div data-auth-file-config-management="quiet" className="grid gap-3">
         <div className="space-y-2">
           <label className="grid gap-1.5">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">账号名称</span>
-            <input className="input-swiss font-mono !text-[length:var(--font-size-ui-xs)]" value={account.displayName} readOnly />
+            <span className={unifiedAccountDetailLabelClass}>账号名称</span>
+            <input className={unifiedAccountDetailInputClass} value={account.displayName} readOnly />
           </label>
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className={unifiedAccountDetailLabelClass}>
             配置预览
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -558,7 +581,7 @@ function AuthFileSummarySection({ account }: { account: AccountRecord }) {
           <div className="h-4 w-1/2 bg-[var(--border-color)]" />
         </div>
       ) : (
-        <div className="border-2 border-dashed border-[var(--border-color)] px-3 py-2 font-mono text-[length:var(--font-size-ui-2xs)] uppercase tracking-[0.1em] text-[var(--text-muted)]">
+        <div data-auth-file-config-notice="true" className={unifiedAccountDetailNoticeClass}>
           配置预览基于账号数据库生成；可预览配置、下载配置，并在确认后应用到运行时。待接入 account-store management API。
         </div>
       )}
@@ -716,20 +739,20 @@ function CompatibleModelsSection({
             type="button"
             onClick={() => void fetchRemoteModelMappings()}
             disabled={remoteModelStatus === 'loading' || !onFetchModels}
-            className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+            className={unifiedAccountDetailIconButtonClass}
             aria-label="拉取模型"
             title="拉取模型"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${remoteModelStatus === 'loading' ? 'animate-spin' : ''}`} strokeWidth={4} />
+            <RefreshCw className={`h-3.5 w-3.5 ${remoteModelStatus === 'loading' ? 'animate-spin' : ''}`} strokeWidth={2.5} />
           </button>
           <button
             type="button"
             onClick={applyDefaultModelMappings}
-            className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+            className={unifiedAccountDetailButtonClass}
           >
             填入支持模型
           </button>
-          <button type="button" onClick={onAddModelMapping} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+          <button type="button" onClick={onAddModelMapping} className={unifiedAccountDetailButtonClass}>
             添加映射
           </button>
         </>
@@ -738,9 +761,7 @@ function CompatibleModelsSection({
       {editable && remoteModelMessage ? (
         <div
           data-account-model-fetch-status={remoteModelStatus}
-          className={`font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] ${
-            remoteModelStatus === 'error' ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
-          }`}
+          className={remoteModelStatus === 'error' ? unifiedAccountDetailFetchErrorClass : unifiedAccountDetailFetchStatusClass}
         >
           {remoteModelMessage}
         </div>
@@ -757,7 +778,7 @@ function CompatibleModelsSection({
             const modelName = String(model.name ?? model.id ?? model.display_name ?? `MODEL ${index + 1}`);
             const routeLabel = String(model.alias ?? (isAuthFile ? 'oauth available' : modelName));
             return (
-              <div key={index} data-account-model-mapping-card={editable ? 'editable' : 'readonly'} className="grid min-h-14 grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)_auto] items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-2">
+              <div key={index} data-account-model-mapping-card={editable ? 'editable' : 'readonly'} className={unifiedAccountDetailModelCardClass}>
                 <div className="min-w-0">
                   {editable ? (
                     <div data-account-model-mapping-input="source">
@@ -770,10 +791,10 @@ function CompatibleModelsSection({
                       />
                     </div>
                   ) : (
-                    <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">{modelName}</div>
+                    <div className={unifiedAccountDetailModelValueClass}>{modelName}</div>
                   )}
                 </div>
-                <div className="grid h-full place-items-center border-x border-dashed border-[var(--border-color)] text-[var(--text-muted)]">→</div>
+                <div className={unifiedAccountDetailModelArrowClass}>→</div>
                 <div className="min-w-0">
                   {editable ? (
                     <div data-account-model-mapping-input="alias">
@@ -786,18 +807,18 @@ function CompatibleModelsSection({
                       />
                     </div>
                   ) : (
-                    <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">{routeLabel}</div>
+                    <div className={unifiedAccountDetailModelValueClass}>{routeLabel}</div>
                   )}
                 </div>
                 {editable ? (
                   <button
                     type="button"
                     onClick={() => removeModelMapping(index)}
-                    className="btn-swiss !min-h-0 !px-1.5 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+                    className={unifiedAccountDetailIconButtonClass}
                     aria-label="删除映射"
                     title="删除映射"
                   >
-                    <Trash2 className="h-3.5 w-3.5" strokeWidth={3} />
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
                   </button>
                 ) : (
                   <AccountDetailPill className="!min-h-0 !py-0.5 !text-[length:var(--font-size-ui-2xs)]">只读</AccountDetailPill>
