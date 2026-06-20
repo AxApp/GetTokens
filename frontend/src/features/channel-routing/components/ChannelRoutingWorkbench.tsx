@@ -79,7 +79,7 @@ const channelRoutingFieldClass =
 const channelRoutingSelectClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
 const channelRoutingMetaTextClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-wide text-[var(--text-muted)]';
+  'font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
 
 export default function ChannelRoutingWorkbench({
   channel,
@@ -194,7 +194,7 @@ export default function ChannelRoutingWorkbench({
               <Split className="h-4 w-4" strokeWidth={4} />
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h2 className="min-w-0 text-[length:var(--font-size-ui-lg)] font-semibold leading-5 tracking-[0] text-[var(--text-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
+              <h2 className="min-w-0 text-[length:var(--font-size-ui-lg)] font-semibold leading-5 text-[var(--text-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
                 请求模式
               </h2>
               <button
@@ -253,7 +253,7 @@ export default function ChannelRoutingWorkbench({
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] [&::-webkit-details-marker]:hidden">
           <span>高级诊断</span>
           <span className="flex items-center gap-2">
-            <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-wide text-[var(--text-muted)]">
+            <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-muted)]">
               {hasExplain ? '有结果' : '可选'}
             </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" strokeWidth={4} />
@@ -278,7 +278,7 @@ export default function ChannelRoutingWorkbench({
                 >
                   <Play className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
                   <span className="min-w-0 flex-1 truncate text-left font-semibold">运行预演</span>
-                  <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide opacity-70">
+                  <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold opacity-70">
                     RUN
                   </span>
                 </button>
@@ -370,12 +370,12 @@ export default function ChannelRoutingWorkbench({
                       <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
                         {row.title}
                       </span>
-                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
+                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                         {row.unresolved ? 'UNRESOLVED' : 'SELECTED'}
                       </span>
                     </div>
                     {row.meta ? (
-                      <div className="mt-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-secondary)]">
+                      <div className="mt-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-secondary)]">
                         {row.meta}
                       </div>
                     ) : null}
@@ -406,7 +406,7 @@ export default function ChannelRoutingWorkbench({
                   <div className="grid gap-2">
                     <div className="flex min-w-0 items-center justify-between gap-3">
                       <span className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">Action Targets</span>
-                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
+                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                         {routeActionTargets.length} 个
                       </span>
                     </div>
@@ -428,7 +428,7 @@ export default function ChannelRoutingWorkbench({
                               {target.title}
                             </span>
                             <span
-                              className={`font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide ${
+                              className={`font-mono text-[length:var(--font-size-ui-xs)] font-semibold ${
                                 active ? 'text-[var(--gt-surface-canvas)] opacity-70' : 'text-[var(--text-muted)]'
                               }`}
                             >
@@ -462,7 +462,7 @@ export default function ChannelRoutingWorkbench({
                         <span className="min-w-0 truncate text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
                           {routeActionTarget.accountTitle}
                         </span>
-                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
+                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                           {routeActionTarget.sourceLabel}
                         </span>
                       </div>
@@ -524,7 +524,7 @@ export default function ChannelRoutingWorkbench({
                         <span className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
                           {routeActionHistoryEntry?.actionTitle || 'Action Response'}
                         </span>
-                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
+                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                           {routeActionPending ? 'RUNNING' : routeActionHistoryEntry?.statusLabel || '未执行'}
                         </span>
                       </div>
@@ -549,7 +549,7 @@ export default function ChannelRoutingWorkbench({
                     <div className="border-t border-[var(--gt-border-subtle)] pt-3">
                       <div className="mb-2 flex min-w-0 items-center justify-between gap-3">
                         <span className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">Action History</span>
-                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
+                        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                           {routeActionHistory.length} 条
                         </span>
                       </div>
@@ -561,7 +561,7 @@ export default function ChannelRoutingWorkbench({
                                 <span className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                                   {entry.targetTitle} · {entry.actionTitle}
                                 </span>
-                                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
+                                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
                                   {entry.statusLabel}
                                 </span>
                               </div>
@@ -617,7 +617,7 @@ function DiagnosticRouteColumn({
       {title ? (
         <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
           <span className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">{title}</span>
-          <span className={`${channelRoutingFieldClass} max-w-[9rem] truncate px-2 py-1 text-right font-mono text-[length:var(--font-size-ui-sm)] tracking-wide text-[var(--text-secondary)]`}>
+          <span className={`${channelRoutingFieldClass} max-w-[9rem] truncate px-2 py-1 text-right font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-secondary)]`}>
             {modeLabel || '未知'}
           </span>
         </div>
@@ -630,7 +630,7 @@ function DiagnosticRouteColumn({
       >
         <span
           className={[
-            'block font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide',
+            'block font-mono text-[length:var(--font-size-ui-xs)] font-semibold',
             emphasis ? 'text-[var(--gt-surface-canvas)] opacity-70' : 'text-[var(--text-muted)]',
           ].join(' ')}
         >
@@ -641,10 +641,10 @@ function DiagnosticRouteColumn({
         </span>
       </div>
       <div className="mt-3 flex min-w-0 items-center justify-between gap-3">
-        <span className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
+        <span className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
           账号顺序
         </span>
-        <span className="min-w-0 truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-secondary)]">
+        <span className="min-w-0 truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-secondary)]">
           {summaryLabel}
         </span>
       </div>
@@ -662,7 +662,7 @@ function DiagnosticRouteColumn({
                 <span className="block min-w-0 truncate text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
                   {row.title}
                 </span>
-                <span className="mt-0.5 block min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-muted)]">
+                <span className="mt-0.5 block min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
                   {row.meta}
                 </span>
               </span>
@@ -781,7 +781,7 @@ function DiagnosticSelect({
 }) {
   return (
     <label className="grid min-w-0 gap-1">
-      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-wide text-[var(--text-muted)]">
+      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
         {label}
       </span>
       <select
