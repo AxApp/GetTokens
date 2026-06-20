@@ -64,3 +64,26 @@ test('Codex extension modals use the quiet workspace shell', async () => {
   assert.doesNotMatch(combined, /shadow-\[8px_8px_0_var\(--shadow-color\)\]/);
   assert.doesNotMatch(combined, /shadow-hard/);
 });
+
+test('Codex extension workspaces use the quiet list shell', async () => {
+  const source = await readFile(new URL('./CodexExtensionsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const codexExtensionsActionButtonClass =/);
+  assert.match(source, /const codexExtensionsNoticeClass =/);
+  assert.match(source, /const codexExtensionsListContentClass =/);
+  assert.match(source, /const codexExtensionsListRowClass =/);
+  assert.match(source, /data-codex-extension-workspace-list="skills"/);
+  assert.match(source, /data-codex-extension-workspace-list="mcp"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-\[0\.(16|18)em\]|tracking-wide/);
+});
