@@ -402,11 +402,11 @@ test('codex live session row gives project text priority and compresses session 
   assert.match(feedSource, /tabIndex=\{0\}/);
   assert.match(feedSource, /onClick=\{onSelect\}/);
   assert.match(feedSource, /event\.key === 'Enter' \|\| event\.key === ' '/);
-  assert.match(feedSource, /grid-cols-\[minmax\(0,1fr\)_auto\]/);
-  assert.match(feedSource, /className="col-start-1 row-start-1/);
-  assert.match(feedSource, /className="col-start-2 row-start-1[^"]*self-center[^"]*justify-self-end/);
+  assert.match(feedSource, /const codexLiveFeedRowClass =[\s\S]*grid-cols-\[minmax\(0,1fr\)_auto\]/);
+  assert.match(feedSource, /const codexLiveFeedPrimaryTextClass =[\s\S]*col-start-1 row-start-1/);
+  assert.match(feedSource, /const codexLiveFeedRightTextClass =[\s\S]*col-start-2 row-start-1[\s\S]*self-center[\s\S]*justify-self-end/);
   assert.match(feedSource, /\{summary\.transportLabel\}/);
-  assert.match(feedSource, /className="col-start-1 row-start-2[^"]*self-center/);
+  assert.match(feedSource, /const codexLiveFeedMetaTextClass =[\s\S]*col-start-1 row-start-2[\s\S]*self-center/);
   assert.match(feedSource, /\{summary\.accountLabel\}/);
   assert.match(feedSource, /className="col-start-2 row-start-2[^"]*items-center[^"]*justify-end/);
   assert.match(feedSource, /t\('codex_live_sessions\.session_button'\)/);
@@ -998,7 +998,8 @@ test('codex live session feed renders session id as an independent copy target',
   assert.match(feedSource, /onCopySessionID/);
   assert.match(feedSource, /event\.stopPropagation\(\)/);
   assert.match(feedSource, /\`\$\{t\('codex_live_sessions\.copy_session_id'\)\} \$\{summary\.sessionIDLabel\}\`/);
-  assert.match(feedSource, /className=\{`inline-flex h-6 shrink-0 items-center justify-center/);
+  assert.match(feedSource, /const codexLiveFeedCopyButtonClass =[\s\S]*inline-flex h-6 shrink-0 items-center justify-center/);
+  assert.match(feedSource, /className=\{`\$\{codexLiveFeedCopyButtonClass\} \$\{copied \? codexLiveFeedCopyButtonCopiedClass : ''\}`\}/);
   assert.match(feedSource, /ClipboardSetText/);
   assert.match(feedSource, /document\.execCommand\('copy'\)/);
   assert.match(feedSource, /aria-live="polite"/);
@@ -1820,4 +1821,29 @@ test('mergeCodexLiveSessionsSnapshot treats a later live poll as authoritative a
   );
   assert.equal(merged.sessions.some((session) => session.authLabel === '78cline.murals+gzu@icloud.com'), false);
   assert.equal(merged.summary.activeSessions, merged.sessions.filter((session) => ['active', 'streaming'].includes(session.status)).length);
+});
+
+test('codex live session feed uses the quiet workspace shell', async () => {
+  const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
+
+  assert.match(feedSource, /const codexLiveFeedShellClass =/);
+  assert.match(feedSource, /const codexLiveFeedHeaderClass =/);
+  assert.match(feedSource, /const codexLiveFeedRowClass =/);
+  assert.match(feedSource, /const codexLiveFeedCopyButtonClass =/);
+  assert.match(feedSource, /data-codex-live-session-feed="quiet"/);
+  assert.match(feedSource, /data-codex-live-project-feed="quiet"/);
+  assert.match(feedSource, /data-codex-live-feed-empty="quiet"/);
+  assert.match(feedSource, /--gt-surface-canvas/);
+  assert.match(feedSource, /--gt-surface-muted/);
+  assert.match(feedSource, /--gt-border-subtle/);
+  assert.match(feedSource, /--gt-status-success/);
+
+  assert.doesNotMatch(feedSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(feedSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(feedSource, /border-2 border-dashed/);
+  assert.doesNotMatch(feedSource, /font-black/);
+  assert.doesNotMatch(feedSource, /\buppercase\b/);
+  assert.doesNotMatch(feedSource, /tracking-\[/);
+  assert.doesNotMatch(feedSource, /color-status-/);
+  assert.doesNotMatch(feedSource, /shadow-\[/);
 });
