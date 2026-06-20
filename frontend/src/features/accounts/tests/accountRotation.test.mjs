@@ -293,6 +293,28 @@ test('RotationConfigSection uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /tracking-\[0\.18em\]/);
 });
 
+test('RotationPriorityItem uses the quiet workspace row shell', async () => {
+  const source = await readFile(new URL('../components/account-rotation/RotationPriorityItem.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const rotationPriorityItemShellClass =/);
+  assert.match(source, /const rotationPriorityItemDraggedClass =/);
+  assert.match(source, /const rotationPriorityItemActionButtonClass =/);
+  assert.match(source, /const rotationPriorityItemStatusClass =/);
+  assert.match(source, /data-account-rotation-priority-item/);
+  assert.match(source, /data-account-rotation-drag-handle/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-\[/);
+});
+
 test('AccountRotationModal uses the quiet workspace modal shell', async () => {
   const source = await readFile(new URL('../components/AccountRotationModal.tsx', import.meta.url), 'utf8');
 

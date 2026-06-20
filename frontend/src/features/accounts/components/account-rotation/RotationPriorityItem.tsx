@@ -5,6 +5,20 @@ import { resolveAccountPrimaryLabel, resolveAccountStatusTone } from '../../mode
 import type { CodexQuotaState } from '../../model/types';
 import { buildRotationParticipationSummary, canToggleRotationAccountDisabled } from '../../model/accountRotation';
 
+const rotationPriorityItemShellClass =
+  'group relative flex items-center justify-between border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 transition-all hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const rotationPriorityItemDraggedClass = 'opacity-40 grayscale';
+const rotationPriorityItemActionButtonClass =
+  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+const rotationPriorityItemActionButtonActiveClass =
+  'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-secondary)] hover:text-[var(--gt-surface-canvas)]';
+const rotationPriorityItemStatusClass =
+  'text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-muted)]';
+const rotationPriorityItemTitleClass =
+  'text-sm font-semibold text-[var(--gt-ink-primary)]';
+const rotationPriorityItemMetaClass =
+  'text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-muted)]';
+
 interface RotationPriorityItemProps {
   account: AccountRecord;
   codexQuota: CodexQuotaState | undefined;
@@ -39,12 +53,11 @@ export function RotationPriorityItem({
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
       onDrop={() => onDrop(account.id)}
-      className={`group relative flex items-center justify-between border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 transition-all ${
-        isDragged ? 'opacity-40 grayscale' : 'hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_var(--shadow-color)]'
-      }`}
+      className={`${rotationPriorityItemShellClass} ${isDragged ? rotationPriorityItemDraggedClass : ''}`}
+      data-account-rotation-priority-item={account.id}
     >
       <div className="flex items-center gap-4">
-        <div className="cursor-grab active:cursor-grabbing">
+        <div className="cursor-grab active:cursor-grabbing" data-account-rotation-drag-handle>
           <div className="grid grid-cols-2 gap-0.5 opacity-30 group-hover:opacity-100">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="h-0.5 w-0.5 bg-[var(--text-primary)]" />
@@ -54,16 +67,16 @@ export function RotationPriorityItem({
 
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
+            <span className={rotationPriorityItemTitleClass}>
               {resolveAccountPrimaryLabel(account)}
             </span>
             <span
-              className={`text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] ${resolveAccountStatusTone(account)}`}
+              className={`${rotationPriorityItemStatusClass} ${resolveAccountStatusTone(account)}`}
             >
               {account.disabled ? t('common.disabled') : t('common.active')}
             </span>
           </div>
-          <div className="text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+          <div className={rotationPriorityItemMetaClass}>
             PRIORITY {account.priority || 0} / {buildRotationParticipationSummary(account, codexQuota, t)}
           </div>
         </div>
@@ -72,9 +85,7 @@ export function RotationPriorityItem({
       <button
         onClick={() => onToggleDisabled(account)}
         disabled={isPending || !ready || !canToggleRotationAccountDisabled(account)}
-        className={`btn-swiss !px-3 !py-1 text-[length:var(--font-size-ui-sm)] ${
-          account.disabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
-        }`}
+        className={`${rotationPriorityItemActionButtonClass} ${account.disabled ? rotationPriorityItemActionButtonActiveClass : ''}`}
       >
         {isPending ? '...' : account.disabled ? t('common.enable') : t('common.disable')}
       </button>
