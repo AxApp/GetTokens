@@ -23,6 +23,25 @@ interface AccountImportQueueListProps {
   onRemove: (id: string) => void;
 }
 
+const accountImportQueueViewportClass =
+  'max-h-[min(34rem,calc(100vh-18rem))] overflow-auto rounded-md bg-[var(--gt-surface-muted)] p-3';
+const accountImportQueueCardClass =
+  'relative flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const accountImportQueueHeaderClass =
+  'grid shrink-0 gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start';
+const accountImportQueueIndexClass =
+  'grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]';
+const accountImportQueueTitleClass =
+  'truncate text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportQueueBadgeClass =
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountImportQueueKindBadgeClass =
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountImportQueueRemoveButtonClass =
+  'inline-flex h-8 w-8 items-center justify-center justify-self-end rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_24%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_6%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)] transition hover:border-[var(--gt-status-danger)] disabled:cursor-not-allowed disabled:opacity-45';
+const accountImportQueuePreviewClass =
+  'min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words bg-[var(--gt-surface-muted)] px-4 py-3 font-mono text-[length:var(--font-size-ui-2xs)] leading-relaxed text-[var(--text-secondary)]';
+
 export default function AccountImportQueueList({
   items,
   submitting,
@@ -74,7 +93,7 @@ export default function AccountImportQueueList({
       ref={viewportRef}
       data-account-import-queue-viewport
       data-account-import-queue-window={`${renderWindow.startIndex}:${renderWindow.endIndex}`}
-      className="max-h-[min(34rem,calc(100vh-18rem))] overflow-auto bg-[var(--bg-surface)] p-4"
+      className={accountImportQueueViewportClass}
       onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
     >
       <div className="relative min-h-full" style={{ height: renderWindow.totalHeight }}>
@@ -89,22 +108,23 @@ export default function AccountImportQueueList({
                 <div
                   data-account-card
                   data-account-import-queue-rendered-item
-                  className="card-swiss relative flex h-full min-w-0 max-w-full flex-col overflow-hidden bg-[var(--bg-main)] p-0"
+                  data-account-import-queue-card="quiet"
+                  className={accountImportQueueCardClass}
                 >
-                  <div className="grid shrink-0 gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                  <div className={accountImportQueueHeaderClass}>
                     <div className="flex min-w-0 items-start gap-3">
-                      <span className="grid h-9 w-9 shrink-0 place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] font-mono text-[length:var(--font-size-ui-xs)] font-black">
+                      <span className={accountImportQueueIndexClass}>
                         {index + 1}
                       </span>
                       <div className="min-w-0">
-                        <div className="truncate text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                        <div className={accountImportQueueTitleClass}>
                           {resolveQueueItemTitle(item.payload)}
                         </div>
                         <div className="mt-1 flex min-w-0 flex-wrap gap-2">
-                          <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                          <span className={accountImportQueueBadgeClass}>
                             {item.source === 'file' ? t('accounts.import_account_source_file') : t('accounts.import_account_source_paste')}
                           </span>
-                          <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                          <span className={accountImportQueueKindBadgeClass}>
                             {resolveQueueItemKind(item.payload)}
                           </span>
                         </div>
@@ -114,14 +134,14 @@ export default function AccountImportQueueList({
                       type="button"
                       onClick={() => onRemove(item.id)}
                       disabled={submitting}
-                      className="justify-self-end border-0 bg-transparent p-1 text-[var(--color-status-danger)] transition-transform active:scale-95 disabled:opacity-45"
+                      className={accountImportQueueRemoveButtonClass}
                       aria-label={t('accounts.import_account_remove_item')}
                       title={t('accounts.import_account_remove_item')}
                     >
-                      <Trash2 className="h-4 w-4" strokeWidth={3} />
+                      <Trash2 className="h-4 w-4" strokeWidth={2.5} />
                     </button>
                   </div>
-                  <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words border-0 bg-[var(--bg-surface)] px-4 py-3 font-mono text-[length:var(--font-size-ui-2xs)] leading-relaxed text-[var(--text-secondary)]">
+                  <pre data-account-import-queue-preview="quiet" className={accountImportQueuePreviewClass}>
                     {resolveAccountImportPayloadPreview(item.payload)}
                   </pre>
                 </div>

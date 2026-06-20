@@ -185,11 +185,29 @@ test('account import queue candidates render with account card styling', async (
   const queueSource = await readFile(new URL('../components/AccountImportQueueList.tsx', import.meta.url), 'utf8');
 
   assert.match(modalSource, /<AccountImportQueueList/);
+  assert.match(queueSource, /const accountImportQueueViewportClass =/);
+  assert.match(queueSource, /const accountImportQueueCardClass =/);
+  assert.match(queueSource, /const accountImportQueueBadgeClass =/);
+  assert.match(queueSource, /const accountImportQueueRemoveButtonClass =/);
   assert.match(queueSource, /data-account-card/);
   assert.match(queueSource, /data-account-import-queue-viewport/);
   assert.match(queueSource, /data-account-import-queue-rendered-item/);
+  assert.match(queueSource, /data-account-import-queue-card="quiet"/);
+  assert.match(queueSource, /data-account-import-queue-preview="quiet"/);
   assert.match(queueSource, /resolveAccountImportQueueRenderWindow/);
   assert.match(queueSource, /resolveAccountImportPayloadPreview\(item\.payload\)/);
+  assert.match(queueSource, /--gt-surface-canvas/);
+  assert.match(queueSource, /--gt-surface-muted/);
+  assert.match(queueSource, /--gt-border-subtle/);
+  assert.match(queueSource, /--gt-status-danger/);
+  assert.doesNotMatch(queueSource, /card-swiss/);
+  assert.doesNotMatch(queueSource, /border-2|border-b-2/);
+  assert.doesNotMatch(queueSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(queueSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(queueSource, /color-status-/);
+  assert.doesNotMatch(queueSource, /font-black/);
+  assert.doesNotMatch(queueSource, /\buppercase\b/);
+  assert.doesNotMatch(queueSource, /tracking-\[0\.12em\]/);
   assert.doesNotMatch(queueSource, /grid-cols-\[2\.25rem_minmax\(0,1fr\)_auto\]/);
 });
 
