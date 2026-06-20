@@ -279,3 +279,34 @@ test('CodexBinaryVersionCell uses the quiet workspace shell', () => {
   assert.doesNotMatch(source, /\buppercase\b/);
   assert.doesNotMatch(source, /tracking-\[/);
 });
+
+test('Codex binary summary and list use the quiet workspace shell', () => {
+  const summarySource = readFileSync(new URL('./components/CodexBinarySummaryPanel.tsx', import.meta.url), 'utf8');
+  const listSource = readFileSync(new URL('./components/CodexBinaryVersionList.tsx', import.meta.url), 'utf8');
+  const combined = `${summarySource}\n${listSource}`;
+
+  assert.match(summarySource, /const codexBinarySummaryPanelClass =/);
+  assert.match(summarySource, /const codexBinarySummaryActionButtonClass =/);
+  assert.match(summarySource, /const codexBinarySummaryStatusClass =/);
+  assert.match(summarySource, /data-codex-binary-summary-panel="quiet"/);
+  assert.match(summarySource, /--gt-surface-canvas/);
+  assert.match(summarySource, /--gt-surface-muted/);
+  assert.match(summarySource, /--gt-border-subtle/);
+  assert.match(summarySource, /--gt-status-success/);
+  assert.match(summarySource, /--gt-status-danger/);
+  assert.match(summarySource, /--gt-status-warning/);
+
+  assert.match(listSource, /const codexBinaryVersionListLabelClass =/);
+  assert.match(listSource, /const codexBinaryVersionListEmptyClass =/);
+  assert.match(listSource, /data-codex-binary-version-list="quiet"/);
+  assert.match(listSource, /data-codex-binary-version-empty="quiet"/);
+
+  assert.doesNotMatch(combined, /btn-swiss/);
+  assert.doesNotMatch(combined, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(combined, /border-2 border-dashed border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(combined, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(combined, /shadow-\[5px_5px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(combined, /font-black/);
+  assert.doesNotMatch(combined, /\buppercase\b/);
+  assert.doesNotMatch(combined, /tracking-\[/);
+});

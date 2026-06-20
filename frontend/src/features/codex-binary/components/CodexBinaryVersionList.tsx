@@ -3,6 +3,11 @@ import type { SegmentedOption } from '../../../types';
 import type { CodexBinaryReleaseFilter, CodexBinaryVersionNotes, CodexBinaryVersionRowView } from '../model';
 import CodexBinaryVersionCell from './CodexBinaryVersionCell';
 
+const codexBinaryVersionListLabelClass =
+  'text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-muted)]';
+const codexBinaryVersionListEmptyClass =
+  'border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-8 text-center text-sm font-medium text-[var(--gt-ink-muted)]';
+
 export default function CodexBinaryVersionList({
   rows,
   visibleRows,
@@ -45,15 +50,15 @@ export default function CodexBinaryVersionList({
   t: (key: string) => string;
 }) {
   return (
-    <section className="space-y-3">
+    <section className="space-y-3" data-codex-binary-version-list="quiet">
       <div className="flex flex-col gap-2 px-0.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className={codexBinaryVersionListLabelClass}>
           {t('codex_binary.release_filter')}
         </div>
         <SegmentedControl options={releaseFilterOptions} value={releaseFilter} onChange={onReleaseFilterChange} />
       </div>
       {visibleRows.length === 0 ? (
-        <div className="border-2 border-dashed border-[var(--border-color)] p-8 text-center text-sm font-bold text-[var(--text-muted)]">
+        <div className={codexBinaryVersionListEmptyClass} data-codex-binary-version-empty="quiet">
           {loading ? t('codex_binary.loading') : rows.length === 0 ? t('codex_binary.empty') : t('codex_binary.empty_filtered')}
         </div>
       ) : (

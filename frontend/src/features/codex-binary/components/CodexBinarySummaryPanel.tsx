@@ -2,6 +2,19 @@ import { ShieldCheck } from 'lucide-react';
 import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import type { CodexBinarySnapshot } from '../model';
 
+const codexBinarySummaryPanelClass =
+  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 shadow-[var(--gt-elevation-raised)] sm:p-4';
+const codexBinarySummaryTitleClass =
+  'min-w-0 truncate text-xl font-semibold text-[var(--gt-ink-primary)]';
+const codexBinarySummaryActionButtonClass =
+  'inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition-colors hover:bg-[var(--gt-ink-secondary)] disabled:cursor-not-allowed disabled:opacity-50';
+const codexBinarySummaryMetaClass =
+  'mt-2 grid gap-x-5 gap-y-1 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]/55 px-2 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-muted)] md:grid-cols-3';
+const codexBinarySummaryMessageClass =
+  'mt-2 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]/55 px-2 py-2 text-xs font-medium text-[var(--gt-ink-muted)]';
+const codexBinarySummaryStatusClass =
+  'inline-flex items-center rounded px-2 py-1 text-[length:var(--font-size-ui-xs)] font-medium';
+
 export default function CodexBinarySummaryPanel({
   snapshot,
   message,
@@ -23,12 +36,13 @@ export default function CodexBinarySummaryPanel({
     <section
       data-design-system-component="true"
       data-design-system-component-name="CodexBinarySummaryPanel"
-      className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[5px_5px_0_var(--shadow-color)] sm:p-4"
+      data-codex-binary-summary-panel="quiet"
+      className={codexBinarySummaryPanelClass}
     >
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div className="min-w-0 space-y-1.5">
           <div className="flex min-w-0 flex-col gap-1.5 lg:flex-row lg:items-center">
-            <div className="min-w-0 truncate text-xl font-black text-[var(--text-primary)]">
+            <div className={codexBinarySummaryTitleClass}>
               {snapshot?.currentVersion?.displayName || t('codex_binary.no_active')}
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -49,7 +63,7 @@ export default function CodexBinarySummaryPanel({
               type="button"
               onClick={onEnableManagedPath}
               disabled={managedBusy}
-              className="btn-swiss whitespace-nowrap bg-[var(--text-primary)] !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+              className={codexBinarySummaryActionButtonClass}
             >
               <ShieldCheck className="h-3.5 w-3.5" />
               {managedBusy ? t('codex_binary.managing') : t('codex_binary.enable_managed')}
@@ -66,27 +80,32 @@ export default function CodexBinarySummaryPanel({
         </div>
       </div>
       {snapshot?.managedConfig ? (
-        <div className="mt-2 grid gap-x-5 gap-y-1 border-t border-[var(--border-color)] pt-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)] md:grid-cols-3">
+        <div className={codexBinarySummaryMetaClass}>
           <ManagedMeta label={t('codex_binary.managed_bin_dir')} value={snapshot.managedConfig.binDir} />
           <ManagedMeta label={t('codex_binary.resolved_codex_path')} value={snapshot.managedConfig.resolvedCodexPath || t('codex_binary.resolved_codex_missing')} />
           <ManagedMeta label={t('codex_binary.managed_profile_target')} value={snapshot.managedConfig.profilePath || t('codex_binary.managed_profile_unknown')} strong />
         </div>
       ) : null}
-      {message ? <div className="mt-2 border-t border-[var(--border-color)] pt-2 text-xs font-semibold text-[var(--text-muted)]">{message}</div> : null}
+      {message ? <div className={codexBinarySummaryMessageClass}>{message}</div> : null}
     </section>
   );
 }
 
 function StatusPill({ severity, text }: { severity: string; text: string }) {
-  const color = severity === 'ok' ? 'bg-[var(--accent-green)] text-[var(--text-on-accent)]' : severity === 'error' ? 'bg-[var(--accent-red)] text-[var(--text-on-accent)]' : 'bg-[var(--accent-yellow)] text-[var(--text-primary)]';
-  return <span className={`inline-flex items-center px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black ${color}`}>{text}</span>;
+  const color =
+    severity === 'ok'
+      ? 'bg-[var(--gt-status-success)]/12 text-[var(--gt-status-success)]'
+      : severity === 'error'
+        ? 'bg-[var(--gt-status-danger)]/12 text-[var(--gt-status-danger)]'
+        : 'bg-[var(--gt-status-warning)]/14 text-[var(--gt-status-warning)]';
+  return <span className={`${codexBinarySummaryStatusClass} ${color}`}>{text}</span>;
 }
 
 function ManagedMeta({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="min-w-0 truncate">
-      <span className="font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">{label}: </span>
-      <span className={strong ? 'text-[var(--text-primary)]' : ''}>{value}</span>
+      <span className="font-medium text-[var(--gt-ink-primary)]">{label}: </span>
+      <span className={strong ? 'text-[var(--gt-ink-primary)]' : ''}>{value}</span>
     </div>
   );
 }
