@@ -221,11 +221,11 @@ export function LoadingBar({ className = '' }: { className?: string }) {
 }
 
 const sessionManagementModalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-4 backdrop-blur-sm sm:p-6';
-const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-3)]';
+const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const sessionManagementModalHeaderClass = 'flex items-start justify-between gap-4 border-b border-[var(--gt-border-subtle)] px-5 py-4';
 const sessionManagementModalFooterClass = 'flex items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-3';
 const sessionManagementModalButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--bg-main)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const sessionManagementModalIconButtonClass = 'flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--text-muted)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] active:scale-90';
 const sessionManagementModalLabelClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
 const sessionManagementModalErrorClass = 'border-b border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]';
@@ -246,7 +246,7 @@ const sessionManagementRawJsonHeaderClass = 'border-b border-[var(--gt-border-su
 
 export function InitialLoadingShell({ copy }: { copy: SessionManagementCopy }) {
   return (
-    <div className="mx-auto grid min-h-0 w-full max-w-[1480px] flex-1 grid-cols-[18rem_minmax(0,1fr)] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]">
+    <div className="mx-auto grid min-h-0 w-full max-w-[1480px] flex-1 grid-cols-[18rem_minmax(0,1fr)] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm">
       <section className="flex min-h-0 flex-col border-r border-[var(--gt-border-subtle)]">
         <div className="flex h-12 items-center border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
           <h2 className="text-[length:var(--font-size-ui-md)] font-semibold">{copy.projectListTitle}</h2>
@@ -940,7 +940,7 @@ export function SessionsPanel({
               {actionMenuOpen ? (
                 <div
                   role="menu"
-                  className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-52 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-[var(--gt-elevation-raised-2)]"
+                  className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-52 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-sm"
                 >
                   {filters.map((filter) => {
                     const isActive = activeFilter === filter.id;
@@ -992,7 +992,7 @@ export function SessionsPanel({
                     onClick={() => onSelectFilter(filter.id)}
                     className={`rounded px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium transition-colors active:scale-95 ${
                       isActive
-                        ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
+                        ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
                         : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)]'
                     }`}
                   >

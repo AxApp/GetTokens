@@ -255,9 +255,12 @@ test('session analysis opens from header through scope selector and detail modal
   assert.match(viewSource, /data-session-management-modal="analysis-detail"/, 'analysis detail must use the current modal shell contract');
   assert.match(viewSource, /data-session-management-modal="provider-merge"/, 'provider merge must use the current modal shell contract');
   assert.match(viewSource, /data-session-management-modal="session-detail"/, 'session detail must use the current modal shell contract');
-  assert.match(viewSource, /const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] shadow-\[var\(--gt-elevation-raised-3\)\]'/);
+  assert.match(viewSource, /const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] shadow-sm'/);
+  assert.match(viewSource, /const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--text-primary\)\][^']*text-\[var\(--gt-surface-canvas\)\]/);
   assert.doesNotMatch(viewSource, /className="btn-swiss/, 'session-management modals must not use the old swiss button skin');
   assert.doesNotMatch(viewSource, /flex max-h-\[90vh\] w-full max-w-[^"]+ border-4 border-\[var\(--border-color\)\]/, 'modals must not keep the old thick border shell');
+  assert.doesNotMatch(viewSource, /shadow-\[var\(--gt-elevation-raised-[23]\)\]/, 'session-management modals and menus must not keep bracket elevation shadows');
+  assert.doesNotMatch(viewSource, /--bg-main/, 'session-management controls must not use legacy inverse background text tokens');
   assert.match(viewSource, /aria-disabled=\{loading \? 'true' : undefined\}/, 'detail modal back control must stay focusable while analysis is loading');
   assert.doesNotMatch(viewSource, /disabled=\{loading\}/, 'detail modal must not drop focus onto body by disabling its initial focus button');
 });
@@ -274,6 +277,7 @@ test('session management workbench uses the current quiet workspace layout', asy
   assert.match(viewSource, /data-session-management-search-frame="true"/, 'search frame must be explicitly styled as a quiet utility rail');
   assert.match(viewSource, /data-session-management-project-panel="true"/, 'project list panel must expose the current column shell');
   assert.match(viewSource, /data-session-management-session-panel="true"/, 'session list panel must expose the current column shell');
+  assert.match(viewSource, /bg-\[var\(--gt-surface-canvas\)\] shadow-sm/, 'initial loading workbench must use the same quiet shadow scale as the loaded shell');
   assert.doesNotMatch(viewSource, /data-session-management-search-frame="true" className="[^"]*bg-\[var\(--bg-surface\)\]/, 'search rail must not keep the old surface block');
   assert.match(viewSource, /rounded-sm border-l-2 border-l-transparent/, 'session rows must keep a subtle two-pixel active affordance');
   assert.match(viewSource, /border-t border-\[var\(--gt-border-subtle\)\]/, 'session metadata must sit in a quiet footer rail');
