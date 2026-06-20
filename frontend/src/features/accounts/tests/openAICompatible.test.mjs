@@ -162,6 +162,28 @@ test('openai compatible compose modal uses the quiet workspace shell', async () 
   assert.doesNotMatch(source, /tracking-\[0\.16em\]|tracking-\[0\.2em\]/);
 });
 
+test('openai compatible workspace uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/OpenAICompatibleWorkspace.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const openAICompatibleWorkspaceShellClass =/);
+  assert.match(source, /const openAICompatibleWorkspaceActionButtonClass =/);
+  assert.match(source, /const openAICompatibleWorkspacePrimaryButtonClass =/);
+  assert.match(source, /const openAICompatibleWorkspaceStateClass =/);
+  assert.match(source, /data-openai-compatible-workspace="quiet"/);
+  assert.match(source, /data-openai-compatible-workspace-actions="quiet"/);
+  assert.match(source, /data-openai-compatible-workspace-state/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-2/);
+  assert.doesNotMatch(source, /border-dashed/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /\buppercase\b/);
+  assert.doesNotMatch(source, /tracking-\[0\.2em\]|tracking-tight/);
+});
+
 test('emptyOpenAICompatibleProviderForm starts with blank fields', () => {
   assert.deepEqual(emptyOpenAICompatibleProviderForm, {
     name: '',

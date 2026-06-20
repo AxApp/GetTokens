@@ -1,3 +1,4 @@
+import { Plus, RefreshCw } from 'lucide-react';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
@@ -24,6 +25,25 @@ interface OpenAICompatibleWorkspaceProps {
   onToggleDisabled: (provider: OpenAICompatibleProvider) => void;
   embedded?: boolean;
 }
+
+const openAICompatibleWorkspaceShellClass =
+  'h-full w-full overflow-auto bg-[var(--gt-surface-canvas)] p-12';
+const openAICompatibleWorkspaceContentClass =
+  'mx-auto max-w-6xl space-y-8 pb-32';
+const openAICompatibleWorkspaceEmbeddedClass =
+  'space-y-8';
+const openAICompatibleWorkspaceActionsClass =
+  'flex flex-wrap items-center justify-end gap-2';
+const openAICompatibleWorkspaceActionButtonClass =
+  'inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-muted)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+const openAICompatibleWorkspacePrimaryButtonClass =
+  'inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const openAICompatibleWorkspaceStateClass =
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-16 text-center';
+const openAICompatibleWorkspaceStateTitleClass =
+  'text-[length:var(--font-size-ui-md)] font-semibold tracking-normal text-[var(--text-primary)]';
+const openAICompatibleWorkspaceStateHintClass =
+  'mx-auto mt-2 max-w-2xl text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-muted)]';
 
 export default function OpenAICompatibleWorkspace({
   t,
@@ -53,49 +73,34 @@ export default function OpenAICompatibleWorkspace({
           </>
         }
         actions={
-          <>
+          <div data-openai-compatible-workspace-actions="quiet" className={openAICompatibleWorkspaceActionsClass}>
             <button
               onClick={onRefresh}
-              className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
+              className={openAICompatibleWorkspaceActionButtonClass}
               disabled={!ready || loading}
               title={t('common.refresh')}
+              aria-label={t('common.refresh')}
             >
-              <svg
-                className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="square"
-              >
-                <path d="M23 4v6h-6M1 20v-6h6" />
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-              </svg>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
             </button>
-            <button onClick={onCreate} className="btn-swiss" disabled={!ready}>
+            <button onClick={onCreate} className={openAICompatibleWorkspacePrimaryButtonClass} disabled={!ready}>
+              <Plus className="h-4 w-4" strokeWidth={2.5} />
               {t('accounts.openai_provider_add')}
             </button>
-          </>
+          </div>
         }
       />
 
       {!ready ? (
-        <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center font-black uppercase italic text-[var(--text-muted)]">
-          {t('common.loading')}
-        </div>
+        <OpenAICompatibleWorkspaceState state="loading" title={t('common.loading')} />
       ) : loading ? (
-        <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center font-black uppercase italic text-[var(--text-muted)]">
-          {t('common.loading')}
-        </div>
+        <OpenAICompatibleWorkspaceState state="loading" title={t('common.loading')} />
       ) : providers.length === 0 ? (
-        <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center">
-          <div className="text-lg font-black uppercase italic tracking-tight text-[var(--text-primary)]">
-            {t('accounts.openai_provider_empty')}
-          </div>
-          <p className="mt-3 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
-            {t('accounts.openai_provider_empty_hint')}
-          </p>
-        </div>
+        <OpenAICompatibleWorkspaceState
+          state="empty"
+          title={t('accounts.openai_provider_empty')}
+          hint={t('accounts.openai_provider_empty_hint')}
+        />
       ) : (
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
           {providers.map((provider) => {
@@ -140,12 +145,41 @@ export default function OpenAICompatibleWorkspace({
   );
 
   if (embedded) {
-    return <section className="space-y-8" data-collaboration-id="PAGE_ACCOUNTS_OPENAI_COMPATIBLE_SECTION">{content}</section>;
+    return (
+      <section
+        className={openAICompatibleWorkspaceEmbeddedClass}
+        data-collaboration-id="PAGE_ACCOUNTS_OPENAI_COMPATIBLE_SECTION"
+        data-openai-compatible-workspace="quiet"
+      >
+        {content}
+      </section>
+    );
   }
 
   return (
-    <div className="h-full w-full overflow-auto bg-[var(--bg-surface)] p-12" data-collaboration-id="PAGE_ACCOUNTS_OPENAI_COMPATIBLE">
-      <div className="mx-auto max-w-6xl space-y-8 pb-32">{content}</div>
+    <div
+      className={openAICompatibleWorkspaceShellClass}
+      data-collaboration-id="PAGE_ACCOUNTS_OPENAI_COMPATIBLE"
+      data-openai-compatible-workspace="quiet"
+    >
+      <div className={openAICompatibleWorkspaceContentClass}>{content}</div>
+    </div>
+  );
+}
+
+function OpenAICompatibleWorkspaceState({
+  state,
+  title,
+  hint,
+}: {
+  state: 'loading' | 'empty';
+  title: string;
+  hint?: string;
+}) {
+  return (
+    <div data-openai-compatible-workspace-state={state} className={openAICompatibleWorkspaceStateClass}>
+      <div className={openAICompatibleWorkspaceStateTitleClass}>{title}</div>
+      {hint ? <p className={openAICompatibleWorkspaceStateHintClass}>{hint}</p> : null}
     </div>
   );
 }
