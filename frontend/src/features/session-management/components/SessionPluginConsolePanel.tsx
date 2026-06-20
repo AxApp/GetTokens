@@ -89,7 +89,7 @@ export interface SessionPluginConsolePanelProps {
 }
 
 const sessionPluginConsoleButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
-const sessionPluginConsolePrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--bg-main)] transition hover:opacity-90';
+const sessionPluginConsolePrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
 const sessionPluginConsolePanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const sessionPluginConsoleMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 
@@ -125,12 +125,12 @@ export default function SessionPluginConsolePanel({
       data-design-system-component="true"
       data-design-system-component-name="SessionPluginConsolePanel"
       data-session-plugin-console-panel="true"
-      className="min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]"
+      className="min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm"
     >
       <header className="grid gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--bg-main)]">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]">
               <BarChart3 className="h-4 w-4" strokeWidth={2.4} />
             </div>
             <div className="min-w-0">
@@ -158,7 +158,7 @@ export default function SessionPluginConsolePanel({
                 key={item.id}
                 type="button"
                 className={`min-h-8 border-r border-[var(--gt-border-subtle)] px-3 text-[length:var(--font-size-ui-xs)] font-medium last:border-r-0 ${
-                  mode === item.id ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-muted)]'
+                  mode === item.id ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]' : 'text-[var(--text-muted)]'
                 }`}
               >
                 {item.label}
@@ -225,7 +225,7 @@ export default function SessionPluginConsolePanel({
                     key={scope.id}
                     className={`rounded border px-3 py-2 ${
                       scope.active
-                        ? 'border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                        ? 'border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
                         : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]'
                     }`}
                   >
@@ -247,9 +247,9 @@ export default function SessionPluginConsolePanel({
                   className="grid h-[74px] w-[74px] place-items-center rounded-full border-[8px] border-solid text-[length:var(--font-size-ui-md)] font-semibold"
                   style={{
                     borderColor:
-                      execution.tone === 'green' ? 'var(--color-status-success)' : 'var(--color-chart-blue)',
+                      execution.tone === 'green' ? 'var(--gt-status-success)' : 'var(--gt-status-info)',
                     borderRightColor:
-                      execution.tone === 'green' ? 'var(--color-status-success)' : 'var(--bg-muted)',
+                      execution.tone === 'green' ? 'var(--gt-status-success)' : 'var(--gt-surface-muted)',
                   }}
                 >
                   {execution.dialLabel}
@@ -261,7 +261,7 @@ export default function SessionPluginConsolePanel({
                   </div>
                   <div className="h-2 overflow-hidden rounded bg-[var(--gt-surface-canvas)]">
                     <div
-                      className={`h-full ${execution.tone === 'green' ? 'bg-[var(--color-status-success)]' : 'bg-[var(--color-chart-blue)]'}`}
+                      className={`h-full ${execution.tone === 'green' ? 'bg-[var(--gt-status-success)]' : 'bg-[var(--gt-status-info)]'}`}
                       style={{ width: `${Math.max(0, Math.min(100, execution.progress))}%` }}
                     />
                   </div>
@@ -320,10 +320,10 @@ export default function SessionPluginConsolePanel({
                       <span>{item.title}</span>
                       <span className={`h-2 w-2 rounded-full ${
                         item.tone === 'green'
-                          ? 'bg-[var(--color-status-success)]'
+                          ? 'bg-[var(--gt-status-success)]'
                           : item.tone === 'orange'
-                            ? 'bg-[var(--color-chart-peak)]'
-                            : 'bg-[var(--color-chart-blue)]'
+                            ? 'bg-[var(--gt-status-warning)]'
+                            : 'bg-[var(--gt-status-info)]'
                       }`} />
                     </div>
                     <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
@@ -377,7 +377,7 @@ export default function SessionPluginConsolePanel({
                       {keyword.term}
                     </div>
                     <div className="h-2 overflow-hidden rounded bg-[var(--gt-surface-muted)]">
-                      <div className="h-full bg-[var(--color-status-success)]" style={{ width: `${keyword.width}%` }} />
+                      <div className="h-full bg-[var(--gt-status-success)]" style={{ width: `${keyword.width}%` }} />
                     </div>
                   </div>
                 ))}
