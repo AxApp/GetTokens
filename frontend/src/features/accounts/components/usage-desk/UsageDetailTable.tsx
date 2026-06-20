@@ -1,9 +1,18 @@
 import {
-  buildUsageDeskChartPointStyle,
-  formatUsageDeskChartValue,
   resolveUsageDeskChartSelectionKey,
   type UsageDeskMinuteRow,
 } from '../../model/usageDesk';
+
+const usageDetailTableShellClass =
+  'overflow-x-auto overflow-y-visible rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const usageDetailTableHeaderRowClass = 'bg-[var(--gt-surface-muted)]';
+const usageDetailTableHeaderCellClass =
+  'border-b border-[var(--gt-border-subtle)] px-3 py-3 text-left text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--gt-ink-primary)]';
+const usageDetailTableRowClass =
+  'cursor-pointer border-t border-[var(--gt-border-subtle)] transition-colors first:border-t-0 hover:bg-[var(--gt-surface-muted)]';
+const usageDetailTableSelectedRowClass =
+  'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-primary)]';
+const usageDetailTableCellClass = 'px-3 py-3 text-[length:var(--font-size-ui-md-compact)] font-medium leading-6';
 
 export type UsageDetailTableRow = UsageDeskMinuteRow & {
   drilldownDayKey?: string;
@@ -73,15 +82,12 @@ export function UsageDetailTable({
   onSelectRow: (rowKey: string, chartPointKey: string, drilldownDayKey?: string) => void;
 }) {
   return (
-    <div className="overflow-x-auto overflow-y-visible border-2 border-[var(--border-color)]">
+    <div className={usageDetailTableShellClass} data-usage-detail-table="quiet">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="bg-[var(--bg-surface)]">
+          <tr className={usageDetailTableHeaderRowClass}>
             {columns.map((column) => (
-              <th
-                key={column.key}
-                className="border-b-2 border-[var(--border-color)] px-3 py-3 text-left text-[length:var(--font-size-ui-sm)] font-black tracking-[0.12em] text-[var(--text-primary)]"
-              >
+              <th key={column.key} className={usageDetailTableHeaderCellClass}>
                 {column.header}
               </th>
             ))}
@@ -125,14 +131,15 @@ function UsageDetailRow({
   return (
     <tr
       onClick={onSelect}
-      className={`border-t border-dashed border-[var(--border-color)] first:border-t-0 cursor-pointer transition-colors ${
-        selected ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'hover:bg-[var(--bg-main)]/60'
-      }`}
+      className={`${usageDetailTableRowClass} ${selected ? usageDetailTableSelectedRowClass : ''}`}
+      data-usage-detail-row={selected ? 'selected' : 'idle'}
     >
       {cells.map((cell, index) => (
         <td
           key={`${row.timeLabel}-${index}`}
-          className={`px-3 py-3 text-[length:var(--font-size-ui-md-compact)] font-bold leading-6 ${selected ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'}`}
+          className={`${usageDetailTableCellClass} ${
+            selected ? 'text-[var(--gt-surface-canvas)]' : 'text-[var(--gt-ink-primary)]'
+          }`}
         >
           {cell}
         </td>

@@ -305,6 +305,30 @@ test('UsageDeskPanels uses the quiet workspace shell', async () => {
   assert.doesNotMatch(panelsSource, /shadow-\[/);
 });
 
+test('UsageDetailTable uses the quiet workspace table shell', async () => {
+  const tableSource = await readFile(new URL('../components/usage-desk/UsageDetailTable.tsx', import.meta.url), 'utf8');
+
+  assert.match(tableSource, /const usageDetailTableShellClass =/);
+  assert.match(tableSource, /const usageDetailTableHeaderRowClass =/);
+  assert.match(tableSource, /const usageDetailTableHeaderCellClass =/);
+  assert.match(tableSource, /const usageDetailTableRowClass =/);
+  assert.match(tableSource, /const usageDetailTableSelectedRowClass =/);
+  assert.match(tableSource, /data-usage-detail-table="quiet"/);
+  assert.match(tableSource, /data-usage-detail-row/);
+  assert.match(tableSource, /--gt-surface-canvas/);
+  assert.match(tableSource, /--gt-surface-muted/);
+  assert.match(tableSource, /--gt-border-subtle/);
+  assert.match(tableSource, /--gt-ink-primary/);
+  assert.doesNotMatch(tableSource, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(tableSource, /border-b-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(tableSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(tableSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(tableSource, /font-black/);
+  assert.doesNotMatch(tableSource, /uppercase/);
+  assert.doesNotMatch(tableSource, /tracking-\[/);
+  assert.doesNotMatch(tableSource, /shadow-\[/);
+});
+
 test('usage desk chart grid fills the scroll viewport', async () => {
   const chartSource = await readFile(new URL('../components/usage-desk/UsageDeskChart.tsx', import.meta.url), 'utf8');
 
