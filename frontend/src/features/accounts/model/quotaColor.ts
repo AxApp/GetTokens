@@ -4,12 +4,12 @@ export function resolveQuotaRemainingFillClass(remainingPercent: number) {
     : 0;
 
   if (value <= 20) {
-    return 'bg-[var(--color-status-danger)]';
+    return 'bg-[var(--gt-status-danger)]';
   }
 
   if (value <= 50) {
-    return 'bg-[var(--color-status-warning)]';
+    return 'bg-[var(--gt-status-warning)]';
   }
 
-  return 'bg-[var(--color-status-success)]';
+  return 'bg-[var(--gt-status-success)]';
 }

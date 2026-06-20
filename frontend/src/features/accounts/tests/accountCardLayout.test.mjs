@@ -198,9 +198,9 @@ test('quota bars keep sidecar quota fact diagnostics out of normal cards', async
 test('quota bar fill color is derived only from remaining quota value', async () => {
   const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 
-  assert.equal(resolveQuotaRemainingFillClass(80), 'bg-[var(--color-status-success)]');
-  assert.equal(resolveQuotaRemainingFillClass(50), 'bg-[var(--color-status-warning)]');
-  assert.equal(resolveQuotaRemainingFillClass(20), 'bg-[var(--color-status-danger)]');
+  assert.equal(resolveQuotaRemainingFillClass(80), 'bg-[var(--gt-status-success)]');
+  assert.equal(resolveQuotaRemainingFillClass(50), 'bg-[var(--gt-status-warning)]');
+  assert.equal(resolveQuotaRemainingFillClass(20), 'bg-[var(--gt-status-danger)]');
   assert.match(source, /resolveQuotaRemainingFillClass\(window\.remainingPercent\)/);
   assert.doesNotMatch(source, /QuotaBars\(\{ quotaDisplay,\s*accentFillClass/);
 });
