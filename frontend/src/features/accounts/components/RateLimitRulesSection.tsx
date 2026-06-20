@@ -53,8 +53,8 @@ export interface RateLimitRulesAPI {
 const rateLimitRulesShellClass = 'grid min-w-0 gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const rateLimitRulesPanelClass = 'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-3';
 const rateLimitRulesListClass = 'grid min-w-0 gap-2';
-const rateLimitRulesMetaClass = 'min-w-0 font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-[0.08em] text-[var(--gt-ink-muted)]';
-const rateLimitRulesTitleClass = 'truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-[0.03em] text-[var(--gt-ink-primary)]';
+const rateLimitRulesMetaClass = 'min-w-0 font-mono text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-muted)]';
+const rateLimitRulesTitleClass = 'truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-primary)]';
 const rateLimitRulesButtonClass = 'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const rateLimitRulesPrimaryButtonClass = `${rateLimitRulesButtonClass} bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-muted)]`;
 const rateLimitRulesIconButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-ink-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
@@ -505,7 +505,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                         }
                         className={rateLimitRulesInlineInputClass}
                       />
-                      <span className="flex w-10 items-center justify-center border-l border-[var(--gt-border-subtle)] text-[length:var(--font-size-ui-2xs)] font-medium tracking-[0.08em] text-[var(--gt-ink-muted)]">
+                      <span className="flex w-10 items-center justify-center border-l border-[var(--gt-border-subtle)] text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-muted)]">
                         {draft.strategy === 'token-window' ? 'M' : t('accounts.rate_limit_count_unit')}
                       </span>
                     </div>
@@ -618,7 +618,7 @@ function buildRateLimitRuleRowSummary(
 function RuleField({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="block min-w-0 space-y-1">
-      <span className="block font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-[0.08em] text-[var(--gt-ink-muted)]">
+      <span className="block font-mono text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-muted)]">
         {label}
       </span>
       {children}
