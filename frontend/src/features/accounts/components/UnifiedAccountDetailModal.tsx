@@ -416,7 +416,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                         </div>
                       </div>
                     ) : (
-                      <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+                      <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)]">
                         请选择左侧额度模块或余额模块
                       </AccountDetailEmptyState>
                     )}
@@ -442,10 +442,10 @@ function AccountDetailStatusNotice({
 }) {
   return (
     <AccountDetailNotice tone={message.tone} className="mx-6 mb-4 shrink-0">
-      <div className="font-mono text-[length:var(--font-size-ui-2xs)] tracking-[0.18em]">
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)]">
         {message.title}
       </div>
-      <div className="mt-1 break-words font-mono text-[length:var(--font-size-ui-xs)] normal-case tracking-[0.06em]">
+      <div className="mt-1 break-words font-mono text-[length:var(--font-size-ui-xs)] normal-case">
         {message.body}
       </div>
     </AccountDetailNotice>

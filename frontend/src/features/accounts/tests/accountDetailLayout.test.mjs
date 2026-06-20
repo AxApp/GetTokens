@@ -1179,7 +1179,7 @@ test('unified account detail modal internals use the quiet workspace shell', asy
   assert.doesNotMatch(source, /color-status-/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /\buppercase\b/);
-  assert.doesNotMatch(source, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-\[0\.16em\]/);
+  assert.doesNotMatch(source, /tracking-\[|tracking-wide|tracking-wider|tracking-widest|tracking-tight|tracking-tighter|tracking-tightest/);
 });
 
 test('openai compatible account detail uses the single unified detail page', async () => {
