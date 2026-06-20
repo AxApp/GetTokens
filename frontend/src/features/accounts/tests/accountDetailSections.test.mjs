@@ -75,6 +75,7 @@ test('account credential detail editor uses the quiet workspace shell', async ()
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.12em\]/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.18em\]/);
+  assert.doesNotMatch(source, /color-status-/);
   assert.doesNotMatch(targetSource, /shadow-hard|shadow-\[/);
 });
 

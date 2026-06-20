@@ -63,6 +63,7 @@ test('quota reset modal uses quiet dialog controls while preserving the gradient
   assert.doesNotMatch(modalSource, /tracking-\[0\.08em\]|tracking-tight/);
   assert.doesNotMatch(modalSource, /bg-\[var\(--bg-main\)\]/);
   assert.doesNotMatch(modalSource, /color-status-/);
+  assert.doesNotMatch(sectionSource, /shadow-\[|shadow-xl/);
 });
 
 test('quota reset consume is gated by available reset credits', () => {

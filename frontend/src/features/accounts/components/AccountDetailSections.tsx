@@ -206,9 +206,9 @@ const accountDetailCredentialMenuItemClass = (active: boolean) =>
 const accountDetailCredentialStatusClass = (status?: APIKeyVerifyState['status']) =>
   `text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal ${
     status === 'success'
-      ? 'text-[var(--color-status-success)]'
+      ? 'text-[var(--gt-status-success)]'
       : status === 'error'
-        ? 'text-[var(--color-status-danger)]'
+        ? 'text-[var(--gt-status-danger)]'
         : 'text-[var(--text-muted)]'
   }`;
 const accountDetailResourcePaneDividerClass =
@@ -250,11 +250,11 @@ const accountDetailResourceKvValueClass =
 const accountDetailQuotaResetModalOverlayClass =
   'fixed inset-0 z-[1000] grid place-items-center bg-black/35 px-6 py-8 backdrop-blur-[18px]';
 const accountDetailQuotaResetModalPanelClass =
-  'relative grid w-full max-w-[38rem] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-canvas)_78%,transparent)] shadow-[0_2rem_5rem_rgba(0,0,0,0.22)] backdrop-blur-2xl';
+  'relative grid w-full max-w-[38rem] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-canvas)_78%,transparent)] shadow-lg backdrop-blur-2xl';
 const accountDetailQuotaResetHeroClass =
   'relative h-36 overflow-hidden border-b border-white/40';
 const accountDetailQuotaResetHeroMarkClass =
-  'absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded border border-white/40 bg-[linear-gradient(150deg,rgba(171,149,255,0.8),rgba(36,65,255,0.88))] font-mono text-3xl font-semibold text-white shadow-xl backdrop-blur-md';
+  'absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded border border-white/40 bg-[linear-gradient(150deg,rgba(171,149,255,0.8),rgba(36,65,255,0.88))] font-mono text-3xl font-semibold text-white shadow-lg backdrop-blur-md';
 const accountDetailQuotaResetCloseButtonClass =
   'absolute right-4 top-4 grid h-10 w-10 place-items-center rounded border border-white/55 bg-white/45 text-xl font-semibold text-[var(--text-primary)] shadow-lg backdrop-blur-xl transition-colors hover:bg-white/65';
 const accountDetailQuotaResetBodyClass =
