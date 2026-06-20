@@ -281,6 +281,33 @@ test('session management workbench uses the current quiet workspace layout', asy
   assert.doesNotMatch(viewSource, /session\.summary \? \(/, 'session list rows must not repeat the derived title again as a summary line');
 });
 
+test('session management analysis and raw json use the quiet detail shell', async () => {
+  const viewSource = await readFile(new URL('./SessionManagementView.tsx', import.meta.url), 'utf8');
+
+  assert.match(viewSource, /const sessionManagementAnalysisSectionClass = /, 'analysis sections must share a quiet section class');
+  assert.match(viewSource, /const sessionManagementAnalysisCardClass = /, 'analysis result cards must share a quiet card class');
+  assert.match(viewSource, /const sessionManagementMessageMetaClass = /, 'message metadata row must share a quiet meta class');
+  assert.match(viewSource, /const sessionManagementRawJsonPanelClass = /, 'raw JSON preview must share a quiet panel class');
+  assert.match(viewSource, /data-session-management-analysis-results="quiet"/, 'analysis results must expose the quiet shell marker');
+  assert.match(viewSource, /data-session-management-raw-json="quiet"/, 'raw JSON preview must expose the quiet shell marker');
+  assert.match(viewSource, /--gt-border-subtle/, 'detail internals must use quiet border tokens');
+  assert.match(viewSource, /--gt-surface-muted/, 'detail internals must use quiet surface tokens');
+
+  const resultBlock = viewSource.match(/function SessionAnalysisResultGrid[\s\S]*?function getAnalysisWordCloud/)?.[0] ?? '';
+  assert.doesNotMatch(resultBlock, /border-\[var\(--border-color\)\]/, 'analysis results must not keep legacy border tokens');
+  assert.doesNotMatch(resultBlock, /\bfont-black\b/, 'analysis results must not use heavy brutalist weight');
+  assert.doesNotMatch(resultBlock, /\buppercase\b/, 'analysis results must not force uppercase labels');
+  assert.doesNotMatch(resultBlock, /tracking-\[/, 'analysis results must not use wide tracking');
+
+  const detailBlock = viewSource.match(/selectedSessionDetail\.messages\.map[\s\S]*?detailState\.rawJSONError/)?.[0] ?? '';
+  assert.match(detailBlock, /data-session-management-raw-json="quiet"/, 'raw JSON assertions must inspect the rendered message detail block');
+  assert.doesNotMatch(detailBlock, /border-2/, 'raw JSON preview must not use thick borders');
+  assert.doesNotMatch(detailBlock, /bg-\[var\(--bg-surface\)\]/, 'raw JSON preview must not use the old surface token');
+  assert.doesNotMatch(detailBlock, /\bfont-black\b/, 'message metadata must not use heavy brutalist weight');
+  assert.doesNotMatch(detailBlock, /\buppercase\b/, 'message metadata must not force uppercase labels');
+  assert.doesNotMatch(detailBlock, /tracking-\[/, 'message metadata must not use wide tracking');
+});
+
 test('dev bridge session analysis keeps word cloud and common phrase fields', async () => {
   const devSource = await readFile(new URL('../../../dev/sessionManagementDevData.js', import.meta.url), 'utf8');
 

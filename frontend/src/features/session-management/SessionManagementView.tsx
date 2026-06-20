@@ -229,6 +229,20 @@ const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center j
 const sessionManagementModalIconButtonClass = 'flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--text-muted)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] active:scale-90';
 const sessionManagementModalLabelClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
 const sessionManagementModalErrorClass = 'border-b border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]';
+const sessionManagementAnalysisSectionClass = 'border-b border-[var(--gt-border-subtle)] px-4 py-3';
+const sessionManagementAnalysisColumnClass = 'border-b border-[var(--gt-border-subtle)] px-4 py-3 lg:border-b-0 lg:border-r lg:border-[var(--gt-border-subtle)]';
+const sessionManagementAnalysisTitleClass = 'mb-2 text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const sessionManagementAnalysisCloudItemClass = 'max-w-full truncate font-semibold leading-none tracking-normal text-[var(--text-primary)]';
+const sessionManagementAnalysisCardClass = 'min-w-0 rounded-sm border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
+const sessionManagementAnalysisCardTitleClass = 'line-clamp-2 break-words text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+const sessionManagementAnalysisCardMetaClass = 'mt-1 text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
+const sessionManagementAnalysisMetricRowClass = 'grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[length:var(--font-size-ui-xs)]';
+const sessionManagementAnalysisMetricLabelClass = 'truncate font-semibold tracking-normal text-[var(--text-primary)]';
+const sessionManagementAnalysisMetricValueClass = 'font-semibold tabular-nums text-[var(--text-primary)]';
+const sessionManagementAnalysisMetricMetaClass = 'text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
+const sessionManagementMessageMetaClass = 'flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal';
+const sessionManagementRawJsonPanelClass = 'mt-3 overflow-hidden rounded-sm border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const sessionManagementRawJsonHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-3 py-1.5 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
 
 export function InitialLoadingShell({ copy }: { copy: SessionManagementCopy }) {
   return (
@@ -685,14 +699,14 @@ export function SessionAnalysisDetailModal({
 function SessionAnalysisResultGrid({ copy, result }: { copy: SessionManagementCopy; result: SessionAnalysisResult }) {
   const wordCloud = getAnalysisWordCloud(result);
   return (
-    <div className="grid gap-0">
-      <div className="border-b border-[var(--border-color)] px-4 py-3">
+    <div className="grid gap-0" data-session-management-analysis-results="quiet">
+      <div className={sessionManagementAnalysisSectionClass}>
         <AnalysisSectionTitle>{copy.analysisWordCloud}</AnalysisSectionTitle>
         <div className="flex min-h-24 flex-wrap items-center gap-x-4 gap-y-2 overflow-hidden">
           {wordCloud.slice(0, 28).map((item) => (
             <span
               key={item.term}
-              className="max-w-full truncate font-black uppercase leading-none text-[var(--text-primary)]"
+              className={sessionManagementAnalysisCloudItemClass}
               style={{
                 fontSize: `${12 + Math.max(0.2, Math.min(item.weight, 1)) * 18}px`,
                 opacity: 0.68 + Math.max(0.2, Math.min(item.weight, 1)) * 0.32,
@@ -736,30 +750,30 @@ function SessionAnalysisResultGrid({ copy, result }: { copy: SessionManagementCo
           ))}
         </AnalysisColumn>
       </div>
-      <div className="border-b border-[var(--border-color)] px-4 py-3">
+      <div className={sessionManagementAnalysisSectionClass}>
         <AnalysisSectionTitle>{copy.analysisCommonPhrases}</AnalysisSectionTitle>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {result.commonPhrases.slice(0, 9).map((phrase) => (
-            <div key={phrase.text} className="min-w-0 border border-[var(--border-color)] px-3 py-2">
-              <div className="line-clamp-2 break-words text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em]">
+            <div key={phrase.text} className={sessionManagementAnalysisCardClass}>
+              <div className={sessionManagementAnalysisCardTitleClass}>
                 {phrase.text}
               </div>
-              <div className="mt-1 text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <div className={sessionManagementAnalysisCardMetaClass}>
                 {phrase.count} / {phrase.sessionCount} {copy.sessionsUnit}
               </div>
             </div>
           ))}
         </div>
       </div>
-      <div className="border-t border-[var(--border-color)] px-4 py-3 lg:col-span-3">
+      <div className="border-t border-[var(--gt-border-subtle)] px-4 py-3 lg:col-span-3">
         <AnalysisSectionTitle>{copy.analysisTopics}</AnalysisSectionTitle>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {result.sessions.slice(0, 6).map((session) => (
-            <div key={session.sessionID} className="min-w-0 border border-[var(--border-color)] px-3 py-2">
-              <div className="truncate text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">
+            <div key={session.sessionID} className={sessionManagementAnalysisCardClass}>
+              <div className={sessionManagementAnalysisCardTitleClass}>
                 {session.title || getFileName(session.sessionID, copy.unavailable)}
               </div>
-              <div className="mt-1 truncate text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <div className={sessionManagementAnalysisCardMetaClass}>
                 {session.topicLine}
               </div>
             </div>
@@ -785,7 +799,7 @@ function getAnalysisWordCloud(result: SessionAnalysisResult) {
 
 function AnalysisSectionTitle({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+    <div className={sessionManagementAnalysisTitleClass}>
       {children}
     </div>
   );
@@ -793,7 +807,7 @@ function AnalysisSectionTitle({ children }: { children: ReactNode }) {
 
 function AnalysisColumn({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="border-b border-[var(--border-color)] px-4 py-3 lg:border-b-0 lg:border-r">
+    <div className={sessionManagementAnalysisColumnClass}>
       <AnalysisSectionTitle>{title}</AnalysisSectionTitle>
       <div className="space-y-1.5">{children}</div>
     </div>
@@ -802,10 +816,10 @@ function AnalysisColumn({ title, children }: { title: string; children: ReactNod
 
 function AnalysisMetricRow({ label, value, meta }: { label: string; value: string; meta: string }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[length:var(--font-size-ui-xs)]">
-      <span className="truncate font-black uppercase tracking-[0.12em]">{label}</span>
-      <span className="font-black tabular-nums">{value}</span>
-      <span className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">{meta}</span>
+    <div className={sessionManagementAnalysisMetricRowClass}>
+      <span className={sessionManagementAnalysisMetricLabelClass}>{label}</span>
+      <span className={sessionManagementAnalysisMetricValueClass}>{value}</span>
+      <span className={sessionManagementAnalysisMetricMetaClass}>{meta}</span>
     </div>
   );
 }
@@ -1372,7 +1386,7 @@ export function SessionDetailModal({
                   onClick={() => onViewRawJSON(message)}
                   className="cursor-pointer border-b border-[var(--gt-border-subtle)] px-5 py-3 transition-colors hover:bg-[var(--gt-surface-muted)]"
                 >
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em]">
+                  <div className={sessionManagementMessageMetaClass}>
                     <span className="text-[var(--text-muted)]/50">#{String(index + 1).padStart(2, '0')}</span>
                     <span className="text-[var(--text-muted)]">{message.timeLabel}</span>
                     <span className={roleTone(message.role)}>{renderRoleLabel(message.role)}</span>
@@ -1390,8 +1404,8 @@ export function SessionDetailModal({
                     {message.content || message.summary}
                   </pre>
                   {detailState.rawJSONByMessageID[message.id] ? (
-                    <div className="mt-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-                      <div className="border-b border-[var(--border-color)] px-3 py-1.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                    <div className={sessionManagementRawJsonPanelClass} data-session-management-raw-json="quiet">
+                      <div className={sessionManagementRawJsonHeaderClass}>
                         RAW JSON
                       </div>
                       <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words p-3 font-mono text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-primary)]">
