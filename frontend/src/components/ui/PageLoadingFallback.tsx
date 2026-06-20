@@ -35,17 +35,31 @@ const dataInfluxPacketStyles: ReadonlyArray<DataInfluxPacketStyle> = [
   { '--packet-top': '6.38rem', '--packet-width': '10.2rem', '--packet-delay': '-0.7s', '--packet-duration': '0.9s', '--packet-opacity': '0.18' },
 ];
 
+const pageLoadingRootClass =
+  'page-loading-fallback flex h-full min-h-[8rem] items-center justify-center overflow-hidden bg-[var(--gt-surface-muted)] p-4';
+const pageLoadingPanelClass =
+  'page-loading-panel grid w-full max-w-[20rem] grid-cols-[5rem_minmax(0,1fr)] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+const pageLoadingRailClass =
+  'page-loading-rail relative grid grid-rows-4 overflow-hidden border-r border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)]';
+const pageLoadingLabelClass =
+  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const pageLoadingMetaClass =
+  'mb-2 grid grid-cols-[minmax(0,1fr)_auto] gap-3 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const pageLoadingTrackClass =
+  'page-loading-track relative h-5 overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+
 export default function PageLoadingFallback() {
   return (
     <div
       data-design-system-component="true"
       data-design-system-component-name="PageLoadingFallback"
-      className="page-loading-fallback flex h-full min-h-[8rem] items-center justify-center overflow-hidden bg-[var(--bg-surface)] p-4"
+      data-page-loading-fallback="quiet"
+      className={pageLoadingRootClass}
       role="status"
       aria-live="polite"
     >
-      <div className="page-loading-panel grid w-full max-w-[20rem] grid-cols-[5rem_minmax(0,1fr)] overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-        <div className="page-loading-rail relative grid grid-rows-4 overflow-hidden border-r-2 border-[var(--border-color)] bg-[var(--text-primary)]">
+      <div className={pageLoadingPanelClass}>
+        <div className={pageLoadingRailClass}>
           <div className="page-loading-rail-bus" aria-hidden="true" />
           <div className="page-loading-orbit" aria-hidden="true">
             <span className="page-loading-planet" />
@@ -71,16 +85,16 @@ export default function PageLoadingFallback() {
           </div>
           <div className="relative z-10">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
+              <span className={pageLoadingLabelClass}>
                 Loading
               </span>
               <span className="page-loading-pulse h-2.5 w-2.5 shrink-0 bg-[var(--text-primary)]" aria-hidden="true" />
             </div>
-            <div className="mb-2 grid grid-cols-[minmax(0,1fr)_auto] gap-3 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]" aria-hidden="true">
+            <div className={pageLoadingMetaClass} aria-hidden="true">
               <span className="truncate">Data Influx</span>
               <span className="page-loading-ticker text-[var(--text-primary)]" />
             </div>
-            <div className="page-loading-track relative h-5 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+            <div className={pageLoadingTrackClass}>
               <span className="page-loading-scan absolute inset-y-0 left-0 block w-1/3 bg-[var(--text-primary)]" aria-hidden="true" />
               <span className="page-loading-grid absolute inset-0" aria-hidden="true" />
             </div>

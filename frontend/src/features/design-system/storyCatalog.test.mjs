@@ -169,6 +169,31 @@ test('modal frame constrains detail dialogs to the viewport width', async () => 
   assert.doesNotMatch(source, /detail: 'max-w-6xl'/);
 });
 
+test('page loading fallback uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../../components/ui/PageLoadingFallback.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const pageLoadingRootClass =/);
+  assert.match(source, /const pageLoadingPanelClass =/);
+  assert.match(source, /const pageLoadingRailClass =/);
+  assert.match(source, /const pageLoadingLabelClass =/);
+  assert.match(source, /const pageLoadingMetaClass =/);
+  assert.match(source, /const pageLoadingTrackClass =/);
+  assert.match(source, /data-page-loading-fallback="quiet"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-ink-primary/);
+  assert.match(source, /--gt-elevation-raised-2/);
+  assert.doesNotMatch(source, /border-2/);
+  assert.doesNotMatch(source, /border-r-2/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-\[/);
+  assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--shadow-color\)\]/);
+});
+
 test('asset workbench shell is shared by Codex and Claude extension surfaces', async () => {
   const componentsGroup = getCatalogGroup('components');
   assert.ok(componentsGroup);
