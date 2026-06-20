@@ -21,7 +21,7 @@ export default function VendorLogoMark({ preset, size = 'md', className = '' }: 
       data-provider-logo={logo.kind}
       data-provider-logo-slug={logo.slug || 'initials'}
       style={style}
-      className={`inline-flex shrink-0 items-center justify-center border border-[color:color-mix(in_srgb,var(--vendor-logo-color)_42%,var(--border-color))] bg-[color-mix(in_srgb,var(--vendor-logo-color)_10%,var(--bg-main))] text-[var(--vendor-logo-color)] ${boxClass} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center border border-[color:color-mix(in_srgb,var(--vendor-logo-color)_34%,var(--gt-border-subtle))] bg-[color-mix(in_srgb,var(--vendor-logo-color)_10%,var(--gt-surface-muted))] text-[var(--vendor-logo-color)] ${boxClass} ${className}`}
     >
       {logo.path ? (
         <svg
@@ -32,7 +32,7 @@ export default function VendorLogoMark({ preset, size = 'md', className = '' }: 
           <path d={logo.path} fill="currentColor" />
         </svg>
       ) : (
-        <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-normal">
+        <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal">
           {logo.initials}
         </span>
       )}

@@ -136,6 +136,19 @@ test('openai compatible provider card uses the quiet workspace shell', async () 
   assert.doesNotMatch(targetSource, /shadow-\[/);
 });
 
+test('vendor logo mark uses quiet provider badge tokens', async () => {
+  const source = await readFile(new URL('../components/VendorLogoMark.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-provider-logo=\{logo\.kind\}/);
+  assert.match(source, /--vendor-logo-color/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.doesNotMatch(source, /--border-color/);
+  assert.doesNotMatch(source, /--bg-main/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /\buppercase\b/);
+});
+
 test('openai compatible compose modal uses the quiet workspace shell', async () => {
   const source = await readFile(new URL('../components/OpenAICompatibleComposeModal.tsx', import.meta.url), 'utf8');
 
