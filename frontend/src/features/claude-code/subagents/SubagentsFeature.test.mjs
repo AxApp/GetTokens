@@ -98,3 +98,25 @@ test('Plugin subagents show ignored fields', () => {
     'must show ignored field warnings for plugin agents',
   );
 });
+
+test('Subagent catalog uses the quiet workspace shell', () => {
+  const source = readFileSync(componentPath, 'utf8');
+
+  assert.match(source, /const subagentCatalogActionButtonClass =/);
+  assert.match(source, /const subagentCatalogRowClass =/);
+  assert.match(source, /const subagentCatalogPanelClass =/);
+  assert.match(source, /const subagentCatalogInputClass =/);
+  assert.match(source, /data-claude-subagent-catalog="quiet"/);
+  assert.match(source, /data-claude-subagent-row=\{agent\.path\}/);
+  assert.match(source, /data-claude-subagent-editor="quiet"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-warning/);
+
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-subtle\)\]/);
+});

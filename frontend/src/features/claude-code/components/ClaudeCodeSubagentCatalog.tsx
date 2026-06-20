@@ -41,6 +41,24 @@ const scopeIcons: Record<string, ReactNode> = {
   project: <FolderGit2 className="h-3.5 w-3.5" />,
 };
 
+const subagentCatalogActionButtonClass =
+  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+const subagentCatalogDangerButtonClass =
+  'inline-flex items-center gap-1 rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-1 text-xs font-medium text-[var(--gt-status-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--gt-status-warning)_16%,transparent)]';
+const subagentCatalogListClass = 'divide-y divide-[var(--gt-border-subtle)]';
+const subagentCatalogRowClass =
+  'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
+const subagentCatalogPanelClass =
+  'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
+const subagentCatalogInputClass =
+  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-xs text-[var(--gt-ink-primary)] transition-colors focus:border-[var(--gt-border-strong)] focus:outline-none';
+const subagentCatalogTextareaClass =
+  'w-full min-h-[10rem] rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 font-mono text-xs text-[var(--gt-ink-primary)] transition-colors focus:border-[var(--gt-border-strong)] focus:outline-none';
+const subagentCatalogWarningPanelClass =
+  'mb-3 rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] p-3 text-sm text-[var(--gt-status-warning)]';
+const subagentCatalogEditorClass =
+  'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
+
 export default function ClaudeCodeSubagentCatalog({
   snapshot,
   creatingNew,
@@ -98,7 +116,7 @@ export default function ClaudeCodeSubagentCatalog({
           <button
             type="button"
             onClick={onStartCreate}
-            className="flex items-center gap-1 rounded border-2 border-[var(--border-color)] px-3 py-1.5 text-xs hover:bg-[var(--bg-main)]"
+            className={subagentCatalogActionButtonClass}
           >
             <Plus className="h-3.5 w-3.5" /> New Agent
           </button>
@@ -122,13 +140,14 @@ export default function ClaudeCodeSubagentCatalog({
           </p>
         </div>
       ) : (
-        <div className="divide-y-2 divide-[var(--border-color)]">
+        <div className={subagentCatalogListClass} data-claude-subagent-catalog="quiet">
           {snapshot.agents.map((agent) => (
             <div key={agent.path}>
               <button
                 type="button"
                 onClick={() => toggleAgent(agent.path)}
-                className="flex w-full items-center gap-3 p-4 text-left hover:bg-[var(--bg-subtle)]"
+                className={subagentCatalogRowClass}
+                data-claude-subagent-row={agent.path}
               >
                 <span className="text-[var(--text-secondary)]">
                   {expandedAgents.has(agent.path) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -157,11 +176,11 @@ export default function ClaudeCodeSubagentCatalog({
               </button>
 
               {expandedAgents.has(agent.path) && (
-                <div className="border-t-2 border-[var(--border-color)] bg-[var(--bg-subtle)] p-4">
+                <div className={subagentCatalogPanelClass}>
                   <p className="mb-3 font-mono text-xs text-[var(--text-muted)]">{agent.path}</p>
 
                   {agent.frontmatterError && (
-                    <div className="mb-3 rounded border-2 border-[var(--border-warning)] bg-[var(--bg-warning)]/10 p-3 text-sm text-[var(--text-warning)]">
+                    <div className={subagentCatalogWarningPanelClass}>
                       {agent.frontmatterError}
                     </div>
                   )}
@@ -208,14 +227,14 @@ export default function ClaudeCodeSubagentCatalog({
                     <button
                       type="button"
                       onClick={() => onStartEdit?.(agent)}
-                      className="flex items-center gap-1 rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs hover:bg-[var(--bg-main)]"
+                      className={subagentCatalogActionButtonClass}
                     >
                       <Edit3 className="h-3 w-3" /> Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => onDeleteAgent?.(agent)}
-                      className="flex items-center gap-1 rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs text-[var(--text-warning)] hover:bg-[var(--bg-warning)]/10"
+                      className={subagentCatalogDangerButtonClass}
                     >
                       <Trash2 className="h-3 w-3" /> Delete
                     </button>
@@ -228,7 +247,7 @@ export default function ClaudeCodeSubagentCatalog({
       )}
 
       {(creatingNew || editingPath) && (
-        <div className="border-t-2 border-[var(--border-color)] p-4 bg-[var(--bg-subtle)]">
+        <div className={subagentCatalogEditorClass} data-claude-subagent-editor="quiet">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
             {creatingNew ? <Plus className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
             {creatingNew ? 'New Subagent' : `Editing: ${editingPath}`}
@@ -239,7 +258,7 @@ export default function ClaudeCodeSubagentCatalog({
               <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Name *</label>
               <input
                 type="text"
-                className="w-full rounded border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-1.5 font-mono text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-focus)]"
+                className={`${subagentCatalogInputClass} font-mono`}
                 value={draftName ?? ''}
                 onChange={(e) => onChangeDraftName?.(e.target.value)}
                 placeholder="code-reviewer"
@@ -249,7 +268,7 @@ export default function ClaudeCodeSubagentCatalog({
               <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Description *</label>
               <input
                 type="text"
-                className="w-full rounded border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-focus)]"
+                className={subagentCatalogInputClass}
                 value={draftDescription ?? ''}
                 onChange={(e) => onChangeDraftDescription?.(e.target.value)}
                 placeholder="Reviews code changes with project context"
@@ -258,14 +277,14 @@ export default function ClaudeCodeSubagentCatalog({
             <div>
               <label className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">Body (Markdown)</label>
               <textarea
-                className="w-full min-h-[10rem] rounded border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 font-mono text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-focus)]"
+                className={subagentCatalogTextareaClass}
                 value={draftBody ?? ''}
                 onChange={(e) => onChangeDraftBody?.(e.target.value)}
                 placeholder="# Agent instructions..."
               />
             </div>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={onCancelEdit ?? onCancelCreate} className="rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs hover:bg-[var(--bg-main)]">
+              <button type="button" onClick={onCancelEdit ?? onCancelCreate} className={subagentCatalogActionButtonClass}>
                 Cancel
               </button>
               <button type="button" onClick={onSaveAgent} className="flex items-center gap-1 rounded bg-[var(--button-primary-bg)] px-3 py-1 text-xs text-[var(--button-primary-text)]">
