@@ -577,7 +577,7 @@ export default function ProxyPoolFeature() {
                 aria-label="新增代理"
                 title="新增代理"
                 onClick={openCreateModal}
-                className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--bg-main)] shadow-sm transition hover:opacity-90"
+                className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)] shadow-sm transition hover:opacity-90"
               >
                 <Plus className="h-5 w-5" strokeWidth={2.5} />
               </button>
@@ -592,7 +592,7 @@ export default function ProxyPoolFeature() {
                   <MoreVertical className="h-5 w-5" strokeWidth={2.5} />
                 </button>
                 {isHeaderMenuOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 flex min-w-[240px] flex-col gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-[var(--gt-elevation-raised-2)]">
+                  <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 flex min-w-[240px] flex-col gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-sm">
                     <MenuActionButton
                       icon={<Upload className="h-4 w-4" strokeWidth={2.3} />}
                       label="导入列表"
@@ -964,7 +964,7 @@ function ProxyNodeRow({
       <td className="w-[88px] px-3 py-3 align-middle">
         <StatusAvailabilityPill status={node.status} availabilityRate={node.availabilityRate} />
       </td>
-      <td className="w-[88px] whitespace-nowrap px-3 py-3 align-middle font-mono text-[length:var(--font-size-ui-sm)] font-semibold uppercase text-[var(--text-primary)]">{node.protocol}</td>
+      <td className="w-[88px] whitespace-nowrap px-3 py-3 align-middle font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">{node.protocol}</td>
       <td
         className="w-[180px] max-w-[180px] break-words px-3 py-3 align-middle font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]"
         title={`${node.host}:${node.port}`}
@@ -1035,7 +1035,7 @@ function ProxyNodeActionsMenu({
         <MoreVertical className="h-4 w-4" strokeWidth={2.4} />
       </button>
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-10 flex min-w-[140px] flex-col gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-[var(--gt-elevation-raised-2)]">
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-10 flex min-w-[140px] flex-col gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-sm">
           <ActionButton
             onClick={() => {
               setOpen(false);
@@ -1062,13 +1062,13 @@ function ProxyNodeActionsMenu({
 }
 
 const proxyPoolModalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm';
-const proxyPoolModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-3)]';
+const proxyPoolModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const proxyPoolModalHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-6 py-4';
 const proxyPoolModalFooterClass = 'flex items-center justify-between border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
 const proxyPoolInputClass = 'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-lg)] font-medium text-[var(--text-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
 const proxyPoolTextareaClass = 'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-lg)] font-medium text-[var(--text-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
 const proxyPoolSecondaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
-const proxyPoolPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--bg-main)] transition hover:opacity-90';
+const proxyPoolPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
 const proxyPoolErrorClass = 'rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-status-danger)]';
 
 function ProxyNodeComposeModal({
