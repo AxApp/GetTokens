@@ -18,7 +18,7 @@ test('legacy account detail modal uses the quiet workspace shell', async () => {
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
-  assert.match(source, /--gt-elevation-raised-3/);
+  assert.match(source, /shadow-lg/);
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /border-b-2/);

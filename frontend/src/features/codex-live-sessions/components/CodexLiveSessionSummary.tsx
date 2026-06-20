@@ -3,7 +3,7 @@ import type { CodexLiveSessionSnapshot } from '../model/types';
 export function SourceBadge({ snapshot }: { snapshot: CodexLiveSessionSnapshot }) {
   const label = snapshot.source === 'unavailable' ? 'UNAVAILABLE' : snapshot.sidecarReady ? snapshot.source.toUpperCase() : 'CACHE';
   return (
-    <span className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase shadow-[3px_3px_0_var(--shadow-color)]">
+    <span className="inline-flex items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-ink-muted)]">
       {label}
     </span>
   );

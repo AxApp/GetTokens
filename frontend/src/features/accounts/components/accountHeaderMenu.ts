@@ -25,9 +25,9 @@ export const ACCOUNT_HEADER_MENU_PANEL_STYLE = {
 } as const;
 
 export const ACCOUNT_HEADER_MENU_ITEM_CLASS =
-  'flex min-h-10 w-full items-center gap-3 rounded-md border-0 bg-transparent px-3 py-2 text-left text-sm font-medium text-[var(--gt-ink-primary)] transition-[background-color] hover:bg-[var(--gt-surface-muted)] focus-visible:bg-[var(--gt-surface-muted)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45';
+  'flex min-h-11 w-full items-center gap-3 rounded-md border-0 bg-transparent px-3 py-2 text-left text-[length:var(--font-size-ui-md)] font-medium leading-snug text-[var(--gt-ink-primary)] transition-[background-color] hover:bg-[var(--gt-surface-muted)] focus-visible:bg-[var(--gt-surface-muted)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45';
 
-export const ACCOUNT_HEADER_MENU_ICON_CLASS = 'h-4 w-4 shrink-0 text-[var(--gt-ink-muted)]';
+export const ACCOUNT_HEADER_MENU_ICON_CLASS = 'h-5 w-5 shrink-0 text-[var(--gt-ink-muted)]';
 export const ACCOUNT_HEADER_MENU_LABEL_CLASS = 'min-w-0 flex-1 truncate';
 export const ACCOUNT_HEADER_MENU_SEPARATOR_CLASS = 'mx-2 my-1 h-px bg-[var(--gt-border-subtle)]';
 

@@ -117,7 +117,7 @@ export default function AccountsListWorkbenchView({
         onOpenUnifiedCompose={onOpenUnifiedCompose}
       />
 
-      <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <div className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4">
         <AccountsToolbar
           t={t}
           searchTerm={searchTerm}

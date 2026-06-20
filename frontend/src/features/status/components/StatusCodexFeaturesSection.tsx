@@ -25,7 +25,7 @@ const codexFeatureStageFilters: CodexFeatureStageFilter[] = [
 ];
 
 const codexFeaturePanelClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const codexFeatureInsetPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)]';
 const codexFeatureHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexFeatureSectionHeaderClass = 'border-b border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';

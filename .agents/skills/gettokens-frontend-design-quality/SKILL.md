@@ -397,6 +397,7 @@ Score: <0-20> / 20
 6. 验证按风险选择 focused tests、typecheck、组件 lint、无头 preview 或浏览器 computed style；若某个 preview gate 有环境限制，记录替代证据而不是跳过说明。
 7. 每个提交同步更新对应 space 和 memory，说明本轮页面、门禁、验证命令、剩余旧样式扫描结果；收尾整理时再判断是否需要扩写本 skill。
 8. 当用户明确要求“整理/沉淀/提交”且当前工作区已经没有代码漂移时，不再为了制造提交而开启下一页迁移；只做治理闭环，记录最近完成切片、复用流程、未升级为 AGENTS/新 skill 的理由和下一批候选入口。
+9. 当用户明确把节奏改成“把剩下的界面一次性收完”或已有跨页面视觉漂移需要收口时，可以增加一个运行态源码残留门禁，扫描 `frontend/src` 的 `.ts/.tsx/.js/.jsx`，排除 `*.test.*`、`*.stories.*` 与 `style.css` 这类测试/展示/兼容层；门禁只禁止运行态继续引入旧 Swiss class、粗描边、旧 `bg-main/bg-surface`、bracket shadow、heavy uppercase/tracking 等高信号样式，不把 Storybook 历史示例作为本轮阻塞。
 
 常见反例：
 - 一次性把多个页面改到半成品，最后只能靠截图主观判断。
@@ -404,3 +405,4 @@ Score: <0-20> / 20
 - 页面主容器缺 `min-h-0` / `overflow-hidden`，列表内容把工作台撑到远超 viewport。
 - 只在 memory 记录完成页面，没有把可复用迁移节奏沉淀到前端设计 skill。
 - 用户要求收尾整理时，又启动新的页面迁移，导致整理提交夹带未请求的新功能改动。
+- 批量收口门禁把 `style.css` 旧兼容 class 或 stories 演示也纳入阻塞，导致一次视觉收口变成无边界的设计系统历史重写。

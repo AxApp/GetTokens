@@ -66,7 +66,7 @@ const routeModes: Array<{
 ];
 
 const channelRoutingPanelClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const channelRoutingMutedPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const channelRoutingHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';

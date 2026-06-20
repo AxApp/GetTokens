@@ -172,7 +172,7 @@ test('openai compatible compose modal uses the quiet workspace shell', async () 
   assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]|bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /color-status-/);
   assert.doesNotMatch(source, /font-black|\buppercase\b|shadow-hard|shadow-\[/);
-  assert.doesNotMatch(source, /tracking-\[0\.16em\]|tracking-\[0\.2em\]/);
+  assert.doesNotMatch(source, /tracking-\[/);
 });
 
 test('openai compatible workspace uses the quiet workspace shell', async () => {

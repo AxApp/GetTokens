@@ -387,7 +387,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
 
       <div
         data-session-management-workbench="true"
-        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]"
+        className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm"
       >
         <SessionManagementSearchBar
           copy={copy}

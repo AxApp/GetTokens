@@ -1,5 +1,5 @@
 import { Copy } from 'lucide-react';
-import { FieldLabel } from './FormField';
+import { FieldLabel, quietControlClass } from './FormField';
 
 export interface ActionSelectOption {
   value: string;
@@ -57,7 +57,7 @@ export default function ActionSelect({
           value={value}
           onChange={(event) => onSelect(event.target.value)}
           disabled={selectDisabled}
-          className={`select-swiss min-w-0 w-full ${selectPaddingClass}`}
+          className={`${quietControlClass} min-w-0 w-full ${selectPaddingClass}`}
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>

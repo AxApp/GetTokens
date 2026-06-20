@@ -56,12 +56,15 @@ export function FieldLabel({ children }: { children: ReactNode }) {
     <span
       data-design-system-component="true"
       data-design-system-component-name="FieldLabel"
-      className="text-[length:var(--font-size-ui-xs)] font-black tracking-[0.18em] text-[var(--text-muted)]"
+      className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-ink-muted)]"
     >
       {children}
     </span>
   );
 }
+
+const quietControlClass =
+  'h-9 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] hover:border-[var(--gt-border-strong)] focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:bg-[var(--gt-surface-muted)] disabled:text-[var(--gt-ink-muted)]';
 
 interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children' | 'onChange'> {
   title: string;
@@ -83,7 +86,7 @@ export function SelectField({
       <select
         {...selectProps}
         onChange={(event) => onChange(event.target.value)}
-        className={`select-swiss w-full ${className}`}
+        className={`${quietControlClass} w-full ${className}`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value} disabled={option.disabled}>
@@ -108,7 +111,9 @@ export function TextInputField({
 }: TextInputFieldProps) {
   return (
     <FormField title={title} className={fieldClassName}>
-      <input {...inputProps} className={`input-swiss w-full ${className}`} />
+      <input {...inputProps} className={`${quietControlClass} w-full ${className}`} />
     </FormField>
   );
 }
+
+export { quietControlClass };

@@ -38,7 +38,7 @@ const dataInfluxPacketStyles: ReadonlyArray<DataInfluxPacketStyle> = [
 const pageLoadingRootClass =
   'page-loading-fallback flex h-full min-h-[8rem] items-center justify-center overflow-hidden bg-[var(--gt-surface-muted)] p-4';
 const pageLoadingPanelClass =
-  'page-loading-panel grid w-full max-w-[20rem] grid-cols-[5rem_minmax(0,1fr)] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+  'page-loading-panel grid w-full max-w-[20rem] grid-cols-[5rem_minmax(0,1fr)] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const pageLoadingRailClass =
   'page-loading-rail relative grid grid-rows-4 overflow-hidden border-r border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)]';
 const pageLoadingLabelClass =

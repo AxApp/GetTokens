@@ -126,8 +126,10 @@ test('accounts selection toolbar stays sticky while scrolling selected accounts'
   assert.match(source, /onCancelSelection=\{toggleSelectionMode\}/);
   assert.match(
     source,
-    /className="sticky -top-12 z-40 -mx-12 !mt-4 bg-\[var\(--bg-surface\)\] px-12 py-1\.5"/,
+    /className=\{accountsFeatureSelectionToolbarShellClass\}/,
   );
+  assert.match(source, /bg-\[color-mix\(in_srgb,var\(--gt-surface-canvas\)_94%,transparent\)\]/);
+  assert.match(source, /backdrop-blur/);
   assert.match(source, /className=\{isSelectionMode \? [\"']space-y-8 !mt-4[\"'] : [\"']space-y-8[\"']\}/);
   assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--shadow-color\)\]/);
   assert.doesNotMatch(source, /className="border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] px-4 pb-4/);

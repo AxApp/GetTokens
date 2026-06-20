@@ -18,7 +18,7 @@ const accountRotationModalFooterClass =
 const accountRotationModalSectionHeaderClass =
   'flex flex-wrap items-end justify-between gap-3 border-b border-[var(--gt-border-subtle)] pb-3';
 const accountRotationModalEyebrowClass =
-  'text-[length:var(--font-size-ui-xs)] font-medium tracking-[0.08em] text-[var(--gt-ink-muted)]';
+  'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-muted)]';
 const accountRotationModalTitleClass = 'mt-1 text-lg font-semibold text-[var(--gt-ink-primary)]';
 const accountRotationModalSectionTitleClass =
   'text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--gt-ink-primary)]';

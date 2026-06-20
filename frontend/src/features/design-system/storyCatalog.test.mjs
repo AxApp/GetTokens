@@ -183,7 +183,7 @@ test('page loading fallback uses the quiet workspace shell', async () => {
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-ink-primary/);
-  assert.match(source, /--gt-elevation-raised-2/);
+  assert.match(source, /shadow-sm/);
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /border-r-2/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);

@@ -8,7 +8,7 @@ import {
 const relayEditorBackdropClass =
   'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm';
 const relayEditorModalPanelClass =
-  'flex w-full max-w-xl flex-col overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-3)]';
+  'flex w-full max-w-xl flex-col overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-lg';
 const relayEditorModalHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
 const relayEditorEyebrowClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
 const relayEditorTitleClass = 'mt-1 text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]';

@@ -24,7 +24,7 @@ interface TProps {
 }
 
 const codexExtensionModalPanelClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-lg';
 const codexExtensionModalHeaderClass =
   'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexExtensionModalFooterClass =

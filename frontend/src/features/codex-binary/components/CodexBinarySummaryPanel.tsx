@@ -3,7 +3,7 @@ import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import type { CodexBinarySnapshot } from '../model';
 
 const codexBinarySummaryPanelClass =
-  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 shadow-[var(--gt-elevation-raised)] sm:p-4';
+  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 shadow-sm sm:p-4';
 const codexBinarySummaryTitleClass =
   'min-w-0 truncate text-xl font-semibold text-[var(--gt-ink-primary)]';
 const codexBinarySummaryActionButtonClass =

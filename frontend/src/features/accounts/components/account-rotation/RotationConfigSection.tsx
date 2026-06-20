@@ -72,7 +72,7 @@ export function RotationConfigSection({
             {isStrategyMenuOpen ? (
               <div
                 data-account-rotation-strategy-menu="true"
-                className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-2 shadow-[var(--gt-elevation-menu)]"
+                className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-2 shadow-sm"
                 role="listbox"
               >
                 <div className="space-y-2">

@@ -59,7 +59,7 @@ test('AccountsHeader menu row styles stay flat instead of card-like', () => {
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /text-\[length:var\(--font-size-ui-md\)\]/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /min-h-11/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /leading-snug/);
-  assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /hover:bg-\[var\(--bg-surface\)\]/);
+  assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /hover:bg-\[var\(--gt-surface-muted\)\]/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /active:scale-\[0\.99\]/);
   assert.match(ACCOUNT_HEADER_MENU_ICON_CLASS, /h-5 w-5/);
   assert.match(source, /aria-label=\{t\('accounts\.header_actions_menu'\)\}/);

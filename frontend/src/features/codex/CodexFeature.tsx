@@ -334,7 +334,7 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
           align="center"
         />
 
-        <section className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+        <section className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4">
           <SearchInput
             value={query}
             onChange={setQuery}

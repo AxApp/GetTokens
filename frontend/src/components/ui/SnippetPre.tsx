@@ -13,7 +13,7 @@ export default function SnippetPre({
     <pre
       data-design-system-component="true"
       data-design-system-component-name="SnippetPre"
-      className={`overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 text-[var(--text-primary)] ${className}`}
+      className={`overflow-x-auto rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 text-xs font-medium leading-6 text-[var(--gt-ink-primary)] ${className}`}
     >
       {children}
     </pre>

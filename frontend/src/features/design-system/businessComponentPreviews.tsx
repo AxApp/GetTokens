@@ -186,7 +186,7 @@ function SessionPluginConsolePreview() {
     <div className="grid gap-5">
       {(['ready', 'running', 'done'] as const).map((mode) => (
         <section key={mode} className="grid gap-3">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-ink-muted)]">
             DS-SESSION-PLUGIN-CONSOLE-{mode.toUpperCase()}
           </div>
           <SessionPluginConsolePanel {...buildSessionPluginConsoleProps(mode)} />

@@ -18,6 +18,9 @@ const sizeClassNames: Record<RefreshActionButtonSize, string> = {
   md: '!px-3 !py-2 !text-[length:var(--font-size-ui-sm)]',
 };
 
+const refreshActionButtonBaseClass =
+  'inline-flex min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+
 export default function RefreshActionButton({
   label,
   loading = false,
@@ -43,7 +46,7 @@ export default function RefreshActionButton({
       disabled={disabled}
       aria-label={resolvedLabel}
       title={title || resolvedLabel}
-      className={`btn-swiss inline-flex min-w-0 items-center justify-center gap-2 whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 ${sizeClassNames[size]} ${
+      className={`${refreshActionButtonBaseClass} ${sizeClassNames[size]} ${
         fullWidth ? 'w-full' : 'w-auto shrink-0'
       } ${iconOnly ? 'h-10 w-10 !px-0 !py-0' : ''} ${className}`}
     >

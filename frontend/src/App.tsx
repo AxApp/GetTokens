@@ -228,7 +228,7 @@ function AppShell() {
     <AccountsPageStateProvider sidecarStatus={sidecarStatus}>
       <AccountMigrationGate sidecarStatus={sidecarStatus}>
         <div
-          className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]"
+          className="flex h-screen w-screen overflow-hidden bg-[var(--gt-surface-canvas)] selection:bg-[var(--gt-border-subtle)] selection:text-[var(--gt-ink-primary)]"
           data-collaboration-id="MAIN_FRAME"
           data-design-system-highlight={import.meta.env.DEV ? 'project' : undefined}
           data-text-scale={getTextScaleAttributeValue(textScale)}
@@ -253,7 +253,7 @@ function AppShell() {
             showDeveloperTools={showDeveloperTools}
             onCollapsedChange={setIsSidebarCollapsed}
           />
-          <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">
+          <main className="flex-1 overflow-hidden bg-[var(--gt-surface-muted)]">
             <Suspense fallback={<PageLoadingFallback />}>{page}</Suspense>
           </main>
         </div>
