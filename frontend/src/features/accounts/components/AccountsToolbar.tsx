@@ -20,6 +20,36 @@ import type { AccountsFilterState, Translator } from '../model/types';
 import type { AccountBulkActionID } from '../model/accountSelection';
 
 const DEFAULT_AVAILABLE_PLAN_TYPES: readonly AccountPlanType[] = [];
+const accountsToolbarMenuDividerClass = 'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2';
+const accountsToolbarMenuFooterClass = 'flex justify-end border-t border-[var(--gt-border-subtle)] pt-2';
+const accountsToolbarModeOptionClass = (active: boolean) =>
+  `min-h-9 rounded border px-2 text-left text-xs font-medium leading-none transition-colors ${
+    active
+      ? 'border-[var(--gt-accent-primary)] bg-[var(--gt-accent-primary)] text-[var(--gt-ink-inverse)]'
+      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
+  }`;
+const accountsToolbarFilterOptionClass = (active: boolean, disabled = false) =>
+  `flex min-h-9 items-center gap-2.5 rounded border px-2.5 text-xs font-medium leading-none transition-colors ${
+    disabled
+      ? 'cursor-not-allowed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] opacity-50'
+      : active
+        ? 'border-[var(--gt-border-default)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]'
+        : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
+  }`;
+const accountsToolbarPillOptionClass = (active: boolean) =>
+  `h-8 min-w-16 rounded border px-2 text-xs font-medium leading-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+    active
+      ? 'border-[var(--gt-accent-primary)] bg-[var(--gt-accent-primary)] text-[var(--gt-ink-inverse)]'
+      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
+  }`;
+const accountsToolbarDisplayButtonClass = (active: boolean, bordered: boolean) =>
+  `h-full min-h-0 px-2.5 text-[length:var(--font-size-ui-xs)] font-medium leading-none transition-colors ${
+    bordered ? 'border-r border-[var(--gt-border-subtle)]' : ''
+  } ${
+    active
+      ? 'bg-[var(--gt-accent-primary)] text-[var(--gt-ink-inverse)]'
+      : 'text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
+  }`;
 
 interface AccountsToolbarProps {
   t: Translator;
@@ -221,7 +251,9 @@ export default function AccountsToolbar({
               <span>{buildToolbarFilterLabel(t, filterSummaryParts)}</span>
             </button>
             {isMenuOpen ? (
-              <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 rounded-lg border p-4"
+              <div
+                className="absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 rounded-lg border p-4"
+                data-accounts-toolbar-filter-menu="quiet"
                 style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}>
                 <div className="grid gap-2">
                   <p className="px-1 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
@@ -249,7 +281,7 @@ export default function AccountsToolbar({
                   </div>
                 </div>
                 {filterSummaryParts.length > 0 ? (
-                  <div className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2">
+                  <div className={accountsToolbarMenuDividerClass}>
                     <p className="px-1 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
                       {t('accounts.filter_active_conditions')}
                     </p>
@@ -298,7 +330,6 @@ export default function AccountsToolbar({
                           <FilterCheckOption
                             key={planType}
                             active={isPlanOptionSelected(filters.plan, planType)}
-                            uppercase={false}
                             onClick={() => setPlanOption(planType)}
                           >
                             {formatAccountPlanLabel(planType)}
@@ -332,7 +363,6 @@ export default function AccountsToolbar({
                         <FilterCheckOption
                           key={statusCode}
                           active={filters.status.requestStatusCodes[statusCode] === true}
-                          uppercase={false}
                           onClick={() => setStatusRequestCodeOption(statusCode)}
                         >
                           {`HTTP ${statusCode}`}
@@ -370,7 +400,7 @@ export default function AccountsToolbar({
                     onChange={(mode) => setResourceFacetMode('hasUsageToday', 'noUsageToday', mode)}
                   />
                 </div>
-                <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-2">
+                <div className={accountsToolbarMenuFooterClass}>
                   <button
                     type="button"
                     onClick={() => onFiltersChange({ ...defaultAccountsFilterState })}
@@ -877,11 +907,7 @@ function ToolbarModeMenu<T extends string>({
                 onChange(optionValue);
                 setOpen(false);
               }}
-              className={`min-h-9 rounded border px-2 text-left text-xs font-medium leading-none ${
-                optionValue === value
-                  ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-                  : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-              }`}
+              className={accountsToolbarModeOptionClass(optionValue === value)}
             >
               {optionLabel}
             </button>
@@ -907,13 +933,7 @@ function DisplayModeButton({
     <button
       type="button"
       onClick={onClick}
-      className={`h-full min-h-0 px-2.5 text-[length:var(--font-size-ui-xs)] font-medium leading-none ${
-        bordered ? 'border-r border-[var(--border-color)]' : ''
-      } ${
-        active
-          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-          : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-      }`}
+      className={accountsToolbarDisplayButtonClass(active, bordered)}
     >
       {children}
     </button>
@@ -924,26 +944,16 @@ function FilterCheckOption({
   active,
   children,
   disabled = false,
-  uppercase = true,
   onClick,
 }: {
   active: boolean;
   children: ReactNode;
   disabled?: boolean;
-  uppercase?: boolean;
   onClick: () => void;
 }) {
   return (
     <label
-      className={`flex min-h-9 cursor-pointer items-center gap-2.5 px-2.5 text-xs font-medium leading-none ${
-        uppercase ? 'uppercase' : ''
-      } ${
-        disabled
-          ? 'cursor-not-allowed bg-[var(--bg-main)] text-[var(--text-muted)] opacity-50'
-          : active
-            ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]'
-            : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-      }`}
+      className={accountsToolbarFilterOptionClass(active, disabled)}
     >
       <input
         type="checkbox"
@@ -974,11 +984,7 @@ function FilterPillOption({
       aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
-      className={`h-8 min-w-16 rounded border px-2 text-xs font-medium leading-none disabled:cursor-not-allowed disabled:opacity-50 ${
-        active
-          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-          : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-      }`}
+      className={accountsToolbarPillOptionClass(active)}
     >
       <span className="block truncate">{children}</span>
     </button>

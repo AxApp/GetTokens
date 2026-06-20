@@ -380,7 +380,8 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.filter_quota_and_balance_match'), false);
   assert.equal(source.includes('accounts.filter_no_quota_and_balance_match'), false);
   assert.equal(source.includes('accounts.filter_no_quota_no_balance_match'), false);
-  assert.equal(source.includes('uppercase={false}'), true);
+  assert.equal(source.includes('uppercase={false}'), false);
+  assert.equal(source.includes('accountsToolbarFilterOptionClass(active, disabled)'), true);
   assert.equal(source.includes('accounts.filter_option_all'), true);
   assert.equal(source.includes("const DEFAULT_AVAILABLE_PLAN_TYPES: readonly AccountPlanType[] = []"), true);
   assert.equal(source.includes('accounts.group_mode_label'), true);
@@ -407,12 +408,35 @@ test('AccountsToolbar filter menu keeps options in compact list mode', async () 
   const ternaryClass = source.slice(source.indexOf('function FilterTernaryOptionRow'), source.indexOf('function buildToolbarFilterLabel'));
 
   assert.equal(source.includes(menuPanelClass), true);
-  assert.equal(pillClass.includes('h-8 min-w-16'), true);
+  assert.equal(source.includes('const accountsToolbarPillOptionClass ='), true);
+  assert.equal(source.includes('h-8 min-w-16 rounded border px-2'), true);
   assert.equal(pillClass.includes('aria-pressed={active}'), true);
   assert.equal(ternaryClass.includes("mode: 'all' | 'positive' | 'negative'"), true);
   assert.equal(source.includes('function FilterTernaryOptionRow'), true);
   assert.equal(source.includes('function FilterBinaryOptionRow'), false);
   assert.equal(source.includes('removeAccountsFilterSummaryPart'), true);
+});
+
+test('AccountsToolbar filter controls use the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
+  const filterMenuBlock = source.match(/<div className="absolute left-0 top-full[\s\S]*?<ToolbarModeMenu/)?.[0] || '';
+  const optionHelpersBlock = source.match(/function ToolbarModeMenu[\s\S]*?function FilterTernaryOptionRow/)?.[0] || '';
+
+  assert.match(source, /const accountsToolbarMenuDividerClass =/);
+  assert.match(source, /const accountsToolbarModeOptionClass =/);
+  assert.match(source, /const accountsToolbarFilterOptionClass =/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /data-accounts-toolbar-filter-menu="quiet"/);
+
+  for (const block of [filterMenuBlock, optionHelpersBlock]) {
+    assert.doesNotMatch(block, /border-dashed border-\[var\(--border-color\)\]/);
+    assert.doesNotMatch(block, /bg-\[var\(--bg-main\)\]/);
+    assert.doesNotMatch(block, /bg-\[var\(--bg-surface\)\]/);
+    assert.doesNotMatch(block, /text-\[var\(--bg-main\)\]/);
+    assert.doesNotMatch(block, /\buppercase\b/);
+  }
 });
 
 test('AccountsToolbar design-system default story starts with all filters selected', async () => {
