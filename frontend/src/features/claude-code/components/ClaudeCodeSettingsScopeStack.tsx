@@ -50,6 +50,16 @@ const scopePriorityLabels: Record<string, string> = {
   user: 'Base',
 };
 
+const settingsScopeStackActionButtonClass =
+  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 text-xs font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+const settingsScopeStackListClass = 'divide-y divide-[var(--gt-border-subtle)]';
+const settingsScopeStackRowClass =
+  'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
+const settingsScopeStackPanelClass =
+  'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
+const settingsScopeStackErrorPanelClass =
+  'rounded border border-[var(--gt-status-warning)]/35 bg-[var(--gt-status-warning)]/10 p-3';
+
 export default function ClaudeCodeSettingsScopeStack({
   snapshot,
   editingScope,
@@ -107,13 +117,14 @@ export default function ClaudeCodeSettingsScopeStack({
           </p>
         </div>
       ) : (
-        <div className="divide-y-2 divide-[var(--border-color)]">
+        <div className={settingsScopeStackListClass} data-claude-settings-scope-stack="quiet">
           {snapshot.layers.map((layer) => (
             <div key={`${layer.scope}`} className="group">
               <button
                 type="button"
                 onClick={() => toggleScope(`${layer.scope}`)}
-                className={`flex w-full items-center gap-3 p-4 text-left hover:bg-[var(--bg-subtle)] ${!layer.exists ? 'opacity-50' : ''}`}
+                className={`${settingsScopeStackRowClass} ${!layer.exists ? 'opacity-50' : ''}`}
+                data-claude-settings-scope-row={`${layer.scope}`}
               >
                 <span className="text-[var(--text-secondary)]">
                   {expandedScopes.has(`${layer.scope}`) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -147,11 +158,11 @@ export default function ClaudeCodeSettingsScopeStack({
               </button>
 
               {expandedScopes.has(`${layer.scope}`) && layer.exists && (
-                <div className="border-t-2 border-[var(--border-color)] bg-[var(--bg-subtle)] p-4">
+                <div className={settingsScopeStackPanelClass}>
                   <p className="mb-3 font-mono text-xs text-[var(--text-muted)]">{layer.path}</p>
 
                   {layer.parseError ? (
-                    <div className="rounded border-2 border-[var(--border-warning)] bg-[var(--bg-warning)]/10 p-3">
+                    <div className={settingsScopeStackErrorPanelClass}>
                       <p className="text-sm text-[var(--text-warning)]">{layer.parseError}</p>
                     </div>
                   ) : layer.knownFields ? (
@@ -205,7 +216,7 @@ export default function ClaudeCodeSettingsScopeStack({
                               <button
                                 type="button"
                                 onClick={onCancelEdit}
-                                className="rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs hover:bg-[var(--bg-main)]"
+                                className={settingsScopeStackActionButtonClass}
                               >
                                 Cancel
                               </button>
@@ -220,7 +231,7 @@ export default function ClaudeCodeSettingsScopeStack({
                           ) : (
                             <button
                               type="button"
-                              className="rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs hover:bg-[var(--bg-main)]"
+                              className={settingsScopeStackActionButtonClass}
                               onClick={() => onStartEdit?.(`${layer.scope}`)}
                             >
                               Edit
@@ -238,7 +249,7 @@ export default function ClaudeCodeSettingsScopeStack({
       )}
 
       {savePreview && (
-        <div className="border-t-2 border-[var(--border-color)] p-4">
+        <div className={settingsScopeStackPanelClass} data-claude-settings-preview="quiet">
           <h3 className="mb-2 text-sm font-medium">Save Preview</h3>
           <SnippetPre className="max-h-60 overflow-auto text-xs">{savePreview}</SnippetPre>
           {saveError && <p className="mt-2 text-sm text-[var(--text-danger)]">{saveError}</p>}

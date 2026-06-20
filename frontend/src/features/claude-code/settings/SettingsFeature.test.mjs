@@ -34,6 +34,30 @@ test('Settings scope stack component renders all layer states', () => {
   assert.match(source, /outputStyle/, 'component must render outputStyle field');
 });
 
+test('ClaudeCodeSettingsScopeStack uses the quiet workspace shell', () => {
+  const source = readFileSync(componentPath, 'utf8');
+
+  assert.match(source, /const settingsScopeStackActionButtonClass =/);
+  assert.match(source, /const settingsScopeStackRowClass =/);
+  assert.match(source, /const settingsScopeStackPanelClass =/);
+  assert.match(source, /const settingsScopeStackErrorPanelClass =/);
+  assert.match(source, /data-claude-settings-scope-stack="quiet"/);
+  assert.match(source, /data-claude-settings-scope-row=\{`\$\{layer\.scope\}`\}/);
+  assert.match(source, /data-claude-settings-preview="quiet"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-warning/);
+
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--border-warning\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-subtle\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-warning\)\]/);
+});
+
 test('Preview data covers all state scenarios', () => {
   const source = readFileSync(previewDataPath, 'utf8');
 
