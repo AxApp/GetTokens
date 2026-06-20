@@ -19,6 +19,20 @@ import { UsageChartCard } from './components/usage-desk/UsageDeskChart';
 import { UsageDetailTable } from './components/usage-desk/UsageDetailTable';
 import { StatePanel, UsageDeskEvidenceStatus, UsageProjectDrilldownPanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
 
+const usageDeskPageShellClass = 'h-full w-full overflow-auto bg-[var(--gt-surface-page)]';
+const usageDeskHeaderSubtitleClass =
+  'mt-1 max-w-3xl text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]';
+const usageDeskProjectedProgressClass =
+  'text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+const usageDeskStickyChartShellClass = 'sticky top-0 z-20 -mx-12 bg-[var(--gt-surface-page)] px-12 pb-3 pt-3';
+const usageDeskSourceToggleClass = (active: boolean) =>
+  [
+    'h-9 rounded border px-3 text-[length:var(--font-size-ui-sm)] font-semibold transition-colors',
+    active
+      ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]',
+  ].join(' ');
+
 export default function UsageDeskFeature({
   sidecarStatus,
   workspace,
@@ -99,7 +113,7 @@ export default function UsageDeskFeature({
     return (
       <div className="space-y-2">
         <div>{workspace === 'claude' ? '正在扫描本地 Claude Code session 样本。' : '正在扫描本地 Codex rollout 样本。'}</div>
-        <div className="font-black text-[var(--text-primary)]">
+        <div className={usageDeskProjectedProgressClass}>
           进度 {processedFiles}/{totalFiles || '?'}
         </div>
         {currentFile ? (
@@ -113,24 +127,30 @@ export default function UsageDeskFeature({
   }, [projectedProgress]);
 
   return (
-    <div ref={scrollContainerRef} className="h-full w-full overflow-auto bg-[var(--bg-surface)]" data-collaboration-id="PAGE_USAGE_DESK">
+    <div ref={scrollContainerRef} className={usageDeskPageShellClass} data-collaboration-id="PAGE_USAGE_DESK" data-usage-desk-feature="quiet">
       <div className="mx-auto max-w-7xl space-y-8 px-12 pb-32 pt-12">
         <WorkspacePageHeader
           title={pageTitle}
           subtitle={pageDescription}
-          subtitleClassName="mt-1 max-w-3xl text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-widest text-[var(--text-muted)]"
+          subtitleClassName={usageDeskHeaderSubtitleClass}
           actions={
             <>
               <button
+                type="button"
                 onClick={() => setSource('observed')}
-                className={`btn-swiss ${source === 'observed' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
+                className={usageDeskSourceToggleClass(source === 'observed')}
+                aria-pressed={source === 'observed'}
+                data-usage-desk-source-toggle="observed"
               >
                 Sidecar 归因
               </button>
               {supportsProjectedUsage ? (
                 <button
+                  type="button"
                   onClick={() => setSource('projected')}
-                  className={`btn-swiss ${source === 'projected' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
+                  className={usageDeskSourceToggleClass(source === 'projected')}
+                  aria-pressed={source === 'projected'}
+                  data-usage-desk-source-toggle="projected"
                 >
                   本地文件投影
                 </button>
@@ -145,7 +165,7 @@ export default function UsageDeskFeature({
               {source === 'observed' ? (
                 <section className="space-y-5">
                   <div className="space-y-5">
-                    <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
+                    <div className={usageDeskStickyChartShellClass}>
                       {loading ? (
                         <StatePanel
                           title="加载中"
@@ -211,7 +231,7 @@ export default function UsageDeskFeature({
               ) : (
                 <section className="space-y-5">
                   <div className="space-y-5">
-                    <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
+                    <div className={usageDeskStickyChartShellClass}>
                       {projectedLoading ? (
                         <StatePanel title="加载中" body={projectedLoadingBody} />
                       ) : projectedLoadError ? (

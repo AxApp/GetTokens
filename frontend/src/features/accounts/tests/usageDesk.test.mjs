@@ -102,6 +102,27 @@ test('usage desk chart header removes source and facet summary strip', async () 
   assert.match(enLocaleSource, /"usage_desk_claude_title": "Claude Usage Desk"/);
 });
 
+test('UsageDeskFeature uses the quiet workspace page shell', async () => {
+  const featureSource = await readFile(new URL('../UsageDeskFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /const usageDeskPageShellClass =/);
+  assert.match(featureSource, /const usageDeskHeaderSubtitleClass =/);
+  assert.match(featureSource, /const usageDeskSourceToggleClass =/);
+  assert.match(featureSource, /const usageDeskStickyChartShellClass =/);
+  assert.match(featureSource, /data-usage-desk-feature="quiet"/);
+  assert.match(featureSource, /data-usage-desk-source-toggle/);
+  assert.match(featureSource, /--gt-surface-canvas/);
+  assert.match(featureSource, /--gt-surface-page/);
+  assert.match(featureSource, /--gt-border-subtle/);
+  assert.match(featureSource, /--gt-ink-primary/);
+  assert.doesNotMatch(featureSource, /btn-swiss/);
+  assert.doesNotMatch(featureSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(featureSource, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(featureSource, /font-black/);
+  assert.doesNotMatch(featureSource, /uppercase/);
+  assert.doesNotMatch(featureSource, /tracking-(wide|wider|widest|tight|tighter|tightest|\[)/);
+});
+
 test('quota status evidence helper consumes explicit quotaFact authority for codex workspace', () => {
   const fromFact = resolveQuotaStatusEvidenceFromPayload(
     {
