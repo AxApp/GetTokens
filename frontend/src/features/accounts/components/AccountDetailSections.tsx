@@ -247,6 +247,30 @@ const accountDetailResourceKvLabelClass =
   'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
 const accountDetailResourceKvValueClass =
   'mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountDetailQuotaResetModalOverlayClass =
+  'fixed inset-0 z-[1000] grid place-items-center bg-black/35 px-6 py-8 backdrop-blur-[18px]';
+const accountDetailQuotaResetModalPanelClass =
+  'relative grid w-full max-w-[38rem] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-canvas)_78%,transparent)] shadow-[0_2rem_5rem_rgba(0,0,0,0.22)] backdrop-blur-2xl';
+const accountDetailQuotaResetHeroClass =
+  'relative h-36 overflow-hidden border-b border-white/40';
+const accountDetailQuotaResetHeroMarkClass =
+  'absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded border border-white/40 bg-[linear-gradient(150deg,rgba(171,149,255,0.8),rgba(36,65,255,0.88))] font-mono text-3xl font-semibold text-white shadow-xl backdrop-blur-md';
+const accountDetailQuotaResetCloseButtonClass =
+  'absolute right-4 top-4 grid h-10 w-10 place-items-center rounded border border-white/55 bg-white/45 text-xl font-semibold text-[var(--text-primary)] shadow-lg backdrop-blur-xl transition-colors hover:bg-white/65';
+const accountDetailQuotaResetBodyClass =
+  'grid gap-5 bg-white/35 px-8 py-7 text-center backdrop-blur-xl';
+const accountDetailQuotaResetTitleClass =
+  'text-xl font-semibold italic leading-tight tracking-normal text-[var(--text-primary)]';
+const accountDetailQuotaResetDescriptionClass =
+  'mx-auto max-w-[28rem] text-[length:var(--font-size-ui-sm)] font-medium leading-relaxed text-[var(--text-muted)]';
+const accountDetailQuotaResetResultClass =
+  'grid gap-2 border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_78%,transparent)] p-4 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] backdrop-blur-xl';
+const accountDetailQuotaResetErrorClass =
+  'border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-4 text-left text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-status-danger)] backdrop-blur-xl';
+const accountDetailQuotaResetPrimaryButtonClass =
+  'h-12 rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-4 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60';
+const accountDetailQuotaResetSecondaryButtonClass =
+  'h-12 rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_72%,transparent)] px-4 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountDetailFooterStatusClass =
   'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
 const accountDetailFooterActionsClass = 'flex items-center gap-2';
@@ -1672,7 +1696,7 @@ function OpenAIQuotaResetConfirmationModal({
         : '重置失败';
 
   return (
-    <div data-openai-quota-reset-modal={resetStatus} className="fixed inset-0 z-[1000] grid place-items-center bg-black/35 px-6 py-8 backdrop-blur-[18px]">
+    <div data-openai-quota-reset-modal={resetStatus} className={accountDetailQuotaResetModalOverlayClass}>
       <style>{`
         @keyframes openaiQuotaResetGradient {
           0% { background-position: 0% 50%, 78% 52%, 0% 50%; transform: scale(1); }
@@ -1683,64 +1707,64 @@ function OpenAIQuotaResetConfirmationModal({
           [data-openai-quota-reset-gradient] { animation: none !important; transform: none !important; }
         }
       `}</style>
-      <div className="relative grid w-full max-w-[38rem] overflow-hidden rounded-[2rem] border border-white/55 bg-[rgba(246,245,241,0.72)] shadow-[0_2rem_5rem_rgba(0,0,0,0.28)] backdrop-blur-2xl">
-        <div className="relative h-40 overflow-hidden">
+      <div className={accountDetailQuotaResetModalPanelClass}>
+        <div className={accountDetailQuotaResetHeroClass}>
           <div
             data-openai-quota-reset-gradient="dynamic"
             className="absolute -inset-5 animate-[openaiQuotaResetGradient_14s_ease-in-out_infinite] bg-[radial-gradient(circle_at_63%_58%,rgba(182,239,0,0.98)_0,rgba(120,137,0,0.82)_20%,transparent_34%),radial-gradient(circle_at_77%_60%,rgba(255,167,38,0.96)_0,rgba(255,171,46,0.78)_24%,transparent_40%),linear-gradient(120deg,rgba(69,199,237,0.94)_0%,rgba(188,198,255,0.88)_48%,rgba(231,182,255,0.9)_100%)] bg-[length:165%_165%,150%_150%,180%_180%] blur-[1px]"
           />
           <div className="absolute inset-0 bg-white/10 backdrop-blur-[3px]" />
           <div className="absolute inset-0 opacity-45 [background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.58)_0_1px,transparent_1px_44px)]" />
-          <div className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[1.65rem] border border-white/35 bg-[linear-gradient(150deg,rgba(171,149,255,0.92),rgba(36,65,255,0.94))] text-4xl font-black text-white shadow-xl backdrop-blur-md">
+          <div className={accountDetailQuotaResetHeroMarkClass}>
             ›_
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-6 top-6 grid h-14 w-14 place-items-center rounded-full border border-white/60 bg-white/45 text-3xl font-light text-[var(--text-muted)] shadow-lg backdrop-blur-xl"
+            className={accountDetailQuotaResetCloseButtonClass}
             aria-label="关闭重置弹框"
           >
             ×
           </button>
         </div>
-        <div className="grid gap-6 bg-white/35 px-10 py-9 text-center backdrop-blur-xl">
+        <div className={accountDetailQuotaResetBodyClass}>
           <div className="grid gap-3">
-            <h3 className="text-3xl font-black tracking-tight text-[var(--text-primary)]">{title}</h3>
-            <p className="text-lg font-black leading-relaxed text-[var(--text-muted)]">{description}</p>
+            <h3 className={accountDetailQuotaResetTitleClass}>{title}</h3>
+            <p className={accountDetailQuotaResetDescriptionClass}>{description}</p>
           </div>
           {resetStatus === 'success' && result ? (
-            <div className="grid gap-2 rounded-2xl border-2 border-white/60 bg-white/35 p-4 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] shadow-inner backdrop-blur-xl">
-              <div>WINDOWS RESET: {result.windowsReset}</div>
-              <div>CREDIT: {result.credit?.status || result.code || 'redeemed'}</div>
-              <div>REDEEMED AT: {result.credit?.redeemedAt || '—'}</div>
-              <div>REMAINING: {result.availableCount}</div>
-              <div>QUOTA REFRESH: {result.postResetRefreshStatus || 'unknown'}</div>
+            <div className={accountDetailQuotaResetResultClass}>
+              <div>Windows reset: {result.windowsReset}</div>
+              <div>Credit: {result.credit?.status || result.code || 'redeemed'}</div>
+              <div>Redeemed at: {result.credit?.redeemedAt || '—'}</div>
+              <div>Remaining: {result.availableCount}</div>
+              <div>Quota refresh: {result.postResetRefreshStatus || 'unknown'}</div>
             </div>
           ) : null}
           {resetStatus === 'error' ? (
-            <div className="rounded-2xl border-2 border-[var(--color-status-danger)]/45 bg-[var(--color-status-danger)]/10 p-4 text-left text-[length:var(--font-size-ui-sm)] font-black text-[var(--color-status-danger)] shadow-inner backdrop-blur-xl">
+            <div className={accountDetailQuotaResetErrorClass}>
               {message}
             </div>
           ) : null}
           <div className="grid gap-3">
             {resetStatus === 'confirm' ? (
-              <button type="button" onClick={onConfirm} className="h-16 rounded-full bg-[var(--text-primary)] text-xl font-black text-[var(--bg-main)]">
+              <button type="button" onClick={onConfirm} className={accountDetailQuotaResetPrimaryButtonClass}>
                 确认重置使用次数
               </button>
             ) : resetStatus === 'loading' ? (
-              <button type="button" disabled className="h-16 rounded-full bg-[var(--text-primary)]/70 text-xl font-black text-[var(--bg-main)]">
+              <button type="button" disabled className={accountDetailQuotaResetPrimaryButtonClass}>
                 重置中...
               </button>
             ) : resetStatus === 'success' ? (
-              <button type="button" onClick={onClose} className="h-16 rounded-full bg-[var(--text-primary)] text-xl font-black text-[var(--bg-main)]">
+              <button type="button" onClick={onClose} className={accountDetailQuotaResetPrimaryButtonClass}>
                 完成
               </button>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={onClose} className="h-14 rounded-full border-2 border-[var(--border-color)] text-base font-black text-[var(--text-primary)]">
+                <button type="button" onClick={onClose} className={accountDetailQuotaResetSecondaryButtonClass}>
                   关闭
                 </button>
-                <button type="button" onClick={onRetry} className="h-14 rounded-full bg-[var(--text-primary)] text-base font-black text-[var(--bg-main)]">
+                <button type="button" onClick={onRetry} className={accountDetailQuotaResetPrimaryButtonClass}>
                   重试
                 </button>
               </div>
