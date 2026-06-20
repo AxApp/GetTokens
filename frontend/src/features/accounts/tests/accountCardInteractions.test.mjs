@@ -180,6 +180,38 @@ test('accounts import modal opens with app-local copied account payload when ava
   assert.match(source, /setInitialImportPasteContent\(readAccountClipboardFallback\(\)\)/);
 });
 
+test('accounts feature page chrome uses the quiet workspace shell', async () => {
+  const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const renderBlock = sourceBlock(source, 'const showAccountSkeletons = shouldShowAccountSkeletons', '<AccountGroupSection');
+
+  assert.match(source, /const accountsFeatureShellClass =/);
+  assert.match(source, /const accountsFeatureSelectionToolbarShellClass =/);
+  assert.match(source, /const accountsFeatureNoticeClass =/);
+  assert.match(source, /const accountsFeatureEmptyStateClass =/);
+  assert.match(source, /const accountsFeatureInlineButtonClass =/);
+  assert.match(renderBlock, /data-accounts-feature-shell="quiet"/);
+  assert.match(renderBlock, /data-account-selection-toolbar-sticky="quiet"/);
+  assert.match(renderBlock, /data-account-action-notice/);
+  assert.match(renderBlock, /data-account-delete-error="quiet"/);
+  assert.match(renderBlock, /data-account-oauth-banner/);
+  assert.match(renderBlock, /data-accounts-empty-state="quiet"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-status-danger/);
+  assert.match(source, /--gt-status-warning/);
+  assert.match(source, /--gt-status-success/);
+  assert.doesNotMatch(renderBlock, /btn-swiss/);
+  assert.doesNotMatch(renderBlock, /border-2/);
+  assert.doesNotMatch(renderBlock, /border-dashed/);
+  assert.doesNotMatch(renderBlock, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(renderBlock, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(renderBlock, /color-status-/);
+  assert.doesNotMatch(renderBlock, /font-black/);
+  assert.doesNotMatch(renderBlock, /\buppercase\b/);
+  assert.doesNotMatch(renderBlock, /tracking-wide|tracking-\[/);
+});
+
 test('account import queue candidates render with account card styling', async () => {
   const modalSource = await readFile(new URL('../components/AccountImportModal.tsx', import.meta.url), 'utf8');
   const queueSource = await readFile(new URL('../components/AccountImportQueueList.tsx', import.meta.url), 'utf8');

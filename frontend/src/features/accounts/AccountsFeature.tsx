@@ -103,6 +103,35 @@ interface AccountsFeatureProps {
   workspace?: string;
 }
 
+const accountsFeatureShellClass =
+  "h-full w-full overflow-auto bg-[var(--gt-surface-canvas)] p-12";
+const accountsFeatureContentClass =
+  "mx-auto max-w-6xl space-y-8 pb-32";
+const accountsFeatureSelectionToolbarShellClass =
+  "sticky -top-12 z-40 -mx-12 !mt-4 bg-[color-mix(in_srgb,var(--gt-surface-canvas)_94%,transparent)] px-12 py-1.5 backdrop-blur";
+const accountsFeatureNoticeClass =
+  "flex items-start justify-between gap-3 rounded-md border px-4 py-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal";
+const accountsFeatureNoticeToneClass = {
+  error:
+    "border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_7%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]",
+  warning:
+    "border-[color-mix(in_srgb,var(--gt-status-warning)_30%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-warning)_8%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)]",
+  success:
+    "border-[color-mix(in_srgb,var(--gt-status-success)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_7%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]",
+  neutral:
+    "border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)]",
+} satisfies Record<"error" | "warning" | "success" | "neutral", string>;
+const accountsFeatureInlineButtonClass =
+  "inline-flex h-7 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]";
+const accountsFeatureEmptyStateClass =
+  "grid gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-16 text-center";
+const accountsFeatureEmptyTitleClass =
+  "font-mono text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]";
+const accountsFeatureEmptyBodyClass =
+  "mx-auto max-w-2xl text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-muted)]";
+const accountsFeatureEmptyActionButtonClass =
+  "inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]";
+
 export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const { t } = useI18n();
   const { trackRequest } = useDebug();
@@ -1399,10 +1428,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     <>
       <div
         ref={pageRef}
-        className="h-full w-full overflow-auto bg-[var(--bg-surface)] p-12"
+        className={accountsFeatureShellClass}
         data-collaboration-id="PAGE_ACCOUNTS"
+        data-accounts-feature-shell="quiet"
       >
-        <div className="mx-auto max-w-6xl space-y-8 pb-32">
+        <div className={accountsFeatureContentClass}>
           <AccountsHeader
             t={t}
             accountCount={accounts.length}
@@ -1465,8 +1495,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
           {isSelectionMode ? (
             <div
-              data-account-selection-toolbar-sticky="true"
-              className="sticky -top-12 z-40 -mx-12 !mt-4 bg-[var(--bg-surface)] px-12 py-1.5"
+              data-account-selection-toolbar-sticky="quiet"
+              className={accountsFeatureSelectionToolbarShellClass}
             >
               <AccountsSelectionActions
                 t={t}
@@ -1487,18 +1517,14 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
           {accountActionNotice ? (
             <div
-              className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide ${
-                accountActionNotice.tone === "error"
-                  ? "border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]"
-                  : accountActionNotice.tone === "warning"
-                    ? "border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] text-[var(--color-status-warning)]"
-                    : "border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]"
-              }`}
+              data-account-action-notice={accountActionNotice.tone}
+              className={`${accountsFeatureNoticeClass} ${accountsFeatureNoticeToneClass[accountActionNotice.tone]}`}
             >
               <span>{accountActionNotice.message}</span>
               <button
+                type="button"
                 onClick={() => setAccountActionNotice(null)}
-                className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+                className={accountsFeatureInlineButtonClass}
               >
                 {t("common.close")}
               </button>
@@ -1506,25 +1532,24 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           ) : null}
 
           {deleteError ? (
-            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
+            <div
+              data-account-delete-error="quiet"
+              className={`${accountsFeatureNoticeClass} ${accountsFeatureNoticeToneClass.error}`}
+            >
               {deleteError}
             </div>
           ) : null}
           {oauthBanner ? (
             <div
-              className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide ${
-                oauthBanner.tone === "error"
-                  ? "border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]"
-                  : oauthBanner.tone === "success"
-                    ? "border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]"
-                    : "border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]"
-              }`}
+              data-account-oauth-banner={oauthBanner.tone}
+              className={`${accountsFeatureNoticeClass} ${accountsFeatureNoticeToneClass[oauthBanner.tone === "error" || oauthBanner.tone === "success" ? oauthBanner.tone : "neutral"]}`}
             >
               <span>{oauthBanner.message}</span>
               {!isOAuthPending ? (
                 <button
+                  type="button"
                   onClick={() => setOAuthBanner(null)}
-                  className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+                  className={accountsFeatureInlineButtonClass}
                 >
                   {t("common.close")}
                 </button>
@@ -1539,11 +1564,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               ))}
             </div>
           ) : accountsEmptyState ? (
-            <div className="grid gap-4 border-2 border-dashed border-[var(--border-color)] p-16 text-center">
-              <div className="font-mono text-[length:var(--font-size-ui-lg)] font-black uppercase italic tracking-wide text-[var(--text-muted)]">
+            <div data-accounts-empty-state="quiet" className={accountsFeatureEmptyStateClass}>
+              <div className={accountsFeatureEmptyTitleClass}>
                 {accountsEmptyState.title}
               </div>
-              <div className="mx-auto max-w-2xl text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              <div className={accountsFeatureEmptyBodyClass}>
                 {accountsEmptyState.body}
               </div>
               {accountsEmptyState.kind === 'filtered' ? (
@@ -1552,7 +1577,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                     <button
                       type="button"
                       onClick={() => setSearchTerm('')}
-                      className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
+                      className={accountsFeatureEmptyActionButtonClass}
                     >
                       {t('common.clear_search')}
                     </button>
@@ -1561,7 +1586,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                     <button
                       type="button"
                       onClick={() => setFilters({ ...defaultAccountsFilterState })}
-                      className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
+                      className={accountsFeatureEmptyActionButtonClass}
                     >
                       {t('accounts.filter_reset')}
                     </button>
