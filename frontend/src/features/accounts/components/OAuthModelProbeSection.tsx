@@ -8,6 +8,22 @@ import {
   AccountDetailSection,
 } from './AccountDetailPrimitives';
 
+const oauthModelProbeFieldLabelClass =
+  'text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]';
+const oauthModelProbeButtonClass =
+  'inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const oauthModelProbeStatusBaseClass =
+  'rounded border px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium leading-5 tracking-normal';
+const oauthModelProbeStatusToneClassNames = {
+  idle: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
+  loading:
+    'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)]',
+  success:
+    'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
+  error:
+    'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
+} satisfies Record<OAuthModelProbeState['status'], string>;
+
 export type OAuthModelProbeState = {
   model: string;
   status: 'idle' | 'loading' | 'success' | 'error';
@@ -77,10 +93,10 @@ export function OAuthModelProbeSection({
       bandActionDivider={false}
       actions={<AccountDetailPill tone={statusTone}>{statusLabel}</AccountDetailPill>}
     >
-      <div data-oauth-model-probe-account={accountID} className="grid gap-3">
+      <div data-oauth-model-probe-shell="quiet" data-oauth-model-probe-account={accountID} className="grid gap-3">
         <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <label className="grid min-w-0 gap-1.5">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <span className={oauthModelProbeFieldLabelClass}>
               测试模型
             </span>
             <Combobox
@@ -95,7 +111,8 @@ export function OAuthModelProbeSection({
             type="button"
             onClick={() => onProbe?.(selectedModel)}
             disabled={!canProbe}
-            className="btn-swiss flex min-h-10 items-center justify-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={oauthModelProbeButtonClass}
+            data-oauth-model-probe-button="run"
           >
             <Play className="h-3.5 w-3.5" strokeWidth={4} />
             {running ? '测试中' : '测试模型'}
@@ -104,11 +121,7 @@ export function OAuthModelProbeSection({
         {message ? (
           <div
             data-oauth-model-probe-status={currentStatus}
-            className={`border-2 px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] ${
-              currentStatus === 'error'
-                ? 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
-                : 'border-[var(--border-color)] text-[var(--text-muted)]'
-            }`}
+            className={`${oauthModelProbeStatusBaseClass} ${oauthModelProbeStatusToneClassNames[currentStatus]}`}
           >
             {message}
           </div>

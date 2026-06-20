@@ -71,6 +71,29 @@ test('auth-file account detail exposes single-account OAuth model probe', async 
   assert.match(featureSource, /allowFallback:\s*false/);
 });
 
+test('OAuthModelProbeSection uses the quiet workspace control shell', async () => {
+  const source = await readFile(new URL('../components/OAuthModelProbeSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const oauthModelProbeFieldLabelClass =/);
+  assert.match(source, /const oauthModelProbeButtonClass =/);
+  assert.match(source, /const oauthModelProbeStatusBaseClass =/);
+  assert.match(source, /const oauthModelProbeStatusToneClassNames =/);
+  assert.match(source, /data-oauth-model-probe-shell="quiet"/);
+  assert.match(source, /data-oauth-model-probe-button="run"/);
+  assert.match(source, /data-oauth-model-probe-status=\{currentStatus\}/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-ink-primary/);
+  assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /btn-swiss/);
+  assert.doesNotMatch(source, /border-2/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-\[/);
+  assert.doesNotMatch(source, /--color-status-/);
+});
+
 test('auth-file summary keeps raw content hidden and retains model catalog', async () => {
   const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
