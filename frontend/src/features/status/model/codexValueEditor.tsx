@@ -24,6 +24,13 @@ function resolveSegmentedEnumOptions(row: CodexFeatureRow) {
   return options.map((option) => ({ id: option, label: option }));
 }
 
+const codexValueEditorInputClass =
+  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-sm)] text-[var(--gt-ink-primary)] transition-colors placeholder:text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] focus:border-[var(--gt-border-strong)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+const codexValueEditorTextareaClass =
+  'min-h-24 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--font-size-ui-sm)] text-[var(--gt-ink-primary)] transition-colors placeholder:text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] focus:border-[var(--gt-border-strong)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+const codexValueEditorResetButtonClass =
+  'flex h-9 w-9 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-40';
+
 export function renderCodexValueEditor(
   row: CodexFeatureRow,
   disabled: boolean,
@@ -40,7 +47,8 @@ export function renderCodexValueEditor(
       title="移除本地配置"
       disabled={disabled}
       onClick={() => onRemoveSetting?.(row.id)}
-      className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40"
+      className={codexValueEditorResetButtonClass}
+      data-codex-value-editor-reset
     >
       <RotateCcw className="h-3.5 w-3.5" strokeWidth={3} />
     </button>
@@ -119,7 +127,7 @@ export function renderCodexValueEditor(
           value={String(value ?? '')}
           disabled={disabled || !enabled}
           onChange={(event) => onChangeSetting(row.id, event.target.value === '' ? '' : Number(event.target.value))}
-          className="input-swiss w-full"
+          className={codexValueEditorInputClass}
         />
       </div>
     );
@@ -140,7 +148,7 @@ export function renderCodexValueEditor(
               .filter(Boolean)
           )
         }
-        className="input-swiss min-h-24 w-full resize-y font-mono"
+        className={codexValueEditorTextareaClass}
       />
     );
   }
@@ -152,7 +160,7 @@ export function renderCodexValueEditor(
         disabled={disabled}
         rows={row.valueType === 'toml' ? 5 : 3}
         onChange={(event) => onChangeSetting(row.id, event.target.value)}
-        className="input-swiss min-h-24 w-full resize-y font-mono"
+        className={codexValueEditorTextareaClass}
       />
     );
   }
@@ -163,7 +171,7 @@ export function renderCodexValueEditor(
       value={String(value ?? '')}
       disabled={disabled}
       onChange={(event) => onChangeSetting(row.id, event.target.value)}
-      className="input-swiss w-full"
+      className={codexValueEditorInputClass}
     />
   );
 }

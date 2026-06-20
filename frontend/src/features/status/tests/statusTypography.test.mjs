@@ -200,6 +200,21 @@ test('codex root settings value editors keep a responsive control column', async
   assert.match(valueEditorSource, /className="ml-auto h-9 w-16"/);
 });
 
+test('codex value editors use the quiet workspace input shell', async () => {
+  const valueEditorSource = await readFile(new URL('../model/codexValueEditor.tsx', import.meta.url), 'utf8');
+
+  assert.match(valueEditorSource, /const codexValueEditorInputClass =/);
+  assert.match(valueEditorSource, /const codexValueEditorTextareaClass =/);
+  assert.match(valueEditorSource, /const codexValueEditorResetButtonClass =/);
+  assert.match(valueEditorSource, /data-codex-value-editor-reset/);
+  assert.match(valueEditorSource, /--gt-surface-canvas/);
+  assert.match(valueEditorSource, /--gt-surface-muted/);
+  assert.match(valueEditorSource, /--gt-border-subtle/);
+  assert.doesNotMatch(valueEditorSource, /input-swiss/);
+  assert.doesNotMatch(valueEditorSource, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(valueEditorSource, /bg-\[var\(--bg-main\)\]/);
+});
+
 test('codex feature config page keeps readable text selectable for copy', async () => {
   const codexFeatureSource = await readFile(new URL('../../codex/CodexFeature.tsx', import.meta.url), 'utf8');
   const configRowsSource = await readFile(
