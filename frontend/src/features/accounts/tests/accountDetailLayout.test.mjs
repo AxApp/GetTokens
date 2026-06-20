@@ -787,6 +787,30 @@ test('account detail proxy route only selects saved proxy nodes', async () => {
   assert.match(source, /账号详情只选择已保存的代理池节点/);
 });
 
+test('account detail proxy route uses the quiet workspace control shell', async () => {
+  const source = await readFile(new URL('../components/AccountProxyRouteSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const accountProxyRouteSummaryPillClass =/);
+  assert.match(source, /const accountProxyRouteEditorClass =/);
+  assert.match(source, /const accountProxyRouteHintClass =/);
+  assert.match(source, /const accountProxyRouteSelectClass =/);
+  assert.match(source, /const accountProxyRouteEmptyClass =/);
+  assert.match(source, /data-account-proxy-route-summary="quiet"/);
+  assert.match(source, /data-account-proxy-route-select="saved-node"/);
+  assert.match(source, /data-account-proxy-route-empty="quiet"/);
+  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /--gt-ink-primary/);
+  assert.doesNotMatch(source, /input-swiss/);
+  assert.doesNotMatch(source, /!border-2/);
+  assert.doesNotMatch(source, /border-2/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-\[/);
+});
+
 test('auth-file compatible model catalog renders source-to-route mapping cards', async () => {
   const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const modelGridBlock = source.match(/<div data-account-model-mapping-grid="source-route"[\s\S]*?<datalist id="account-detail-model-source-options">/)?.[0] ?? '';

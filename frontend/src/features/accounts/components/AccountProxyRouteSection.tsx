@@ -16,6 +16,16 @@ import {
   AccountDetailSection,
 } from './AccountDetailPrimitives';
 
+const accountProxyRouteSummaryPillClass =
+  '!border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-canvas)] !text-[var(--gt-ink-primary)]';
+const accountProxyRouteEditorClass = 'grid gap-2';
+const accountProxyRouteHintClass =
+  'text-[length:var(--font-size-ui-xs)] font-medium leading-5 tracking-normal text-[var(--text-muted)]';
+const accountProxyRouteSelectClass =
+  'min-h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] outline-none transition-colors focus:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:bg-[var(--gt-surface-muted)] disabled:text-[var(--text-muted)]';
+const accountProxyRouteEmptyClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium leading-5 tracking-normal text-[var(--text-muted)]';
+
 interface AccountProxyRouteSectionProps {
   proxyUrl?: string;
   proxyNodes?: ProxyNodeRecord[];
@@ -126,7 +136,7 @@ export default function AccountProxyRouteSection({
       title={t('accounts.proxy_route_title')}
       meta={summary.proxyUrl || t('accounts.proxy_route_inherit_hint')}
       actions={
-        <AccountDetailPill className="!border-2 !text-[var(--text-primary)]">
+        <AccountDetailPill className={accountProxyRouteSummaryPillClass} data-account-proxy-route-summary="quiet">
           {summary.label}
         </AccountDetailPill>
       }
@@ -159,22 +169,23 @@ export function AccountProxyRouteEditor({
 
   if (readonlyReason) {
     return (
-      <AccountDetailEmptyState className="py-3 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+      <AccountDetailEmptyState className="py-3 text-left !text-[length:var(--font-size-ui-xs)]">
         {readonlyReason}
       </AccountDetailEmptyState>
     );
   }
 
   return (
-    <div data-account-proxy-route-editor="saved-node-only" className="space-y-2">
-      <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+    <div data-account-proxy-route-editor="saved-node-only" className={accountProxyRouteEditorClass}>
+      <div className={accountProxyRouteHintClass}>
         账号详情只选择已保存的代理池节点；刷新、测速、增删节点在代理池页面完成。
       </div>
       <select
         value={draft.proxyUrl}
         onChange={(event) => onProxySelect(event.target.value)}
         disabled={proxyOptions.length === 0 && !hasDetachedCurrentURL}
-        className="input-swiss w-full font-mono !text-[length:var(--font-size-ui-xs)]"
+        className={accountProxyRouteSelectClass}
+        data-account-proxy-route-select="saved-node"
       >
         {draft.proxyUrl ? null : <option value="">{t('accounts.proxy_route_select_placeholder')}</option>}
         {hasDetachedCurrentURL ? (
@@ -189,7 +200,7 @@ export function AccountProxyRouteEditor({
         ))}
       </select>
       {proxyOptions.length === 0 && !draft.proxyUrl ? (
-        <div className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+        <div className={accountProxyRouteEmptyClass} data-account-proxy-route-empty="quiet">
           {t('accounts.proxy_route_no_nodes')}
         </div>
       ) : null}
