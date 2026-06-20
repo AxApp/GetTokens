@@ -140,12 +140,16 @@ test('status panels use the quiet workspace shell', async () => {
   assert.match(statusPanelSource, /data-status-local-cli-panel="true"/);
   assert.match(statusPanelSource, /data-status-local-cli-target=\{activeTarget\}/);
   assert.match(statusPanelSource, /data-status-quota-evidence-section="true"/);
+  assert.match(statusPanelSource, /shadow-sm/);
   assert.match(statusPanelSource, /--gt-surface-canvas/);
   assert.match(statusPanelSource, /--gt-border-subtle/);
   assert.doesNotMatch(statusPanelSource, /card-swiss grid gap-4 p-4/);
   assert.doesNotMatch(statusPanelSource, /btn-swiss/);
   assert.doesNotMatch(statusPanelSource, /border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\]/);
   assert.doesNotMatch(statusPanelSource, /relative overflow-visible border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(statusPanelSource, /shadow-\[/);
+  assert.doesNotMatch(statusPanelSource, /tracking-(wide|wider|widest|tight|tighter|tightest|normal|\[)/);
+  assert.doesNotMatch(statusPanelSource, /--bg-main/);
   assert.match(actionSelectSource, /--gt-surface-raised/);
   assert.match(snippetPanelSource, /--gt-border-subtle/);
   assert.doesNotMatch(actionSelectSource, /btn-swiss/);

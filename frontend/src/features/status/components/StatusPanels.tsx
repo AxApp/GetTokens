@@ -26,7 +26,7 @@ import { RELAY_CODEX_DEFAULT_MODEL } from '../../accounts/model/accountConfig';
 type LocalCliPanelTarget = 'codex' | 'claude';
 
 const statusPanelClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const statusMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const statusInsetPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)]';
 const statusFieldBoxClass =
@@ -38,7 +38,7 @@ const statusValueClass = 'font-mono text-[length:var(--font-size-ui-sm)] font-se
 const statusSecondaryButtonClass =
   'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const statusPrimaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--bg-main)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const statusCompactButtonClass =
   'inline-flex h-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const statusNoticeClass =
@@ -665,7 +665,7 @@ export function StatusApplyLocalSection({
               {selectedRelayProvider.id !== 'openai' ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[length:var(--font-size-ui-lg)] font-bold tracking-[0.08em] text-[var(--text-primary)]">
+                    <span className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">
                       supports_websockets
                     </span>
                     <ToggleSwitch
@@ -693,7 +693,7 @@ export function StatusApplyLocalSection({
                   className="min-w-0 text-left active:scale-95"
                   onClick={() => setModelCatalogPreviewOpen(true)}
                 >
-                  <span className="text-[length:var(--font-size-ui-lg)] font-bold tracking-[0.08em] text-[var(--text-primary)] underline-offset-4 hover:underline">
+                  <span className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)] underline-offset-4 hover:underline">
                     sync_model_catalog
                     {isDisablingModelCatalog ? (
                       <span className={`ml-2 ${statusMetaClass}`}>
@@ -1010,7 +1010,7 @@ export function StatusApplyLocalSection({
                     </div>
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-primary)]">
+                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
                       {model.name || '-'}
                     </div>
                   </td>
@@ -1106,7 +1106,7 @@ function StatusEndpointPicker({
           type="button"
           onClick={onToggleLANAccess}
           className={`${statusSecondaryButtonClass} ${
-            isLANAccessEnabled ? '!border-[var(--gt-border-strong)] !bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
+            isLANAccessEnabled ? '!border-[var(--gt-border-strong)] !bg-[var(--text-primary)] !text-[var(--gt-surface-canvas)]' : ''
           }`}
         >
           {isLANAccessEnabled ? t('status.lan_access_on') : t('status.lan_access_off')}
@@ -1129,7 +1129,7 @@ function StatusEndpointPicker({
               onClick={() => onSelectEndpointID(endpoint.id)}
               className={`rounded border px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium transition ${
                 isSelected
-                  ? 'border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                  ? 'border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
                   : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)] hover:border-[var(--gt-border-strong)]'
               }`}
             >
