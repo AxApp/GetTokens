@@ -27,7 +27,7 @@ import {
 
 function EmptyState({ children }: { children: string }) {
   return (
-    <div className="border-t-2 border-[var(--border-color)] px-8 py-14 text-center text-[length:var(--font-size-ui-md)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+    <div className="border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-8 py-14 text-center text-[length:var(--font-size-ui-md)] font-medium text-[var(--gt-ink-muted)]">
       {children}
     </div>
   );
@@ -40,7 +40,7 @@ const CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS =
 const CODEX_ACCOUNT_ORDER_FILTER_BUTTON_CLASS =
   'h-10 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const CODEX_ACCOUNT_ORDER_FILTER_MENU_CLASS =
-  'absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 shadow-[var(--gt-elevation-raised-2)]';
+  'absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 shadow-sm';
 const CODEX_ACCOUNT_ORDER_FILTER_TITLE_CLASS =
   'px-1 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-subtle)]';
 const CODEX_ACCOUNT_ORDER_FILTER_SECTION_TITLE_CLASS =

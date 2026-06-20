@@ -1188,6 +1188,12 @@ test('Codex account order section uses a lighter shell instead of a nested card 
   assert.doesNotMatch(source, /CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS/);
   assert.doesNotMatch(source, /<h2 className=/);
   assert.doesNotMatch(source, /<p className="mt-2 max-w-3xl/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /--gt-ink-muted/);
+  assert.doesNotMatch(source, /border-t-2/);
+  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /\buppercase\b/);
+  assert.doesNotMatch(source, /tracking-wide|tracking-wider|tracking-widest|tracking-\[/);
   assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\] px-5 py-4/);
   assert.doesNotMatch(source, /CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS/);
   assert.doesNotMatch(
@@ -1243,6 +1249,8 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
+  assert.match(source, /shadow-sm/);
+  assert.doesNotMatch(source, /shadow-\[/);
   assert.match(source, /flex w-full flex-wrap items-center gap-2/);
   assert.match(source, /className="min-w-\[18rem\] flex-1"/);
   assert.match(source, /ml-auto flex shrink-0 items-center gap-2/);
