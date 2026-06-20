@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Download, ExternalLink, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
 import type { AppPage, ClaudeWorkspace, CodexWorkspace, ReleaseInfo } from '../../types';
@@ -52,7 +53,7 @@ const claudeWorkspaceItems = [
   { id: 'subagents', label: 'nav.claude_subagents' },
 ] as const satisfies ReadonlyArray<{ id: ClaudeWorkspace; label: string }>;
 
-const SECTION_IDS = ['accounts', 'codex', 'claude'] as const;
+const SECTION_IDS = ['codex', 'claude'] as const;
 
 function isSectionId(id: string): id is 'accounts' | 'codex' | 'claude' {
   return SECTION_IDS.includes(id as any);
@@ -92,6 +93,7 @@ export default function Sidebar({
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openSection, setOpenSection] = useState<OpenSection>(null);
+  const navItemRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const isExpanded = !isCollapsed;
 
   const toggleCollapsed = useCallback(() => {
@@ -138,7 +140,7 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`relative z-20 flex h-full shrink-0 flex-col overflow-x-hidden border-r transition-[width] duration-200 ease-out ${
+      className={`relative z-20 flex h-full shrink-0 flex-col border-r transition-[width] duration-200 ease-out ${
         isCollapsed ? 'w-[4.75rem]' : 'w-60'
       }`}
       style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-panel)' }}
@@ -148,7 +150,15 @@ export default function Sidebar({
       {/* Brand */}
       <div className={`border-b transition-[padding] duration-200 ease-out ${isCollapsed ? 'p-3' : 'p-5'}`} style={{ borderColor: 'var(--gt-border-subtle)' }}>
         <div className={`flex transition-[gap] duration-200 ease-out ${isCollapsed ? 'flex-col items-center gap-3' : 'items-center justify-between gap-4'}`}>
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={t(getSidebarToggleTranslationKey(isCollapsed))}
+            title={t(getSidebarToggleTranslationKey(isCollapsed))}
+            aria-expanded={isExpanded}
+            className={`flex items-center rounded-md transition duration-150 hover:bg-[var(--gt-surface-muted)] active:scale-[0.98] ${isCollapsed ? 'justify-center' : 'gap-3'}`}
+            style={{ color: 'var(--gt-ink-secondary)' }}
+          >
             <div className="h-8 w-8 shrink-0" style={{ color: 'var(--gt-accent-primary)' }}>
               <svg viewBox="0 0 100 100" className="h-full w-full" fill="currentColor" aria-hidden="true">
                 <rect x="10" y="14" width="80" height="32" rx="4" />
@@ -162,17 +172,6 @@ export default function Sidebar({
                 GetTokens
               </div>
             )}
-          </div>
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            aria-label={t(getSidebarToggleTranslationKey(isCollapsed))}
-            title={t(getSidebarToggleTranslationKey(isCollapsed))}
-            aria-expanded={isExpanded}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition duration-150 hover:bg-[var(--gt-surface-muted)] active:scale-95"
-            style={{ color: 'var(--gt-ink-secondary)' }}
-          >
-            {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </button>
         </div>
       </div>
@@ -187,6 +186,7 @@ export default function Sidebar({
           return (
             <div
               key={item.id}
+              ref={(el) => { navItemRefs.current.set(item.id, el); }}
               className="relative"
               onMouseEnter={() => handleSectionMouseEnter(item.id)}
               onMouseLeave={() => handleSectionMouseLeave()}
@@ -227,6 +227,7 @@ export default function Sidebar({
                 <Submenu
                   isOpen={isOpen}
                   isCollapsed={isCollapsed}
+                  parentRef={{ current: navItemRefs.current.get(item.id) ?? null }}
                 >
                   {item.id === 'codex' && codexWorkspaceItems.map((ws) => (
                     <button
@@ -256,23 +257,6 @@ export default function Sidebar({
                       {t(ws.label)}
                     </button>
                   ))}
-                  {item.id === 'accounts' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActivePage('accounts');
-                        if (isExpanded) setOpenSection(null);
-                      }}
-                      className="w-full rounded-md px-3 py-1.5 text-left text-sm font-medium transition duration-150 active:scale-[0.98]"
-                      style={{
-                        color: activePage === 'accounts' ? 'var(--gt-accent-primary)' : 'var(--gt-ink-secondary)',
-                        backgroundColor: activePage === 'accounts' ? 'color-mix(in srgb, var(--gt-accent-primary) 8%, transparent)' : 'transparent',
-                        fontFamily: 'var(--gt-font-family-sans)',
-                      }}
-                    >
-                      {t('nav.accounts_all')}
-                    </button>
-                  )}
                 </Submenu>
               )}
             </div>
@@ -342,24 +326,31 @@ export default function Sidebar({
 function Submenu({
   isOpen,
   isCollapsed,
+  parentRef,
   children,
 }: {
   isOpen: boolean;
   isCollapsed: boolean;
+  parentRef: React.RefObject<HTMLDivElement | null>;
   children: React.ReactNode;
 }) {
   if (isCollapsed) {
-    // Flyout to the right
-    return (
+    if (!isOpen || !parentRef.current) return null;
+    const rect = parentRef.current.getBoundingClientRect();
+    return createPortal(
       <div
-        className={`absolute left-full top-0 z-30 w-56 pl-3 transition duration-200 ease-out ${
-          isOpen ? 'pointer-events-auto translate-x-0 opacity-100' : 'pointer-events-none -translate-x-2 opacity-0'
-        }`}
+        className="pointer-events-auto fixed z-[9999] w-56 rounded-lg border p-2"
+        style={{
+          left: rect.right + 4,
+          top: rect.top,
+          borderColor: 'var(--gt-border-subtle)',
+          backgroundColor: 'var(--gt-surface-raised)',
+          boxShadow: 'var(--gt-elevation-raised-2)',
+        }}
       >
-        <div className="rounded-lg border p-2" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}>
-          <div className="space-y-0.5">{children}</div>
-        </div>
-      </div>
+        <div className="space-y-0.5">{children}</div>
+      </div>,
+      document.body,
     );
   }
 
