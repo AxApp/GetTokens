@@ -41,6 +41,51 @@ function getModelLabel(model: AuthModel): string {
   return model.display_name || model.id || model.name || 'MODEL';
 }
 
+const accountDetailModalOverlayClass =
+  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm';
+const accountDetailModalPanelClass =
+  'flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-3)]';
+const accountDetailModalHeaderClass =
+  'flex items-center justify-between border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-6 py-4';
+const accountDetailModalEyebrowClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailModalTitleClass =
+  'max-w-[450px] truncate text-sm font-semibold tracking-normal text-[var(--text-primary)]';
+const accountDetailModalActionButtonClass =
+  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+const accountDetailModalIconButtonClass =
+  'inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+const accountDetailModalBodyClass =
+  'flex-1 space-y-8 overflow-y-auto p-6 selection:bg-[var(--gt-border-subtle)] selection:text-[var(--text-primary)]';
+const accountDetailModalInfoGridClass =
+  'grid grid-cols-3 gap-y-6 border-b border-dashed border-[var(--gt-border-subtle)] pb-8';
+const accountDetailModalFieldLabelClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailModalFieldValueClass =
+  'truncate text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountDetailModalSectionClass =
+  'space-y-4 border-b border-dashed border-[var(--gt-border-subtle)] pb-8';
+const accountDetailModalSectionTitleClass =
+  'flex items-center gap-2 text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailModalSectionStateClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountDetailModalStatCardClass =
+  'space-y-1 rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3';
+const accountDetailModalStatLabelClass =
+  'text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailModalStatValueClass =
+  'text-[length:var(--font-size-ui-md)] font-semibold tracking-normal text-[var(--text-primary)]';
+const accountDetailModalModelChipClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]';
+const accountDetailModalFeedbackClass =
+  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const accountDetailModalRawContentClass =
+  'max-h-[300px] overflow-auto whitespace-pre rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 font-mono text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]';
+const accountDetailModalRawContentInteractiveClass =
+  'cursor-copy transition-colors hover:bg-[var(--gt-surface-canvas)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gt-surface-canvas)]';
+const accountDetailModalFooterClass =
+  'flex items-center justify-end border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
+
 export default function AccountDetailModal({
   account,
   usageSummary,
@@ -219,20 +264,21 @@ export default function AccountDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm"
+      className={accountDetailModalOverlayClass}
+      data-account-detail-modal="quiet"
       data-collaboration-id="MODAL_ACCOUNT_DETAIL"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        className={accountDetailModalPanelClass}
         onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-4">
+        <header className={accountDetailModalHeaderClass}>
           <div className="flex flex-col">
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className={accountDetailModalEyebrowClass}>
               Object_Inspection
             </div>
-            <h3 className="max-w-[450px] truncate text-sm font-black italic uppercase tracking-tighter text-[var(--text-primary)]">
+            <h3 className={accountDetailModalTitleClass}>
               {account.name}
             </h3>
           </div>
@@ -240,12 +286,12 @@ export default function AccountDetailModal({
             {canStartReauth ? (
               <button
                 onClick={isReauthing ? onCancelReauth : onStartReauth}
-                className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)]"
+                className={accountDetailModalActionButtonClass}
               >
                 {isReauthing ? t('common.cancel') : t('accounts.reauth')}
               </button>
             ) : null}
-            <button onClick={onClose} className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]">
+            <button onClick={onClose} className={accountDetailModalIconButtonClass}>
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
@@ -253,22 +299,22 @@ export default function AccountDetailModal({
           </div>
         </header>
 
-        <div className="flex-1 space-y-8 overflow-y-auto p-6 selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]">
-          <div className="grid grid-cols-3 gap-y-6 border-b-2 border-dashed border-[var(--border-color)] pb-8">
+        <div className={accountDetailModalBodyClass}>
+          <div className={accountDetailModalInfoGridClass}>
             {detailFields.map(([label, value]) => (
               <div key={label} className="space-y-1">
-                <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase italic text-[var(--text-muted)]">{label}</div>
-                <div className="truncate text-[length:var(--font-size-ui-md-compact)] font-black uppercase text-[var(--text-primary)]">{value}</div>
+                <div className={accountDetailModalFieldLabelClass}>{label}</div>
+                <div className={accountDetailModalFieldValueClass}>{value}</div>
               </div>
             ))}
           </div>
 
-          <section className="space-y-4 border-b-2 border-dashed border-[var(--border-color)] pb-8">
+          <section className={accountDetailModalSectionClass}>
             <div className="flex items-center justify-between gap-4">
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className={accountDetailModalSectionTitleClass}>
                 {t('accounts.recent_health')}
               </div>
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
+              <div className={accountDetailModalSectionStateClass}>
                 {usageSummary?.hasData ? t('accounts.stability_signal_synced') : t('accounts.no_recent_activity')}
               </div>
             </div>
@@ -279,10 +325,10 @@ export default function AccountDetailModal({
               {statisticsFields.map(([label, value]) => (
                 <div
                   key={label}
-                  className="space-y-1 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3"
+                  className={accountDetailModalStatCardClass}
                 >
-                  <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{label}</div>
-                  <div className="text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{value}</div>
+                  <div className={accountDetailModalStatLabelClass}>{label}</div>
+                  <div className={accountDetailModalStatValueClass}>{value}</div>
                 </div>
               ))}
             </div>
@@ -290,18 +336,18 @@ export default function AccountDetailModal({
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                <span className="h-2 w-2 bg-[var(--border-color)]"></span>
+              <div className={accountDetailModalSectionTitleClass}>
+                <span className="h-2 w-2 bg-[var(--gt-border-subtle)]"></span>
                 {t('accounts.ui_compatible_models')}
               </div>
-              {loadingModels ? <span className="animate-pulse text-[length:var(--font-size-ui-xs)] font-black">{t('accounts.ui_loading_short')}</span> : null}
+              {loadingModels ? <span className={`animate-pulse ${accountDetailModalFeedbackClass}`}>{t('accounts.ui_loading_short')}</span> : null}
             </div>
             <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto pr-2">
               {models.length > 0 ? (
                 models.map((model, index) => (
                   <span
                     key={`${getModelLabel(model)}-${index}`}
-                    className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 text-[length:var(--font-size-ui-sm)] font-black italic uppercase"
+                    className={accountDetailModalModelChipClass}
                   >
                     {getModelLabel(model)}
                   </span>
@@ -314,26 +360,26 @@ export default function AccountDetailModal({
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                <span className="h-2 w-2 bg-[var(--border-color)]"></span>
+              <div className={accountDetailModalSectionTitleClass}>
+                <span className="h-2 w-2 bg-[var(--gt-border-subtle)]"></span>
                 {viewMode === 'sanitized' ? t('accounts.ui_sanitized_source_data') : t('accounts.ui_raw_source_data')}
               </div>
-	              <div className="flex items-center gap-3">
-	                {copyState !== 'idle' || sanitizeState !== 'idle' ? (
-	                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--border-color)]">
-	                    {copyState === 'success' || sanitizeState === 'success'
-	                      ? t('accounts.copy_done')
-	                      : t('accounts.copy_failed')}
-	                  </span>
+              <div className="flex items-center gap-3">
+                {copyState !== 'idle' || sanitizeState !== 'idle' ? (
+                  <span className={accountDetailModalFeedbackClass}>
+                    {copyState === 'success' || sanitizeState === 'success'
+                      ? t('accounts.copy_done')
+                      : t('accounts.copy_failed')}
+                  </span>
                 ) : null}
                 {loadingRaw ? (
-                  <span className="animate-pulse text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">{t('accounts.ui_fetching_fs')}</span>
+                  <span className={`animate-pulse ${accountDetailModalFeedbackClass}`}>{t('accounts.ui_fetching_fs')}</span>
                 ) : (
                   <>
                     <button
                       onClick={() => void handleSanitizeContent()}
                       disabled={!canCopyRawContent(rawContent, loadingRaw) || sanitizing}
-                      className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)]"
+                      className={accountDetailModalActionButtonClass}
                     >
                       {sanitizing
                         ? t('accounts.sanitizing_source')
@@ -344,7 +390,7 @@ export default function AccountDetailModal({
                     <button
                       onClick={() => void handleCopyDisplayedContent()}
                       disabled={!displayedContentCopyable}
-                      className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)]"
+                      className={accountDetailModalActionButtonClass}
                     >
                       {viewMode === 'sanitized' ? t('accounts.copy_sanitized_source') : t('accounts.copy_raw_source')}
                     </button>
@@ -356,6 +402,7 @@ export default function AccountDetailModal({
               role="button"
               tabIndex={displayedContentCopyable ? 0 : -1}
               aria-disabled={!displayedContentCopyable}
+              data-account-detail-modal-raw-content="quiet"
               onClick={() => {
                 if (!displayedContentCopyable) {
                   return;
@@ -363,9 +410,9 @@ export default function AccountDetailModal({
                 void handleCopyDisplayedContent();
               }}
               onKeyDown={handleRawContentKeyDown}
-              className={`max-h-[300px] overflow-auto whitespace-pre border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 font-mono text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)] shadow-inner ${
+              className={`${accountDetailModalRawContentClass} ${
                 displayedContentCopyable
-                  ? 'cursor-copy transition-colors hover:bg-[var(--bg-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)]'
+                  ? accountDetailModalRawContentInteractiveClass
                   : ''
               }`}
               title={displayedContentCopyable ? (viewMode === 'sanitized' ? t('accounts.copy_sanitized_source') : t('accounts.copy_raw_source')) : undefined}
@@ -375,8 +422,8 @@ export default function AccountDetailModal({
           </section>
         </div>
 
-        <footer className="flex items-center justify-end border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
+        <footer className={accountDetailModalFooterClass}>
+          <button onClick={onClose} className={accountDetailModalActionButtonClass}>
             {t('common.close')}
           </button>
         </footer>
