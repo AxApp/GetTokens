@@ -23,24 +23,24 @@ export default function StatusSnippetPanel({
     const tone = resolveUnifiedDiffLineTone(line);
     switch (tone) {
       case 'add':
-        return 'border-l-4 border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] pl-2 text-[var(--color-status-success)]';
+        return 'border-l-4 border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] pl-2 text-[var(--gt-status-success)]';
       case 'remove':
-        return 'border-l-4 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] pl-2 text-[var(--color-status-danger)]';
+        return 'border-l-4 border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] pl-2 text-[var(--gt-status-danger)]';
       case 'hunk':
-        return 'text-[var(--text-muted)]';
+        return 'text-[var(--gt-ink-muted)]';
       case 'file':
-        return 'font-semibold text-[var(--text-primary)]';
+        return 'font-semibold text-[var(--gt-ink-primary)]';
       case 'meta':
-        return 'text-[var(--text-muted)]';
+        return 'text-[var(--gt-ink-muted)]';
       default:
-        return 'text-[var(--text-primary)]';
+        return 'text-[var(--gt-ink-primary)]';
     }
   }
 
   return (
     <div className="min-h-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-[var(--gt-border-subtle)] px-1 pb-2">
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-ink-primary)]">
           {title}
         </div>
         {onCopy || headerAction ? (
@@ -49,7 +49,7 @@ export default function StatusSnippetPanel({
               <button
                 type="button"
                 onClick={onCopy}
-                className="inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                className="inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               >
                 复制
               </button>

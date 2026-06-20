@@ -152,8 +152,15 @@ test('status panels use the quiet workspace shell', async () => {
   assert.doesNotMatch(statusPanelSource, /--bg-main/);
   assert.match(actionSelectSource, /--gt-surface-raised/);
   assert.match(snippetPanelSource, /--gt-border-subtle/);
+  assert.match(snippetPanelSource, /--gt-status-success/);
+  assert.match(snippetPanelSource, /--gt-status-danger/);
+  assert.match(snippetPanelSource, /--gt-ink-primary/);
+  assert.match(snippetPanelSource, /--gt-ink-muted/);
   assert.doesNotMatch(actionSelectSource, /btn-swiss/);
   assert.doesNotMatch(snippetPanelSource, /btn-swiss/);
+  assert.doesNotMatch(snippetPanelSource, /--color-status-/);
+  assert.doesNotMatch(snippetPanelSource, /--text-primary/);
+  assert.doesNotMatch(snippetPanelSource, /--text-muted/);
 });
 
 test('codex model provider option descriptions are localized in Chinese', async () => {
