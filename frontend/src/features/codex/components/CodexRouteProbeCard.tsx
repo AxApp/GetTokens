@@ -9,7 +9,7 @@ import {
 } from '../model/codexAccountList';
 
 const codexRouteProbePanelClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const codexRouteProbeButtonClass =
   'inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexRouteProbePrimaryButtonClass =
@@ -79,7 +79,7 @@ export function RouteProbeCard({
       onClick={onClose}
     >
       <section
-        className="flex h-full w-full max-w-none flex-col overflow-hidden bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-overlay)]"
+        className="flex h-full w-full max-w-none flex-col overflow-hidden bg-[var(--gt-surface-canvas)] shadow-lg"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-4">

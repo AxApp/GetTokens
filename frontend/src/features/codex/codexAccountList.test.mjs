@@ -1319,6 +1319,8 @@ test('Codex route probe modal uses the quiet workspace shell', async () => {
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-danger/);
+  assert.match(source, /shadow-sm/);
+  assert.match(source, /shadow-lg/);
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
   assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
@@ -1330,6 +1332,7 @@ test('Codex route probe modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[0\.16em\]/);
   assert.doesNotMatch(source, /shadow-hard/);
+  assert.doesNotMatch(source, /shadow-\[/);
 });
 
 test('routing probe model helpers prefer configured codex aliases, hide aliased real names, and keep fallback', () => {
