@@ -15,6 +15,7 @@ test('vendor status feature uses the quiet workspace shell', async () => {
   assert.match(source, /--gt-status-success/);
   assert.match(source, /--gt-status-warning/);
   assert.match(source, /--gt-status-danger/);
+  assert.match(source, /shadow-sm/);
   assert.doesNotMatch(source, /card-swiss/);
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
@@ -23,5 +24,7 @@ test('vendor status feature uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
+  assert.doesNotMatch(source, /tracking-(wide|wider|widest|tight|tighter|tightest|normal|\[)/);
+  assert.doesNotMatch(source, /shadow-\[/);
   assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
 });

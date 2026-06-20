@@ -31,7 +31,7 @@ const rssURL = 'https://status.openai.com/feed.rss';
 const historyURL = 'https://status.openai.com/history';
 
 const vendorStatusPanelClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-[var(--gt-elevation-raised-2)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const vendorStatusHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const vendorStatusMutedPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
@@ -190,13 +190,13 @@ function SystemStatusRow({
           <span className={statusToneClasses(group.status)}>
             <StatusIcon status={group.status} className="h-5 w-5" />
           </span>
-          <h4 className="text-[length:var(--font-size-ui-5xl)] font-semibold tracking-tight text-[var(--text-primary)] md:text-[length:var(--font-size-ui-2xl)]">{group.name}</h4>
+          <h4 className="text-[length:var(--font-size-ui-5xl)] font-semibold text-[var(--text-primary)] md:text-[length:var(--font-size-ui-2xl)]">{group.name}</h4>
           {canExpand ? (
             <button
               type="button"
               onClick={() => setExpanded((current) => !current)}
               aria-expanded={expanded}
-              className="inline-flex items-center gap-1.5 text-[length:var(--font-size-ui-lg)] font-medium tracking-tight text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] md:text-[length:var(--font-size-ui-lg-compact)]"
+              className="inline-flex items-center gap-1.5 text-[length:var(--font-size-ui-lg)] font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] md:text-[length:var(--font-size-ui-lg-compact)]"
             >
               <span>{componentCountLabel}</span>
               <svg
@@ -210,7 +210,7 @@ function SystemStatusRow({
               </svg>
             </button>
           ) : (
-            <span className="text-[length:var(--font-size-ui-lg)] font-medium tracking-tight text-[var(--text-muted)] md:text-[length:var(--font-size-ui-lg-compact)]">
+            <span className="text-[length:var(--font-size-ui-lg)] font-medium text-[var(--text-muted)] md:text-[length:var(--font-size-ui-lg-compact)]">
               {componentCountLabel}
             </span>
           )}
@@ -238,7 +238,7 @@ function SystemStatusRow({
         )}
       </div>
       <div className="text-left md:text-right">
-        <p className="text-[length:var(--font-size-ui-xl-plus)] font-medium tracking-tight text-[var(--text-muted)] md:text-[length:var(--font-size-ui-lg)]">{group.uptimeLabel}</p>
+        <p className="text-[length:var(--font-size-ui-xl-plus)] font-medium text-[var(--text-muted)] md:text-[length:var(--font-size-ui-lg)]">{group.uptimeLabel}</p>
       </div>
     </div>
   );
@@ -258,9 +258,9 @@ function ExpandedComponentRow({
           <span className={statusToneClasses(component.status)}>
             <StatusIcon status={component.status} className="h-4.5 w-4.5" />
           </span>
-          <h5 className="truncate text-[length:var(--font-size-ui-2xl)] font-medium tracking-tight text-[var(--text-primary)] md:text-[length:var(--font-size-ui-xl-plus)]">{component.name}</h5>
+          <h5 className="truncate text-[length:var(--font-size-ui-2xl)] font-medium text-[var(--text-primary)] md:text-[length:var(--font-size-ui-xl-plus)]">{component.name}</h5>
         </div>
-        <p className="shrink-0 text-[length:var(--font-size-ui-2xl)] font-medium tracking-tight text-[var(--text-muted)] md:text-[length:var(--font-size-ui-xl-plus)]">{component.uptimeLabel}</p>
+        <p className="shrink-0 text-[length:var(--font-size-ui-2xl)] font-medium text-[var(--text-muted)] md:text-[length:var(--font-size-ui-xl-plus)]">{component.uptimeLabel}</p>
       </div>
       <div className="mt-3 flex gap-[4px] overflow-hidden">
         {component.segments.map((segment) => (
