@@ -163,6 +163,35 @@ test('status panels use the quiet workspace shell', async () => {
   assert.doesNotMatch(snippetPanelSource, /--text-muted/);
 });
 
+test('status local CLI apply panel uses the workbench plan layout', async () => {
+  const statusPanelSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
+  const zh = JSON.parse(await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8'));
+  const en = JSON.parse(await readFile(new URL('../../../locales/en.json', import.meta.url), 'utf8'));
+
+  assert.match(statusPanelSource, /data-status-local-cli-summary="true"/);
+  assert.match(statusPanelSource, /data-status-local-cli-config-rail="true"/);
+  assert.match(statusPanelSource, /data-status-local-cli-plan-rail="true"/);
+  assert.match(statusPanelSource, /data-status-local-cli-plan-status="true"/);
+  assert.match(statusPanelSource, /statusLocalCliCapabilityRowClass/);
+  assert.match(statusPanelSource, /status\.local_cli_target_label/);
+  assert.match(statusPanelSource, /status\.local_cli_preflight_title/);
+  assert.match(statusPanelSource, /status\.local_cli_apply_plan_title/);
+  assert.match(statusPanelSource, /status\.local_cli_capability_websocket_title/);
+  assert.match(statusPanelSource, /status\.local_cli_capability_model_catalog_title/);
+  assert.doesNotMatch(statusPanelSource, /<div className="mb-2 flex w-full">\s*<SegmentedControl/);
+
+  assert.equal(zh.status.local_cli_target_label, '目标客户端');
+  assert.equal(zh.status.local_cli_preflight_title, '运行前检查');
+  assert.equal(zh.status.local_cli_apply_plan_title, '写入计划');
+  assert.equal(zh.status.local_cli_config_input_title, '配置输入');
+  assert.equal(zh.status.local_cli_capability_websocket_title, 'WebSocket 转发');
+  assert.equal(zh.status.local_cli_capability_model_catalog_title, '模型目录同步');
+  assert.equal(en.status.local_cli_target_label, 'Target client');
+  assert.equal(en.status.local_cli_preflight_title, 'Preflight');
+  assert.equal(en.status.local_cli_apply_plan_title, 'Apply plan');
+  assert.equal(en.status.local_cli_config_input_title, 'Configuration input');
+});
+
 test('codex model provider option descriptions are localized in Chinese', async () => {
   const zh = JSON.parse(await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8'));
   const descriptions = zh.status.codex_model_provider_descriptions;

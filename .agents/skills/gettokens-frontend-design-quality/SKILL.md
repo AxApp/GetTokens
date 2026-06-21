@@ -407,3 +407,23 @@ Score: <0-20> / 20
 - 只在 memory 记录完成页面，没有把可复用迁移节奏沉淀到前端设计 skill。
 - 用户要求收尾整理时，又启动新的页面迁移，导致整理提交夹带未请求的新功能改动。
 - 批量收口门禁把 `style.css` 旧兼容 class 或 stories 演示也纳入阻塞，导致一次视觉收口变成无边界的设计系统历史重写。
+
+### 4.15 Local CLI apply workbench rule
+
+当页面要把 Relay/API 账号、endpoint、provider、model、auth strategy 或能力开关应用到本机 CLI 配置时，优先采用“配置输入 rail + 写入计划 rail”的工作台布局，不再把所有字段、阻塞提示和 diff 堆在同一条表单流里。
+
+适用模块：状态页本地 CLI 配置区、账号卡本地 CLI apply 确认页、Claude Code / Codex 本机配置写入预览。
+
+执行顺序：
+1. 顶部先给出目标客户端、关键输入和写入状态 summary，例如 Relay key、Endpoint、READY/BLOCKED。
+2. 左侧 rail 只承载可编辑配置输入：凭证、访问地址、provider、model、auth strategy、能力开关。
+3. 右侧 rail 承载写入计划：preflight、阻塞原因、恢复动作、最小 diff 和最终 apply 按钮。
+4. supports_websockets、sync_model_catalog 等技术字段必须转成能力行：中文/英文标题、副文案、开关和必要的预览动作；字段名可以保留在 aria label 或 diff 中，但不应作为主要阅读标题。
+5. 缺 key、服务未 ready、本地 auth 不可用等阻塞原因必须集中在 preflight 区；不要散落在左侧配置表单中间。
+6. Codex 与 Claude Code 两个目标应复用同一套外壳、summary 和 plan rail，只替换目标特有字段。
+7. 用源码/DOM 测试固定 summary / config rail / plan rail / preflight 结构，再用无头浏览器截图验证密度。
+
+常见反例：
+- 目标切换器漂在 panel 外，用户看不出它控制的是“本机写入目标”。
+- diff 面板与应用按钮裸露在右侧，没有 preflight，因此按钮置灰时用户不知道原因。
+- supports_websockets / sync_model_catalog 直接作为大标题展示，缺少风险说明和决策语义。

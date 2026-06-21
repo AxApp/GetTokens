@@ -43,10 +43,16 @@ const statusCompactButtonClass =
   'inline-flex h-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const statusNoticeClass =
   'rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]';
-const statusDangerNoticeClass =
-  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_9%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium leading-snug text-[var(--gt-status-danger)]';
 const statusToggleRowClass =
   'flex items-center justify-between gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 md:min-h-[2.875rem]';
+const statusLocalCliSummaryItemClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
+const statusLocalCliRailClass =
+  'grid min-w-0 gap-4 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-4';
+const statusLocalCliCapabilityRowClass =
+  'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center';
+const statusLocalCliPlanStatusClass =
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]';
 
 export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEvidenceSectionState }) {
   if (state.items.length === 0 && !state.notice) {
@@ -547,6 +553,28 @@ export function StatusApplyLocalSection({
           },
         ];
 
+  const activeTargetLabel =
+    localCliTargetOptions.find((option) => option.id === activeTarget)?.label || t('status.local_cli_tab_codex');
+  const activeRelayKey = activeTarget === 'codex' ? selectedRelayKey : selectedClaudeRelayKey;
+  const activeRelayKeyLabel = activeRelayKey.trim()
+    ? relayKeyDisplayName(activeRelayKey, activeTarget === 'codex' ? selectedKeyIndex : claudeDraft.relayKeyIndex)
+    : t('status.local_cli_no_relay_key');
+  const activeApplyReady =
+    activeTarget === 'codex'
+      ? codexLocalApplyState.canApply
+      : isReady && Boolean(selectedClaudeRelayKey.trim()) && !isApplyingClaude;
+  const activePreflightMessage =
+    activeTarget === 'codex'
+      ? codexLocalApplyGuidance || t('status.local_cli_preflight_ready')
+      : !isReady
+        ? t('status.codex_local_apply_blocked_not_ready')
+        : !selectedClaudeRelayKey.trim()
+          ? t('status.codex_local_apply_blocked_missing_key')
+          : t('status.local_cli_preflight_ready');
+  const activePlanStateLabel = activeApplyReady
+    ? t('status.local_cli_plan_ready')
+    : t('status.local_cli_plan_blocked');
+
   function openModelEditor(target: ModelEditorTarget, value: string) {
     setModelEditorTarget(target);
     setModelEditor({
@@ -577,17 +605,58 @@ export function StatusApplyLocalSection({
 
   return (
     <>
-      <div className="mb-2 flex w-full">
-        <SegmentedControl options={localCliTargetOptions} value={activeTarget} onChange={setActiveTarget} />
-      </div>
       <section
-        className={`${statusPanelClass} relative overflow-visible`}
+        className={[statusPanelClass, 'relative overflow-visible'].join(' ')}
         data-status-local-cli-panel="true"
         data-status-local-cli-target={activeTarget}
       >
+        <div className="grid gap-4 border-b border-[var(--gt-border-subtle)] p-4" data-status-local-cli-summary="true">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+            <div className="min-w-0">
+              <div className={statusEyebrowClass}>
+                {t('status.local_cli_target_label')}
+              </div>
+              <div className="mt-1 text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">
+                {activeTargetLabel}
+              </div>
+              <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+                {t('status.local_cli_workbench_hint')}
+              </div>
+            </div>
+            <SegmentedControl options={localCliTargetOptions} value={activeTarget} onChange={setActiveTarget} />
+          </div>
+          <dl className="grid gap-2 md:grid-cols-3">
+            <div className={statusLocalCliSummaryItemClass}>
+              <dt className={statusEyebrowClass}>{t('status.local_cli_relay_key')}</dt>
+              <dd className="mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                {activeRelayKeyLabel}
+              </dd>
+            </div>
+            <div className={statusLocalCliSummaryItemClass}>
+              <dt className={statusEyebrowClass}>{t('status.endpoint_title')}</dt>
+              <dd className="mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                {selectedEndpointBaseUrl}
+              </dd>
+            </div>
+            <div className={statusLocalCliSummaryItemClass}>
+              <dt className={statusEyebrowClass}>{t('status.local_cli_plan_state_title')}</dt>
+              <dd className="mt-1 font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                {activePlanStateLabel}
+              </dd>
+            </div>
+          </dl>
+        </div>
         {activeTarget === 'codex' ? (
           <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-            <div className="space-y-4">
+            <div className={statusLocalCliRailClass} data-status-local-cli-config-rail="true">
+              <div>
+                <div className={statusEyebrowClass}>
+                  {t('status.local_cli_config_input_title')}
+                </div>
+                <div className="mt-1 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+                  {t('status.local_cli_config_codex_title')}
+                </div>
+              </div>
               <StatusRelayKeyPicker
                 t={t}
                 value={selectedKeyIndex}
@@ -663,11 +732,25 @@ export function StatusApplyLocalSection({
               </div>
 
               {selectedRelayProvider.id !== 'openai' ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">
-                      supports_websockets
-                    </span>
+                <div className={statusLocalCliCapabilityRowClass}>
+                  <div className="min-w-0">
+                    <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                      {t('status.local_cli_capability_websocket_title')}
+                    </div>
+                    <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                      {supportsWebsockets
+                        ? t('status.local_cli_capability_websocket_on')
+                        : t('status.local_cli_capability_websocket_off')}
+                    </div>
+                    {localCodexProviderWebsocketRisk ? (
+                      <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-medium leading-snug text-[var(--gt-status-danger)]">
+                        {supportsWebsockets
+                          ? t('status.local_cli_websocket_risk_opt_in')
+                          : t('status.local_cli_websocket_risk_detected')}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="flex justify-end">
                     <ToggleSwitch
                       label="supports_websockets"
                       checked={supportsWebsockets}
@@ -676,89 +759,48 @@ export function StatusApplyLocalSection({
                       onChange={onToggleSupportsWebsockets}
                     />
                   </div>
-                  {localCodexProviderWebsocketRisk ? (
-                    <div className={statusDangerNoticeClass}>
-                      {supportsWebsockets
-                        ? t('status.local_cli_websocket_risk_opt_in')
-                        : t('status.local_cli_websocket_risk_detected')}
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
 
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  aria-label="preview sync_model_catalog"
-                  className="min-w-0 text-left active:scale-95"
-                  onClick={() => setModelCatalogPreviewOpen(true)}
-                >
-                  <span className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)] underline-offset-4 hover:underline">
-                    sync_model_catalog
+              <div className={statusLocalCliCapabilityRowClass}>
+                <div className="min-w-0">
+                  <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                    {t('status.local_cli_capability_model_catalog_title')}
                     {isDisablingModelCatalog ? (
-                      <span className={`ml-2 ${statusMetaClass}`}>
-                        正在停用
+                      <span className="ml-2 font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]">
+                        {t('status.local_cli_model_catalog_disabling')}
                       </span>
                     ) : null}
-                  </span>
-                </button>
-                <ToggleSwitch
-                  label="sync_model_catalog"
-                  checked={syncCodexModelCatalog}
-                  disabled={isApplyingToLocal || isDisablingModelCatalog}
-                  className="h-9 w-16"
-                  onChange={onChangeSyncCodexModelCatalog}
-                />
+                  </div>
+                  <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                    {syncCodexModelCatalog
+                      ? t('status.local_cli_capability_model_catalog_on')
+                      : t('status.local_cli_capability_model_catalog_off')}
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="preview sync_model_catalog"
+                    className="mt-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] underline-offset-4 hover:underline active:scale-95"
+                    onClick={() => setModelCatalogPreviewOpen(true)}
+                  >
+                    {t('status.local_cli_model_catalog_preview')}
+                  </button>
+                </div>
+                <div className="flex justify-end">
+                  <ToggleSwitch
+                    label="sync_model_catalog"
+                    checked={syncCodexModelCatalog}
+                    disabled={isApplyingToLocal || isDisablingModelCatalog}
+                    className="h-9 w-16"
+                    onChange={onChangeSyncCodexModelCatalog}
+                  />
+                </div>
               </div>
 
               {codexLocalAuthStrategy === 'preserve_chatgpt_auth' && codexLocalCanApply ? (
                 <div className={statusNoticeClass}>
                   {t('status.codex_local_preserve_hint')}
                   {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
-                </div>
-              ) : null}
-
-              {codexLocalApplyGuidance ? (
-                <div className={`${statusNoticeClass} grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center`}>
-                  <div>
-                    {codexLocalApplyGuidance}
-                    {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
-                  </div>
-                  {codexLocalApplyState.recoveryAction === 'create_relay_key' ? (
-                    <button
-                      type="button"
-                      className={statusSecondaryButtonClass}
-                      onClick={onOpenCreateRelayKeyEditor}
-                    >
-                      {t('status.codex_local_recovery_create_key')}
-                    </button>
-                  ) : codexLocalApplyState.recoveryAction === 'switch_auth_to_apikey' ? (
-                    <button
-                      type="button"
-                      className={statusSecondaryButtonClass}
-                      onClick={() => onSelectCodexLocalAuthStrategy('replace_auth_with_apikey')}
-                    >
-                      {t('status.codex_local_recovery_use_apikey')}
-                    </button>
-                  ) : codexLocalApplyState.recoveryAction === 'switch_to_custom_provider' &&
-                    codexLocalApplyState.nextProviderID ? (
-                    <button
-                      type="button"
-                      className={statusSecondaryButtonClass}
-                      onClick={() => onSelectRelayProviderID(codexLocalApplyState.nextProviderID || '')}
-                    >
-                      {t('status.codex_local_recovery_switch_provider')}{' '}
-                      {codexLocalRecoveryProvider?.name || codexLocalApplyState.nextProviderID}
-                    </button>
-                  ) : codexLocalApplyState.recoveryAction === 'create_provider' ? (
-                    <button
-                      type="button"
-                      className={statusSecondaryButtonClass}
-                      onClick={onOpenCreateRelayProviderEditor}
-                    >
-                      {t('status.codex_local_recovery_create_provider')}
-                    </button>
-                  ) : null}
                 </div>
               ) : null}
 
@@ -770,26 +812,82 @@ export function StatusApplyLocalSection({
 
             </div>
 
-            <StatusSnippetPanel
-              title={t('status.codex_local_diff')}
-              content={codexDiff}
-              onCopy={() => onCopyText(codexDiff, t('status.codex_local_diff_copied'))}
-              headerAction={
-                <button
-                  type="button"
-                  onClick={onApplyRelayConfigToLocal}
-                  disabled={!codexLocalApplyState.canApply}
-                  className={statusPrimaryButtonClass}
-                >
-                  {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local_codex')}
-                </button>
-              }
-              preClassName="max-h-[38rem]"
-            />
+            <div className={statusLocalCliRailClass} data-status-local-cli-plan-rail="true">
+              <div>
+                <div className={statusEyebrowClass}>
+                  {t('status.local_cli_apply_plan_title')}
+                </div>
+                <div className="mt-1 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+                  {t('status.codex_local_diff')}
+                </div>
+              </div>
+              <div className={statusLocalCliPlanStatusClass} data-status-local-cli-plan-status="true">
+                <div className={statusEyebrowClass}>
+                  {t('status.local_cli_preflight_title')}
+                </div>
+                <div className="mt-1 leading-snug">
+                  {activePreflightMessage}
+                  {activeTarget === 'codex' && localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
+                </div>
+                {activeTarget === 'codex' && codexLocalApplyState.recoveryAction ? (
+                  <div className="mt-3">
+                    {codexLocalApplyState.recoveryAction === 'create_relay_key' ? (
+                      <button type="button" className={statusSecondaryButtonClass} onClick={onOpenCreateRelayKeyEditor}>
+                        {t('status.codex_local_recovery_create_key')}
+                      </button>
+                    ) : codexLocalApplyState.recoveryAction === 'switch_auth_to_apikey' ? (
+                      <button
+                        type="button"
+                        className={statusSecondaryButtonClass}
+                        onClick={() => onSelectCodexLocalAuthStrategy('replace_auth_with_apikey')}
+                      >
+                        {t('status.codex_local_recovery_use_apikey')}
+                      </button>
+                    ) : codexLocalApplyState.recoveryAction === 'switch_to_custom_provider' && codexLocalApplyState.nextProviderID ? (
+                      <button
+                        type="button"
+                        className={statusSecondaryButtonClass}
+                        onClick={() => onSelectRelayProviderID(codexLocalApplyState.nextProviderID || '')}
+                      >
+                        {t('status.codex_local_recovery_switch_provider')} {codexLocalRecoveryProvider?.name || codexLocalApplyState.nextProviderID}
+                      </button>
+                    ) : codexLocalApplyState.recoveryAction === 'create_provider' ? (
+                      <button type="button" className={statusSecondaryButtonClass} onClick={onOpenCreateRelayProviderEditor}>
+                        {t('status.codex_local_recovery_create_provider')}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              <StatusSnippetPanel
+                title={t('status.codex_local_diff')}
+                content={codexDiff}
+                onCopy={() => onCopyText(codexDiff, t('status.codex_local_diff_copied'))}
+                headerAction={
+                  <button
+                    type="button"
+                    onClick={onApplyRelayConfigToLocal}
+                    disabled={!codexLocalApplyState.canApply}
+                    className={statusPrimaryButtonClass}
+                  >
+                    {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local_codex')}
+                  </button>
+                }
+                preClassName="max-h-[32rem]"
+              />
+            </div>
           </div>
         ) : (
           <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-            <div className="space-y-4">
+            <div className={statusLocalCliRailClass} data-status-local-cli-config-rail="true">
+              <div>
+                <div className={statusEyebrowClass}>
+                  {t('status.local_cli_config_input_title')}
+                </div>
+                <div className="mt-1 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+                  {t('status.local_cli_config_claude_title')}
+                </div>
+              </div>
               <StatusRelayKeyPicker
                 t={t}
                 value={claudeDraft.relayKeyIndex}
@@ -933,22 +1031,40 @@ export function StatusApplyLocalSection({
 
             </div>
 
-            <StatusSnippetPanel
-              title={t('status.claude_settings_diff')}
-              content={claudeDiff}
-              onCopy={() => onCopyText(claudeDiff, t('status.claude_settings_diff_copied'))}
-              headerAction={
-                <button
-                  type="button"
-                  onClick={() => onApplyClaude({ ...claudeDraft, baseUrl: selectedEndpointBaseUrl })}
-                  disabled={isApplyingClaude || !isReady || !selectedClaudeRelayKey.trim()}
-                  className={statusPrimaryButtonClass}
-                >
-                  {isApplyingClaude ? t('status.applying_local') : t('status.apply_local_claude')}
-                </button>
-              }
-              preClassName="max-h-[38rem]"
-            />
+            <div className={statusLocalCliRailClass} data-status-local-cli-plan-rail="true">
+              <div>
+                <div className={statusEyebrowClass}>
+                  {t('status.local_cli_apply_plan_title')}
+                </div>
+                <div className="mt-1 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+                  {t('status.claude_settings_diff')}
+                </div>
+              </div>
+              <div className={statusLocalCliPlanStatusClass} data-status-local-cli-plan-status="true">
+                <div className={statusEyebrowClass}>
+                  {t('status.local_cli_preflight_title')}
+                </div>
+                <div className="mt-1 leading-snug">
+                  {activePreflightMessage}
+                </div>
+              </div>
+              <StatusSnippetPanel
+                title={t('status.claude_settings_diff')}
+                content={claudeDiff}
+                onCopy={() => onCopyText(claudeDiff, t('status.claude_settings_diff_copied'))}
+                headerAction={
+                  <button
+                    type="button"
+                    onClick={() => onApplyClaude({ ...claudeDraft, baseUrl: selectedEndpointBaseUrl })}
+                    disabled={isApplyingClaude || !isReady || !selectedClaudeRelayKey.trim()}
+                    className={statusPrimaryButtonClass}
+                  >
+                    {isApplyingClaude ? t('status.applying_local') : t('status.apply_local_claude')}
+                  </button>
+                }
+                preClassName="max-h-[32rem]"
+              />
+            </div>
           </div>
         )}
       </section>
