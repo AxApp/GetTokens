@@ -97,58 +97,11 @@ const statusPageShellClass =
   'h-full w-full overflow-auto bg-[var(--gt-surface-panel)] px-6 py-6 lg:px-8 lg:py-8';
 const statusPageContentClass = 'mx-auto flex w-full max-w-[1180px] flex-col gap-6';
 const statusHeroCardClass = 'status-hero-card border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
-const statusOverviewGridClass = 'grid gap-3 md:grid-cols-2 xl:grid-cols-4';
-const statusOverviewCardClass = 'status-overview-card h-full border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const statusWorkbenchGridClass = 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.34fr)]';
 const statusPrimaryRailClass = 'min-w-0';
 const statusDiagnosticsRailClass = 'grid min-w-0 gap-4';
 
 type StatusBadgeState = 'success' | 'processing' | 'default' | 'error' | 'warning';
-
-interface StatusOverviewCardProps {
-  label: string;
-  value: string;
-  meta: string;
-  status?: StatusBadgeState;
-  tagColor?: string;
-}
-
-function StatusOverviewCard({ label, value, meta, status, tagColor }: StatusOverviewCardProps) {
-  return (
-    <Card
-      size="small"
-      variant="outlined"
-      className={statusOverviewCardClass}
-      styles={{ body: { padding: 14 } }}
-      data-status-overview-card="true"
-    >
-      <Space orientation="vertical" size={6} className="w-full">
-        <Typography.Text type="secondary" className="text-[length:var(--gt-font-size-xs)]">
-          {label}
-        </Typography.Text>
-        <div className="min-w-0">
-          {status ? (
-            <Badge
-              status={status}
-              text={
-                <Typography.Text strong ellipsis className="max-w-full text-[length:var(--gt-font-size-sm)]">
-                  {value}
-                </Typography.Text>
-              }
-            />
-          ) : (
-            <Typography.Text strong ellipsis className="block text-[length:var(--gt-font-size-sm)]">
-              {value}
-            </Typography.Text>
-          )}
-        </div>
-        <Tag bordered color={tagColor || 'default'} className="m-0 max-w-full truncate">
-          {meta}
-        </Tag>
-      </Space>
-    </Card>
-  );
-}
 
 function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildAccountStoreDiagnosticsView> }) {
   const toneClass =
@@ -1191,74 +1144,39 @@ export default function StatusFeature({
           : 'default';
   const runtimeLabel = hasWailsAppBindings() ? 'Wails runtime' : 'browser runtime';
   const statusDisplayValue = statusHeadline === runtimeLabel ? healthz : statusHeadline;
-  const overviewCards = [
-    {
-      label: t('status.title'),
-      value: statusDisplayValue,
-      meta: healthz,
-      status: statusBadgeState,
-      tagColor: statusToneColor,
-    },
-    {
-      label: t('status.local_cli_target_label'),
-      value: selectedRelayProvider.id || 'gettokens',
-      meta: selectedRelayModel || RELAY_CODEX_DEFAULT_MODEL,
-      tagColor: 'blue',
-    },
-    {
-      label: t('status.endpoint_title'),
-      value: selectedEndpoint.baseUrl,
-      meta: isLANAccessEnabled ? 'LAN access enabled' : 'Localhost',
-      tagColor: isLANAccessEnabled ? 'success' : 'default',
-    },
-    {
-      label: 'Runtime',
-      value: version,
-      meta: runtimeLabel,
-      tagColor: hasWailsAppBindings() ? 'success' : 'warning',
-    },
-  ] satisfies StatusOverviewCardProps[];
-
   return (
     <div className={statusPageShellClass} data-collaboration-id="PAGE_STATUS">
       <div className={statusPageContentClass}>
         <Card
           variant="outlined"
           className={statusHeroCardClass}
-          styles={{ body: { padding: 24 } }}
+          styles={{ body: { padding: 16 } }}
           data-status-hero="true"
         >
-          <div className="grid gap-5">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-              <Space orientation="vertical" size={8} className="min-w-0">
-                <Typography.Title level={2} className="!m-0 !text-[length:var(--gt-font-size-2xl)] !font-semibold">
-                  {t('status.title')}
-                </Typography.Title>
-                <div data-status-header-health="quiet">
-                  <Badge
-                    status={statusBadgeState}
-                    text={
-                      <Typography.Text className="text-[length:var(--gt-font-size-sm)]">
-                        {healthz}
-                      </Typography.Text>
-                    }
-                  />
-                </div>
-              </Space>
-              <Space wrap align="start" className="justify-start lg:justify-end">
-                <Tag bordered color={statusToneColor} className="m-0">
-                  {statusDisplayValue}
-                </Tag>
-                <Tag bordered color={hasWailsAppBindings() ? 'success' : 'warning'} className="m-0">
-                  {runtimeLabel}
-                </Tag>
-              </Space>
-            </div>
-            <div className={statusOverviewGridClass} data-status-overview-grid="true">
-              {overviewCards.map((item) => (
-                <StatusOverviewCard key={item.label} {...item} />
-              ))}
-            </div>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+            <Space orientation="vertical" size={8} className="min-w-0">
+              <Typography.Title level={2} className="!m-0 !text-[length:var(--gt-font-size-2xl)] !font-semibold">
+                {t('status.title')}
+              </Typography.Title>
+              <div data-status-header-health="quiet">
+                <Badge
+                  status={statusBadgeState}
+                  text={
+                    <Typography.Text className="text-[length:var(--gt-font-size-sm)]">
+                      {healthz}
+                    </Typography.Text>
+                  }
+                />
+              </div>
+            </Space>
+            <Space wrap align="start" className="justify-start lg:justify-end">
+              <Tag bordered color={statusToneColor} className="m-0">
+                {statusDisplayValue}
+              </Tag>
+              <Tag bordered color={hasWailsAppBindings() ? 'success' : 'warning'} className="m-0">
+                {runtimeLabel}
+              </Tag>
+            </Space>
           </div>
         </Card>
 

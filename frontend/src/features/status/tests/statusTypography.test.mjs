@@ -70,7 +70,7 @@ test('status page uses AntD workbench shell for the redesigned status frame', as
   assert.match(statusFeatureSource, /<Typography\.Title\b/);
   assert.match(statusFeatureSource, /<Space\b/);
   assert.match(statusFeatureSource, /data-status-hero="true"/);
-  assert.match(statusFeatureSource, /data-status-overview-grid="true"/);
+  assert.doesNotMatch(statusFeatureSource, /data-status-overview-(?:grid|descriptions|card)="true"/);
   assert.match(statusFeatureSource, /data-status-workbench-grid="true"/);
   assert.match(statusFeatureSource, /data-status-primary-rail="true"/);
   assert.match(statusFeatureSource, /data-status-diagnostics-rail="true"/);
@@ -427,7 +427,6 @@ test('status page diagnostics and header status use the quiet workspace shell', 
   assert.match(source, /const statusDiagnosticsPanelClass =/);
   assert.match(source, /const statusDiagnosticsToneClass =/);
   assert.match(source, /const statusHeroCardClass =/);
-  assert.match(source, /const statusOverviewGridClass =/);
   assert.match(source, /const statusWorkbenchGridClass =/);
   assert.match(source, /<Card\b/);
   assert.match(source, /<Badge\b/);
@@ -437,7 +436,7 @@ test('status page diagnostics and header status use the quiet workspace shell', 
   assert.match(source, /data-account-store-diagnostics-panel="quiet"/);
   assert.match(source, /data-status-header-health="quiet"/);
   assert.match(source, /data-status-hero="true"/);
-  assert.match(source, /data-status-overview-grid="true"/);
+  assert.doesNotMatch(source, /data-status-overview-(?:grid|descriptions|card)="true"/);
   assert.match(source, /data-status-workbench-grid="true"/);
   assert.match(source, /data-status-primary-rail="true"/);
   assert.match(source, /data-status-diagnostics-rail="true"/);

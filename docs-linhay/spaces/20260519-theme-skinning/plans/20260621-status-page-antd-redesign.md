@@ -12,7 +12,7 @@
 
 ## 设计目标
 
-- 顶部改为 AntD status hero：标题、健康状态、运行环境 badge 和关键指标同屏呈现。
+- 顶部改为紧凑 AntD status header：只保留标题、健康状态、运行状态 Tag 和运行环境 Tag，避免摘要区抢占主任务层级。
 - 主体改为工作台布局：左侧为本地 CLI 配置写入主任务，右侧为账号库诊断和 quota evidence。
 - 优先使用 AntD Card / Tag / Badge / Typography / Space 搭建页面骨架。
 - 降低卡片堆叠感：surface 使用 8px 圆角、细边框、flat-first 层级，避免重阴影。
@@ -20,13 +20,13 @@
 
 ## 验收
 
-- 源码测试固定 \`data-status-hero\`、\`data-status-overview-grid\`、\`data-status-workbench-grid\`、\`data-status-primary-rail\`、\`data-status-diagnostics-rail\`。
+- 源码测试固定 \`data-status-hero\`、\`data-status-workbench-grid\`、\`data-status-primary-rail\`、\`data-status-diagnostics-rail\`，并禁止顶部 overview grid / descriptions / card 残留。
 - 源码测试确认 StatusFeature 使用 AntD Card / Tag / Badge / Typography / Space。
 - 运行态扫描不出现旧字重、大圆角、uppercase / italic / arbitrary tracking。
 
 ## 实施记录
 
-- StatusFeature 顶部改为 AntD Card 承载的 status hero，内部使用 Typography.Title、Badge、Tag、Space 和 overview cards 展示健康状态、目标客户端、可用访问地址和 runtime。
+- StatusFeature 顶部改为 AntD Card 承载的紧凑 status header，内部只使用 Typography.Title、Badge、Tag、Space 展示必要运行线索；移除重复目标客户端、访问地址和 runtime 的 overview cards。
 - StatusFeature 主体改为桌面工作台双 rail：左侧保留本地 CLI 配置写入主任务，右侧放账号库诊断和 quota evidence；桌面宽度从 lg 起进入双栏。
 - AccountStoreDiagnosticsPanel 改为 AntD Card + Tag，保留 sidecar 诊断事实来源，不在前端伪造状态。
 - StatusApplyLocalSection 的 Codex / Claude Code 目标切换由项目自定义 SegmentedControl 改为 AntD Segmented，并固定到 4px 网格宽度避免文案截断。
@@ -40,7 +40,7 @@
 - 完整前端单测：`npm --prefix frontend run test:unit` 通过。
 - 生产构建：`npm --prefix frontend run build` 通过，仅保留既有 Vite chunk size warning。
 - 文档与 diff 校验：`docs-linhay/scripts/check-docs.sh`、`git diff --check` 通过。
-- 浏览器验收：`http://localhost:5173/#frame=status` 在 1280×860 无头截图确认 hero、overview、双 rail 和 AntD Segmented 均渲染正常；截图归档到 `docs-linhay/spaces/20260519-theme-skinning/screenshots/20260621/status-page-antd-redesign/20260621-status-page-antd-redesign-after-v01.png`。
+- 浏览器验收：`http://localhost:5173/#frame=status` 在 1280×860 无头截图确认 compact hero、双 rail 和 AntD Segmented 均渲染正常；顶部 hero 高度约 84px，overview 残留为 0；截图归档到 `docs-linhay/spaces/20260519-theme-skinning/screenshots/20260621/status-page-antd-redesign/20260621-status-page-antd-header-compact-after-v02.png`。
 - 控制台验收：warnings 为 0；仍有 Vite browser preview 既有 `favicon.ico` 404 和缺少 Wails runtime 的 `window.go.main` 错误，不是本轮 AntD 改造引入。
 
 ## Session Skill Distillation
