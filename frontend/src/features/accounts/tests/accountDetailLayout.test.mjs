@@ -51,17 +51,24 @@ test('account detail keeps auth-file modules scoped to oauth operations and quot
   assert.equal(modulePlan.includes('model-routing'), false);
 });
 
-test('account detail footer exposes local CLI apply actions from the account mapping', async () => {
+test('account detail section nav exposes local CLI apply actions from the account mapping', async () => {
   const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const layoutSource = await readFile(new URL('../components/AccountDetailLayout.tsx', import.meta.url), 'utf8');
   const sectionsSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const footerSource = sourceBlock(sectionsSource, 'export function AccountDetailFooter', 'function normalizeBillingDisplay');
+  const sectionNavSource = sourceBlock(layoutSource, 'function SectionNav', '/* ── Layout: sidebar + scrollable content with scroll-spy ── */');
 
   assert.match(featureSource, /localCliActions=\{resolveLocalCliActionsForAccount\(selectedAccount\)\.map/);
   assert.match(featureSource, /onSelect: \(\) => action\.onSelect\(\)/);
-  assert.match(modalSource, /localCliActions=\{props\.localCliActions\}/);
-  assert.match(sectionsSource, /data-account-detail-local-cli-actions/);
-  assert.match(sectionsSource, /action\.label/);
-  assert.match(sectionsSource, /action\.disabledReason \|\| action\.detail \|\| action\.label/);
+  assert.match(modalSource, /<AccountDetailLayout[\s\S]*localCliActions=\{props\.localCliActions\}/);
+  assert.match(sectionNavSource, /data-account-detail-nav-local-cli-actions/);
+  assert.match(sectionNavSource, /data-account-detail-nav-local-cli-action/);
+  assert.match(sectionNavSource, /action\.label/);
+  assert.match(sectionNavSource, /action\.disabledReason \|\| action\.detail \|\| action\.label/);
+  assert.match(sectionNavSource, /disabled=\{action\.disabled\}/);
+  assert.doesNotMatch(footerSource, /localCliActions/);
+  assert.doesNotMatch(footerSource, /data-account-detail-local-cli-actions/);
 });
 
 test('account detail layout renders close as a top-right icon action', async () => {
@@ -818,12 +825,15 @@ test('account detail footer status copy stays on a single line', async () => {
 
 test('account detail footer uses the quiet workspace action shell', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const layoutSource = await readFile(new URL('../components/AccountDetailLayout.tsx', import.meta.url), 'utf8');
   const targetSource = sourceBlock(source, 'export function AccountDetailFooter', 'function normalizeBillingDisplay');
+  const sectionNavSource = sourceBlock(layoutSource, 'function SectionNav', '/* ── Layout: sidebar + scrollable content with scroll-spy ── */');
 
   assert.match(source, /const accountDetailFooterStatusClass =/);
   assert.match(source, /const accountDetailFooterActionsClass =/);
-  assert.match(source, /const accountDetailFooterButtonClass =/);
   assert.match(source, /const accountDetailFooterPrimaryButtonClass =/);
+  assert.match(layoutSource, /const accountDetailNavLocalActionButtonClass =/);
+  assert.match(sectionNavSource, /data-account-detail-nav-local-cli-actions/);
   assert.match(targetSource, /data-account-detail-footer-status="single-line"/);
   assert.match(targetSource, /data-account-detail-footer-actions/);
   assert.match(source, /--gt-surface-canvas/);

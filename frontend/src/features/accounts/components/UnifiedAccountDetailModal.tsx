@@ -274,7 +274,6 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
           rateLimitDirty={rateLimitDirty}
           missingFields={missingFields}
           savingConfig={savingConfig}
-          localCliActions={props.localCliActions}
           onSaveConfig={saveConfig}
         />
       }
@@ -283,6 +282,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         sectionNavItems={sectionNavItems}
         header={<AccountDetailHeader {...props} />}
         onClose={props.onClose}
+        localCliActions={props.localCliActions}
       >
         {modulePlan.map((moduleID) => (
           <div key={moduleID} data-account-detail-section={moduleID}>

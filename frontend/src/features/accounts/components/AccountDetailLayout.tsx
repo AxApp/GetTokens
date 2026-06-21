@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from 'antd';
 import { X } from 'lucide-react';
+import type { AccountDetailLocalCliAction } from './AccountDetailSections';
 
 export interface AccountDetailSectionNavItem {
   id: string;
@@ -9,6 +10,10 @@ export interface AccountDetailSectionNavItem {
 
 const accountDetailLayoutCloseButtonClass =
   '!absolute right-4 top-4 !z-10 !grid !h-8 !w-8 !min-w-8 !place-items-center !rounded-md !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !text-[var(--gt-ink-muted)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] hover:!text-[var(--gt-ink-primary)]';
+const accountDetailNavLocalActionsClass =
+  'border-t border-[var(--gt-border-subtle)] px-3 py-3';
+const accountDetailNavLocalActionButtonClass =
+  '!h-8 !w-full !rounded-md !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !px-3 !text-xs !font-semibold !text-[var(--gt-ink-primary)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] disabled:!cursor-not-allowed disabled:!opacity-45';
 
 /* ── Sidebar Navigation ── */
 
@@ -17,11 +22,13 @@ function SectionNav({
   activeId,
   onSelect,
   header,
+  localCliActions = [],
 }: {
   items: AccountDetailSectionNavItem[];
   activeId: string;
   onSelect: (id: string) => void;
   header?: ReactNode;
+  localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
 }) {
   return (
     <nav
@@ -50,6 +57,32 @@ function SectionNav({
           </button>
         ))}
       </div>
+      {localCliActions.length > 0 ? (
+        <div data-account-detail-nav-local-cli-actions className={accountDetailNavLocalActionsClass}>
+          {localCliActions.map((action) => (
+            <Button
+              key={action.id}
+              data-account-detail-nav-local-cli-action={action.id}
+              htmlType="button"
+              type="default"
+              size="small"
+              block
+              disabled={action.disabled}
+              title={action.disabledReason || action.detail || action.label}
+              aria-label={action.label}
+              onClick={() => {
+                if (action.disabled) {
+                  return;
+                }
+                action.onSelect();
+              }}
+              className={accountDetailNavLocalActionButtonClass}
+            >
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      ) : null}
     </nav>
   );
 }
@@ -60,11 +93,13 @@ export function AccountDetailLayout({
   sectionNavItems,
   header,
   onClose,
+  localCliActions,
   children,
 }: {
   sectionNavItems: AccountDetailSectionNavItem[];
   header?: ReactNode;
   onClose: () => void;
+  localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
   children: ReactNode;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -121,6 +156,7 @@ export function AccountDetailLayout({
         activeId={activeSection}
         onSelect={handleSelect}
         header={header}
+        localCliActions={localCliActions}
       />
       <div
         ref={scrollRef}

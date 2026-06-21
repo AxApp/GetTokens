@@ -133,7 +133,6 @@ export interface AccountDetailFooterProps {
   rateLimitDirty?: boolean;
   missingFields: string[];
   savingConfig: boolean;
-  localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
   onSaveConfig: () => void;
 }
 
@@ -284,8 +283,6 @@ const accountDetailQuotaResetSecondaryButtonClass =
 const accountDetailFooterStatusClass =
   'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailFooterActionsClass = 'flex items-center gap-2';
-const accountDetailFooterButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-xs font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountDetailFooterPrimaryButtonClass =
   'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-xs font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 
@@ -1952,7 +1949,6 @@ export function AccountDetailFooter({
   rateLimitDirty = false,
   missingFields,
   savingConfig,
-  localCliActions = [],
   onSaveConfig,
 }: AccountDetailFooterProps) {
   const { t } = useI18n();
@@ -1976,27 +1972,6 @@ export function AccountDetailFooter({
           : dirtyMessage}
       </div>
       <div data-account-detail-footer-actions className={accountDetailFooterActionsClass}>
-        {localCliActions.length > 0 ? (
-          <div data-account-detail-local-cli-actions className={accountDetailFooterActionsClass}>
-            {localCliActions.map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                disabled={action.disabled}
-                title={action.disabledReason || action.detail || action.label}
-                onClick={() => {
-                  if (action.disabled) {
-                    return;
-                  }
-                  action.onSelect();
-                }}
-                className={accountDetailFooterButtonClass}
-              >
-                {action.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
         {isApiKey || rateLimitDirty ? (
           <button
             onClick={onSaveConfig}
