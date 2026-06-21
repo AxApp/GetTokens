@@ -26,6 +26,7 @@
     "back": "返回"
   },
   "nav": {
+    "sidebar_navigation": "导航",
     "status": "运行状态",
     "accounts": "账号池",
     "accounts_all": "全部账号",

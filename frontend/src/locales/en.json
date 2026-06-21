@@ -26,6 +26,7 @@
     "back": "Back"
   },
   "nav": {
+    "sidebar_navigation": "Navigation",
     "status": "STATUS",
     "accounts": "ACCOUNTS",
     "accounts_all": "All Accounts",

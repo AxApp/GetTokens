@@ -34,4 +34,8 @@ test('unsupported theme inputs still resolve to the single neutral style', () =>
   assert.equal(theme.components?.Segmented?.itemSelectedColor, '#ffffff');
   assert.equal(theme.components?.Segmented?.trackBg, 'transparent');
   assert.equal(theme.components?.Segmented?.borderRadius, 6);
+  assert.equal(theme.components?.Menu?.itemHeight, 32);
+  assert.equal(theme.components?.Menu?.itemBorderRadius, 6);
+  assert.equal(theme.components?.Menu?.collapsedWidth, 76);
+  assert.equal(theme.components?.Menu?.itemSelectedColor, '#1677ff');
 });

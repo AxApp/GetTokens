@@ -1,6 +1,7 @@
-import { useState, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { ChevronDown, Download, ExternalLink } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Menu } from 'antd';
+import type { MenuProps } from 'antd';
+import { Download, ExternalLink } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
 import type { AppPage, ClaudeWorkspace, CodexWorkspace, ReleaseInfo } from '../../types';
 import { formatSidebarVersion } from '../../utils/version';
@@ -59,6 +60,29 @@ function isSectionId(id: string): id is 'codex' | 'claude' {
   return SECTION_IDS.includes(id as any);
 }
 
+function getSelectedSection(activePage: AppPage): OpenSection {
+  return activePage === 'codex' || activePage === 'claude' ? activePage : null;
+}
+
+function renderSidebarIcon(path: string) {
+  return (
+    <svg
+      className="gt-sidebar-menu-icon"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={path} />
+    </svg>
+  );
+}
+
 const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1';
 
 export default function Sidebar({
@@ -82,194 +106,179 @@ export default function Sidebar({
   const navItems = getSidebarNavItems(showDeveloperTools);
   const sidebarVersion = formatSidebarVersion(releaseLabel);
   const updatePrompt = resolveSidebarUpdatePrompt({ availableRelease, canApplyUpdate, usesNativeUpdaterUI });
-  const updatePromptLabel = updatePrompt ? `${t('nav.update_available')}: ${updatePrompt.releaseVersion}` : '';
-  const updatePromptTitle = updatePrompt && updateActionError ? `${updatePromptLabel} / ${t('nav.update_failed')}: ${updateActionError}` : updatePromptLabel;
+  const updatePromptLabel = updatePrompt ? t('nav.update_available') + ': ' + updatePrompt.releaseVersion : '';
+  const updatePromptTitle = updatePrompt && updateActionError ? updatePromptLabel + ' / ' + t('nav.update_failed') + ': ' + updateActionError : updatePromptLabel;
   const updateButtonLabel = updateActionError
     ? t('nav.update_failed')
     : isUpdateActionPending
-      ? `${t('nav.updating')} ${updatePrompt?.releaseVersion ?? ''}`.trim()
+      ? (t('nav.updating') + ' ' + (updatePrompt?.releaseVersion ?? '')).trim()
       : updatePrompt
-        ? `${t('nav.update_now')} ${updatePrompt.releaseVersion}`
+        ? t('nav.update_now') + ' ' + updatePrompt.releaseVersion
         : t('nav.update_now');
   const UpdateActionIcon = updatePrompt?.action === 'open-release-page' ? ExternalLink : Download;
 
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [openSection, setOpenSection] = useState<OpenSection>(null);
-  const navItemRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const [openSection, setOpenSection] = useState<OpenSection>(() => getSelectedSection(activePage));
+  const selectedSection = getSelectedSection(activePage);
   const isExpanded = !isCollapsed;
+
+  useEffect(() => {
+    if (isExpanded && selectedSection) {
+      setOpenSection(selectedSection);
+    }
+  }, [isExpanded, selectedSection]);
 
   const toggleCollapsed = useCallback(() => {
     setIsCollapsed((prev) => {
       const next = !prev;
       onCollapsedChange?.(next);
       if (next) setOpenSection(null);
+      if (!next) setOpenSection(getSelectedSection(activePage));
       return next;
     });
-  }, [onCollapsedChange]);
+  }, [activePage, onCollapsedChange]);
 
-  function handleNavItemClick(item: { id: string; label: string }) {
-    if (isSectionId(item.id)) {
-      setActivePage(item.id as AppPage);
-      if (isExpanded) {
-        setOpenSection((prev) => prev === item.id ? null : (item.id as OpenSection));
-      } else {
-        setOpenSection(null);
-      }
-    } else {
-      setActivePage(item.id as AppPage);
-      setOpenSection(null);
-    }
-  }
-
-  function handleSubmenuItemClick(section: 'codex' | 'claude', workspaceId: string) {
+  function handleSectionTitleClick(section: 'codex' | 'claude') {
     setActivePage(section);
-    if (section === 'codex') setActiveCodexWorkspace(workspaceId as CodexWorkspace);
-    if (section === 'claude') setActiveClaudeWorkspace(workspaceId as ClaudeWorkspace);
-    if (isExpanded) setOpenSection(null);
+    if (isExpanded) setOpenSection(section);
   }
 
-  function handleSectionMouseEnter(sectionId: string) {
-    if (!isExpanded && isSectionId(sectionId)) {
-      setOpenSection(sectionId as OpenSection);
+  function handleMenuClick({ key }: { key: string }) {
+    if (key.startsWith('codex:')) {
+      setActivePage('codex');
+      setActiveCodexWorkspace(key.slice('codex:'.length) as CodexWorkspace);
+      setOpenSection('codex');
+      return;
     }
+
+    if (key.startsWith('claude:')) {
+      setActivePage('claude');
+      setActiveClaudeWorkspace(key.slice('claude:'.length) as ClaudeWorkspace);
+      setOpenSection('claude');
+      return;
+    }
+
+    setActivePage(key as AppPage);
+    setOpenSection(null);
   }
 
-  function handleSectionMouseLeave() {
-    if (!isExpanded) setOpenSection(null);
+  function handleOpenChange(keys: string[]) {
+    const nextSection = [...keys].reverse().find(isSectionId) ?? null;
+    setOpenSection(nextSection);
   }
+
+  const selectedMenuKey =
+    activePage === 'codex'
+      ? 'codex:' + activeCodexWorkspace
+      : activePage === 'claude'
+        ? 'claude:' + activeClaudeWorkspace
+        : activePage;
+  const sidebarOpenKeys = isExpanded && openSection ? [openSection] : [];
+
+  const sidebarMenuItems = useMemo<MenuProps['items']>(() => {
+    return navItems.map((item) => {
+      if (item.id === 'codex') {
+        return {
+          key: 'codex',
+          icon: renderSidebarIcon(item.icon),
+          label: t(item.label),
+          title: t(item.label),
+          onTitleClick: () => handleSectionTitleClick('codex'),
+          children: codexWorkspaceItems.map((workspace) => ({
+            key: 'codex:' + workspace.id,
+            label: t(workspace.label),
+            title: t(workspace.label),
+          })),
+        };
+      }
+
+      if (item.id === 'claude') {
+        return {
+          key: 'claude',
+          icon: renderSidebarIcon(item.icon),
+          label: t(item.label),
+          title: t(item.label),
+          onTitleClick: () => handleSectionTitleClick('claude'),
+          children: claudeWorkspaceItems.map((workspace) => ({
+            key: 'claude:' + workspace.id,
+            label: t(workspace.label),
+            title: t(workspace.label),
+          })),
+        };
+      }
+
+      return {
+        key: item.id,
+        icon: renderSidebarIcon(item.icon),
+        label: t(item.label),
+        title: t(item.label),
+      };
+    });
+  }, [navItems, t]);
 
   return (
     <aside
-      className={`relative z-20 flex h-full shrink-0 flex-col transition-[width] duration-150 ${
-        isCollapsed ? 'w-[48px]' : 'w-[220px]'
-      }`}
+      className={[
+        'relative z-20 flex h-full shrink-0 flex-col transition-[width] duration-150',
+        isCollapsed ? 'w-[4.75rem]' : 'w-[15rem]',
+      ].join(' ')}
       style={{ borderRight: '1px solid var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-canvas)' }}
       data-collaboration-id="NAV_SIDEBAR"
       data-sidebar-collapsed={isCollapsed ? 'true' : 'false'}
     >
-      {/* Header: traffic light zone + toggle */}
       <div
-        className={`flex items-center ${isCollapsed ? 'justify-center px-2 pt-[22px] pb-1' : 'px-3 pt-[22px] pb-1'}`}
+        className={[
+          'flex items-center',
+          isCollapsed ? 'justify-center px-3 pb-2 pt-[22px]' : 'justify-between px-3 pb-2 pt-[22px]',
+        ].join(' ')}
       >
+        {isExpanded ? (
+          <div
+            className="min-w-0 truncate text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]"
+            data-sidebar-context-label="true"
+          >
+            {t('nav.sidebar_navigation')}
+          </div>
+        ) : null}
         <button
           type="button"
           onClick={toggleCollapsed}
           aria-label={t(getSidebarToggleTranslationKey(isCollapsed))}
           title={t(getSidebarToggleTranslationKey(isCollapsed))}
-          className={`flex items-center gap-1.5 rounded p-0.5 transition duration-75 hover:bg-[var(--gt-surface-muted)] active:scale-95 ${FOCUS_RING}`}
+          className={'flex h-7 w-7 items-center justify-center rounded-md transition duration-75 hover:bg-[var(--gt-surface-muted)] active:scale-95 ' + FOCUS_RING}
           style={{ color: 'var(--gt-ink-muted)' }}
         >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M2 3h8M2 6h8M2 9h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
           </svg>
         </button>
       </div>
 
-      {/* Nav */}
       <nav
-        className="flex-1 overflow-y-auto px-2 py-1"
+        className="min-h-0 flex-1 overflow-y-auto px-2 py-1"
         style={{ overscrollBehavior: 'contain' }}
+        aria-label={t('nav.sidebar_navigation')}
       >
-        {navItems.map((item) => {
-          const hasSubmenu = isSectionId(item.id);
-          const isActive = activePage === item.id;
-          const isOpen = hasSubmenu && openSection === item.id;
-
-          return (
-            <div
-              key={item.id}
-              ref={(el) => { navItemRefs.current.set(item.id, el); }}
-              onMouseEnter={() => handleSectionMouseEnter(item.id)}
-              onMouseLeave={() => handleSectionMouseLeave()}
-            >
-              <button
-                type="button"
-                aria-label={isCollapsed ? t(item.label) : undefined}
-                aria-expanded={hasSubmenu ? isOpen : undefined}
-                title={isCollapsed ? t(item.label) : undefined}
-                onClick={() => handleNavItemClick(item)}
-                className={`flex w-full items-center rounded-md transition duration-75 ${FOCUS_RING} ${
-                  isCollapsed ? 'justify-center px-0 py-1.5' : 'px-2 py-1'
-                }`}
-                style={{
-                  color: isActive ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
-                  backgroundColor: isActive ? 'var(--gt-surface-muted)' : 'transparent',
-                  fontFamily: 'var(--gt-font-family-sans)',
-                  fontSize: 'var(--gt-font-size-body)',
-                  lineHeight: 'var(--gt-line-height-body)',
-                  fontWeight: isActive ? 500 : 400,
-                  gap: isCollapsed ? 0 : '6px',
-                }}
-              >
-                <svg className="shrink-0 opacity-60" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d={item.icon} />
-                </svg>
-                {isExpanded && (
-                  <span className="min-w-0 flex-1 truncate text-left">{t(item.label)}</span>
-                )}
-                {hasSubmenu && isExpanded && (
-                  <ChevronDown
-                    className="shrink-0 transition-transform duration-100"
-                    width="10" height="10"
-                    style={{
-                      color: 'var(--gt-ink-muted)',
-                      opacity: 0.4,
-                      transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
-                    }}
-                    strokeWidth={2}
-                  />
-                )}
-              </button>
-
-              {/* Submenu */}
-              {hasSubmenu && (
-                <Submenu
-                  isOpen={isOpen}
-                  isCollapsed={isCollapsed}
-                  parentRef={{ current: navItemRefs.current.get(item.id) ?? null }}
-                >
-                  {item.id === 'codex' && codexWorkspaceItems.map((ws) => (
-                    <button
-                      key={ws.id}
-                      onClick={() => handleSubmenuItemClick('codex', ws.id)}
-                      className={`w-full rounded-md px-2 py-1 text-left transition duration-75 ${FOCUS_RING}`}
-                      style={{
-                        color: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
-                        backgroundColor: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'var(--gt-surface-muted)' : 'transparent',
-                        fontFamily: 'var(--gt-font-family-sans)',
-                        fontSize: 'var(--gt-font-size-body)',
-                        lineHeight: 'var(--gt-line-height-body)',
-                        fontWeight: activePage === 'codex' && activeCodexWorkspace === ws.id ? 500 : 400,
-                      }}
-                    >
-                      {t(ws.label)}
-                    </button>
-                  ))}
-                  {item.id === 'claude' && claudeWorkspaceItems.map((ws) => (
-                    <button
-                      key={ws.id}
-                      onClick={() => handleSubmenuItemClick('claude', ws.id)}
-                      className={`w-full rounded-md px-2 py-1 text-left transition duration-75 ${FOCUS_RING}`}
-                      style={{
-                        color: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
-                        backgroundColor: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'var(--gt-surface-muted)' : 'transparent',
-                        fontFamily: 'var(--gt-font-family-sans)',
-                        fontSize: 'var(--gt-font-size-body)',
-                        lineHeight: 'var(--gt-line-height-body)',
-                        fontWeight: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 500 : 400,
-                      }}
-                    >
-                      {t(ws.label)}
-                    </button>
-                  ))}
-                </Submenu>
-              )}
-            </div>
-          );
-        })}
+        <Menu
+          className="gt-sidebar-menu"
+          data-sidebar-menu="antd"
+          mode="inline"
+          selectable
+          items={sidebarMenuItems}
+          selectedKeys={[selectedMenuKey]}
+          openKeys={sidebarOpenKeys}
+          inlineCollapsed={isCollapsed}
+          onClick={({ key }) => handleMenuClick({ key: String(key) })}
+          onOpenChange={handleOpenChange}
+          triggerSubMenuAction="click"
+          style={{
+            borderInlineEnd: 0,
+            background: 'transparent',
+            fontFamily: 'var(--gt-font-family-sans)',
+          }}
+        />
       </nav>
 
-      {/* Bottom: version + update */}
       <div
         className="px-3 py-2"
         style={{ borderTop: '1px solid var(--gt-border-subtle)' }}
@@ -294,8 +303,8 @@ export default function Sidebar({
                 </div>
                 <button
                   type="button"
-                  className={`mt-1 flex h-5 w-full items-center justify-center gap-1 rounded transition duration-75 hover:opacity-90 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ${FOCUS_RING}`}
-                  style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)', fontSize: 'var(--gt-font-size-2xs)', fontWeight: 500, lineHeight: 'var(--gt-line-height-tight)' }}
+                  className={'mt-1 flex h-5 w-full items-center justify-center gap-1 rounded-md transition duration-75 hover:opacity-90 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
+                  style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)', fontSize: 'var(--gt-font-size-2xs)', fontWeight: 600, lineHeight: 'var(--gt-line-height-tight)' }}
                   aria-label={updatePromptLabel}
                   title={updatePromptTitle}
                   aria-live="polite"
@@ -313,7 +322,7 @@ export default function Sidebar({
             {updatePrompt ? (
               <button
                 type="button"
-                className={`flex h-4 w-4 items-center justify-center rounded-full transition duration-75 hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-60 ${FOCUS_RING}`}
+                className={'flex h-6 w-6 items-center justify-center rounded-md transition duration-75 hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
                 style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)' }}
                 aria-label={updatePromptLabel}
                 title={updatePromptTitle}
@@ -321,7 +330,7 @@ export default function Sidebar({
                 onClick={onUpdateAction}
                 disabled={!onUpdateAction || isUpdateActionPending}
               >
-                <UpdateActionIcon className="h-2 w-2" aria-hidden="true" />
+                <UpdateActionIcon className="h-3 w-3" aria-hidden="true" />
               </button>
             ) : (
               <div
@@ -334,53 +343,5 @@ export default function Sidebar({
         )}
       </div>
     </aside>
-  );
-}
-
-/* ─── Submenu ─── */
-
-function Submenu({
-  isOpen,
-  isCollapsed,
-  parentRef,
-  children,
-}: {
-  isOpen: boolean;
-  isCollapsed: boolean;
-  parentRef: React.RefObject<HTMLDivElement | null>;
-  children: React.ReactNode;
-}) {
-  if (isCollapsed) {
-    if (!isOpen || !parentRef.current) return null;
-    const rect = parentRef.current.getBoundingClientRect();
-    return createPortal(
-      <div
-        className="pointer-events-auto fixed z-[9999] w-48 rounded-lg p-1"
-        role="menu"
-        style={{
-          left: rect.right + 4,
-          top: rect.top - 2,
-          backgroundColor: 'var(--gt-surface-raised)',
-          boxShadow: '0 4px 16px rgb(0 0 0 / 0.12), 0 0 0 1px var(--gt-border-subtle)',
-        }}
-      >
-        {children}
-      </div>,
-      document.body,
-    );
-  }
-
-  return (
-    <div
-      className={`grid w-full overflow-hidden transition-[grid-template-rows,opacity] duration-100 ease-out ${
-        isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-      }`}
-    >
-      <div className="min-h-0 overflow-hidden">
-        <div className="py-0.5 pl-5 pr-1" role="menu">
-          {children}
-        </div>
-      </div>
-    </div>
   );
 }

@@ -16,6 +16,7 @@ interface AntdPalette {
   border: string;
   borderStrong: string;
   primary: string;
+  primarySelected: string;
   primarySoft: string;
   success: string;
   warning: string;
@@ -23,6 +24,7 @@ interface AntdPalette {
 }
 
 const antdBluePrimary = blue[5] ?? '#1677ff';
+const antdBlueSelected = blue[0] ?? '#e6f4ff';
 const antdBlueSoft = blue[1] ?? '#bae0ff';
 const antdGreenPrimary = green[5] ?? '#52c41a';
 const antdGoldPrimary = gold[5] ?? '#faad14';
@@ -38,6 +40,7 @@ const classicLight: AntdPalette = {
   border: '#d9d9d9',
   borderStrong: '#8c8c8c',
   primary: antdBluePrimary,
+  primarySelected: antdBlueSelected,
   primarySoft: antdBlueSoft,
   success: antdGreenPrimary,
   warning: antdGoldPrimary,
@@ -85,6 +88,25 @@ export function buildGetTokensAntdTheme(_input?: GetTokensAntdThemeInput): Theme
         colorBgContainer: palette.container,
         colorBorderSecondary: palette.border,
         paddingLG: 24,
+      },
+      Menu: {
+        itemBg: 'transparent',
+        itemActiveBg: palette.primarySelected,
+        itemHoverBg: palette.muted,
+        itemHoverColor: palette.text,
+        itemSelectedBg: palette.primarySelected,
+        itemSelectedColor: palette.primary,
+        subMenuItemBg: 'transparent',
+        subMenuItemSelectedColor: palette.primary,
+        itemBorderRadius: 6,
+        subMenuItemBorderRadius: 6,
+        itemHeight: 32,
+        itemMarginBlock: 2,
+        itemMarginInline: 4,
+        itemPaddingInline: 10,
+        iconSize: 16,
+        collapsedIconSize: 16,
+        collapsedWidth: 76,
       },
       Segmented: {
         borderRadius: 6,

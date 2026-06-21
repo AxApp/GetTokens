@@ -1,14 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-  getSidebarContentMotionState,
-  getOpenSidebarSection,
-  getSidebarSubmenuMotionState,
-  getSidebarSubmenuPlacement,
-  getSidebarToggleTranslationKey,
-  resolveHoveredSidebarSection,
-} from './sidebarState.ts';
+import { getSidebarToggleTranslationKey } from './sidebarState.ts';
 import { getSidebarNavItems } from './sidebarNav.ts';
 import { readFile } from 'node:fs/promises';
 
@@ -22,60 +15,52 @@ test('sidebar hides developer-only entries outside dev tools mode', () => {
   assert.equal(developmentIDs.includes('debug'), true);
 });
 
-test('sidebar only opens nested navigation for hoverable section pages', () => {
-  assert.equal(resolveHoveredSidebarSection('accounts'), 'accounts');
-  assert.equal(resolveHoveredSidebarSection('codex'), 'codex');
-  assert.equal(resolveHoveredSidebarSection('claude'), 'claude');
-  assert.equal(resolveHoveredSidebarSection('settings'), null);
-  assert.equal(resolveHoveredSidebarSection('debug'), null);
-});
-
 test('sidebar toggle uses explicit labels for collapsed and expanded states', () => {
   assert.equal(getSidebarToggleTranslationKey(false), 'nav.collapse_sidebar');
   assert.equal(getSidebarToggleTranslationKey(true), 'nav.expand_sidebar');
 });
 
-test('content motion state follows collapsed sidebar state', () => {
-  assert.equal(getSidebarContentMotionState(false), 'expanded');
-  assert.equal(getSidebarContentMotionState(true), 'collapsed');
-});
-
-test('pinned sidebar section stays open after hover leaves', () => {
-  assert.equal(getOpenSidebarSection('accounts', null), 'accounts');
-  assert.equal(getOpenSidebarSection('codex', 'accounts'), 'codex');
-  assert.equal(getOpenSidebarSection('claude', 'codex'), 'claude');
-  assert.equal(getOpenSidebarSection(null, 'accounts'), 'accounts');
-  assert.equal(getOpenSidebarSection(null, null), null);
-});
-
-test('submenu placement uses right rail only for collapsed sidebar', () => {
-  assert.equal(getSidebarSubmenuPlacement(true), 'right');
-  assert.equal(getSidebarSubmenuPlacement(false), 'bottom');
-});
-
-test('submenu motion state matches placement and visibility', () => {
-  assert.equal(getSidebarSubmenuMotionState('right', true), 'open-right');
-  assert.equal(getSidebarSubmenuMotionState('right', false), 'closed-right');
-  assert.equal(getSidebarSubmenuMotionState('bottom', true), 'open-bottom');
-  assert.equal(getSidebarSubmenuMotionState('bottom', false), 'closed-bottom');
-});
-
 test('sidebar typography keeps nav labels readable in the compact workspace shell', async () => {
   const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+  const stateSource = await readFile(new URL('./sidebarState.ts', import.meta.url), 'utf8');
 
-  assert.match(source, /fontSize: 'var\(--gt-font-size-body\)'/);
-  assert.match(source, /lineHeight: 'var\(--gt-line-height-body\)'/);
-  assert.match(source, /fontWeight: isActive \? 500 : 400/);
+  assert.match(source, /from 'antd'/);
+  assert.match(source, /<Menu\b/);
+  assert.match(source, /items=\{sidebarMenuItems\}/);
+  assert.match(source, /selectedKeys=\{\[selectedMenuKey\]\}/);
+  assert.match(source, /openKeys=\{sidebarOpenKeys\}/);
+  assert.match(source, /inlineCollapsed=\{isCollapsed\}/);
+  assert.match(source, /mode="inline"/);
   assert.match(source, /--gt-font-family-sans/);
-  assert.match(source, /--gt-ink-primary/);
+  assert.doesNotMatch(source, /fontWeight: .*500/);
+  assert.doesNotMatch(source, /createPortal/);
+  assert.doesNotMatch(source, /function Submenu/);
+  assert.doesNotMatch(stateSource, /resolveHoveredSidebarSection|getSidebarSubmenuPlacement|getSidebarSubmenuMotionState|getOpenSidebarSection/);
 });
 
 test('sidebar section clicks still select the section page before opening submenu', async () => {
   const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /if \(isSectionId\(item\.id\)\) \{\n\s*setActivePage\(item\.id as AppPage\)/);
-  assert.match(source, /function handleSubmenuItemClick\(section: 'codex' \| 'claude', workspaceId: string\) \{\n\s*setActivePage\(section\)/);
+  assert.match(source, /function handleSectionTitleClick\(section: 'codex' \| 'claude'\) \{\n\s*setActivePage\(section\)/);
+  assert.match(source, /function handleMenuClick\(\{ key \}: \{ key: string \}\) \{/);
+  assert.match(source, /setActivePage\('codex'\)/);
+  assert.match(source, /setActivePage\('claude'\)/);
   assert.doesNotMatch(source, /展开时：只 toggle 子菜单，不切换页面/);
+});
+
+test('sidebar navigation follows Ant Design navigation menu contract', async () => {
+  const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+  const themeSource = await readFile(new URL('../../context/antdTheme.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /MenuProps\['items'\]/);
+  assert.match(source, /onTitleClick: \(\) => handleSectionTitleClick\('codex'\)/);
+  assert.match(source, /onTitleClick: \(\) => handleSectionTitleClick\('claude'\)/);
+  assert.match(source, /data-sidebar-menu="antd"/);
+  assert.match(source, /aria-label=\{t\('nav\.sidebar_navigation'\)\}/);
+  assert.match(themeSource, /Menu: \{/);
+  assert.match(themeSource, /itemHeight: 32/);
+  assert.match(themeSource, /itemBorderRadius: 6/);
+  assert.match(themeSource, /collapsedWidth: 76/);
 });
 
 test('app shell publishes sidebar width for fixed modal layout', async () => {
