@@ -45,7 +45,8 @@ test('codex oauth dialog is portaled above account detail modal', async () => {
   assert.match(modalFrameSource, /zIndexClassName = 'z-50'/);
   assert.match(modalFrameSource, /coverViewport = false/);
   assert.match(modalFrameSource, /!detailFullscreen && !coverViewport/);
-  assert.match(modalFrameSource, /detailFullscreen \|\| portal/);
+  assert.match(modalFrameSource, /const shouldUseBodyContainer = detailFullscreen \|\| portal/);
+  assert.match(modalFrameSource, /getContainer=\{getModalContainer\}/);
 });
 
 test('codex oauth dialog uses the quiet workspace shell', async () => {

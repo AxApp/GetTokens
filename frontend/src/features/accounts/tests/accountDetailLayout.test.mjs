@@ -32,12 +32,15 @@ test('account detail frame uses the fullscreen detail modal shell', async () => 
   const modalFrameSource = await readFile(new URL('../../../components/ui/ModalFrame.tsx', import.meta.url), 'utf8');
 
   assert.match(frameSource, /size="detail"/);
+  assert.match(modalFrameSource, /import \{ Modal \} from 'antd'/);
   assert.match(modalFrameSource, /const detailFullscreen = size === 'detail'/);
   assert.match(modalFrameSource, /position === 'fixed' && !detailFullscreen/);
   assert.match(modalFrameSource, /detailFullscreen[\s\S]*\? 'items-start justify-items-center overflow-hidden px-4 pb-4 pt-8 sm:px-6 sm:pb-6 sm:pt-10'/);
   assert.match(modalFrameSource, /detailFullscreen[\s\S]*h-\[calc\(100vh-3rem\)\]/);
   assert.match(modalFrameSource, /sm:h-\[calc\(100vh-4rem\)\]/);
-  assert.match(modalFrameSource, /createPortal\(modal, document\.body\)/);
+  assert.match(modalFrameSource, /const shouldUseBodyContainer = detailFullscreen \|\| portal/);
+  assert.match(modalFrameSource, /getContainer=\{getModalContainer\}/);
+  assert.doesNotMatch(modalFrameSource, /createPortal\(/);
 });
 
 test('account detail keeps auth-file modules scoped to oauth operations and quota reset', () => {
