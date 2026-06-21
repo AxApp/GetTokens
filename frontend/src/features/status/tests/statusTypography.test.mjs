@@ -74,6 +74,8 @@ test('status page uses AntD workbench shell for the redesigned status frame', as
   assert.match(statusFeatureSource, /data-status-workbench-grid="true"/);
   assert.match(statusFeatureSource, /data-status-primary-rail="true"/);
   assert.match(statusFeatureSource, /data-status-diagnostics-rail="true"/);
+  assert.match(statusFeatureSource, /const statusWorkbenchGridClass = 'grid items-start gap-4'/);
+  assert.doesNotMatch(statusFeatureSource, /statusWorkbenchGridClass = 'grid items-start gap-6 lg:grid-cols/);
   assert.doesNotMatch(statusFeatureSource, /data-status-hero="true"[\s\S]{0,500}shadow-/);
 });
 
@@ -475,6 +477,8 @@ test('status page diagnostics and header status use the quiet workspace shell', 
   assert.match(source, /data-status-workbench-grid="true"/);
   assert.match(source, /data-status-primary-rail="true"/);
   assert.match(source, /data-status-diagnostics-rail="true"/);
+  assert.match(source, /const statusWorkbenchGridClass = 'grid items-start gap-4'/);
+  assert.doesNotMatch(source, /statusWorkbenchGridClass = 'grid items-start gap-6 lg:grid-cols/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-danger/);

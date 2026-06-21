@@ -97,7 +97,7 @@ const statusPageShellClass =
   'h-full w-full overflow-auto bg-[var(--gt-surface-panel)] px-6 py-6 lg:px-8 lg:py-8';
 const statusPageContentClass = 'mx-auto flex w-full max-w-[1180px] flex-col gap-6';
 const statusHeroCardClass = 'status-hero-card border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
-const statusWorkbenchGridClass = 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.34fr)]';
+const statusWorkbenchGridClass = 'grid items-start gap-4';
 const statusPrimaryRailClass = 'min-w-0';
 const statusDiagnosticsRailClass = 'grid min-w-0 gap-4';
 
