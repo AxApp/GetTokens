@@ -114,10 +114,10 @@ export function AccountMiniMetrics({ usageSummary, quotaDisplay, t }: AccountMin
 export function AccountMiniMetric({ label, value, title = '' }: { label: string; value: string; title?: string }) {
   return (
     <div className="account-card-list-metric-cell min-w-0 border-l border-dashed border-[var(--gt-border-subtle)] px-2 py-1.5 first:border-l-0" title={title}>
-      <div className="truncate font-mono text-[length:var(--font-size-ui-2xs)] font-medium  text-[var(--gt-ink-muted)]">
+      <div className="truncate font-mono text-[length:var(--gt-font-size-2xs)] font-medium  text-[var(--gt-ink-muted)]">
         {label}
       </div>
-      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--gt-ink-primary)]">
+      <div className="mt-1 truncate font-mono text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-primary)]">
         {value}
       </div>
     </div>
@@ -194,10 +194,10 @@ export function QuotaBars({ quotaDisplay, t, showDivider = true }: QuotaBarsProp
         return (
           <div key={window.id} className="account-card-quota-row grid min-w-0 gap-1.5">
             <div className="account-card-quota-heading flex min-w-0 items-baseline justify-between gap-2">
-              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
+              <div className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-sm)] font-medium  text-[var(--gt-ink-muted)]">
                 {window.label}
               </div>
-              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
+              <div className="shrink-0 text-right font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                 {valueLabel}
               </div>
             </div>
@@ -223,7 +223,7 @@ export function QuotaBars({ quotaDisplay, t, showDivider = true }: QuotaBarsProp
                   />
                 ) : null}
               </div>
-              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-medium  text-[var(--gt-ink-muted)]">
+              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--gt-font-size-2xs)] font-medium  text-[var(--gt-ink-muted)]">
                 <span className="shrink-0">{t('accounts.quota_reset')}</span>
                 <span className="min-w-0 truncate text-right text-[var(--gt-ink-primary)]">{resetTime}</span>
               </div>
@@ -276,11 +276,11 @@ export function BillingBalance({ billing }: BillingBalanceProps) {
 
   return (
     <div className="space-y-2 border-b border-dashed border-[var(--gt-border-subtle)] px-4 py-3">
-      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-medium  text-[var(--gt-ink-muted)]">
+      <div className="font-mono text-[length:var(--gt-font-size-xs)] font-medium  text-[var(--gt-ink-muted)]">
         BALANCE
       </div>
       {billing.balances.map((b, i) => (
-        <div key={i} className="account-card-billing-grid grid gap-2 text-[length:var(--font-size-ui-xs)]">
+        <div key={i} className="account-card-billing-grid grid gap-2 text-[length:var(--gt-font-size-xs)]">
           <div className="flex items-center justify-between border border-[var(--gt-border-subtle)] px-2 py-1">
             <span className="font-mono font-medium  text-[var(--gt-ink-muted)]">Total</span>
             <span className="font-mono font-semibold text-[var(--gt-ink-primary)]">{b.totalBalance} {b.currency}</span>
@@ -344,10 +344,10 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
       ) : null}
       {hasRows ? (
         <div className="flex items-center justify-between gap-3">
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-medium  text-[var(--gt-ink-muted)]">
+          <div className="font-mono text-[length:var(--gt-font-size-xs)] font-medium  text-[var(--gt-ink-muted)]">
             ROUTE GUARD
           </div>
-          <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-medium  ${
+          <div className={`font-mono text-[length:var(--gt-font-size-xs)] font-medium  ${
             rateLimitStatus?.blocked ? 'text-[var(--gt-status-danger)]' : 'text-[var(--gt-ink-muted)]'
           }`}>
             {statusLabel}
@@ -375,10 +375,10 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
         return (
           <div key={row.id} className="account-card-rate-limit-row grid min-w-0 gap-1.5">
             <div className="account-card-rate-limit-heading flex min-w-0 items-baseline justify-between gap-2">
-              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
+              <div className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-sm)] font-medium  text-[var(--gt-ink-muted)]">
                 {row.label}
               </div>
-              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
+              <div className="shrink-0 text-right font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                 {row.valueLabel}
               </div>
             </div>
@@ -392,7 +392,7 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
                   />
                 ) : null}
               </div>
-              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-medium  text-[var(--gt-ink-muted)]">
+              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--gt-font-size-2xs)] font-medium  text-[var(--gt-ink-muted)]">
                 <span className="shrink-0">{row.windowLabel}</span>
                 <span className="min-w-0 truncate text-right text-[var(--gt-ink-primary)]">{row.resetLabel || '--'}</span>
               </div>
@@ -418,10 +418,10 @@ function TrafficStatisticsRow({
   return (
     <div className="account-card-traffic-statistics-row grid min-w-0 gap-1.5">
       <div className="flex min-w-0 items-baseline justify-between gap-2">
-        <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
+        <div className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-sm)] font-medium  text-[var(--gt-ink-muted)]">
           {label}
         </div>
-        <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
+        <div className="shrink-0 text-right font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
           {value} / ∞
         </div>
       </div>
@@ -465,7 +465,7 @@ export function UnsupportedQuotaPlaceholder({ quotaDisplay, billing, t }: Unsupp
 
   return (
     <section className="border-b border-dashed border-[var(--gt-border-subtle)] px-4 py-4">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-medium  text-[var(--gt-ink-muted)]">
+      <div className="font-mono text-[length:var(--gt-font-size-sm)] font-medium  text-[var(--gt-ink-muted)]">
         {quotaDisplay?.status === 'loading' ? t('accounts.quota_syncing') : t('accounts.quota_unsupported')}
       </div>
     </section>

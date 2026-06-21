@@ -42,9 +42,9 @@ const pageLoadingPanelClass =
 const pageLoadingRailClass =
   'page-loading-rail relative grid grid-rows-4 overflow-hidden border-r border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)]';
 const pageLoadingLabelClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const pageLoadingMetaClass =
-  'mb-2 grid grid-cols-[minmax(0,1fr)_auto] gap-3 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'mb-2 grid grid-cols-[minmax(0,1fr)_auto] gap-3 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const pageLoadingTrackClass =
   'page-loading-track relative h-5 overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 
@@ -88,22 +88,22 @@ export default function PageLoadingFallback() {
               <span className={pageLoadingLabelClass}>
                 Loading
               </span>
-              <span className="page-loading-pulse h-2.5 w-2.5 shrink-0 bg-[var(--text-primary)]" aria-hidden="true" />
+              <span className="page-loading-pulse h-2.5 w-2.5 shrink-0 bg-[var(--gt-ink-primary)]" aria-hidden="true" />
             </div>
             <div className={pageLoadingMetaClass} aria-hidden="true">
               <span className="truncate">Data Influx</span>
-              <span className="page-loading-ticker text-[var(--text-primary)]" />
+              <span className="page-loading-ticker text-[var(--gt-ink-primary)]" />
             </div>
             <div className={pageLoadingTrackClass}>
-              <span className="page-loading-scan absolute inset-y-0 left-0 block w-1/3 bg-[var(--text-primary)]" aria-hidden="true" />
+              <span className="page-loading-scan absolute inset-y-0 left-0 block w-1/3 bg-[var(--gt-ink-primary)]" aria-hidden="true" />
               <span className="page-loading-grid absolute inset-0" aria-hidden="true" />
             </div>
             <div className="mt-3 grid grid-cols-5 gap-1.5" aria-hidden="true">
-              <span className="page-loading-step h-2 bg-[var(--text-primary)]" />
-              <span className="page-loading-step h-2 bg-[var(--text-primary)]" />
-              <span className="page-loading-step h-2 bg-[var(--text-primary)]" />
-              <span className="page-loading-step h-2 bg-[var(--text-primary)]" />
-              <span className="page-loading-step h-2 bg-[var(--text-primary)]" />
+              <span className="page-loading-step h-2 bg-[var(--gt-ink-primary)]" />
+              <span className="page-loading-step h-2 bg-[var(--gt-ink-primary)]" />
+              <span className="page-loading-step h-2 bg-[var(--gt-ink-primary)]" />
+              <span className="page-loading-step h-2 bg-[var(--gt-ink-primary)]" />
+              <span className="page-loading-step h-2 bg-[var(--gt-ink-primary)]" />
             </div>
           </div>
         </div>

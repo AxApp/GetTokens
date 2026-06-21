@@ -25,9 +25,9 @@ function resolveSegmentedEnumOptions(row: CodexFeatureRow) {
 }
 
 const codexValueEditorInputClass =
-  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-sm)] text-[var(--gt-ink-primary)] transition-colors placeholder:text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] focus:border-[var(--gt-border-strong)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-primary)] transition-colors placeholder:text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] focus:border-[var(--gt-border-strong)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
 const codexValueEditorTextareaClass =
-  'min-h-24 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--font-size-ui-sm)] text-[var(--gt-ink-primary)] transition-colors placeholder:text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] focus:border-[var(--gt-border-strong)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
+  'min-h-24 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-primary)] transition-colors placeholder:text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] focus:border-[var(--gt-border-strong)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
 const codexValueEditorResetButtonClass =
   'flex h-9 w-9 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-40';
 

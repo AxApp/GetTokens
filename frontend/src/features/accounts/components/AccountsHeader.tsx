@@ -1,4 +1,5 @@
 import type { MutableRefObject } from 'react';
+import { Button } from 'antd';
 import { Activity, KeyRound, LogIn, Menu, Plus, RefreshCw, RotateCcw, Upload } from 'lucide-react';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { Translator } from '../model/types';
@@ -93,36 +94,36 @@ export default function AccountsHeader({
         }
         actions={
           <>
-            <button
+            <Button
+              size="large"
               onClick={onRefreshAccounts}
-              className="parchment-toolbar-action-secondary flex h-10 w-10 items-center justify-center !px-0"
               disabled={!ready || loading}
               title={t('accounts.refresh_accounts')}
               aria-label={t('accounts.refresh_accounts')}
+              icon={<RefreshCw className={loading ? 'animate-spin' : ''} size={16} strokeWidth={2} />}
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2} />
-            </button>
-            <button
+            </Button>
+            <Button
+              size="large"
               onClick={onRefreshRuntime}
-              className="parchment-toolbar-action-secondary flex h-10 w-10 items-center justify-center !px-0"
               disabled={!ready || loading || runtimeRefreshing}
               aria-busy={runtimeRefreshing ? 'true' : undefined}
               data-accounts-runtime-refreshing={runtimeRefreshing ? 'true' : undefined}
               title={t('accounts.refresh_runtime_hint')}
               aria-label={t('accounts.refresh_runtime')}
+              icon={<Activity className={['h-4 w-4', runtimeRefreshing ? 'animate-pulse' : ''].filter(Boolean).join(' ')} size={16} strokeWidth={2} />}
             >
-              <Activity className={`h-4 w-4 ${runtimeRefreshing ? 'animate-pulse' : ''}`} strokeWidth={2} />
-            </button>
+            </Button>
             <div ref={headerActionsMenuRef} className="relative">
-              <button
+              <Button
+                size="large"
                 onClick={onToggleMenu}
-                className="parchment-toolbar-action-secondary flex h-10 w-10 items-center justify-center !px-0"
                 aria-label={t('accounts.header_actions_menu')}
                 aria-expanded={isHeaderActionsMenuOpen}
                 aria-haspopup="menu"
+                icon={<Menu size={16} strokeWidth={2} />}
               >
-                <Menu className="h-4 w-4" strokeWidth={2} />
-              </button>
+              </Button>
               {isHeaderActionsMenuOpen ? (
                 <div className={ACCOUNT_HEADER_MENU_PANEL_CLASS}>
                   <div className="grid gap-1">

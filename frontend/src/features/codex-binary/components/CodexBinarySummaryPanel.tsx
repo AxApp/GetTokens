@@ -7,13 +7,13 @@ const codexBinarySummaryPanelClass =
 const codexBinarySummaryTitleClass =
   'min-w-0 truncate text-xl font-semibold text-[var(--gt-ink-primary)]';
 const codexBinarySummaryActionButtonClass =
-  'inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition-colors hover:bg-[var(--gt-ink-secondary)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-surface-canvas)] transition-colors hover:bg-[var(--gt-ink-secondary)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexBinarySummaryMetaClass =
-  'mt-2 grid gap-x-5 gap-y-1 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]/55 px-2 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-muted)] md:grid-cols-3';
+  'mt-2 grid gap-x-5 gap-y-1 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]/55 px-2 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)] md:grid-cols-3';
 const codexBinarySummaryMessageClass =
   'mt-2 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]/55 px-2 py-2 text-xs font-medium text-[var(--gt-ink-muted)]';
 const codexBinarySummaryStatusClass =
-  'inline-flex items-center rounded px-2 py-1 text-[length:var(--font-size-ui-xs)] font-medium';
+  'inline-flex items-center rounded px-2 py-1 text-[length:var(--gt-font-size-xs)] font-medium';
 
 export default function CodexBinarySummaryPanel({
   snapshot,

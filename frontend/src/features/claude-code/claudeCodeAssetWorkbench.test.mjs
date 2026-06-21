@@ -73,15 +73,15 @@ test('Claude Code asset workbench uses the quiet workspace shell', () => {
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /input-swiss/);
   assert.doesNotMatch(source, /select-swiss/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
-  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
-  assert.doesNotMatch(source, /shadow-\[8px_8px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
+  assert.doesNotMatch(source, /shadow-\[8px_8px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(source, /shadow-hard/);
 });
 
@@ -108,7 +108,7 @@ test('Claude Code account list workbench uses the quiet workspace shell', () => 
   assert.match(source, /--gt-status-danger/);
   assert.doesNotMatch(source, /btn-swiss|input-swiss|select-swiss|card-swiss/);
   assert.doesNotMatch(source, /border-2|border-t-2|border-b-2/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /color-status-/);
   assert.doesNotMatch(source, /font-black/);

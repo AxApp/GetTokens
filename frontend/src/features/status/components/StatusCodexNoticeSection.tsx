@@ -21,13 +21,13 @@ const codexConfigSectionHeaderClass = 'border-b border-[var(--gt-border-subtle)]
 const codexConfigSectionGroupHeaderClass =
   'flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2';
 const codexConfigSectionChipClass =
-  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)]';
+  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]';
 const codexConfigSectionRowChipClass =
-  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
 const codexConfigSectionSecondaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexConfigSectionPrimaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 
 interface StatusCodexNoticeSectionProps {
   t: (key: string) => string;
@@ -75,10 +75,10 @@ export default function StatusCodexNoticeSection({
     <section className={`${codexConfigSectionPanelClass} relative overflow-hidden`}>
       <div className={`${codexConfigSectionHeaderClass} grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start`}>
         <div className="min-w-0">
-          <div className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">
+          <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">
             {t('status.codex_notices_title')}
           </div>
-          <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+          <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
             {snapshot?.configPath || t('status.codex_notices_unavailable')}
           </div>
         </div>
@@ -101,7 +101,7 @@ export default function StatusCodexNoticeSection({
       </div>
 
       {message ? (
-        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">
+        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">
           {message}
         </div>
       ) : null}
@@ -110,10 +110,10 @@ export default function StatusCodexNoticeSection({
         {groupedRows.map((group, groupIndex) => (
           <div key={group.id} className={`${groupIndex > 0 ? 'border-t border-[var(--gt-border-subtle)]' : ''}`}>
             <div className={codexConfigSectionGroupHeaderClass}>
-              <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+              <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                 {resolveGroupTitle(group.id)}
               </div>
-              <div className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+              <div className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                 {group.rows.length} {t('design_system.items')}
               </div>
             </div>
@@ -124,10 +124,10 @@ export default function StatusCodexNoticeSection({
                   className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_5rem] md:items-center"
                 >
                   <div className="min-w-0">
-                    <div className="break-all font-mono text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+                    <div className="break-all font-mono text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
                       {row.key}
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
                       <span className={codexConfigSectionRowChipClass}>
                         NOTICE
                       </span>
@@ -145,7 +145,7 @@ export default function StatusCodexNoticeSection({
           </div>
         ))}
         {rows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+          <div className="px-4 py-8 text-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
             {isLoading ? t('status.codex_notices_loading') : t('status.codex_notices_empty')}
           </div>
         ) : null}
@@ -153,17 +153,17 @@ export default function StatusCodexNoticeSection({
 
       {preview ? (
         <div className="border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4">
-          <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+          <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
             {t('status.codex_notices_preview_title')}: {preview.summary}
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {preview.changes.map((change) => (
               <div
                 key={`${change.key}-${change.kind}`}
-                className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]"
+                className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]"
               >
                 <span className="font-mono">{change.key}</span>
-                <span className="text-[var(--text-muted)]"> / {change.kind} / </span>
+                <span className="text-[var(--gt-ink-muted)]"> / {change.kind} / </span>
                 <span>{String(change.before ?? '-')} -&gt; {String(change.after ?? '-')}</span>
               </div>
             ))}
@@ -172,7 +172,7 @@ export default function StatusCodexNoticeSection({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
-        <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+        <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
           {t('status.codex_notices_save_hint')}
         </div>
         <div className="flex flex-wrap gap-2">

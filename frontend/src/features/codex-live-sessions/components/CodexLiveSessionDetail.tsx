@@ -44,15 +44,15 @@ const codexLiveMutedPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveChipClass =
-  'inline-flex h-6 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)]';
+  'inline-flex h-6 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]';
 const codexLiveSecondaryButtonClass =
-  'inline-flex h-8 w-fit items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const codexLiveMetaTextClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
-const codexLiveKickerTextClass = 'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
-const codexLiveSectionLabelClass = 'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
-const codexLiveTitleTextClass = 'text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'inline-flex h-8 w-fit items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const codexLiveMetaTextClass = 'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const codexLiveKickerTextClass = 'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+const codexLiveSectionLabelClass = 'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+const codexLiveTitleTextClass = 'text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const codexLiveMetaPanelClass = `${codexLiveMutedPanelClass} flex min-h-10 items-center justify-between gap-3 px-3 py-2 ${codexLiveMetaTextClass}`;
-const codexLiveInlineMetaClass = 'min-w-0 max-w-full truncate text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]';
+const codexLiveInlineMetaClass = 'min-w-0 max-w-full truncate text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[color:color-mix(in_srgb,var(--gt-ink-muted)_72%,var(--gt-ink-primary))]';
 
 export function SessionDetail({
   session,
@@ -117,7 +117,7 @@ export function SessionDetail({
         {loading || errorMessage ? (
           <div className="overflow-hidden" data-codex-detail-slot="status">
             <div className={codexLiveMetaPanelClass}>
-              <span className="text-[var(--text-muted)]">
+              <span className="text-[var(--gt-ink-muted)]">
                 {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
               </span>
               {errorMessage ? (
@@ -210,7 +210,7 @@ function SessionOverview({
               {t('codex_live_sessions.overview_title')}
             </h3>
           </div>
-          <span className="mt-2 h-1 w-8 bg-[color:color-mix(in_srgb,var(--text-primary)_18%,transparent)]" aria-hidden="true" />
+          <span className="mt-2 h-1 w-8 bg-[color:color-mix(in_srgb,var(--gt-ink-primary)_18%,transparent)]" aria-hidden="true" />
         </section>
         <OverviewSummaryCard
           label={t('codex_live_sessions.requests')}
@@ -273,7 +273,7 @@ function HistoryWindowControl({
 
   return (
     <div className={`${codexLiveMetaPanelClass} flex-wrap`} data-codex-history-window-control="true">
-      <span className="text-[var(--text-muted)]">{label || t('codex_live_sessions.history_recent_window')}</span>
+      <span className="text-[var(--gt-ink-muted)]">{label || t('codex_live_sessions.history_recent_window')}</span>
       {canLoadMore ? (
         <button type="button" className={codexLiveSecondaryButtonClass} onClick={onLoadMore} disabled={loading}>
           {loading ? t('common.loading') : t('codex_live_sessions.history_load_more')}
@@ -290,12 +290,12 @@ function OverviewStatusNotice({ loading, errorMessage, t }: { loading?: boolean;
 
   return (
     <div
-      className={`${codexLiveMutedPanelClass} pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-10 flex max-w-[min(32rem,100%)] items-center gap-3 px-2.5 py-1 text-[length:var(--font-size-ui-2xs)] font-medium`}
+      className={`${codexLiveMutedPanelClass} pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-10 flex max-w-[min(32rem,100%)] items-center gap-3 px-2.5 py-1 text-[length:var(--gt-font-size-2xs)] font-medium`}
       data-codex-overview-status-overlay="true"
       role="status"
       aria-live="polite"
     >
-      <span className="shrink-0 text-[var(--text-muted)]">
+      <span className="shrink-0 text-[var(--gt-ink-muted)]">
         {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
       </span>
       {errorMessage ? <span className="min-w-0 truncate text-right text-[var(--gt-status-warning)]">{errorMessage}</span> : null}
@@ -317,7 +317,7 @@ function OverviewSummaryCard({
   accent?: 'neutral' | 'success' | 'warning' | 'danger';
 }) {
   const accentClass = {
-    neutral: 'bg-[color:color-mix(in_srgb,var(--text-muted)_18%,transparent)]',
+    neutral: 'bg-[color:color-mix(in_srgb,var(--gt-ink-muted)_18%,transparent)]',
     success: 'bg-[var(--gt-status-success)]',
     warning: 'bg-[var(--gt-status-warning)]',
     danger: 'bg-[var(--gt-status-danger)]',
@@ -333,14 +333,14 @@ function OverviewSummaryCard({
       </div>
       <div className="min-w-0">
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="font-mono text-[length:var(--font-size-ui-2xl)] font-semibold leading-none text-[var(--text-primary)]">
+          <span className="font-mono text-[length:var(--gt-font-size-2xl)] font-semibold leading-none text-[var(--gt-ink-primary)]">
             {primaryValue}
           </span>
-          <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+          <span className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
             {primaryLabel}
           </span>
         </div>
-        <p className="mt-2 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
+        <p className="mt-2 truncate font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[color:color-mix(in_srgb,var(--gt-ink-muted)_72%,var(--gt-ink-primary))]">
           {secondaryValue}
         </p>
       </div>
@@ -407,10 +407,10 @@ function OverviewTimingTrend({
           </div>
 
           <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
-            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)]">
+            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)]">
               <span className="h-2 w-2" style={{ backgroundColor: selectedSeries.color }} />
-              <span className="font-semibold text-[var(--text-muted)]">{t(selectedSeries.labelKey)}</span>
-              <span className="font-semibold text-[var(--text-primary)]">
+              <span className="font-semibold text-[var(--gt-ink-muted)]">{t(selectedSeries.labelKey)}</span>
+              <span className="font-semibold text-[var(--gt-ink-primary)]">
                 {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}
               </span>
             </div>
@@ -438,10 +438,10 @@ function TimingMetricSelector({
           <button
             key={series.id}
             type="button"
-            className={`h-7 border px-2 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold transition-colors ${
+            className={`h-7 border px-2 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold transition-colors ${
               active
-                ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
-                : 'border-[color:color-mix(in_srgb,var(--gt-border-subtle)_42%,transparent)] text-[var(--text-muted)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]'
+                ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+                : 'border-[color:color-mix(in_srgb,var(--gt-border-subtle)_42%,transparent)] text-[var(--gt-ink-muted)] hover:border-[var(--gt-ink-primary)] hover:text-[var(--gt-ink-primary)]'
             }`}
             onClick={() => onSelectMetric(series.id)}
           >
@@ -511,9 +511,9 @@ function RequestTimingTrend({
             {t('codex_live_sessions.request_timing_trend')}
           </h3>
         </div>
-        <div className="flex min-w-0 max-w-full flex-nowrap items-center justify-start gap-2 overflow-hidden whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[color:color-mix(in_srgb,var(--text-muted)_68%,var(--text-primary))] md:justify-end md:text-right">
-          <span className="shrink-0 text-[var(--text-primary)]">{session.model}</span>
-          <span className="shrink-0 text-[color:color-mix(in_srgb,var(--text-muted)_54%,var(--text-primary))]">·</span>
+        <div className="flex min-w-0 max-w-full flex-nowrap items-center justify-start gap-2 overflow-hidden whitespace-nowrap font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[color:color-mix(in_srgb,var(--gt-ink-muted)_68%,var(--gt-ink-primary))] md:justify-end md:text-right">
+          <span className="shrink-0 text-[var(--gt-ink-primary)]">{session.model}</span>
+          <span className="shrink-0 text-[color:color-mix(in_srgb,var(--gt-ink-muted)_54%,var(--gt-ink-primary))]">·</span>
           <span className="min-w-0 truncate">{session.downstreamTransport} → {session.upstreamTransport}</span>
         </div>
       </div>
@@ -534,10 +534,10 @@ function RequestTimingTrend({
           </div>
 
           <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
-            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)]">
+            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)]">
               <span className="h-2 w-2" style={{ backgroundColor: selectedSeries.color }} />
-              <span className="font-semibold text-[var(--text-muted)]">{t(selectedSeries.labelKey)}</span>
-              <span className="font-semibold text-[var(--text-primary)]">
+              <span className="font-semibold text-[var(--gt-ink-muted)]">{t(selectedSeries.labelKey)}</span>
+              <span className="font-semibold text-[var(--gt-ink-primary)]">
                 {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}
               </span>
             </div>
@@ -550,9 +550,9 @@ function RequestTimingTrend({
 
 function TimingTrendFooterItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 font-mono text-[length:var(--font-size-ui-xs)]">
-      <span className="mr-2 font-semibold text-[var(--text-muted)]">{label}</span>
-      <span className="font-semibold text-[var(--text-primary)]">{value}</span>
+    <div className="min-w-0 font-mono text-[length:var(--gt-font-size-xs)]">
+      <span className="mr-2 font-semibold text-[var(--gt-ink-muted)]">{label}</span>
+      <span className="font-semibold text-[var(--gt-ink-primary)]">{value}</span>
     </div>
   );
 }
@@ -606,7 +606,7 @@ function TimingTrendChart({
 
   if (!trend.hasData || selectedMetricMaxMs <= 0) {
     return (
-      <div className={`${codexLiveMutedPanelClass} grid h-[230px] place-items-center text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]`}>
+      <div className={`${codexLiveMutedPanelClass} grid h-[230px] place-items-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]`}>
         {t('codex_live_sessions.timing_trend_empty')}
       </div>
     );
@@ -660,7 +660,7 @@ function TimingTrendChart({
                   x2={width - padding.right}
                   y1={y}
                   y2={y}
-                  stroke="color-mix(in srgb, var(--text-muted) 13%, transparent)"
+                  stroke="color-mix(in srgb, var(--gt-ink-muted) 13%, transparent)"
                   strokeWidth="1"
                 />
                 {ratio === 0 || ratio === 0.5 || ratio === 1 ? (
@@ -668,7 +668,7 @@ function TimingTrendChart({
                     x={padding.left - 8}
                     y={y + 3}
                     textAnchor="end"
-                    className="fill-[var(--text-muted)] font-mono text-[9px] font-semibold"
+                    className="fill-[var(--gt-ink-muted)] font-mono text-[9px] font-semibold"
                     opacity="0.52"
                   >
                     {formatDuration(selectedMetricMaxMs * (1 - ratio))}
@@ -689,14 +689,14 @@ function TimingTrendChart({
                       x2={x}
                       y1={height - padding.bottom + 10}
                       y2={height - padding.bottom + 15}
-                      stroke="color-mix(in srgb, var(--text-muted) 30%, transparent)"
+                      stroke="color-mix(in srgb, var(--gt-ink-muted) 30%, transparent)"
                       strokeWidth="1"
                     />
                     <text
                       x={x}
                       y={height - 8}
                       textAnchor="middle"
-                      className="fill-[var(--text-muted)] font-mono text-[9px] font-semibold"
+                      className="fill-[var(--gt-ink-muted)] font-mono text-[9px] font-semibold"
                       opacity={point.requestID === selectedRequestID || point.isLive ? 0.92 : 0.48}
                     >
                       #{point.sequence}
@@ -899,17 +899,17 @@ function TransportLane({ events, t }: { events: readonly CodexLiveTimelineEvent[
       <div className="grid gap-2 xl:grid-cols-4">
         {laneItems.map(([lane, label]) => (
           <div key={lane} className="min-h-[86px] border border-[color:color-mix(in_srgb,var(--gt-border-subtle)_55%,transparent)] bg-[var(--gt-surface-muted)] p-3">
-            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+            <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
               {label}
             </div>
             <div className="mt-2 grid gap-1">
               {lanes[lane].length === 0 ? (
-                <span className="text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">{t('codex_live_sessions.no_event')}</span>
+                <span className="text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">{t('codex_live_sessions.no_event')}</span>
               ) : (
                 lanes[lane].slice(0, 2).map((event) => (
                   <div key={event.id} className="grid grid-cols-[8px_1fr] gap-2">
                     <span className={`mt-1 h-2 w-2 ${severityDotClass(event.severity)}`} />
-                    <span className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+                    <span className="min-w-0 truncate text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">
                       {event.kind}
                     </span>
                   </div>
@@ -955,10 +955,10 @@ function TimingMetrics({
       <div className="mt-3 grid gap-2 md:grid-cols-3 xl:grid-cols-5">
         {metrics.map((metric) => {
           const selected = metric.trendMetric === selectedMetric;
-          const rowClassName = `grid min-h-12 min-w-0 grid-cols-[1fr_auto] items-end gap-2 border px-2.5 py-2 font-mono text-[length:var(--font-size-ui-xs)] transition-colors ${
+          const rowClassName = `grid min-h-12 min-w-0 grid-cols-[1fr_auto] items-end gap-2 border px-2.5 py-2 font-mono text-[length:var(--gt-font-size-xs)] transition-colors ${
             selected
-              ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] shadow-sm'
-              : 'border-[color:color-mix(in_srgb,var(--gt-border-subtle)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--gt-surface-canvas)_58%,transparent)] text-[var(--text-muted)] hover:border-[color:color-mix(in_srgb,var(--gt-border-subtle)_46%,transparent)] hover:bg-[var(--gt-surface-muted)]'
+              ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] shadow-sm'
+              : 'border-[color:color-mix(in_srgb,var(--gt-border-subtle)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--gt-surface-canvas)_58%,transparent)] text-[var(--gt-ink-muted)] hover:border-[color:color-mix(in_srgb,var(--gt-border-subtle)_46%,transparent)] hover:bg-[var(--gt-surface-muted)]'
           }`;
 
           const trendMetric = metric.trendMetric;
@@ -966,7 +966,7 @@ function TimingMetrics({
             return (
               <div key={metric.key} className={rowClassName}>
                 <span className="min-w-0 truncate font-semibold">{metric.label}</span>
-                <span className="font-semibold tabular-nums text-[var(--text-primary)]">{metric.value}</span>
+                <span className="font-semibold tabular-nums text-[var(--gt-ink-primary)]">{metric.value}</span>
               </div>
             );
           }
@@ -980,7 +980,7 @@ function TimingMetrics({
               onClick={() => onSelectMetric(trendMetric)}
             >
               <span className="min-w-0 truncate font-semibold">{metric.label}</span>
-              <span className="font-semibold tabular-nums text-[var(--text-primary)]">{metric.value}</span>
+              <span className="font-semibold tabular-nums text-[var(--gt-ink-primary)]">{metric.value}</span>
             </button>
           );
         })}
@@ -1164,9 +1164,9 @@ function SessionCard({ session, request, t }: { session: CodexLiveSession; reque
       </div>
       <div className="mt-3 grid gap-x-5 gap-y-2 md:grid-cols-2">
         {rows.map(([label, value]) => (
-          <div key={label} className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_30%,transparent)] py-1 text-[length:var(--font-size-ui-sm)]">
-            <span className="shrink-0 font-mono font-semibold text-[var(--text-muted)]">{label}</span>
-            <span className="truncate font-mono font-bold text-[var(--text-primary)]">{value}</span>
+          <div key={label} className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_30%,transparent)] py-1 text-[length:var(--gt-font-size-sm)]">
+            <span className="shrink-0 font-mono font-semibold text-[var(--gt-ink-muted)]">{label}</span>
+            <span className="truncate font-mono font-bold text-[var(--gt-ink-primary)]">{value}</span>
           </div>
         ))}
       </div>
@@ -1210,12 +1210,12 @@ function Timeline({
             {title ?? t('codex_live_sessions.request_timeline')}
           </h3>
           {title ? (
-            <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+            <p className="mt-1 text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">
               {t('codex_live_sessions.request_timeline')}
             </p>
           ) : null}
         </div>
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
+        <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
           {countLabel ?? `${visibleRowCount} ${t('codex_live_sessions.rows')}`}
         </div>
       </div>
@@ -1305,19 +1305,19 @@ function TimelineSummaryRow({
     <button
       type="button"
       onClick={onOpen}
-      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_20%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-[0.995] last:border-b-0 ${fallback ? 'bg-[color:color-mix(in_srgb,var(--gt-surface-muted)_54%,transparent)]' : ''}`}
+      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_20%,transparent)] px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-[0.995] last:border-b-0 ${fallback ? 'bg-[color:color-mix(in_srgb,var(--gt-surface-muted)_54%,transparent)]' : ''}`}
       title={t('codex_live_sessions.detail')}
       aria-label={t('codex_live_sessions.detail')}
     >
-      <span className="shrink-0 whitespace-nowrap font-mono font-semibold text-[var(--text-primary)]">
+      <span className="shrink-0 whitespace-nowrap font-mono font-semibold text-[var(--gt-ink-primary)]">
         {summary.sequenceLabel} · {summary.modelLabel}
       </span>
-      <span className="shrink-0 whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+      <span className="shrink-0 whitespace-nowrap font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
         {requestIDLabel}
       </span>
-      <span className="flex min-w-0 items-center gap-2 truncate whitespace-nowrap font-mono font-semibold text-[var(--text-primary)]">
+      <span className="flex min-w-0 items-center gap-2 truncate whitespace-nowrap font-mono font-semibold text-[var(--gt-ink-primary)]">
         {historicalStatusLabel ? (
-          <span className="shrink-0 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-1.5 py-0.5 text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+          <span className="shrink-0 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
             {historicalStatusLabel}
           </span>
         ) : null}
@@ -1357,8 +1357,8 @@ function isTimelineValuePresent(value: string): boolean {
 function TimelineMetricPill({ label, value, priority }: { label: string; value: string; priority: number }) {
   const visibilityClass = priority >= 3 ? 'hidden xl:inline-flex' : 'inline-flex';
   return (
-    <span className={`${visibilityClass} h-6 shrink-0 items-center gap-1 bg-[color:color-mix(in_srgb,var(--gt-border-subtle)_9%,transparent)] px-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]`}>
-      <span className="text-[var(--text-muted)]">{label}</span>
+    <span className={`${visibilityClass} h-6 shrink-0 items-center gap-1 bg-[color:color-mix(in_srgb,var(--gt-border-subtle)_9%,transparent)] px-1.5 font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]`}>
+      <span className="text-[var(--gt-ink-muted)]">{label}</span>
       <span>{value}</span>
     </span>
   );
@@ -1402,20 +1402,20 @@ function RequestTimelineDetailModal({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+              <span className="border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-0.5 font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                 {request.historyState === 'historical_unclosed'
                   ? t('codex_live_sessions.status_historical_unclosed')
                   : t(statusLabelKeys[request.status])}
               </span>
-              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+              <span className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
                 #{request.sequence} · {request.model}
               </span>
             </div>
-            <div className="mt-2 truncate font-mono text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
+            <div className="mt-2 truncate font-mono text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">
               {request.requestID}
             </div>
           </div>
-          <div className="shrink-0 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)] sm:text-right">
+          <div className="shrink-0 text-left font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)] sm:text-right">
             <div>{request.startedAt}</div>
             <div>{request.completedAt || (request.historyState === 'historical_unclosed' ? t('codex_live_sessions.status_historical_unclosed') : t('codex_live_sessions.status_streaming'))}</div>
           </div>
@@ -1444,7 +1444,7 @@ function RequestTimelineDetailModal({
         </div>
 
         {request.error ? (
-          <div className="border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--gt-status-danger)]">
+          <div className="border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-status-danger)]">
             {request.error.statusCode ? `${request.error.statusCode} ` : ''}
             {request.error.code ? `${request.error.code}: ` : ''}
             {request.error.message}
@@ -1476,7 +1476,7 @@ function FallbackTimelineDetailModal({
           <div className={codexLiveKickerTextClass}>
             {t('codex_live_sessions.request_timeline')}
           </div>
-          <div className="mt-2 font-mono text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
+          <div className="mt-2 font-mono text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">
             {t('codex_live_sessions.unknown_request')}
           </div>
         </div>
@@ -1504,7 +1504,7 @@ function TimelineEventsPanel({ events, t }: { events: readonly CodexLiveTimeline
       </div>
       <div className="mt-3 grid gap-2">
         {events.length === 0 ? (
-          <span className="text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+          <span className="text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">
             {t('codex_live_sessions.no_event')}
           </span>
         ) : (
@@ -1517,9 +1517,9 @@ function TimelineEventsPanel({ events, t }: { events: readonly CodexLiveTimeline
 
 function RequestInfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid min-w-0 gap-2 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_28%,transparent)] py-1 font-mono text-[length:var(--font-size-ui-sm)] md:grid-cols-[9.5rem_1fr]">
-      <span className="font-semibold text-[var(--text-muted)]">{label}</span>
-      <span className="min-w-0 truncate font-bold text-[var(--text-primary)]">{value}</span>
+    <div className="grid min-w-0 gap-2 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_28%,transparent)] py-1 font-mono text-[length:var(--gt-font-size-sm)] md:grid-cols-[9.5rem_1fr]">
+      <span className="font-semibold text-[var(--gt-ink-muted)]">{label}</span>
+      <span className="min-w-0 truncate font-bold text-[var(--gt-ink-primary)]">{value}</span>
     </div>
   );
 }
@@ -1527,24 +1527,24 @@ function RequestInfoRow({ label, value }: { label: string; value: string }) {
 function MetricCell({ label, value }: { label: string; value: string }) {
   return (
     <div className={`${codexLiveMutedPanelClass} min-w-0 p-2`}>
-      <div className="truncate font-mono text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">{value}</div>
-      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">{label}</div>
+      <div className="truncate font-mono text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">{value}</div>
+      <div className="mt-1 truncate font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">{label}</div>
     </div>
   );
 }
 
 function EventDetailLine({ event }: { event: CodexLiveTimelineEvent }) {
   return (
-    <div className="grid min-w-0 grid-cols-[5.8rem_8px_minmax(8rem,10rem)_1fr] gap-2 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_28%,transparent)] pb-2 text-[length:var(--font-size-ui-sm)] last:border-b-0 last:pb-0">
-      <span className="font-mono font-semibold text-[var(--text-muted)]">{event.at}</span>
+    <div className="grid min-w-0 grid-cols-[5.8rem_8px_minmax(8rem,10rem)_1fr] gap-2 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_28%,transparent)] pb-2 text-[length:var(--gt-font-size-sm)] last:border-b-0 last:pb-0">
+      <span className="font-mono font-semibold text-[var(--gt-ink-muted)]">{event.at}</span>
       <span className={`mt-1.5 h-2 w-2 ${severityDotClass(event.severity)}`} />
-      <span className="truncate font-mono font-semibold text-[var(--text-primary)]">
+      <span className="truncate font-mono font-semibold text-[var(--gt-ink-primary)]">
         {event.lane}.{event.kind}
       </span>
       <span className="min-w-0">
-        <span className="block truncate font-bold text-[var(--text-muted)]">{event.label}</span>
+        <span className="block truncate font-bold text-[var(--gt-ink-muted)]">{event.label}</span>
         {event.detail ? (
-          <span className="mt-1 block truncate font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
+          <span className="mt-1 block truncate font-mono text-[length:var(--gt-font-size-xs)] font-bold text-[var(--gt-ink-muted)]">
             {event.detail}
           </span>
         ) : null}
@@ -1563,7 +1563,7 @@ function StatusBadge({ status, t }: { status: CodexLiveSessionStatus; t: Transla
           ? 'bg-[color-mix(in_srgb,var(--gt-status-success)_12%,var(--gt-surface-canvas))]'
           : 'bg-[var(--gt-surface-muted)]';
   return (
-    <span className={`shrink-0 rounded border border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] ${tone}`}>
+    <span className={`shrink-0 rounded border border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] ${tone}`}>
       {t(statusLabelKeys[status])}
     </span>
   );

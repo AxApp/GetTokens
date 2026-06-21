@@ -36,12 +36,12 @@ const vendorStatusHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[v
 const vendorStatusMutedPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const vendorStatusChipClass =
-  'inline-flex rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]';
+  'inline-flex rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
 const vendorStatusSecondaryButtonClass =
-  'inline-flex h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+  'inline-flex h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const vendorStatusPrimaryButtonClass =
-  'inline-flex h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
-const vendorStatusMetaClass = 'text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]';
+  'inline-flex h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
+const vendorStatusMetaClass = 'text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]';
 
 function canUseVendorStatusRSSBridge() {
   if (typeof window === 'undefined') {
@@ -119,13 +119,13 @@ function HeroIncidentCard({
     return (
       <section data-vendor-status-hero="operational" className={`${vendorStatusPanelClass} overflow-hidden`}>
         <div className={`${vendorStatusHeaderClass} px-6 py-5`}>
-          <div className="flex items-center gap-3 text-[var(--text-primary)]">
+          <div className="flex items-center gap-3 text-[var(--gt-ink-primary)]">
             <CheckCircle2 className="h-6 w-6" />
-            <h3 className="text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">{t('vendor_status.hero_all_operational')}</h3>
+            <h3 className="text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">{t('vendor_status.hero_all_operational')}</h3>
           </div>
         </div>
         <div className="px-6 py-6">
-          <p className="text-sm leading-7 text-[var(--text-primary)]">
+          <p className="text-sm leading-7 text-[var(--gt-ink-primary)]">
             {t('vendor_status.hero_no_incident')}
           </p>
           <div className="mt-5">
@@ -141,9 +141,9 @@ function HeroIncidentCard({
   return (
     <section data-vendor-status-hero="incident" className={`${vendorStatusPanelClass} overflow-hidden`}>
       <div className={`${vendorStatusHeaderClass} px-6 py-5`}>
-        <div className="flex items-center gap-3 text-[var(--text-primary)]">
+        <div className="flex items-center gap-3 text-[var(--gt-ink-primary)]">
           <AlertTriangle className="h-6 w-6" />
-          <h3 className="text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">{t('vendor_status.hero_active_issue')}</h3>
+          <h3 className="text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">{t('vendor_status.hero_active_issue')}</h3>
         </div>
       </div>
       <div className="border-b border-dashed border-[var(--gt-border-subtle)] px-6 py-5">
@@ -153,13 +153,13 @@ function HeroIncidentCard({
       </div>
       <div className="px-6 py-6">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--text-primary)]" />
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--gt-ink-primary)]" />
           <div className="min-w-0">
-            <h4 className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">{incident.title}</h4>
-            <p className="mt-4 whitespace-pre-line text-[length:var(--font-size-ui-xl-plus)] leading-8 text-[var(--text-primary)]">
+            <h4 className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">{incident.title}</h4>
+            <p className="mt-4 whitespace-pre-line text-[length:var(--gt-font-size-xl-plus)] leading-8 text-[var(--gt-ink-primary)]">
               {incident.body || t('vendor_status.hero_incident_fallback')}
             </p>
-            <p className="mt-6 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+            <p className="mt-6 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
               {incident.publishedLabel}
             </p>
           </div>
@@ -190,13 +190,13 @@ function SystemStatusRow({
           <span className={statusToneClasses(group.status)}>
             <StatusIcon status={group.status} className="h-5 w-5" />
           </span>
-          <h4 className="text-[length:var(--font-size-ui-5xl)] font-semibold text-[var(--text-primary)] md:text-[length:var(--font-size-ui-2xl)]">{group.name}</h4>
+          <h4 className="text-[length:var(--gt-font-size-5xl)] font-semibold text-[var(--gt-ink-primary)] md:text-[length:var(--gt-font-size-2xl)]">{group.name}</h4>
           {canExpand ? (
             <button
               type="button"
               onClick={() => setExpanded((current) => !current)}
               aria-expanded={expanded}
-              className="inline-flex items-center gap-1.5 text-[length:var(--font-size-ui-lg)] font-medium text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] md:text-[length:var(--font-size-ui-lg-compact)]"
+              className="inline-flex items-center gap-1.5 text-[length:var(--gt-font-size-lg)] font-medium text-[var(--gt-ink-muted)] transition-colors hover:text-[var(--gt-ink-primary)] md:text-[length:var(--gt-font-size-lg-compact)]"
             >
               <span>{componentCountLabel}</span>
               <svg
@@ -210,7 +210,7 @@ function SystemStatusRow({
               </svg>
             </button>
           ) : (
-            <span className="text-[length:var(--font-size-ui-lg)] font-medium text-[var(--text-muted)] md:text-[length:var(--font-size-ui-lg-compact)]">
+            <span className="text-[length:var(--gt-font-size-lg)] font-medium text-[var(--gt-ink-muted)] md:text-[length:var(--gt-font-size-lg-compact)]">
               {componentCountLabel}
             </span>
           )}
@@ -238,7 +238,7 @@ function SystemStatusRow({
         )}
       </div>
       <div className="text-left md:text-right">
-        <p className="text-[length:var(--font-size-ui-xl-plus)] font-medium text-[var(--text-muted)] md:text-[length:var(--font-size-ui-lg)]">{group.uptimeLabel}</p>
+        <p className="text-[length:var(--gt-font-size-xl-plus)] font-medium text-[var(--gt-ink-muted)] md:text-[length:var(--gt-font-size-lg)]">{group.uptimeLabel}</p>
       </div>
     </div>
   );
@@ -258,9 +258,9 @@ function ExpandedComponentRow({
           <span className={statusToneClasses(component.status)}>
             <StatusIcon status={component.status} className="h-4.5 w-4.5" />
           </span>
-          <h5 className="truncate text-[length:var(--font-size-ui-2xl)] font-medium text-[var(--text-primary)] md:text-[length:var(--font-size-ui-xl-plus)]">{component.name}</h5>
+          <h5 className="truncate text-[length:var(--gt-font-size-2xl)] font-medium text-[var(--gt-ink-primary)] md:text-[length:var(--gt-font-size-xl-plus)]">{component.name}</h5>
         </div>
-        <p className="shrink-0 text-[length:var(--font-size-ui-2xl)] font-medium text-[var(--text-muted)] md:text-[length:var(--font-size-ui-xl-plus)]">{component.uptimeLabel}</p>
+        <p className="shrink-0 text-[length:var(--gt-font-size-2xl)] font-medium text-[var(--gt-ink-muted)] md:text-[length:var(--gt-font-size-xl-plus)]">{component.uptimeLabel}</p>
       </div>
       <div className="mt-3 flex gap-[4px] overflow-hidden">
         {component.segments.map((segment) => (
@@ -394,7 +394,7 @@ export default function VendorStatusFeature() {
               <RefreshActionButton
                 onClick={() => setRefreshToken((current) => current + 1)}
                 label={t('vendor_status.refresh')}
-                className="!text-[length:var(--font-size-ui-xs)]"
+                className="!text-[length:var(--gt-font-size-xs)]"
               />
               <a
                 href={data?.subscribeUrl || 'https://status.openai.com/'}
@@ -426,7 +426,7 @@ export default function VendorStatusFeature() {
         />
 
         {state.status === 'loading' && !data ? (
-          <section className={`${vendorStatusPanelClass} flex min-h-[16rem] items-center justify-center gap-3 text-[var(--text-muted)]`}>
+          <section className={`${vendorStatusPanelClass} flex min-h-[16rem] items-center justify-center gap-3 text-[var(--gt-ink-muted)]`}>
             <LoaderCircle className="h-5 w-5 animate-spin" />
             <span className="text-sm font-medium">{t('vendor_status.loading')}</span>
           </section>
@@ -434,9 +434,9 @@ export default function VendorStatusFeature() {
 
         {state.status === 'error' ? (
           <section className={`${vendorStatusMutedPanelClass} p-6`}>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{t('vendor_status.fetch_failed')}</p>
-            <p className="mt-3 text-sm leading-7 text-[var(--text-primary)]">{state.errorMessage}</p>
-            <p className="mt-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+            <p className="text-sm font-semibold text-[var(--gt-ink-primary)]">{t('vendor_status.fetch_failed')}</p>
+            <p className="mt-3 text-sm leading-7 text-[var(--gt-ink-primary)]">{state.errorMessage}</p>
+            <p className="mt-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
               {t('vendor_status.fetch_failed_hint')}
             </p>
           </section>
@@ -455,18 +455,18 @@ export default function VendorStatusFeature() {
             <section data-vendor-status-matrix="true" className={`${vendorStatusPanelClass} overflow-hidden`}>
               <div className={`${vendorStatusHeaderClass} flex flex-col gap-3 px-5 py-5 md:flex-row md:items-end md:justify-between`}>
                 <div className="min-w-0">
-                  <p className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                  <p className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                     {t('vendor_status.live_uptime_matrix')}
                   </p>
-                  <h3 className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">
+                  <h3 className="mt-2 text-2xl font-semibold text-[var(--gt-ink-primary)]">
                     {t('vendor_status.system_status')}
                   </h3>
                 </div>
                 <div className="text-left md:text-right">
-                  <p className="text-[length:var(--font-size-ui-md)] font-medium text-[var(--text-muted)]">
+                  <p className="text-[length:var(--gt-font-size-md)] font-medium text-[var(--gt-ink-muted)]">
                     {data.historyRangeLabel}
                   </p>
-                  <p className="mt-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                  <p className="mt-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                     {locale === 'zh'
                       ? `当前 ${data.activeIncidentCount} 个进行中事件`
                       : `${data.activeIncidentCount} active incident${data.activeIncidentCount === 1 ? '' : 's'}`}

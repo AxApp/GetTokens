@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Button } from 'antd';
 import { ChevronDown, ChevronRight, MoreVertical, Power, RefreshCw, SquareCheckBig, Trash2 } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
@@ -252,7 +253,7 @@ export default function AccountGroupSectionView({
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           <p
-            className="font-mono text-[length:var(--font-size-ui-xs)] font-medium leading-none"
+            className="font-mono text-[length:var(--gt-font-size-xs)] font-medium leading-none"
             style={{ color: 'var(--gt-ink-muted)' }}
           >
             {group.accounts.length} {t('accounts.plan_group_meta')}
@@ -263,7 +264,7 @@ export default function AccountGroupSectionView({
               aria-pressed={allGroupSelected}
               onClick={() => groupSelectionAction(group.accounts)}
               disabled={!hasAccounts}
-              className="flex h-7 items-center gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-7 items-center gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <SquareCheckBig size={13} strokeWidth={2} />
               {allGroupSelected ? t('accounts.unselect_group') : t('accounts.select_group')}
@@ -350,24 +351,25 @@ export default function AccountGroupSectionView({
                             {deleteGroupConfirmLabel} · {deleteGroupResolution.targets.length}/{group.accounts.length}
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
+                            <Button
+                              size="small"
+                              htmlType="button"
                               onClick={() => setIsGroupDeleteConfirming(false)}
-                              className="parchment-toolbar-action-secondary !px-2 !py-2 text-xs"
                             >
                               {t('common.cancel')}
-                            </button>
-                            <button
-                              type="button"
+                            </Button>
+                            <Button
+                              size="small"
+                              danger
+                              htmlType="button"
                               onClick={() => {
                                 closeGroupActionsMenu();
                                 onDeleteGroup(group.accounts);
                               }}
                               disabled={!canDeleteGroup}
-                              className="parchment-toolbar-action-secondary !px-2 !py-2 text-xs !text-[var(--gt-status-danger)]"
                             >
                               {t('accounts.group_remove_confirm_action')}
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ) : null}

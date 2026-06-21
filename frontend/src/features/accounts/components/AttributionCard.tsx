@@ -196,7 +196,7 @@ export default function AttributionCard({
             <div className="account-card-meta-action-row -mr-4 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
               {eyebrow || eyebrowPrefix || priorityBadges.length > 0 ? (
                 <div
-                  className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1.5 overflow-hidden text-[length:var(--font-size-ui-sm-plus)] font-semibold leading-none"
+                  className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1.5 overflow-hidden text-[length:var(--gt-font-size-sm-plus)] font-semibold leading-none"
                   style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
                 >
                   <span className={`h-2 w-2 shrink-0 rounded-full ${accentFillClass}`} />
@@ -212,7 +212,7 @@ export default function AttributionCard({
                           data-account-card-badge-priority={resolveAttributionCardBadgePriority(badge)}
                           title={badge.label}
                           style={badge.backgroundColor ? { backgroundColor: badge.backgroundColor } : undefined}
-                          className={`account-card-meta-badge shrink-0 truncate rounded border px-1.5 py-0.5 text-[length:var(--font-size-ui-sm)] font-semibold leading-none ${ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']}`}
+                          className={`account-card-meta-badge shrink-0 truncate rounded border px-1.5 py-0.5 text-[length:var(--gt-font-size-sm)] font-semibold leading-none ${ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']}`}
                         >
                           {badge.shortLabel || badge.label}
                         </span>

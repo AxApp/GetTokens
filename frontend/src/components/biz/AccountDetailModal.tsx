@@ -48,39 +48,39 @@ const accountDetailModalPanelClass =
 const accountDetailModalHeaderClass =
   'flex items-center justify-between border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-6 py-4';
 const accountDetailModalEyebrowClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailModalTitleClass =
-  'max-w-[450px] truncate text-sm font-semibold tracking-normal text-[var(--text-primary)]';
+  'max-w-[450px] truncate text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailModalActionButtonClass =
-  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailModalIconButtonClass =
-  'inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+  'inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountDetailModalBodyClass =
-  'flex-1 space-y-8 overflow-y-auto p-6 selection:bg-[var(--gt-border-subtle)] selection:text-[var(--text-primary)]';
+  'flex-1 space-y-8 overflow-y-auto p-6 selection:bg-[var(--gt-border-subtle)] selection:text-[var(--gt-ink-primary)]';
 const accountDetailModalInfoGridClass =
   'grid grid-cols-3 gap-y-6 border-b border-dashed border-[var(--gt-border-subtle)] pb-8';
 const accountDetailModalFieldLabelClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailModalFieldValueClass =
-  'truncate text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'truncate text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailModalSectionClass =
   'space-y-4 border-b border-dashed border-[var(--gt-border-subtle)] pb-8';
 const accountDetailModalSectionTitleClass =
-  'flex items-center gap-2 text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'flex items-center gap-2 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailModalSectionStateClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailModalStatCardClass =
   'space-y-1 rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3';
 const accountDetailModalStatLabelClass =
-  'text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailModalStatValueClass =
-  'text-[length:var(--font-size-ui-md)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'text-[length:var(--gt-font-size-md)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailModalModelChipClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
 const accountDetailModalFeedbackClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailModalRawContentClass =
-  'max-h-[300px] overflow-auto whitespace-pre rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 font-mono text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]';
+  'max-h-[300px] overflow-auto whitespace-pre rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 font-mono text-[length:var(--gt-font-size-sm)] leading-relaxed text-[var(--gt-ink-primary)]';
 const accountDetailModalRawContentInteractiveClass =
   'cursor-copy transition-colors hover:bg-[var(--gt-surface-canvas)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gt-surface-canvas)]';
 const accountDetailModalFooterClass =
@@ -353,7 +353,7 @@ export default function AccountDetailModal({
                   </span>
                 ))
               ) : !loadingModels ? (
-                <div className="text-[length:var(--font-size-ui-sm)] font-bold italic text-[var(--text-muted)]">{t('accounts.ui_no_data_available')}</div>
+                <div className="text-[length:var(--gt-font-size-sm)] font-bold italic text-[var(--gt-ink-muted)]">{t('accounts.ui_no_data_available')}</div>
               ) : null}
             </div>
           </section>

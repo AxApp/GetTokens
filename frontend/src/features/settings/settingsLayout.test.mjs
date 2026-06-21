@@ -33,7 +33,8 @@ test('settings appearance keeps one runtime style and exposes only non-style pre
   assert.match(source, /settings\.language/);
   assert.match(source, /settings\.text_scale/);
   assert.match(source, /<Switch\b/);
-  assert.match(source, /parchment-settings-row/);
+  assert.match(source, /settingsRowClass/);
+  assert.doesNotMatch(source, /parchment-settings-row/);
   assert.match(source, /settings-group/);
   assert.match(source, /settings-section-title/);
 });

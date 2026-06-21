@@ -384,7 +384,7 @@ export function buildAccountAttributionBadges(account: AccountRecord, quotaDispl
   if (planLabel) {
     badges.push({
       label: planLabel,
-      backgroundColor: 'color-mix(in_srgb,var(--text-primary)_6%,transparent)',
+      backgroundColor: 'color-mix(in_srgb,var(--gt-ink-primary)_6%,transparent)',
     });
   }
 

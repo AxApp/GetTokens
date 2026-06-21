@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Button } from 'antd';
 import { ExternalLink } from 'lucide-react';
 
 interface SettingsReleasePanelProps {
@@ -44,9 +45,9 @@ function ReleaseRow({
   onOpenURL?: (url: string) => void;
 }) {
   return (
-    <div className="parchment-settings-row">
+    <div className="flex items-center justify-between gap-4 border-b px-4 py-3 last:border-b-0">
       <div className="min-w-0 flex-1">
-        <div className="parchment-settings-row-label">{label}</div>
+        <div className="text-[length:var(--gt-font-size-body)] font-semibold text-[var(--gt-ink-primary)]">{label}</div>
       </div>
       <div className="flex items-center gap-2">
         <span
@@ -60,20 +61,14 @@ function ReleaseRow({
           {value}
         </span>
         {actionURL && onOpenURL ? (
-          <button
-            type="button"
-            className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded transition active:scale-95"
-            style={{
-              border: '1px solid var(--gt-border-default)',
-              backgroundColor: 'var(--gt-surface-raised)',
-              color: 'var(--gt-ink-secondary)',
-            }}
+          <Button
+            size="small"
+            type="text"
+            icon={<ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />}
             aria-label={`${actionLabel}: ${value}`}
             title={actionLabel}
             onClick={() => onOpenURL(actionURL)}
-          >
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
+          />
         ) : null}
       </div>
     </div>
@@ -150,25 +145,22 @@ export default function SettingsReleasePanel({
       ) : null}
 
       <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: '1px solid var(--gt-border-subtle)' }}>
-        <button
-          type="button"
-          className="parchment-toolbar-action-secondary"
-          style={{ minWidth: 'auto', minHeight: 'auto', padding: '0.5rem 1rem', fontSize: 'var(--gt-font-size-body)' }}
+        <Button
+          size="small"
           onClick={onCheckUpdate}
           disabled={isCheckingUpdate}
         >
           {isCheckingUpdate ? checkingUpdateLabel : checkUpdateLabel}
-        </button>
+        </Button>
         {showPrimaryUpdateAction ? (
-          <button
-            type="button"
-            className="parchment-toolbar-action-primary"
-            style={{ minWidth: 'auto', minHeight: 'auto', padding: '0.5rem 1rem', fontSize: 'var(--gt-font-size-body)' }}
+          <Button
+            size="small"
+            type="primary"
             onClick={onPrimaryUpdateAction}
             disabled={primaryUpdateDisabled}
           >
             {primaryUpdateLabel}
-          </button>
+          </Button>
         ) : null}
         <span className="text-xs" style={{ color: 'var(--gt-ink-muted)' }}>
           {updateActionHint}

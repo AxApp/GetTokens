@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { Button, Segmented, Space } from 'antd';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
 import type { SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from '../../types';
@@ -21,16 +21,16 @@ import { StatePanel, UsageDeskEvidenceStatus, UsageProjectDrilldownPanel, UsageS
 
 const usageDeskPageShellClass = 'h-full w-full overflow-auto bg-[var(--gt-surface-page)]';
 const usageDeskHeaderSubtitleClass =
-  'mt-1 max-w-3xl text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]';
+  'mt-1 max-w-3xl text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]';
 const usageDeskProjectedProgressClass =
-  'text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+  'text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const usageDeskStickyChartShellClass = 'sticky top-0 z-20 -mx-12 bg-[var(--gt-surface-page)] px-12 pb-3 pt-3';
 const usageDeskSourceToggleClass = (active: boolean) =>
   [
-    'h-9 rounded border px-3 text-[length:var(--font-size-ui-sm)] font-semibold transition-colors',
+    'h-9 rounded border px-3 text-[length:var(--gt-font-size-sm)] font-semibold transition-colors',
     active
       ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
-      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]',
+      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]',
   ].join(' ');
 
 export default function UsageDeskFeature({
@@ -326,7 +326,7 @@ function UsageDeskObservedControls({
   onViewScaleChange: (scale: UsageDeskViewScale) => void;
 }) {
   return (
-    <div className="usage-desk-control-bar">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <UsageDeskRangeResolutionControl
         range={range}
         resolution={resolution}
@@ -335,26 +335,15 @@ function UsageDeskObservedControls({
         onResolutionSelect={onResolutionSelect}
       />
 
-      <div className="usage-desk-control-cluster">
-        <div className="usage-desk-segmented usage-desk-view-scale-group">
-          <button type="button" onClick={() => onViewScaleChange('daily')} className={usageDeskSegmentClass(viewScale === 'daily')}>
-            天级趋势
-          </button>
-          <button type="button" onClick={() => onViewScaleChange('minute')} className={usageDeskSegmentClass(viewScale === 'minute')}>
-            分钟明细
-          </button>
-        </div>
-
-        <UsageDeskOverflowMenu className="usage-desk-compact-overflow-menu">
-          <UsageDeskRangeResolutionOverflow
-            range={range}
-            resolution={resolution}
-            viewScale={viewScale}
-            onRangeSelect={onRangeSelect}
-            onResolutionSelect={onResolutionSelect}
-          />
-        </UsageDeskOverflowMenu>
-      </div>
+      <Segmented
+        size="small"
+        value={viewScale}
+        options={[
+          { label: '天级趋势', value: 'daily' },
+          { label: '分钟明细', value: 'minute' },
+        ]}
+        onChange={(value) => onViewScaleChange(value as UsageDeskViewScale)}
+      />
     </div>
   );
 }
@@ -393,7 +382,7 @@ function UsageDeskProjectedControls({
   onRebuildProjectedUsageDay: (dayKey: string | null) => Promise<void>;
 }) {
   return (
-    <div className="usage-desk-control-bar">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <UsageDeskRangeResolutionControl
         range={range}
         resolution={resolution}
@@ -402,98 +391,38 @@ function UsageDeskProjectedControls({
         onResolutionSelect={onResolutionSelect}
       />
 
-      <div className="usage-desk-control-cluster">
-        <div className="usage-desk-segmented usage-desk-surface-group">
-          {usageDeskProjectedSurfaceViewOptions.map((option) => {
-            const active =
-              option.id === 'projects' || option.id === 'sessions'
-                ? projectedSurfaceView === option.id
-                : projectedSurfaceView === 'chart' && viewScale === option.id;
-            const overflowable = option.id === 'projects' || option.id === 'sessions';
-            return (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => onSurfaceViewChange(option.id)}
-                className={usageDeskSegmentClass(active, overflowable ? 'usage-desk-secondary-surface-option' : '')}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
+      <Space size={8} wrap>
+        <Segmented
+          size="small"
+          value={projectedSurfaceView === 'chart' ? viewScale : projectedSurfaceView}
+          options={usageDeskProjectedSurfaceViewOptions.map((option) => ({ label: option.label, value: option.id }))}
+          onChange={(value) => onSurfaceViewChange(value as UsageDeskProjectedSurfaceView)}
+        />
+        <Segmented
+          size="small"
+          value={projectedChartMetric}
+          options={[
+            { label: 'Tokens', value: 'tokens' },
+            { label: '请求数', value: 'requests' },
+          ]}
+          onChange={(value) => onMetricChange(value as UsageDeskMetric)}
+        />
+        {usageDeskProjectedActionImpacts.map((action) => {
+          const disabled = projectedLoading || (action.id === 'rebuild-day' && !selectedDayKey);
+          const handleClick =
+            action.id === 'refresh'
+              ? () => void onRefreshProjectedUsage()
+              : action.id === 'rebuild-day'
+                ? () => void onRebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)
+                : () => void onRebuildProjectedUsage();
 
-        <div className="usage-desk-segmented usage-desk-metric-group">
-          <button type="button" onClick={() => onMetricChange('tokens')} className={usageDeskSegmentClass(projectedChartMetric === 'tokens')}>
-            Tokens
-          </button>
-          <button type="button" onClick={() => onMetricChange('requests')} className={usageDeskSegmentClass(projectedChartMetric === 'requests')}>
-            请求数
-          </button>
-        </div>
-
-        <UsageDeskOverflowMenu className="usage-desk-projected-overflow-menu">
-          <div className="usage-desk-overflow-section usage-desk-index-overflow-section">
-            <div className="usage-desk-overflow-heading">索引</div>
-            {usageDeskProjectedActionImpacts.map((action) => {
-              const disabled = projectedLoading || (action.id === 'rebuild-day' && !selectedDayKey);
-              const handleClick =
-                action.id === 'refresh'
-                  ? () => void onRefreshProjectedUsage()
-                  : action.id === 'rebuild-day'
-                    ? () => void onRebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)
-                    : () => void onRebuildProjectedUsage();
-
-              return (
-                <button
-                  key={action.id}
-                  type="button"
-                  onClick={handleClick}
-                  className={usageDeskOverflowItemClass(false)}
-                  disabled={disabled}
-                  title={action.description}
-                >
-                  {action.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="usage-desk-overflow-section usage-desk-surface-overflow-section">
-            <div className="usage-desk-overflow-heading">视图</div>
-            {usageDeskProjectedSurfaceViewOptions
-              .filter((option) => option.id === 'projects' || option.id === 'sessions')
-              .map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => onSurfaceViewChange(option.id)}
-                  className={usageDeskOverflowItemClass(projectedSurfaceView === option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
-          </div>
-
-          <div className="usage-desk-overflow-section usage-desk-metric-overflow-section">
-            <div className="usage-desk-overflow-heading">指标</div>
-            <button type="button" onClick={() => onMetricChange('tokens')} className={usageDeskOverflowItemClass(projectedChartMetric === 'tokens')}>
-              Tokens
-            </button>
-            <button type="button" onClick={() => onMetricChange('requests')} className={usageDeskOverflowItemClass(projectedChartMetric === 'requests')}>
-              请求数
-            </button>
-          </div>
-
-          <UsageDeskRangeResolutionOverflow
-            range={range}
-            resolution={resolution}
-            viewScale={viewScale}
-            onRangeSelect={onRangeSelect}
-            onResolutionSelect={onResolutionSelect}
-          />
-        </UsageDeskOverflowMenu>
-      </div>
+          return (
+            <Button key={action.id} size="small" onClick={handleClick} disabled={disabled} title={action.description}>
+              {action.label}
+            </Button>
+          );
+        })}
+      </Space>
     </div>
   );
 }
@@ -511,85 +440,25 @@ function UsageDeskRangeResolutionControl({
   onRangeSelect: (option: UsageDeskRangeOption) => void;
   onResolutionSelect: (option: UsageDeskResolution) => void;
 }) {
+  if (viewScale === 'daily') {
+    return (
+      <Segmented
+        size="small"
+        value={range}
+        options={rangeOptions.map((option) => ({ label: formatUsageDeskRangeLabel(option), value: option }))}
+        onChange={(value) => onRangeSelect(value as UsageDeskRangeOption)}
+      />
+    );
+  }
+
   return (
-    <div className="usage-desk-range-slot">
-      <div className={`usage-desk-range-layer ${viewScale === 'daily' ? 'is-visible' : 'is-hidden-left'}`}>
-        <div className="usage-desk-segmented">
-          {rangeOptions.map((option) => (
-            <button key={option} type="button" onClick={() => onRangeSelect(option)} className={usageDeskSegmentClass(range === option)}>
-              {formatUsageDeskRangeLabel(option)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className={`usage-desk-range-layer ${viewScale === 'minute' ? 'is-visible' : 'is-hidden-right'}`}>
-        <div className="usage-desk-segmented">
-          {resolutionOptions.map((option) => (
-            <button key={option} type="button" onClick={() => onResolutionSelect(option)} className={usageDeskSegmentClass(resolution === option)}>
-              {formatUsageDeskResolutionLabel(option)}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
+    <Segmented
+      size="small"
+      value={resolution}
+      options={resolutionOptions.map((option) => ({ label: formatUsageDeskResolutionLabel(option), value: option }))}
+      onChange={(value) => onResolutionSelect(value as UsageDeskResolution)}
+    />
   );
-}
-
-function UsageDeskRangeResolutionOverflow({
-  range,
-  resolution,
-  viewScale,
-  onRangeSelect,
-  onResolutionSelect,
-}: {
-  range: UsageDeskRangeOption;
-  resolution: UsageDeskResolution;
-  viewScale: UsageDeskViewScale;
-  onRangeSelect: (option: UsageDeskRangeOption) => void;
-  onResolutionSelect: (option: UsageDeskResolution) => void;
-}) {
-  return (
-    <div className="usage-desk-overflow-section usage-desk-range-overflow-section">
-      <div className="usage-desk-overflow-heading">{viewScale === 'daily' ? '范围' : '粒度'}</div>
-      {viewScale === 'daily'
-        ? rangeOptions.map((option) => (
-            <button key={option} type="button" onClick={() => onRangeSelect(option)} className={usageDeskOverflowItemClass(range === option)}>
-              {formatUsageDeskRangeLabel(option)}
-            </button>
-          ))
-        : resolutionOptions.map((option) => (
-            <button key={option} type="button" onClick={() => onResolutionSelect(option)} className={usageDeskOverflowItemClass(resolution === option)}>
-              {formatUsageDeskResolutionLabel(option)}
-            </button>
-          ))}
-    </div>
-  );
-}
-
-function UsageDeskOverflowMenu({
-  className,
-  children,
-}: {
-  className: string;
-  children: ReactNode;
-}) {
-  return (
-    <details className={`usage-desk-overflow-menu ${className}`}>
-      <summary className="usage-desk-overflow-trigger" aria-label="更多筛选项">
-        <MoreHorizontal size={16} strokeWidth={3} aria-hidden="true" />
-      </summary>
-      <div className="usage-desk-overflow-panel">{children}</div>
-    </details>
-  );
-}
-
-function usageDeskSegmentClass(active: boolean, extraClassName = '') {
-  return `usage-desk-segment ${active ? 'is-active' : 'is-muted'} ${extraClassName}`.trim();
-}
-
-function usageDeskOverflowItemClass(active: boolean) {
-  return `usage-desk-overflow-item ${active ? 'is-active' : ''}`.trim();
 }
 
 function formatUsageDeskRangeLabel(option: UsageDeskRangeOption) {

@@ -67,15 +67,12 @@ test('usage desk chart controls stay on one line and expose compact overflow', a
   const featureSource = await readFile(new URL('../UsageDeskFeature.tsx', import.meta.url), 'utf8');
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
-  assert.match(featureSource, /usage-desk-control-bar/);
-  assert.match(featureSource, /usage-desk-overflow-menu/);
-  assert.match(featureSource, /usage-desk-secondary-surface-option/);
-  assert.match(featureSource, /usage-desk-metric-group/);
-  assert.match(styleSource, /\.usage-desk-control-bar\s*\{[^}]*flex-wrap:\s*nowrap/s);
-  assert.match(styleSource, /\.usage-desk-segment\s*\{[^}]*white-space:\s*nowrap/s);
-  assert.match(styleSource, /@container\s*\(max-width:\s*760px\)\s*\{[^}]*\.usage-desk-secondary-surface-option/s);
-  assert.match(styleSource, /@container\s*\(max-width:\s*620px\)\s*\{[^}]*\.usage-desk-metric-group/s);
-  assert.match(styleSource, /@container\s*\(max-width:\s*520px\)\s*\{[^}]*\.usage-desk-range-slot/s);
+  assert.match(featureSource, /from 'antd'/);
+  assert.match(featureSource, /<Segmented\b/);
+  assert.match(featureSource, /<Button\b/);
+  assert.match(featureSource, /<Space\b/);
+  assert.doesNotMatch(featureSource, /usage-desk-control-bar|usage-desk-overflow-menu|usage-desk-segment/);
+  assert.doesNotMatch(styleSource, /\.usage-desk-control-bar|\.usage-desk-overflow-menu|\.usage-desk-segment/);
 });
 
 test('usage desk chart header removes source and facet summary strip', async () => {
@@ -91,7 +88,7 @@ test('usage desk chart header removes source and facet summary strip', async () 
   assert.doesNotMatch(featureSource, /<div className="mt-1[^"]*"[^>]*>\s*\{\s*action\.description\s*\}\s*<\/div>/s);
   assert.match(featureSource, /t\('accounts\.usage_desk_codex_title'\)/);
   assert.match(featureSource, /t\('accounts\.usage_desk_claude_title'\)/);
-  assert.match(featureSource, /usage-desk-index-overflow-section/);
+  assert.doesNotMatch(featureSource, /usage-desk-index-overflow-section/);
   assert.match(featureSource, /title=\{action\.description\}/);
   assert.match(featureSource, /status=\{observedStatusEvidence \?/);
   assert.match(featureSource, /status=\{projectedStatusEvidence \?/);
@@ -116,7 +113,7 @@ test('UsageDeskFeature uses the quiet workspace page shell', async () => {
   assert.match(featureSource, /--gt-border-subtle/);
   assert.match(featureSource, /--gt-ink-primary/);
   assert.doesNotMatch(featureSource, /btn-swiss/);
-  assert.doesNotMatch(featureSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(featureSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(featureSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(featureSource, /font-black/);
   assert.doesNotMatch(featureSource, /uppercase/);
@@ -317,7 +314,7 @@ test('UsageDeskPanels uses the quiet workspace shell', async () => {
   assert.match(panelsSource, /--gt-status-danger/);
   assert.doesNotMatch(panelsSource, /border-2/);
   assert.doesNotMatch(panelsSource, /border-b-2/);
-  assert.doesNotMatch(panelsSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(panelsSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(panelsSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(panelsSource, /font-black/);
   assert.doesNotMatch(panelsSource, /uppercase/);
@@ -340,9 +337,9 @@ test('UsageDetailTable uses the quiet workspace table shell', async () => {
   assert.match(tableSource, /--gt-surface-muted/);
   assert.match(tableSource, /--gt-border-subtle/);
   assert.match(tableSource, /--gt-ink-primary/);
-  assert.doesNotMatch(tableSource, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(tableSource, /border-b-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(tableSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(tableSource, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(tableSource, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(tableSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(tableSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(tableSource, /font-black/);
   assert.doesNotMatch(tableSource, /uppercase/);
@@ -374,7 +371,7 @@ test('UsageDeskChart uses the quiet workspace shell', async () => {
   assert.doesNotMatch(chartSource, /border-2/);
   assert.doesNotMatch(chartSource, /border-b-2/);
   assert.doesNotMatch(chartSource, /border-t-2/);
-  assert.doesNotMatch(chartSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(chartSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(chartSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(chartSource, /font-black/);
   assert.doesNotMatch(chartSource, /uppercase/);

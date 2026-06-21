@@ -1,4 +1,5 @@
 import { useEffect, useState, type MouseEvent } from 'react';
+import { Button, Card, Input, Segmented, Switch, Tag } from 'antd';
 import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
@@ -115,37 +116,32 @@ function ElevationSwatch({ label, varName }: { label: string; varName: string })
 
 function AnatomySettingsRow() {
   return (
-    <div className="parchment-settings-row" style={{ border: '1px solid var(--gt-border-subtle)', borderRadius: 'var(--gt-radius-md)', backgroundColor: 'var(--gt-surface-raised)' }}>
+    <div className="flex items-center justify-between gap-4 rounded border px-4 py-3" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
       <div className="min-w-0 flex-1">
-        <div className="parchment-settings-row-label">Setting Label</div>
-        <div className="parchment-settings-row-description">Description text for this setting</div>
+        <div className="text-[length:var(--gt-font-size-body)] font-semibold text-[var(--gt-ink-primary)]">Setting Label</div>
+        <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">Description text for this setting</div>
       </div>
-      <div className="parchment-settings-row-control">
-        <div className="h-5 w-9 rounded-full" style={{ backgroundColor: 'var(--gt-status-success)' }} />
-      </div>
+      <Switch defaultChecked />
     </div>
   );
 }
 
 function AnatomySectionCard() {
   return (
-    <div className="parchment-section-card">
-      <div className="parchment-section-card-header">
-        <span className="parchment-section-card-header-title">Section Title</span>
-      </div>
-      <div className="parchment-section-card-body text-sm" style={{ color: 'var(--gt-ink-secondary)' }}>
+    <Card size="small" title="Section Title">
+      <div className="text-sm" style={{ color: 'var(--gt-ink-secondary)' }}>
         Card body content goes here.
       </div>
-    </div>
+    </Card>
   );
 }
 
 function AnatomyMetricTile() {
   return (
-    <div className="parchment-metric-tile">
-      <div className="parchment-metric-tile-label">Spend</div>
-      <div className="parchment-metric-tile-value">$12.40</div>
-      <div className="parchment-metric-tile-delta parchment-metric-tile-delta-success">+2.1%</div>
+    <div className="rounded border p-4" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
+      <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">Spend</div>
+      <div className="mt-1 text-[length:var(--gt-font-size-number)] font-bold text-[var(--gt-ink-primary)]">$12.40</div>
+      <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-success)]">+2.1%</div>
     </div>
   );
 }
@@ -153,61 +149,66 @@ function AnatomyMetricTile() {
 function AnatomyStatusPill() {
   return (
     <div className="flex flex-wrap gap-2">
-      <span className="parchment-status-pill parchment-status-pill-healthy">Healthy</span>
-      <span className="parchment-status-pill parchment-status-pill-degraded">Degraded</span>
-      <span className="parchment-status-pill parchment-status-pill-error">Error</span>
-      <span className="parchment-status-pill parchment-status-pill-info">Info</span>
-      <span className="parchment-status-pill parchment-status-pill-neutral">Neutral</span>
+      <Tag color="success">Healthy</Tag>
+      <Tag color="warning">Degraded</Tag>
+      <Tag color="error">Error</Tag>
+      <Tag color="processing">Info</Tag>
+      <Tag>Neutral</Tag>
     </div>
   );
 }
 
 function AnatomyToolbar() {
   return (
-    <div className="parchment-toolbar" style={{ height: 'auto', padding: '0.5rem 1rem' }}>
-      <div className="parchment-toolbar-search" style={{ maxWidth: '12rem', height: '28px' }}>Search…</div>
-      <div className="parchment-toolbar-action-primary" style={{ minHeight: '28px', padding: '0 0.75rem', fontSize: '11px' }}>New</div>
-      <div className="parchment-toolbar-action-secondary" style={{ minHeight: '28px', padding: '0 0.75rem', fontSize: '11px' }}>Export</div>
+    <div className="flex flex-wrap items-center gap-2 rounded border px-3 py-2" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
+      <Input size="small" placeholder="Search…" style={{ maxWidth: '12rem' }} />
+      <Button size="small" type="primary">New</Button>
+      <Button size="small">Export</Button>
     </div>
   );
 }
 
 function AnatomyTabs() {
   return (
-    <div className="parchment-tabs">
-      <button type="button" className="parchment-tab">Overview</button>
-      <button type="button" className="parchment-tab parchment-tab-active">Details</button>
-      <button type="button" className="parchment-tab">History</button>
-    </div>
+    <Segmented
+      size="small"
+      defaultValue="details"
+      options={[
+        { label: 'Overview', value: 'overview' },
+        { label: 'Details', value: 'details' },
+        { label: 'History', value: 'history' },
+      ]}
+    />
   );
 }
 
 function AnatomyModalShell() {
   return (
-    <div className="parchment-detail-modal-shell" style={{ width: '100%', maxHeight: '10rem', position: 'relative' }}>
-      <div className="parchment-detail-modal-header">
-        <span className="text-sm font-semibold" style={{ color: 'var(--gt-ink-primary)' }}>Detail Modal</span>
-        <span className="text-xs" style={{ color: 'var(--gt-ink-muted)' }}>✕</span>
-      </div>
-      <div className="parchment-detail-modal-body text-xs" style={{ color: 'var(--gt-ink-secondary)' }}>
+    <Card
+      size="small"
+      title="Detail Modal"
+      extra={<span className="text-xs" style={{ color: 'var(--gt-ink-muted)' }}>✕</span>}
+      style={{ width: '100%', position: 'relative' }}
+    >
+      <div className="text-xs" style={{ color: 'var(--gt-ink-secondary)' }}>
         Modal body content area. Supports 2-column grid layout on wide screens.
       </div>
-      <div className="parchment-detail-modal-footer">
-        <div className="parchment-toolbar-action-secondary" style={{ minHeight: '24px', padding: '0 0.5rem', fontSize: '11px' }}>Cancel</div>
-        <div className="parchment-toolbar-action-primary" style={{ minHeight: '24px', padding: '0 0.5rem', fontSize: '11px' }}>Save</div>
+      <div className="mt-3 flex justify-end gap-2">
+        <Button size="small">Cancel</Button>
+        <Button size="small" type="primary">Save</Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
 const ANATOMY_ITEMS = [
-  { name: 'parchment-settings-row', desc: '设置行：label + description + control', preview: <AnatomySettingsRow /> },
-  { name: 'parchment-section-card', desc: '分区卡片：header + body', preview: <AnatomySectionCard /> },
-  { name: 'parchment-metric-tile', desc: '指标卡：label + value + delta', preview: <AnatomyMetricTile /> },
-  { name: 'parchment-status-pill', desc: '状态胶囊：5 种语义状态', preview: <AnatomyStatusPill /> },
-  { name: 'parchment-toolbar', desc: '工具栏：search + actions', preview: <AnatomyToolbar /> },
-  { name: 'parchment-tabs', desc: '下划线 tab：active 用 accent underline', preview: <AnatomyTabs /> },
-  { name: 'parchment-detail-modal-shell', desc: '详情弹窗：overlay + shell + header/body/footer', preview: <AnatomyModalShell /> },
+  { name: 'antd-settings-row', desc: '设置行：AntD Switch + gt token layout', preview: <AnatomySettingsRow /> },
+  { name: 'antd-card', desc: '分区卡片：AntD Card header + body', preview: <AnatomySectionCard /> },
+  { name: 'gt-metric-tile', desc: '指标卡：gt token surface + semantic delta', preview: <AnatomyMetricTile /> },
+  { name: 'antd-tag', desc: '状态标签：AntD Tag 语义状态', preview: <AnatomyStatusPill /> },
+  { name: 'antd-toolbar', desc: '工具栏：AntD Input + Button', preview: <AnatomyToolbar /> },
+  { name: 'antd-segmented', desc: '分段切换：AntD Segmented', preview: <AnatomyTabs /> },
+  { name: 'antd-modal-shell', desc: '详情弹窗骨架：AntD Card/Button preview', preview: <AnatomyModalShell /> },
 ];
 
 /* ─── State matrix ─── */
@@ -244,7 +245,7 @@ export default function DesignSystemEntryFeature() {
   });
   const showDevWebOpen = import.meta.env.DEV;
 
-  function openExternalURL(event: MouseEvent<HTMLAnchorElement>, url: string) {
+  function openExternalURL(event: MouseEvent<HTMLElement>, url: string) {
     event.preventDefault();
     if (hasWailsRuntime()) {
       BrowserOpenURL(url);
@@ -255,7 +256,7 @@ export default function DesignSystemEntryFeature() {
 
   return (
     <div
-      className="h-full overflow-auto text-[var(--text-primary)]"
+      className="h-full overflow-auto text-[var(--gt-ink-primary)]"
       style={{ backgroundColor: 'var(--gt-surface-canvas)', padding: '1.75rem 2rem' }}
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
@@ -264,38 +265,33 @@ export default function DesignSystemEntryFeature() {
           subtitle={t('design_system.subtitle')}
           actions={
             <div className="flex flex-wrap gap-2">
-              <a
-                className="parchment-toolbar-action-primary"
-                style={{ minHeight: 'auto', padding: '0.5rem 1rem', fontSize: '12px', textDecoration: 'none' }}
+              <Button
+                type="primary"
                 href={storybookOpenURL}
                 onClick={(event) => openExternalURL(event, storybookOpenURL)}
                 target="_blank"
                 rel="noreferrer"
               >
                 {t('design_system.open_storybook')}
-              </a>
+              </Button>
               {showDevWebOpen ? (
                 <>
-                  <a
-                    className="parchment-toolbar-action-secondary"
-                    style={{ minHeight: 'auto', padding: '0.5rem 1rem', fontSize: '12px', textDecoration: 'none' }}
+                  <Button
                     href={inspectOpenURL}
                     onClick={(event) => openExternalURL(event, inspectOpenURL)}
                     target="_blank"
                     rel="noreferrer"
                   >
                     {t('design_system.inspect_elements')}
-                  </a>
-                  <a
-                    className="parchment-toolbar-action-secondary"
-                    style={{ minHeight: 'auto', padding: '0.5rem 1rem', fontSize: '12px', textDecoration: 'none' }}
+                  </Button>
+                  <Button
                     href={viteOpenURL}
                     onClick={(event) => openExternalURL(event, viteOpenURL)}
                     target="_blank"
                     rel="noreferrer"
                   >
                     {t('design_system.open_5173_web')}
-                  </a>
+                  </Button>
                 </>
               ) : null}
             </div>
@@ -432,9 +428,9 @@ export default function DesignSystemEntryFeature() {
 
 function MetricTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="parchment-metric-tile">
-      <div className="parchment-metric-tile-label">{label}</div>
-      <div className="parchment-metric-tile-value">{value}</div>
+    <div className="rounded border p-4" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
+      <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="mt-1 text-[length:var(--gt-font-size-number)] font-bold text-[var(--gt-ink-primary)]">{value}</div>
     </div>
   );
 }

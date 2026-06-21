@@ -46,12 +46,12 @@ export interface ClaudeCodeAccountListWorkbenchProps {
 }
 
 const claudeAccountWorkbenchShellClass =
-  'min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]';
+  'min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)]';
 const claudeAccountHeaderClass =
   'grid gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 xl:grid-cols-[minmax(0,1fr)_auto]';
 const claudeAccountMainGridClass = 'grid gap-4 p-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]';
 const claudeAccountBadgeClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[10px] font-semibold tracking-normal text-[var(--text-muted)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const claudeAccountStatusToneClass = {
   success:
     'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]',
@@ -65,17 +65,17 @@ const claudeAccountMetricClass =
 const claudeAccountPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const claudeAccountTerminalClass =
-  'mt-3 grid gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 font-mono text-[11px] font-medium leading-5 text-[var(--text-muted)]';
+  'mt-3 grid gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 font-mono text-[11px] font-medium leading-5 text-[var(--gt-ink-muted)]';
 const claudeAccountIconClass =
-  'grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]';
+  'grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)]';
 const claudeAccountQueueRowClass =
   'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 lg:grid-cols-[auto_minmax(0,1fr)_auto]';
 const claudeAccountQueueIndexClass =
   'grid h-10 w-10 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-mono text-xs font-semibold';
 const claudeAccountButtonClass =
-  'grid h-10 w-10 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)]';
+  'grid h-10 w-10 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)]';
 const claudeAccountChipClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-normal text-[var(--text-muted)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const claudeAccountStatusChipBaseClass = 'rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-normal';
 const claudeAccountProfileCardClass =
   'rounded border bg-[var(--gt-surface-muted)] p-3';
@@ -148,7 +148,7 @@ export function ClaudeCodeAccountListWorkbench({
             </span>
           </div>
           <h2 className="mt-3 text-2xl font-semibold tracking-normal">账号列表 / 模型映射工作台</h2>
-          <p className="mt-2 max-w-4xl text-sm font-medium leading-6 text-[var(--text-muted)]">
+          <p className="mt-2 max-w-4xl text-sm font-medium leading-6 text-[var(--gt-ink-muted)]">
             只收 `supportedFormats` 包含 `anthropic` 的账号；Claude Code 本地只应用一个 relay endpoint 和 key，多账号请求顺序由 GetTokens relay 执行。
           </p>
         </div>
@@ -203,7 +203,7 @@ export function ClaudeCodeAccountListWorkbench({
 function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div className={claudeAccountMetricClass}>
-      <div className="font-mono text-[10px] font-semibold tracking-normal text-[var(--text-muted)]">{label}</div>
+      <div className="font-mono text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
       <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
     </div>
   );
@@ -218,7 +218,7 @@ function PanelTitle({ icon, title, note }: { icon: ReactNode; title: string; not
         </span>
         <div className="min-w-0">
           <h3 className="text-sm font-semibold tracking-normal">{title}</h3>
-          <p className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">{note}</p>
+          <p className="mt-0.5 text-xs font-medium text-[var(--gt-ink-muted)]">{note}</p>
         </div>
       </div>
     </div>
@@ -258,14 +258,14 @@ function AccountQueueRow({ account, index }: { account: ClaudeCodeAccountRow; in
             {blocked ? account.blockReason || 'blocked' : 'requestable'}
           </span>
         </div>
-        <div className="mt-2 grid gap-1 font-mono text-[11px] font-medium leading-5 text-[var(--text-muted)]">
+        <div className="mt-2 grid gap-1 font-mono text-[11px] font-medium leading-5 text-[var(--gt-ink-muted)]">
           <span className="truncate">request base: {resolveRequestBaseUrl(account)}</span>
           <span>
             profile: {account.profileName} / mappings: {account.mappingCount}
           </span>
         </div>
       </div>
-      <div className="grid content-center gap-1 text-right font-mono text-[10px] font-semibold tracking-normal text-[var(--text-muted)]">
+      <div className="grid content-center gap-1 text-right font-mono text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
         <span>priority {account.priority}</span>
         <span>{account.supportedFormats.join(' + ')}</span>
       </div>
@@ -281,7 +281,7 @@ function ProviderProfileCard({ profile }: { profile: ClaudeCodeProviderProfile }
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h4 className="text-sm font-semibold tracking-normal">{profile.provider}</h4>
-          <p className="mt-1 font-mono text-[10px] font-semibold tracking-normal text-[var(--text-muted)]">{profile.plan}</p>
+          <p className="mt-1 font-mono text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]">{profile.plan}</p>
         </div>
         <span className={claudeAccountChipClass}>
           官网默认值
@@ -290,7 +290,7 @@ function ProviderProfileCard({ profile }: { profile: ClaudeCodeProviderProfile }
       <div className="mt-3 grid gap-2 font-mono text-[11px] font-medium leading-5">
         <span>default: {profile.defaultModel}</span>
         {profile.haikuModel ? <span>haiku: {profile.haikuModel}</span> : null}
-        <span className="text-[var(--text-muted)]">local apply: {profile.localApplyHint}</span>
+        <span className="text-[var(--gt-ink-muted)]">local apply: {profile.localApplyHint}</span>
       </div>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {profile.switchableModels.map((model) => (
@@ -299,7 +299,7 @@ function ProviderProfileCard({ profile }: { profile: ClaudeCodeProviderProfile }
           </span>
         ))}
       </div>
-      <p className="mt-2 text-xs font-medium text-[var(--text-muted)]">上方模型是官方可切换模型集合，不作为默认值候选。</p>
+      <p className="mt-2 text-xs font-medium text-[var(--gt-ink-muted)]">上方模型是官方可切换模型集合，不作为默认值候选。</p>
     </article>
   );
 }
@@ -312,7 +312,7 @@ function MappingRow({ mapping }: { mapping: ClaudeCodeModelMappingDraft }) {
       <span className="min-w-0 truncate">
         {mapping.realModel} -&gt; {mapping.claudeAlias}
       </span>
-      <span className="text-[var(--text-muted)]">{mapping.provider} / {sourceLabel}</span>
+      <span className="text-[var(--gt-ink-muted)]">{mapping.provider} / {sourceLabel}</span>
     </div>
   );
 }

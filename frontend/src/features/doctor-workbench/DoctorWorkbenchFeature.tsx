@@ -34,12 +34,12 @@ const statusLabel: Record<DoctorCheckStatus, string> = {
 };
 
 const statusTone: Record<DoctorCheckStatus, string> = {
-  critical: 'border-red-500/80 bg-red-500/10 text-red-700 dark:text-red-200',
-  warning: 'border-amber-500/80 bg-amber-500/10 text-amber-700 dark:text-amber-200',
-  degraded: 'border-orange-500/80 bg-orange-500/10 text-orange-700 dark:text-orange-200',
-  not_ready: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
-  ok: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
-  skipped: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
+  critical: 'border-[color:color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]',
+  warning: 'border-[color:color-mix(in_srgb,var(--gt-status-warning)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] text-[var(--gt-status-warning)]',
+  degraded: 'border-[color:color-mix(in_srgb,var(--gt-status-warning)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] text-[var(--gt-status-warning)]',
+  not_ready: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
+  ok: 'border-[color:color-mix(in_srgb,var(--gt-status-success)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]',
+  skipped: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
 };
 
 const statusIcon = {
@@ -52,11 +52,11 @@ const statusIcon = {
 };
 
 const signalTone: Record<OmniRouteWorkbenchSignalStatus, string> = {
-  critical: 'border-red-500/80 bg-red-500/10 text-red-700 dark:text-red-200',
-  warning: 'border-amber-500/80 bg-amber-500/10 text-amber-700 dark:text-amber-200',
-  missing: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
-  preview: 'border-sky-500/70 bg-sky-500/10 text-sky-700 dark:text-sky-200',
-  ready: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
+  critical: 'border-[color:color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]',
+  warning: 'border-[color:color-mix(in_srgb,var(--gt-status-warning)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] text-[var(--gt-status-warning)]',
+  missing: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
+  preview: 'border-[color:color-mix(in_srgb,var(--gt-status-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-info)_10%,transparent)] text-[var(--gt-status-info)]',
+  ready: 'border-[color:color-mix(in_srgb,var(--gt-status-success)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]',
 };
 
 const signalIcon: Record<OmniRouteWorkbenchSignalKind, typeof Route> = {
@@ -67,22 +67,22 @@ const signalIcon: Record<OmniRouteWorkbenchSignalKind, typeof Route> = {
 };
 
 const actionTone: Record<OmniRouteWorkbenchActionStatus, string> = {
-  ready: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
-  pending: 'border-sky-500/70 bg-sky-500/10 text-sky-700 dark:text-sky-200',
-  success: 'border-emerald-500/80 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
-  warning: 'border-amber-500/80 bg-amber-500/10 text-amber-700 dark:text-amber-200',
-  blocked: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
-  failed: 'border-red-500/80 bg-red-500/10 text-red-700 dark:text-red-200',
+  ready: 'border-[color:color-mix(in_srgb,var(--gt-status-success)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]',
+  pending: 'border-[color:color-mix(in_srgb,var(--gt-status-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-info)_10%,transparent)] text-[var(--gt-status-info)]',
+  success: 'border-[color:color-mix(in_srgb,var(--gt-status-success)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]',
+  warning: 'border-[color:color-mix(in_srgb,var(--gt-status-warning)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] text-[var(--gt-status-warning)]',
+  blocked: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
+  failed: 'border-[color:color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]',
 };
 
 const doctorPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const doctorMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const doctorInsetPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
-const doctorSectionEyebrowClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
-const doctorTinyMetaClass = 'text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)]';
-const doctorMetaClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
-const doctorStatusBadgeClass = 'inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-semibold';
-const doctorLinkButtonClass = 'inline-flex items-center justify-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const doctorSectionEyebrowClass = 'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const doctorTinyMetaClass = 'text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]';
+const doctorMetaClass = 'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const doctorStatusBadgeClass = 'inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-semibold';
+const doctorLinkButtonClass = 'inline-flex items-center justify-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 
 function formatPreviewTime(unixMs: number) {
   return new Intl.DateTimeFormat('en-US', {
@@ -113,7 +113,7 @@ function renderRouteEvidenceField(marker: string, label: string, value?: string)
       <div className={doctorTinyMetaClass}>
         {label}
       </div>
-      <div className="text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-primary)]">
+      <div className="text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-primary)]">
         {value}
       </div>
     </div>
@@ -257,7 +257,7 @@ export default function DoctorWorkbenchFeature() {
           align="center"
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <span className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+              <span className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                 Sidecar {view.sidecarReady ? 'ready in snapshot' : 'not ready'}
               </span>
               <RefreshActionButton
@@ -280,14 +280,14 @@ export default function DoctorWorkbenchFeature() {
               <div className={doctorSectionEyebrowClass}>
                 OmniRoute Workbench
               </div>
-              <h2 className="mt-1 text-[length:var(--font-size-ui-2xl)] font-semibold text-[var(--text-primary)]">
+              <h2 className="mt-1 text-[length:var(--gt-font-size-2xl)] font-semibold text-[var(--gt-ink-primary)]">
                 Failure explanation surface
               </h2>
-              <p className="mt-2 max-w-4xl text-[length:var(--font-size-ui-sm)] font-medium leading-6 text-[var(--text-secondary)]">
+              <p className="mt-2 max-w-4xl text-[length:var(--gt-font-size-sm)] font-medium leading-6 text-[var(--gt-ink-secondary)]">
                 {omniRouteView.subtitle}
               </p>
             </div>
-            <div className={`rounded border px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-semibold ${signalTone[omniRouteView.primaryStatus]}`}>
+            <div className={`rounded border px-3 py-2 text-[length:var(--gt-font-size-2xs)] font-semibold ${signalTone[omniRouteView.primaryStatus]}`}>
               {omniRouteView.primaryStatus} / {omniRouteView.sourceLabel}
             </div>
           </div>
@@ -310,23 +310,23 @@ export default function DoctorWorkbenchFeature() {
                     <a
                       href={signal.navigationHash}
                       data-omniroute-workbench-signal-primary-action={signal.kind}
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--text-primary)]"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--gt-ink-primary)]"
                       aria-label={`${signal.title}: ${signal.actionLabel}`}
                     >
                       <ArrowUpRight className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" />
                     </a>
                   </div>
-                  <div className="mt-3 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                  <div className="mt-3 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                     {signal.title}
                   </div>
-                  <p className="mt-2 min-h-12 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]">
+                  <p className="mt-2 min-h-12 text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-secondary)]">
                     {signal.summary}
                   </p>
                   <div className={`mt-3 space-y-1 border-t border-[var(--gt-border-subtle)] pt-3 ${doctorTinyMetaClass}`}>
                     <div>source={signal.sourceLabel}</div>
                     <div className="truncate">evidence={signal.evidenceLabel}</div>
                     <div>{signal.actionLabel}</div>
-                    {signal.blockedReason ? <div className="text-amber-700 dark:text-amber-200">{signal.blockedReason}</div> : null}
+                    {signal.blockedReason ? <div className="text-[var(--gt-status-warning)]">{signal.blockedReason}</div> : null}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--gt-border-subtle)] pt-3">
                     {signal.actionLinks.map((action) => (
@@ -358,10 +358,10 @@ export default function DoctorWorkbenchFeature() {
               <div className={doctorSectionEyebrowClass}>
                 Safe actions
               </div>
-              <h2 className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
+              <h2 className="mt-1 text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">
                 Controlled next steps
               </h2>
-              <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-medium leading-6 text-[var(--text-secondary)]">
+              <p className="mt-2 max-w-3xl text-[length:var(--gt-font-size-sm)] font-medium leading-6 text-[var(--gt-ink-secondary)]">
                 Route actions are sidecar-owned and only run with a stable target. Extension config apply remains preview/staged-only until an explicit temp target is supplied.
               </p>
             </div>
@@ -379,10 +379,10 @@ export default function DoctorWorkbenchFeature() {
                     <div className={`${doctorStatusBadgeClass} ${actionTone[action.status]}`}>
                       {action.status}
                     </div>
-                    <div className="mt-3 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                    <div className="mt-3 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                       {action.title}
                     </div>
-                    <p className="mt-2 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]">
+                    <p className="mt-2 text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-secondary)]">
                       {action.summary}
                     </p>
                   </div>
@@ -406,12 +406,12 @@ export default function DoctorWorkbenchFeature() {
                 </div>
                 <div className={`mt-3 grid gap-2 border-t border-[var(--gt-border-subtle)] pt-3 ${doctorTinyMetaClass}`}>
                   <div>result={action.resultLabel}</div>
-                  <div className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-secondary)]">
+                  <div className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)]">
                     {action.resultDetail}
                   </div>
                   <div>{action.rollbackLabel}</div>
                   {action.disabledReason ? (
-                    <div className="text-amber-700 dark:text-amber-200">{action.disabledReason}</div>
+                    <div className="text-[var(--gt-status-warning)]">{action.disabledReason}</div>
                   ) : null}
                 </div>
               </div>
@@ -422,7 +422,7 @@ export default function DoctorWorkbenchFeature() {
             className={`${doctorMutedPanelClass} mt-4 p-3`}
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+              <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                 Evidence ledger
               </div>
               <div className={doctorTinyMetaClass}>
@@ -440,13 +440,13 @@ export default function DoctorWorkbenchFeature() {
                   <div className={`${doctorStatusBadgeClass} ${actionTone[entry.status]}`}>
                     {entry.status}
                   </div>
-                  <div className="mt-3 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+                  <div className="mt-3 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                     {entry.title}
                   </div>
-                  <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]">
+                  <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-secondary)]">
                     {entry.summary}
                   </div>
-                  <div className="mt-2 break-words text-[length:var(--font-size-ui-xs)] font-semibold leading-5 text-[var(--text-muted)]">
+                  <div className="mt-2 break-words text-[length:var(--gt-font-size-xs)] font-semibold leading-5 text-[var(--gt-ink-muted)]">
                     {entry.detail}
                   </div>
                   <div className={`mt-3 grid gap-1 border-t border-[var(--gt-border-subtle)] pt-2 ${doctorTinyMetaClass}`}>
@@ -469,7 +469,7 @@ export default function DoctorWorkbenchFeature() {
               <div className={doctorSectionEyebrowClass}>
                 Source boundary
               </div>
-              <p className="mt-1 max-w-3xl text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-secondary)]">
+              <p className="mt-1 max-w-3xl text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-secondary)]">
                 {previewOnly
                   ? 'This workbench consumes the explicit preview doctor snapshot because Wails runtime is unavailable.'
                   : 'This workbench consumes the read-only Wails Doctor snapshot and surfaces sidecar authority facts without repair mutations.'}
@@ -487,7 +487,7 @@ export default function DoctorWorkbenchFeature() {
                   data-testid={`doctor-count-${status}`}
                 >
                   <div className="text-lg font-semibold leading-none">{count}</div>
-                  <div className="mt-1 text-[length:var(--font-size-ui-2xs)] font-medium">{statusLabel[status as DoctorCheckStatus]}</div>
+                  <div className="mt-1 text-[length:var(--gt-font-size-2xs)] font-medium">{statusLabel[status as DoctorCheckStatus]}</div>
                 </div>
               ))}
             </div>
@@ -506,7 +506,7 @@ export default function DoctorWorkbenchFeature() {
               <div className={doctorSectionEyebrowClass}>
                 Check filters
               </div>
-              <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-secondary)]">
+              <div className="mt-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-secondary)]">
                 Narrow the evidence list without changing sidecar authority or local inference rules.
               </div>
             </div>
@@ -522,7 +522,7 @@ export default function DoctorWorkbenchFeature() {
                 data-omniroute-workbench-check-filter={option.id}
                 data-omniroute-workbench-check-filter-selected={option.id === checkFilter}
                 onClick={() => setCheckFilter(option.id)}
-                className={`rounded border px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium transition-colors ${
+                className={`rounded border px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium transition-colors ${
                   option.id === checkFilter
                     ? 'border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                     : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]'
@@ -559,10 +559,10 @@ export default function DoctorWorkbenchFeature() {
                           {check.kind}
                         </span>
                       </div>
-                      <h3 className="mt-3 text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
+                      <h3 className="mt-3 text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">
                         {check.title}
                       </h3>
-                      <p className="mt-2 text-[length:var(--font-size-ui-sm)] font-semibold leading-6 text-[var(--text-secondary)]">
+                      <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-semibold leading-6 text-[var(--gt-ink-secondary)]">
                         {check.reason}
                       </p>
                     </div>
@@ -582,7 +582,7 @@ export default function DoctorWorkbenchFeature() {
                           className={`${doctorMutedPanelClass} px-3 py-2`}
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+                            <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                               {item.label}
                             </span>
                             <span className={doctorTinyMetaClass}>
@@ -596,7 +596,7 @@ export default function DoctorWorkbenchFeature() {
                                 : 'Partial identity fallback'}
                             </div>
                           ) : null}
-                          <p className="mt-1 text-[length:var(--font-size-ui-xs)] font-semibold leading-5 text-[var(--text-secondary)]">
+                          <p className="mt-1 text-[length:var(--gt-font-size-xs)] font-semibold leading-5 text-[var(--gt-ink-secondary)]">
                             {item.summaryLabel}
                           </p>
                           {item.targetKey ? (
@@ -617,7 +617,7 @@ export default function DoctorWorkbenchFeature() {
                                   <div className={doctorTinyMetaClass}>
                                     Target key
                                   </div>
-                                  <div className="break-all text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-primary)]">
+                                  <div className="break-all text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-primary)]">
                                     {item.targetKey}
                                   </div>
                                 </div>
@@ -628,7 +628,7 @@ export default function DoctorWorkbenchFeature() {
                                   <div className={doctorTinyMetaClass}>
                                     Route blocking
                                   </div>
-                                  <div className="text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-primary)]">
+                                  <div className="text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-primary)]">
                                     {item.routeBlockingLabel || 'Unknown'}
                                   </div>
                                 </div>
@@ -656,7 +656,7 @@ export default function DoctorWorkbenchFeature() {
                           key={`${check.id}-${target.hash}`}
                           href={target.hash}
                           data-doctor-navigation-hash={target.hash}
-                          className="flex items-center justify-between gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                          className="flex items-center justify-between gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
                         >
                           <span className="min-w-0 truncate">{target.label}</span>
                           <ArrowUpRight className="h-4 w-4 shrink-0" strokeWidth={2.4} aria-hidden="true" />
@@ -679,8 +679,8 @@ export default function DoctorWorkbenchFeature() {
             <div className="mt-3 space-y-3">
               {acceptanceChecks.map((check) => (
                 <div key={`acceptance-${check.id}`} className={`${doctorMutedPanelClass} p-3`}>
-                  <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">{check.title}</div>
-                  <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]">
+                  <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">{check.title}</div>
+                  <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-secondary)]">
                     status={check.status}; repairability={check.repairability}; navigation={check.primaryNavigation?.hash ?? 'none'}
                   </div>
                 </div>

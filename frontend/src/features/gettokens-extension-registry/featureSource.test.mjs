@@ -70,9 +70,9 @@ test('extension registry feature uses the quiet workspace shell', async () => {
   assert.match(source, /data-gettokens-extension-registry-list-header="true"/);
   assert.match(source, /data-gettokens-extension-registry-aside="true"/);
   assert.match(source, /data-gettokens-extension-registry-selected="true"/);
-  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black uppercase/);
   assert.doesNotMatch(source, /uppercase tracking-\[0\.18em\]/);

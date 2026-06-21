@@ -40,7 +40,7 @@ export default function StatusSnippetPanel({
   return (
     <div className="min-h-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-[var(--gt-border-subtle)] px-1 pb-2">
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-ink-primary)]">
+        <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
           {title}
         </div>
         {onCopy || headerAction ? (
@@ -49,7 +49,7 @@ export default function StatusSnippetPanel({
               <button
                 type="button"
                 onClick={onCopy}
-                className="inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                className="inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               >
                 复制
               </button>

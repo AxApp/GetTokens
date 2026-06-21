@@ -124,7 +124,7 @@ export function AccountDetailLayout({
           className="mx-auto max-w-[42rem] space-y-6 px-8 py-6"
           style={{
             fontFamily: 'var(--gt-font-family-sans)',
-            fontSize: '14px',
+      fontSize: 'var(--gt-font-size-lg)',
             lineHeight: '1.6',
             color: 'var(--gt-ink-primary)',
             userSelect: 'text',

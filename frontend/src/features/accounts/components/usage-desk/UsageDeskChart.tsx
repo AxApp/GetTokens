@@ -18,7 +18,7 @@ const usageDeskChartSurfaceClass = 'overflow-x-auto overflow-y-hidden bg-[var(--
 const usageDeskChartFooterClass =
   'flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
 const usageDeskChartFooterValueClass =
-  'text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const usageDeskChartPointRingClass =
   'rounded-full border border-[var(--gt-surface-canvas)] transition-transform';
 const usageDeskChartAxisLabelClass =
@@ -26,7 +26,7 @@ const usageDeskChartAxisLabelClass =
 const usageDeskEmptyChartClass =
   'relative overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const usageDeskEmptyChartTitleClass =
-  'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 
 export function UsageChartCard({
   rangeAnimationVersion = 0,
@@ -392,7 +392,7 @@ function ChartPoint({
       {/* 1. 数值标签 (不占用空间) */}
       <div
         className={`absolute whitespace-nowrap text-center transition-all pointer-events-none ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
-        style={{ color, fontSize: selected ? 'var(--font-size-ui-md)' : 'var(--font-size-ui-md-compact)', fontWeight: selected ? 700 : 600 }}
+        style={{ color, fontSize: selected ? 'var(--gt-font-size-md)' : 'var(--gt-font-size-md-compact)', fontWeight: selected ? 700 : 600 }}
       >
         {label}
       </div>
@@ -400,7 +400,7 @@ function ChartPoint({
       {/* 2. 中心圆点 */}
       <div className="relative flex items-center justify-center">
         {selected && (
-          <div className="absolute h-8 w-8 rounded-full bg-[var(--text-primary)] opacity-10 animate-pulse" />
+          <div className="absolute h-8 w-8 rounded-full bg-[var(--gt-ink-primary)] opacity-10 animate-pulse" />
         )}
         <div
           className={`${usageDeskChartPointRingClass} ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}
@@ -413,8 +413,8 @@ function ChartPoint({
         className={usageDeskChartAxisLabelClass}
         style={{
           top: `${helperY - y}px`,
-          fontSize: 'var(--font-size-ui-sm)',
-          color: selected ? 'var(--text-primary)' : 'var(--text-muted)',
+          fontSize: 'var(--gt-font-size-sm)',
+          color: selected ? 'var(--gt-ink-primary)' : 'var(--gt-ink-muted)',
           opacity: selected ? 1 : 0.6
         }}
       >
@@ -448,7 +448,7 @@ export function EmptyChartPlaceholder({
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,var(--color-chart-empty-overlay-from),var(--color-chart-empty-overlay-to))] px-6 text-center">
         <div className={usageDeskEmptyChartTitleClass}>{title}</div>
-        <p className="max-w-md text-[length:var(--font-size-ui-md-compact)] font-bold leading-6 text-[var(--text-muted)]">{body}</p>
+        <p className="max-w-md text-[length:var(--gt-font-size-md-compact)] font-bold leading-6 text-[var(--gt-ink-muted)]">{body}</p>
       </div>
     </div>
   );

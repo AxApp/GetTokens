@@ -695,10 +695,10 @@ test('AccountLocalCliApplyConfirm uses the quiet workspace shell', async () => {
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-warning/);
   assert.doesNotMatch(source, /btn-swiss/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /border-r-2/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
@@ -743,7 +743,7 @@ test('deep link account import confirm uses the quiet workspace shell', async ()
   assert.match(source, /--gt-status-danger/);
   assert.doesNotMatch(targetSource, /btn-swiss/);
   assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
   assert.doesNotMatch(targetSource, /font-black/);

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Button } from 'antd';
 import { FileText, MoreVertical, Power, RefreshCw, RotateCw, Terminal, Trash2 } from 'lucide-react';
 import { buildQuotaBlockBadgeLabel, buildQuotaDisplay, extractBilling, hasQuotaEmptyBlock } from '../model/accountQuota';
 import { buildAccountCardContentText } from '../model/accountCardActions';
@@ -408,14 +409,14 @@ export default function AccountCard({
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}
           >
-            <button
-              type="button"
+            <Button
+              size="small"
+              htmlType="button"
               onClick={() => onStartReauth(account)}
-              className="parchment-toolbar-action-secondary !py-1.5 text-xs"
               disabled={isOAuthPending}
             >
               {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
-            </button>
+            </Button>
           </div>
         )
       }

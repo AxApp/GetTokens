@@ -32,7 +32,7 @@ test('account detail header and runtime route use the quiet workspace shell', as
   assert.match(source, /--gt-border-subtle/);
   assert.doesNotMatch(targetSource, /border-2/);
   assert.doesNotMatch(targetSource, /border-r-2/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /font-black/);
   assert.doesNotMatch(targetSource, /uppercase/);
@@ -69,7 +69,7 @@ test('account credential detail editor uses the quiet workspace shell', async ()
   assert.doesNotMatch(targetSource, /border-2/);
   assert.doesNotMatch(targetSource, /border-t-2/);
   assert.doesNotMatch(targetSource, /border-l-2/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /font-black/);
   assert.doesNotMatch(targetSource, /uppercase/);
@@ -108,7 +108,7 @@ test('account quota and billing editors use the quiet workspace shell', async ()
   assert.doesNotMatch(targetSource, /border-t-2/);
   assert.doesNotMatch(targetSource, /border-l-2/);
   assert.doesNotMatch(targetSource, /border-y border-dashed/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
   assert.doesNotMatch(targetSource, /font-black/);

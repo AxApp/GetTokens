@@ -113,9 +113,9 @@ test('full account card badges share the eyebrow metadata row', async () => {
   const fullSource = source.split('// ── Full density ──')[1] || '';
 
   assert.match(fullSource, /eyebrow \|\| eyebrowPrefix \|\| priorityBadges\.length > 0/);
-  assert.match(fullSource, /className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1\.5 overflow-hidden text-\[length:var\(--font-size-ui-sm-plus\)\] font-semibold leading-none"/);
+  assert.match(fullSource, /className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1\.5 overflow-hidden text-\[length:var\(--gt-font-size-sm-plus\)\] font-semibold leading-none"/);
   assert.match(fullSource, /\{eyebrow \? <span className="min-w-0 truncate">\{eyebrow\}<\/span> : null\}\s*\{priorityBadges\.length > 0 \? \(\s*<div className="account-card-meta-badges flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">/s);
-  assert.match(fullSource, /className=\{`account-card-meta-badge shrink-0 truncate rounded border px-1\.5 py-0\.5 text-\[length:var\(--font-size-ui-sm\)\] font-semibold leading-none \$\{ATTRIBUTION_CARD_BADGE_TONE_CLASS\[badge\.tone \|\| 'neutral'\]\}`\}/);
+  assert.match(fullSource, /className=\{`account-card-meta-badge shrink-0 truncate rounded border px-1\.5 py-0\.5 text-\[length:var\(--gt-font-size-sm\)\] font-semibold leading-none \$\{ATTRIBUTION_CARD_BADGE_TONE_CLASS\[badge\.tone \|\| 'neutral'\]\}`\}/);
   assert.doesNotMatch(fullSource, /<div className="mt-2 flex flex-wrap gap-1">/);
   assert.doesNotMatch(fullSource, /\{topActions \? <div className="-mr-4 shrink-0 pl-4">\{topActions\}<\/div> : null\}/);
 });
@@ -253,7 +253,7 @@ test('account card footer only renders the reauth action when required', async (
   assert.match(cardSource, /onClick=\{\(\) => onStartReauth\(account\)\}/);
   assert.doesNotMatch(cardSource, /t\('common\.details'\)/);
   assert.doesNotMatch(cardSource, /account-card-footer-refresh-button/);
-  assert.doesNotMatch(sectionsSource, /<section className="grid gap-2\.5 border-b border-dashed border-\[var\(--border-color\)\] px-4 py-3">/);
+  assert.doesNotMatch(sectionsSource, /<section className="grid gap-2\.5 border-b border-dashed border-\[var\(--gt-border-strong\)\] px-4 py-3">/);
   assert.doesNotMatch(cardSource, /actionColumnClass|account-card-action-grid-1|account-card-action-grid-2|account-card-action-grid-3/);
   assert.doesNotMatch(styleSource, /account-card-action-grid|account-card-action-grid-span/);
 });

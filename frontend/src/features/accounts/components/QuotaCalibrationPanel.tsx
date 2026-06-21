@@ -15,13 +15,13 @@ interface QuotaCalibrationPanelProps {
 const quotaCalibrationPanelClass = 'grid gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const quotaCalibrationHeaderClass = 'flex min-w-0 items-center justify-between gap-2';
 const quotaCalibrationItemClass = 'flex min-w-0 items-center justify-between gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1.5';
-const quotaCalibrationButtonClass = 'inline-flex min-h-8 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const quotaCalibrationButtonClass = 'inline-flex min-h-8 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const quotaCalibrationPrimaryButtonClass = `${quotaCalibrationButtonClass} bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-muted)]`;
-const quotaCalibrationInputClass = 'h-8 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:opacity-60';
-const quotaCalibrationMetaClass = 'font-mono text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-muted)]';
-const quotaCalibrationValueClass = 'font-mono text-[length:var(--font-size-ui-xs)] font-medium tabular-nums text-[var(--gt-ink-primary)]';
+const quotaCalibrationInputClass = 'h-8 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:opacity-60';
+const quotaCalibrationMetaClass = 'font-mono text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]';
+const quotaCalibrationValueClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-medium tabular-nums text-[var(--gt-ink-primary)]';
 const quotaCalibrationDividerClass = 'grid gap-2 border-t border-[var(--gt-border-subtle)] pt-2';
-const quotaCalibrationErrorClass = 'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-status-danger)]';
+const quotaCalibrationErrorClass = 'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-status-danger)]';
 
 export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationPanelProps) {
   const { trackRequest } = useDebug();
@@ -117,7 +117,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
             CALIBRATION
           </div>
           {activeCalibrations.length > 0 ? (
-            <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)]">
+            <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]">
               {activeCalibrations.length} 个活跃校准
             </div>
           ) : null}
@@ -137,7 +137,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
             >
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                  <AccountDetailPill tone={cal.mode === 'delta' ? 'warning' : 'success'} className="!min-h-0 !px-1.5 !py-0 !text-[length:var(--font-size-ui-2xs)]">
+                  <AccountDetailPill tone={cal.mode === 'delta' ? 'warning' : 'success'} className="!min-h-0 !px-1.5 !py-0 !text-[length:var(--gt-font-size-2xs)]">
                     {cal.mode === 'delta' ? 'DELTA' : 'SET'}
                   </AccountDetailPill>
                   <span className={quotaCalibrationValueClass}>
@@ -148,7 +148,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
                   </span>
                 </div>
                 {cal.expiresAt ? (
-                  <div className="mt-0.5 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--gt-ink-muted)]">
+                  <div className="mt-0.5 font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
                     created {formatCalibrationTime(cal.createdAt)} · expires {formatCalibrationTime(cal.expiresAt)}
                   </div>
                 ) : null}
@@ -166,7 +166,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
         </div>
       ) : (
         !formOpen ? (
-          <div className="text-[length:var(--font-size-ui-2xs)] text-[var(--gt-ink-muted)]">
+          <div className="text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
             暂无活跃校准，可手动调整额度显示值
           </div>
         ) : null
@@ -179,7 +179,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
           </div>
           <div className="grid gap-1">
             {historicalCalibrations.map((cal) => (
-              <div key={cal.id} className="flex min-w-0 items-center justify-between gap-2 text-[length:var(--font-size-ui-2xs)] text-[var(--gt-ink-muted)]">
+              <div key={cal.id} className="flex min-w-0 items-center justify-between gap-2 text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
                 <span className="min-w-0 truncate font-mono">
                   {cal.windowKey} · {cal.mode} · {cal.value}
                 </span>

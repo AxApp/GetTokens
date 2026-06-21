@@ -28,7 +28,7 @@ type Story = StoryObj;
 function ModalViewport({ children, label }: { children: ReactNode; label: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="relative h-[34rem] min-w-0 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)] [transform:translateZ(0)]">
+      <div className="relative h-[34rem] min-w-0 overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -243,15 +243,15 @@ function ProviderCardSample({
 
 function OpenAICompatibleOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">OpenAI 兼容</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
           把 OpenAI-compatible provider 卡片纳入设计系统，用固定 provider、验证结果、usage 和限流 mock 覆盖可用、错误、禁用、空模型、pending 和限流状态。
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Provider card states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ProviderCardSample label="DS-READY" />
@@ -262,7 +262,7 @@ function OpenAICompatibleOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Workspace states</h3>
         <div className="grid gap-4">
           <WorkspaceSample label="DS-WORKSPACE-GRID" />
@@ -274,7 +274,7 @@ function OpenAICompatibleOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Compose modal states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ComposeModalSample label="DS-COMPOSE-EMPTY" formKey="empty" />
@@ -341,7 +341,7 @@ function WorkspaceSample({
 
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className={embedded ? 'max-h-[44rem] overflow-auto bg-[var(--bg-surface)] p-5' : 'h-[44rem] overflow-hidden'}>
+      <div className={embedded ? 'max-h-[44rem] overflow-auto bg-[var(--gt-surface-panel)] p-5' : 'h-[44rem] overflow-hidden'}>
         <OpenAICompatibleWorkspace
           t={t}
           ready={ready}

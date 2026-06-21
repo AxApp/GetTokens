@@ -101,7 +101,7 @@ function GroupViewport({
 }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-5">
+      <div className="min-w-0 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-5">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -113,22 +113,22 @@ function MockAccountCard({ account, displayMode }: { account: AccountRecord; dis
     <AccountCardFrame interactive={false} onOpen={() => undefined}>
       <div className={`grid gap-3 p-4 ${displayMode === 'list' ? 'md:grid-cols-[1fr_auto] md:items-center' : ''}`}>
         <div className="min-w-0">
-          <p className="truncate text-sm font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+          <p className="truncate text-sm font-black uppercase italic tracking-normal text-[var(--gt-ink-primary)]">
             {account.displayName}
           </p>
-          <p className="mt-1 truncate text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <p className="mt-1 truncate text-[length:var(--gt-font-size-sm)] font-bold uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
             {account.email || account.keyFingerprint || account.id}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          <span className="border border-[var(--gt-border-strong)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-black uppercase tracking-[0.14em] text-[var(--gt-ink-muted)]">
             {account.provider}
           </span>
-          <span className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          <span className="border border-[var(--gt-border-strong)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-black uppercase tracking-[0.14em] text-[var(--gt-ink-muted)]">
             {account.planType}
           </span>
           {account.disabled ? (
-            <span className="border border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--color-status-danger)]">
+            <span className="border border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-black uppercase tracking-[0.14em] text-[var(--color-status-danger)]">
               Disabled
             </span>
           ) : null}
@@ -166,7 +166,7 @@ function AccountGroupSectionSample({
         onSetGroupDisabled={() => undefined}
         renderAccount={(account) => <MockAccountCard key={account.id} account={account} displayMode={displayMode} />}
         emptyContent={
-          <div className="border-2 border-dashed border-[var(--border-color)] p-8 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="border-2 border-dashed border-[var(--gt-border-strong)] p-8 text-center text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
             No accounts in this group
           </div>
         }
@@ -223,15 +223,15 @@ function AccountGroupSectionWrapperSample({
 
 function AccountGroupSectionOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">账号分组</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
           账号分组容器拆成无 Wails 的纯 view 后进入设计系统，用 mock 卡片覆盖完整、列表和空分组布局。
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Group states</h3>
         <div className="grid gap-4">
           <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-FULL" />

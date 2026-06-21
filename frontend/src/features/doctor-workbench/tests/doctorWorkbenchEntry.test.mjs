@@ -158,11 +158,11 @@ test('doctor workbench uses the quiet workspace shell', async () => {
   assert.match(featureSource, /data-doctor-workbench-shell="quiet"/);
   assert.match(featureSource, /data-doctor-workbench-core-acceptance="true"/);
   assert.match(featureSource, /data-doctor-workbench-check-list="true"/);
-  assert.doesNotMatch(featureSource, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(featureSource, /shadow-\[[34]px_[34]px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(featureSource, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(featureSource, /shadow-\[[34]px_[34]px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(featureSource, /shadow-\[/);
-  assert.doesNotMatch(featureSource, /bg-\[var\(--bg-main\)\]/);
-  assert.doesNotMatch(featureSource, /--bg-main/);
+  assert.doesNotMatch(featureSource, /bg-\[var\(--bg-(main|surface)\)\]/);
+  assert.doesNotMatch(featureSource, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
   assert.doesNotMatch(featureSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(featureSource, /font-black uppercase/);
 });

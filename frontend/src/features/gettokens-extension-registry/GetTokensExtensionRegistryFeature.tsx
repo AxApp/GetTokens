@@ -37,13 +37,13 @@ const stagedApplyConfigText = [
   '',
 ].join('\n');
 
-const extensionRegistryButtonClass = 'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:border-dashed disabled:text-[var(--text-muted)] disabled:opacity-60';
+const extensionRegistryButtonClass = 'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:border-dashed disabled:text-[var(--gt-ink-muted)] disabled:opacity-60';
 const extensionRegistryPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const extensionRegistryMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const extensionRegistrySectionTitleClass = 'flex items-center gap-2 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]';
-const extensionRegistryMetaClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
-const extensionRegistryTinyMetaClass = 'text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)]';
-const extensionRegistryChipClass = 'inline-flex items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const extensionRegistrySectionTitleClass = 'flex items-center gap-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
+const extensionRegistryMetaClass = 'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const extensionRegistryTinyMetaClass = 'text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]';
+const extensionRegistryChipClass = 'inline-flex items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
 
 export default function GetTokensExtensionRegistryFeature({ input }: GetTokensExtensionRegistryFeatureProps) {
   const [snapshot, setSnapshot] = useState<main.GetTokensExtensionRegistrySnapshot>(() => getGetTokensExtensionRegistryPreviewSnapshot());
@@ -239,7 +239,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
         </>
       }
       notice={
-        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-muted)]">
+        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-muted)]">
           此页展示 extension registry snapshot、diagnostics、capability kinds、source/root 信息；enable/disable 仅更新 GetTokens dev/app-local extension enable-state file，不写 Codex config，不执行 capability。
           Codex config preview 是 dry-run diff/validation，不读取或写入真实 ~/.codex/config.toml。
         </div>
@@ -261,7 +261,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
       <div className="grid min-h-0 gap-0" data-gettokens-extension-registry-panel="true">
         <div
           data-gettokens-extension-registry-list-header="true"
-          className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]"
+          className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]"
         >
           <span>Extension</span>
           <span>Enable State</span>
@@ -270,7 +270,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
         </div>
         <div className="scrollbar-stable min-h-0 overflow-auto">
           {view.extensions.length === 0 ? (
-            <div className="grid place-items-center px-6 py-10 text-center text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+            <div className="grid place-items-center px-6 py-10 text-center text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">
               当前过滤条件下没有 extension snapshot。
             </div>
           ) : (
@@ -288,13 +288,13 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
                   }`}
                 >
                   <div className="min-w-0">
-                    <div className="truncate text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">{extension.name}</div>
-                    <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                    <div className="truncate text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">{extension.name}</div>
+                    <div className="mt-1 truncate font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                       {extension.id || 'missing-id'} / {extension.version}
                     </div>
                     <div
                       data-gettokens-extension-registry-source="true"
-                      className="mt-2 truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]"
+                      className="mt-2 truncate font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]"
                     >
                       {extension.manifestPath}
                     </div>
@@ -302,17 +302,17 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
                   <div className="grid justify-items-end gap-1 self-start text-right">
                     <div
                       data-gettokens-extension-enable-state={extension.enableState.state}
-                      className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)]"
+                      className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-primary)]"
                     >
                       {extension.enableState.label}
                     </div>
                     <div
                       data-gettokens-extension-action-availability={extension.actionAvailability.state}
-                      className="rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)]"
+                      className="rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]"
                     >
                       {extension.actionAvailability.label}
                     </div>
-                    <div className="max-w-[15rem] text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+                    <div className="max-w-[15rem] text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
                       {extension.enableState.reasonSummary}
                     </div>
                     <ExtensionEnableActionButton
@@ -326,13 +326,13 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
                       <span
                         key={`${extension.id}-${kind}`}
                         data-gettokens-extension-registry-capability-kind={kind}
-                        className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)]"
+                        className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]"
                       >
                         {kind}
                       </span>
                     ))}
                   </div>
-                  <div className="self-start text-right text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                  <div className="self-start text-right text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                     {extension.diagnosticCount}
                   </div>
                 </button>
@@ -386,7 +386,7 @@ function GetTokensExtensionRegistryAside({
           data-gettokens-extension-codex-config-dry-run="true"
           className={`${extensionRegistryPanelClass} mt-3 grid gap-3 px-3 py-3`}
         >
-          <div className="grid grid-cols-2 gap-2 text-[length:var(--font-size-ui-xs)]">
+          <div className="grid grid-cols-2 gap-2 text-[length:var(--gt-font-size-xs)]">
             <KeyValueRow label="Mode" value={codexConfigDryRunView.dryRun ? 'DRY RUN ONLY' : 'UNKNOWN'} />
             <KeyValueRow label="Target" value={codexConfigDryRunView.targetPath} monospace />
             <KeyValueRow label="Enabled" value={String(codexConfigDryRunView.enabledExtensionCount)} />
@@ -401,14 +401,14 @@ function GetTokensExtensionRegistryAside({
                 className={`${extensionRegistryMutedPanelClass} px-2 py-2`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)]">
+                  <div className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-primary)]">
                     {section.label}
                   </div>
                   <div className={extensionRegistryTinyMetaClass}>
                     {section.status}
                   </div>
                 </div>
-                <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+                <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
                   {section.diffPreview.join('\n')}
                 </pre>
               </div>
@@ -416,7 +416,7 @@ function GetTokensExtensionRegistryAside({
           </div>
           <div className="grid gap-2">
             {codexConfigDryRunView.operations.length === 0 ? (
-              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                 No candidate operations
               </div>
             ) : (
@@ -427,17 +427,17 @@ function GetTokensExtensionRegistryAside({
                   className={`${extensionRegistryMutedPanelClass} px-2 py-2`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)]">
+                    <div className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-primary)]">
                       {operation.target}
                     </div>
                     <div className={extensionRegistryTinyMetaClass}>
                       {operation.action}
                     </div>
                   </div>
-                  <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+                  <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
                     {[operation.extensionID, operation.capabilityID].filter(Boolean).join(' / ')}
                   </div>
-                  <div className="mt-2 grid gap-2 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+                  <div className="mt-2 grid gap-2 font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
                     <KeyValueRow label="Section" value={operation.patchPlan.targetSection} monospace />
                     <KeyValueRow label="Operation" value={operation.patchPlan.operation} monospace />
                     <pre className="whitespace-pre-wrap break-words rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-2">
@@ -456,7 +456,7 @@ function GetTokensExtensionRegistryAside({
           </div>
           <div className="grid gap-2">
             {codexConfigDryRunView.validation.length === 0 ? (
-              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                 No dry-run validation errors
               </div>
             ) : (
@@ -466,11 +466,11 @@ function GetTokensExtensionRegistryAside({
                   data-gettokens-extension-codex-config-dry-run-validation={item.code}
                   className={`${extensionRegistryMutedPanelClass} px-2 py-2`}
                 >
-                  <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)]">
+                  <div className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-primary)]">
                     {item.code}
                   </div>
-                  <div className="mt-1 text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)]">{item.message}</div>
-                  <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+                  <div className="mt-1 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-primary)]">{item.message}</div>
+                  <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
                     {[item.extensionID, item.capabilityID, item.target].filter(Boolean).join(' / ')}
                   </div>
                 </div>
@@ -484,7 +484,7 @@ function GetTokensExtensionRegistryAside({
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+                <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                   Staged Temp Apply
                 </div>
                 <div className={`mt-1 ${extensionRegistryTinyMetaClass}`}>
@@ -515,7 +515,7 @@ function GetTokensExtensionRegistryAside({
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-[length:var(--font-size-ui-xs)]">
+            <div className="grid grid-cols-2 gap-2 text-[length:var(--gt-font-size-xs)]">
               <KeyValueRow label="Target" value={stagedApplyView.targetPath} monospace />
               <KeyValueRow label="Temp Dir" value={stagedApplyView.tempDir} monospace />
               <KeyValueRow label="Confirmation" value={stagedApplyView.confirmationLabel} monospace />
@@ -524,17 +524,17 @@ function GetTokensExtensionRegistryAside({
               <KeyValueRow label="Operations" value={stagedApplyView.appliedOperations.join(', ') || '-'} monospace />
             </div>
             {stagedApplyView.disabledReason ? (
-              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                 {stagedApplyView.disabledReason}
               </div>
             ) : null}
             {stagedApplyView.errorDetail ? (
-              <div className="border border-red-500/70 bg-red-500/10 px-2 py-2 text-[length:var(--font-size-ui-xs)] font-bold text-red-700 dark:text-red-200">
+              <div className="border px-2 py-2 text-[length:var(--gt-font-size-xs)] font-bold text-[var(--gt-status-danger)]" style={{ borderColor: 'color-mix(in srgb, var(--gt-status-danger) 34%, transparent)', backgroundColor: 'color-mix(in srgb, var(--gt-status-danger) 10%, transparent)' }}>
                 {stagedApplyView.errorDetail}
               </div>
             ) : null}
             {stagedApplyView.diffPreview.length > 0 ? (
-              <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-2 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+              <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-2 font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
                 {stagedApplyView.diffPreview.join('\n')}
               </pre>
             ) : null}
@@ -555,12 +555,12 @@ function GetTokensExtensionRegistryAside({
               className={`${extensionRegistryPanelClass} px-3 py-2`}
             >
               <div className="flex items-center justify-between gap-3">
-                <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">{root.id}</div>
+                <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">{root.id}</div>
                 <div className={extensionRegistryTinyMetaClass}>
                   {root.extensionCount} extensions
                 </div>
               </div>
-              <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">{root.path}</div>
+              <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">{root.path}</div>
             </div>
           ))}
         </div>
@@ -573,7 +573,7 @@ function GetTokensExtensionRegistryAside({
         </div>
         <div className="mt-3 grid gap-2">
           {view.registryDiagnostics.length === 0 ? (
-            <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+            <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
               No registry diagnostics
             </div>
           ) : (
@@ -592,11 +592,11 @@ function GetTokensExtensionRegistryAside({
         {view.selectedExtension ? (
           <div data-gettokens-extension-registry-selected="true" className="mt-3 grid gap-3">
             <div className={`${extensionRegistryPanelClass} px-3 py-3`}>
-              <div className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">{view.selectedExtension.name}</div>
-              <div className="mt-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+              <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">{view.selectedExtension.name}</div>
+              <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                 {view.selectedExtension.id || 'missing-id'} / {view.selectedExtension.version}
               </div>
-              <div className="mt-3 grid gap-2 text-[length:var(--font-size-ui-xs)]">
+              <div className="mt-3 grid gap-2 text-[length:var(--gt-font-size-xs)]">
                 <KeyValueRow label="Enable State" value={view.selectedExtension.enableState.label} />
                 <KeyValueRow label="Action Availability" value={view.selectedExtension.actionAvailability.label} />
                 <ExtensionEnableActionButton
@@ -613,7 +613,7 @@ function GetTokensExtensionRegistryAside({
             </div>
 
             <div className={`${extensionRegistryPanelClass} px-3 py-3`}>
-              <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+              <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                 Enable State Reasons
               </div>
               <div className="mt-3 grid gap-2">
@@ -624,7 +624,7 @@ function GetTokensExtensionRegistryAside({
             </div>
 
             <div className={`${extensionRegistryPanelClass} px-3 py-3`}>
-              <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+              <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                 Action Availability
               </div>
               <div className="mt-3 grid gap-2">
@@ -642,7 +642,7 @@ function GetTokensExtensionRegistryAside({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+                      <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                         {capability.id || capability.kind}
                       </div>
                       <div
@@ -656,7 +656,7 @@ function GetTokensExtensionRegistryAside({
                       {capability.declaredContributions.length} contributions
                     </div>
                   </div>
-                  <div className="mt-3 grid gap-2 text-[length:var(--font-size-ui-xs)]">
+                  <div className="mt-3 grid gap-2 text-[length:var(--gt-font-size-xs)]">
                     <KeyValueRow label="Required" value={capability.requiredPermissions.join(', ') || '-'} monospace />
                     <KeyValueRow label="Declared" value={capability.declaredContributions.join(', ') || '-'} monospace />
                   </div>
@@ -676,7 +676,7 @@ function GetTokensExtensionRegistryAside({
 
             <div className="grid gap-2">
               {view.selectedExtension.diagnostics.length === 0 ? (
-                <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                   No extension diagnostics
                 </div>
               ) : (
@@ -687,7 +687,7 @@ function GetTokensExtensionRegistryAside({
             </div>
           </div>
         ) : (
-          <div className="mt-3 rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-4 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+          <div className="mt-3 rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-4 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
             选择一个 extension 查看 diagnostics、capability kinds 与 source/root 信息。
           </div>
         )}
@@ -712,7 +712,7 @@ function ExtensionEnableActionButton({
         type="button"
         disabled
         data-gettokens-extension-enable-action="disabled"
-        className="inline-flex h-8 items-center justify-center gap-2 rounded border border-dashed border-[var(--gt-border-subtle)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]"
+        className="inline-flex h-8 items-center justify-center gap-2 rounded border border-dashed border-[var(--gt-border-subtle)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]"
       >
         <Power className="h-3.5 w-3.5" strokeWidth={2.5} />
         Disabled
@@ -751,14 +751,14 @@ function ReasonRow({
   return (
     <div className={`${extensionRegistryMutedPanelClass} px-3 py-3`}>
       <div className="flex items-center justify-between gap-3">
-        <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)]">
+        <div className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-primary)]">
           {reason.code}
         </div>
         <div className={extensionRegistryTinyMetaClass}>
           {reason.label}
         </div>
       </div>
-      <div className="mt-2 text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)]">{reason.message}</div>
+      <div className="mt-2 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-primary)]">{reason.message}</div>
     </div>
   );
 }
@@ -781,19 +781,19 @@ function DiagnosticRow({
       className={`${extensionRegistryMutedPanelClass} px-3 py-3`}
     >
       <div className="flex items-center justify-between gap-3">
-        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+        <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
           {diagnostic.code}
         </div>
         <div className={extensionRegistryTinyMetaClass}>
           {diagnostic.scope} / {diagnostic.severity}
         </div>
       </div>
-      <div className="mt-2 text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)]">{diagnostic.message}</div>
+      <div className="mt-2 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-primary)]">{diagnostic.message}</div>
       {diagnostic.path ? (
-        <div className="mt-2 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">{diagnostic.path}</div>
+        <div className="mt-2 font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">{diagnostic.path}</div>
       ) : null}
       {diagnostic.source ? (
-        <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">{diagnostic.source}</div>
+        <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">{diagnostic.source}</div>
       ) : null}
     </div>
   );
@@ -811,7 +811,7 @@ function KeyValueRow({
   return (
     <div className="grid gap-1">
       <div className={extensionRegistryTinyMetaClass}>{label}</div>
-      <div className={monospace ? 'break-all font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}>
+      <div className={monospace ? 'break-all font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-primary)]' : 'text-[var(--gt-ink-primary)]'}>
         {value}
       </div>
     </div>

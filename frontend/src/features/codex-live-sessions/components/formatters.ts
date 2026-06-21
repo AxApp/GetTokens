@@ -249,7 +249,7 @@ export function statusDotClass(status: CodexLiveSessionStatus): string {
   if (status === 'active' || status === 'streaming') {
     return 'bg-[var(--color-success)]';
   }
-  return 'bg-[var(--text-muted)]';
+  return 'bg-[var(--gt-ink-muted)]';
 }
 
 export function severityDotClass(severity: CodexLiveTimelineEvent['severity']): string {
@@ -262,7 +262,7 @@ export function severityDotClass(severity: CodexLiveTimelineEvent['severity']): 
   if (severity === 'success') {
     return 'bg-[var(--color-success)]';
   }
-  return 'bg-[var(--text-muted)]';
+  return 'bg-[var(--gt-ink-muted)]';
 }
 
 export function formatDuration(ms: number): string {

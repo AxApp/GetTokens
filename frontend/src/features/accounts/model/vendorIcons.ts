@@ -69,7 +69,7 @@ export function resolveVendorDisplayName(preset?: Pick<VendorPreset, 'name'>): s
 export function resolveVendorLogo(preset?: Pick<VendorPreset, 'id' | 'name' | 'icon' | 'iconColor'>): VendorLogoSpec {
   const title = preset?.name?.trim() || 'Custom provider';
   const displayName = resolveVendorDisplayName(preset) || title;
-  const color = preset?.iconColor || 'var(--text-primary)';
+  const color = preset?.iconColor || 'var(--gt-ink-primary)';
   const iconKey = normalizeIconKey(preset?.icon || preset?.id || '');
   const slug = ICON_ALIASES[iconKey];
   const icon = slug ? SIMPLE_ICONS[slug] : undefined;

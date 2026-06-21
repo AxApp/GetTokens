@@ -111,7 +111,7 @@ test('buildAccountAttributionBadges includes codex plan from quota before source
 
   assert.deepEqual(badges.map((badge) => badge.label), ['PLUS', 'OPENAI RESPONSES', 'ANTHROPIC']);
   assert.deepEqual(badges.map((badge) => badge.shortLabel || badge.label), ['PLUS', 'OAI RESP', 'ANTH']);
-  assert.equal(badges[0].backgroundColor, 'color-mix(in_srgb,var(--text-primary)_6%,transparent)');
+  assert.equal(badges[0].backgroundColor, 'color-mix(in_srgb,var(--gt-ink-primary)_6%,transparent)');
 });
 
 test('vendor preset picker uses compact provider names', () => {

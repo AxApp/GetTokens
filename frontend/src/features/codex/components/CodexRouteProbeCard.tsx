@@ -11,13 +11,13 @@ import {
 const codexRouteProbePanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const codexRouteProbeButtonClass =
-  'inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexRouteProbePrimaryButtonClass =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const codexRouteProbeBadgeClass =
-  'inline-flex items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
+  'inline-flex items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
 const codexRouteProbeMetaClass =
-  'truncate font-mono text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
+  'truncate font-mono text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
 
 export function RouteProbeCard({
   t,
@@ -87,10 +87,10 @@ export function RouteProbeCard({
             <div className={codexRouteProbeMetaClass}>
               {t('codex.account_list_probe_terminal')}
             </div>
-            <h3 className="mt-2 text-xl font-semibold italic leading-none tracking-normal text-[var(--text-primary)]">
+            <h3 className="mt-2 text-xl font-semibold italic leading-none tracking-normal text-[var(--gt-ink-primary)]">
               {t('codex.account_list_probe_open')}
             </h3>
-            <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-muted)]">
+            <p className="mt-2 max-w-3xl text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-muted)]">
               {t('codex.account_list_policy_headline')}
             </p>
           </div>
@@ -104,7 +104,7 @@ export function RouteProbeCard({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               aria-label={t('common.close')}
               title={t('common.close')}
             >
@@ -179,8 +179,8 @@ function ProbeMetric({
       <div className={codexRouteProbeMetaClass}>
         {label}
       </div>
-      <div className={`mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal ${
-        tone === 'critical' ? 'text-[var(--gt-status-danger)]' : 'text-[var(--text-primary)]'
+      <div className={`mt-1 truncate font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal ${
+        tone === 'critical' ? 'text-[var(--gt-status-danger)]' : 'text-[var(--gt-ink-primary)]'
       }`}>
         {value}
       </div>
@@ -215,7 +215,7 @@ function ProbeControlPanel({
         <div className={codexRouteProbeMetaClass}>
           {t('codex.account_list_probe_open')}
         </div>
-        <div className="mt-2 text-lg font-semibold italic leading-none tracking-normal text-[var(--text-primary)]">
+        <div className="mt-2 text-lg font-semibold italic leading-none tracking-normal text-[var(--gt-ink-primary)]">
           {t('codex.account_list_policy_headline')}
         </div>
       </div>
@@ -274,17 +274,17 @@ function RouteProbeCandidateQueue({ rows, t }: { rows: CodexAccountRow[]; t: (ke
           <div className={codexRouteProbeMetaClass}>
             {t('codex.account_list_policy_preview')}
           </div>
-          <div className="mt-1 text-base font-semibold italic leading-none tracking-normal text-[var(--text-primary)]">
+          <div className="mt-1 text-base font-semibold italic leading-none tracking-normal text-[var(--gt-ink-primary)]">
             {t('codex.account_list_policy_order')}
           </div>
         </div>
-        <div className={`${codexRouteProbeBadgeClass} shrink-0 text-[var(--text-primary)]`}>
+        <div className={`${codexRouteProbeBadgeClass} shrink-0 text-[var(--gt-ink-primary)]`}>
           {String(rows.length).padStart(2, '0')}
         </div>
       </div>
       <div className="max-h-[19rem] overflow-auto p-3">
         {rows.length === 0 ? (
-          <div className="rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-3 py-4 text-center text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--gt-status-danger)]">
+          <div className="rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-3 py-4 text-center text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-status-danger)]">
             {t('codex.account_list_probe_no_account')}
           </div>
         ) : (
@@ -294,14 +294,14 @@ function RouteProbeCandidateQueue({ rows, t }: { rows: CodexAccountRow[]; t: (ke
                 key={row.id}
                 className={`${codexRouteProbePanelClass} grid min-h-12 grid-cols-[3rem_minmax(0,1fr)_max-content] items-stretch`}
               >
-                <div className="flex items-center justify-center border-r border-[var(--gt-border-subtle)] bg-[var(--text-primary)] font-mono text-[length:var(--font-size-ui-md)] font-semibold text-[var(--gt-surface-canvas)]">
+                <div className="flex items-center justify-center border-r border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] font-mono text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-surface-canvas)]">
                   {String(index + 1).padStart(2, '0')}
                 </div>
                 <div className="grid min-w-0 content-center gap-1 px-3 py-2">
-                  <div className="truncate text-[length:var(--font-size-ui-md)] font-semibold leading-tight text-[var(--text-primary)]">
+                  <div className="truncate text-[length:var(--gt-font-size-md)] font-semibold leading-tight text-[var(--gt-ink-primary)]">
                     {row.label}
                   </div>
-                  <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]">
+                  <div className="truncate font-mono text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]">
                     {buildEndpointLabel(row) || row.provider}
                   </div>
                 </div>
@@ -335,14 +335,14 @@ function RouteProbeTerminal({
   return (
     <section data-codex-route-probe-terminal="true" className="min-w-0 bg-[var(--gt-surface-canvas)] p-5">
       <div className="flex items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] pb-3">
-        <div className="flex items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]">
+        <div className="flex items-center gap-2 text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]">
           <Terminal className="h-3.5 w-3.5" strokeWidth={3} />
           {t('codex.account_list_probe_terminal')}
         </div>
       </div>
-      <div className="max-h-[22rem] min-h-[13rem] overflow-auto bg-[var(--gt-surface-canvas)] py-3 font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold leading-6 text-[var(--text-primary)]">
+      <div className="max-h-[22rem] min-h-[13rem] overflow-auto bg-[var(--gt-surface-canvas)] py-3 font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold leading-6 text-[var(--gt-ink-primary)]">
         {lines.length === 0 ? (
-          <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-4 text-[length:var(--font-size-ui-sm)] tracking-normal text-[var(--text-muted)]">
+          <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-4 text-[length:var(--gt-font-size-sm)] tracking-normal text-[var(--gt-ink-muted)]">
             {t('codex.account_list_probe_idle')}
           </div>
         ) : (
@@ -352,7 +352,7 @@ function RouteProbeTerminal({
               <span className="min-w-0">
                 <span className="break-all">{line.label}</span>
                 {line.detail ? (
-                  <span className={`ml-2 break-all text-[length:var(--font-size-ui-sm)] ${line.status === 'command' ? 'text-[var(--text-muted)]' : routeProbeLineTone(line.status)}`}>
+                  <span className={`ml-2 break-all text-[length:var(--gt-font-size-sm)] ${line.status === 'command' ? 'text-[var(--gt-ink-muted)]' : routeProbeLineTone(line.status)}`}>
                     · {line.detail}
                   </span>
                 ) : null}
@@ -369,16 +369,16 @@ function routeProbeLineTone(status: CodexRoutingProbeStreamLineStatus) {
   switch (status) {
     case 'hit':
     case 'running':
-      return 'text-[var(--text-primary)]';
+      return 'text-[var(--gt-ink-primary)]';
     case 'passed':
-      return 'text-[var(--text-primary)]';
+      return 'text-[var(--gt-ink-primary)]';
     case 'miss':
     case 'empty':
       return 'text-[var(--gt-status-danger)]';
     case 'queued':
-      return 'text-[var(--text-muted)]';
+      return 'text-[var(--gt-ink-muted)]';
     case 'command':
     default:
-      return 'text-[var(--text-primary)]';
+      return 'text-[var(--gt-ink-primary)]';
   }
 }

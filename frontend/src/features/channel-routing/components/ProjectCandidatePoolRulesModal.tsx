@@ -23,7 +23,7 @@ interface ProjectCandidatePoolRulesModalProps {
 }
 
 const projectCandidateRulesModalButtonClass =
-  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)]';
+  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)]';
 
 export default function ProjectCandidatePoolRulesModal({
   channel,
@@ -48,12 +48,12 @@ export default function ProjectCandidatePoolRulesModal({
       header={
         <div className="flex min-w-0 items-center justify-between gap-3" data-project-candidate-rules-modal-header>
           <div className="flex min-w-0 items-center gap-2">
-            <Settings2 className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={3} />
+            <Settings2 className="h-4 w-4 shrink-0 text-[var(--gt-ink-secondary)]" strokeWidth={3} />
             <div className="min-w-0">
-              <h2 className="text-[length:var(--font-size-ui-lg)] font-semibold leading-5 text-[var(--text-primary)]">
+              <h2 className="text-[length:var(--gt-font-size-lg)] font-semibold leading-5 text-[var(--gt-ink-primary)]">
                 项目配置
               </h2>
-              <p className="mt-1 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
+              <p className="mt-1 text-[length:var(--gt-font-size-xs)] leading-5 text-[var(--gt-ink-secondary)]">
                 账号候选池规则
               </p>
             </div>

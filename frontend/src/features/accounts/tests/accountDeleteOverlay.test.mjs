@@ -45,7 +45,7 @@ test('buildAccountDeleteOverlay renders a full-card delete overlay', () => {
   assert.match(markup, /flex h-full flex-col overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\]/);
   assert.match(markup, /bg-\[var\(--gt-surface-canvas\)\]/);
   assert.match(markup, /text-\[var\(--gt-status-danger\)\]/);
-  assert.match(markup, /text-\[length:var\(--font-size-ui-xl-plus\)\] font-semibold/);
+  assert.match(markup, /text-\[length:var\(--gt-font-size-xl-plus\)\] font-semibold/);
   assert.match(markup, /flex flex-1 flex-col px-4 py-4/);
   assert.match(markup, /mt-3 h-px bg-\[var\(--gt-border-subtle\)\]/);
   assert.match(markup, /grid gap-2 pt-3/);
@@ -57,13 +57,13 @@ test('buildAccountDeleteOverlay renders a full-card delete overlay', () => {
   assert.match(markup, /accounts\.card_delete/);
   assert.doesNotMatch(markup, /本地凭据引用/);
   assert.doesNotMatch(markup, /关闭此账号的后续路由使用/);
-  assert.doesNotMatch(markup, /grid gap-3 border border-\[color-mix\(in_srgb,var\(--color-status-danger\)_18%,var\(--border-color\)\)\]/);
+  assert.doesNotMatch(markup, /grid gap-3 border border-\[color-mix\(in_srgb,var\(--color-status-danger\)_18%,var\(--gt-border-strong\)\)\]/);
   assert.doesNotMatch(markup, /grid grid-cols-\[3rem_minmax\(0,1fr\)\]/);
   assert.doesNotMatch(markup, /max-w-\[18rem\]/);
   assert.doesNotMatch(markup, /text-center/);
   assert.doesNotMatch(source, /btn-swiss|input-swiss|select-swiss|card-swiss/);
   assert.doesNotMatch(source, /border-2|border-t-2|border-b-2/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /color-status-/);
   assert.doesNotMatch(source, /font-black/);
@@ -102,7 +102,7 @@ test('buildAccountDeleteOverlay keeps list mode delete actions visible', () => {
   assert.match(markup, /flex shrink-0 items-center gap-2/);
   assert.match(markup, /common\.cancel/);
   assert.match(markup, /common\.delete/);
-  assert.doesNotMatch(markup, /border-t-2 border-\[color-mix\(in_srgb,var\(--text-primary\)_58%,var\(--border-color\)\)\]/);
+  assert.doesNotMatch(markup, /border-t-2 border-\[color-mix\(in_srgb,var\(--gt-ink-primary\)_58%,var\(--gt-border-strong\)\)\]/);
   assert.doesNotMatch(markup, /grid gap-2 pt-3/);
 });
 

@@ -36,6 +36,7 @@ description: "GetTokens 桌面/Wails 前端设计质量统一 skill，合并 tas
 - Codex 负责需求边界、业务状态、接口契约、测试门禁、文档和最终集成；视觉实现可按 AGENTS 规则交给 Gemini/设计技能主导。
 - 不直接引入参考项目源码、CLI、浏览器扩展或运行时依赖；如需引入检测器/工具，单独开 space 并先写测试。
 - 不用前端假状态掩盖 sidecar 事实：账号、quota、routing、live sessions 等热路径必须尊重 sidecar 数据边界。
+- 2026-06-21 用户明确视觉系统收敛方向：只保留 AntD，且只保留新的 gt-* 语义 token 层；随后进一步明确不允许保留过渡态。新增 UI 默认走 AntD component / GetTokens AntD adapter；旧 Swiss / parchment visual primitive、legacy alias token、Tailwind named colors、dark:* 和裸 px 字号不能作为完成闭包继续留在运行态。确需保留的只能登记为产品例外，并说明存在理由与验收边界。
 - 当前运行态只保留一套 `classic light` 样式；不要新增或恢复 `system/dark/light` 切换、`theme-preset` 选择、`.dark` token override、parchment 平行 token 或 Wails 透明窗口合成，除非用户重新开启主题 space 并先更新需求、测试和验收边界。
 
 ## 1. 选择模式
@@ -333,7 +334,7 @@ Score: <0-20> / 20
 执行顺序：
 1. 先复述参考图中可复用的信息架构，例如顶部筛选条、普通设置表、复合对象 panel、内部分组、主开关位置。
 2. 再明确哪些不迁移：配色、圆角、阴影、浅色 tint、外部品牌 icon 风格、营销式留白。
-3. 实现时优先保留现有 token：`border-color`、`bg-main`、`bg-surface`、`text-primary`、`text-muted`、`btn-swiss`、`input-swiss`、`ToggleSwitch`。
+3. 实现时遵循当前 App Visual System Standard：新增或重排默认走 AntD component / GetTokens AntD adapter 和 gt-* 语义 token；不要继续保留或新增旧 Swiss / parchment visual primitive、legacy alias token、Tailwind named colors、dark:* 或裸 px 字号。
 4. 对复合配置对象，父层用独立 panel 承担身份和主开关，子字段按语义分组；长 textarea 字段使用 label 在上、控件全宽，避免在窄列里强塞固定宽控件导致字段名竖排。
 5. 浏览器验收除了截图，还要做 DOM 断言：目标 panel 存在、真实字段齐全、示例假字段不存在、父级路径不重复、没有新增临时配色 token。
 

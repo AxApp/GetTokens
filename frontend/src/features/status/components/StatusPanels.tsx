@@ -31,18 +31,18 @@ const statusMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] b
 const statusInsetPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)]';
 const statusFieldBoxClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2';
-const statusEyebrowClass = 'text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]';
-const statusTitleClass = 'text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]';
-const statusMetaClass = 'font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
-const statusValueClass = 'font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]';
+const statusEyebrowClass = 'text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]';
+const statusTitleClass = 'text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]';
+const statusMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const statusValueClass = 'font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
 const statusSecondaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const statusPrimaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const statusCompactButtonClass =
-  'inline-flex h-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+  'inline-flex h-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const statusNoticeClass =
-  'rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]';
+  'rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
 const statusToggleRowClass =
   'flex items-center justify-between gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 md:min-h-[2.875rem]';
 const statusLocalCliSummaryItemClass =
@@ -52,7 +52,7 @@ const statusLocalCliRailClass =
 const statusLocalCliCapabilityRowClass =
   'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center';
 const statusLocalCliPlanStatusClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
 
 export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEvidenceSectionState }) {
   if (state.items.length === 0 && !state.notice) {
@@ -69,7 +69,7 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
           <div className={statusEyebrowClass}>
             QUOTA EVIDENCE
           </div>
-          <div className="mt-1 text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">
+          <div className="mt-1 text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">
             Runtime authority facts
           </div>
         </div>
@@ -89,7 +89,7 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
           <div className={statusTitleClass}>
             {state.notice.title}
           </div>
-          <div className="font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-muted)]">
+          <div className="font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]">
             {state.notice.description}
           </div>
           {state.notice.unscopedMissingFactCount > 0 ? (
@@ -113,7 +113,7 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
                     {state.notice.unscopedMissingFactSamples.map((label) => (
                       <li
                         key={label}
-                        className="break-all font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)]"
+                        className="break-all font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-primary)]"
                       >
                         {label}
                       </li>
@@ -135,7 +135,7 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
                 {state.notice.accountKeys.map((accountKey) => (
                   <li
                     key={accountKey}
-                    className="break-all font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)]"
+                    className="break-all font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-primary)]"
                   >
                     {accountKey}
                   </li>
@@ -169,7 +169,7 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
                   <div className={statusEyebrowClass}>
                     {evidence.title}
                   </div>
-                  <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                  <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                     {item.accountKey || 'UNSCOPED'}
                   </div>
                 </div>
@@ -198,7 +198,7 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
                   <div className={statusEyebrowClass}>
                     EXPLANATION
                   </div>
-                  <div className="font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)]">
+                  <div className="font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-primary)]">
                     {evidence.view.explanation}
                   </div>
                 </div>
@@ -213,7 +213,7 @@ export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEviden
                     {evidence.view.evidenceRefs.map((ref) => (
                       <li
                         key={ref}
-                        className="break-all font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)]"
+                        className="break-all font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-primary)]"
                       >
                         {ref}
                       </li>
@@ -616,10 +616,10 @@ export function StatusApplyLocalSection({
               <div className={statusEyebrowClass}>
                 {t('status.local_cli_target_label')}
               </div>
-              <div className="mt-1 text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">
+              <div className="mt-1 text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">
                 {activeTargetLabel}
               </div>
-              <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+              <div className="mt-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
                 {t('status.local_cli_workbench_hint')}
               </div>
             </div>
@@ -628,19 +628,19 @@ export function StatusApplyLocalSection({
           <dl className="grid gap-2 md:grid-cols-3">
             <div className={statusLocalCliSummaryItemClass}>
               <dt className={statusEyebrowClass}>{t('status.local_cli_relay_key')}</dt>
-              <dd className="mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+              <dd className="mt-1 truncate font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                 {activeRelayKeyLabel}
               </dd>
             </div>
             <div className={statusLocalCliSummaryItemClass}>
               <dt className={statusEyebrowClass}>{t('status.endpoint_title')}</dt>
-              <dd className="mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+              <dd className="mt-1 truncate font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                 {selectedEndpointBaseUrl}
               </dd>
             </div>
             <div className={statusLocalCliSummaryItemClass}>
               <dt className={statusEyebrowClass}>{t('status.local_cli_plan_state_title')}</dt>
-              <dd className="mt-1 font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+              <dd className="mt-1 font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                 {activePlanStateLabel}
               </dd>
             </div>
@@ -653,7 +653,7 @@ export function StatusApplyLocalSection({
                 <div className={statusEyebrowClass}>
                   {t('status.local_cli_config_input_title')}
                 </div>
-                <div className="mt-1 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+                <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
                   {t('status.local_cli_config_codex_title')}
                 </div>
               </div>
@@ -708,10 +708,10 @@ export function StatusApplyLocalSection({
                 />
 
                 <FormField title={t('status.codex_local_auth_state_title')} as="div">
-                  <div className={`${statusFieldBoxClass} text-[length:var(--font-size-ui-md-compact)] font-medium text-[var(--text-primary)]`}>
+                  <div className={`${statusFieldBoxClass} text-[length:var(--gt-font-size-md-compact)] font-medium text-[var(--gt-ink-primary)]`}>
                     <div>{codexLocalAuthSummary}</div>
                     {localCodexAuthState?.accountEmail ? (
-                      <div className="mt-1 font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-muted)]">
+                      <div className="mt-1 font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]">
                         {localCodexAuthState.accountEmail}
                       </div>
                     ) : null}
@@ -734,16 +734,16 @@ export function StatusApplyLocalSection({
               {selectedRelayProvider.id !== 'openai' ? (
                 <div className={statusLocalCliCapabilityRowClass}>
                   <div className="min-w-0">
-                    <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                    <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                       {t('status.local_cli_capability_websocket_title')}
                     </div>
-                    <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                    <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                       {supportsWebsockets
                         ? t('status.local_cli_capability_websocket_on')
                         : t('status.local_cli_capability_websocket_off')}
                     </div>
                     {localCodexProviderWebsocketRisk ? (
-                      <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-medium leading-snug text-[var(--gt-status-danger)]">
+                      <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-medium leading-snug text-[var(--gt-status-danger)]">
                         {supportsWebsockets
                           ? t('status.local_cli_websocket_risk_opt_in')
                           : t('status.local_cli_websocket_risk_detected')}
@@ -764,15 +764,15 @@ export function StatusApplyLocalSection({
 
               <div className={statusLocalCliCapabilityRowClass}>
                 <div className="min-w-0">
-                  <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                  <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                     {t('status.local_cli_capability_model_catalog_title')}
                     {isDisablingModelCatalog ? (
-                      <span className="ml-2 font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]">
+                      <span className="ml-2 font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
                         {t('status.local_cli_model_catalog_disabling')}
                       </span>
                     ) : null}
                   </div>
-                  <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                  <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                     {syncCodexModelCatalog
                       ? t('status.local_cli_capability_model_catalog_on')
                       : t('status.local_cli_capability_model_catalog_off')}
@@ -780,7 +780,7 @@ export function StatusApplyLocalSection({
                   <button
                     type="button"
                     aria-label="preview sync_model_catalog"
-                    className="mt-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] underline-offset-4 hover:underline active:scale-95"
+                    className="mt-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] underline-offset-4 hover:underline active:scale-95"
                     onClick={() => setModelCatalogPreviewOpen(true)}
                   >
                     {t('status.local_cli_model_catalog_preview')}
@@ -817,7 +817,7 @@ export function StatusApplyLocalSection({
                 <div className={statusEyebrowClass}>
                   {t('status.local_cli_apply_plan_title')}
                 </div>
-                <div className="mt-1 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+                <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
                   {t('status.codex_local_diff')}
                 </div>
               </div>
@@ -884,7 +884,7 @@ export function StatusApplyLocalSection({
                 <div className={statusEyebrowClass}>
                   {t('status.local_cli_config_input_title')}
                 </div>
-                <div className="mt-1 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+                <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
                   {t('status.local_cli_config_claude_title')}
                 </div>
               </div>
@@ -998,7 +998,7 @@ export function StatusApplyLocalSection({
 
               <div className={fieldPairGridClass}>
                 <div className={statusToggleRowClass}>
-                  <span className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">
+                  <span className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">
                     {t('status.claude_disable_nonessential_traffic')}
                   </span>
                   <ToggleSwitch
@@ -1010,7 +1010,7 @@ export function StatusApplyLocalSection({
                   />
                 </div>
                 <div className={statusToggleRowClass}>
-                  <span className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">
+                  <span className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">
                     {t('status.claude_code_attribution_header')}
                   </span>
                   <ToggleSwitch
@@ -1036,7 +1036,7 @@ export function StatusApplyLocalSection({
                 <div className={statusEyebrowClass}>
                   {t('status.local_cli_apply_plan_title')}
                 </div>
-                <div className="mt-1 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+                <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
                   {t('status.claude_settings_diff')}
                 </div>
               </div>
@@ -1092,7 +1092,7 @@ export function StatusApplyLocalSection({
                 <div className={statusEyebrowClass}>
                   CODEX MODEL CATALOG
                 </div>
-                <h3 className="mt-1 text-sm font-semibold text-[var(--text-primary)]">
+                <h3 className="mt-1 text-sm font-semibold text-[var(--gt-ink-primary)]">
                   Codex /model 模型目录预览
                 </h3>
               </div>
@@ -1106,13 +1106,13 @@ export function StatusApplyLocalSection({
           <table className="w-max min-w-full border-collapse">
             <thead className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]">
               <tr>
-                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
                   /model slug
                 </th>
-                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
                   real model
                 </th>
-                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
                   reasoning
                 </th>
               </tr>
@@ -1121,12 +1121,12 @@ export function StatusApplyLocalSection({
               {modelCatalogPreviewModels.map((model) => (
                 <tr key={model.slug}>
                   <td className="px-4 py-3 align-top">
-                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                    <div className="whitespace-nowrap font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                       {model.slug}
                     </div>
                   </td>
                   <td className="px-4 py-3 align-top">
-                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                    <div className="whitespace-nowrap font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                       {model.name || '-'}
                     </div>
                   </td>
@@ -1139,7 +1139,7 @@ export function StatusApplyLocalSection({
               ))}
               {modelCatalogPreviewModels.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+                  <td colSpan={3} className="px-4 py-8 text-center font-mono text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
                     暂无可同步模型
                   </td>
                 </tr>
@@ -1222,7 +1222,7 @@ function StatusEndpointPicker({
           type="button"
           onClick={onToggleLANAccess}
           className={`${statusSecondaryButtonClass} ${
-            isLANAccessEnabled ? '!border-[var(--gt-border-strong)] !bg-[var(--text-primary)] !text-[var(--gt-surface-canvas)]' : ''
+            isLANAccessEnabled ? '!border-[var(--gt-border-strong)] !bg-[var(--gt-ink-primary)] !text-[var(--gt-surface-canvas)]' : ''
           }`}
         >
           {isLANAccessEnabled ? t('status.lan_access_on') : t('status.lan_access_off')}
@@ -1243,10 +1243,10 @@ function StatusEndpointPicker({
               key={endpoint.id}
               type="button"
               onClick={() => onSelectEndpointID(endpoint.id)}
-              className={`rounded border px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium transition ${
+              className={`rounded border px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium transition ${
                 isSelected
-                  ? 'border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
-                  : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)] hover:border-[var(--gt-border-strong)]'
+                  ? 'border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+                  : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
               }`}
             >
               {endpointLabel}
@@ -1255,7 +1255,7 @@ function StatusEndpointPicker({
         })}
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2">
-        <span className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+        <span className="truncate font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
           {selectedEndpointBaseUrl}
         </span>
         <button type="button" onClick={onCopyEndpointBaseUrl} className={statusCompactButtonClass}>

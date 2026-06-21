@@ -118,24 +118,24 @@ export interface SessionDetailState {
 
 export function roleTone(role: MessageRole) {
   if (role === 'system') {
-    return 'text-[var(--accent-red)]';
+    return 'text-[var(--gt-status-danger)]';
   }
   if (role === 'tool_call') {
-    return 'text-[var(--accent-red)]';
+    return 'text-[var(--gt-status-danger)]';
   }
   if (role === 'tool_result') {
-    return 'text-[var(--text-primary)]';
+    return 'text-[var(--gt-ink-primary)]';
   }
   if (role === 'reasoning') {
-    return 'text-[var(--text-primary)]';
+    return 'text-[var(--gt-ink-primary)]';
   }
   if (role === 'event') {
-    return 'text-[var(--text-muted)]';
+    return 'text-[var(--gt-ink-muted)]';
   }
   if (role === 'assistant') {
-    return 'text-[var(--text-primary)]';
+    return 'text-[var(--gt-ink-primary)]';
   }
-  return 'text-[var(--text-muted)]';
+  return 'text-[var(--gt-ink-muted)]';
 }
 
 export function getFileName(value: string | null | undefined, fallback: string) {
@@ -199,15 +199,15 @@ export function StatePanel({
 }) {
   return (
     <div className="flex min-h-[10rem] flex-col items-start justify-center gap-2.5 px-6 py-8 text-left">
-      <div className="text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--text-primary)]">{title}</div>
+      <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">{title}</div>
       {description ? (
-        <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">{description}</div>
+        <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">{description}</div>
       ) : null}
       {actionLabel && onAction ? (
         <button
           type="button"
           onClick={onAction}
-          className="mt-1 inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+          className="mt-1 inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
         >
           {actionLabel}
         </button>
@@ -224,32 +224,32 @@ const sessionManagementModalBackdropClass = 'fixed inset-0 z-50 flex items-cente
 const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const sessionManagementModalHeaderClass = 'flex items-start justify-between gap-4 border-b border-[var(--gt-border-subtle)] px-5 py-4';
 const sessionManagementModalFooterClass = 'flex items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-3';
-const sessionManagementModalButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
-const sessionManagementModalIconButtonClass = 'flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--text-muted)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] active:scale-90';
-const sessionManagementModalLabelClass = 'text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
-const sessionManagementModalErrorClass = 'border-b border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]';
+const sessionManagementModalButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const sessionManagementModalIconButtonClass = 'flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90';
+const sessionManagementModalLabelClass = 'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const sessionManagementModalErrorClass = 'border-b border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]';
 const sessionManagementAnalysisSectionClass = 'border-b border-[var(--gt-border-subtle)] px-4 py-3';
 const sessionManagementAnalysisColumnClass = 'border-b border-[var(--gt-border-subtle)] px-4 py-3 lg:border-b-0 lg:border-r lg:border-[var(--gt-border-subtle)]';
-const sessionManagementAnalysisTitleClass = 'mb-2 text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
-const sessionManagementAnalysisCloudItemClass = 'max-w-full truncate font-semibold leading-none tracking-normal text-[var(--text-primary)]';
+const sessionManagementAnalysisTitleClass = 'mb-2 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+const sessionManagementAnalysisCloudItemClass = 'max-w-full truncate font-semibold leading-none tracking-normal text-[var(--gt-ink-primary)]';
 const sessionManagementAnalysisCardClass = 'min-w-0 rounded-sm border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
-const sessionManagementAnalysisCardTitleClass = 'line-clamp-2 break-words text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
-const sessionManagementAnalysisCardMetaClass = 'mt-1 text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
-const sessionManagementAnalysisMetricRowClass = 'grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[length:var(--font-size-ui-xs)]';
-const sessionManagementAnalysisMetricLabelClass = 'truncate font-semibold tracking-normal text-[var(--text-primary)]';
-const sessionManagementAnalysisMetricValueClass = 'font-semibold tabular-nums text-[var(--text-primary)]';
-const sessionManagementAnalysisMetricMetaClass = 'text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
-const sessionManagementMessageMetaClass = 'flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal';
+const sessionManagementAnalysisCardTitleClass = 'line-clamp-2 break-words text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+const sessionManagementAnalysisCardMetaClass = 'mt-1 text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
+const sessionManagementAnalysisMetricRowClass = 'grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[length:var(--gt-font-size-xs)]';
+const sessionManagementAnalysisMetricLabelClass = 'truncate font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+const sessionManagementAnalysisMetricValueClass = 'font-semibold tabular-nums text-[var(--gt-ink-primary)]';
+const sessionManagementAnalysisMetricMetaClass = 'text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
+const sessionManagementMessageMetaClass = 'flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal';
 const sessionManagementRawJsonPanelClass = 'mt-3 overflow-hidden rounded-sm border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const sessionManagementRawJsonHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-3 py-1.5 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+const sessionManagementRawJsonHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-3 py-1.5 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 
 export function InitialLoadingShell({ copy }: { copy: SessionManagementCopy }) {
   return (
     <div className="mx-auto grid min-h-0 w-full max-w-[1480px] flex-1 grid-cols-[18rem_minmax(0,1fr)] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm">
       <section className="flex min-h-0 flex-col border-r border-[var(--gt-border-subtle)]">
         <div className="flex h-12 items-center border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
-          <h2 className="text-[length:var(--font-size-ui-md)] font-semibold">{copy.projectListTitle}</h2>
+          <h2 className="text-[length:var(--gt-font-size-md)] font-semibold">{copy.projectListTitle}</h2>
         </div>
         <div>
           {Array.from({ length: 5 }).map((_, index) => (
@@ -267,7 +267,7 @@ export function InitialLoadingShell({ copy }: { copy: SessionManagementCopy }) {
 
       <section className="flex min-h-0 flex-col">
         <div className="flex h-12 items-center border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
-          <h2 className="text-[length:var(--font-size-ui-md)] font-semibold">{copy.projectSessionsTitle}</h2>
+          <h2 className="text-[length:var(--gt-font-size-md)] font-semibold">{copy.projectSessionsTitle}</h2>
         </div>
         <div>
           {Array.from({ length: 6 }).map((_, index) => (
@@ -339,9 +339,9 @@ export function ProjectListPanel({
   return (
     <section data-session-management-project-panel="true" className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
-        <h2 className="text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">{copy.projectListTitle}</h2>
+        <h2 className="text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">{copy.projectListTitle}</h2>
         {snapshotRefreshing ? (
-          <span className="animate-pulse text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+          <span className="animate-pulse text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
             {copy.refreshing}
           </span>
         ) : null}
@@ -362,7 +362,7 @@ export function ProjectListPanel({
                 }`}
               >
                 <div className={`w-0.5 shrink-0 self-stretch transition-colors ${
-                  isActive ? 'bg-[var(--text-primary)]' : 'bg-transparent group-hover:bg-[var(--text-muted)]/35'
+                  isActive ? 'bg-[var(--gt-ink-primary)]' : 'bg-transparent group-hover:bg-[var(--gt-ink-muted)]/35'
                 }`} />
 
                 <button
@@ -370,8 +370,8 @@ export function ProjectListPanel({
                   onClick={() => onSelectProject(project.id, compactLayout)}
                   className="flex min-w-0 flex-1 flex-col gap-2.5 py-4 pl-4 pr-3 text-left active:opacity-70"
                 >
-                  <div className={`truncate text-[length:var(--font-size-ui-lg)] font-semibold leading-none ${
-                    isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'
+                  <div className={`truncate text-[length:var(--gt-font-size-lg)] font-semibold leading-none ${
+                    isActive ? 'text-[var(--gt-ink-primary)]' : 'text-[var(--gt-ink-primary)]'
                   }`}>
                     {project.name}
                   </div>
@@ -383,17 +383,17 @@ export function ProjectListPanel({
                     ].map((tag) => (
                       <span
                         key={tag}
-                        className={`rounded border px-1.5 py-0.5 text-[length:var(--font-size-ui-2xs)] font-medium leading-none ${
+                        className={`rounded border px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-medium leading-none ${
                           isActive
-                            ? 'border-[var(--gt-border-strong)] text-[var(--text-primary)]'
-                            : 'border-[var(--gt-border-subtle)] text-[var(--text-muted)]'
+                            ? 'border-[var(--gt-border-strong)] text-[var(--gt-ink-primary)]'
+                            : 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)]'
                         }`}
                       >
                         {tag}
                       </span>
                     ))}
-                    <span className={`truncate text-[length:var(--font-size-ui-2xs)] font-medium leading-none ${
-                      isActive ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]/70'
+                    <span className={`truncate text-[length:var(--gt-font-size-2xs)] font-medium leading-none ${
+                      isActive ? 'text-[var(--gt-ink-muted)]' : 'text-[var(--gt-ink-muted)]/70'
                     }`}>
                       {getProviderDisplayLabel(project.providerSummary, copy.unknownProvider)}
                     </span>
@@ -408,8 +408,8 @@ export function ProjectListPanel({
                     aria-label="Edit provider mapping"
                     className={`flex h-7 w-7 items-center justify-center rounded border transition-all active:scale-90 ${
                       isActive
-                        ? 'border-[var(--gt-border-subtle)] text-[var(--text-primary)] hover:border-[var(--gt-border-strong)]'
-                        : 'border-transparent text-[var(--text-muted)]/45 hover:border-[var(--gt-border-subtle)] hover:text-[var(--text-primary)]'
+                        ? 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
+                        : 'border-transparent text-[var(--gt-ink-muted)]/45 hover:border-[var(--gt-border-subtle)] hover:text-[var(--gt-ink-primary)]'
                     }`}
                   >
                     <Pencil className="h-3 w-3" strokeWidth={2.5} />
@@ -475,17 +475,17 @@ export function SessionAnalysisScopeModal({
       >
         <div className={sessionManagementModalHeaderClass}>
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+            <div className="flex items-center gap-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
               <BarChart3 className="h-3.5 w-3.5" strokeWidth={2.5} />
               <span>{copy.analysisTitle}</span>
             </div>
             <h3
               id="session-analysis-scope-title"
-              className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold leading-tight text-[var(--text-primary)]"
+              className="mt-1 text-[length:var(--gt-font-size-xl)] font-semibold leading-tight text-[var(--gt-ink-primary)]"
             >
               {copy.analysisSelectorTitle}
             </h3>
-            <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
+            <p className="mt-2 max-w-3xl text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
               {copy.analysisSelectorHint}
             </p>
           </div>
@@ -524,14 +524,14 @@ export function SessionAnalysisScopeModal({
                 {copy.analysisRecent(recentLimit)}
               </button>
             </div>
-            <div className="mt-4 border-t border-[var(--gt-border-subtle)] pt-4 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+            <div className="mt-4 border-t border-[var(--gt-border-subtle)] pt-4 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
               {copy.analysisPluginName} / {activeProjectName}
             </div>
           </div>
 
           <div className="min-h-0 border-b border-[var(--gt-border-subtle)] lg:border-b-0 lg:border-r">
             <div className="sticky top-0 z-10 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-4 py-3">
-              <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+              <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                 {copy.analysisSelectProject}
               </div>
             </div>
@@ -544,14 +544,14 @@ export function SessionAnalysisScopeModal({
                     type="button"
                     onClick={() => onAnalyzeProject(project)}
                     className={`block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors active:opacity-70 ${
-                      active ? 'bg-[var(--gt-surface-muted)] text-[var(--text-primary)]' : 'hover:bg-[var(--gt-surface-muted)]'
+                      active ? 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]' : 'hover:bg-[var(--gt-surface-muted)]'
                     }`}
                   >
-                    <div className="truncate text-[length:var(--font-size-ui-md)] font-semibold">
+                    <div className="truncate text-[length:var(--gt-font-size-md)] font-semibold">
                       {project.name}
                     </div>
-                    <div className={`mt-1 text-[length:var(--font-size-ui-xs)] font-medium ${
-                      active ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'
+                    <div className={`mt-1 text-[length:var(--gt-font-size-xs)] font-medium ${
+                      active ? 'text-[var(--gt-ink-muted)]' : 'text-[var(--gt-ink-muted)]'
                     }`}>
                       {copy.projectStatusLine(project)}
                     </div>
@@ -566,7 +566,7 @@ export function SessionAnalysisScopeModal({
 
           <div className="min-h-0">
             <div className="sticky top-0 z-10 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-4 py-3">
-              <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+              <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                 {copy.analysisSelectSession}
               </div>
             </div>
@@ -578,10 +578,10 @@ export function SessionAnalysisScopeModal({
                   onClick={() => onAnalyzeSession(session)}
                   className="block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors hover:bg-[var(--gt-surface-muted)] active:opacity-70"
                 >
-                  <div className="truncate text-[length:var(--font-size-ui-md)] font-semibold">
+                  <div className="truncate text-[length:var(--gt-font-size-md)] font-semibold">
                     {session.displayTitle || session.title || getFileName(session.fileLabel, session.id)}
                   </div>
-                  <div className="mt-1 flex min-w-0 items-center gap-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                  <div className="mt-1 flex min-w-0 items-center gap-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                     <span>{session.messageCount} {copy.metaMessages}</span>
                     <span>·</span>
                     <span className="truncate">{formatSessionMetadataDate(session.updatedAt)}</span>
@@ -638,11 +638,11 @@ export function SessionAnalysisDetailModal({
             </div>
             <h3
               id="session-analysis-detail-title"
-              className="mt-1 truncate text-[length:var(--font-size-ui-xl)] font-semibold leading-tight text-[var(--text-primary)]"
+              className="mt-1 truncate text-[length:var(--gt-font-size-xl)] font-semibold leading-tight text-[var(--gt-ink-primary)]"
             >
               {copy.analysisDetailTitle}
             </h3>
-            <div className="mt-2 truncate text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+            <div className="mt-2 truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
               {result
                 ? `${scopeLabel} / ${result.analyzedSessionCount} ${copy.sessionsUnit} / ${result.totalMessages} ${copy.metaMessages} / ${result.generatedAt}`
                 : scopeLabel}
@@ -650,7 +650,7 @@ export function SessionAnalysisDetailModal({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {loading ? (
-              <span className="animate-pulse text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+              <span className="animate-pulse text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
                 {copy.analysisRunning}
               </span>
             ) : null}
@@ -918,8 +918,8 @@ export function SessionsPanel({
     <section ref={panelRef} data-session-management-session-panel="true" className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
         <div className="flex min-w-0 items-center gap-3">
-          <h2 className="shrink-0 text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">{copy.projectSessionsTitle}</h2>
-          <span className="truncate text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+          <h2 className="shrink-0 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">{copy.projectSessionsTitle}</h2>
+          <span className="truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
             {activeProjectName}
           </span>
         </div>
@@ -933,7 +933,7 @@ export function SessionsPanel({
                 aria-expanded={actionMenuOpen}
                 title={copy.sessionActions}
                 onClick={() => setActionMenuOpen((prev) => !prev)}
-                className="flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--text-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] active:scale-90"
+                className="flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90"
               >
                 <MoreVertical className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
@@ -954,10 +954,10 @@ export function SessionsPanel({
                           onSelectFilter(filter.id);
                           setActionMenuOpen(false);
                         }}
-                        className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-medium transition-colors active:scale-95 ${
+                        className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-medium transition-colors active:scale-95 ${
                           isActive
-                            ? 'bg-[var(--gt-surface-muted)] text-[var(--text-primary)]'
-                            : 'text-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]'
+                            ? 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]'
+                            : 'text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]'
                         }`}
                       >
                         <Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'opacity-100' : 'opacity-0'}`} strokeWidth={3} />
@@ -973,7 +973,7 @@ export function SessionsPanel({
                       setActionMenuOpen(false);
                       onRefresh();
                     }}
-                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-95"
+                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-95"
                   >
                     <RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                     <span>{copy.refresh}</span>
@@ -990,10 +990,10 @@ export function SessionsPanel({
                     key={filter.id}
                     type="button"
                     onClick={() => onSelectFilter(filter.id)}
-                    className={`rounded px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium transition-colors active:scale-95 ${
+                    className={`rounded px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium transition-colors active:scale-95 ${
                       isActive
-                        ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
-                        : 'bg-transparent text-[var(--text-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)]'
+                        ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+                        : 'bg-transparent text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
                     }`}
                   >
                     {filter.label}
@@ -1005,7 +1005,7 @@ export function SessionsPanel({
                 onClick={onRefresh}
                 aria-label={copy.refresh}
                 title={copy.refresh}
-                  className="flex h-8 w-8 items-center justify-center rounded border border-transparent text-[var(--text-muted)] transition-colors hover:border-[var(--gt-border-subtle)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] active:scale-90"
+                  className="flex h-8 w-8 items-center justify-center rounded border border-transparent text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-subtle)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90"
               >
                 <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
@@ -1018,7 +1018,7 @@ export function SessionsPanel({
       ) : (
         <>
           {snapshotError ? (
-            <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]">
+            <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2.5 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]">
               {copy.loadFailed} / {snapshotError}
             </div>
           ) : null}
@@ -1029,23 +1029,23 @@ export function SessionsPanel({
                   key={session.id}
                   type="button"
                   onClick={() => onSelectSession(session.id)}
-                  className="group block w-full rounded-sm border-l-2 border-l-transparent border-b border-b-[var(--gt-border-subtle)] px-6 py-4 text-left transition-colors hover:border-l-[var(--text-muted)]/45 hover:bg-[var(--gt-surface-muted)] active:bg-[var(--gt-surface-muted)]"
+                  className="group block w-full rounded-sm border-l-2 border-l-transparent border-b border-b-[var(--gt-border-subtle)] px-6 py-4 text-left transition-colors hover:border-l-[var(--gt-ink-muted)]/45 hover:bg-[var(--gt-surface-muted)] active:bg-[var(--gt-surface-muted)]"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="line-clamp-2 min-w-0 flex-1 break-words text-[length:var(--font-size-ui-lg)] font-semibold leading-tight text-[var(--text-primary)]">
+                    <div className="line-clamp-2 min-w-0 flex-1 break-words text-[length:var(--gt-font-size-lg)] font-semibold leading-tight text-[var(--gt-ink-primary)]">
                       {session.displayTitle || session.title || 'UNTITLED SESSION'}
                     </div>
-                    <span className={`shrink-0 rounded border px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-medium leading-none ${
+                    <span className={`shrink-0 rounded border px-2 py-0.5 text-[length:var(--gt-font-size-2xs)] font-medium leading-none ${
                       session.status === 'active'
-                        ? 'border-[color-mix(in_srgb,var(--gt-status-success)_35%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--text-primary)]'
-                        : 'border-[var(--gt-border-subtle)] text-[var(--text-muted)]'
+                        ? 'border-[color-mix(in_srgb,var(--gt-status-success)_35%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-ink-primary)]'
+                        : 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)]'
                     }`}>
                       {session.status}
                     </span>
                   </div>
 
                   <div
-                    className={`mt-3 flex items-center border-t border-[var(--gt-border-subtle)] pt-2 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)] ${
+                    className={`mt-3 flex items-center border-t border-[var(--gt-border-subtle)] pt-2 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)] ${
                       useCompactSessionMetadata ? 'justify-between gap-x-6' : 'gap-x-2'
                     }`}
                   >
@@ -1125,11 +1125,11 @@ export function ProviderMergeModal({
             </div>
             <h3
               id="session-management-provider-merge-title"
-              className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold leading-tight text-[var(--text-primary)]"
+              className="mt-1 text-[length:var(--gt-font-size-xl)] font-semibold leading-tight text-[var(--gt-ink-primary)]"
             >
               {projectName}
             </h3>
-            <p className="mt-2 text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
+            <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
               将来源 Provider 统一映射到目标标签，不同来源可归并到同一个目标
             </p>
           </div>
@@ -1150,14 +1150,14 @@ export function ProviderMergeModal({
             return (
               <div key={row.sourceKey} className="flex items-center gap-3 px-5 py-4">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[length:var(--font-size-ui-lg)] font-semibold">
+                  <div className="truncate text-[length:var(--gt-font-size-lg)] font-semibold">
                     {sourceLabel}
                   </div>
-                  <div className="mt-0.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                  <div className="mt-0.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                     {row.count} 条会话
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={2} />
+                <ArrowRight className="h-4 w-4 shrink-0 text-[var(--gt-ink-muted)]" strokeWidth={2} />
                 <div className="min-w-0 flex-1">
                   <Combobox
                     value={row.targetProvider}
@@ -1171,14 +1171,14 @@ export function ProviderMergeModal({
             );
           })}
           {rows.length === 0 ? (
-            <div className="px-5 py-8 text-center text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+            <div className="px-5 py-8 text-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
               暂无可归并的 Provider
             </div>
           ) : null}
         </div>
 
         {error ? (
-          <div className="border-t border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]">
+          <div className="border-t border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]">
             {error}
           </div>
         ) : null}
@@ -1291,14 +1291,14 @@ export function SessionDetailModal({
             <div className={sessionManagementModalLabelClass}>
               {copy.modalTitle}
             </div>
-            <h3 id="session-management-dialog-title" className="mt-1 truncate text-[length:var(--font-size-ui-xl)] font-semibold leading-tight text-[var(--text-primary)]">
+            <h3 id="session-management-dialog-title" className="mt-1 truncate text-[length:var(--gt-font-size-xl)] font-semibold leading-tight text-[var(--gt-ink-primary)]">
               {selectedSessionDetail?.displayTitle ??
                 selectedSessionSummary?.displayTitle ??
                 selectedSessionDetail?.title ??
                 selectedSessionSummary?.title ??
                 getFileName(selectedSessionDetail?.fileLabel ?? selectedSessionSummary?.fileLabel, copy.unavailable)}
             </h3>
-            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
               <span>{modalProjectName}</span>
               <span className="opacity-40">·</span>
               <span>
@@ -1331,7 +1331,7 @@ export function SessionDetailModal({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {detailState.refreshing ? (
-              <span className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+              <span className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
                 {copy.refreshing}
               </span>
             ) : null}
@@ -1387,20 +1387,20 @@ export function SessionDetailModal({
                   className="cursor-pointer border-b border-[var(--gt-border-subtle)] px-5 py-3 transition-colors hover:bg-[var(--gt-surface-muted)]"
                 >
                   <div className={sessionManagementMessageMetaClass}>
-                    <span className="text-[var(--text-muted)]/50">#{String(index + 1).padStart(2, '0')}</span>
-                    <span className="text-[var(--text-muted)]">{message.timeLabel}</span>
+                    <span className="text-[var(--gt-ink-muted)]/50">#{String(index + 1).padStart(2, '0')}</span>
+                    <span className="text-[var(--gt-ink-muted)]">{message.timeLabel}</span>
                     <span className={roleTone(message.role)}>{renderRoleLabel(message.role)}</span>
                     {message.truncated ? (
-                      <span className="text-[var(--text-muted)]/50">TRUNCATED</span>
+                      <span className="text-[var(--gt-ink-muted)]/50">TRUNCATED</span>
                     ) : null}
                     {message.lineNumber ? (
-                      <span className="text-[var(--text-muted)]/50">JSONL:{message.lineNumber}</span>
+                      <span className="text-[var(--gt-ink-muted)]/50">JSONL:{message.lineNumber}</span>
                     ) : null}
                     {detailState.rawJSONLoadingMessageID === message.id ? (
-                      <span className="animate-pulse text-[var(--text-muted)]/50">RAW JSON</span>
+                      <span className="animate-pulse text-[var(--gt-ink-muted)]/50">RAW JSON</span>
                     ) : null}
                   </div>
-                  <pre className="mt-2 max-h-80 overflow-y-auto whitespace-pre-wrap break-words font-mono text-[length:var(--font-size-ui-sm)] leading-5 text-[var(--text-primary)]">
+                  <pre className="mt-2 max-h-80 overflow-y-auto whitespace-pre-wrap break-words font-mono text-[length:var(--gt-font-size-sm)] leading-5 text-[var(--gt-ink-primary)]">
                     {message.content || message.summary}
                   </pre>
                   {detailState.rawJSONByMessageID[message.id] ? (
@@ -1408,7 +1408,7 @@ export function SessionDetailModal({
                       <div className={sessionManagementRawJsonHeaderClass}>
                         RAW JSON
                       </div>
-                      <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words p-3 font-mono text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-primary)]">
+                      <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words p-3 font-mono text-[length:var(--gt-font-size-xs)] leading-5 text-[var(--gt-ink-primary)]">
                         {detailState.rawJSONByMessageID[message.id]}
                       </pre>
                     </div>
@@ -1416,16 +1416,16 @@ export function SessionDetailModal({
                 </div>
               ))}
               {detailState.rawJSONError ? (
-                <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]">
+                <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]">
                   {copy.loadFailed} / {detailState.rawJSONError}
                 </div>
               ) : null}
               <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+                <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
                   {copy.messageLoadedLine(selectedSessionDetail.messages.length, selectedSessionDetail.messageCount)}
                 </div>
                 {detailState.messagePageError ? (
-                  <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--accent-red)]">
+                  <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]">
                     {copy.loadFailed} / {detailState.messagePageError}
                   </div>
                 ) : null}

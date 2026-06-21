@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Button } from 'antd';
 import { useState } from 'react';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
@@ -470,9 +471,9 @@ function AccountCardTemplateApplySample() {
 
   return (
     <DesignSystemStoryFrame label="DS-ACCOUNT-CARD-TEMPLATE-APPLY">
-      <div className="relative grid gap-4 bg-[var(--bg-surface)] p-4">
-        <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className="relative grid gap-4 bg-[var(--gt-surface-panel)] p-4">
+        <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+          <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
             ACCOUNT CARD MENU / VERIFIED TEMPLATE ONLY
           </div>
           <div className="grid gap-4 xl:grid-cols-3">
@@ -591,37 +592,37 @@ function AccountCardTemplateApplySample() {
             aria-modal="true"
             aria-label={previewTarget !== 'claude' ? '确认应用到 Codex' : '确认应用到 Claude Code'}
           >
-            <div className="grid max-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)] shadow-[10px_10px_0_var(--shadow-color)]">
-              <div className="grid gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+            <div className="grid max-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] shadow-[10px_10px_0_var(--gt-shadow-panel)]">
+              <div className="grid gap-3 border-b-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
                 <div className="min-w-0">
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
                     FILE PREVIEW CONFIRM
                   </div>
-                  <h2 className="mt-1 text-xl font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                  <h2 className="mt-1 text-xl font-black uppercase italic tracking-normal text-[var(--gt-ink-primary)]">
                     {previewTitle}
                   </h2>
-                  <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+                  <p className="mt-2 max-w-3xl text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">
                     只预览将写入的本地配置文件。确认前不会调用 Wails，也不会修改本机文件。
                   </p>
                   {previewTarget !== 'claude' ? (
                     <div className="mt-3 flex max-w-full flex-wrap gap-2">
-                      <span className="inline-flex border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                      <span className="inline-flex border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.12em] text-[var(--gt-ink-primary)]">
                         固定应用模式：{codexModeLabel}
                       </span>
-                      <span className="inline-flex border-2 border-[var(--border-muted)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      <span className="inline-flex border-2 border-[var(--border-muted)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.12em] text-[var(--gt-ink-muted)]">
                         当前 provider：{currentCodexProviderID}
                       </span>
                     </div>
                   ) : null}
                 </div>
-                <button type="button" onClick={() => setConfirmOpen(false)} className="btn-swiss active:scale-95">
+                <Button onClick={() => setConfirmOpen(false)}>
                   关闭
-                </button>
+                </Button>
               </div>
 
               <div className="grid h-[clamp(24rem,calc(100vh-12rem),38rem)] min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
-                <div className="grid min-h-0 content-start gap-3 overflow-auto border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:border-b-0 lg:border-r-2">
-                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="grid min-h-0 content-start gap-3 overflow-auto border-b-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4 lg:border-b-0 lg:border-r-2">
+                  <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
                     文件列表
                   </div>
                   <div className="grid gap-2">
@@ -632,11 +633,11 @@ function AccountCardTemplateApplySample() {
                         onClick={() => setSelectedFileID(file.id)}
                         className={`grid border-2 px-3 py-3 text-left active:scale-[0.99] ${
                           selectedFileID === file.id
-                            ? 'border-[var(--border-color)] bg-[var(--bg-surface)] shadow-[4px_4px_0_var(--shadow-color)]'
-                            : 'border-[var(--border-muted)] bg-[var(--bg-main)] hover:bg-[var(--bg-surface)]'
+                            ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] shadow-[4px_4px_0_var(--gt-shadow-panel)]'
+                            : 'border-[var(--border-muted)] bg-[var(--gt-surface-canvas)] hover:bg-[var(--gt-surface-panel)]'
                         }`}
                       >
-                        <span className="break-all font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                        <span className="break-all font-mono text-[length:var(--gt-font-size-sm)] font-black text-[var(--gt-ink-primary)]">
                           {file.path}
                         </span>
                       </button>
@@ -654,21 +655,20 @@ function AccountCardTemplateApplySample() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3">
-                <button type="button" onClick={() => setConfirmOpen(false)} className="btn-swiss active:scale-95">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] px-4 py-3">
+                <Button onClick={() => setConfirmOpen(false)}>
                   取消
-                </button>
+                </Button>
                 <div className="flex flex-wrap items-center justify-end gap-3">
-                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                  <div className="font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-[0.12em] text-[var(--gt-ink-primary)]">
                     {result}
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    type="primary"
                     onClick={() => setResult(`PREVIEW ONLY / ${previewTarget !== 'claude' ? `Codex ${codexModeLabel}` : 'Claude Code'} 草稿已确认，未调用 Wails 写入。`)}
-                    className="btn-swiss bg-[var(--border-color)] !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] active:scale-95"
                   >
                     确认并应用
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -683,28 +683,28 @@ function AccountCardFrameSample({ selected = false }: { selected?: boolean }) {
   return (
     <DesignSystemStoryFrame label="DS-FRAME">
       <AccountCardFrame
-        className={selected ? 'border-[var(--accent-red)] bg-[var(--bg-surface)]' : ''}
+        className={selected ? 'border-[var(--gt-status-danger)] bg-[var(--gt-surface-panel)]' : ''}
         onOpen={() => undefined}
       >
         <div className="grid min-h-[9rem] gap-3 p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
                 Interactive card shell
               </div>
-              <h3 className="mt-2 text-lg font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+              <h3 className="mt-2 text-lg font-black uppercase italic tracking-normal text-[var(--gt-ink-primary)]">
                 AccountCardFrame
               </h3>
             </div>
             <button
               type="button"
-              className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal"
+              className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-normal"
               onClick={(event) => event.stopPropagation()}
             >
               Nested Action
             </button>
           </div>
-          <div className="border-t border-dashed border-[var(--border-color)] pt-3 text-xs font-bold text-[var(--text-muted)]">
+          <div className="border-t border-dashed border-[var(--gt-border-strong)] pt-3 text-xs font-bold text-[var(--gt-ink-muted)]">
             Child controls keep their own click boundary while the shell remains keyboard-openable.
           </div>
         </div>
@@ -716,12 +716,12 @@ function AccountCardFrameSample({ selected = false }: { selected?: boolean }) {
 function HealthBarSample({ summary = healthyUsageSummary }: { summary?: AccountUsageSummary }) {
   return (
     <DesignSystemStoryFrame label="DS-HEALTH">
-      <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <div className="flex items-end justify-between gap-3">
-          <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
             Request health
           </div>
-          <div className="font-mono text-sm font-black tabular-nums text-[var(--text-primary)]">
+          <div className="font-mono text-sm font-black tabular-nums text-[var(--gt-ink-primary)]">
             {Math.round(summary.successRate ?? 0)}%
           </div>
         </div>
@@ -771,8 +771,8 @@ function CardSectionsSample() {
   const { t } = useStoryCopy();
   return (
     <DesignSystemStoryFrame label="DS-SECTIONS">
-      <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-        <div className="border-b border-dashed border-[var(--border-color)] p-4">
+      <div className="grid overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)]">
+        <div className="border-b border-dashed border-[var(--gt-border-strong)] p-4">
           <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
         </div>
         <QuotaBars quotaDisplay={quotaDisplay} t={t} />
@@ -789,7 +789,7 @@ function MiniMetricsSample() {
   const { t } = useStoryCopy();
   return (
     <DesignSystemStoryFrame label="DS-MINI-METRICS">
-      <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
       </div>
     </DesignSystemStoryFrame>
@@ -800,7 +800,7 @@ function QuotaBarsRefreshingSample() {
   const { t } = useStoryCopy();
   return (
     <DesignSystemStoryFrame label="DS-QUOTA-REFRESHING">
-      <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+      <div className="grid overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)]">
         <QuotaBars quotaDisplay={refreshingQuotaDisplay} t={t} />
       </div>
     </DesignSystemStoryFrame>
@@ -823,17 +823,17 @@ function AccountCardsOverview() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">账号卡片组件</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
           {zh
             ? '把账号卡片体系里的完整账号卡、基础外壳、归因卡、指标段、健康条和加载骨架纳入设计系统，用固定 mock 数据检查密度、失败态、限流和额度展示。'
             : 'Admitted full account card, shell, attribution card, metric sections, health bar, and loading skeleton with fixed mock data for density, failure, rate-limit, and quota states including in-row quota refresh.'}
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '完整账号卡' : 'Full account card'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountCardSample label="DS-ACCOUNT-CARD-READY" />
@@ -844,12 +844,12 @@ function AccountCardsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '模板应用菜单' : 'Template apply menu'}</h3>
         <AccountCardTemplateApplySample />
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '交互外壳' : 'Interactive shell'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountCardFrameSample />
@@ -857,7 +857,7 @@ function AccountCardsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '归因卡片状态' : 'Attribution card states'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AttributionCardSample />
@@ -867,7 +867,7 @@ function AccountCardsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '指标段与健康条' : 'Metric sections and health'}</h3>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.65fr)]">
           <CardSectionsSample />
@@ -878,7 +878,7 @@ function AccountCardsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '加载骨架' : 'Loading skeleton'}</h3>
         <SkeletonSample />
       </section>

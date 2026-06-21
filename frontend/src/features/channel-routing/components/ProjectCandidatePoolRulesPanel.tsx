@@ -40,38 +40,38 @@ const emptyDraft: ProjectCandidatePoolRuleLike = {
   allowAccountIDs: [],
 };
 
-const projectCandidateRulesShellClass = 'flex min-h-0 flex-1 flex-col text-[var(--text-primary)]';
+const projectCandidateRulesShellClass = 'flex min-h-0 flex-1 flex-col text-[var(--gt-ink-primary)]';
 const projectCandidateRulesGridClass =
   'grid min-h-0 flex-1 gap-4 overflow-x-hidden xl:grid-cols-[minmax(18rem,0.78fr)_minmax(0,1.22fr)]';
 const projectCandidateRulesPanelClass =
   'flex min-h-0 min-w-0 flex-col rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const projectCandidateRulesPanelBodyClass = 'flex min-h-0 flex-1 flex-col gap-3 p-3';
-const projectCandidateRulesLabelClass = 'mb-1 block text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]';
+const projectCandidateRulesLabelClass = 'mb-1 block text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]';
 const projectCandidateRulesSelectClass =
-  'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+  'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] outline-none transition-colors focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const projectCandidateRulesListClass =
   'min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
-const projectCandidateRulesEmptyClass = 'px-3 py-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+const projectCandidateRulesEmptyClass = 'px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
 const projectCandidateRulesAccountRowClass =
   'grid min-w-0 grid-cols-[1rem_2rem_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2 last:border-b-0';
 const projectCandidateRulesRankClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const projectCandidateRulesButtonClass =
-  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 const projectCandidateRulesPrimaryButtonClass =
-  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50';
 const projectCandidateRulesIconButtonClass =
-  'inline-flex h-7 w-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex h-7 w-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-45';
 const projectCandidateRulesMetaClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const projectCandidateRulesChipClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-secondary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)]';
 const projectCandidateRulesStrongChipClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]';
 const projectCandidateRulesDangerChipClass =
-  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,transparent)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-status-danger)]';
+  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,transparent)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-danger)]';
 const projectCandidateRulesMessageClass =
-  'mt-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-secondary)]';
+  'mt-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)]';
 
 export default function ProjectCandidatePoolRulesPanel({
   channel,
@@ -291,7 +291,7 @@ export default function ProjectCandidatePoolRulesPanel({
             </label>
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
-                <span className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">允许账号</span>
+                <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">允许账号</span>
                 <span className={projectCandidateRulesMetaClass}>
                   {normalizedAllowAccountIDs.length} enabled
                 </span>
@@ -318,14 +318,14 @@ export default function ProjectCandidatePoolRulesPanel({
                           checked={enabled}
                           disabled={controlsDisabled}
                           onChange={() => toggleDraftAccount(accountID)}
-                          className="h-4 w-4 accent-[var(--text-primary)]"
+                          className="h-4 w-4 accent-[var(--gt-ink-primary)]"
                           aria-label={`${enabled ? '停用' : '启用'} ${account.label || accountID}`}
                         />
                         <span className={projectCandidateRulesRankClass}>
                           {enabled ? `#${rank}` : '--'}
                         </span>
                         <label htmlFor={`project-candidate-account-${accountID}`} className="min-w-0 cursor-pointer">
-                          <span className="block truncate text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+                          <span className="block truncate text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                             {account.label || accountID}
                           </span>
                           <span className={projectCandidateRulesMetaClass}>
@@ -365,7 +365,7 @@ export default function ProjectCandidatePoolRulesPanel({
 
         <section className={projectCandidateRulesPanelClass} data-project-candidate-rule-list>
           {rows.length === 0 ? (
-            <div className="min-h-0 flex-1 px-3 py-4 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+            <div className="min-h-0 flex-1 px-3 py-4 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
               暂无项目候选池规则
             </div>
           ) : (
@@ -375,18 +375,18 @@ export default function ProjectCandidatePoolRulesPanel({
                   <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                        <h3 className="min-w-0 truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                           {row.projectTitle}
                         </h3>
-                        <span className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]">
+                        <span className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                           {row.statusLabel}
                         </span>
                       </div>
-                      <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]">
+                      <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                         {row.projectKey}
                       </div>
                       {row.projectMeta ? (
-                        <div className="mt-1 text-[length:var(--font-size-ui-xs)] text-[var(--text-secondary)]">{row.projectMeta}</div>
+                        <div className="mt-1 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-secondary)]">{row.projectMeta}</div>
                       ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">

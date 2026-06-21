@@ -63,8 +63,8 @@ test('submenu motion state matches placement and visibility', () => {
 test('sidebar typography keeps nav labels readable in the compact workspace shell', async () => {
   const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /fontSize: '13px'/);
-  assert.match(source, /lineHeight: '20px'/);
+  assert.match(source, /fontSize: 'var\(--gt-font-size-body\)'/);
+  assert.match(source, /lineHeight: 'var\(--gt-line-height-body\)'/);
   assert.match(source, /fontWeight: isActive \? 500 : 400/);
   assert.match(source, /--gt-font-family-sans/);
   assert.match(source, /--gt-ink-primary/);

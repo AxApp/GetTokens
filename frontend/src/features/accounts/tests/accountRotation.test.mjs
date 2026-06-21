@@ -282,10 +282,10 @@ test('RotationConfigSection uses the quiet workspace shell', async () => {
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-warning/);
   assert.doesNotMatch(source, /select-swiss/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /border-2 border-\[var\(--border-muted\)\]/);
-  assert.doesNotMatch(source, /border-l-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /border-l-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
@@ -307,9 +307,9 @@ test('RotationPriorityItem uses the quiet workspace row shell', async () => {
   assert.match(source, /--gt-border-subtle/);
 
   assert.doesNotMatch(source, /btn-swiss/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
-  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
+  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
@@ -335,11 +335,11 @@ test('AccountRotationModal uses the quiet workspace modal shell', async () => {
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-danger/);
   assert.doesNotMatch(source, /btn-swiss/);
-  assert.doesNotMatch(source, /border-4 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-b-4 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-4 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-b-4 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /border-2 border-dashed/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);

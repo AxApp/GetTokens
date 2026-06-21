@@ -70,6 +70,18 @@ const typographyTokens = [
   '--gt-font-size-page-title',
   '--gt-font-size-metadata',
   '--gt-font-size-number',
+  '--gt-font-size-xs',
+  '--gt-font-size-sm',
+  '--gt-font-size-sm-plus',
+  '--gt-font-size-md',
+  '--gt-font-size-lg',
+  '--gt-font-size-xl',
+  '--gt-line-height-none',
+  '--gt-line-height-tight',
+  '--gt-line-height-snug',
+  '--gt-line-height-body',
+  '--gt-line-height-relaxed',
+  '--gt-line-height-loose',
   '--gt-font-weight-normal',
   '--gt-font-weight-medium',
   '--gt-font-weight-semibold',
@@ -157,8 +169,8 @@ test('style contract keeps only the single root token set', () => {
   assert.equal(parchmentDarkBlock, '');
 });
 
-test('CSS keeps existing component class names while sharing the single root token set', () => {
-  const componentClasses = [
+test('CSS removes retired Swiss/Parchment component primitives', () => {
+  const retiredComponentClasses = [
     '.parchment-app-shell',
     '.parchment-toolbar',
     '.parchment-section-card',
@@ -167,8 +179,12 @@ test('CSS keeps existing component class names while sharing the single root tok
     '.parchment-tabs',
     '.parchment-detail-modal-shell',
     '.parchment-settings-row',
+    '.btn-swiss',
+    '.input-swiss',
+    '.select-swiss',
+    '.card-swiss',
   ];
-  for (const cls of componentClasses) {
-    assert.ok(css.includes(cls), `CSS should contain ${cls}`);
+  for (const cls of retiredComponentClasses) {
+    assert.equal(css.includes(cls), false, `CSS should not contain retired primitive ${cls}`);
   }
 });

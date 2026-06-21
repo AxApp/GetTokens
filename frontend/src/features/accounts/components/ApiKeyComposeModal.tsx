@@ -12,33 +12,33 @@ const apiKeyComposeBodyClass = 'space-y-4 overflow-y-auto p-6';
 const apiKeyComposeFooterClass =
   'flex items-center justify-between border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
 const apiKeyComposeLabelClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const apiKeyComposeInputClass =
-  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-faint)] focus:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-disabled)] focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 const apiKeyComposeTextareaClass = `${apiKeyComposeInputClass} min-h-28 resize-y font-mono`;
 const apiKeyComposeToggleClass =
   'flex items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
 const apiKeyComposeProbeClass =
   'space-y-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-4';
 const apiKeyComposeButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
 const apiKeyComposePrimaryButtonClass =
-  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_88%,transparent)] disabled:cursor-not-allowed disabled:opacity-45';
+  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:bg-[color-mix(in_srgb,var(--gt-ink-primary)_88%,transparent)] disabled:cursor-not-allowed disabled:opacity-45';
 const apiKeyComposeModelChipClass =
-  'rounded border px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal transition-colors';
+  'rounded border px-2 py-0.5 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal transition-colors';
 const apiKeyComposeModelChipActiveClass =
-  'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]';
+  'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]';
 const apiKeyComposeModelChipInactiveClass =
-  'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-muted)] hover:border-[var(--text-primary)]';
+  'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] hover:border-[var(--gt-ink-primary)]';
 const apiKeyComposeErrorClass =
-  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
+  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
 const apiKeyComposeStatusClass = (status: FetchModelsState['status'] | ProbeVerifyState['status']) =>
-  `text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal ${
+  `text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal ${
     status === 'success'
       ? 'text-[var(--gt-status-success)]'
       : status === 'error'
         ? 'text-[var(--gt-status-danger)]'
-        : 'text-[var(--text-muted)]'
+        : 'text-[var(--gt-ink-muted)]'
   }`;
 
 interface FetchModelsState {
@@ -133,7 +133,7 @@ export default function ApiKeyComposeModal({
           <div className={apiKeyComposeLabelClass}>
             {t('accounts.source_api_key')}
           </div>
-          <h3 className="mt-1 text-sm font-semibold tracking-normal text-[var(--text-primary)]">
+          <h3 className="mt-1 text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]">
             {t('accounts.add_codex_api_key')}
           </h3>
         </header>
@@ -247,7 +247,7 @@ export default function ApiKeyComposeModal({
                         </button>
                       ))}
                       {fetchModelsState.models.length > 12 ? (
-                        <span className="self-center text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]">
+                        <span className="self-center text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                           +{fetchModelsState.models.length - 12}
                         </span>
                       ) : null}

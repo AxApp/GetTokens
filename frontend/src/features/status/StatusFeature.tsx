@@ -86,19 +86,19 @@ const defaultSidecarStatus: SidecarStatus = {
 const statusDiagnosticsPanelClass =
   'grid gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4';
 const statusDiagnosticsTitleClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const statusDiagnosticsHeadlineClass =
-  'mt-1 truncate text-[length:var(--font-size-ui-md)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'mt-1 truncate text-[length:var(--gt-font-size-md)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const statusDiagnosticsToneClass =
-  'shrink-0 rounded border px-3 py-1 text-right text-[length:var(--font-size-ui-xs)] font-medium tracking-normal';
+  'shrink-0 rounded border px-3 py-1 text-right text-[length:var(--gt-font-size-xs)] font-medium tracking-normal';
 const statusDiagnosticsErrorClass =
-  'min-w-0 overflow-hidden rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-status-warning)]';
+  'min-w-0 overflow-hidden rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-status-warning)]';
 const statusHeaderHealthClass =
-  'flex items-center gap-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]';
+  'flex items-center gap-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
 const statusHeaderStatusDotClass =
   'h-2.5 w-2.5 shrink-0 rounded-full border border-[var(--gt-border-subtle)]';
 const statusHeaderStatusBadgeClass =
-  'max-w-[18rem] rounded border px-4 py-1 text-right text-[length:var(--font-size-ui-xs)] font-medium tracking-normal';
+  'max-w-[18rem] rounded border px-4 py-1 text-right text-[length:var(--gt-font-size-xs)] font-medium tracking-normal';
 
 function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildAccountStoreDiagnosticsView> }) {
   const toneClass =
@@ -108,7 +108,7 @@ function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildA
         ? 'border-[var(--gt-status-warning)] text-[var(--gt-status-warning)]'
         : view.tone === 'success'
           ? 'border-[var(--gt-status-success)] text-[var(--gt-status-success)]'
-          : 'border-[var(--gt-border-subtle)] text-[var(--text-muted)]';
+          : 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)]';
 
   return (
     <section
@@ -1135,7 +1135,7 @@ export default function StatusFeature({
               <div
                 className={`${statusHeaderStatusBadgeClass} ${
                   sidecarStatus.code === 'ready' && !healthzHasError
-                    ? 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]'
+                    ? 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)]'
                     : 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]'
                 }`}
                 data-status-header-state="quiet"

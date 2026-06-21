@@ -44,39 +44,39 @@ const unifiedComposeProviderPickerClass = "space-y-4";
 const unifiedComposeProviderSectionStackClass = "space-y-4";
 const unifiedComposeProviderGridClass = "grid grid-cols-3 gap-2";
 const unifiedComposeProviderCardClass =
-  "group grid min-h-[7.25rem] grid-rows-[auto_1fr_auto] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-left transition-[border-color,background-color,transform] hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] active:scale-[0.98]";
+  "group grid min-h-[7.25rem] grid-rows-[auto_1fr_auto] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-left transition-[border-color,background-color,transform] hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] active:scale-[0.98]";
 const unifiedComposeProviderChipClass =
-  "max-w-[6.75rem] truncate rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+  "max-w-[6.75rem] truncate rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--gt-font-size-3xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]";
 const unifiedComposeProviderNameClass =
-  "truncate text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]";
+  "truncate text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]";
 const unifiedComposeProviderVariantClass =
-  "inline-flex max-w-full rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-semibold tracking-normal text-[var(--gt-surface-canvas)]";
+  "inline-flex max-w-full rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-1.5 py-0.5 text-[length:var(--gt-font-size-3xs)] font-semibold tracking-normal text-[var(--gt-surface-canvas)]";
 const unifiedComposeProviderFormatPillClass =
-  "!min-h-0 bg-[var(--gt-surface-canvas)] !px-1.5 !py-0.5 !text-[length:var(--font-size-ui-3xs)]";
+  "!min-h-0 bg-[var(--gt-surface-canvas)] !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-3xs)]";
 const unifiedComposeEndpointRowClass =
   "grid min-w-0 gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 xl:grid-cols-[10rem_minmax(0,1fr)] xl:items-end";
 const unifiedComposeEndpointMetaClass =
-  "truncate text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+  "truncate text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]";
 const unifiedComposeSubheadingClass =
-  "font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+  "font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]";
 const unifiedComposeHelpClass =
-  "text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+  "text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]";
 const unifiedComposeCurlButtonClass =
-  "rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]";
+  "rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]";
 const unifiedComposeCurlCardClass =
   "grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3";
-const unifiedComposeCurlEmptyClass = "py-4 text-left !text-[length:var(--font-size-ui-xs)]";
+const unifiedComposeCurlEmptyClass = "py-4 text-left !text-[length:var(--gt-font-size-xs)]";
 const unifiedComposeHeaderEyebrowClass =
-  "text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]";
+  "text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]";
 const unifiedComposeHeaderTitleClass =
-  "truncate text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]";
+  "truncate text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]";
 const unifiedComposeHeaderPillClass = "!min-h-0 !py-0.5";
 const unifiedComposeHeaderButtonClass =
-  "shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]";
+  "shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]";
 const unifiedComposeFooterButtonClass =
-  "rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50";
 const unifiedComposeFooterPrimaryButtonClass =
-  "rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:bg-[color-mix(in_srgb,var(--text-primary)_88%,transparent)] disabled:cursor-not-allowed disabled:opacity-50";
+  "rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:bg-[color-mix(in_srgb,var(--gt-ink-primary)_88%,transparent)] disabled:cursor-not-allowed disabled:opacity-50";
 
 export interface UnifiedComposeFormState extends ApiKeyFormState {
   formatBaseUrls: Partial<Record<string, string>>;
@@ -361,7 +361,7 @@ export default function UnifiedComposeModal({
                           onChange={(event) =>
                             onFormatBaseUrlChange(fmt, event.target.value)
                           }
-                          className="font-mono !text-[length:var(--font-size-ui-xs)]"
+                          className="font-mono !text-[length:var(--gt-font-size-xs)]"
                           fieldClassName="min-w-0"
                           placeholder={fmtBaseUrl}
                           aria-label={resolveUnifiedComposeFormatTitle(t, fmt)}
@@ -640,7 +640,7 @@ function UnifiedComposeCurlConfigSection({
             </span>
           </div>
           <div
-            className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]"
+            className="truncate font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]"
             title={value || undefined}
           >
             {value}
@@ -751,7 +751,7 @@ function UnifiedComposeHeader({
         ) : null}
       </div>
       {selectedPreset && !showPresets ? (
-        <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]">
+        <div className="truncate font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
           {selectedPreset.baseUrl}
         </div>
       ) : null}

@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { Button } from 'antd';
 import { ArrowRight, BadgeCheck, CircleDollarSign, Route, WalletCards } from 'lucide-react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useI18n } from '../../../context/I18nContext';
@@ -50,7 +51,7 @@ type Story = StoryObj;
 function ModalViewport({ children }: { children: ReactNode }) {
   return (
     <DesignSystemStoryFrame label="DS-CODEX-DETAIL-DESKTOP-DRAFT">
-      <div className="relative h-[45rem] w-[76rem] min-w-[76rem] overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)] [transform:translateZ(0)]">
+      <div className="relative h-[45rem] w-[76rem] min-w-[76rem] overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -111,27 +112,23 @@ function CodexAccountDetailDesktopDraft() {
         header={<CodexAccountDetailHeader row={row} t={t} onClose={() => undefined} />}
         footer={
           <>
-            <div className="min-w-0 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)]">
+            <div className="min-w-0 text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.15em] text-[var(--gt-ink-muted)]">
               Desktop draft · OpenAI compatible
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="btn-swiss inline-flex items-center gap-2 bg-[var(--text-primary)] !text-[var(--bg-main)]"
-              >
+              <Button type="primary" iconPosition="end" icon={<ArrowRight className="h-3.5 w-3.5" strokeWidth={3.2} />}>
                 {t('common.save')}
-                <ArrowRight className="h-3.5 w-3.5" strokeWidth={3.2} />
-              </button>
-              <button type="button" className="btn-swiss">
+              </Button>
+              <Button>
                 {t('common.cancel')}
-              </button>
+              </Button>
             </div>
           </>
         }
       >
         <AccountDetailBody
           data-collaboration-id="DS-CODEX-ACCOUNT-DETAIL-DESKTOP-DRAFT"
-          className="!space-y-4 bg-[var(--bg-surface)]"
+          className="!space-y-4 bg-[var(--gt-surface-panel)]"
         >
           <CodexOperationalDeck
             routeLabel={configDraft.proxyUrl || 'direct'}
@@ -225,7 +222,7 @@ function CodexOperationalDeck({
       eyebrow="Runtime"
       title="运行控制面板"
       density="dense"
-      className="bg-[var(--bg-main)]"
+      className="bg-[var(--gt-surface-canvas)]"
     >
       <div className="grid min-w-0 grid-cols-4 gap-3">
         <OperationalMetric
@@ -269,20 +266,20 @@ function OperationalMetric({
   meta: string;
 }) {
   return (
-    <div className="grid min-h-[5.25rem] min-w-0 content-between border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+    <div className="grid min-h-[5.25rem] min-w-0 content-between border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <span className="inline-flex h-7 w-7 items-center justify-center bg-[var(--text-primary)] text-[var(--bg-main)]">
+        <span className="inline-flex h-7 w-7 items-center justify-center bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]">
           {icon}
         </span>
-        <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
           {label}
         </span>
       </div>
       <div className="min-w-0">
-        <div className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
+        <div className="truncate font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase text-[var(--gt-ink-primary)]">
           {value}
         </div>
-        <div className="mt-1 truncate text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        <div className="mt-1 truncate text-[length:var(--gt-font-size-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--gt-ink-muted)]">
           {meta}
         </div>
       </div>
@@ -320,25 +317,25 @@ function CodexModelRoutingPreview({
       density="dense"
       actions={
         editable ? (
-          <button type="button" onClick={onAdd} className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
+          <Button size="small" onClick={onAdd}>
             + {t('accounts.openai_provider_add_model')}
-          </button>
+          </Button>
         ) : undefined
       }
     >
       {mappings.length > 0 ? (
-        <div className="border-2 border-[var(--border-color)]">
-          <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <div className="border-2 border-[var(--gt-border-strong)]">
+          <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-2xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
             <span>{t('codex.account_list_real_model')}</span>
             <span className="text-center">-&gt;</span>
             <span className="text-right">{t('codex.account_list_codex_model')}</span>
             <span />
           </div>
-          <div className="divide-y divide-[var(--border-color)]">
+          <div className="divide-y divide-[var(--gt-border-strong)]">
             {mappings.map((mapping, index) => (
               <div
                 key={`mapping-${index}`}
-                className="grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)]"
+                className="grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 px-3 py-2 text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-primary)]"
               >
                 {editable ? (
                   <ModelCombobox
@@ -348,11 +345,11 @@ function CodexModelRoutingPreview({
                     placeholder={modelOptionNames[0] || 'deepseek-chat'}
                   />
                 ) : (
-                  <span className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
+                  <span className="min-w-0 break-all font-mono text-[length:var(--gt-font-size-md-compact)] font-black text-[var(--gt-ink-primary)]">
                     {mapping.realModel}
                   </span>
                 )}
-                <span className="text-center font-black text-[var(--text-muted)]">-&gt;</span>
+                <span className="text-center font-black text-[var(--gt-ink-muted)]">-&gt;</span>
                 {editable ? (
                   <ModelCombobox
                     value={mapping.codexModel}
@@ -362,19 +359,19 @@ function CodexModelRoutingPreview({
                     align="right"
                   />
                 ) : (
-                  <span className="min-w-0 break-all text-right font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
+                  <span className="min-w-0 break-all text-right font-mono text-[length:var(--gt-font-size-md-compact)] font-black text-[var(--gt-ink-primary)]">
                     {mapping.codexModel}
                   </span>
                 )}
                 {editable ? (
-                  <button
-                    type="button"
+                  <Button
+                    size="small"
+                    type="text"
                     onClick={() => onRemove(index)}
-                    className="btn-swiss !p-1.5 !shadow-none hover:bg-[var(--bg-surface)]"
                     aria-label={t('common.delete')}
                   >
                     ✕
-                  </button>
+                  </Button>
                 ) : (
                   <span />
                 )}

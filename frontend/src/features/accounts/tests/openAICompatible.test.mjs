@@ -127,7 +127,7 @@ test('openai compatible provider card uses the quiet workspace shell', async () 
   assert.doesNotMatch(targetSource, /btn-swiss/);
   assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
   assert.doesNotMatch(targetSource, /border-dashed/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
   assert.doesNotMatch(targetSource, /font-black/);
@@ -143,8 +143,8 @@ test('vendor logo mark uses quiet provider badge tokens', async () => {
   assert.match(source, /--vendor-logo-color/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-surface-muted/);
-  assert.doesNotMatch(source, /--border-color/);
-  assert.doesNotMatch(source, /--bg-main/);
+  assert.doesNotMatch(source, /--gt-border-strong/);
+  assert.doesNotMatch(source, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /\buppercase\b/);
 });
@@ -169,7 +169,7 @@ test('openai compatible compose modal uses the quiet workspace shell', async () 
   assert.match(source, /--gt-status-danger/);
   assert.doesNotMatch(source, /btn-swiss|input-swiss|select-swiss|card-swiss/);
   assert.doesNotMatch(source, /border-2|border-t-2|border-b-2|border-dashed/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]|bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]|bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /color-status-/);
   assert.doesNotMatch(source, /font-black|\buppercase\b|shadow-hard|shadow-\[/);
   assert.doesNotMatch(source, /tracking-\[/);

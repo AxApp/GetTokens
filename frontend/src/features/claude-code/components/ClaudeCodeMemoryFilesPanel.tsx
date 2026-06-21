@@ -94,7 +94,7 @@ export default function ClaudeCodeMemoryFilesPanel({
       subtitle={snapshot.projectPath ? `Project: ${snapshot.projectPath}` : undefined}
       notice={
         stateMessage || hasWarnings ? (
-          <span className={`flex items-center gap-2 text-sm ${hasWarnings ? 'text-[var(--text-warning)]' : 'text-[var(--text-secondary)]'}`}>
+          <span className={`flex items-center gap-2 text-sm ${hasWarnings ? 'text-[var(--gt-status-warning)]' : 'text-[var(--gt-ink-secondary)]'}`}>
             {hasWarnings ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
             {stateMessage || (hasWarnings ? warnings[0] : `${existingFiles.length} file${existingFiles.length !== 1 ? 's' : ''} found`)}
           </span>
@@ -103,9 +103,9 @@ export default function ClaudeCodeMemoryFilesPanel({
     >
       {existingFiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
-          <FileText className="h-10 w-10 text-[var(--text-muted)]" />
-          <p className="text-sm text-[var(--text-muted)]">No CLAUDE.md files discovered</p>
-          <p className="max-w-md text-xs text-[var(--text-muted)]">
+          <FileText className="h-10 w-10 text-[var(--gt-ink-muted)]" />
+          <p className="text-sm text-[var(--gt-ink-muted)]">No CLAUDE.md files discovered</p>
+          <p className="max-w-md text-xs text-[var(--gt-ink-muted)]">
             Create a CLAUDE.md in ~/.claude/ or your project root to provide persistent instructions to Claude Code.
             Use @imports to include AGENTS.md or other shared Markdown files.
           </p>
@@ -120,29 +120,29 @@ export default function ClaudeCodeMemoryFilesPanel({
                 className={`${memoryFilesPanelRowClass} ${!file.exists ? 'opacity-50' : ''}`}
                 data-claude-memory-file-row={file.path}
               >
-                <span className="text-[var(--text-secondary)]">
+                <span className="text-[var(--gt-ink-secondary)]">
                   {expandedFiles.has(file.path) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </span>
-                <span className="text-[var(--text-secondary)]">{scopeIcons[file.scope] ?? <FileText className="h-4 w-4" />}</span>
+                <span className="text-[var(--gt-ink-secondary)]">{scopeIcons[file.scope] ?? <FileText className="h-4 w-4" />}</span>
                 <div className="flex-1 text-left">
                   <span className="text-sm font-medium">{scopeLabels[file.scope] ?? file.scope}</span>
                 </div>
                 {file.exists ? (
-                  <span className="flex items-center gap-1 rounded bg-[var(--badge-success-bg)] px-2 py-0.5 text-xs text-[var(--text-success)]">
+                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-success)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-success)]">
                     <CheckCircle2 className="h-3 w-3" /> {file.size > 1024 ? `${(file.size / 1024).toFixed(1)}KB` : `${file.size}B`}
                   </span>
                 ) : (
-                  <span className="rounded bg-[var(--badge-neutral-bg)] px-2 py-0.5 text-xs text-[var(--text-muted)]">
+                  <span className="rounded bg-[var(--gt-surface-muted)] px-2 py-0.5 text-xs text-[var(--gt-ink-muted)]">
                     Not found
                   </span>
                 )}
                 {file.gitIgnored && (
-                  <span className="rounded bg-[var(--badge-success-bg)] px-2 py-0.5 text-xs text-[var(--text-success)]">
+                  <span className="rounded bg-[color-mix(in_srgb,var(--gt-status-success)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-success)]">
                     <GitBranch className="inline h-3 w-3" /> gitignored
                   </span>
                 )}
                 {file.scope === 'local' && !file.gitIgnored && file.exists && (
-                  <span className="flex items-center gap-1 rounded bg-[var(--badge-warning-bg)] px-2 py-0.5 text-xs text-[var(--text-warning)]">
+                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-warning)]">
                     <AlertTriangle className="h-3 w-3" /> not gitignored
                   </span>
                 )}
@@ -150,30 +150,30 @@ export default function ClaudeCodeMemoryFilesPanel({
 
               {expandedFiles.has(file.path) && file.exists && (
                 <div className={memoryFilesPanelPanelClass}>
-                  <p className="mb-3 font-mono text-xs text-[var(--text-muted)]">{file.path}</p>
+                  <p className="mb-3 font-mono text-xs text-[var(--gt-ink-muted)]">{file.path}</p>
 
                   {file.imports && file.imports.length > 0 && (
                     <div className="mb-4">
                       <div className="mb-2 flex items-center gap-2">
-                        <Import className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+                        <Import className="h-3.5 w-3.5 text-[var(--gt-ink-secondary)]" />
                         <span className="text-xs font-medium">Imports ({file.imports.length})</span>
                       </div>
                       <div className="ml-5 space-y-1">
                         {file.imports.map((imp) => (
                           <div key={imp.raw} className="flex items-center gap-2 text-xs">
-                            <span className="font-mono text-[var(--text-secondary)]">@{imp.raw}</span>
-                            <span className="text-[var(--text-muted)]">&rarr;</span>
+                            <span className="font-mono text-[var(--gt-ink-secondary)]">@{imp.raw}</span>
+                            <span className="text-[var(--gt-ink-muted)]">&rarr;</span>
                             {imp.exists ? (
-                              <span className="flex items-center gap-1 text-[var(--text-success)]">
+                              <span className="flex items-center gap-1 text-[var(--gt-status-success)]">
                                 <CheckCircle2 className="h-3 w-3" /> {imp.resolved}
                               </span>
                             ) : (
-                              <span className="flex items-center gap-1 text-[var(--text-warning)]">
+                              <span className="flex items-center gap-1 text-[var(--gt-status-warning)]">
                                 <AlertTriangle className="h-3 w-3" /> missing: {imp.resolved}
                               </span>
                             )}
                             {imp.depth > 1 && (
-                              <span className="rounded bg-[var(--badge-neutral-bg)] px-1 py-0.5 text-[var(--text-muted)]">
+                              <span className="rounded bg-[var(--gt-surface-muted)] px-1 py-0.5 text-[var(--gt-ink-muted)]">
                                 depth {imp.depth}
                               </span>
                             )}
@@ -184,13 +184,13 @@ export default function ClaudeCodeMemoryFilesPanel({
                   )}
 
                   {file.contentTruncated && (
-                    <div className="mb-2 rounded bg-[var(--badge-warning-bg)] p-2 text-xs text-[var(--text-warning)]">
+                    <div className="mb-2 rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] p-2 text-xs text-[var(--gt-status-warning)]">
                       Content truncated (file exceeds 50KB limit)
                     </div>
                   )}
 
                   <div className="mb-3">
-                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
+                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[var(--gt-ink-secondary)]">
                       <Globe className="h-3.5 w-3.5" /> Content Preview
                     </div>
                     <SnippetPre className="max-h-60 overflow-auto text-xs">{file.content || ''}</SnippetPre>
@@ -226,7 +226,7 @@ export default function ClaudeCodeMemoryFilesPanel({
       {isEditing && editingPath && (
         <div className={memoryFilesPanelPanelClass} data-claude-memory-editor="quiet">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-medium">
-            <Edit3 className="h-4 w-4" /> Editing: <span className="font-mono text-xs text-[var(--text-muted)]">{editingPath}</span>
+            <Edit3 className="h-4 w-4" /> Editing: <span className="font-mono text-xs text-[var(--gt-ink-muted)]">{editingPath}</span>
           </h3>
           <textarea
             className={memoryFilesPanelTextareaClass}
@@ -239,7 +239,7 @@ export default function ClaudeCodeMemoryFilesPanel({
               <SnippetPre className="max-h-40 mt-1 overflow-auto text-xs">{savePreview}</SnippetPre>
             </div>
           )}
-          {saveError && <p className="mt-2 text-sm text-[var(--text-danger)]">{saveError}</p>}
+          {saveError && <p className="mt-2 text-sm text-[var(--gt-status-danger)]">{saveError}</p>}
         </div>
       )}
     </AssetWorkbenchShell>

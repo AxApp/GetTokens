@@ -8,13 +8,13 @@ import {
 } from './AccountDetailPrimitives';
 
 const oauthModelProbeFieldLabelClass =
-  'text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
 const oauthModelProbeButtonClass =
-  'inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const oauthModelProbeStatusBaseClass =
-  'rounded border px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium leading-5 tracking-normal';
+  'rounded border px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-medium leading-5 tracking-normal';
 const oauthModelProbeStatusToneClassNames = {
-  idle: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
+  idle: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
   loading:
     'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)]',
   success:

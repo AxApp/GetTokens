@@ -239,7 +239,7 @@ test('CodexAccountDetailModal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /border-l-2/);
   assert.doesNotMatch(source, /border-b-2/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
@@ -1194,11 +1194,11 @@ test('Codex account order section uses a lighter shell instead of a nested card 
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /\buppercase\b/);
   assert.doesNotMatch(source, /tracking-wide|tracking-wider|tracking-widest|tracking-\[/);
-  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\] px-5 py-4/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--gt-border-strong\)\] px-5 py-4/);
   assert.doesNotMatch(source, /CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS/);
   assert.doesNotMatch(
     source,
-    /<section className="border-\[3px\] border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] shadow-\[8px_8px_0_var\(--shadow-color\)\]">/,
+    /<section className="border-\[3px\] border-\[var\(--gt-border-strong\)\] bg-\[var\(--gt-surface-canvas\)\] shadow-\[8px_8px_0_var\(--gt-shadow-panel\)\]">/,
   );
 });
 
@@ -1303,7 +1303,7 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.doesNotMatch(toolbarSource, /border-t-2|border-r-2|border-l-2/);
   assert.doesNotMatch(toolbarSource, /border-y border-dashed/);
   assert.doesNotMatch(toolbarSource, /border-t border-dashed/);
-  assert.doesNotMatch(toolbarSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(toolbarSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(toolbarSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(toolbarSource, /font-black/);
   assert.doesNotMatch(toolbarSource, /uppercase/);
@@ -1330,11 +1330,11 @@ test('Codex route probe modal uses the quiet workspace shell', async () => {
   assert.match(source, /shadow-sm/);
   assert.match(source, /shadow-lg/);
   assert.doesNotMatch(source, /btn-swiss/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-r-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-r-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /xl:border-r-2/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);

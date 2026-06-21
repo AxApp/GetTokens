@@ -14,33 +14,33 @@ interface BuildAccountDeleteOverlayParams {
 }
 
 const accountDeleteOverlayShellClass =
-  'flex h-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]';
+  'flex h-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)]';
 const accountDeleteOverlayListShellClass =
-  'flex h-full min-h-[5rem] items-center gap-3 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[var(--text-primary)]';
+  'flex h-full min-h-[5rem] items-center gap-3 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[var(--gt-ink-primary)]';
 const accountDeleteOverlayHeaderClass =
   'border-b border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-status-danger)_7%,var(--gt-surface-muted))] px-4 py-3';
 const accountDeleteOverlayIconClass =
   'flex h-10 w-10 shrink-0 items-center justify-center rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_36%,var(--gt-border-subtle))] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]';
 const accountDeleteOverlayEyebrowClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
+  'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
 const accountDeleteOverlayTitleClass =
-  'mt-1 truncate text-[length:var(--font-size-ui-xl-plus)] font-semibold leading-tight text-[var(--text-primary)]';
+  'mt-1 truncate text-[length:var(--gt-font-size-xl-plus)] font-semibold leading-tight text-[var(--gt-ink-primary)]';
 const accountDeleteOverlayListTitleClass =
-  'mt-1 truncate text-[length:var(--font-size-ui-lg)] font-semibold leading-tight text-[var(--text-primary)]';
+  'mt-1 truncate text-[length:var(--gt-font-size-lg)] font-semibold leading-tight text-[var(--gt-ink-primary)]';
 const accountDeleteOverlayMetaClass =
-  'mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'mt-1 truncate font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDeleteOverlayButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)]';
 const accountDeleteOverlayListButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)]';
 const accountDeleteOverlayDangerButtonClass =
-  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity hover:opacity-90';
+  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity hover:opacity-90';
 const accountDeleteOverlayListDangerButtonClass =
-  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity hover:opacity-90';
+  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity hover:opacity-90';
 const accountDeleteOverlayFieldLabelClass =
-  'w-[3rem] shrink-0 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'w-[3rem] shrink-0 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDeleteOverlayFieldValueClass =
-  'min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-semibold leading-snug text-[var(--text-primary)]';
+  'min-w-0 truncate text-[length:var(--gt-font-size-xs)] font-semibold leading-snug text-[var(--gt-ink-primary)]';
 
 export function buildAccountDeleteOverlay({
   t,
@@ -169,7 +169,7 @@ export function buildAccountDeleteOverlay({
         createElement('span', { className: 'h-2.5 w-2.5 shrink-0 rounded-sm bg-[var(--gt-status-danger)]' }),
         createElement(
           'div',
-          { className: 'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]' },
+          { className: 'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]' },
           t('accounts.card_delete'),
         ),
       ),

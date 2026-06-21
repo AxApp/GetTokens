@@ -53,16 +53,16 @@ export interface RateLimitRulesAPI {
 const rateLimitRulesShellClass = 'grid min-w-0 gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const rateLimitRulesPanelClass = 'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-3';
 const rateLimitRulesListClass = 'grid min-w-0 gap-2';
-const rateLimitRulesMetaClass = 'min-w-0 font-mono text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-muted)]';
-const rateLimitRulesTitleClass = 'truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-primary)]';
+const rateLimitRulesMetaClass = 'min-w-0 font-mono text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]';
+const rateLimitRulesTitleClass = 'truncate font-mono text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
 const rateLimitRulesButtonClass = 'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] px-3 text-xs font-medium text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const rateLimitRulesPrimaryButtonClass = `${rateLimitRulesButtonClass} bg-[var(--gt-accent-primary)] text-white hover:bg-[var(--gt-accent-hover)]`;
 const rateLimitRulesIconButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] text-[var(--gt-ink-muted)] transition hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
-const rateLimitRulesMenuItemClass = 'flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]';
+const rateLimitRulesMenuItemClass = 'flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]';
 const rateLimitRulesDangerMenuItemClass = `${rateLimitRulesMenuItemClass} text-[var(--gt-status-danger)]`;
 const rateLimitRulesInputClass = 'h-9 w-full rounded-md border border-[var(--gt-border-default)] bg-white px-2 py-1 text-sm text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60';
-const rateLimitRulesInlineInputClass = 'min-w-0 flex-1 bg-transparent px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] outline-none';
-const rateLimitRulesNoticeClass = 'rounded-md border px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium';
+const rateLimitRulesInlineInputClass = 'min-w-0 flex-1 bg-transparent px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] outline-none';
+const rateLimitRulesNoticeClass = 'rounded-md border px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-medium';
 const rateLimitRulesNoticeToneClass = {
   danger: 'border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
   neutral: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)]',
@@ -348,7 +348,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
               <button
                 type="button"
                 onClick={addRateLimitRule}
-                className="font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-primary)] underline decoration-dotted underline-offset-4"
+                className="font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] underline decoration-dotted underline-offset-4"
                 disabled={savingRules}
               >
                 {t('accounts.rate_limit_no_local_rule')}
@@ -505,7 +505,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                         }
                         className={rateLimitRulesInlineInputClass}
                       />
-                      <span className="flex w-10 items-center justify-center border-l border-[var(--gt-border-subtle)] text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-muted)]">
+                      <span className="flex w-10 items-center justify-center border-l border-[var(--gt-border-subtle)] text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]">
                         {draft.strategy === 'token-window' ? 'M' : t('accounts.rate_limit_count_unit')}
                       </span>
                     </div>
@@ -618,7 +618,7 @@ function buildRateLimitRuleRowSummary(
 function RuleField({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="block min-w-0 space-y-1">
-      <span className="block font-mono text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--gt-ink-muted)]">
+      <span className="block font-mono text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]">
         {label}
       </span>
       {children}

@@ -18,13 +18,13 @@ test('vendor status feature uses the quiet workspace shell', async () => {
   assert.match(source, /shadow-sm/);
   assert.doesNotMatch(source, /card-swiss/);
   assert.doesNotMatch(source, /btn-swiss/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-(wide|wider|widest|tight|tighter|tightest|normal|\[)/);
   assert.doesNotMatch(source, /shadow-\[/);
-  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
 });

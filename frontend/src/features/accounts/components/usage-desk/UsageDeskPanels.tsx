@@ -10,15 +10,15 @@ import {
 
 const usageDeskPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const usageDeskMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const usageDeskMetaClass = 'text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]';
-const usageDeskStrongMetaClass = 'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+const usageDeskMetaClass = 'text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
+const usageDeskStrongMetaClass = 'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const usageDeskBadgeClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
 const usageDeskCountBadgeClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1 text-[length:var(--font-size-ui-md-compact)] font-medium text-[var(--text-primary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1 text-[length:var(--gt-font-size-md-compact)] font-medium text-[var(--gt-ink-primary)]';
 const usageDeskTableHeaderClass =
-  'sticky top-0 z-10 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]';
-const usageDeskTableCellClass = 'px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-medium leading-4 text-[var(--text-primary)]';
+  'sticky top-0 z-10 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-left text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-primary)]';
+const usageDeskTableCellClass = 'px-3 py-1.5 text-[length:var(--gt-font-size-md-compact)] font-medium leading-4 text-[var(--gt-ink-primary)]';
 
 export function StatePanel({ title, body, tone = 'default' }: { title: string; body: ReactNode; tone?: 'default' | 'error' }) {
   return (
@@ -27,11 +27,11 @@ export function StatePanel({ title, body, tone = 'default' }: { title: string; b
       className={`px-4 py-4 ${
         tone === 'error'
           ? 'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]'
-          : `${usageDeskMutedPanelClass} text-[var(--text-primary)]`
+          : `${usageDeskMutedPanelClass} text-[var(--gt-ink-primary)]`
       }`}
     >
-      <div className="text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal">{title}</div>
-      <div className={`mt-2 text-[length:var(--font-size-ui-md-compact)] leading-6 ${tone === 'error' ? 'text-[var(--gt-status-danger)]' : 'text-[var(--text-muted)]'}`}>{body}</div>
+      <div className="text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">{title}</div>
+      <div className={`mt-2 text-[length:var(--gt-font-size-md-compact)] leading-6 ${tone === 'error' ? 'text-[var(--gt-status-danger)]' : 'text-[var(--gt-ink-muted)]'}`}>{body}</div>
     </div>
   );
 }
@@ -40,8 +40,8 @@ export function InfoCard({ title, highlight, body }: { title: string; highlight:
   return (
     <div data-usage-desk-info-card="true" className={`${usageDeskPanelClass} px-4 py-4`}>
       <div className={usageDeskMetaClass}>{title}</div>
-      <div className="mt-3 text-[length:var(--font-size-ui-4xl)] font-semibold tracking-normal text-[var(--text-primary)]">{highlight}</div>
-      <p className="mt-3 text-[length:var(--font-size-ui-md-compact)] leading-6 text-[var(--text-muted)]">{body}</p>
+      <div className="mt-3 text-[length:var(--gt-font-size-4xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">{highlight}</div>
+      <p className="mt-3 text-[length:var(--gt-font-size-md-compact)] leading-6 text-[var(--gt-ink-muted)]">{body}</p>
     </div>
   );
 }
@@ -60,7 +60,7 @@ export function UsageDeskEvidenceStatus({ evidence }: { evidence: UsageDeskStatu
           <div className={`mt-1 ${usageDeskMetaClass}`}>
             {evidence.summary}
           </div>
-          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-muted)]">
+          <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-bold leading-5 text-[var(--gt-ink-muted)]">
             {evidence.description}
           </div>
         </div>
@@ -80,14 +80,14 @@ export function UsageDeskEvidenceStatus({ evidence }: { evidence: UsageDeskStatu
   return (
     <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3" data-usage-desk-evidence-status="quota-fact">
       <div className="min-w-0 flex-1">
-        <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]">
+        <div className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
           {evidence.title}
         </div>
         <div className={`mt-1 ${usageDeskStrongMetaClass}`}>
           {evidence.summary}
         </div>
         {evidence.view.explanation ? (
-          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-muted)]">
+          <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-bold leading-5 text-[var(--gt-ink-muted)]">
             {evidence.view.explanation}
           </div>
         ) : null}
@@ -128,7 +128,7 @@ export function UsageSessionDrilldownPanel({
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] px-4 py-3">
         <div>
           <div className={usageDeskMetaClass}>LOCAL SESSIONS</div>
-          <h3 className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]">{title}</h3>
+          <h3 className="mt-1 text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">{title}</h3>
         </div>
         <div className={usageDeskCountBadgeClass}>
           {new Intl.NumberFormat('zh-CN').format(rows.length)} 个会话
@@ -154,8 +154,8 @@ export function UsageSessionDrilldownPanel({
               {rows.map((row) => {
                 const sourceLabel = buildSessionSourceLabel(row.projectName);
                 return (
-                  <tr key={row.sessionID} className="border-t border-dashed border-[var(--border-color)] first:border-t-0">
-                    <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] leading-4 text-[var(--text-primary)]" title={row.sessionID}>
+                  <tr key={row.sessionID} className="border-t border-dashed border-[var(--gt-border-strong)] first:border-t-0">
+                    <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--gt-font-size-md-compact)] leading-4 text-[var(--gt-ink-primary)]" title={row.sessionID}>
                       <div className="truncate font-medium">{sourceLabel}</div>
                     </td>
                     <SessionUsageCell value={row.model || '--'} />
@@ -171,7 +171,7 @@ export function UsageSessionDrilldownPanel({
           </table>
         </div>
       ) : (
-        <div className="px-4 py-5 text-[length:var(--font-size-ui-md-compact)] font-bold leading-6 text-[var(--text-muted)]">
+        <div className="px-4 py-5 text-[length:var(--gt-font-size-md-compact)] font-bold leading-6 text-[var(--gt-ink-muted)]">
           当前用量没有可关联会话。
         </div>
       )}
@@ -193,7 +193,7 @@ export function UsageProjectDrilldownPanel({
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] px-4 py-3">
         <div>
           <div className={usageDeskMetaClass}>PROJECT TOTALS</div>
-          <h3 className="mt-1 text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]">{title}</h3>
+          <h3 className="mt-1 text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">{title}</h3>
         </div>
         <div className={usageDeskCountBadgeClass}>
           {new Intl.NumberFormat('zh-CN').format(rows.length)} 个项目
@@ -217,8 +217,8 @@ export function UsageProjectDrilldownPanel({
             </thead>
             <tbody>
               {rows.map((project) => (
-                <tr key={project.projectName} className="border-t border-dashed border-[var(--border-color)] first:border-t-0">
-                  <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-medium leading-4 text-[var(--text-primary)]">
+                <tr key={project.projectName} className="border-t border-dashed border-[var(--gt-border-strong)] first:border-t-0">
+                  <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--gt-font-size-md-compact)] font-medium leading-4 text-[var(--gt-ink-primary)]">
                     <div className="truncate">{project.projectName}</div>
                   </td>
                   <ProjectUsageCell value={formatUsageDeskChartValue(project.sessions, 'count').replace('次', '个')} />
@@ -234,7 +234,7 @@ export function UsageProjectDrilldownPanel({
           </table>
         </div>
       ) : (
-        <div className="px-4 py-5 text-[length:var(--font-size-ui-md-compact)] font-bold leading-6 text-[var(--text-muted)]">
+        <div className="px-4 py-5 text-[length:var(--gt-font-size-md-compact)] font-bold leading-6 text-[var(--gt-ink-muted)]">
           当前用量没有可聚合项目。
         </div>
       )}

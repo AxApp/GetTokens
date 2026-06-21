@@ -33,7 +33,7 @@ function SnippetPreSample({ long = false }: { long?: boolean }) {
     <DesignSystemStoryFrame>
       <SnippetPre className="max-h-56">
         {lines.map((line, index) => (
-          <code key={`${index}-${line}`} className="block min-h-6 whitespace-pre text-[var(--text-primary)]">
+          <code key={`${index}-${line}`} className="block min-h-6 whitespace-pre text-[var(--gt-ink-primary)]">
             {line}
           </code>
         ))}
@@ -47,10 +47,10 @@ function SnippetPreOverview() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid w-full max-w-5xl gap-4 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full max-w-5xl gap-4 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">SnippetPre</h2>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--gt-ink-muted)]">
           {zh
             ? '统一配置片段和 diff 预览的 pre 容器，让滚动、字号、底色和设计系统标记保持一致。'
             : 'Shared pre container for config snippets and diff previews, keeping scroll, type size, surface color, and design-system markers consistent.'}
@@ -58,11 +58,11 @@ function SnippetPreOverview() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '普通片段' : 'Plain snippet'}</h3>
           <SnippetPreSample />
         </section>
-        <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '长行滚动' : 'Long line'}</h3>
           <SnippetPreSample long />
         </section>

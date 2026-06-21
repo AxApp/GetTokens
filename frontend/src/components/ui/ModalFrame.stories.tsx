@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Button } from 'antd';
 import { useI18n } from '../../context/I18nContext';
 import DesignSystemStoryFrame from '../../features/design-system/DesignSystemStoryFrame';
 import ModalFrame from './ModalFrame';
@@ -16,10 +17,10 @@ type Story = StoryObj;
 function ModalHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div>
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+      <div className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.2em] text-[var(--gt-ink-muted)]">
         {eyebrow}
       </div>
-      <h3 className="mt-1 text-sm font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+      <h3 className="mt-1 text-sm font-black uppercase italic tracking-normal text-[var(--gt-ink-primary)]">
         {title}
       </h3>
     </div>
@@ -29,16 +30,16 @@ function ModalHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
 function ModalFooter({ confirmLabel, cancelLabel }: { confirmLabel: string; cancelLabel: string }) {
   return (
     <>
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)]">
+      <div className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.15em] text-[var(--gt-ink-muted)]">
         {confirmLabel}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className="btn-swiss">
+        <Button>
           {cancelLabel}
-        </button>
-        <button type="button" className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+        </Button>
+        <Button type="primary">
           {confirmLabel}
-        </button>
+        </Button>
       </div>
     </>
   );
@@ -49,11 +50,11 @@ function ModalContent({ long = false }: { long?: boolean }) {
   return (
     <div className="grid gap-3 p-6">
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-normal text-[var(--text-muted)]">
+        <div key={index} className="grid gap-2 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-3">
+          <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-normal text-[var(--gt-ink-muted)]">
             FIELD {String(index + 1).padStart(2, '0')}
           </div>
-          <div className="h-8 border-2 border-[var(--border-color)] bg-[var(--bg-main)]" />
+          <div className="h-8 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)]" />
         </div>
       ))}
     </div>
@@ -62,7 +63,7 @@ function ModalContent({ long = false }: { long?: boolean }) {
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="shrink-0 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal text-[var(--color-status-danger)]">
+    <div className="shrink-0 border-t-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-normal text-[var(--color-status-danger)]">
       {message}
     </div>
   );
@@ -81,7 +82,7 @@ function ModalFrameSample({
 
   return (
     <DesignSystemStoryFrame>
-      <div className="relative min-h-[32rem] overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+      <div className="relative min-h-[32rem] overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)]">
         <ModalFrame
           onClose={() => undefined}
           size={isConfirm ? 'sm' : isDetail ? 'detail' : 'md'}
@@ -121,10 +122,10 @@ function ModalFrameOverview() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">ModalFrame</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
           {zh
             ? '统一遮罩、窗口材质、尺寸、滚动边界、分区和设计系统准入标记。'
             : 'Shared scrim, panel material, sizing, scroll boundary, slots, and design-system admission marker.'}

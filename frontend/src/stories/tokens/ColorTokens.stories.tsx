@@ -15,31 +15,22 @@ interface FixedColor {
 }
 
 const themeTokens: ColorToken[] = [
-  { name: '--gt-surface-canvas', usage: '主题画布背景，映射到 --bg-main' },
-  { name: '--gt-surface-panel', usage: '面板和页面二级表面，映射到 --bg-surface' },
-  { name: '--gt-surface-muted', usage: '弱化块背景，映射到 --bg-muted' },
-  { name: '--gt-ink-primary', usage: '主文本和强对比图形，映射到 --text-primary' },
-  { name: '--gt-ink-muted', usage: '辅助文本和弱 meta，映射到 --text-muted' },
-  { name: '--gt-border-strong', usage: '主要结构线，映射到 --border-color' },
+  { name: '--gt-surface-canvas', usage: '主应用背景、输入框背景、按钮默认背景' },
+  { name: '--gt-surface-panel', usage: '面板和页面二级表面' },
+  { name: '--gt-surface-raised', usage: '抬升卡片和浮层表面' },
+  { name: '--gt-surface-muted', usage: '弱化内嵌表面、骨架屏、低权重块背景' },
+  { name: '--gt-ink-primary', usage: '主文本、主图标、强对比图形' },
+  { name: '--gt-ink-secondary', usage: '辅助文本 token' },
+  { name: '--gt-ink-muted', usage: '说明文字、弱 meta' },
+  { name: '--gt-ink-inverse', usage: '强调色、状态色上的反白文本' },
+  { name: '--gt-border-subtle', usage: '弱分割线和卡片边界' },
+  { name: '--gt-border-default', usage: '默认控件边框' },
+  { name: '--gt-border-strong', usage: '主要结构线、强控件边框' },
   { name: '--gt-focus-ring', usage: '键盘焦点和高优先级可操作控件描边' },
   { name: '--gt-accent-primary', usage: '当前皮肤的品牌强调色' },
-  { name: '--bg-main', usage: '主应用背景、输入框背景、按钮默认背景' },
-  { name: '--bg-surface', usage: '二级页面表面、Storybook 画布背景、卡片外层背景' },
-  { name: '--bg-muted', usage: '弱化内嵌表面、骨架屏、低权重块背景' },
-  { name: '--border-color', usage: '主要结构线、控件边框、卡片硬边' },
-  { name: '--text-primary', usage: '主文本、主图标、反色按钮背景' },
-  { name: '--text-muted', usage: '辅助文本、说明文字、弱 meta' },
-  { name: '--text-secondary', usage: '兼容旧命名的辅助文本 token' },
-  { name: '--text-on-accent', usage: '强调色、状态色上的反白文本' },
-  { name: '--accent-red', usage: '危险动作、设计组件描边、项目内调试强调' },
-  { name: '--accent-green', usage: '兼容旧命名的成功强调色' },
-  { name: '--accent-yellow', usage: '兼容旧命名的警告强调色' },
-  { name: '--shadow-color', usage: 'Swiss 硬阴影、按钮和卡片立体层' },
-  { name: '--shadow-inset-color', usage: '图表和凹陷层的内阴影颜色' },
-  { name: '--overlay-scrim-60', usage: '模态遮罩 60% 强度' },
-  { name: '--overlay-scrim-70', usage: '模态遮罩 70% 强度' },
-  { name: '--overlay-scrim-80', usage: '模态遮罩 80% 强度' },
-  { name: '--overlay-scrim-85', usage: '危险确认遮罩 85% 强度' },
+  { name: '--gt-accent-hover', usage: '主强调色悬停态' },
+  { name: '--gt-shadow-panel', usage: '卡片与面板阴影色' },
+  { name: '--gt-shadow-overlay', usage: '模态遮罩与浮层遮罩' },
 ];
 
 const semanticColors: FixedColor[] = [
@@ -62,17 +53,6 @@ const analyticsColors: FixedColor[] = [
   { name: '--color-chart-blue', value: 'var(--color-chart-blue)', usage: '用量投影图表色', source: 'style.css token' },
   { name: '--color-chart-peak', value: 'var(--color-chart-peak)', usage: '归因卡峰值点', source: 'style.css token' },
   { name: '--color-chart-attribution', value: 'var(--color-chart-attribution)', usage: '归因卡流量曲线', source: 'style.css token' },
-];
-
-const neutralScaleColors: FixedColor[] = [
-  { name: '--color-swiss-gray-300', value: 'var(--color-swiss-gray-300)', usage: 'Tailwind swiss.gray.300 兼容色阶', source: 'tailwind.config.js token' },
-  { name: '--color-swiss-gray-400', value: 'var(--color-swiss-gray-400)', usage: 'Tailwind swiss.gray.400 兼容色阶', source: 'tailwind.config.js token' },
-  { name: '--color-swiss-gray-500', value: 'var(--color-swiss-gray-500)', usage: 'Tailwind swiss.gray.500 兼容色阶', source: 'tailwind.config.js token' },
-  { name: '--color-swiss-gray-600', value: 'var(--color-swiss-gray-600)', usage: 'Tailwind swiss.gray.600 兼容色阶', source: 'tailwind.config.js token' },
-  { name: '--color-swiss-gray-700', value: 'var(--color-swiss-gray-700)', usage: 'Tailwind swiss.gray.700 兼容色阶', source: 'tailwind.config.js token' },
-  { name: '--color-swiss-gray-800', value: 'var(--color-swiss-gray-800)', usage: 'Tailwind swiss.gray.800 兼容色阶', source: 'tailwind.config.js token' },
-  { name: '--color-swiss-gray-900', value: 'var(--color-swiss-gray-900)', usage: 'Tailwind swiss.gray.900 兼容色阶', source: 'tailwind.config.js token' },
-  { name: '--color-swiss-gray-950', value: 'var(--color-swiss-gray-950)', usage: 'Tailwind swiss.gray.950 兼容色阶', source: 'tailwind.config.js token' },
 ];
 
 const vendorIconColors = Array.from(
@@ -124,18 +104,18 @@ function TokenSwatch({
 
   return (
     <div>
-      <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-[var(--text-primary)]">
+      <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-3 text-[var(--gt-ink-primary)]">
         <div
           ref={ref}
-          className="h-16 border-2 border-[var(--border-color)]"
+          className="h-16 border-2 border-[var(--gt-border-strong)]"
           style={{ backgroundColor: `var(${token.name})` }}
         />
         <div className="min-w-0">
-          <div className="font-mono text-[length:var(--font-size-ui-md)] font-black">{token.name}</div>
-          <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
+          <div className="font-mono text-[length:var(--gt-font-size-md)] font-black">{token.name}</div>
+          <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-xs)] font-bold text-[var(--gt-ink-muted)]">
             {resolved || '解析中'}
           </div>
-          <div className="mt-2 text-[length:var(--font-size-ui-sm)] font-bold leading-relaxed text-[var(--text-muted)]">
+          <div className="mt-2 text-[length:var(--gt-font-size-sm)] font-bold leading-relaxed text-[var(--gt-ink-muted)]">
             {token.usage}
           </div>
         </div>
@@ -148,24 +128,24 @@ function FixedSwatch({ color }: { color: FixedColor }) {
   const { ref, resolved } = useResolvedColor(color.value);
 
   return (
-    <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3">
+    <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-3">
       <div
         ref={ref}
-        className="h-16 border-2 border-[var(--border-color)]"
+        className="h-16 border-2 border-[var(--gt-border-strong)]"
         style={{ backgroundColor: color.value }}
       />
       <div className="min-w-0">
-        <div className="font-mono text-[length:var(--font-size-ui-md)] font-black">{color.name}</div>
-        <div className="mt-1 font-mono text-[length:var(--font-size-ui-xs)] font-bold uppercase text-[var(--text-muted)]">
+        <div className="font-mono text-[length:var(--gt-font-size-md)] font-black">{color.name}</div>
+        <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-bold uppercase text-[var(--gt-ink-muted)]">
           {color.value}
         </div>
-        <div className="mt-1 font-mono text-[length:var(--font-size-ui-xs)] font-bold uppercase text-[var(--text-muted)]">
+        <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-bold uppercase text-[var(--gt-ink-muted)]">
           {resolved || '解析中'}
         </div>
-        <div className="mt-2 text-[length:var(--font-size-ui-sm)] font-bold leading-relaxed text-[var(--text-muted)]">
+        <div className="mt-2 text-[length:var(--gt-font-size-sm)] font-bold leading-relaxed text-[var(--gt-ink-muted)]">
           {color.usage}
         </div>
-        <div className="mt-2 inline-flex border border-[var(--border-color)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-muted)]">
+        <div className="mt-2 inline-flex border border-[var(--gt-border-strong)] px-2 py-0.5 font-mono text-[length:var(--gt-font-size-2xs)] font-black uppercase text-[var(--gt-ink-muted)]">
           {color.source}
         </div>
       </div>
@@ -183,10 +163,10 @@ function TokenSection({
   children: ReactNode;
 }) {
   return (
-    <section className="grid gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-5">
+    <section className="grid gap-4 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-5">
       <div>
         <h3 className="text-lg font-black uppercase italic tracking-normal">{title}</h3>
-        <p className="mt-1 max-w-4xl text-[length:var(--font-size-ui-md)] font-bold leading-relaxed text-[var(--text-muted)]">
+        <p className="mt-1 max-w-4xl text-[length:var(--gt-font-size-md)] font-bold leading-relaxed text-[var(--gt-ink-muted)]">
           {description}
         </p>
       </div>
@@ -197,10 +177,10 @@ function TokenSection({
 
 function PaletteSample() {
   return (
-    <div className="grid gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">颜色系统</h2>
-        <p className="mt-2 max-w-4xl text-sm font-bold leading-relaxed text-[var(--text-muted)]">
+        <p className="mt-2 max-w-4xl text-sm font-bold leading-relaxed text-[var(--gt-ink-muted)]">
           这里展示项目当前实际使用的颜色入口。主题色、状态色、图表色和供应商图标色都从设计系统 token 进入业务代码。
         </p>
       </div>
@@ -233,17 +213,6 @@ function PaletteSample() {
       >
         <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
           {analyticsColors.map((color) => (
-            <FixedSwatch key={color.name} color={color} />
-          ))}
-        </div>
-      </TokenSection>
-
-      <TokenSection
-        title="中性色阶"
-        description="Tailwind swiss.gray 兼容色阶也进入 token，避免配置里保留孤立 hex。"
-      >
-        <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
-          {neutralScaleColors.map((color) => (
             <FixedSwatch key={color.name} color={color} />
           ))}
         </div>

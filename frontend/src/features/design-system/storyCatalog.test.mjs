@@ -186,12 +186,12 @@ test('page loading fallback uses the quiet workspace shell', async () => {
   assert.match(source, /shadow-sm/);
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /border-r-2/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
-  assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--gt-shadow-panel\)\]/);
 });
 
 test('asset workbench shell is shared by Codex and Claude extension surfaces', async () => {
@@ -223,8 +223,8 @@ test('asset workbench shell uses the quiet workspace shell tokens', async () => 
   assert.doesNotMatch(source, /border-b-2/);
   assert.doesNotMatch(source, /border-t-2/);
   assert.doesNotMatch(source, /border-l-2/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
-  assert.doesNotMatch(source, /--bg-main/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
+  assert.doesNotMatch(source, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
   assert.doesNotMatch(source, /shadow-\[/);
 });
 

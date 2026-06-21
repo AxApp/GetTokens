@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Button } from 'antd';
 import { useI18n } from '../../../context/I18nContext';
 import type { BillingDisplay, CodexQuota } from '../../../types';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
@@ -39,7 +40,7 @@ type Story = StoryObj;
 function ModalViewport({ children, label = 'DS-MODAL' }: { children: ReactNode; label?: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="relative h-[32rem] min-w-0 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)] [transform:translateZ(0)]">
+      <div className="relative h-[32rem] min-w-0 overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -50,14 +51,14 @@ function Header({ title = 'Codex Account Detail', eyebrow = 'ACCOUNT DETAIL' }: 
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
-        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.2em] text-[var(--gt-ink-muted)]">
           {eyebrow}
         </div>
-        <h3 className="mt-2 text-xl font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+        <h3 className="mt-2 text-xl font-black uppercase italic tracking-normal text-[var(--gt-ink-primary)]">
           {title}
         </h3>
       </div>
-      <span className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+      <span className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-1 font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-[0.12em] text-[var(--gt-ink-primary)]">
         READY
       </span>
     </div>
@@ -87,32 +88,32 @@ function Body({ long = false }: { long?: boolean }) {
   return (
     <div className="grid gap-4 p-6">
       <div className="grid gap-3 md:grid-cols-3">
-        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-4">
+          <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
             Requests
           </div>
-          <div className="mt-2 text-2xl font-black italic tracking-normal text-[var(--text-primary)]">1,248</div>
+          <div className="mt-2 text-2xl font-black italic tracking-normal text-[var(--gt-ink-primary)]">1,248</div>
         </div>
-        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-4">
+          <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
             Tokens
           </div>
-          <div className="mt-2 text-2xl font-black italic tracking-normal text-[var(--text-primary)]">1.0M</div>
+          <div className="mt-2 text-2xl font-black italic tracking-normal text-[var(--gt-ink-primary)]">1.0M</div>
         </div>
-        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-4">
+          <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
             Latency
           </div>
-          <div className="mt-2 text-2xl font-black italic tracking-normal text-[var(--text-primary)]">182MS</div>
+          <div className="mt-2 text-2xl font-black italic tracking-normal text-[var(--gt-ink-primary)]">182MS</div>
         </div>
       </div>
-      <div className="grid overflow-hidden border-2 border-[var(--border-color)]">
+      <div className="grid overflow-hidden border-2 border-[var(--gt-border-strong)]">
         {rows.map(([label, value]) => (
-          <div key={label} className="grid gap-2 border-b border-dashed border-[var(--border-color)] px-4 py-3 last:border-b-0 md:grid-cols-[12rem_minmax(0,1fr)]">
-            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          <div key={label} className="grid gap-2 border-b border-dashed border-[var(--gt-border-strong)] px-4 py-3 last:border-b-0 md:grid-cols-[12rem_minmax(0,1fr)]">
+            <div className="font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-[0.12em] text-[var(--gt-ink-muted)]">
               {label}
             </div>
-            <div className="min-w-0 break-all text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
+            <div className="min-w-0 break-all text-[length:var(--gt-font-size-md)] font-black text-[var(--gt-ink-primary)]">
               {value}
             </div>
           </div>
@@ -125,16 +126,16 @@ function Body({ long = false }: { long?: boolean }) {
 function Footer() {
   return (
     <>
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <div className="font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-[0.12em] text-[var(--gt-ink-muted)]">
         Preview only
       </div>
       <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn-swiss">
+        <Button>
           Cancel
-        </button>
-        <button type="button" className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+        </Button>
+        <Button type="primary">
           Save
-        </button>
+        </Button>
       </div>
     </>
   );
@@ -142,7 +143,7 @@ function Footer() {
 
 function ErrorMessage() {
   return (
-    <div className="border-t-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-6 py-4 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
+    <div className="border-t-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-6 py-4 text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
       Quota probe returned 429 in the latest check.
     </div>
   );
@@ -634,15 +635,15 @@ function OAuthSample({
 
 function AccountModalsOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">账号弹窗</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
           把账号详情弹窗的基础 shell 纳入设计系统，用固定内容检查 header、可滚动 body、错误条和 footer action 布局。
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">弹窗框架状态</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <ModalSample />
@@ -652,7 +653,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">统一导入状态</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <AccountImportSample label="DS-IMPORT-EMPTY" />
@@ -661,7 +662,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">API 密钥新增状态</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <ApiKeyComposeSample label="DS-API-KEY-EMPTY" formKey="empty" />
@@ -676,7 +677,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">统一账号详情区块</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountDetailSectionsSample label="DS-ACCOUNT-DETAIL-SECTIONS-READY" />
@@ -684,7 +685,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">统一新增状态</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <UnifiedComposeSample label="DS-UNIFIED-PRESET-LIST" formKey="empty" />
@@ -703,7 +704,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Codex OAuth 状态</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <OAuthSample label="DS-OAUTH-READY" />

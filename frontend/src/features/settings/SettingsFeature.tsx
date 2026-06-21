@@ -55,6 +55,11 @@ function toAntdSegmentedOptions<T extends string>(options: ReadonlyArray<Segment
   return options.map((option) => ({ label: option.label, value: option.id }));
 }
 
+const settingsRowClass = 'flex items-center justify-between gap-4 border-b px-4 py-3 last:border-b-0';
+const settingsRowLabelClass = 'text-[length:var(--gt-font-size-body)] font-semibold text-[var(--gt-ink-primary)]';
+const settingsRowDescriptionClass = 'mt-1 text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-muted)]';
+const settingsRowControlClass = 'flex shrink-0 items-center justify-end';
+
 interface SettingsFeatureProps {
   version: string;
   releaseLabel: string;
@@ -428,7 +433,7 @@ export default function SettingsFeature({
   return (
     <div
       ref={pageRef}
-      className="settings-page h-full w-full overflow-auto text-[var(--text-primary)]"
+      className="settings-page h-full w-full overflow-auto text-[var(--gt-ink-primary)]"
       data-settings-redesign="macos-preferences"
       data-settings-antd-spike="true"
     >
@@ -446,11 +451,11 @@ export default function SettingsFeature({
         <section data-settings-section="appearance">
           <h2 className="settings-section-title">{t('settings.appearance')}</h2>
           <div className="settings-group">
-            <div className="parchment-settings-row">
+            <div className={settingsRowClass}>
               <div className="min-w-0 flex-1">
-                <div className="parchment-settings-row-label">{t('settings.language')}</div>
+                <div className={settingsRowLabelClass}>{t('settings.language')}</div>
               </div>
-              <div className="parchment-settings-row-control">
+              <div className={settingsRowControlClass}>
                 <Segmented
                   options={toAntdSegmentedOptions(languages)}
                   value={locale}
@@ -458,14 +463,14 @@ export default function SettingsFeature({
                 />
               </div>
             </div>
-            <div className="parchment-settings-row">
+            <div className={settingsRowClass}>
               <div className="min-w-0 flex-1">
-                <div className="parchment-settings-row-label">{t('settings.text_scale')}</div>
-                <div className="parchment-settings-row-description">
+                <div className={settingsRowLabelClass}>{t('settings.text_scale')}</div>
+                <div className={settingsRowDescriptionClass}>
                   {t('settings.text_scale_hint')}
                 </div>
               </div>
-              <div className="parchment-settings-row-control">
+              <div className={settingsRowControlClass}>
                 <Segmented
                   options={toAntdSegmentedOptions(textScaleOptions)}
                   value={textScale}
@@ -480,10 +485,10 @@ export default function SettingsFeature({
         <section data-settings-section="app-lifecycle">
           <h2 className="settings-section-title">{t('settings.app_lifecycle')}</h2>
           <div className="settings-group">
-            <div className="parchment-settings-row">
+            <div className={settingsRowClass}>
               <div className="min-w-0 flex-1">
-                <div className="parchment-settings-row-label">{t('settings.launch_at_login')}</div>
-                <div className="parchment-settings-row-description">
+                <div className={settingsRowLabelClass}>{t('settings.launch_at_login')}</div>
+                <div className={settingsRowDescriptionClass}>
                   {isLoadingAppRuntimeSettings
                     ? t('settings.app_lifecycle_loading')
                     : launchAtLoginSupported
@@ -491,7 +496,7 @@ export default function SettingsFeature({
                       : t('settings.launch_at_login_unsupported')}
                 </div>
               </div>
-              <div className="parchment-settings-row-control">
+              <div className={settingsRowControlClass}>
                 <Switch
                   aria-label={t('settings.launch_at_login')}
                   checked={launchAtLogin}
@@ -500,16 +505,16 @@ export default function SettingsFeature({
                 />
               </div>
             </div>
-            <div className="parchment-settings-row">
+            <div className={settingsRowClass}>
               <div className="min-w-0 flex-1">
-                <div className="parchment-settings-row-label">{t('settings.show_menu_bar_icon')}</div>
-                <div className="parchment-settings-row-description">
+                <div className={settingsRowLabelClass}>{t('settings.show_menu_bar_icon')}</div>
+                <div className={settingsRowDescriptionClass}>
                   {closeAction === 'keep_service_in_menu_bar'
                     ? t('settings.show_menu_bar_icon_forced_hint')
                     : t('settings.show_menu_bar_icon_hint')}
                 </div>
               </div>
-              <div className="parchment-settings-row-control">
+              <div className={settingsRowControlClass}>
                 <Switch
                   aria-label={t('settings.show_menu_bar_icon')}
                   checked={showMenuBarIcon}
@@ -518,10 +523,10 @@ export default function SettingsFeature({
                 />
               </div>
             </div>
-            <div className="parchment-settings-row">
+            <div className={settingsRowClass}>
               <div className="min-w-0 flex-1">
-                <div className="parchment-settings-row-label">{t('settings.close_action')}</div>
-                <div className="parchment-settings-row-description">
+                <div className={settingsRowLabelClass}>{t('settings.close_action')}</div>
+                <div className={settingsRowDescriptionClass}>
                   {isSavingAppRuntimeSettings
                     ? t('settings.app_lifecycle_saving')
                     : closeAction === 'keep_service_in_menu_bar'
@@ -529,7 +534,7 @@ export default function SettingsFeature({
                       : t('settings.close_action_quit_hint')}
                 </div>
               </div>
-              <div className="parchment-settings-row-control">
+              <div className={settingsRowControlClass}>
                 <Segmented
                   options={toAntdSegmentedOptions([
                     { ...closeActionOptions[0], label: t('settings.close_action_quit') },
@@ -552,10 +557,10 @@ export default function SettingsFeature({
         <section data-settings-section="local-usage-refresh">
           <h2 className="settings-section-title">{t('settings.local_usage_refresh')}</h2>
           <div className="settings-group">
-            <div className="parchment-settings-row">
+            <div className={settingsRowClass}>
               <div className="min-w-0 flex-1">
-                <div className="parchment-settings-row-label">{t('settings.local_usage_refresh_interval')}</div>
-                <div className="parchment-settings-row-description">
+                <div className={settingsRowLabelClass}>{t('settings.local_usage_refresh_interval')}</div>
+                <div className={settingsRowDescriptionClass}>
                   {isLoadingLocalUsageSettings
                     ? t('settings.local_usage_refresh_loading')
                     : isSavingLocalUsageSettings
@@ -563,7 +568,7 @@ export default function SettingsFeature({
                       : t('settings.local_usage_refresh_hint')}
                 </div>
               </div>
-              <div className="parchment-settings-row-control">
+              <div className={settingsRowControlClass}>
                 <Segmented
                   options={toAntdSegmentedOptions(localProjectedUsageRefreshIntervalOptions)}
                   value={localUsageInterval}
@@ -583,10 +588,10 @@ export default function SettingsFeature({
         <section data-settings-section="network-proxy">
           <h2 className="settings-section-title">{t('settings.network_proxy')}</h2>
           <div className="settings-group">
-            <div className="parchment-settings-row">
+            <div className={settingsRowClass}>
               <div className="min-w-0 flex-1">
-                <div className="parchment-settings-row-label">{t('settings.system_proxy')}</div>
-                <div className="parchment-settings-row-description">
+                <div className={settingsRowLabelClass}>{t('settings.system_proxy')}</div>
+                <div className={settingsRowDescriptionClass}>
                   {isLoadingSidecarProxySettings
                     ? t('settings.system_proxy_loading')
                     : isSavingSidecarProxySettings
@@ -599,7 +604,7 @@ export default function SettingsFeature({
                   </div>
                 ) : null}
               </div>
-              <div className="parchment-settings-row-control">
+              <div className={settingsRowControlClass}>
                 <Switch
                   aria-label={t('settings.system_proxy')}
                   checked={useSystemProxy}

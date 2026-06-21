@@ -141,21 +141,21 @@ const toneClass: Record<'ready' | 'warning' | 'danger' | 'neutral', string> = {
     'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] text-[var(--gt-status-warning)]',
   danger:
     'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]',
-  neutral: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-muted)]',
+  neutral: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-muted)]',
 };
 
 const claudeAssetPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const claudeAssetMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const claudeAssetButtonClass =
-  'inline-flex min-h-8 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-8 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const claudeAssetPrimaryButtonClass =
-  'inline-flex min-h-8 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-8 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const claudeAssetInputClass =
-  'min-h-10 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] outline-none transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
-const claudeAssetMetaTextClass = 'font-mono text-[10px] font-medium tracking-normal text-[var(--text-muted)]';
+  'min-h-10 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 font-mono text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] outline-none transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
+const claudeAssetMetaTextClass = 'font-mono text-[10px] font-medium tracking-normal text-[var(--gt-ink-muted)]';
 const claudeAssetBadgeClass =
-  'inline-flex items-center justify-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-normal text-[var(--text-muted)]';
+  'inline-flex items-center justify-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-normal text-[var(--gt-ink-muted)]';
 
 export function ClaudeCodeAssetWorkbench({
   state,
@@ -279,12 +279,12 @@ function SectionTitle({ icon, title, note }: { icon: ReactNode; title: string; n
   return (
     <div className="flex min-w-0 items-start justify-between gap-3">
       <div className="flex min-w-0 items-center gap-2">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)]">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)]">
           {icon}
         </span>
         <div className="min-w-0">
           <h3 className="text-sm font-semibold italic tracking-normal">{title}</h3>
-          <p className="mt-0.5 text-xs font-medium leading-5 text-[var(--text-muted)]">{note}</p>
+          <p className="mt-0.5 text-xs font-medium leading-5 text-[var(--gt-ink-muted)]">{note}</p>
         </div>
       </div>
     </div>
@@ -296,8 +296,8 @@ function StatusStrip({ icon, title, detail }: { icon: ReactNode; title: string; 
     <div className="flex min-w-0 items-start gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)]">{icon}</span>
       <div className="min-w-0">
-        <div className="text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal">{title}</div>
-        <div className="mt-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">{detail}</div>
+        <div className="text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">{title}</div>
+        <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">{detail}</div>
       </div>
     </div>
   );
@@ -318,15 +318,15 @@ function SkillAssetMatrix({ skills }: { skills: readonly ClaudeCodeSkillAsset[] 
           <article key={skill.id} className="group grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--gt-surface-muted)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-semibold">{skill.name}</span>
+                <span className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-lg)] font-semibold">{skill.name}</span>
                 <ScopeBadge scope={skill.scope} />
                 <span className={`${claudeAssetBadgeClass} ${frontmatterTone(skill.frontmatterStatus)}`}>
                   {skill.frontmatterStatus}
                 </span>
                 <Badge>{skill.invocation}</Badge>
               </div>
-              <p className="mt-1 line-clamp-2 text-[length:var(--font-size-ui-sm)] font-medium leading-snug text-[var(--text-muted)]">{skill.description}</p>
-              <div className="mt-2 grid gap-1 font-mono text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-muted)]">
+              <p className="mt-1 line-clamp-2 text-[length:var(--gt-font-size-sm)] font-medium leading-snug text-[var(--gt-ink-muted)]">{skill.description}</p>
+              <div className="mt-2 grid gap-1 font-mono text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-muted)]">
                 <span className="truncate">path: {skill.path}</span>
                 {skill.risk ? <span className="text-[var(--gt-status-warning)]">risk: {skill.risk}</span> : null}
               </div>
@@ -390,7 +390,7 @@ function McpAssetMatrix({
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg-compact)] font-semibold">{server.label}</span>
+                  <span className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-lg-compact)] font-semibold">{server.label}</span>
                   <ScopeBadge scope={server.scope} />
                   <Badge>{server.transport}</Badge>
                   <span
@@ -408,7 +408,7 @@ function McpAssetMatrix({
                     </span>
                   ) : null}
                 </div>
-                <div className="mt-2 grid gap-1 font-mono text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
+                <div className="mt-2 grid gap-1 font-mono text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
                   <span className="truncate">endpoint: {server.endpoint}</span>
                   <span className="truncate">source: {server.sourcePath}</span>
                   {server.shadowedBy ? <span className="text-[var(--gt-status-warning)]">shadowed by: {server.shadowedBy}</span> : null}
@@ -433,7 +433,7 @@ function McpAssetMatrix({
             {editingServerID === mcpServerEditKey(server) ? (
               <div className="grid gap-3 border-t border-[var(--gt-border-subtle)] pt-3 md:grid-cols-[minmax(12rem,18rem)_minmax(0,1fr)_auto] md:items-end">
                 <SegmentedControl options={mcpTransportOptions} value={draftTransport} onChange={onDraftTransportChange ?? (() => undefined)} />
-                <label className="grid gap-1 text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]">
+                <label className="grid gap-1 text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]">
                   Endpoint
                   <input
                     className={claudeAssetInputClass}
@@ -451,7 +451,7 @@ function McpAssetMatrix({
                     Cancel
                   </button>
                 </div>
-                {saveMessage ? <div className="font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)] md:col-span-3">{saveMessage}</div> : null}
+                {saveMessage ? <div className="font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)] md:col-span-3">{saveMessage}</div> : null}
               </div>
             ) : null}
           </article>
@@ -477,7 +477,7 @@ function DiffPanel({ diffPreview }: { diffPreview?: ClaudeCodeDiffPreview }) {
               <span
                 key={line}
                 className={`block whitespace-pre ${
-                  line.startsWith('+') ? 'text-[var(--gt-status-success)]' : line.startsWith('-') ? 'text-[var(--gt-status-danger)]' : 'text-[var(--text-muted)]'
+                  line.startsWith('+') ? 'text-[var(--gt-status-success)]' : line.startsWith('-') ? 'text-[var(--gt-status-danger)]' : 'text-[var(--gt-ink-muted)]'
                 }`}
               >
                 {line}
@@ -486,7 +486,7 @@ function DiffPanel({ diffPreview }: { diffPreview?: ClaudeCodeDiffPreview }) {
           </SnippetPre>
         </div>
       ) : (
-        <p className="mt-3 text-sm font-medium leading-6 text-[var(--text-muted)]">No pending diff. Writes stay disabled until a target scope and server are selected.</p>
+        <p className="mt-3 text-sm font-medium leading-6 text-[var(--gt-ink-muted)]">No pending diff. Writes stay disabled until a target scope and server are selected.</p>
       )}
     </section>
   );
@@ -504,7 +504,7 @@ function PlanPanel({ plannedAssets }: { plannedAssets: readonly ClaudeCodeAssetP
               <Badge>{item.status}</Badge>
             </div>
             <div className={`mt-2 ${claudeAssetMetaTextClass}`}>{item.owner}</div>
-            <p className="mt-2 text-xs font-medium leading-5 text-[var(--text-muted)]">{item.note}</p>
+            <p className="mt-2 text-xs font-medium leading-5 text-[var(--gt-ink-muted)]">{item.note}</p>
           </article>
         ))}
       </div>
@@ -516,9 +516,9 @@ function EmptyPanel({ title, detail }: { title: string; detail: string }) {
   return (
     <div className="grid min-h-48 place-items-center rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-6 text-center">
       <div className="max-w-md">
-        <FileCode2 className="mx-auto h-8 w-8 text-[var(--text-muted)]" />
+        <FileCode2 className="mx-auto h-8 w-8 text-[var(--gt-ink-muted)]" />
         <h3 className="mt-3 text-sm font-semibold italic tracking-normal">{title}</h3>
-        <p className="mt-2 text-sm font-medium leading-6 text-[var(--text-muted)]">{detail}</p>
+        <p className="mt-2 text-sm font-medium leading-6 text-[var(--gt-ink-muted)]">{detail}</p>
       </div>
     </div>
   );

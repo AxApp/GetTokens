@@ -16,23 +16,23 @@ interface CodexOAuthModalProps {
 const codexOAuthModalHeaderClass =
   'grid gap-1';
 const codexOAuthModalEyebrowClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexOAuthModalTitleClass =
-  'text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const codexOAuthModalHintClass =
-  'text-[length:var(--font-size-ui-md-compact)] font-medium leading-relaxed text-[var(--text-secondary)]';
+  'text-[length:var(--gt-font-size-md-compact)] font-medium leading-relaxed text-[var(--gt-ink-secondary)]';
 const codexOAuthModalFooterClass =
   'flex flex-wrap items-center justify-end gap-2';
 const codexOAuthModalButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]';
+  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]';
 const codexOAuthModalPrimaryButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
+  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
 const codexOAuthModalLabelClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexOAuthModalUrlClass =
-  'break-all rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 font-mono text-[length:var(--font-size-ui-md-compact)] leading-relaxed text-[var(--text-primary)]';
+  'break-all rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 font-mono text-[length:var(--gt-font-size-md-compact)] leading-relaxed text-[var(--gt-ink-primary)]';
 const codexOAuthModalStatusBaseClass =
-  'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal';
+  'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal';
 const codexOAuthModalStatusToneClass = {
   success: 'text-[var(--gt-status-success)]',
   error: 'text-[var(--gt-status-danger)]',

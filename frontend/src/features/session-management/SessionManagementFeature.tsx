@@ -332,13 +332,13 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   }
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] select-text">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] select-text">
       <div className="mx-auto flex min-h-0 w-full max-w-[1480px] flex-1 flex-col gap-4 px-6 py-5">
       <WorkspacePageHeader
         title={t('session_management.title')}
         meta={
           <span
-            className="block max-w-[min(62rem,70vw)] truncate text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]"
+            className="block max-w-[min(62rem,70vw)] truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]"
             title={copy.headerSubtitleLine(stats)}
           >
             {copy.headerSubtitleLine(stats)}
@@ -348,7 +348,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
         actions={
           <>
             {snapshotRefreshing ? (
-              <div className="text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+              <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
                 {copy.refreshing}
               </div>
             ) : null}
@@ -365,7 +365,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                   setAnalysisSelectorOpen(true);
                 }}
                 aria-disabled={!projects.length || analysisLoading ? 'true' : undefined}
-                className={`inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] ${
+                className={`inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] ${
                   !projects.length || analysisLoading ? 'cursor-not-allowed opacity-50' : ''
                 }`}
               >
@@ -377,7 +377,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
               aria-label={copy.refresh}
               title={copy.refresh}
               onClick={() => void loadSnapshot('refresh')}
-              className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
             >
               <RefreshCw className={`h-5 w-5 ${snapshotRefreshing ? 'animate-spin' : ''}`} strokeWidth={2.4} />
             </button>
@@ -457,7 +457,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                 onClick={() => setCompactSessionsOpen(false)}
                 aria-label={copy.close}
                 title={copy.close}
-                className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               >
                 <X className="h-4 w-4" strokeWidth={2.4} />
               </button>

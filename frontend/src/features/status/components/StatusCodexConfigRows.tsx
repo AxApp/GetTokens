@@ -27,7 +27,7 @@ interface StatusCodexConfigRowsProps {
 }
 
 const codexConfigRowsChipClass =
-  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
 
 function groupRowsByPrimaryPath(rows: CodexFeatureRow[]): CodexPathGroup[] {
   const groups: CodexPathGroup[] = [];
@@ -76,15 +76,15 @@ export default function StatusCodexConfigRows({
         className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] md:items-center"
       >
         <div className={`min-w-0 select-text ${nested ? 'pl-3' : ''}`}>
-          <div className="flex flex-wrap items-center gap-1 font-mono text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]">
+          <div className="flex flex-wrap items-center gap-1 font-mono text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
             {pathLabels.map((label, index) => (
               <span key={`${pathDisplay.fullLabel}-${index}`} className="inline-flex min-w-0 items-center gap-1">
-                {index > 0 ? <span className="text-[var(--text-muted)]">/</span> : null}
+                {index > 0 ? <span className="text-[var(--gt-ink-muted)]">/</span> : null}
                 <span className="min-w-0 break-all">{label}</span>
               </span>
             ))}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
             <span className={codexConfigRowsChipClass}>
               {badgeLabel}
             </span>
@@ -113,7 +113,7 @@ export default function StatusCodexConfigRows({
             {parentMode === 'section' ? (
               <div
                 data-codex-path-primary-heading={pathGroup.primaryLabel}
-                className="border-b border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 font-mono text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-primary)]"
+                className="border-b border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 font-mono text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]"
               >
                 {pathGroup.primaryLabel}
               </div>

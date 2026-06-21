@@ -13,13 +13,13 @@ interface CurlTemplateOption {
 
 const accountCurlEditorHeaderClass = 'grid gap-1';
 const accountCurlEditorEyebrowClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountCurlEditorTitleClass =
-  'text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountCurlEditorFooterNoteClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountCurlEditorButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountCurlEditorBodyClass =
   'grid min-h-[28rem] gap-0 bg-[var(--gt-surface-canvas)] lg:grid-cols-[minmax(0,1fr)_22rem]';
 const accountCurlEditorPanelClass =
@@ -27,22 +27,22 @@ const accountCurlEditorPanelClass =
 const accountCurlEditorToolbarClass =
   'mb-3 flex flex-wrap items-center justify-between gap-3';
 const accountCurlEditorToggleLabelClass =
-  'text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountCurlEditorMetaClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountCurlEditorTextareaClass =
-  'min-h-[23rem] w-full resize-none rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] leading-relaxed text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--text-primary)]';
+  'min-h-[23rem] w-full resize-none rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] leading-relaxed text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-ink-primary)]';
 const accountCurlEditorSectionLabelClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountCurlEditorVariableButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-left transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] active:scale-[0.99]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-left transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] active:scale-[0.99]';
 const accountCurlEditorGuidePanelClass =
   'grid gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const accountCurlEditorAsideClass = 'grid content-start gap-4 p-4';
 const accountCurlEditorTemplateButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-left transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] active:scale-[0.99]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-left transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] active:scale-[0.99]';
 const accountCurlEditorTemplateTitleClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 
 export function AccountCurlEditorModal({
   title,
@@ -218,7 +218,7 @@ export function AccountCurlEditorModal({
                     <div className={accountCurlEditorMetaClass}>
                       {variable.label}
                     </div>
-                    <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)]">
+                    <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-primary)]">
                       {variable.value || '未填写'}
                     </div>
                     <div className={`mt-2 ${accountCurlEditorMetaClass}`}>
@@ -236,7 +236,7 @@ export function AccountCurlEditorModal({
               <div className={accountCurlEditorSectionLabelClass}>
                 获取 Cookie 指引
               </div>
-              <ol className="list-decimal space-y-1 pl-4 text-[length:var(--font-size-ui-xs)] font-bold leading-relaxed text-[var(--text-primary)]">
+              <ol className="list-decimal space-y-1 pl-4 text-[length:var(--gt-font-size-xs)] font-bold leading-relaxed text-[var(--gt-ink-primary)]">
                 {setupGuide.map((step) => (
                   <li key={step}>{step}</li>
                 ))}

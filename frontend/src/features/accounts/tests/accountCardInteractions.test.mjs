@@ -205,7 +205,7 @@ test('accounts feature page chrome uses the quiet workspace shell', async () => 
   assert.doesNotMatch(renderBlock, /border-2/);
   assert.doesNotMatch(renderBlock, /border-dashed/);
   assert.doesNotMatch(renderBlock, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(renderBlock, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(renderBlock, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(renderBlock, /color-status-/);
   assert.doesNotMatch(renderBlock, /font-black/);
   assert.doesNotMatch(renderBlock, /\buppercase\b/);
@@ -234,7 +234,7 @@ test('account import queue candidates render with account card styling', async (
   assert.match(queueSource, /--gt-status-danger/);
   assert.doesNotMatch(queueSource, /card-swiss/);
   assert.doesNotMatch(queueSource, /border-2|border-b-2/);
-  assert.doesNotMatch(queueSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(queueSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(queueSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(queueSource, /color-status-/);
   assert.doesNotMatch(queueSource, /font-black/);
@@ -292,7 +292,7 @@ test('account import page uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /btn-swiss/);
   assert.doesNotMatch(targetSource, /border-2|border-b-4|border-t-4|border-t-2|border-b-2/);
   assert.doesNotMatch(targetSource, /border-dashed/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
   assert.doesNotMatch(targetSource, /font-black/);
@@ -322,7 +322,7 @@ test('account import modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /btn-swiss/);
   assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
   assert.doesNotMatch(targetSource, /border-dashed/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
   assert.doesNotMatch(targetSource, /font-black/);
@@ -354,7 +354,7 @@ test('api key compose modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /btn-swiss|input-swiss/);
   assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
   assert.doesNotMatch(targetSource, /border-dashed/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
   assert.doesNotMatch(targetSource, /font-black/);

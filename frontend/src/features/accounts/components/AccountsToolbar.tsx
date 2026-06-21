@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { Button } from 'antd';
 import { Download, MoreVertical, Power, RefreshCw, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import SearchInput from '../../../components/ui/SearchInput';
 import {
@@ -43,7 +44,7 @@ const accountsToolbarPillOptionClass = (active: boolean) =>
       : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
   }`;
 const accountsToolbarDisplayButtonClass = (active: boolean, bordered: boolean) =>
-  `h-full min-h-0 px-2.5 text-[length:var(--font-size-ui-xs)] font-medium leading-none transition-colors ${
+  `h-full min-h-0 px-2.5 text-[length:var(--gt-font-size-xs)] font-medium leading-none transition-colors ${
     bordered ? 'border-r border-[var(--gt-border-subtle)]' : ''
   } ${
     active
@@ -245,7 +246,7 @@ export default function AccountsToolbar({
             <button
               type="button"
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
+              className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
             >
               <SlidersHorizontal size={13} strokeWidth={2} />
               <span>{buildToolbarFilterLabel(t, filterSummaryParts)}</span>
@@ -401,13 +402,13 @@ export default function AccountsToolbar({
                   />
                 </div>
                 <div className={accountsToolbarMenuFooterClass}>
-                  <button
-                    type="button"
+                  <Button
+                    size="small"
+                    htmlType="button"
                     onClick={() => onFiltersChange({ ...defaultAccountsFilterState })}
-                    className="parchment-toolbar-action-secondary h-9 !px-2.5 !py-1 !text-[length:var(--font-size-ui-md-compact)]"
                   >
                     {t('accounts.filter_reset')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : null}
@@ -468,7 +469,7 @@ export default function AccountsToolbar({
             </div>
             <button
               onClick={onToggleSelectionMode}
-              className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
+              className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
             >
               {isSelectionMode ? t('accounts.cancel_selection') : t('accounts.selection_mode')}
             </button>
@@ -654,25 +655,26 @@ export function AccountsSelectionActions({
               {t('accounts.bulk_remove_confirm')} · {selectedAccountCount}
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
+              <Button
+                size="small"
+                htmlType="button"
                 onClick={() => setIsBulkDeleteConfirming(false)}
-                className="parchment-toolbar-action-secondary !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)]"
               >
                 {t('common.cancel')}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                size="small"
+                danger
+                htmlType="button"
                 onClick={() => {
                   setIsBulkDeleteConfirming(false);
                   setIsBulkMenuOpen(false);
                   onDeleteSelected?.();
                 }}
                 disabled={bulkActionPending !== null || !onDeleteSelected}
-                className="parchment-toolbar-action-secondary !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)] !text-[var(--gt-status-danger)]"
               >
                 {bulkActionPending === 'delete' ? t('common.loading') : t('accounts.bulk_remove_confirm_action')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -682,15 +684,15 @@ export function AccountsSelectionActions({
 
   function renderBulkRefreshAction() {
     return (
-      <button
-        type="button"
+      <Button
+        size="small"
+        htmlType="button"
         onClick={handleRefreshSelected}
         disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onRefreshSelected}
-        className="parchment-toolbar-action-secondary flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+        icon={<RefreshCw size={14} strokeWidth={3} />}
       >
-        <RefreshCw size={14} strokeWidth={3} />
         {bulkActionPending === 'refresh' ? t('common.loading') : t('accounts.bulk_refresh_selected')}
-      </button>
+      </Button>
     );
   }
 
@@ -738,41 +740,42 @@ export function AccountsSelectionActions({
         <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-sm font-medium" style={{ color: 'var(--gt-ink-primary)' }}>
           {selectedAccountCount} {t('accounts.selected_count')}
         </span>
-        <button type="button" className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        <Button size="small" htmlType="button">
           {t('accounts.cancel_selection')}
-        </button>
-        <button type="button" className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        </Button>
+        <Button size="small" htmlType="button">
           {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
-        </button>
-        <button type="button" className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        </Button>
+        <Button size="small" htmlType="button">
           {t('accounts.clear_selection')}
-        </button>
+        </Button>
         {renderInlineBulkActions()}
       </div>
       <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-sm font-medium" style={{ color: 'var(--gt-ink-primary)' }}>
         {selectedAccountCount} {t('accounts.selected_count')}
       </span>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-        <button onClick={handleCancelSelection} className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        <Button size="small" onClick={handleCancelSelection}>
           {t('accounts.cancel_selection')}
-        </button>
-        <button onClick={onToggleSelectAllFiltered} className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+        </Button>
+        <Button size="small" onClick={onToggleSelectAllFiltered}>
           {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
-        </button>
-        <button
+        </Button>
+        <Button
+          size="small"
           onClick={onClearSelection}
-          className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]"
           disabled={selectedAccountCount === 0}
         >
           {t('accounts.clear_selection')}
-        </button>
+        </Button>
       </div>
       <div ref={bulkMenuRef} className="relative ml-auto flex shrink-0 items-center gap-2">
         {useBulkActionMenu ? (
           <>
             {renderBulkRefreshAction()}
-            <button
-              type="button"
+            <Button
+              size="small"
+              htmlType="button"
               aria-expanded={isBulkMenuOpen}
               aria-label={t('common.more_actions')}
               title={t('common.more_actions')}
@@ -781,10 +784,9 @@ export function AccountsSelectionActions({
                 setIsBulkDeleteConfirming(false);
               }}
               disabled={selectedAccountCount === 0 || bulkActionPending !== null}
-              className="parchment-toolbar-action-secondary flex h-10 w-10 items-center justify-center !p-0 disabled:cursor-not-allowed disabled:opacity-50"
+              icon={<MoreVertical size={18} strokeWidth={3} />}
             >
-              <MoreVertical size={18} strokeWidth={3} />
-            </button>
+            </Button>
           </>
         ) : (
           renderInlineBulkActions()
@@ -809,17 +811,16 @@ function BulkInlineAction({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
+      htmlType="button"
       onClick={onClick}
       disabled={disabled}
-      className={`parchment-toolbar-action-secondary flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50 ${
-        tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''
-      }`}
+      danger={tone === 'danger'}
+      icon={icon}
     >
-      {icon}
       <span className="whitespace-nowrap">{label}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -837,17 +838,17 @@ function BulkMenuAction({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
+      htmlType="button"
       onClick={onClick}
       disabled={disabled}
-      className={`parchment-toolbar-action-secondary flex h-9 w-full items-center justify-start gap-2 !px-2.5 !py-2 !text-left !text-[length:var(--font-size-ui-2xs)] disabled:cursor-not-allowed disabled:opacity-50 ${
-        tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''
-      }`}
+      danger={tone === 'danger'}
+      icon={icon}
+      block
     >
-      {icon}
       <span className="truncate">{label}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -888,7 +889,7 @@ function ToolbarModeMenu<T extends string>({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
+        className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
       >
         {label} · {activeLabel}
       </button>
@@ -960,7 +961,7 @@ function FilterCheckOption({
         checked={active}
         disabled={disabled}
         onChange={onClick}
-        className="h-4.5 w-4.5 shrink-0 accent-[var(--text-primary)]"
+        className="h-4.5 w-4.5 shrink-0 accent-[var(--gt-ink-primary)]"
       />
       <span className="block min-w-0 truncate">{children}</span>
     </label>

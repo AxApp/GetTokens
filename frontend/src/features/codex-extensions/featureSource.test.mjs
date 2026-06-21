@@ -54,17 +54,17 @@ test('Codex extension modals use the quiet workspace shell', async () => {
   assert.doesNotMatch(combined, /btn-swiss/);
   assert.doesNotMatch(combined, /input-swiss/);
   assert.doesNotMatch(combined, /select-swiss/);
-  assert.doesNotMatch(combined, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(combined, /border-b-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(combined, /border-t-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(combined, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(combined, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(combined, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(combined, /border-t-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(combined, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(combined, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(combined, /font-black/);
   assert.doesNotMatch(combined, /uppercase/);
   assert.doesNotMatch(combined, /tracking-\[/);
   assert.doesNotMatch(combined, /tracking-(wide|wider|widest|tight|tighter|tightest|normal)/);
   assert.doesNotMatch(combined, /italicer/);
-  assert.doesNotMatch(combined, /shadow-\[8px_8px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(combined, /shadow-\[8px_8px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(combined, /shadow-hard/);
 });
 
@@ -82,9 +82,9 @@ test('Codex extension workspaces use the quiet list shell', async () => {
   assert.match(source, /--gt-border-subtle/);
 
   assert.doesNotMatch(source, /btn-swiss/);
-  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);

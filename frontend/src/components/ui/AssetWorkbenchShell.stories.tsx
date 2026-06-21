@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Button } from 'antd';
 import DesignSystemStoryFrame from '../../features/design-system/DesignSystemStoryFrame';
 import SearchInput from './SearchInput';
 import SegmentedControl from './SegmentedControl';
@@ -16,10 +17,10 @@ type Story = StoryObj;
 
 function AssetWorkbenchShellOverview() {
   return (
-    <div className="grid gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">AssetWorkbenchShell</h2>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--gt-ink-muted)]">
           Codex Extensions 与 Claude Code 资产页共用同一个工作台框架，只替换 toolbar、列表内容和右侧预览。
         </p>
       </div>
@@ -31,9 +32,9 @@ function AssetWorkbenchShellOverview() {
             subtitle="3 skills / 2 active MCP / diff preview"
             actions={
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <button type="button" className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
+                <Button size="small">
                   Refresh
-                </button>
+                </Button>
               </div>
             }
             toolbar={
@@ -50,24 +51,24 @@ function AssetWorkbenchShellOverview() {
               </>
             }
             notice={
-              <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide">
+              <div className="border-b-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-wide">
                 Preview data loaded
               </div>
             }
             aside={
-              <div className="bg-[var(--bg-surface)] p-3">
+              <div className="bg-[var(--gt-surface-panel)] p-3">
                 <div className="text-sm font-black uppercase italic tracking-normal">Preview Rail</div>
-                <p className="mt-2 text-xs font-bold leading-5 text-[var(--text-muted)]">
+                <p className="mt-2 text-xs font-bold leading-5 text-[var(--gt-ink-muted)]">
                   Diff、详情和计划项放在同一个固定宽度侧栏。
                 </p>
               </div>
             }
           >
-            <div className="divide-y-2 divide-[var(--border-color)]">
+            <div className="divide-y-2 divide-[var(--gt-border-strong)]">
               {['skill-installer', 'github-mcp', 'project-command'].map((item) => (
                 <div key={item} className="grid gap-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                  <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black">{item}</div>
-                  <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--text-muted)]">
+                  <div className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-lg)] font-black">{item}</div>
+                  <span className="border-2 border-[var(--gt-border-strong)] px-2 py-1 font-mono text-[10px] font-black uppercase tracking-normal text-[var(--gt-ink-muted)]">
                     ready
                   </span>
                 </div>

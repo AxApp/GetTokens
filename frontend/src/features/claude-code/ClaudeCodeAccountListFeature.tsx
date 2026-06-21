@@ -85,15 +85,15 @@ const PROJECT_CANDIDATE_POOL_PROJECT_SYNC_INTERVAL_MS = 15_000;
 const claudeAccountListPageShellClass =
   'h-full w-full overflow-auto bg-[var(--gt-surface-page)] p-6 lg:p-8';
 const claudeAccountListRouteProbeButtonClass =
-  'inline-flex min-h-10 items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+  'inline-flex min-h-10 items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const claudeAccountListSummaryShellClass =
   'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 sm:grid-cols-4';
 const claudeAccountListSummaryCardClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const claudeAccountListSummaryLabelClass =
-  'text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
 const claudeAccountListSummaryValueClass =
-  'mt-1 text-[length:var(--font-size-ui-2xl)] font-semibold tabular-nums text-[var(--text-primary)]';
+  'mt-1 text-[length:var(--gt-font-size-2xl)] font-semibold tabular-nums text-[var(--gt-ink-primary)]';
 
 interface ClaudeCodeAccountListFeatureProps {
   sidecarStatus: SidecarStatus;

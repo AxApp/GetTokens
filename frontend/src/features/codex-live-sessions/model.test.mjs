@@ -882,12 +882,12 @@ test('codex live session surfaces use larger typography tokens for the dense wor
   const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
 
   assert.match(detailSource, /RequestTimingTrend/);
-  assert.match(detailSource, /font-size-ui-lg/);
-  assert.match(detailSource, /font-size-ui-sm/);
-  assert.match(detailSource, /font-size-ui-xs/);
-  assert.match(feedSource, /font-size-ui-xl/);
-  assert.match(feedSource, /font-size-ui-lg/);
-  assert.match(feedSource, /font-size-ui-sm/);
+  assert.match(detailSource, /gt-font-size-lg/);
+  assert.match(detailSource, /gt-font-size-sm/);
+  assert.match(detailSource, /gt-font-size-xs/);
+  assert.match(feedSource, /gt-font-size-xl/);
+  assert.match(feedSource, /gt-font-size-lg/);
+  assert.match(feedSource, /gt-font-size-sm/);
 });
 
 
@@ -907,10 +907,10 @@ test('codex live session feed header summarizes all requests without switching t
   assert.match(feedSource, /codex-live-session-list-item-selected/);
   assert.match(feedSource, /codex-live-session-list-item-idle/);
   assert.match(styleSource, /\.codex-live-session-list-item-selected/);
-  assert.match(styleSource, /var\(--text-primary\) 12%, var\(--bg-main\)/);
-  assert.match(styleSource, /box-shadow: inset 3px 0 0 var\(--text-primary\)/);
+  assert.match(styleSource, /var\(--gt-ink-primary\) 12%, var\(--gt-surface-canvas\)/);
+  assert.match(styleSource, /box-shadow: inset 3px 0 0 var\(--gt-ink-primary\)/);
   assert.match(styleSource, /\.codex-live-session-list-item-idle:hover/);
-  assert.doesNotMatch(feedSource, /var\(--text-primary\)_4%,transparent/);
+  assert.doesNotMatch(feedSource, /var\(--gt-ink-primary\)_4%,transparent/);
   assert.match(feedSource, /buildCodexLiveRequestFeedRows\(sessions\)/);
   assert.match(feedSource, /requestRows\.length/);
   assert.ok(zhLocale.codex_live_sessions.session_feed);
@@ -942,7 +942,7 @@ test('codex live sessions workbench keeps the right pane as overview until a ses
   assert.match(detailSource, /title=\{t\('codex_live_sessions\.overview_request_list'\)\}/);
   assert.doesNotMatch(detailSource, /function OverviewRequestList/);
   assert.doesNotMatch(detailSource, /buildRequestRowSummary\(row, t\)/);
-  assert.doesNotMatch(detailSource, /grid-cols-2 border border-\\\[color:color-mix\\\(in_srgb,var\\\(--border-color\\\)_32%,transparent\\\)\\\] md:grid-cols-4/);
+  assert.doesNotMatch(detailSource, /grid-cols-2 border border-\\\[color:color-mix\\\(in_srgb,var\\\(--gt-border-strong\\\)_32%,transparent\\\)\\\] md:grid-cols-4/);
   assert.ok(zhLocale.codex_live_sessions.overview_title);
   assert.ok(zhLocale.codex_live_sessions.overview_hint);
   assert.ok(zhLocale.codex_live_sessions.overview_request_list);
@@ -1093,12 +1093,12 @@ test('codex live session surfaces avoid nested card shells in the dense workbenc
 
   assert.match(detailSource, /className="grid max-h-\[calc\(100vh-13rem\)\] min-w-0 w-full gap-5 overflow-y-auto overscroll-contain pr-1 scrollbar-stable"/);
   assert.match(timingTrendSource, /data-codex-request-timing-trend-shell="session-style"/);
-  assert.doesNotMatch(timingTrendSource, /className="min-w-0 border border-\[color:color-mix\(in_srgb,var\(--border-color\)_40%,transparent\)\] bg-\[color:color-mix\(in_srgb,var\(--bg-main\)_72%,var\(--bg-surface\)\)\] p-4 shadow/);
-  assert.doesNotMatch(detailSource, /className="min-w-0 w-full border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] shadow-\[6px_6px_0_var\(--shadow-color\)\]"/);
-  assert.doesNotMatch(detailSource, /grid gap-5 border-b-2 border-\[var\(--border-color\)\] p-4/);
+  assert.doesNotMatch(timingTrendSource, /className="min-w-0 border border-\[color:color-mix\(in_srgb,var\(--gt-border-strong\)_40%,transparent\)\] bg-\[color:color-mix\(in_srgb,var\(--gt-surface-canvas\)_72%,var\(--gt-surface-panel\)\)\] p-4 shadow/);
+  assert.doesNotMatch(detailSource, /className="min-w-0 w-full border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\] shadow-\[6px_6px_0_var\(--gt-shadow-panel\)\]"/);
+  assert.doesNotMatch(detailSource, /grid gap-5 border-b-2 border-\[var\(--gt-border-strong\)\] p-4/);
   assert.match(workbenchSource, /className="grid min-w-0 gap-2 lg:grid-cols-\[minmax\(260px,1fr\)_auto\]"/);
-  assert.doesNotMatch(workbenchSource, /className="grid gap-3 border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] p-3 shadow-\[6px_6px_0_var\(--shadow-color\)\]/);
-  assert.doesNotMatch(filterSource, /border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] p-3/);
+  assert.doesNotMatch(workbenchSource, /className="grid gap-3 border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\] p-3 shadow-\[6px_6px_0_var\(--gt-shadow-panel\)\]/);
+  assert.doesNotMatch(filterSource, /border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\] p-3/);
 });
 
 test('codex live sessions workbench uses the quiet workspace shell', async () => {
@@ -1119,7 +1119,7 @@ test('codex live sessions workbench uses the quiet workspace shell', async () =>
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /border-dashed/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /shadow-\[/);
   assert.doesNotMatch(source, /font-black/);
@@ -1183,7 +1183,7 @@ test('codex live session detail header uses request timing trend chart', async (
   assert.doesNotMatch(detailSource, /<div className="mt-1 truncate">\{session\.downstreamTransport\} → \{session\.upstreamTransport\}<\/div>/);
   assert.match(detailSource, /TimingTrendFooterItem label=\{t\('codex_live_sessions\.duration'\)\}/);
   assert.doesNotMatch(detailSource, /min-h-\[166px\][^"]*border[^"]*bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(detailSource, /font-size-ui-5xl/);
+  assert.doesNotMatch(detailSource, /gt-font-size-5xl/);
 });
 
 test('codex live session detail typography uses the quiet workspace shell', async () => {
@@ -1197,13 +1197,13 @@ test('codex live session detail typography uses the quiet workspace shell', asyn
   assert.match(detailSource, /data-codex-live-timing-title="quiet"/, 'timing trend title must expose the quiet typography marker');
 
   const overviewBlock = detailSource.match(/function SessionOverview\([\s\S]*?function HistoryWindowControl/)?.[0] ?? '';
-  assert.doesNotMatch(overviewBlock, /font-mono text-\[length:var\(--font-size-ui-xs\)\] font-semibold tracking-\[/, 'overview cards must not keep wide tracked mono kickers');
-  assert.doesNotMatch(overviewBlock, /font-mono text-\[length:var\(--font-size-ui-xl\)\] font-semibold tracking-\[/, 'overview titles must not keep wide tracked mono headings');
+  assert.doesNotMatch(overviewBlock, /font-mono text-\[length:var\(--gt-font-size-xs\)\] font-semibold tracking-\[/, 'overview cards must not keep wide tracked mono kickers');
+  assert.doesNotMatch(overviewBlock, /font-mono text-\[length:var\(--gt-font-size-xl\)\] font-semibold tracking-\[/, 'overview titles must not keep wide tracked mono headings');
   assert.doesNotMatch(overviewBlock, /border-dashed/, 'overview meta panels must not rely on dashed borders');
 
   const timingBlock = detailSource.match(/function OverviewTimingTrend\([\s\S]*?const timingTrendSeries/)?.[0] ?? '';
-  assert.doesNotMatch(timingBlock, /font-mono text-\[length:var\(--font-size-ui-xl\)\] font-semibold tracking-\[/, 'timing trend titles must not keep wide tracked mono headings');
-  assert.doesNotMatch(timingBlock, /font-mono text-\[length:var\(--font-size-ui-xs\)\] font-semibold tracking-\[/, 'timing trend metadata must not keep wide tracked mono labels');
+  assert.doesNotMatch(timingBlock, /font-mono text-\[length:var\(--gt-font-size-xl\)\] font-semibold tracking-\[/, 'timing trend titles must not keep wide tracked mono headings');
+  assert.doesNotMatch(timingBlock, /font-mono text-\[length:var\(--gt-font-size-xs\)\] font-semibold tracking-\[/, 'timing trend metadata must not keep wide tracked mono labels');
 });
 
 test('codex live overview loading notice does not push the timing trend down', async () => {
@@ -1732,7 +1732,7 @@ test('codex live session timing chart follows low-noise line chart primitives', 
   assert.doesNotMatch(detailSource, /shouldShowTimingTrendMarker/);
   assert.doesNotMatch(detailSource, /strokeWidth=\{point\.requestID === selectedRequestID \? 10 : 7\}/);
   assert.doesNotMatch(detailSource, /strokeDasharray="2 3"/);
-  assert.doesNotMatch(detailSource, /border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] shadow-\[inset_0_12px_16px_-12px/);
+  assert.doesNotMatch(detailSource, /border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\] shadow-\[inset_0_12px_16px_-12px/);
   assert.doesNotMatch(detailSource, /buildTimingTrendWaveformBars/);
   assert.doesNotMatch(detailSource, /interface TimingTrendWaveformBar/);
   assert.doesNotMatch(detailSource, /codex-live-strip-enter/);
@@ -1858,7 +1858,7 @@ test('codex live session feed uses the quiet workspace shell', async () => {
   assert.match(feedSource, /--gt-border-subtle/);
   assert.match(feedSource, /--gt-status-success/);
 
-  assert.doesNotMatch(feedSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(feedSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(feedSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(feedSource, /border-2 border-dashed/);
   assert.doesNotMatch(feedSource, /font-black/);

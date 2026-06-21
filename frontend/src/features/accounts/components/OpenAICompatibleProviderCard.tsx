@@ -22,27 +22,27 @@ const openAICompatibleProviderCardModelPanelClass =
 const openAICompatibleProviderCardModelRowClass =
   'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2';
 const openAICompatibleProviderCardLabelClass =
-  'text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const openAICompatibleProviderCardMonoValueClass =
-  'font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const openAICompatibleProviderCardSmallMonoClass =
-  'font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const openAICompatibleProviderCardMetaClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const openAICompatibleProviderCardEmptyClass =
-  'font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const openAICompatibleProviderCardFooterClass = 'grid grid-cols-3 gap-2 border-t border-[var(--gt-border-subtle)] pt-3';
 const openAICompatibleProviderCardButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
 const openAICompatibleProviderCardDangerButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-status-danger)] transition-colors hover:border-[var(--gt-status-danger)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-muted))] disabled:cursor-not-allowed disabled:opacity-45';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-danger)] transition-colors hover:border-[var(--gt-status-danger)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-muted))] disabled:cursor-not-allowed disabled:opacity-45';
 const openAICompatibleProviderCardStatusClass = (status: ProviderVerifyState['status']) =>
-  `mt-2 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal ${
+  `mt-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal ${
     status === 'success'
       ? 'text-[var(--gt-status-success)]'
       : status === 'error'
         ? 'text-[var(--gt-status-danger)]'
-        : 'text-[var(--text-primary)]'
+        : 'text-[var(--gt-ink-primary)]'
   }`;
 
 interface OpenAICompatibleProviderCardProps {
@@ -223,7 +223,7 @@ function MetricPanel({ label, value, mono = false }: { label: string; value: str
   return (
     <div className={openAICompatibleProviderCardPanelClass}>
       <div className={openAICompatibleProviderCardLabelClass}>{label}</div>
-      <div className={`mt-2 ${mono ? 'font-mono' : ''} text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]`}>
+      <div className={`mt-2 ${mono ? 'font-mono' : ''} text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]`}>
         {value}
       </div>
     </div>

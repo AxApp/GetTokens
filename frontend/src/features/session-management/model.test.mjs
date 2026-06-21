@@ -256,11 +256,11 @@ test('session analysis opens from header through scope selector and detail modal
   assert.match(viewSource, /data-session-management-modal="provider-merge"/, 'provider merge must use the current modal shell contract');
   assert.match(viewSource, /data-session-management-modal="session-detail"/, 'session detail must use the current modal shell contract');
   assert.match(viewSource, /const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] shadow-sm'/);
-  assert.match(viewSource, /const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--text-primary\)\][^']*text-\[var\(--gt-surface-canvas\)\]/);
+  assert.match(viewSource, /const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--gt-ink-primary\)\][^']*text-\[var\(--gt-surface-canvas\)\]/);
   assert.doesNotMatch(viewSource, /className="btn-swiss/, 'session-management modals must not use the old swiss button skin');
-  assert.doesNotMatch(viewSource, /flex max-h-\[90vh\] w-full max-w-[^"]+ border-4 border-\[var\(--border-color\)\]/, 'modals must not keep the old thick border shell');
+  assert.doesNotMatch(viewSource, /flex max-h-\[90vh\] w-full max-w-[^"]+ border-4 border-\[var\(--gt-border-strong\)\]/, 'modals must not keep the old thick border shell');
   assert.doesNotMatch(viewSource, /shadow-\[var\(--gt-elevation-raised-[23]\)\]/, 'session-management modals and menus must not keep bracket elevation shadows');
-  assert.doesNotMatch(viewSource, /--bg-main/, 'session-management controls must not use legacy inverse background text tokens');
+  assert.doesNotMatch(viewSource, /--text-on-accent|--bg-(main|surface|subtle|warning)/, 'session-management controls must not use legacy inverse background text tokens');
   assert.match(viewSource, /aria-disabled=\{loading \? 'true' : undefined\}/, 'detail modal back control must stay focusable while analysis is loading');
   assert.doesNotMatch(viewSource, /disabled=\{loading\}/, 'detail modal must not drop focus onto body by disabling its initial focus button');
 });
@@ -298,7 +298,7 @@ test('session management analysis and raw json use the quiet detail shell', asyn
   assert.match(viewSource, /--gt-surface-muted/, 'detail internals must use quiet surface tokens');
 
   const resultBlock = viewSource.match(/function SessionAnalysisResultGrid[\s\S]*?function getAnalysisWordCloud/)?.[0] ?? '';
-  assert.doesNotMatch(resultBlock, /border-\[var\(--border-color\)\]/, 'analysis results must not keep legacy border tokens');
+  assert.doesNotMatch(resultBlock, /border-\[var\(--gt-border-strong\)\]/, 'analysis results must not keep legacy border tokens');
   assert.doesNotMatch(resultBlock, /\bfont-black\b/, 'analysis results must not use heavy brutalist weight');
   assert.doesNotMatch(resultBlock, /\buppercase\b/, 'analysis results must not force uppercase labels');
   assert.doesNotMatch(resultBlock, /tracking-\[/, 'analysis results must not use wide tracking');

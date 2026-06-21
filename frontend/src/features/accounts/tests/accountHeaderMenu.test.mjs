@@ -56,7 +56,7 @@ test('AccountsHeader menu row styles stay flat instead of card-like', () => {
   const source = readFileSync(new URL('../components/AccountsHeader.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /ACCOUNT_HEADER_MENU_ITEM_CLASS/);
-  assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /text-\[length:var\(--font-size-ui-md\)\]/);
+  assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /text-\[length:var\(--gt-font-size-md\)\]/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /min-h-11/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /leading-snug/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /hover:bg-\[var\(--gt-surface-muted\)\]/);
@@ -67,7 +67,7 @@ test('AccountsHeader menu row styles stay flat instead of card-like', () => {
   assert.doesNotMatch(ACCOUNT_HEADER_MENU_ITEM_CLASS, /btn-swiss/);
   assert.doesNotMatch(ACCOUNT_HEADER_MENU_ITEM_CLASS, /shadow/);
   assert.doesNotMatch(ACCOUNT_HEADER_MENU_ITEM_CLASS, /border-2/);
-  assert.doesNotMatch(source, /btn-swiss whitespace-nowrap bg-\[var\(--text-primary\)\]/);
+  assert.doesNotMatch(source, /btn-swiss whitespace-nowrap bg-\[var\(--gt-ink-primary\)\]/);
 });
 
 test('AccountsHeader exposes separate account-list and runtime refresh actions', () => {
@@ -82,7 +82,7 @@ test('AccountsHeader exposes separate account-list and runtime refresh actions',
   assert.match(headerSource, /accounts\.refresh_runtime_hint/);
   assert.match(headerSource, /disabled=\{!ready \|\| loading \|\| runtimeRefreshing\}/);
   assert.match(headerSource, /data-accounts-runtime-refreshing=\{runtimeRefreshing \? 'true' : undefined\}/);
-  assert.match(headerSource, /className=\{`h-4 w-4 \$\{runtimeRefreshing \? 'animate-pulse' : ''\}`\}/);
+  assert.equal(headerSource.includes("className={['h-4 w-4', runtimeRefreshing ? 'animate-pulse' : ''].filter(Boolean).join(' ')}"), true);
   assert.doesNotMatch(headerSource, /<Activity className=\{`h-4 w-4 \$\{loading \? 'animate-pulse' : ''\}`\}/);
   assert.match(featureSource, /const \[runtimeRefreshing, setRuntimeRefreshing\] = useState\(false\)/);
   assert.match(featureSource, /await Promise\.allSettled\(\[/);

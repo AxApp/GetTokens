@@ -66,23 +66,23 @@ const mcpFilterOptions: ReadonlyArray<SegmentedOption<McpFilter>> = [
 ];
 
 const codexExtensionsActionButtonClass =
-  'inline-flex h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const codexExtensionsNoticeClass =
-  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-primary)]';
+  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
 const codexExtensionsListContentClass =
   'scrollbar-stable min-h-0 flex-1 overflow-auto divide-y divide-[var(--gt-border-subtle)]';
 const codexExtensionsListRowClass =
   'group relative grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--gt-surface-muted)] focus-within:bg-[var(--gt-surface-muted)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center';
 const codexExtensionsListTitleClass =
-  'min-w-0 truncate text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--gt-ink-primary)]';
+  'min-w-0 truncate text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]';
 const codexExtensionsListSubtitleClass =
-  'mt-1 line-clamp-2 text-[length:var(--font-size-ui-sm)] font-medium leading-snug text-[var(--gt-ink-muted)]';
+  'mt-1 line-clamp-2 text-[length:var(--gt-font-size-sm)] font-medium leading-snug text-[var(--gt-ink-muted)]';
 const codexExtensionsListMetaClass =
-  'mt-2 break-all text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-muted)]';
+  'mt-2 break-all text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
 const codexExtensionsEmptyClass =
-  'px-4 py-12 text-center text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-muted)]';
+  'px-4 py-12 text-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]';
 const codexExtensionsTransportBadgeClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--gt-ink-secondary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)]';
 
 interface ConfigEditorState {
   open: boolean;
@@ -374,7 +374,7 @@ Path: ${parsedGitSource.path}`,
               type="button"
               aria-label={`${skill.name} ${t('common.details')}`}
               onClick={() => openSkillDetail(skill)}
-              className="absolute inset-0 z-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)]"
+              className="absolute inset-0 z-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-border-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gt-surface-canvas)]"
             />
             <div className="pointer-events-none relative z-[1] min-w-0 text-left">
               <div className={codexExtensionsListTitleClass}>

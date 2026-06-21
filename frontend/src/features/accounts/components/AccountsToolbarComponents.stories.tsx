@@ -58,7 +58,7 @@ function ToolbarViewport({
 }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-5">
+      <div className="min-w-0 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-5">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -135,15 +135,15 @@ function AccountsToolbarSample({
 
 function AccountsToolbarOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">账号工具栏</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
           账号工作台搜索、筛选、视图切换和批量选择工具栏进入设计系统，用固定状态覆盖普通态、筛选菜单和批量操作栏。
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Toolbar states</h3>
         <div className="grid gap-4">
           <AccountsToolbarSample label="DS-ACCOUNTS-TOOLBAR-DEFAULT" />

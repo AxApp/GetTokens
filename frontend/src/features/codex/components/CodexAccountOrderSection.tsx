@@ -27,7 +27,7 @@ import {
 
 function EmptyState({ children }: { children: string }) {
   return (
-    <div className="border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-8 py-14 text-center text-[length:var(--font-size-ui-md)] font-medium text-[var(--gt-ink-muted)]">
+    <div className="border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-8 py-14 text-center text-[length:var(--gt-font-size-md)] font-medium text-[var(--gt-ink-muted)]">
       {children}
     </div>
   );
@@ -38,35 +38,35 @@ const CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS =
 const CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS =
   'pt-4';
 const CODEX_ACCOUNT_ORDER_FILTER_BUTTON_CLASS =
-  'h-10 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+  'h-10 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const CODEX_ACCOUNT_ORDER_FILTER_MENU_CLASS =
   'absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 shadow-sm';
 const CODEX_ACCOUNT_ORDER_FILTER_TITLE_CLASS =
-  'px-1 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-subtle)]';
+  'px-1 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const CODEX_ACCOUNT_ORDER_FILTER_SECTION_TITLE_CLASS =
-  'px-2.5 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-subtle)]';
+  'px-2.5 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const CODEX_ACCOUNT_ORDER_FILTER_SECTION_DIVIDER_CLASS =
   'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2';
 const CODEX_ACCOUNT_ORDER_FILTER_FOOTER_CLASS =
   'flex justify-end border-t border-[var(--gt-border-subtle)] pt-2';
 const CODEX_ACCOUNT_ORDER_FILTER_CHIP_CLASS =
-  'inline-flex h-8 max-w-[180px] items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+  'inline-flex h-8 max-w-[180px] items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const CODEX_ACCOUNT_ORDER_FILTER_ACTIVE_CHIP_CLASS =
-  'inline-flex h-8 max-w-[220px] items-center gap-1.5 rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-2 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--gt-surface-canvas)]';
+  'inline-flex h-8 max-w-[220px] items-center gap-1.5 rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-2 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-surface-canvas)]';
 const CODEX_ACCOUNT_ORDER_FILTER_OPTION_CLASS =
-  'flex min-h-9 cursor-pointer items-center gap-2.5 rounded px-2.5 text-[length:var(--font-size-ui-md-compact)] font-semibold leading-none tracking-normal transition-colors';
+  'flex min-h-9 cursor-pointer items-center gap-2.5 rounded px-2.5 text-[length:var(--gt-font-size-md-compact)] font-semibold leading-none tracking-normal transition-colors';
 const CODEX_ACCOUNT_ORDER_FILTER_PILL_CLASS =
-  'h-8 min-w-16 rounded border border-[var(--gt-border-subtle)] px-2 text-[length:var(--font-size-ui-2xs)] font-semibold leading-none tracking-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+  'h-8 min-w-16 rounded border border-[var(--gt-border-subtle)] px-2 text-[length:var(--gt-font-size-2xs)] font-semibold leading-none tracking-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 const CODEX_ACCOUNT_ORDER_FILTER_RESET_BUTTON_CLASS =
-  'h-9 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1 text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+  'h-9 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1 text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const CODEX_ACCOUNT_ORDER_STATUS_TEXT_CLASS = (saving: boolean) =>
-  `shrink-0 text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal ${
-    saving ? 'text-[var(--text-muted)]' : 'text-[var(--gt-status-danger)]'
+  `shrink-0 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal ${
+    saving ? 'text-[var(--gt-ink-muted)]' : 'text-[var(--gt-status-danger)]'
   }`;
 const CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS =
   'grid h-10 shrink-0 grid-cols-2 overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const CODEX_ACCOUNT_ORDER_DISPLAY_BUTTON_CLASS =
-  'h-full min-w-12 border-r border-[var(--gt-border-subtle)] px-2 text-center text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal last:border-r-0 transition-colors';
+  'h-full min-w-12 border-r border-[var(--gt-border-subtle)] px-2 text-center text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal last:border-r-0 transition-colors';
 
 export function CodexAccountOrderSection({
   ready,
@@ -430,7 +430,7 @@ function InlineActionControls({
                 </div>
               </div>
               <div className="space-y-2">
-                <p className="text-[length:var(--font-size-ui-md-compact)] font-semibold tracking-normal text-[var(--text-muted)]">
+                <p className="text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                   {t('accounts.filter_group_plan_source')}
                 </p>
                 <div className="grid grid-cols-4 gap-1">
@@ -569,10 +569,10 @@ function FilterCheckOption({
     <label
       className={`${CODEX_ACCOUNT_ORDER_FILTER_OPTION_CLASS} ${
         disabled
-          ? 'cursor-not-allowed bg-[var(--gt-surface-muted)] text-[var(--text-muted)] opacity-50'
+          ? 'cursor-not-allowed bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)] opacity-50'
           : active
-            ? 'bg-[var(--gt-surface-muted)] text-[var(--text-primary)]'
-            : 'bg-[var(--gt-surface-canvas)] text-[var(--text-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)]'
+            ? 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]'
+            : 'bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
       }`}
     >
       <input
@@ -580,7 +580,7 @@ function FilterCheckOption({
         checked={active}
         disabled={disabled}
         onChange={onClick}
-        className="h-4.5 w-4.5 shrink-0 accent-[var(--text-primary)]"
+        className="h-4.5 w-4.5 shrink-0 accent-[var(--gt-ink-primary)]"
       />
       <span className="block min-w-0 truncate">{children}</span>
     </label>
@@ -606,8 +606,8 @@ function FilterPillOption({
       onClick={onClick}
       className={`${CODEX_ACCOUNT_ORDER_FILTER_PILL_CLASS} ${
         active
-          ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
-          : 'bg-[var(--gt-surface-canvas)] text-[var(--text-muted)] hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)]'
+          ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+          : 'bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
       }`}
     >
       <span className="block truncate">{children}</span>
@@ -662,8 +662,8 @@ function DisplayModeButton({
       onClick={() => onClick(id)}
       className={`${CODEX_ACCOUNT_ORDER_DISPLAY_BUTTON_CLASS} ${
         active
-          ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
-          : 'bg-[var(--gt-surface-muted)] text-[var(--text-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--text-primary)]'
+          ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+          : 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--gt-ink-primary)]'
       }`}
     >
       {children}

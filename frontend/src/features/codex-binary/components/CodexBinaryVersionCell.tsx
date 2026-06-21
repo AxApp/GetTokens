@@ -12,17 +12,17 @@ import {
 import { formatTaskSize, getVersionBrowserURL } from '../presentation';
 
 const codexBinaryVersionCellShellClass =
-  'overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] transition hover:border-[color-mix(in_srgb,var(--text-primary)_32%,var(--gt-border-subtle))]';
+  'overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] transition hover:border-[color-mix(in_srgb,var(--gt-ink-primary)_32%,var(--gt-border-subtle))]';
 const codexBinaryVersionCellSelectedClass =
   'border-[color-mix(in_srgb,var(--gt-status-success)_38%,var(--gt-border-subtle))] bg-[color-mix(in_srgb,var(--gt-status-success)_4%,var(--gt-surface-canvas))]';
 const codexBinaryVersionCellHeaderClass =
   'grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center';
 const codexBinaryVersionCellTitleClass =
-  'min-w-0 truncate text-[length:var(--font-size-ui-lg)] font-semibold leading-tight tracking-normal text-[var(--text-primary)]';
+  'min-w-0 truncate text-[length:var(--gt-font-size-lg)] font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const codexBinaryVersionCellMetaClass =
-  'mt-1 text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-muted)]';
+  'mt-1 text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
 const codexBinaryVersionCellBadgeBaseClass =
-  'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal';
+  'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal';
 const codexBinaryVersionCellBadgeToneClass = {
   success:
     'border-[color-mix(in_srgb,var(--gt-status-success)_22%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_8%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
@@ -34,36 +34,36 @@ const codexBinaryVersionCellActionsClass =
 const codexBinaryVersionCellProgressClass =
   'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const codexBinaryVersionCellProgressMetaClass =
-  'mb-1 flex justify-between gap-3 text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'mb-1 flex justify-between gap-3 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexBinaryVersionCellProgressTrackClass =
-  'h-2 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--text-primary)_10%,var(--gt-surface-canvas))]';
+  'h-2 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--gt-ink-primary)_10%,var(--gt-surface-canvas))]';
 const codexBinaryVersionCellProgressFillClass =
-  'h-full rounded-full bg-[var(--text-primary)]';
+  'h-full rounded-full bg-[var(--gt-ink-primary)]';
 const codexBinaryVersionCellNotesClass =
   'max-h-[22rem] overflow-auto border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
 const codexBinaryVersionCellNotesMetaClass =
-  'mt-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'mt-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexBinaryVersionCellStatusTextClass =
-  'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexBinaryVersionCellErrorTextClass =
-  'text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
+  'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
 const codexBinaryVersionCellMenuButtonClass =
-  'inline-flex h-9 w-full min-w-0 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[var(--text-muted)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-55 sm:w-9';
+  'inline-flex h-9 w-full min-w-0 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-55 sm:w-9';
 const codexBinaryVersionCellMenuClass =
   'absolute right-0 top-[calc(100%+0.35rem)] z-20 w-48 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-1 shadow-lg';
 const codexBinaryVersionCellMenuItemClass =
-  'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-primary)] transition hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-45';
+  'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-45';
 const codexBinaryVersionCellMenuDangerItemClass =
   'text-[var(--gt-status-danger)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_7%,var(--gt-surface-canvas))]';
 const codexBinaryVersionCellStaticActionClass =
-  'flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)] sm:min-w-[10.5rem]';
+  'flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-center text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)] sm:min-w-[10.5rem]';
 const codexBinaryVersionCellButtonClass =
-  'inline-flex min-h-9 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--gt-border-subtle)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal transition disabled:cursor-not-allowed disabled:opacity-55 sm:min-w-[10.5rem]';
+  'inline-flex min-h-9 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--gt-border-subtle)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal transition disabled:cursor-not-allowed disabled:opacity-55 sm:min-w-[10.5rem]';
 const codexBinaryVersionCellButtonToneClass = {
   primary:
-    'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)] hover:opacity-90',
+    'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:opacity-90',
   secondary:
-    'bg-[var(--gt-surface-canvas)] text-[var(--text-primary)] hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]',
+    'bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]',
   warning:
     'bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)] hover:border-[color-mix(in_srgb,var(--gt-status-warning)_40%,var(--gt-border-subtle))]',
   danger:
@@ -179,7 +179,7 @@ export default function CodexBinaryVersionCell({
           {notesState?.loading ? <div className={codexBinaryVersionCellStatusTextClass}>{t('codex_binary.notes_loading')}</div> : null}
           {notesState?.error ? <div className={codexBinaryVersionCellErrorTextClass}>{notesState.error}</div> : null}
           {notesState?.notes ? (
-            <div className="prose prose-sm max-w-none text-[var(--text-primary)] prose-headings:text-[var(--text-primary)] prose-a:text-[var(--gt-status-danger)]">
+            <div className="prose prose-sm max-w-none text-[var(--gt-ink-primary)] prose-headings:text-[var(--gt-ink-primary)] prose-a:text-[var(--gt-status-danger)]">
               <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{notesState.notes.bodyMarkdown || t('codex_binary.notes_empty')}</ReactMarkdown>
               <div className={codexBinaryVersionCellNotesMetaClass}>
                 {notesState.notes.source === 'cache' ? t('codex_binary.notes_from_cache') : t('codex_binary.notes_from_remote')}

@@ -25,27 +25,27 @@ interface AccountMigrationGateProps {
 }
 
 const accountMigrationGateLoadingClass =
-  'fixed inset-0 z-[90] flex min-w-0 overflow-hidden bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]';
+  'fixed inset-0 z-[90] flex min-w-0 overflow-hidden bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)]';
 const accountMigrationGateShellClass =
-  'fixed inset-0 z-[90] flex w-screen max-w-full min-w-0 flex-col overflow-hidden bg-[var(--gt-surface-canvas)] text-[var(--text-primary)]';
+  'fixed inset-0 z-[90] flex w-screen max-w-full min-w-0 flex-col overflow-hidden bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)]';
 const accountMigrationGateHeaderClass =
   'flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-4 lg:px-7';
 const accountMigrationGateBadgeClass =
-  'mb-2 inline-flex rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'mb-2 inline-flex rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountMigrationGateButtonClass =
-  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountMigrationGatePrimaryButtonClass =
-  'inline-flex min-h-14 w-full items-center justify-center gap-2 rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-6 py-4 text-[length:var(--font-size-ui-lg)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-14 w-full items-center justify-center gap-2 rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-6 py-4 text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50';
 const accountMigrationGatePanelClass =
   'grid min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const accountMigrationGatePanelHeaderClass =
   'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-4 py-3';
 const accountMigrationGateStepIndexClass =
-  'grid h-11 w-11 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]';
+  'grid h-11 w-11 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
 const accountMigrationGateChipClass =
-  'inline-flex items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]';
+  'inline-flex items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]';
 const accountMigrationGateEmptyChipClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountMigrationGateStatsClass =
   'grid min-w-0 gap-3 border-t border-[var(--gt-border-subtle)] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0';
 const accountMigrationGateNoticesClass =
@@ -217,10 +217,10 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
           <div className={accountMigrationGateBadgeClass}>
             App started / migration modal
           </div>
-          <h1 id="account-migration-title" className="text-[length:var(--font-size-ui-5xl)] font-semibold leading-tight lg:text-[length:var(--font-size-ui-display)]">
+          <h1 id="account-migration-title" className="text-[length:var(--gt-font-size-5xl)] font-semibold leading-tight lg:text-[length:var(--gt-font-size-display)]">
             账号存储迁移
           </h1>
-          <p className="mt-1 max-w-3xl break-words text-[length:var(--font-size-ui-md)] font-semibold leading-relaxed text-[var(--text-muted)] [overflow-wrap:anywhere]">
+          <p className="mt-1 max-w-3xl break-words text-[length:var(--gt-font-size-md)] font-semibold leading-relaxed text-[var(--gt-ink-muted)] [overflow-wrap:anywhere]">
             sidecar 已切换到 SQLite 账号库。进入工作台前，需要先把旧账号凭证和配置导入新事实源，再清理旧数据来源。
           </p>
         </div>
@@ -238,7 +238,7 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
       <div className="grid min-h-0 min-w-0 flex-1 content-start gap-5 overflow-y-auto overflow-x-hidden p-5 lg:p-7">
         <section className={accountMigrationGatePanelClass} data-account-migration-summary-panel>
           <div className={accountMigrationGatePanelHeaderClass}>
-            <div className="text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]">
+            <div className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
               迁移列表
             </div>
           </div>
@@ -251,8 +251,8 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
                     01
                   </span>
                   <div className="min-w-0">
-                    <div className="text-[length:var(--font-size-ui-2xl)] font-semibold">账号迁移</div>
-                    <p className="mt-1 break-words text-[length:var(--font-size-ui-sm)] font-semibold leading-relaxed text-[var(--text-muted)] [overflow-wrap:anywhere]">
+                    <div className="text-[length:var(--gt-font-size-2xl)] font-semibold">账号迁移</div>
+                    <p className="mt-1 break-words text-[length:var(--gt-font-size-sm)] font-semibold leading-relaxed text-[var(--gt-ink-muted)] [overflow-wrap:anywhere]">
                       导入账号凭证与配置，确认 SQLite 账号写入后删除旧账号事实源。
                     </p>
                   </div>
@@ -263,7 +263,7 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
                     preview.kindSummary.map((item) => (
                       <span key={item.kind} className={accountMigrationGateChipClass}>
                         {formatAccountMigrationKind(item.kind)}
-                        <span className="text-[var(--text-muted)]">{item.count}</span>
+                        <span className="text-[var(--gt-ink-muted)]">{item.count}</span>
                       </span>
                     ))
                   ) : (
@@ -315,7 +315,7 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
 
 function NoticeLine({ tone, text }: { tone: 'success' | 'warning' | 'error'; text: string }) {
   return (
-    <div className={`rounded border px-3 py-2 text-[length:var(--font-size-ui-sm)] font-semibold leading-relaxed ${accountMigrationGateNoticeToneClass[tone]}`}>
+    <div className={`rounded border px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold leading-relaxed ${accountMigrationGateNoticeToneClass[tone]}`}>
       {text}
     </div>
   );
@@ -324,8 +324,8 @@ function NoticeLine({ tone, text }: { tone: 'success' | 'warning' | 'error'; tex
 function MigrationStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 border-b border-[var(--gt-border-subtle)] pb-2 last:border-b-0 last:pb-0">
-      <span className="truncate text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]">{label}</span>
-      <span className="font-mono text-[length:var(--font-size-ui-lg)] font-semibold">{value}</span>
+      <span className="truncate text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">{label}</span>
+      <span className="font-mono text-[length:var(--gt-font-size-lg)] font-semibold">{value}</span>
     </div>
   );
 }

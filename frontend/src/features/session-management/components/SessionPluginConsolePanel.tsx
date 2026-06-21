@@ -88,8 +88,8 @@ export interface SessionPluginConsolePanelProps {
   topics: SessionPluginConsoleTopic[];
 }
 
-const sessionPluginConsoleButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
-const sessionPluginConsolePrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
+const sessionPluginConsoleButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const sessionPluginConsolePrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
 const sessionPluginConsolePanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const sessionPluginConsoleMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 
@@ -130,19 +130,19 @@ export default function SessionPluginConsolePanel({
       <header className="grid gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]">
               <BarChart3 className="h-4 w-4" strokeWidth={2.4} />
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-[length:var(--font-size-ui-xl)] font-semibold text-[var(--text-primary)]">
+              <h2 className="truncate text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">
                 {pluginHostTitle}
               </h2>
-              <p className="mt-1 truncate text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]">
+              <p className="mt-1 truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
                 {pluginHostSubtitle}
               </p>
             </div>
           </div>
-          <p className="mt-2 text-[length:var(--font-size-ui-sm)] font-medium leading-5 text-[var(--text-muted)]">
+          <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
             {pluginHint}
           </p>
         </div>
@@ -157,8 +157,8 @@ export default function SessionPluginConsolePanel({
               <button
                 key={item.id}
                 type="button"
-                className={`min-h-8 border-r border-[var(--gt-border-subtle)] px-3 text-[length:var(--font-size-ui-xs)] font-medium last:border-r-0 ${
-                  mode === item.id ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]' : 'text-[var(--text-muted)]'
+                className={`min-h-8 border-r border-[var(--gt-border-subtle)] px-3 text-[length:var(--gt-font-size-xs)] font-medium last:border-r-0 ${
+                  mode === item.id ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]' : 'text-[var(--gt-ink-muted)]'
                 }`}
               >
                 {item.label}
@@ -185,25 +185,25 @@ export default function SessionPluginConsolePanel({
                   plugin.active
                     ? 'bg-[color-mix(in_srgb,var(--gt-status-info)_10%,var(--gt-surface-canvas))]'
                     : plugin.disabled
-                      ? 'bg-[var(--gt-surface-muted)] text-[var(--text-muted)]'
+                      ? 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]'
                       : 'bg-[var(--gt-surface-canvas)]'
                 }`}
               >
-                <div className="grid h-8 w-8 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[length:var(--font-size-ui-lg)] font-semibold">
+                <div className="grid h-8 w-8 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[length:var(--gt-font-size-lg)] font-semibold">
                   {plugin.icon}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="truncate text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                  <h3 className="truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                     {plugin.name}
                   </h3>
-                  <p className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium leading-4 text-[var(--text-muted)]">
+                  <p className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium leading-4 text-[var(--gt-ink-muted)]">
                     {plugin.description}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {plugin.tags.map((tag) => (
                       <span
                         key={`${plugin.id}-${tag}`}
-                        className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)]"
+                        className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]"
                       >
                         {tag}
                       </span>
@@ -225,14 +225,14 @@ export default function SessionPluginConsolePanel({
                     key={scope.id}
                     className={`rounded border px-3 py-2 ${
                       scope.active
-                        ? 'border-[var(--gt-border-strong)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
+                        ? 'border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                         : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]'
                     }`}
                   >
-                    <div className="text-[length:var(--font-size-ui-sm)] font-semibold">
+                    <div className="text-[length:var(--gt-font-size-sm)] font-semibold">
                       {scope.title}
                     </div>
-                    <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium opacity-75">
+                    <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium opacity-75">
                       {scope.subtitle}
                     </div>
                   </div>
@@ -244,7 +244,7 @@ export default function SessionPluginConsolePanel({
               <PanelHead title={executionTitle} count={mode.toUpperCase()} />
               <div className="grid grid-cols-[74px_minmax(0,1fr)] gap-3 p-3">
                 <div
-                  className="grid h-[74px] w-[74px] place-items-center rounded-full border-[8px] border-solid text-[length:var(--font-size-ui-md)] font-semibold"
+                  className="grid h-[74px] w-[74px] place-items-center rounded-full border-[8px] border-solid text-[length:var(--gt-font-size-md)] font-semibold"
                   style={{
                     borderColor:
                       execution.tone === 'green' ? 'var(--gt-status-success)' : 'var(--gt-status-info)',
@@ -255,7 +255,7 @@ export default function SessionPluginConsolePanel({
                   {execution.dialLabel}
                 </div>
                 <div className="grid gap-2">
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)]">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]">
                     <span>{execution.headline}</span>
                     <b>{actionStatusLabel}</b>
                   </div>
@@ -265,10 +265,10 @@ export default function SessionPluginConsolePanel({
                       style={{ width: `${Math.max(0, Math.min(100, execution.progress))}%` }}
                     />
                   </div>
-                  <div className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                  <div className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                     {execution.detail}
                   </div>
-                  <div className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                  <div className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                     {execution.footer}
                   </div>
                 </div>
@@ -287,18 +287,18 @@ export default function SessionPluginConsolePanel({
                       session.selected ? 'bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,var(--gt-surface-canvas))]' : 'bg-[var(--gt-surface-canvas)]'
                     }`}
                   >
-                    <div className="grid h-6 w-6 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[length:var(--font-size-ui-xs)] font-semibold">
+                    <div className="grid h-6 w-6 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[length:var(--gt-font-size-xs)] font-semibold">
                       {session.selected ? '✓' : ''}
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                      <div className="truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                         {session.title}
                       </div>
-                      <div className="mt-1 truncate text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                      <div className="mt-1 truncate text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                         {session.metadata}
                       </div>
                     </div>
-                    <div className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-1 text-center text-[length:var(--font-size-ui-xs)] font-semibold">
+                    <div className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-1 text-center text-[length:var(--gt-font-size-xs)] font-semibold">
                       {session.score}
                     </div>
                   </div>
@@ -316,7 +316,7 @@ export default function SessionPluginConsolePanel({
                       item.active ? 'bg-[color-mix(in_srgb,var(--gt-status-info)_10%,var(--gt-surface-canvas))]' : ''
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+                    <div className="flex items-center justify-between gap-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                       <span>{item.title}</span>
                       <span className={`h-2 w-2 rounded-full ${
                         item.tone === 'green'
@@ -326,7 +326,7 @@ export default function SessionPluginConsolePanel({
                             : 'bg-[var(--gt-status-info)]'
                       }`} />
                     </div>
-                    <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                    <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                       {item.detail}
                     </div>
                   </div>
@@ -341,21 +341,21 @@ export default function SessionPluginConsolePanel({
           <div className="space-y-3 p-3">
             <section className={sessionPluginConsolePanelClass}>
               <div className="flex items-center justify-between gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2">
-                <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                   {metricsTitle}
                 </div>
-                <span className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                <span className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                   {currentProjectLabel}
                 </span>
               </div>
               <div className="grid grid-cols-2">
                 {metrics.map((metric) => (
                   <div key={`${metric.label}-${metric.value}`} className="min-h-[70px] border-b border-r border-[var(--gt-border-subtle)] p-3 last:border-b-0">
-                    <div className="text-[length:var(--font-size-ui-2xl)] font-semibold leading-none">{metric.value}</div>
-                    <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+                    <div className="text-[length:var(--gt-font-size-2xl)] font-semibold leading-none">{metric.value}</div>
+                    <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                       {metric.label}
                     </div>
-                    <div className="mt-1 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)]">
+                    <div className="mt-1 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]">
                       {metric.meta}
                     </div>
                   </div>
@@ -365,7 +365,7 @@ export default function SessionPluginConsolePanel({
 
             <section className={sessionPluginConsolePanelClass}>
               <div className="flex items-center justify-between gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2">
-                <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                   {keywordsTitle}
                 </div>
                 <BarChart3 className="h-4 w-4" strokeWidth={2.5} />
@@ -373,7 +373,7 @@ export default function SessionPluginConsolePanel({
               <div className="grid gap-2 p-3">
                 {keywords.map((keyword) => (
                   <div key={keyword.term} className="grid grid-cols-[minmax(0,1fr)_42px] items-center gap-2">
-                    <div className="truncate text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)]">
+                    <div className="truncate text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]">
                       {keyword.term}
                     </div>
                     <div className="h-2 overflow-hidden rounded bg-[var(--gt-surface-muted)]">
@@ -386,20 +386,20 @@ export default function SessionPluginConsolePanel({
 
             <section className={sessionPluginConsolePanelClass}>
               <div className="flex items-center justify-between gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2">
-                <div className="text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+                <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                   {topicsTitle}
                 </div>
-                <span className="text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]">
+                <span className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
                   {sessions.length} sessions
                 </span>
               </div>
               <div className="grid gap-2 p-3">
                 {topics.map((topic) => (
                   <article key={topic.title} className={sessionPluginConsoleMutedPanelClass}>
-                    <h4 className="truncate p-2.5 pb-0 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]">
+                    <h4 className="truncate p-2.5 pb-0 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                       {topic.title}
                     </h4>
-                    <p className="p-2.5 pt-1 text-[length:var(--font-size-ui-2xs)] font-medium leading-4 text-[var(--text-muted)]">
+                    <p className="p-2.5 pt-1 text-[length:var(--gt-font-size-2xs)] font-medium leading-4 text-[var(--gt-ink-muted)]">
                       {topic.summary}
                     </p>
                   </article>
@@ -416,10 +416,10 @@ export default function SessionPluginConsolePanel({
 function PanelHead({ title, count }: { title: string; count: string }) {
   return (
     <div className="flex min-h-11 items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2">
-      <div className="truncate text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+      <div className="truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
         {title}
       </div>
-      <span className="inline-flex min-w-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-muted)]">
+      <span className="inline-flex min-w-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]">
         {count}
       </span>
     </div>

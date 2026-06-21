@@ -32,7 +32,7 @@ export default function VendorLogoMark({ preset, size = 'md', className = '' }: 
           <path d={logo.path} fill="currentColor" />
         </svg>
       ) : (
-        <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal">
+        <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal">
           {logo.initials}
         </span>
       )}

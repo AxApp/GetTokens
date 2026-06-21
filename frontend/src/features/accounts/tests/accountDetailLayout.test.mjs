@@ -379,7 +379,7 @@ test('unified compose modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /btn-swiss|input-swiss|select-swiss/);
   assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
   assert.doesNotMatch(targetSource, /border-dashed/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
   assert.doesNotMatch(targetSource, /font-black/);
@@ -443,7 +443,7 @@ test('account curl editor modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /btn-swiss/);
   assert.doesNotMatch(targetSource, /input-swiss/);
   assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2|border-r-2/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /font-black/);
   assert.doesNotMatch(targetSource, /uppercase/);
@@ -791,7 +791,7 @@ test('account detail footer uses the quiet workspace action shell', async () => 
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
   assert.doesNotMatch(targetSource, /btn-swiss/);
-  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /font-black/);
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.08em\]/);
@@ -984,7 +984,7 @@ test('account detail primitives use the current quiet token shell', async () => 
   assert.match(primitiveSource, /--gt-status-success/);
   assert.match(primitiveSource, /--gt-status-warning/);
   assert.match(primitiveSource, /--gt-status-danger/);
-  assert.doesNotMatch(primitiveSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(primitiveSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(primitiveSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(primitiveSource, /font-black/);
 });

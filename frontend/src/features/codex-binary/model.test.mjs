@@ -270,11 +270,11 @@ test('CodexBinaryVersionCell uses the quiet workspace shell', () => {
   assert.match(source, /--gt-status-warning/);
 
   assert.doesNotMatch(source, /btn-swiss/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /\buppercase\b/);
   assert.doesNotMatch(source, /tracking-\[/);
@@ -302,10 +302,10 @@ test('Codex binary summary and list use the quiet workspace shell', () => {
   assert.match(listSource, /data-codex-binary-version-empty="quiet"/);
 
   assert.doesNotMatch(combined, /btn-swiss/);
-  assert.doesNotMatch(combined, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(combined, /border-2 border-dashed border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(combined, /bg-\[var\(--bg-main\)\]/);
-  assert.doesNotMatch(combined, /shadow-\[5px_5px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(combined, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(combined, /border-2 border-dashed border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(combined, /bg-\[var\(--bg-(main|surface)\)\]/);
+  assert.doesNotMatch(combined, /shadow-\[5px_5px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(combined, /font-black/);
   assert.doesNotMatch(combined, /\buppercase\b/);
   assert.doesNotMatch(combined, /tracking-\[/);

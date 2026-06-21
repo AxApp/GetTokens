@@ -14,8 +14,8 @@ interface RefreshActionButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonE
 }
 
 const sizeClassNames: Record<RefreshActionButtonSize, string> = {
-  sm: '!px-2 !py-1 !text-[length:var(--font-size-ui-xs)]',
-  md: '!px-3 !py-2 !text-[length:var(--font-size-ui-sm)]',
+  sm: '!px-2 !py-1 !text-[length:var(--gt-font-size-xs)]',
+  md: '!px-3 !py-2 !text-[length:var(--gt-font-size-sm)]',
 };
 
 const refreshActionButtonBaseClass =

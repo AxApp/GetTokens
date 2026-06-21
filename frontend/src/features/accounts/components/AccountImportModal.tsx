@@ -16,19 +16,19 @@ type AccountImportSource = 'file' | 'paste';
 const accountImportModalHeaderClass =
   'flex flex-wrap items-start justify-between gap-4';
 const accountImportModalEyebrowClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportModalTitleClass =
-  'mt-1 text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'mt-1 text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportModalMetaChipClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportModalErrorClass =
-  'border-t border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-6 py-4 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
+  'border-t border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-6 py-4 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
 const accountImportModalSummaryClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportModalButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountImportModalPrimaryButtonClass =
-  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
+  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 const accountImportModalBodyClass =
   'grid gap-5 p-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start';
 const accountImportModalPanelClass =
@@ -36,25 +36,25 @@ const accountImportModalPanelClass =
 const accountImportModalPanelSectionClass =
   'grid gap-3 border-b border-[var(--gt-border-subtle)] pb-4';
 const accountImportModalPanelTitleClass =
-  'truncate text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'truncate text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportModalPanelMetaClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportModalDropzoneClass = (active: boolean) =>
   `grid min-h-36 place-items-center rounded border px-5 py-6 text-center transition-[background-color,border-color,transform] active:scale-[0.99] disabled:opacity-45 ${
     active
-      ? 'border-[var(--text-primary)] bg-[color-mix(in_srgb,var(--text-primary)_8%,var(--gt-surface-muted))]'
+      ? 'border-[var(--gt-ink-primary)] bg-[color-mix(in_srgb,var(--gt-ink-primary)_8%,var(--gt-surface-muted))]'
       : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
   }`;
 const accountImportModalDropzoneTitleClass =
-  'text-sm font-semibold tracking-normal text-[var(--text-primary)]';
+  'text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportModalDropzoneHintClass =
-  'max-w-sm text-[length:var(--font-size-ui-xs)] font-medium leading-relaxed tracking-normal text-[var(--text-muted)]';
+  'max-w-sm text-[length:var(--gt-font-size-xs)] font-medium leading-relaxed tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportModalTextareaClass =
-  'min-h-36 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-xs text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+  'min-h-36 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-xs text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountImportModalQueueHeaderClass =
   'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
 const accountImportModalQueueEmptyClass =
-  'px-4 py-8 text-center text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'px-4 py-8 text-center text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 
 interface AccountImportModalProps {
   t: Translator;
@@ -272,7 +272,7 @@ export default function AccountImportModal({
           <div className={accountImportModalPanelSectionClass}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
-                <FilePlus className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
+                <FilePlus className="h-4 w-4 shrink-0 text-[var(--gt-ink-muted)]" strokeWidth={3} />
                 <h4 className={accountImportModalPanelTitleClass}>
                   {t('accounts.import_account_files')}
                 </h4>
@@ -319,7 +319,7 @@ export default function AccountImportModal({
           <div className="grid gap-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
-                <ClipboardPaste className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
+                <ClipboardPaste className="h-4 w-4 shrink-0 text-[var(--gt-ink-muted)]" strokeWidth={3} />
                 <h4 className={accountImportModalPanelTitleClass}>
                   {t('accounts.import_account_paste')}
                 </h4>

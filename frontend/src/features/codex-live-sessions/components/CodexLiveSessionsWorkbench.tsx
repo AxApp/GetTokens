@@ -55,23 +55,23 @@ const transportOptions: ReadonlyArray<SegmentedOption<CodexLiveTransportFilter>>
 const codexLiveWorkbenchShellClass =
   'h-full min-h-0 min-w-0 overflow-auto bg-[var(--gt-surface-canvas)] p-5 lg:p-8';
 const codexLiveWorkbenchTitleClass =
-  'text-2xl font-semibold tracking-normal text-[var(--text-primary)] [word-break:keep-all] sm:text-3xl';
+  'text-2xl font-semibold tracking-normal text-[var(--gt-ink-primary)] [word-break:keep-all] sm:text-3xl';
 const codexLiveWorkbenchActionButtonClass =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexLiveWorkbenchSegmentClass =
   'grid grid-cols-2 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveWorkbenchSegmentButtonClass =
-  'h-9 min-w-16 px-3 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal transition-colors';
+  'h-9 min-w-16 px-3 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal transition-colors';
 const codexLiveWorkbenchFilterButtonClass =
-  'inline-flex h-10 w-full min-w-0 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)] lg:w-auto';
+  'inline-flex h-10 w-full min-w-0 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] lg:w-auto';
 const codexLiveWorkbenchFilterMenuClass =
   'absolute left-1/2 top-[calc(100%+0.75rem)] z-30 grid min-w-[min(22rem,calc(100vw-2.5rem))] -translate-x-1/2 gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 [box-shadow:var(--gt-elevation-card)] lg:left-auto lg:right-0 lg:translate-x-0';
 const codexLiveWorkbenchFilterGroupLabelClass =
-  'text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveWorkbenchFilterOptionGridClass =
   'grid overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveWorkbenchFilterOptionClass =
-  'min-h-9 min-w-0 px-2 text-[length:var(--font-size-ui-2xs)] font-semibold leading-none tracking-normal transition-colors';
+  'min-h-9 min-w-0 px-2 text-[length:var(--gt-font-size-2xs)] font-semibold leading-none tracking-normal transition-colors';
 const codexLiveWorkbenchFilterResetRowClass =
   'flex justify-end border-t border-[var(--gt-border-subtle)] pt-3';
 
@@ -246,8 +246,8 @@ export default function CodexLiveSessionsWorkbench({
                     }}
                     className={`${codexLiveWorkbenchSegmentButtonClass} ${
                       view === item
-                        ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
-                        : 'text-[var(--text-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--text-primary)]'
+                        ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+                        : 'text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--gt-ink-primary)]'
                     } ${item === 'session' ? 'border-r border-[var(--gt-border-subtle)]' : ''}`}
                   >
                     {t(`codex_live_sessions.view_${item}`)}
@@ -260,7 +260,7 @@ export default function CodexLiveSessionsWorkbench({
                 label={t('common.refresh')}
                 title={t('codex_live_sessions.refresh_title')}
                 iconStrokeWidth={2.5}
-                className="text-[length:var(--font-size-ui-xs)]"
+                className="text-[length:var(--gt-font-size-xs)]"
               />
               <button
                 type="button"
@@ -343,7 +343,7 @@ export default function CodexLiveSessionsWorkbench({
                 <div className={codexLiveWorkbenchFilterResetRowClass}>
                   <button
                     type="button"
-                    className={`${codexLiveWorkbenchActionButtonClass} h-8 px-2 text-[length:var(--font-size-ui-2xs)]`}
+                    className={`${codexLiveWorkbenchActionButtonClass} h-8 px-2 text-[length:var(--gt-font-size-2xs)]`}
                     onClick={() => {
                       setStatusFilter('all');
                       setTransportFilter('all');
@@ -426,8 +426,8 @@ function FilterMenuOptionButton({
         bordered ? 'border-r border-[var(--gt-border-subtle)]' : ''
       } ${topBorder ? 'border-t border-[var(--gt-border-subtle)]' : ''} ${
         active
-          ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
-          : 'text-[var(--text-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--text-primary)]'
+          ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+          : 'text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--gt-ink-primary)]'
       }`}
     >
       <span className="block truncate">{children}</span>

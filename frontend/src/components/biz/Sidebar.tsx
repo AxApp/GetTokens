@@ -195,8 +195,8 @@ export default function Sidebar({
                   color: isActive ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
                   backgroundColor: isActive ? 'var(--gt-surface-muted)' : 'transparent',
                   fontFamily: 'var(--gt-font-family-sans)',
-                  fontSize: '13px',
-                  lineHeight: '20px',
+                  fontSize: 'var(--gt-font-size-body)',
+                  lineHeight: 'var(--gt-line-height-body)',
                   fontWeight: isActive ? 500 : 400,
                   gap: isCollapsed ? 0 : '6px',
                 }}
@@ -237,8 +237,8 @@ export default function Sidebar({
                         color: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
                         backgroundColor: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'var(--gt-surface-muted)' : 'transparent',
                         fontFamily: 'var(--gt-font-family-sans)',
-                        fontSize: '13px',
-                        lineHeight: '20px',
+                        fontSize: 'var(--gt-font-size-body)',
+                        lineHeight: 'var(--gt-line-height-body)',
                         fontWeight: activePage === 'codex' && activeCodexWorkspace === ws.id ? 500 : 400,
                       }}
                     >
@@ -254,8 +254,8 @@ export default function Sidebar({
                         color: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
                         backgroundColor: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'var(--gt-surface-muted)' : 'transparent',
                         fontFamily: 'var(--gt-font-family-sans)',
-                        fontSize: '13px',
-                        lineHeight: '20px',
+                        fontSize: 'var(--gt-font-size-body)',
+                        lineHeight: 'var(--gt-line-height-body)',
                         fontWeight: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 500 : 400,
                       }}
                     >
@@ -280,8 +280,8 @@ export default function Sidebar({
               style={{
                 color: 'var(--gt-ink-muted)',
                 fontFamily: 'var(--gt-font-family-mono)',
-                fontSize: '10px',
-                lineHeight: '14px',
+                fontSize: 'var(--gt-font-size-2xs)',
+                lineHeight: 'var(--gt-line-height-tight)',
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
@@ -289,13 +289,13 @@ export default function Sidebar({
             </div>
             {updatePrompt && (
               <>
-                <div className="mt-1 font-medium" style={{ color: 'var(--gt-status-success)', fontSize: '9px', lineHeight: '12px' }}>
+                <div className="mt-1 font-medium" style={{ color: 'var(--gt-status-success)', fontSize: 'var(--gt-font-size-3xs)', lineHeight: 'var(--gt-line-height-tight)' }}>
                   {t('nav.update_available')}
                 </div>
                 <button
                   type="button"
                   className={`mt-1 flex h-5 w-full items-center justify-center gap-1 rounded transition duration-75 hover:opacity-90 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ${FOCUS_RING}`}
-                  style={{ backgroundColor: 'var(--gt-status-success)', color: '#ffffff', fontSize: '10px', fontWeight: 500, lineHeight: '14px' }}
+                  style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)', fontSize: 'var(--gt-font-size-2xs)', fontWeight: 500, lineHeight: 'var(--gt-line-height-tight)' }}
                   aria-label={updatePromptLabel}
                   title={updatePromptTitle}
                   aria-live="polite"
@@ -314,7 +314,7 @@ export default function Sidebar({
               <button
                 type="button"
                 className={`flex h-4 w-4 items-center justify-center rounded-full transition duration-75 hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-60 ${FOCUS_RING}`}
-                style={{ backgroundColor: 'var(--gt-status-success)', color: '#ffffff' }}
+                style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)' }}
                 aria-label={updatePromptLabel}
                 title={updatePromptTitle}
                 aria-live="polite"

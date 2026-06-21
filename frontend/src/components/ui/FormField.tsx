@@ -56,7 +56,7 @@ export function FieldLabel({ children }: { children: ReactNode }) {
     <span
       data-design-system-component="true"
       data-design-system-component-name="FieldLabel"
-      className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-ink-muted)]"
+      className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]"
     >
       {children}
     </span>
@@ -64,7 +64,7 @@ export function FieldLabel({ children }: { children: ReactNode }) {
 }
 
 const quietControlClass =
-  'h-9 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] hover:border-[var(--gt-border-strong)] focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:bg-[var(--gt-surface-muted)] disabled:text-[var(--gt-ink-muted)]';
+  'h-9 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] hover:border-[var(--gt-border-strong)] focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:bg-[var(--gt-surface-muted)] disabled:text-[var(--gt-ink-muted)]';
 
 interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children' | 'onChange'> {
   title: string;

@@ -110,7 +110,7 @@ const accountsFeatureContentClass =
 const accountsFeatureSelectionToolbarShellClass =
   "sticky -top-12 z-40 -mx-12 !mt-4 bg-[color-mix(in_srgb,var(--gt-surface-canvas)_94%,transparent)] px-12 py-1.5 backdrop-blur";
 const accountsFeatureNoticeClass =
-  "flex items-start justify-between gap-3 rounded-md border px-4 py-3 text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal";
+  "flex items-start justify-between gap-3 rounded-md border px-4 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal";
 const accountsFeatureNoticeToneClass = {
   error:
     "border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_7%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]",
@@ -119,18 +119,18 @@ const accountsFeatureNoticeToneClass = {
   success:
     "border-[color-mix(in_srgb,var(--gt-status-success)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_7%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]",
   neutral:
-    "border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)]",
+    "border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]",
 } satisfies Record<"error" | "warning" | "success" | "neutral", string>;
 const accountsFeatureInlineButtonClass =
-  "inline-flex h-7 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--font-size-ui-2xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]";
+  "inline-flex h-7 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]";
 const accountsFeatureEmptyStateClass =
   "grid gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-16 text-center";
 const accountsFeatureEmptyTitleClass =
-  "font-mono text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]";
+  "font-mono text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]";
 const accountsFeatureEmptyBodyClass =
-  "mx-auto max-w-2xl text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-muted)]";
+  "mx-auto max-w-2xl text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-muted)]";
 const accountsFeatureEmptyActionButtonClass =
-  "inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]";
+  "inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]";
 
 export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const { t } = useI18n();

@@ -13,30 +13,30 @@ interface DeepLinkAccountImportConfirmProps {
 
 const deepLinkImportHeaderClass = 'grid gap-1';
 const deepLinkImportTitleClass =
-  'text-[length:var(--font-size-ui-lg)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const deepLinkImportMetaClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const deepLinkImportButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
 const deepLinkImportPrimaryButtonClass =
-  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
+  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 const deepLinkImportBodyClass =
-  'grid gap-5 p-0 text-[length:var(--font-size-ui-sm)]';
+  'grid gap-5 p-0 text-[length:var(--gt-font-size-sm)]';
 const deepLinkImportSummaryGridClass = 'grid gap-3 md:grid-cols-4';
 const deepLinkImportPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4';
 const deepLinkImportSummaryTileClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const deepLinkImportSummaryLabelClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const deepLinkImportSummaryValueClass =
-  'mt-1 truncate font-semibold tracking-normal text-[var(--text-primary)]';
+  'mt-1 truncate font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const deepLinkImportUrlClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]';
 const deepLinkImportAccountTitleClass =
-  'font-semibold tracking-normal text-[var(--text-primary)]';
+  'font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const deepLinkImportAccountMetaClass =
-  'mt-1 flex flex-wrap gap-2 text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'mt-1 flex flex-wrap gap-2 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const deepLinkImportResultClass =
   'mt-3 rounded border px-3 py-2 font-semibold tracking-normal';
 const deepLinkImportNoticeClass =
@@ -134,7 +134,7 @@ export default function DeepLinkAccountImportConfirm({
                       {account.disabled ? <span>disabled</span> : null}
                     </div>
                   </div>
-                  <div className="text-right font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">
+                  <div className="text-right font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">
                     <div>{account.baseUrl || '-'}</div>
                     <div>{account.apiKeyPreview || `${account.keyCount || 0} key(s)`} / {account.modelCount || 0} model(s)</div>
                   </div>

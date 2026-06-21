@@ -68,7 +68,7 @@ test('sidebar update prompt UI uses green success styling and carries the releas
   const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /--gt-status-success/);
-  assert.match(source, /color:\s*'#ffffff'/);
+  assert.match(source, /color:\s*'var\(--gt-ink-inverse\)'/);
   assert.match(source, /updateButtonLabel[\s\S]*updatePrompt\?\.releaseVersion/);
   assert.doesNotMatch(source, /\{t\('nav\.update_available'\)\}\s*\{updatePrompt\.releaseVersion\}/);
 });

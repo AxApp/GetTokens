@@ -61,7 +61,7 @@ test('quota reset modal uses quiet dialog controls while preserving the gradient
   assert.doesNotMatch(modalSource, /font-black/);
   assert.doesNotMatch(modalSource, /uppercase/);
   assert.doesNotMatch(modalSource, /tracking-\[0\.08em\]|tracking-tight/);
-  assert.doesNotMatch(modalSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(modalSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(modalSource, /color-status-/);
   assert.doesNotMatch(sectionSource, /shadow-\[|shadow-xl/);
 });

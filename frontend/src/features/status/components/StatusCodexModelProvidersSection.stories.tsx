@@ -242,7 +242,7 @@ const preview: CodexFeaturePreview = {
 function Frame({ label, children }: { label: string; children: ReactNode }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">{children}</div>
+      <div className="min-w-0 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">{children}</div>
     </DesignSystemStoryFrame>
   );
 }
@@ -289,15 +289,15 @@ function ProviderSectionSample({
 
 function StatusCodexModelProvidersOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页 Codex Model Providers</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
           Codex model provider 面板展示 provider 名称、base URL、wire API、认证依赖和只读参数，覆盖 string、enum、bool 与 TOML 文本控件。
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Provider states</h3>
         <div className="grid gap-4">
           <ProviderSectionSample label="DS-CODEX-PROVIDERS-READY" message="loaded from config.toml" />

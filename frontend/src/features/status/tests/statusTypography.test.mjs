@@ -84,8 +84,8 @@ test('status relay editor modals use the quiet workspace shell', async () => {
   assert.match(relayEditorsSource, /--gt-border-subtle/);
   assert.match(relayEditorsSource, /--gt-status-danger/);
   assert.doesNotMatch(relayEditorsSource, /btn-swiss/);
-  assert.doesNotMatch(relayEditorsSource, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(relayEditorsSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(relayEditorsSource, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(relayEditorsSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(relayEditorsSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(relayEditorsSource, /font-black/);
   assert.doesNotMatch(relayEditorsSource, /uppercase/);
@@ -145,11 +145,11 @@ test('status panels use the quiet workspace shell', async () => {
   assert.match(statusPanelSource, /--gt-border-subtle/);
   assert.doesNotMatch(statusPanelSource, /card-swiss grid gap-4 p-4/);
   assert.doesNotMatch(statusPanelSource, /btn-swiss/);
-  assert.doesNotMatch(statusPanelSource, /border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\]/);
-  assert.doesNotMatch(statusPanelSource, /relative overflow-visible border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(statusPanelSource, /border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\]/);
+  assert.doesNotMatch(statusPanelSource, /relative overflow-visible border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(statusPanelSource, /shadow-\[/);
   assert.doesNotMatch(statusPanelSource, /tracking-(wide|wider|widest|tight|tighter|tightest|normal|\[)/);
-  assert.doesNotMatch(statusPanelSource, /--bg-main/);
+  assert.doesNotMatch(statusPanelSource, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
   assert.match(actionSelectSource, /--gt-surface-raised/);
   assert.match(snippetPanelSource, /--gt-border-subtle/);
   assert.match(snippetPanelSource, /--gt-status-success/);
@@ -159,8 +159,7 @@ test('status panels use the quiet workspace shell', async () => {
   assert.doesNotMatch(actionSelectSource, /btn-swiss/);
   assert.doesNotMatch(snippetPanelSource, /btn-swiss/);
   assert.doesNotMatch(snippetPanelSource, /--color-status-/);
-  assert.doesNotMatch(snippetPanelSource, /--text-primary/);
-  assert.doesNotMatch(snippetPanelSource, /--text-muted/);
+  assert.doesNotMatch(snippetPanelSource, /--text-primary|--text-muted/);
 });
 
 test('status local CLI apply panel uses the workbench plan layout', async () => {
@@ -251,8 +250,8 @@ test('codex value editors use the quiet workspace input shell', async () => {
   assert.match(valueEditorSource, /--gt-surface-muted/);
   assert.match(valueEditorSource, /--gt-border-subtle/);
   assert.doesNotMatch(valueEditorSource, /input-swiss/);
-  assert.doesNotMatch(valueEditorSource, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(valueEditorSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(valueEditorSource, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(valueEditorSource, /bg-\[var\(--bg-(main|surface)\)\]/);
 });
 
 test('codex feature config page keeps readable text selectable for copy', async () => {
@@ -303,11 +302,11 @@ test('codex config rows render as a settings table rather than heavy nested card
   assert.match(configRowsSource, /--gt-border-subtle/);
   assert.match(configRowsSource, /--gt-surface-muted/);
   assert.match(configRowsSource, /divide-y divide-\[var\(--gt-border-subtle\)\]/);
-  assert.doesNotMatch(configRowsSource, /divide-y-2 divide-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(configRowsSource, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(configRowsSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(configRowsSource, /divide-y-2 divide-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(configRowsSource, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(configRowsSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(configRowsSource, /--codex-panel-border/);
-  assert.doesNotMatch(configRowsSource, /border-l-4 border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(configRowsSource, /border-l-4 border-\[var\(--gt-border-strong\)\]/);
 });
 
 test('codex config sibling sections use the quiet workspace shell', async () => {
@@ -326,8 +325,8 @@ test('codex config sibling sections use the quiet workspace shell', async () => 
     assert.match(source, /--gt-surface-canvas/);
     assert.match(source, /--gt-border-subtle/);
     assert.doesNotMatch(source, /btn-swiss/);
-    assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-    assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+    assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+    assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
     assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
     assert.doesNotMatch(source, /font-black/);
     assert.doesNotMatch(source, /uppercase/);
@@ -370,15 +369,15 @@ test('codex feature rows render a settings table and a grouped multi_agent_v2 co
   assert.match(featureSectionSource, /--gt-border-subtle/);
   assert.match(featureSectionSource, /divide-y divide-\[var\(--gt-border-subtle\)\]/);
   assert.doesNotMatch(featureSectionSource, /btn-swiss/);
-  assert.doesNotMatch(featureSectionSource, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(featureSectionSource, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(featureSectionSource, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(featureSectionSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(featureSectionSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(featureSectionSource, /--codex-blue/);
   assert.doesNotMatch(featureSectionSource, /--codex-panel/);
   assert.match(featureSectionSource, /data-codex-feature-primary-heading=\{pathGroup\.primaryLabel\}/);
   assert.match(featureSectionSource, /resolveFeatureRowPathLabels\(pathDisplay, nested\)/);
   assert.match(featureSectionSource, /pathDisplay\.childLabels/);
-  assert.doesNotMatch(featureSectionSource, /<div className="divide-y-2 divide-\[var\(--border-color\)\]">\s*\{groupFeatureRowsByPrimaryPath/);
+  assert.doesNotMatch(featureSectionSource, /<div className="divide-y-2 divide-\[var\(--gt-border-strong\)\]">\s*\{groupFeatureRowsByPrimaryPath/);
 });
 
 test('codex feature panel suppresses project design-system highlight overlays', async () => {
@@ -419,7 +418,7 @@ test('status page diagnostics and header status use the quiet workspace shell', 
   for (const block of [diagnosticsBlock, headerBlock]) {
     assert.doesNotMatch(block, /card-swiss/);
     assert.doesNotMatch(block, /border-2/);
-    assert.doesNotMatch(block, /bg-\[var\(--bg-main\)\]/);
+    assert.doesNotMatch(block, /bg-\[var\(--bg-(main|surface)\)\]/);
     assert.doesNotMatch(block, /font-black/);
     assert.doesNotMatch(block, /\buppercase\b/);
     assert.doesNotMatch(block, /tracking-\[0\.(04|08|14|18)em\]|tracking-widest/);

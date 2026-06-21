@@ -102,12 +102,12 @@ export const designSystemStoryGroups = [
   {
     id: 'primitives',
     title: '基础样式',
-    description: '定义产品视觉材料语言的 Swiss 基础 class。',
+    description: '定义基于 AntD 组件与 gt 语义令牌的基础样式。',
     stories: [
       {
-        id: 'swiss-primitives',
-        title: '瑞士风基础样式',
-        storybookTitle: 'Design System/基础样式/瑞士风基础样式',
+        id: 'antd-primitives',
+        title: 'AntD 基础样式',
+        storybookTitle: 'Design System/基础样式/AntD 基础样式',
         path: 'frontend/src/stories/primitives/SwissPrimitives.stories.tsx',
       },
     ],

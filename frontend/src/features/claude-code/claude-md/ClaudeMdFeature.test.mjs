@@ -53,10 +53,10 @@ test('ClaudeCodeMemoryFilesPanel uses the quiet workspace shell', () => {
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
 
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-subtle\)\]/);
 });
 

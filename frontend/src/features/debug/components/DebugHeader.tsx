@@ -1,3 +1,4 @@
+import { Button } from 'antd';
 import { useI18n } from '../../../context/I18nContext';
 
 interface DebugHeaderProps {
@@ -43,22 +44,22 @@ export default function DebugHeader({
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={onToggleSelectAll} className="parchment-toolbar-action-secondary" style={{ minHeight: 'auto', padding: '0.4rem 0.75rem', fontSize: '12px' }} disabled={count === 0}>
+        <Button size="small" onClick={onToggleSelectAll} disabled={count === 0}>
           {allSelected ? t('debug.unselect_all') : t('debug.select_all')}
-        </button>
-        <button onClick={onClearSelection} className="parchment-toolbar-action-secondary" style={{ minHeight: 'auto', padding: '0.4rem 0.75rem', fontSize: '12px' }} disabled={selectedCount === 0}>
+        </Button>
+        <Button size="small" onClick={onClearSelection} disabled={selectedCount === 0}>
           {t('debug.clear_selection')}
-        </button>
-        <button onClick={onCopySelected} className="parchment-toolbar-action-primary" style={{ minHeight: 'auto', padding: '0.4rem 0.75rem', fontSize: '12px' }} disabled={selectedCount === 0}>
+        </Button>
+        <Button size="small" type="primary" onClick={onCopySelected} disabled={selectedCount === 0}>
           {copyState === 'success'
             ? t('debug.copy_success')
             : copyState === 'error'
               ? t('debug.copy_error')
               : `${t('debug.copy_selected')} (${selectedCount})`}
-        </button>
-        <button onClick={onClearAll} className="parchment-toolbar-action-secondary" style={{ minHeight: 'auto', padding: '0.4rem 0.75rem', fontSize: '12px' }} disabled={count === 0}>
+        </Button>
+        <Button size="small" onClick={onClearAll} disabled={count === 0}>
           {t('debug.clear')}
-        </button>
+        </Button>
       </div>
     </header>
   );

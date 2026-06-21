@@ -4,7 +4,7 @@ import type { CodexBinaryReleaseFilter, CodexBinaryVersionNotes, CodexBinaryVers
 import CodexBinaryVersionCell from './CodexBinaryVersionCell';
 
 const codexBinaryVersionListLabelClass =
-  'text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-ink-muted)]';
+  'text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]';
 const codexBinaryVersionListEmptyClass =
   'border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-8 text-center text-sm font-medium text-[var(--gt-ink-muted)]';
 

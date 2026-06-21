@@ -46,10 +46,10 @@ function SearchInputOverview() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid w-full max-w-5xl gap-4 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full max-w-5xl gap-4 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase tracking-normal">SearchInput</h2>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--gt-ink-muted)]">
           {zh
             ? '统一带搜索图标、清除按钮、禁用态和窄容器压力的搜索输入。'
             : 'Unified search field with icon, clear action, disabled state, and narrow-width pressure.'}
@@ -57,19 +57,19 @@ function SearchInputOverview() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="grid gap-3 border-[1px] border-[color:color-mix(in_srgb,var(--border-color)_55%,transparent)] bg-[var(--bg-main)] p-4">
+        <section className="grid gap-3 border-[1px] border-[color:color-mix(in_srgb,var(--gt-border-strong)_55%,transparent)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-black uppercase tracking-normal">{zh ? '默认' : 'Default'}</h3>
           <SearchInputSample />
         </section>
-        <section className="grid gap-3 border-[1px] border-[color:color-mix(in_srgb,var(--border-color)_55%,transparent)] bg-[var(--bg-main)] p-4">
+        <section className="grid gap-3 border-[1px] border-[color:color-mix(in_srgb,var(--gt-border-strong)_55%,transparent)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-black uppercase tracking-normal">{zh ? '带值' : 'Filled'}</h3>
           <SearchInputSample initialValue="filesystem" />
         </section>
-        <section className="grid gap-3 border-[1px] border-[color:color-mix(in_srgb,var(--border-color)_55%,transparent)] bg-[var(--bg-main)] p-4">
+        <section className="grid gap-3 border-[1px] border-[color:color-mix(in_srgb,var(--gt-border-strong)_55%,transparent)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-black uppercase tracking-normal">{zh ? '窄容器' : 'Narrow'}</h3>
           <SearchInputSample initialValue="tool search" narrow />
         </section>
-        <section className="grid gap-3 border-[1px] border-[color:color-mix(in_srgb,var(--border-color)_55%,transparent)] bg-[var(--bg-main)] p-4">
+        <section className="grid gap-3 border-[1px] border-[color:color-mix(in_srgb,var(--gt-border-strong)_55%,transparent)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-black uppercase tracking-normal">{zh ? '禁用' : 'Disabled'}</h3>
           <SearchInputSample initialValue="readonly" disabled />
         </section>

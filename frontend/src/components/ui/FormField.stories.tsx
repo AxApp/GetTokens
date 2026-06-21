@@ -43,7 +43,7 @@ function FormFieldSample({ variant = 'select' }: { variant?: 'select' | 'input' 
           />
         ) : (
           <FormField title={zh ? '认证状态' : 'Auth State'} as="div">
-            <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">
+            <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]">
               {zh ? 'ChatGPT 授权已保留' : 'ChatGPT auth preserved'}
             </div>
           </FormField>
@@ -63,10 +63,10 @@ function StatePanel({
   title: string;
 }) {
   return (
-    <section className="grid min-h-[9rem] gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+    <section className="grid min-h-[9rem] gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
       <div>
         <h3 className="text-sm font-black uppercase italic tracking-normal">{title}</h3>
-        <p className="mt-1 text-xs font-bold text-[var(--text-muted)]">{description}</p>
+        <p className="mt-1 text-xs font-bold text-[var(--gt-ink-muted)]">{description}</p>
       </div>
       {children}
     </section>
@@ -78,10 +78,10 @@ function FormFieldOverview() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid w-full max-w-5xl gap-4 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full max-w-5xl gap-4 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">FormField</h2>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--gt-ink-muted)]">
           {zh
             ? '统一字段标题、select、input 和只读状态，确保业务区块里的字段标签都可被设计系统追踪。'
             : 'Shared field labels, select, input, and read-only states so business panels remain trackable by the design system.'}

@@ -55,12 +55,12 @@ type CodexBooleanField = 'supportsWebsockets';
 const accountLocalCliPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const accountLocalCliMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const accountLocalCliButtonClass =
-  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
 const accountLocalCliPrimaryButtonClass =
-  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
 const accountLocalCliInputClass =
-  'min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
-const accountLocalCliMetaClass = 'font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-muted)]';
+  'min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] outline-none placeholder:text-[var(--gt-ink-muted)] transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
+const accountLocalCliMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
 const accountLocalCliToggleClass = 'h-4 w-4 accent-[var(--gt-status-warning)]';
 
 export default function AccountLocalCliApplyConfirm({
@@ -192,7 +192,7 @@ export default function AccountLocalCliApplyConfirm({
             <div className={accountLocalCliMetaClass}>
               FILE PREVIEW CONFIRM
             </div>
-            <h2 className="mt-1 text-xl font-semibold tracking-normal text-[var(--text-primary)]">
+            <h2 className="mt-1 text-xl font-semibold tracking-normal text-[var(--gt-ink-primary)]">
               {title}
             </h2>
             <div className="mt-3 flex max-w-full flex-wrap gap-2">
@@ -214,7 +214,7 @@ export default function AccountLocalCliApplyConfirm({
             取消
           </button>
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
-            <div className="max-w-xl truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-primary)]">
+            <div className="max-w-xl truncate font-mono text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-primary)]">
               {resultMessage || (blockingWarnings[0]?.message ?? (previewMode ? 'PREVIEW ONLY / 未写入' : '等待确认 / 未写入'))}
             </div>
             <button
@@ -285,7 +285,7 @@ export default function AccountLocalCliApplyConfirm({
               </label>
               <ReadOnlyCodexSetting label="本地 auth 状态" value={draft.codex.localAuthStatus || '未检测到本地 auth 状态'} />
               <ReadOnlyCodexSetting label="Wire API" value={draft.codex.wireAPI || 'responses'} />
-              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]">
+              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-primary)]">
                 <span>supports_websockets</span>
                 <input
                   type="checkbox"
@@ -294,7 +294,7 @@ export default function AccountLocalCliApplyConfirm({
                   className={accountLocalCliToggleClass}
                 />
               </label>
-              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]">
+              <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-primary)]">
                 <span>sync_model_catalog</span>
                 <input
                   type="checkbox"
@@ -381,7 +381,7 @@ export default function AccountLocalCliApplyConfirm({
                   <option value="ANTHROPIC_AUTH_TOKEN">ANTHROPIC_AUTH_TOKEN</option>
                 </select>
               </label>
-              <label className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]">
+              <label className="flex items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-primary)]">
                 <input
                   type="checkbox"
                   checked={draft.claude.disableNonEssentialTraffic}
@@ -390,7 +390,7 @@ export default function AccountLocalCliApplyConfirm({
                 />
                 Disable nonessential traffic
               </label>
-              <label className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal text-[var(--text-primary)]">
+              <label className="flex items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-primary)]">
                 <input
                   type="checkbox"
                   checked={draft.claude.claudeCodeAttributionHeader}
@@ -416,7 +416,7 @@ export default function AccountLocalCliApplyConfirm({
                     : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] hover:bg-[var(--gt-surface-muted)]'
                 }`}
               >
-                <span className="break-all font-mono text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)]">
+                <span className="break-all font-mono text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">
                   {file.path}
                 </span>
               </button>
@@ -504,7 +504,7 @@ function ReadOnlyCodexSetting({ label, value }: { label: string; value: string }
       <span className={accountLocalCliMetaClass}>
         {label}
       </span>
-      <div className="min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-primary)]">
+      <div className="min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]">
         {value}
       </div>
     </div>
@@ -522,13 +522,13 @@ function SummaryBadge({
 }) {
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-2 rounded border px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-medium tracking-normal ${
+      className={`inline-flex max-w-full items-center gap-2 rounded border px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-medium tracking-normal ${
         tone === 'warning'
           ? 'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] text-[var(--gt-status-warning)]'
-          : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-primary)]'
+          : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]'
       }`}
     >
-      <span className="text-[var(--text-muted)]">{label}</span>
+      <span className="text-[var(--gt-ink-muted)]">{label}</span>
       <span className="truncate">{value}</span>
     </span>
   );

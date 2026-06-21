@@ -7,12 +7,12 @@ const usageDetailTableShellClass =
   'overflow-x-auto overflow-y-visible rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const usageDetailTableHeaderRowClass = 'bg-[var(--gt-surface-muted)]';
 const usageDetailTableHeaderCellClass =
-  'border-b border-[var(--gt-border-subtle)] px-3 py-3 text-left text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--gt-ink-primary)]';
+  'border-b border-[var(--gt-border-subtle)] px-3 py-3 text-left text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-primary)]';
 const usageDetailTableRowClass =
   'cursor-pointer border-t border-[var(--gt-border-subtle)] transition-colors first:border-t-0 hover:bg-[var(--gt-surface-muted)]';
 const usageDetailTableSelectedRowClass =
   'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-primary)]';
-const usageDetailTableCellClass = 'px-3 py-3 text-[length:var(--font-size-ui-md-compact)] font-medium leading-6';
+const usageDetailTableCellClass = 'px-3 py-3 text-[length:var(--gt-font-size-md-compact)] font-medium leading-6';
 
 export type UsageDetailTableRow = UsageDeskMinuteRow & {
   drilldownDayKey?: string;

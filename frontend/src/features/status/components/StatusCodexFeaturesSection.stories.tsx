@@ -186,7 +186,7 @@ const preview: CodexFeaturePreview = {
 function Frame({ label, children }: { label: string; children: ReactNode }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <div className="min-w-0 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -243,15 +243,15 @@ function FeatureSectionSample({
 
 function StatusCodexFeaturesOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页 Codex 功能</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
+        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
           Codex feature 开关列表进入设计系统后，用固定 snapshot、row 和 preview mock 覆盖配置型列表、筛选、空态和保存状态。
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Feature list states</h3>
         <div className="grid gap-4">
           <FeatureSectionSample label="DS-CODEX-FEATURES-READY" message="loaded from config.toml" />

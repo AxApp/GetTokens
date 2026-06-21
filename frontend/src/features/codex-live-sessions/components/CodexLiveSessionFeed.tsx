@@ -20,27 +20,27 @@ const codexLiveFeedHeaderClass =
 const codexLiveFeedStaticHeaderClass =
   'grid w-full gap-1 border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left md:grid-cols-[1fr_auto] md:items-end';
 const codexLiveFeedTitleClass =
-  'font-mono text-[length:var(--font-size-ui-xl)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'font-mono text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const codexLiveFeedHintClass =
-  'mt-1 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-muted)]';
+  'mt-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]';
 const codexLiveFeedCountClass =
-  'font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedEmptyClass =
-  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-5 text-center text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]';
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-5 text-center text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]';
 const codexLiveFeedRowsClass =
   'divide-y divide-[var(--gt-border-subtle)]';
 const codexLiveFeedRowClass =
   'grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors';
 const codexLiveFeedPrimaryTextClass =
-  'col-start-1 row-start-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-semibold leading-snug tracking-normal text-[var(--text-primary)]';
+  'col-start-1 row-start-1 min-w-0 truncate font-mono text-[length:var(--gt-font-size-lg)] font-semibold leading-snug tracking-normal text-[var(--gt-ink-primary)]';
 const codexLiveFeedRightTextClass =
-  'col-start-2 row-start-1 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-semibold leading-snug tracking-normal text-[var(--text-muted)]';
+  'col-start-2 row-start-1 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--gt-font-size-sm)] font-semibold leading-snug tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedMetaTextClass =
-  'col-start-1 row-start-2 min-w-0 self-center truncate font-mono text-[length:var(--font-size-ui-sm)] font-medium leading-snug tracking-normal text-[var(--text-muted)]';
+  'col-start-1 row-start-2 min-w-0 self-center truncate font-mono text-[length:var(--gt-font-size-sm)] font-medium leading-snug tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedRightMetaTextClass =
-  'col-start-2 row-start-2 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'col-start-2 row-start-2 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedCopyButtonClass =
-  'inline-flex h-6 shrink-0 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 font-mono text-[length:var(--font-size-ui-2xs)] font-semibold leading-none tracking-normal text-[var(--text-muted)] transition-colors hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] active:scale-[0.98]';
+  'inline-flex h-6 shrink-0 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold leading-none tracking-normal text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-ink-primary)] hover:text-[var(--gt-ink-primary)] active:scale-[0.98]';
 const codexLiveFeedCopyButtonCopiedClass =
   'border-[color-mix(in_srgb,var(--gt-status-success)_36%,var(--gt-border-subtle))] bg-[color-mix(in_srgb,var(--gt-status-success)_7%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]';
 

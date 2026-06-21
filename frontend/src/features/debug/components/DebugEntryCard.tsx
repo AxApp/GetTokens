@@ -1,3 +1,4 @@
+import { Button, Card } from 'antd';
 import { useI18n } from '../../../context/I18nContext';
 
 interface DebugEntryCardProps {
@@ -31,9 +32,10 @@ export default function DebugEntryCard({
     : 'var(--gt-ink-muted)';
 
   return (
-    <section
-      className="parchment-section-card flex max-h-[600px] flex-col overflow-hidden"
+    <Card
+      className="flex max-h-[600px] flex-col overflow-hidden"
       style={isSelected ? { boxShadow: '0 0 0 2px var(--gt-accent-primary)' } : undefined}
+      styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 } }}
     >
       {/* Header */}
       <div
@@ -69,13 +71,12 @@ export default function DebugEntryCard({
             <div style={{ color: statusColor, fontWeight: 600 }}>{entry.status}</div>
             <div className="mt-0.5" style={{ color: 'var(--gt-ink-muted)' }}>{entry.durationMs ?? 0}ms</div>
           </div>
-          <button
+          <Button
+            size="small"
             onClick={() => onToggleExpanded(entry.id)}
-            className="parchment-toolbar-action-secondary"
-            style={{ minHeight: 'auto', padding: '0.3rem 0.6rem', fontSize: '11px' }}
           >
             {entry.isExpanded ? t('debug.collapse') : t('debug.expand')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -122,6 +123,6 @@ export default function DebugEntryCard({
           {t('debug.collapsed_hint')}
         </div>
       )}
-    </section>
+    </Card>
   );
 }

@@ -89,8 +89,8 @@ test('account plan groups can collapse without changing group actions scope', as
   assert.match(viewSource, /className="flex min-w-0 items-center gap-2"/);
   assert.match(viewSource, /className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-\[var\(--gt-surface-canvas\)\]"/);
   assert.match(viewSource, /className="min-w-0 truncate text-sm font-semibold leading-tight"/);
-  assert.match(viewSource, /className="font-mono text-\[length:var\(--font-size-ui-xs\)\] font-medium leading-none"/);
-  assert.match(viewSource, /className="flex h-7 items-center gap-1 rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] px-2 text-\[length:var\(--font-size-ui-xs\)\] font-medium text-\[var\(--gt-ink-secondary\)\] transition-colors hover:bg-\[var\(--gt-surface-muted\)\] disabled:cursor-not-allowed disabled:opacity-40"/);
+  assert.match(viewSource, /className="font-mono text-\[length:var\(--gt-font-size-xs\)\] font-medium leading-none"/);
+  assert.match(viewSource, /className="flex h-7 items-center gap-1 rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] px-2 text-\[length:var\(--gt-font-size-xs\)\] font-medium text-\[var\(--gt-ink-secondary\)\] transition-colors hover:bg-\[var\(--gt-surface-muted\)\] disabled:cursor-not-allowed disabled:opacity-40"/);
   assert.match(viewSource, /aria-label=\{t\('accounts\.refresh_group'\)\}[\s\S]*className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-\[var\(--gt-surface-muted\)\] disabled:cursor-not-allowed disabled:opacity-40"[\s\S]*title=\{t\('accounts\.refresh_group'\)\}/);
   assert.match(viewSource, /className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-\[var\(--gt-surface-muted\)\]"/);
   assert.doesNotMatch(viewSource, /<RefreshCw size=\{13\} strokeWidth=\{2\} \/>\s*\{t\('accounts\.refresh_group'\)\}/);
@@ -131,8 +131,8 @@ test('accounts selection toolbar stays sticky while scrolling selected accounts'
   assert.match(source, /bg-\[color-mix\(in_srgb,var\(--gt-surface-canvas\)_94%,transparent\)\]/);
   assert.match(source, /backdrop-blur/);
   assert.match(source, /className=\{isSelectionMode \? [\"']space-y-8 !mt-4[\"'] : [\"']space-y-8[\"']\}/);
-  assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--shadow-color\)\]/);
-  assert.doesNotMatch(source, /className="border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] px-4 pb-4/);
+  assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--gt-shadow-panel\)\]/);
+  assert.doesNotMatch(source, /className="border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\] px-4 pb-4/);
   assert.match(source, /<AccountsSelectionActions/);
 });
 
@@ -150,7 +150,7 @@ test('accounts selection actions render as one adaptive toolbar with overflow fa
   assert.match(source, /aria-label=\{t\('common\.more_actions'\)\}/);
   assert.match(source, /<BulkMenuAction/);
   assert.match(source, /label=\{t\('accounts\.export_selected'\)\}/);
-  assert.doesNotMatch(source, /className="border-t border-dashed border-\[var\(--border-color\)\] pt-4"/);
+  assert.doesNotMatch(source, /className="border-t border-dashed border-\[var\(--gt-border-strong\)\] pt-4"/);
   assert.doesNotMatch(source, /className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed/);
 });
 
@@ -173,7 +173,7 @@ test('accounts toolbar display mode switch only offers full and list views', asy
 
   assert.match(source, /grid-cols-2/);
   assert.match(source, /className="grid h-8 shrink-0 grid-cols-2 overflow-hidden rounded-md border"/);
-  assert.match(source, /text-\[length:var\(--font-size-ui-xs\)\] font-medium leading-none/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\] font-medium leading-none/);
   assert.match(source, /onDisplayModeChange\('full'\)/);
   assert.match(source, /onDisplayModeChange\('list'\)/);
   assert.doesNotMatch(source, /onDisplayModeChange\('compact'\)|display_mode_compact/);

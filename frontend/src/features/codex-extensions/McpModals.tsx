@@ -30,15 +30,15 @@ const codexExtensionModalHeaderClass =
 const codexExtensionModalFooterClass =
   'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexExtensionModalButtonClass =
-  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexExtensionModalPrimaryButtonClass =
-  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--text-primary)] px-3 py-1.5 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const codexExtensionModalIconButtonClass =
-  'inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--text-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+  'inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const codexExtensionModalFieldClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
 const codexExtensionModalSelectClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-medium text-[var(--text-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
 
 export function McpServerEditorModal({
   draft,
@@ -115,10 +115,10 @@ export function McpServerEditorModal({
       >
         <header className={`${codexExtensionModalHeaderClass} grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center`}>
           <div className="min-w-0">
-            <div className="font-mono text-xl font-semibold italic text-[var(--text-primary)]">
+            <div className="font-mono text-xl font-semibold italic text-[var(--gt-ink-primary)]">
               {draft.label}
             </div>
-            <div className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
+            <div className="mt-1 break-all text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
               {draft.sourcePath || '-'}
             </div>
           </div>
@@ -141,7 +141,7 @@ export function McpServerEditorModal({
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label={t('codex_extensions.server_id')} value={draft.id} onChange={(value) => onPatch({ id: value, label: value })} />
                 <label className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+                  <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
                     {t('common.type')}
                   </span>
                   <select
@@ -164,7 +164,7 @@ export function McpServerEditorModal({
                 title={t('codex_extensions.mcp_transport_resolution_section')}
                 meta={draft.transport}
               >
-                <div className="border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-status-danger)]">
+                <div className="border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-status-danger)]">
                   {t('codex_extensions.mcp_transport_resolution_hint')}
                 </div>
               </McpEditorSection>
@@ -217,7 +217,7 @@ export function McpServerEditorModal({
                 <Field label={t('codex_extensions.startup_timeout_sec')} value={draft.startupTimeoutSec || ''} onChange={(value) => onPatch({ startupTimeoutSec: value })} />
                 <Field label={t('codex_extensions.tool_timeout_sec')} value={draft.toolTimeoutSec || ''} onChange={(value) => onPatch({ toolTimeoutSec: value })} />
                 <label className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+                  <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
                     {t('codex_extensions.default_tools_approval_mode')}
                   </span>
                   <select
@@ -248,12 +248,12 @@ export function McpServerEditorModal({
 
             <div className="flex flex-wrap gap-2 bg-[var(--gt-surface-muted)] p-4">
               {envValidationIssues.length > 0 ? (
-                <div className="basis-full border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-3 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-status-danger)]">
+                <div className="basis-full border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-3 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-status-danger)]">
                   {t('codex_extensions.mcp_env_validation_error')}: {formatMcpEnvValidationIssues(envValidationIssues, t)}
                 </div>
               ) : null}
               {toolValidationIssues.length > 0 ? (
-                <div className="basis-full border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-3 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-status-danger)]">
+                <div className="basis-full border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-3 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-status-danger)]">
                   {t('codex_extensions.mcp_tool_validation_error')}: {formatMcpToolValidationIssues(toolValidationIssues, t)}
                 </div>
               ) : null}
@@ -282,27 +282,27 @@ export function McpServerEditorModal({
             </div>
           </main>
           <aside className="border-t border-[var(--gt-border-subtle)] p-4 xl:border-l xl:border-t-0">
-            <div className="mb-3 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
+            <div className="mb-3 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
               {t('codex_extensions.mcp_current_values')}
             </div>
-            <pre className="scrollbar-stable max-h-[28rem] overflow-auto border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]">
+            <pre className="scrollbar-stable max-h-[28rem] overflow-auto border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 text-[length:var(--gt-font-size-sm)] leading-relaxed text-[var(--gt-ink-primary)]">
               <code className="whitespace-pre font-mono font-semibold">{currentValueToml}</code>
             </pre>
 
-            <div className="mb-3 mt-6 flex items-center gap-2 border-t border-[var(--gt-border-subtle)] pt-4 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
+            <div className="mb-3 mt-6 flex items-center gap-2 border-t border-[var(--gt-border-subtle)] pt-4 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
               <GitBranch className="h-3.5 w-3.5" />
               {t('codex_extensions.change_preview')}
             </div>
             <div className="divide-y divide-[var(--gt-border-subtle)] border-t border-[var(--gt-border-subtle)]">
               {preview.length > 0 ? preview.map((change) => (
                 <div key={change.key} className="py-2">
-                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">{change.key}</div>
-                  <div className="mt-1 break-all text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
+                  <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">{change.key}</div>
+                  <div className="mt-1 break-all text-[length:var(--gt-font-size-xs)] font-bold text-[var(--gt-ink-muted)]">
                     {change.before} -&gt; {change.after}
                   </div>
                 </div>
               )) : (
-                <div className="py-8 text-center text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-muted)]">
+                <div className="py-8 text-center text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
                   {t('codex_extensions.no_changes')}
                 </div>
               )}
@@ -344,23 +344,23 @@ function McpPreflightPanel({ result, t }: { result: McpPreflightResult; t: (key:
   return (
     <section className="basis-full border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]" data-codex-mcp-preflight-result="true">
       <header className={`flex items-center justify-between gap-3 border-b px-3 py-2 ${statusClass}`}>
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold">
+        <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold">
           {t('codex_extensions.mcp_preflight_result')}
         </div>
-        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold">
+        <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold">
           {t(`codex_extensions.mcp_preflight_status_${result.status}`)}
         </div>
       </header>
       <div className="divide-y divide-[var(--gt-border-subtle)]">
         {result.checks.map((check) => (
           <div key={check.id} className="grid gap-1 px-3 py-2 md:grid-cols-[8rem_minmax(0,1fr)_6rem] md:items-center">
-            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+            <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
               {check.label}
             </div>
-            <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)]">
+            <div className="min-w-0 break-words font-mono text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-primary)]">
               {check.detail || '-'}
             </div>
-            <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-semibold ${preflightCheckClass(check.status)}`}>
+            <div className={`font-mono text-[length:var(--gt-font-size-xs)] font-semibold ${preflightCheckClass(check.status)}`}>
               {t(`codex_extensions.mcp_preflight_status_${check.status}`)}
             </div>
           </div>
@@ -413,10 +413,10 @@ export function ConfigTomlEditorModal({
       >
         <header className={`${codexExtensionModalHeaderClass} flex shrink-0 items-start justify-between gap-4 px-5 py-4`}>
           <div className="min-w-0">
-            <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+            <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
               {t('codex_extensions.config_editor_title')}
             </div>
-            <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">
+            <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]">
               {configPath}
             </div>
           </div>
@@ -432,7 +432,7 @@ export function ConfigTomlEditorModal({
 
         <div className="min-h-0 flex-1 p-4">
           {loading ? (
-            <div className="flex min-h-[24rem] items-center justify-center text-[length:var(--font-size-ui-md)] font-semibold text-[var(--text-muted)]">
+            <div className="flex min-h-[24rem] items-center justify-center text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-muted)]">
               {t('common.loading')}
             </div>
           ) : (
@@ -440,14 +440,14 @@ export function ConfigTomlEditorModal({
               value={content}
               onChange={(event) => onChange(event.target.value)}
               spellCheck={false}
-              className={`${codexExtensionModalFieldClass} scrollbar-stable min-h-[24rem] w-full resize-none overflow-auto font-mono text-[length:var(--font-size-ui-md)] leading-relaxed`}
+              className={`${codexExtensionModalFieldClass} scrollbar-stable min-h-[24rem] w-full resize-none overflow-auto font-mono text-[length:var(--gt-font-size-md)] leading-relaxed`}
               placeholder={t('codex_extensions.config_editor_placeholder')}
             />
           )}
         </div>
 
         <footer className={`${codexExtensionModalFooterClass} flex shrink-0 flex-wrap items-center justify-between gap-3 px-5 py-4`}>
-          <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+          <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
             {dirty ? t('codex_extensions.config_dirty') : t('codex_extensions.config_clean')}
           </div>
           <div className="flex items-center gap-2">
@@ -475,11 +475,11 @@ export function McpStatusBadge({ status }: { status: McpServerRecord['status'] }
   const isDisabled = status === 'disabled';
   return (
     <div
-      className={`border px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-semibold ${
+      className={`border px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold ${
         isReady
-          ? 'border-[var(--gt-border-subtle)] bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
+          ? 'border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
           : isDisabled
-            ? 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]'
+            ? 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]'
             : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-status-danger)]'
       }`}
     >
@@ -492,11 +492,11 @@ function McpEditorSection({ title, meta, children }: { title: string; meta?: str
   return (
     <section className="grid gap-4 p-4 lg:grid-cols-[9rem_minmax(0,1fr)]">
       <div className="min-w-0">
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]">
+        <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
           {title}
         </div>
         {meta ? (
-          <div className="mt-1 break-all text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-muted)]">
+          <div className="mt-1 break-all text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">
             {meta}
           </div>
         ) : null}
@@ -509,7 +509,7 @@ function McpEditorSection({ title, meta, children }: { title: string; meta?: str
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="grid gap-2">
-      <span className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+      <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
         {label}
       </span>
       <input value={value} onChange={(event) => onChange(event.target.value)} className={`${codexExtensionModalFieldClass} w-full font-mono`} />
@@ -520,11 +520,11 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
     <div className="grid gap-2">
-      <div className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+      <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
         {label}
       </div>
       <div className={`${codexExtensionModalFieldClass} flex h-10 items-center justify-between gap-3 py-1`}>
-        <span className="font-mono text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">
+        <span className="font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]">
           {String(checked)}
         </span>
         <ToggleSwitch
@@ -541,7 +541,7 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
 function TextareaField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="grid gap-2">
-      <span className="text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)]">
+      <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
         {label}
       </span>
       <textarea

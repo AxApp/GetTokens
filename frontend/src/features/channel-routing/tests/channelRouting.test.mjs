@@ -1584,13 +1584,13 @@ test('ProjectCandidatePoolRulesPanel stays flat inside the project config modal'
   assert.doesNotMatch(source, /onChange=\{\(event\) => updateDraft\(\{ projectKey/);
   assert.doesNotMatch(source, /onChange=\{\(event\) => updateDraft\(\{ projectName/);
   assert.doesNotMatch(source, /placeholder="workspace:\.\.\."/);
-  assert.doesNotMatch(source, /overflow-hidden border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\]/);
-  assert.doesNotMatch(source, /<section className="min-w-0 border border-\[var\(--border-color\)\] p-3">/);
-  assert.doesNotMatch(source, /<section className="min-w-0 border border-\[var\(--border-color\)\]">/);
+  assert.doesNotMatch(source, /overflow-hidden border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\]/);
+  assert.doesNotMatch(source, /<section className="min-w-0 border border-\[var\(--gt-border-strong\)\] p-3">/);
+  assert.doesNotMatch(source, /<section className="min-w-0 border border-\[var\(--gt-border-strong\)\]">/);
   for (const targetSource of [source, modalSource]) {
     assert.doesNotMatch(targetSource, /btn-swiss|input-swiss|select-swiss|card-swiss/);
     assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2/);
-    assert.doesNotMatch(targetSource, /bg-\[var\(--bg-main\)\]/);
+    assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
     assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
     assert.doesNotMatch(targetSource, /color-status-/);
     assert.doesNotMatch(targetSource, /font-black/);
@@ -1625,16 +1625,16 @@ test('ChannelRoutingWorkbench uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /input-swiss/);
   assert.doesNotMatch(source, /select-swiss/);
-  assert.doesNotMatch(source, /border-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-b-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-main\)\]/);
+  assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--gt-border-strong\)\]/);
+  assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-black/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
   assert.doesNotMatch(source, /tracking-(wide|wider|widest|tight|tighter|tightest|normal)/);
-  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
 });
 
 test('ChannelRoutingWorkbench uses left conditions and right diagnostic result layout', async () => {
@@ -1662,14 +1662,14 @@ test('ChannelRoutingWorkbench uses left conditions and right diagnostic result l
   assert.ok((source.match(/channelRoutingSelectClass/g) || []).length >= 3);
   assert.match(source, /h-11 min-w-0 px-3 py-2 pr-8/);
   assert.match(source, /h-\[1\.625rem\] w-\[4\.25rem\] px-2 py-1 text-center/);
-  assert.match(source, /text-center font-mono text-\[length:var\(--font-size-ui-sm\)\] \[text-align-last:center\]/);
+  assert.match(source, /text-center font-mono text-\[length:var\(--gt-font-size-sm\)\] \[text-align-last:center\]/);
   assert.match(source, />\s*条件列表\s*<\/span>/);
-  assert.match(source, /text-\[length:var\(--font-size-ui-md\)\][^"]*">\s*条件列表\s*<\/span>/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-md\)\][^"]*">\s*条件列表\s*<\/span>/);
   assert.match(source, /<aside className="min-w-0 py-1">/);
   assert.equal((source.match(/border-l border-\[var\(--gt-border-subtle\)\]/g) || []).length, 2);
-  assert.doesNotMatch(source, /border-y border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-y border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /lg:border-r/);
-  assert.doesNotMatch(source, /border-l border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(source, /border-l border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /onShadowEnabledChange/);
   assert.match(source, />\s*最近真实决策\s*</);
   assert.match(source, /SIDE CAR/);
@@ -1728,8 +1728,8 @@ test('ChannelRoutingWorkbench keeps route mode toggles in the header and removes
 test('ChannelRoutingWorkbench presents route mode heading as a large status lockup', async () => {
   const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /flex h-11 w-11 shrink-0 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--text-primary\)\] text-\[var\(--gt-surface-canvas\)\]/);
-  assert.match(source, /<h2 className="min-w-0 text-\[length:var\(--font-size-ui-lg\)\] font-semibold leading-5 text-\[var\(--text-primary\)\] sm:text-\[length:var\(--font-size-heading-sm\)\] sm:leading-normal">/);
+  assert.match(source, /flex h-11 w-11 shrink-0 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--gt-ink-primary\)\] text-\[var\(--gt-surface-canvas\)\]/);
+  assert.match(source, /<h2 className="min-w-0 text-\[length:var\(--gt-font-size-lg\)\] font-semibold leading-5 text-\[var\(--gt-ink-primary\)\] sm:text-\[length:var\(--font-size-heading-sm\)\] sm:leading-normal">/);
   assert.doesNotMatch(source, /tracking-\[0\]/);
   assert.match(source, /查看请求模式说明/);
   assert.doesNotMatch(source, /preview\?: boolean/);
