@@ -151,92 +151,13 @@ test(':root contains all typography tokens', () => {
   }
 });
 
-test('.dark overrides status tokens for classic dark mode', () => {
-  assertTokenExists('--gt-status-success', darkBlock);
-  assertTokenExists('--gt-status-warning', darkBlock);
-  assertTokenExists('--gt-status-danger', darkBlock);
-  assertTokenExists('--gt-status-info', darkBlock);
+test('style contract keeps only the single root token set', () => {
+  assert.equal(darkBlock, '');
+  assert.equal(parchmentLightBlock, '');
+  assert.equal(parchmentDarkBlock, '');
 });
 
-test('.dark overrides elevation tokens for classic dark mode', () => {
-  assertTokenExists('--gt-elevation-raised-1', darkBlock);
-  assertTokenExists('--gt-elevation-raised-2', darkBlock);
-  assertTokenExists('--gt-elevation-raised-3', darkBlock);
-});
-
-test('parchment light block contains all surface tokens', () => {
-  for (const token of surfaceTokens) {
-    assertTokenExists(token, parchmentLightBlock, `parchment light should define ${token}`);
-  }
-});
-
-test('parchment light block contains all ink tokens', () => {
-  for (const token of inkTokens) {
-    assertTokenExists(token, parchmentLightBlock, `parchment light should define ${token}`);
-  }
-});
-
-test('parchment light block contains all border tokens', () => {
-  for (const token of borderTokens) {
-    assertTokenExists(token, parchmentLightBlock, `parchment light should define ${token}`);
-  }
-});
-
-test('parchment light block contains all accent/status tokens', () => {
-  for (const token of accentStatusTokens) {
-    assertTokenExists(token, parchmentLightBlock, `parchment light should define ${token}`);
-  }
-});
-
-test('parchment dark block contains all surface tokens', () => {
-  for (const token of surfaceTokens) {
-    assertTokenExists(token, parchmentDarkBlock, `parchment dark should define ${token}`);
-  }
-});
-
-test('parchment dark block contains all ink tokens', () => {
-  for (const token of inkTokens) {
-    assertTokenExists(token, parchmentDarkBlock, `parchment dark should define ${token}`);
-  }
-});
-
-test('parchment dark block contains all border tokens', () => {
-  for (const token of borderTokens) {
-    assertTokenExists(token, parchmentDarkBlock, `parchment dark should define ${token}`);
-  }
-});
-
-test('parchment dark block contains all accent/status tokens', () => {
-  for (const token of accentStatusTokens) {
-    assertTokenExists(token, parchmentDarkBlock, `parchment dark should define ${token}`);
-  }
-});
-
-test('parchment dark block overrides elevation tokens', () => {
-  assertTokenExists('--gt-elevation-raised-1', parchmentDarkBlock);
-  assertTokenExists('--gt-elevation-raised-2', parchmentDarkBlock);
-  assertTokenExists('--gt-elevation-raised-3', parchmentDarkBlock);
-});
-
-test('parchment light border-default matches long-term plan (#e8e6dc)', () => {
-  const match = parchmentLightBlock.match(/--gt-border-default:\s*([^;]+)/);
-  assert.ok(match, 'should find --gt-border-default');
-  assert.equal(match[1].trim(), '#e8e6dc');
-});
-
-test('parchment light border-strong matches long-term plan (#d1cfc5)', () => {
-  const match = parchmentLightBlock.match(/--gt-border-strong:\s*([^;]+)/);
-  assert.ok(match, 'should find --gt-border-strong');
-  assert.equal(match[1].trim(), '#d1cfc5');
-});
-
-test('parchment light accent-primary matches long-term plan (#c96442)', () => {
-  const match = parchmentLightBlock.match(/--gt-accent-primary:\s*([^;]+)/);
-  assert.ok(match, 'should find --gt-accent-primary');
-  assert.equal(match[1].trim(), '#c96442');
-});
-
-test('CSS contains parchment component classes', () => {
+test('CSS keeps existing component class names while sharing the single root token set', () => {
   const componentClasses = [
     '.parchment-app-shell',
     '.parchment-toolbar',

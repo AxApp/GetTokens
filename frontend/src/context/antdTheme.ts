@@ -1,9 +1,8 @@
 import type { ThemeConfig } from 'antd';
-import type { ThemePreset } from '../types';
 
 interface GetTokensAntdThemeInput {
-  themePreset: ThemePreset;
-  isDark: boolean;
+  themePreset?: unknown;
+  isDark?: unknown;
 }
 
 interface AntdPalette {
@@ -38,66 +37,8 @@ const classicLight: AntdPalette = {
   error: '#b42318',
 };
 
-const classicDark: AntdPalette = {
-  canvas: '#080808',
-  container: '#111111',
-  elevated: '#171717',
-  muted: '#202020',
-  text: '#f4f4f4',
-  textSecondary: '#c8c8c8',
-  border: '#343434',
-  borderStrong: '#e8e8e8',
-  primary: '#f4f4f4',
-  primarySoft: '#2a2a2a',
-  success: '#7bc47f',
-  warning: '#d39b48',
-  error: '#ff766d',
-};
-
-const parchmentLight: AntdPalette = {
-  canvas: '#f5f4ed',
-  container: '#faf9f5',
-  elevated: '#ffffff',
-  muted: '#e8e6dc',
-  text: '#141413',
-  textSecondary: '#5e5d59',
-  border: '#e8e6dc',
-  borderStrong: '#d1cfc5',
-  primary: '#c96442',
-  primarySoft: '#f0eee6',
-  success: '#3f7d5a',
-  warning: '#b7791f',
-  error: '#b84a38',
-};
-
-const parchmentDark: AntdPalette = {
-  canvas: '#1d1c19',
-  container: '#25231f',
-  elevated: '#2e2b26',
-  muted: '#363228',
-  text: '#f5f1e8',
-  textSecondary: '#c9c1ae',
-  border: '#605947',
-  borderStrong: '#d4c6a5',
-  primary: '#d97757',
-  primarySoft: '#38342d',
-  success: '#74b18a',
-  warning: '#d4a647',
-  error: '#e0765f',
-};
-
-function resolvePalette(themePreset: ThemePreset, isDark: boolean): AntdPalette {
-  if (themePreset === 'parchment-trust-console') {
-    return isDark ? parchmentDark : parchmentLight;
-  }
-  return isDark ? classicDark : classicLight;
-}
-
-export function buildGetTokensAntdTheme({
-  themePreset,
-  isDark,
-}: GetTokensAntdThemeInput): ThemeConfig {
-  const palette = resolvePalette(themePreset, isDark);
+export function buildGetTokensAntdTheme(_input?: GetTokensAntdThemeInput): ThemeConfig {
+  const palette = classicLight;
 
   return {
     cssVar: { key: 'gettokens' },

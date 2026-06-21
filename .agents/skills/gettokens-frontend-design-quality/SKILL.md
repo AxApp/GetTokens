@@ -36,6 +36,7 @@ description: "GetTokens 桌面/Wails 前端设计质量统一 skill，合并 tas
 - Codex 负责需求边界、业务状态、接口契约、测试门禁、文档和最终集成；视觉实现可按 AGENTS 规则交给 Gemini/设计技能主导。
 - 不直接引入参考项目源码、CLI、浏览器扩展或运行时依赖；如需引入检测器/工具，单独开 space 并先写测试。
 - 不用前端假状态掩盖 sidecar 事实：账号、quota、routing、live sessions 等热路径必须尊重 sidecar 数据边界。
+- 当前运行态只保留一套 `classic light` 样式；不要新增或恢复 `system/dark/light` 切换、`theme-preset` 选择、`.dark` token override、parchment 平行 token 或 Wails 透明窗口合成，除非用户重新开启主题 space 并先更新需求、测试和验收边界。
 
 ## 1. 选择模式
 

@@ -7,7 +7,8 @@ import PageLoadingFallback from './components/ui/PageLoadingFallback';
 import { DebugProvider } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
 import { TextScaleProvider, useTextScale } from './context/TextScaleContext';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { GetTokensAntdThemeProvider } from './context/AntdThemeProvider';
 import { getTextScaleAttributeValue } from './context/textScale';
 import { applyTextScaleVariables } from './features/settings/settingsTextScale';
 import { AccountsPageStateProvider } from './features/accounts/AccountsPageStateProvider';
@@ -29,7 +30,6 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 
 function AppShell() {
-  const { themeMode, themePreset } = useTheme();
   const { textScale } = useTextScale();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [sidebarUpdateError, setSidebarUpdateError] = useState('');
@@ -95,22 +95,9 @@ function AppShell() {
   }
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    function applyResolvedThemeMode() {
-      const isDark = themeMode === 'dark' || (themeMode === 'system' && mediaQuery.matches);
-      document.documentElement.classList.toggle('dark', isDark);
-    }
+    document.documentElement.classList.remove('dark');
+  }, []);
 
-    applyResolvedThemeMode();
-    mediaQuery.addEventListener('change', applyResolvedThemeMode);
-    return () => {
-      mediaQuery.removeEventListener('change', applyResolvedThemeMode);
-    };
-  }, [themeMode]);
-
-  useEffect(() => {
-    document.documentElement.dataset.themePreset = themePreset;
-  }, [themePreset]);
 
   useEffect(() => {
     document.documentElement.dataset.textScale = getTextScaleAttributeValue(textScale);
@@ -295,13 +282,15 @@ async function copyDesignSystemComponentName(component: HTMLElement, componentNa
 export default function App() {
   return (
     <ThemeProvider>
-      <TextScaleProvider>
-        <I18nProvider>
-          <DebugProvider>
-            <AppShell />
-          </DebugProvider>
-        </I18nProvider>
-      </TextScaleProvider>
+      <GetTokensAntdThemeProvider>
+        <TextScaleProvider>
+          <I18nProvider>
+            <DebugProvider>
+              <AppShell />
+            </DebugProvider>
+          </I18nProvider>
+        </TextScaleProvider>
+      </GetTokensAntdThemeProvider>
     </ThemeProvider>
   );
 }

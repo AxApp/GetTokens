@@ -1,10 +1,10 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import type { ThemeMode, ThemePreset } from '../types';
 import {
+  DEFAULT_THEME_MODE,
+  DEFAULT_THEME_PRESET,
   persistThemeMode,
   persistThemePreset,
-  readStoredThemeMode,
-  readStoredThemePreset,
 } from './theme';
 
 interface ThemeContextValue {
@@ -17,20 +17,21 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children?: ReactNode }) {
-  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    return readStoredThemeMode(typeof localStorage === 'undefined' ? null : localStorage);
-  });
-  const [themePreset, setThemePreset] = useState<ThemePreset>(() => {
-    return readStoredThemePreset(typeof localStorage === 'undefined' ? null : localStorage);
-  });
+  const themeMode = DEFAULT_THEME_MODE;
+  const themePreset = DEFAULT_THEME_PRESET;
 
   useEffect(() => {
     persistThemeMode(typeof localStorage === 'undefined' ? null : localStorage, themeMode);
-  }, [themeMode]);
-
-  useEffect(() => {
     persistThemePreset(typeof localStorage === 'undefined' ? null : localStorage, themePreset);
-  }, [themePreset]);
+  }, []);
+
+  function setThemeMode(_value: ThemeMode) {
+    persistThemeMode(typeof localStorage === 'undefined' ? null : localStorage, themeMode);
+  }
+
+  function setThemePreset(_value: ThemePreset) {
+    persistThemePreset(typeof localStorage === 'undefined' ? null : localStorage, themePreset);
+  }
 
   const value = useMemo(
     () => ({
@@ -39,7 +40,7 @@ export function ThemeProvider({ children }: { children?: ReactNode }) {
       themePreset,
       setThemePreset,
     }),
-    [themeMode, themePreset]
+    []
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

@@ -2,7 +2,7 @@ import type { ThemeMode, ThemePreset } from '../types';
 
 export const THEME_MODE_STORAGE_KEY = 'theme-mode';
 export const THEME_PRESET_STORAGE_KEY = 'theme-preset';
-export const DEFAULT_THEME_MODE: ThemeMode = 'system';
+export const DEFAULT_THEME_MODE: ThemeMode = 'light';
 export const DEFAULT_THEME_PRESET: ThemePreset = 'classic';
 
 export interface ThemePresetDefinition {
@@ -31,50 +31,38 @@ export const themePresetDefinitions: ReadonlyArray<ThemePresetDefinition> = [
       accent: '#111111',
     },
   },
-  {
-    id: 'parchment-trust-console',
-    label: 'Parchment Trust Console',
-    description: 'Warm parchment surfaces, charcoal ink, and audit-console contrast for dense workbench pages.',
-    rootAttribute: 'parchment-trust-console',
-    previewTokens: {
-      canvas: '#f5f4ed',
-      panel: '#faf9f5',
-      ink: '#141413',
-      accent: '#c96442',
-    },
-  },
 ] as const;
 
 export function isThemeMode(value: unknown): value is ThemeMode {
-  return value === 'system' || value === 'light' || value === 'dark';
+  return value === DEFAULT_THEME_MODE;
 }
 
 export function isThemePreset(value: unknown): value is ThemePreset {
-  return value === 'classic' || value === 'parchment-trust-console';
+  return value === DEFAULT_THEME_PRESET;
 }
 
-export function resolveInitialThemeMode(value: string | null): ThemeMode {
-  return isThemeMode(value) ? value : DEFAULT_THEME_MODE;
+export function resolveInitialThemeMode(_value: string | null): ThemeMode {
+  return DEFAULT_THEME_MODE;
 }
 
-export function resolveInitialThemePreset(value: string | null): ThemePreset {
-  return isThemePreset(value) ? value : DEFAULT_THEME_PRESET;
+export function resolveInitialThemePreset(_value: string | null): ThemePreset {
+  return DEFAULT_THEME_PRESET;
 }
 
-export function readStoredThemeMode(storage: Pick<Storage, 'getItem'> | null | undefined): ThemeMode {
-  return resolveInitialThemeMode(storage?.getItem(THEME_MODE_STORAGE_KEY) ?? null);
+export function readStoredThemeMode(_storage: Pick<Storage, 'getItem'> | null | undefined): ThemeMode {
+  return DEFAULT_THEME_MODE;
 }
 
-export function readStoredThemePreset(storage: Pick<Storage, 'getItem'> | null | undefined): ThemePreset {
-  return resolveInitialThemePreset(storage?.getItem(THEME_PRESET_STORAGE_KEY) ?? null);
+export function readStoredThemePreset(_storage: Pick<Storage, 'getItem'> | null | undefined): ThemePreset {
+  return DEFAULT_THEME_PRESET;
 }
 
-export function persistThemeMode(storage: Pick<Storage, 'setItem'> | null | undefined, themeMode: ThemeMode) {
-  storage?.setItem(THEME_MODE_STORAGE_KEY, themeMode);
+export function persistThemeMode(storage: Pick<Storage, 'setItem'> | null | undefined, _themeMode: unknown) {
+  storage?.setItem(THEME_MODE_STORAGE_KEY, DEFAULT_THEME_MODE);
 }
 
-export function persistThemePreset(storage: Pick<Storage, 'setItem'> | null | undefined, themePreset: ThemePreset) {
-  storage?.setItem(THEME_PRESET_STORAGE_KEY, themePreset);
+export function persistThemePreset(storage: Pick<Storage, 'setItem'> | null | undefined, _themePreset: unknown) {
+  storage?.setItem(THEME_PRESET_STORAGE_KEY, DEFAULT_THEME_PRESET);
 }
 
 export function getThemePresetDefinition(themePreset: ThemePreset): ThemePresetDefinition {

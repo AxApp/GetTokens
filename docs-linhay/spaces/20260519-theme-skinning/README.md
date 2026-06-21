@@ -111,3 +111,31 @@ And 截图命名遵守项目规范。
 - 收尾补充：2026-06-20 追加完成 `ClaudeCodeAccountListFeature.tsx` 页面级 quiet shell、`StatusPanels.tsx` token/typography cleanup 和 `ProxyPoolFeature.tsx` token/typography cleanup；这些文件不再作为当前旧样式高信号入口，后续继续优先看 `CardSections.tsx`、`AccountDetailSections.tsx`、Session 局部残余等独立切片。
 - 收尾补充：2026-06-20 用户再次要求“整理，沉淀，提交”时主仓在 `style: align proxy pool typography` 后保持干净；本轮只做治理闭环，不夹带下一页迁移。复核结论是最近三轮 Vendor Status、StatusPanels、ProxyPool 都是既有 `Quiet workspace migration loop` 的 token/typography/shadow 门禁细化，不产生新的跨领域 workflow 或 repo-wide 规则；下一批运行态旧样式高信号入口为 `SessionManagementView.tsx`、`CardSections.tsx`、`ThemePresetPicker.tsx`、`RateLimitRulesSection.tsx` 和 `AccountDetailSections.tsx`。
 - 进展补充：2026-06-20 追加完成 `SessionManagementView.tsx` token/shadow cleanup、`CardSections.tsx` typography cleanup、`ThemePresetPicker.tsx` quiet shell、`RateLimitRulesSection.tsx` typography cleanup、`AccountDetailSections.tsx` token/shadow cleanup、`quotaColor.ts` token cleanup、`UnifiedAccountDetailModal.tsx` typography cleanup、`AssetWorkbenchShell.tsx` quiet shell、`StatusSnippetPanel.tsx` token cleanup、`DoctorWorkbenchFeature.tsx` token/shadow cleanup、`CodexRouteProbeCard.tsx` shadow cleanup、`CodexAccountOrderSection.tsx` filter/empty cleanup、`CodexLiveSessionDetail.tsx` shadow cleanup 与 `VendorLogoMark.tsx` token cleanup；这些文件不再作为当前运行态旧样式高信号入口。下一批运行态旧样式高信号入口更新为 `componentManifest.ts`、`OpenAICompatibleComposeModal.tsx`、`FormField.tsx`、`App.tsx` 和 status/settings 局部小切片。
+
+## 2026-06-21 单运行态样式收敛
+
+### 问题来源
+- 用户反馈：桌面 App 的颜色和 Web 预览不一致，并进一步要求“只留一套样式”。
+
+### 当前事实位置
+- `frontend/src/context/theme.ts` 旧逻辑接受 `system / light / dark` 和 `classic / parchment-trust-console`，并从各 runtime 的 `localStorage` 读取。
+- `frontend/src/App.tsx` 旧逻辑根据 `prefers-color-scheme` 切换 `.dark`，并写入 `data-theme-preset`。
+- `frontend/src/style.css` 旧逻辑同时维护 root、`.dark`、`[data-theme-preset='parchment-trust-console']` 与 dark parchment token override。
+- `main.go` 旧 Wails 配置开启透明 WebView 与半透明窗口，App 颜色会被 macOS 合成影响。
+- `frontend/src/features/settings/SettingsFeature.tsx` 旧设置页暴露 theme mode / preset 控件，允许用户继续制造两套运行态样式。
+
+### 决策
+- 运行态只保留一套 `classic light` 样式。
+- 旧 `theme-mode` / `theme-preset` localStorage key 只做兼容归一化：无论旧值是什么，读取和写回都归一为 `light / classic`。
+- Settings 不再展示主题 mode / preset 控件，只保留语言、文字大小等非样式偏好。
+- Ant Design token adapter 提到 App 根部，全局只产出同一套 neutral palette。
+- Wails 窗口关闭透明和半透明，背景改为白色，避免 App/Web 颜色被窗口合成拉开。
+
+### 验收方式
+- 主题解析、AntD token、CSS token contract、Settings 布局 targeted tests 必须通过。
+- `npm run build` 必须通过，确认删除主题切换组件和 token override 后前端打包入口不缺引用。
+- `go test -run '^$' .` 必须通过，确认 Wails 配置改动可编译。
+- `./scripts/wails-cli.sh build` 应能生成 dev build 产物；本地未签名产物不作为分发签名验收。
+- `npm run typecheck` 已恢复通过；账号详情 props 类型漂移已作为本轮阻塞处理修正。
+- `go test .` 已恢复通过；`build/darwin/Info.plist` 已补齐，prod/dev plist 均固定注册 `gt` scheme 且不注册 `gt-dev`。
+- `npm run test:unit` 仍有既有 Sidebar / Account Detail / Design System 源码契约漂移红灯，不归因于本轮颜色一致性收敛；后续应按账号详情/设计系统契约独立处理。

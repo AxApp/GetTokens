@@ -103,31 +103,27 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-function useResolvedColor(cssValue: string, themeClass = '', themePreset = '') {
+function useResolvedColor(cssValue: string) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [resolved, setResolved] = useState('');
 
   useEffect(() => {
     if (!ref.current) return;
     setResolved(window.getComputedStyle(ref.current).backgroundColor);
-  }, [cssValue, themeClass, themePreset]);
+  }, [cssValue]);
 
   return { ref, resolved };
 }
 
 function TokenSwatch({
   token,
-  themeClass,
-  themePreset,
 }: {
   token: ColorToken;
-  themeClass?: string;
-  themePreset?: string;
 }) {
-  const { ref, resolved } = useResolvedColor(`var(${token.name})`, themeClass, themePreset);
+  const { ref, resolved } = useResolvedColor(`var(${token.name})`);
 
   return (
-    <div className={themeClass} data-theme-preset={themePreset}>
+    <div>
       <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-[var(--text-primary)]">
         <div
           ref={ref}
@@ -211,43 +207,12 @@ function PaletteSample() {
 
       <TokenSection
         title="主题 token"
-        description="同一组 CSS 变量在浅色和深色主题下分别解析，组件应优先引用这些 token。"
+        description="项目只保留一套运行态 CSS 变量。组件应优先引用这些 token，不再按 App/Web 或系统深浅色维护平行色板。"
       >
-        <div className="grid gap-4 xl:grid-cols-3">
-          <div className="grid gap-3">
-            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-              浅色主题
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {themeTokens.map((token) => (
-                <TokenSwatch key={`light-${token.name}`} token={token} />
-              ))}
-            </div>
-          </div>
-          <div className="grid gap-3">
-            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-              深色主题
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {themeTokens.map((token) => (
-                <TokenSwatch key={`dark-${token.name}`} token={token} themeClass="dark" />
-              ))}
-            </div>
-          </div>
-          <div className="grid gap-3">
-            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-              Parchment Trust Console
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {themeTokens.map((token) => (
-                <TokenSwatch
-                  key={`parchment-${token.name}`}
-                  token={token}
-                  themePreset="parchment-trust-console"
-                />
-              ))}
-            </div>
-          </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {themeTokens.map((token) => (
+            <TokenSwatch key={token.name} token={token} />
+          ))}
         </div>
       </TokenSection>
 

@@ -33,7 +33,7 @@ func main() {
 		MinWidth:         800,
 		MinHeight:        600,
 		StartHidden:      loginItemLaunch && wailsapp.LoginItemLaunchStartHidden(),
-		BackgroundColour: &options.RGBA{R: 18, G: 18, B: 18, A: 1},
+		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
@@ -51,8 +51,8 @@ func main() {
 			app,
 		},
 		Mac: &mac.Options{
-			WebviewIsTransparent: true,
-			WindowIsTranslucent:  true,
+			WebviewIsTransparent: false,
+			WindowIsTranslucent:  false,
 			About: &mac.AboutInfo{
 				Title:   "GetTokens",
 				Message: "Proxy API management for CLI tools",

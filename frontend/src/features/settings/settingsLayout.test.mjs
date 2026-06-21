@@ -38,22 +38,6 @@ test('settings appearance keeps one runtime style and exposes only non-style pre
   assert.match(source, /settings-section-title/);
 });
 
-test('theme preset picker uses the quiet workspace shell', async () => {
-  const source = await readFile(new URL('../../components/ui/ThemePresetPicker.tsx', import.meta.url), 'utf8');
-
-  assert.match(source, /data-theme-preset-option=\{definition\.id\}/);
-  assert.match(source, /border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]/);
-  assert.match(source, /border-\[var\(--gt-accent-primary\)\]/);
-  assert.match(source, /bg-\[color-mix\(in_srgb,var\(--gt-accent-primary\)_8%,var\(--gt-surface-canvas\)\)\]/);
-  assert.match(source, /text-\[var\(--gt-ink-primary\)\]/);
-  assert.match(source, /text-\[var\(--gt-ink-muted\)\]/);
-  assert.doesNotMatch(source, /border-2/);
-  assert.doesNotMatch(source, /--bg-main|--border-color|--text-primary|--text-muted/);
-  assert.doesNotMatch(source, /font-black/);
-  assert.doesNotMatch(source, /\buppercase\b/);
-  assert.doesNotMatch(source, /tracking-\[|tracking-wide|tracking-wider|tracking-widest|tracking-tight|tracking-tighter|tracking-tightest/);
-});
-
 test('settings page uses Ant Design adapter and macOS preferences layout', async () => {
   const source = await readFile(new URL('./SettingsFeature.tsx', import.meta.url), 'utf8');
 

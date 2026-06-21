@@ -1744,8 +1744,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               }
               activeScriptEditor={
                 selectedAccount.id === accountDetailIDFromHash
-                  ? accountDetailScriptFromHash
-                  : ""
+                  ? accountDetailScriptFromHash || null
+                  : null
               }
               onOpenScriptEditor={openAccountDetailScriptRoute}
               onCloseScriptEditor={closeAccountDetailScriptRoute}

@@ -31,7 +31,7 @@ test('unsupported theme inputs still resolve to the single neutral style', () =>
   assert.equal(theme.token?.colorWarning, '#a46312');
   assert.equal(theme.token?.colorError, '#b42318');
   assert.equal(theme.components?.Segmented?.itemSelectedBg, '#111111');
-  assert.equal(theme.components?.Segmented?.itemSelectedColor, '#ffffff');
+  assert.equal(theme.components?.Segmented?.itemSelectedColor, '#f9f9f9');
   assert.equal(theme.components?.Segmented?.trackBg, 'transparent');
   assert.equal(theme.components?.Segmented?.borderRadius, 6);
 });

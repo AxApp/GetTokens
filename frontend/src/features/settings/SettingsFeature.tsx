@@ -12,11 +12,9 @@ import {
 } from '../../../wailsjs/go/main/App';
 import { BrowserOpenURL, Quit } from '../../../wailsjs/runtime/runtime';
 import SettingsReleasePanel from './components/SettingsReleasePanel';
-import { GetTokensAntdThemeProvider } from '../../context/AntdThemeProvider';
 import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import { useTextScale } from '../../context/TextScaleContext';
-import { useTheme } from '../../context/ThemeContext';
 import { buildGitHashCommit, buildGitHashLabel, formatBuildGitHash } from './settingsBuildMetadata';
 import {
   buildGetTokensReleaseURL,
@@ -41,18 +39,7 @@ import {
 import { toErrorMessage } from '../../utils/error';
 import { hasWailsAppBindings, hasWailsRuntime } from '../../utils/previewMode';
 import { formatAppVersion } from '../../utils/version';
-import type { LocaleCode, ReleaseInfo, SegmentedOption, SidecarStatus, ThemeMode, ThemePreset } from '../../types';
-
-const themes: ReadonlyArray<SegmentedOption<ThemeMode>> = [
-  { id: 'system', label: 'SYSTEM' },
-  { id: 'light', label: 'LIGHT' },
-  { id: 'dark', label: 'DARK' },
-];
-
-const themePresets: ReadonlyArray<SegmentedOption<ThemePreset>> = [
-  { id: 'classic', label: 'CLASSIC' },
-  { id: 'parchment-trust-console', label: 'PARCHMENT' },
-];
+import type { LocaleCode, ReleaseInfo, SegmentedOption, SidecarStatus } from '../../types';
 
 const languages: ReadonlyArray<SegmentedOption<LocaleCode>> = [
   { id: 'zh', label: '简体中文' },
@@ -88,7 +75,6 @@ export default function SettingsFeature({
   setAvailableRelease,
 }: SettingsFeatureProps) {
   const pageRef = useRef<HTMLDivElement | null>(null);
-  const { themeMode, setThemeMode, themePreset, setThemePreset } = useTheme();
   const { textScale, setTextScale } = useTextScale();
   const { locale, setLocale, t } = useI18n();
   const { trackRequest } = useDebug();
@@ -440,7 +426,6 @@ export default function SettingsFeature({
   }
 
   return (
-    <GetTokensAntdThemeProvider>
     <div
       ref={pageRef}
       className="settings-page h-full w-full overflow-auto text-[var(--text-primary)]"
@@ -461,37 +446,6 @@ export default function SettingsFeature({
         <section data-settings-section="appearance">
           <h2 className="settings-section-title">{t('settings.appearance')}</h2>
           <div className="settings-group">
-            <div className="parchment-settings-row">
-              <div className="min-w-0 flex-1">
-                <div className="parchment-settings-row-label">{t('settings.theme_mode')}</div>
-                <div className="parchment-settings-row-description">
-                  {t('settings.theme_mode_hint')}
-                </div>
-              </div>
-              <div className="parchment-settings-row-control">
-                <Segmented
-                  options={toAntdSegmentedOptions(themes)}
-                  value={themeMode}
-                  onChange={(value) => setThemeMode(value as ThemeMode)}
-                />
-              </div>
-            </div>
-            <div className="parchment-settings-row">
-              <div className="min-w-0 flex-1">
-                <div className="parchment-settings-row-label">{t('settings.theme_preset')}</div>
-                <div className="parchment-settings-row-description">
-                  {t('settings.theme_preset_hint')}
-                </div>
-              </div>
-              <div className="parchment-settings-row-control">
-                <Segmented<ThemePreset>
-                  data-theme-preset-control="true"
-                  value={themePreset}
-                  options={toAntdSegmentedOptions(themePresets)}
-                  onChange={(value) => setThemePreset(value)}
-                />
-              </div>
-            </div>
             <div className="parchment-settings-row">
               <div className="min-w-0 flex-1">
                 <div className="parchment-settings-row-label">{t('settings.language')}</div>
@@ -716,6 +670,5 @@ export default function SettingsFeature({
         </footer>
       </div>
     </div>
-    </GetTokensAntdThemeProvider>
   );
 }

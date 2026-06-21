@@ -65,14 +65,19 @@ export interface UnifiedAccountDetailProps {
   oauthModelProbeState?: OAuthModelProbeState;
   activeScriptEditor?: 'quota' | 'billing' | null;
   onClose: () => void;
+  onRename?: (nextName: string) => void;
+  onStartReauth?: () => void;
+  onCancelReauth?: () => void;
+  isReauthing?: boolean;
   onSaveConfig?: (draft: ApiKeyConfigDraft) => Promise<void>;
-  onVerify?: (params: { apiKey: string; baseUrl: string; model: string }) => Promise<void>;
-  onOAuthModelProbe?: (params: { accountID: string; model: string }) => Promise<void>;
+  onVerify?: (params: { apiKey: string; baseUrl: string; model: string }) => void;
+  onOAuthModelProbe?: (model: string) => void;
   onFetchModels?: (params: { apiKey: string; baseUrl: string; headers?: Record<string, string> }) => Promise<{ models: string[]; message: string }>;
   onOpenScriptEditor?: (type: 'quota' | 'billing') => void;
   onCloseScriptEditor?: () => void;
-  onTestQuotaCurl?: () => Promise<void>;
-  onTestBillingCurl?: () => Promise<void>;
+  onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<unknown>;
+  onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<unknown>;
+  onRateLimitRulesChanged?: () => void;
 }
 
 export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailProps) {
@@ -178,7 +183,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
             disabled={!canProbeOAuthAccount || !props.onOAuthModelProbe}
             disabledReason={canProbeOAuthAccount ? '当前运行环境不可执行模型测试' : '仅支持统一账号库 acct_ OAuth 账号模型测试'}
             probeState={props.oauthModelProbeState}
-            onProbe={props.onOAuthModelProbe as any}
+            onProbe={props.onOAuthModelProbe}
           />
         );
       }
@@ -191,7 +196,10 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
             rateLimitStrategies={props.rateLimitStrategies}
             rateLimitRulesAPI={props.rateLimitRulesAPI}
             t={t}
-            onRateLimitRulesChanged={() => setRateLimitDirty(true)}
+            onRateLimitRulesChanged={() => {
+              setRateLimitDirty(true);
+              props.onRateLimitRulesChanged?.();
+            }}
           />
         );
       case 'quota': {

@@ -39,8 +39,8 @@ export type ClaudeWorkspace =
 export type SessionManagementWorkspace = "codex" | "claude";
 export type UsageDeskWorkspace = "codex" | "claude";
 
-export type ThemeMode = "system" | "light" | "dark";
-export type ThemePreset = "classic" | "parchment-trust-console";
+export type ThemeMode = "light";
+export type ThemePreset = "classic";
 
 export type LocaleCode = "zh" | "en";
 
