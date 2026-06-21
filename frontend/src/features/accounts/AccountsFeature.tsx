@@ -1675,6 +1675,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               )}
               localModelNames={relayModelNames}
               cachedModelNames={accountModelNamesByID[selectedAccount.id] ?? []}
+              localCliActions={resolveLocalCliActionsForAccount(selectedAccount).map((action) => ({
+                ...action,
+                onSelect: () => action.onSelect(),
+              }))}
               onClose={closeAccountDetail}
               onRename={
                 selectedAccountIsCodexAPIKey ? renameSelectedApiKey : undefined

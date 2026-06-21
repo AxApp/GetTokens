@@ -62,7 +62,7 @@ cc-switch 提供了较重的配置编辑参考：
 
 ## 用户流
 
-### 1. 从账号卡进入
+### 1. 从账号卡或详情页进入
 
 1. 用户打开账号卡右上角菜单。
 2. 前端根据 `AccountRecord + VendorPreset + relay 状态` 生成 `AccountLocalCliMapping[]`。
@@ -70,6 +70,7 @@ cc-switch 提供了较重的配置编辑参考：
 4. 如果只有一个可用目标，展示单个动作，例如 `应用到 Claude Code`。
 5. 如果 Codex 和 Claude Code 都可用，展示两个动作。
 6. 点击动作后不写文件，先打开确认页面。
+7. 用户打开账号详情页时，footer 复用同一批 mapping 结果展示 `应用到 Codex` / `应用到 Claude Code`；详情页不重新判断模板、禁用态或写入目标。
 
 DeepSeek 特例：
 

@@ -29,6 +29,7 @@ import {
   AccountQuotaSection,
   AccountRuntimeRouteSection,
   type APIKeyVerifyState,
+  type AccountDetailLocalCliAction,
 } from './AccountDetailSections';
 import { AccountDetailNotice, AccountDetailEmptyState } from './AccountDetailPrimitives';
 import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
@@ -78,6 +79,7 @@ export interface UnifiedAccountDetailProps {
   onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<unknown>;
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<unknown>;
   onRateLimitRulesChanged?: () => void;
+  localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
 }
 
 export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailProps) {
@@ -272,6 +274,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
           rateLimitDirty={rateLimitDirty}
           missingFields={missingFields}
           savingConfig={savingConfig}
+          localCliActions={props.localCliActions}
           onClose={props.onClose}
           onSaveConfig={saveConfig}
         />

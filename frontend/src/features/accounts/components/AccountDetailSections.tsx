@@ -133,8 +133,18 @@ export interface AccountDetailFooterProps {
   rateLimitDirty?: boolean;
   missingFields: string[];
   savingConfig: boolean;
+  localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
   onClose: () => void;
   onSaveConfig: () => void;
+}
+
+export interface AccountDetailLocalCliAction {
+  id: string;
+  label: string;
+  detail?: string;
+  disabled?: boolean;
+  disabledReason?: string;
+  onSelect: () => void;
 }
 
 const DEFAULT_VERIFY_MODEL = 'gpt-5.4-mini';
@@ -1943,6 +1953,7 @@ export function AccountDetailFooter({
   rateLimitDirty = false,
   missingFields,
   savingConfig,
+  localCliActions = [],
   onClose,
   onSaveConfig,
 }: AccountDetailFooterProps) {
@@ -1970,6 +1981,27 @@ export function AccountDetailFooter({
         <button onClick={onClose} className={accountDetailFooterButtonClass}>
           {t('common.close')}
         </button>
+        {localCliActions.length > 0 ? (
+          <div data-account-detail-local-cli-actions className={accountDetailFooterActionsClass}>
+            {localCliActions.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                disabled={action.disabled}
+                title={action.disabledReason || action.detail || action.label}
+                onClick={() => {
+                  if (action.disabled) {
+                    return;
+                  }
+                  action.onSelect();
+                }}
+                className={accountDetailFooterButtonClass}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         {isApiKey || rateLimitDirty ? (
           <button
             onClick={onSaveConfig}

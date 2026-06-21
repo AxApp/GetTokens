@@ -51,6 +51,19 @@ test('account detail keeps auth-file modules scoped to oauth operations and quot
   assert.equal(modulePlan.includes('model-routing'), false);
 });
 
+test('account detail footer exposes local CLI apply actions from the account mapping', async () => {
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /localCliActions=\{resolveLocalCliActionsForAccount\(selectedAccount\)\.map/);
+  assert.match(featureSource, /onSelect: \(\) => action\.onSelect\(\)/);
+  assert.match(modalSource, /localCliActions=\{props\.localCliActions\}/);
+  assert.match(sectionsSource, /data-account-detail-local-cli-actions/);
+  assert.match(sectionsSource, /action\.label/);
+  assert.match(sectionsSource, /action\.disabledReason \|\| action\.detail \|\| action\.label/);
+});
+
 test('accounts page loads auth-file rows from unified account store only', async () => {
   const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
 

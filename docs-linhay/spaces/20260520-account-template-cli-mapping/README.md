@@ -56,24 +56,25 @@
 ## 验收标准
 1. Given 账号卡匹配到应用模板且支持 Codex 目标格式，When 用户打开右上角菜单，Then 菜单展示 `应用到 Codex` 动作。
 2. Given 账号卡匹配到应用模板且支持 Claude Code 目标格式，When 用户打开右上角菜单，Then 菜单展示 `应用到 Claude Code` 动作。
-3. Given 账号没有可识别模板，When 用户打开右上角菜单，Then 不展示 Codex / Claude Code 映射动作，避免用户误以为可以安全套用未知配置。
-4. Given DeepSeek 账号命中官方应用模板，When 用户打开右上角菜单，Then 只展示 `应用到 Claude Code`，不展示 `应用到 Codex` 按钮。
-5. Given 账号被禁用或当前不可请求，When 用户查看模板映射动作，Then 动作不可执行并展示禁用原因；不会写入本机配置。
-6. Given 用户点击 `应用到 Codex`，When 进入配置确认流程，Then 当前 Codex local apply 草稿包含正确的 relay key、base URL、provider id/name、model 和 auth strategy 建议。
-7. Given 用户点击 `应用到 Claude Code`，When 进入配置确认流程，Then 当前 Claude Code local apply 草稿包含正确的 relay key、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` 和可用的模型族字段建议。
-8. Given 模板同时官方支持 Codex 与 Claude Code，When 用户分别应用到 Codex 和 Claude Code，Then Codex 使用 Codex 目标格式规则，Claude Code 使用 `formatBaseUrls.anthropic || baseUrl`，两者互不污染。
-9. Given 用户已有本地 Codex ChatGPT 登录态且在 Status 页选择保留模式，When 执行 Status local apply，Then 仍需通过既有 preflight 校验，不因账号卡需求而绕过 `requires_custom_provider` / `missing_chatgpt_auth` 限制。
-10. Given 用户从 OAuth / auth-file 账号点击 `应用到 Codex`，When 查看确认页，Then 页面必须展示 `CODEX_HOME/auth.json` 将写入所选账号的 OAuth tokens，`CODEX_HOME/config.toml` 将移除会让 Codex 走 API key / relay token 的 provider token 字段，并让请求进入 ChatGPT/Codex OAuth backend。
-11. Given 单个 Codex 账号进入应用确认页，When 用户查看确认页，Then 应用模式必须由账号来源固定决定；API Key 账号只展示 API Key 写入方案，OAuth / auth-file 账号只展示 OAuth 写入方案，不允许在同一个账号确认页中切换 API Key 与 OAuth。
-12. Given 用户已有 Codex `config.toml` 且 root `model_provider` 指向某个 provider，When 从账号卡生成 Codex 草稿，Then 确认页必须展示当前 provider，并默认 patch `[model_providers.<current>]`；不得默认改成 `gettokens` 或按账号新建 provider。
-13. Given 用户当前 `model_provider = "openai"` 且账号为 OAuth / auth-file，When 生成 Codex 草稿，Then 可以复用内置 `openai` provider，但必须移除既有 `openai_base_url` override，让 Codex 根据 `auth_mode=chatgpt` 使用 ChatGPT/Codex backend。
-14. Given 用户已有 Claude Code `settings.json` 中的 `permissions`、`hooks`、`statusLine` 或未知字段，When 最终执行 apply，Then 只 patch 受控 `env` 字段并保留其他内容。
-15. Given 用户在确认页修改模型或 provider，When 返回账号卡或刷新页面，Then 不把临时修改反写到账号模板；模板只提供默认草稿。
-16. Given 用户点击账号卡 `应用到 Codex` 或 `应用到 Claude Code`，When 系统生成配置草稿，Then 必须先打开新的确认页面或确认面板；用户未确认前不得写入本机 CLI 配置。
-17. Given 用户打开确认页面，When 查看修改信息，Then 页面展示目标文件 diff、将新增或修改的字段、明确保留不动的字段，以及可能的冲突 warning。
-18. Given 用户在确认页面点击取消，When 返回账号卡或账号列表，Then 不写入任何本地 CLI 文件，也不改变账号模板或账号排序。
-19. Given 普通浏览器 preview 环境缺少 Wails runtime，When 打开包含模板账号的账号卡，Then 菜单动作可演示确认页面，不调用真实写入绑定。
-20. Given 相关纯模型函数新增或修改，When 运行前端单测，Then 覆盖模板匹配、目标可用性、格式端点选择、模型默认值和禁用态原因。
+3. Given 用户已打开账号详情页，When 该账号匹配到可展示的本地 CLI 应用目标，Then 详情页 footer 同样展示 `应用到 Codex` / `应用到 Claude Code` 动作，disabled 状态和原因必须复用账号卡同一套 mapping。
+4. Given 账号没有可识别模板，When 用户打开右上角菜单，Then 不展示 Codex / Claude Code 映射动作，避免用户误以为可以安全套用未知配置。
+5. Given DeepSeek 账号命中官方应用模板，When 用户打开右上角菜单，Then 只展示 `应用到 Claude Code`，不展示 `应用到 Codex` 按钮。
+6. Given 账号被禁用或当前不可请求，When 用户查看模板映射动作，Then 动作不可执行并展示禁用原因；不会写入本机配置。
+7. Given 用户点击 `应用到 Codex`，When 进入配置确认流程，Then 当前 Codex local apply 草稿包含正确的 relay key、base URL、provider id/name、model 和 auth strategy 建议。
+8. Given 用户点击 `应用到 Claude Code`，When 进入配置确认流程，Then 当前 Claude Code local apply 草稿包含正确的 relay key、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` 和可用的模型族字段建议。
+9. Given 模板同时官方支持 Codex 与 Claude Code，When 用户分别应用到 Codex 和 Claude Code，Then Codex 使用 Codex 目标格式规则，Claude Code 使用 `formatBaseUrls.anthropic || baseUrl`，两者互不污染。
+10. Given 用户已有本地 Codex ChatGPT 登录态且在 Status 页选择保留模式，When 执行 Status local apply，Then 仍需通过既有 preflight 校验，不因账号卡需求而绕过 `requires_custom_provider` / `missing_chatgpt_auth` 限制。
+11. Given 用户从 OAuth / auth-file 账号点击 `应用到 Codex`，When 查看确认页，Then 页面必须展示 `CODEX_HOME/auth.json` 将写入所选账号的 OAuth tokens，`CODEX_HOME/config.toml` 将移除会让 Codex 走 API key / relay token 的 provider token 字段，并让请求进入 ChatGPT/Codex OAuth backend。
+12. Given 单个 Codex 账号进入应用确认页，When 用户查看确认页，Then 应用模式必须由账号来源固定决定；API Key 账号只展示 API Key 写入方案，OAuth / auth-file 账号只展示 OAuth 写入方案，不允许在同一个账号确认页中切换 API Key 与 OAuth。
+13. Given 用户已有 Codex `config.toml` 且 root `model_provider` 指向某个 provider，When 从账号卡生成 Codex 草稿，Then 确认页必须展示当前 provider，并默认 patch `[model_providers.<current>]`；不得默认改成 `gettokens` 或按账号新建 provider。
+14. Given 用户当前 `model_provider = "openai"` 且账号为 OAuth / auth-file，When 生成 Codex 草稿，Then 可以复用内置 `openai` provider，但必须移除既有 `openai_base_url` override，让 Codex 根据 `auth_mode=chatgpt` 使用 ChatGPT/Codex backend。
+15. Given 用户已有 Claude Code `settings.json` 中的 `permissions`、`hooks`、`statusLine` 或未知字段，When 最终执行 apply，Then 只 patch 受控 `env` 字段并保留其他内容。
+16. Given 用户在确认页修改模型或 provider，When 返回账号卡或刷新页面，Then 不把临时修改反写到账号模板；模板只提供默认草稿。
+17. Given 用户点击账号卡或账号详情页的 `应用到 Codex` / `应用到 Claude Code`，When 系统生成配置草稿，Then 必须先打开新的确认页面或确认面板；用户未确认前不得写入本机 CLI 配置。
+18. Given 用户打开确认页面，When 查看修改信息，Then 页面展示目标文件 diff、将新增或修改的字段、明确保留不动的字段，以及可能的冲突 warning。
+19. Given 用户在确认页面点击取消，When 返回账号卡或账号列表，Then 不写入任何本地 CLI 文件，也不改变账号模板或账号排序。
+20. Given 普通浏览器 preview 环境缺少 Wails runtime，When 打开包含模板账号的账号卡或详情页，Then 动作可演示确认页面，不调用真实写入绑定。
+21. Given 相关纯模型函数新增或修改，When 运行前端单测，Then 覆盖模板匹配、目标可用性、格式端点选择、模型默认值和禁用态原因。
 
 ## 需求细节草案
 
