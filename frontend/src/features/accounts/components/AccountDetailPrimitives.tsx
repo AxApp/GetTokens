@@ -1,170 +1,8 @@
-import { createContext, useContext, type HTMLAttributes, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
-type AccountDetailTone = 'neutral' | 'success' | 'warning' | 'danger';
-export type AccountDetailSectionDensity = 'standard' | 'dense' | 'hero';
-export type AccountDetailModuleStackLayout = 'flow' | 'cards' | 'bands';
 export type AccountDetailSectionSpan = 'auto' | 'wide';
 
-const AccountDetailModuleLayoutContext = createContext<AccountDetailModuleStackLayout>('flow');
-
-const toneClassNames: Record<AccountDetailTone, string> = {
-  neutral: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--text-muted)]',
-  success: 'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
-  warning: 'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)]',
-  danger: 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
-};
-
-const sectionDensityClassNames: Record<AccountDetailSectionDensity, string> = {
-  standard: 'gap-3 py-4',
-  dense: 'gap-2.5 py-3',
-  hero: 'gap-4 py-5',
-};
-
-const cardSectionDensityClassNames: Record<AccountDetailSectionDensity, string> = {
-  standard: 'gap-2.5 p-4',
-  dense: 'gap-2 p-3',
-  hero: 'gap-3 p-5',
-};
-
-const sectionBodyDensityClassNames: Record<AccountDetailSectionDensity, string> = {
-  standard: 'space-y-3',
-  dense: 'space-y-2.5',
-  hero: 'space-y-4',
-};
-
-const accountDetailSectionHeaderDividerClass =
-  'border-b border-[var(--gt-border-subtle)] pb-2';
-const accountDetailSectionTitleRowClass =
-  'flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1';
-const accountDetailSectionEyebrowClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
-const accountDetailSectionTitleClass =
-  'text-[length:var(--font-size-ui-md-compact)] font-semibold italic leading-snug tracking-normal text-[var(--text-primary)]';
-const accountDetailSectionMetaClass =
-  'min-w-0 break-words font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
-const accountDetailBandShellClass =
-  'grid min-w-0 grid-cols-[10.5rem_minmax(0,1fr)] border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
-const accountDetailBandMutedClass =
-  'bg-[var(--gt-surface-muted)]';
-const accountDetailBandRailClass =
-  'min-w-0 border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-4';
-const accountDetailBandRailTitleClass =
-  'mt-2 text-[length:var(--font-size-ui-lg-compact)] font-semibold italic leading-tight tracking-normal text-[var(--text-primary)]';
-const accountDetailBandContentClass =
-  'min-w-0 px-4 py-4';
-const accountDetailBandActionDividerClass =
-  'border-b border-[var(--gt-border-subtle)] pb-2';
-const accountDetailSectionCardBorderClass =
-  'border bg-[var(--gt-surface-canvas)]';
-const accountDetailSectionTopBorderClass =
-  'border-t';
-const accountDetailSectionNoTopBorderClass =
-  'border-t-0';
-const accountDetailSectionShellBaseClass =
-  'grid border-[var(--gt-border-subtle)]';
-const accountDetailSectionMutedClass =
-  'bg-[var(--gt-surface-muted)]';
-const accountDetailBodyClass =
-  'bg-[var(--gt-surface-canvas)]';
-const accountDetailModuleSideClass =
-  'min-w-0 border-t border-[var(--gt-border-subtle)] xl:border-l xl:border-t-0 xl:pl-6';
-const accountDetailModuleBandsClass =
-  'min-w-0 border-t border-[var(--gt-border-subtle)]';
-const accountDetailStatGridClass =
-  'grid overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
-const accountDetailStatCellClass =
-  'min-w-0 border-b border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3';
-const accountDetailStatLabelClass =
-  'truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
-const accountDetailStatValueClass =
-  'mt-1 truncate font-mono text-[length:var(--font-size-ui-md)] font-semibold tabular-nums text-[var(--text-primary)]';
-const accountDetailStatMetaClass =
-  'mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
-const accountDetailFieldGridClass =
-  'grid gap-4 border-b border-[var(--gt-border-subtle)] pb-5';
-const accountDetailFieldLabelClass =
-  'text-[length:var(--font-size-ui-sm)] font-semibold italic tracking-normal text-[var(--text-muted)]';
-const accountDetailFieldValueClass =
-  'break-all text-[length:var(--font-size-ui-md)] font-semibold tracking-normal text-[var(--text-primary)]';
-const accountDetailPillClass =
-  'inline-flex min-h-7 items-center rounded border px-2 py-1 text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal';
-const accountDetailNoticeClass =
-  'rounded border px-4 py-3 text-[length:var(--font-size-ui-sm)] font-medium leading-relaxed tracking-normal';
-const accountDetailEmptyStateClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-6 text-center text-[length:var(--font-size-ui-sm)] font-medium tracking-normal text-[var(--text-muted)]';
-const accountDetailEvidenceGridClass =
-  'grid overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const accountDetailEvidenceRowClass =
-  'grid gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2.5 last:border-b-0 md:grid-cols-[8rem_minmax(0,1fr)] md:items-start';
-const accountDetailEvidenceLabelClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
-const accountDetailEvidenceValueClass =
-  'min-w-0 break-all font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
-
-interface AccountDetailSectionProps {
-  eyebrow?: ReactNode;
-  title?: ReactNode;
-  meta?: ReactNode;
-  actions?: ReactNode;
-  children: ReactNode;
-  componentName?: string;
-  density?: AccountDetailSectionDensity;
-  span?: AccountDetailSectionSpan;
-  inset?: boolean;
-  muted?: boolean;
-  topBorder?: boolean;
-  headerDivider?: boolean;
-  bandActionDivider?: boolean;
-  railControls?: ReactNode;
-  className?: string;
-}
-
-interface AccountDetailSectionHeaderProps {
-  eyebrow?: ReactNode;
-  title?: ReactNode;
-  meta?: ReactNode;
-  actions?: ReactNode;
-  className?: string;
-  divider?: boolean;
-}
-
-export function AccountDetailSectionHeader({
-  eyebrow,
-  title,
-  meta,
-  actions,
-  className = '',
-  divider = true,
-}: AccountDetailSectionHeaderProps) {
-  const dividerClassName = divider
-    ? accountDetailSectionHeaderDividerClass
-    : '';
-  return (
-    <div
-      data-account-detail-section-header="standard"
-      className={`flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${dividerClassName} ${className}`}
-    >
-      <div data-account-detail-section-title-row="compact" className={accountDetailSectionTitleRowClass}>
-        {eyebrow ? (
-          <div className={accountDetailSectionEyebrowClass}>
-            {eyebrow}
-          </div>
-        ) : null}
-        {title ? (
-          <h3 className={accountDetailSectionTitleClass}>
-            {title}
-          </h3>
-        ) : null}
-        {meta ? (
-          <div className={accountDetailSectionMetaClass}>
-            {meta}
-          </div>
-        ) : null}
-      </div>
-      {actions ? <div data-account-detail-section-action-row="compact" className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">{actions}</div> : null}
-    </div>
-  );
-}
+/* ── Section ── */
 
 export function AccountDetailSection({
   eyebrow,
@@ -173,217 +11,59 @@ export function AccountDetailSection({
   actions,
   children,
   componentName = 'AccountDetailSection',
-  density = 'standard',
-  span = 'auto',
-  inset = false,
-  muted = false,
-  topBorder = true,
-  headerDivider = true,
-  bandActionDivider = true,
-  railControls,
   className = '',
-}: AccountDetailSectionProps) {
-  const moduleLayout = useContext(AccountDetailModuleLayoutContext);
-  const isBandLayout = moduleLayout === 'bands' && !inset;
-  const isCardLayout = moduleLayout === 'cards' && !inset;
-
-  if (isBandLayout) {
-    const bandActionDividerClassName = bandActionDivider
-      ? accountDetailBandActionDividerClass
-      : '';
-    return (
-      <section
-        data-design-system-component="true"
-        data-design-system-component-name={componentName}
-        data-account-detail-section-layout="band"
-        className={`${accountDetailBandShellClass} ${muted ? accountDetailBandMutedClass : ''} ${className}`}
-      >
-        <aside data-account-detail-band-index="true" className={accountDetailBandRailClass}>
-          {eyebrow ? (
-            <div className={accountDetailSectionEyebrowClass}>
-              {eyebrow}
-            </div>
-          ) : null}
-          {title ? (
-            <h3 className={accountDetailBandRailTitleClass}>
-              {title}
-            </h3>
-          ) : null}
-          {railControls ? (
-            <div data-account-detail-band-rail-controls="true" className="mt-5 grid gap-2">
-              {railControls}
-            </div>
-          ) : null}
-        </aside>
-        <div className={accountDetailBandContentClass}>
-          {meta || actions ? (
-            <div className={`mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${bandActionDividerClassName}`}>
-              {meta ? (
-                <div className={accountDetailSectionMetaClass}>
-                  {meta}
-                </div>
-              ) : <span />}
-              {actions ? <div className="flex shrink-0 flex-wrap items-center gap-1.5">{actions}</div> : null}
-            </div>
-          ) : null}
-          <AccountDetailModuleLayoutContext.Provider value="flow">
-            <div data-account-detail-section-body="compact" className={`min-w-0 ${sectionBodyDensityClassNames[density]}`}>
-              {children}
-            </div>
-          </AccountDetailModuleLayoutContext.Provider>
-        </div>
-      </section>
-    );
-  }
-
-  const shellClassName = isCardLayout
-    ? cardSectionDensityClassNames[density]
-    : inset
-      ? `px-6 ${sectionDensityClassNames[density]}`
-      : sectionDensityClassNames[density];
-  const borderClassName = isCardLayout
-    ? accountDetailSectionCardBorderClass
-    : topBorder
-      ? accountDetailSectionTopBorderClass
-      : accountDetailSectionNoTopBorderClass;
-  const spanClassName = isCardLayout && span === 'wide' ? 'lg:col-span-2' : '';
-  const heightClassName = isCardLayout ? 'h-full' : '';
-
+}: {
+  eyebrow?: ReactNode;
+  title?: ReactNode;
+  meta?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+  componentName?: string;
+  className?: string;
+  // Legacy props (ignored, kept for backward compatibility)
+  density?: string;
+  span?: string;
+  inset?: boolean;
+  muted?: boolean;
+  topBorder?: boolean;
+  headerDivider?: boolean;
+  bandActionDivider?: boolean;
+  railControls?: ReactNode;
+}) {
   return (
     <section
       data-design-system-component="true"
       data-design-system-component-name={componentName}
-      className={`${accountDetailSectionShellBaseClass} ${borderClassName} ${shellClassName} ${spanClassName} ${heightClassName} ${muted ? accountDetailSectionMutedClass : ''} ${className}`}
+      className={`space-y-3 ${className}`}
     >
-      {eyebrow || title || meta || actions ? (
-        <AccountDetailSectionHeader
-          eyebrow={eyebrow}
-          title={title}
-          meta={meta}
-          actions={actions}
-          divider={headerDivider}
-        />
-      ) : null}
-      <div data-account-detail-section-body="compact" className={`min-w-0 ${sectionBodyDensityClassNames[density]}`}>
-        {children}
-      </div>
+      {(title || actions) && (
+        <div className="space-y-2" style={{ userSelect: 'text' }}>
+          {title && (
+            <h3 className="font-semibold text-[var(--gt-ink-secondary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>
+              {title}
+            </h3>
+          )}
+          {actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}
+        </div>
+      )}
+      <div style={{ userSelect: 'text' }}>{children}</div>
     </section>
   );
 }
 
-export function AccountDetailBody({
-  children,
-  className = '',
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div {...props} data-account-detail-body="module-surface" className={`${accountDetailBodyClass} ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-export function AccountDetailOverviewGrid({
-  runtime,
-  evidence,
-  className = '',
-}: {
-  runtime: ReactNode;
-  evidence?: ReactNode;
-  className?: string;
-}) {
-  const hasEvidence = Boolean(evidence);
-  const gridClassName = hasEvidence
-    ? 'grid min-w-0 items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'
-    : 'min-w-0';
-
-  return (
-    <AccountDetailModuleLayoutContext.Provider value="cards">
-      <div
-        data-account-detail-overview-grid="runtime-evidence"
-        data-account-detail-overview-layout={hasEvidence ? 'split-50-50' : 'single'}
-        data-account-detail-overview-equal-height={hasEvidence ? 'true' : undefined}
-        className={`${gridClassName} ${className}`}
-      >
-        <div data-account-detail-overview-slot="runtime" className={hasEvidence ? 'min-w-0 h-full' : 'min-w-0'}>
-          {runtime}
-        </div>
-        {hasEvidence ? (
-          <aside data-account-detail-overview-slot="evidence" className="min-w-0 h-full">
-            {evidence}
-          </aside>
-        ) : null}
-      </div>
-    </AccountDetailModuleLayoutContext.Provider>
-  );
-}
-
-export function AccountDetailModuleGrid({
-  main,
-  side,
-  className = '',
-}: {
-  main: ReactNode;
-  side?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] ${className}`}>
-      <div className="min-w-0">
-        {main}
-      </div>
-      {side ? (
-        <aside className={accountDetailModuleSideClass}>
-          {side}
-        </aside>
-      ) : null}
-    </div>
-  );
-}
-
-export function AccountDetailModuleStack({
-  children,
-  layout = 'flow',
-  cardColumns = 2,
-  className = '',
-}: {
-  children: ReactNode;
-  layout?: AccountDetailModuleStackLayout;
-  cardColumns?: 1 | 2;
-  className?: string;
-}) {
-  const layoutClassName = layout === 'cards'
-    ? `grid min-w-0 gap-4 ${cardColumns === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2'}`
-    : layout === 'bands'
-      ? accountDetailModuleBandsClass
-      : 'min-w-0';
-
-  return (
-    <AccountDetailModuleLayoutContext.Provider value={layout}>
-      <div data-account-detail-module-layout={layout} className={`${layoutClassName} ${className}`}>
-        {children}
-      </div>
-    </AccountDetailModuleLayoutContext.Provider>
-  );
-}
+/* ── Stat Grid ── */
 
 export function AccountDetailStatGrid({
-  children,
   columns = 3,
+  children,
   className = '',
 }: {
-  children: ReactNode;
   columns?: 2 | 3 | 6;
+  children: ReactNode;
   className?: string;
 }) {
-  const columnClassName = columns === 6
-    ? 'sm:grid-cols-2 xl:grid-cols-6'
-    : columns === 2
-      ? 'md:grid-cols-2'
-      : 'md:grid-cols-3';
-
   return (
-    <div className={`${accountDetailStatGridClass} ${columnClassName} ${className}`}>
+    <div className={`grid overflow-hidden rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] ${columns === 6 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6' : columns === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'} ${className}`}>
       {children}
     </div>
   );
@@ -393,102 +73,71 @@ export function AccountDetailStatCell({
   label,
   value,
   meta,
+  className = '',
 }: {
   label: ReactNode;
   value: ReactNode;
   meta?: ReactNode;
-}) {
-  return (
-    <div className={accountDetailStatCellClass}>
-      <div className={accountDetailStatLabelClass}>
-        {label}
-      </div>
-      <div className={accountDetailStatValueClass}>
-        {value}
-      </div>
-      {meta ? (
-        <div className={accountDetailStatMetaClass}>
-          {meta}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-export function AccountDetailFieldGrid({
-  children,
-  columns = 3,
-  className = '',
-}: {
-  children: ReactNode;
-  columns?: 2 | 3;
   className?: string;
 }) {
-  const columnClassName = columns === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3';
   return (
-    <div className={`${accountDetailFieldGridClass} ${columnClassName} ${className}`}>
-      {children}
+    <div className={`min-w-0 border-b border-r border-[var(--gt-border-subtle)] px-4 py-3 last:border-r-0 ${className}`}>
+      <div className="truncate text-xs font-medium uppercase tracking-wider text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="mt-1 truncate font-semibold tabular-nums text-[var(--gt-ink-primary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
+      {meta && <div className="mt-1 truncate text-xs text-[var(--gt-ink-muted)]">{meta}</div>}
     </div>
   );
 }
 
-export function AccountDetailField({
-  label,
-  value,
-  title,
-  align = 'left',
-}: {
-  label: ReactNode;
-  value: ReactNode;
-  title?: string;
-  align?: 'left' | 'right';
-}) {
-  return (
-    <div className={`min-w-0 space-y-1 ${align === 'right' ? 'text-right' : ''}`}>
-      <div className={accountDetailFieldLabelClass}>
-        {label}
-      </div>
-      <div
-        className={accountDetailFieldValueClass}
-        title={title}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
+/* ── Pill ── */
 
 export function AccountDetailPill({
-  children,
   tone = 'neutral',
+  children,
   className = '',
 }: {
+  tone?: 'neutral' | 'success' | 'warning' | 'danger';
   children: ReactNode;
-  tone?: AccountDetailTone;
   className?: string;
 }) {
+  const toneStyles: Record<string, string> = {
+    neutral: 'border-[var(--gt-border-default)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
+    success: 'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
+    warning: 'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)]',
+    danger: 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
+  };
   return (
-    <span className={`${accountDetailPillClass} ${toneClassNames[tone]} ${className}`}>
+    <span className={`inline-flex min-h-7 items-center rounded-full border px-2 py-1 text-xs font-medium ${toneStyles[tone]} ${className}`}>
       {children}
     </span>
   );
 }
 
+/* ── Notice ── */
+
 export function AccountDetailNotice({
-  children,
   tone = 'neutral',
+  children,
   className = '',
 }: {
+  tone?: 'neutral' | 'success' | 'warning' | 'danger';
   children: ReactNode;
-  tone?: AccountDetailTone;
   className?: string;
 }) {
+  const toneStyles: Record<string, string> = {
+    neutral: 'border-[var(--gt-border-default)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
+    success: 'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
+    warning: 'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)]',
+    danger: 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
+  };
   return (
-    <div className={`${accountDetailNoticeClass} ${toneClassNames[tone]} ${className}`}>
+    <div className={`rounded-lg border px-4 py-3 font-medium leading-relaxed ${toneStyles[tone]} ${className}`}>
       {children}
     </div>
   );
 }
+
+/* ── Empty State ── */
 
 export function AccountDetailEmptyState({
   children,
@@ -498,45 +147,101 @@ export function AccountDetailEmptyState({
   className?: string;
 }) {
   return (
-    <div className={`${accountDetailEmptyStateClass} ${className}`}>
+    <div className={`rounded-lg border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-6 text-center font-medium text-[var(--gt-ink-muted)] ${className}`}>
       {children}
     </div>
   );
 }
 
-export function AccountDetailEvidenceGrid({
-  rows,
-  compact = false,
-}: {
-  rows: Array<{ label: ReactNode; value: ReactNode; title?: string }>;
-  compact?: boolean;
-}) {
-  const outerClassName = compact
-    ? 'grid mt-2'
-    : accountDetailEvidenceGridClass;
-  const rowClassName = compact
-    ? 'grid gap-1 py-1 md:grid-cols-[6rem_minmax(0,1fr)] md:items-start'
-    : accountDetailEvidenceRowClass;
-  const labelClassName = accountDetailEvidenceLabelClass;
-  const valueClassName = compact
-    ? 'min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)]'
-    : accountDetailEvidenceValueClass;
+/* ── Evidence Row ── */
 
+export function AccountDetailEvidenceGrid({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={outerClassName}>
-      {rows.map((row, index) => (
-        <div key={`${String(row.label)}-${index}`} className={rowClassName}>
-          <div className={labelClassName}>
-            {row.label}
-          </div>
-          <div
-            className={valueClassName}
-            title={row.title}
-          >
-            {row.value}
-          </div>
-        </div>
-      ))}
+    <div className={`grid overflow-hidden rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+export function AccountDetailEvidenceRow({
+  label,
+  value,
+  className = '',
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`grid gap-2 border-b border-[var(--gt-border-subtle)] px-4 py-3 last:border-b-0 md:grid-cols-[10rem_minmax(0,1fr)] md:items-start ${className}`}>
+      <div className="truncate text-xs font-medium uppercase tracking-wider text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="min-w-0 break-all text-[var(--gt-ink-primary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
+    </div>
+  );
+}
+
+/* ── Legacy backward-compatible exports ── */
+
+export function AccountDetailBody({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={`bg-[var(--gt-surface-canvas)] ${className}`}>{children}</div>;
+}
+
+export function AccountDetailModuleStack({
+  layout = 'flow',
+  children,
+  className = '',
+}: {
+  layout?: string;
+  children: ReactNode;
+  className?: string;
+  cardColumns?: number;
+}) {
+  return <div className={className}>{children}</div>;
+}
+
+export function AccountDetailFieldGrid({
+  columns = 2,
+  children,
+  className = '',
+}: {
+  columns?: 2 | 3;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`grid gap-4 border-b border-[var(--gt-border-subtle)] pb-5 last:border-b-0 last:pb-0 ${columns === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'} ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+export function AccountDetailField({
+  label,
+  value,
+  align = 'left',
+  className = '',
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  align?: 'left' | 'right';
+  className?: string;
+}) {
+  return (
+    <div className={`min-w-0 ${align === 'right' ? 'text-right' : ''} ${className}`}>
+      <div className="font-medium text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="break-all font-medium text-[var(--gt-ink-primary)]">{value}</div>
     </div>
   );
 }

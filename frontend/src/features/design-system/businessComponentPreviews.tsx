@@ -5,6 +5,16 @@ import type {
   SessionPluginConsolePanelProps,
 } from '../session-management/components/SessionPluginConsolePanel';
 import {
+  AccountDetailSection,
+  AccountDetailStatGrid,
+  AccountDetailStatCell,
+  AccountDetailPill,
+  AccountDetailNotice,
+  AccountDetailEmptyState,
+  AccountDetailEvidenceGrid,
+  AccountDetailEvidenceRow,
+} from '../accounts/components/AccountDetailPrimitives';
+import {
   businessDesignSystemPreviewCatalog,
   type BusinessDesignSystemPreviewCatalogEntry,
 } from './businessComponentPreviewCatalog';
@@ -196,9 +206,51 @@ function SessionPluginConsolePreview() {
   );
 }
 
+function AccountDetailPrimitivesPreview() {
+  return (
+    <div className="space-y-6">
+      <AccountDetailSection eyebrow="Runtime" title="运行态路由" actions={<span className="text-xs text-[var(--gt-ink-muted)]">只读</span>}>
+        <AccountDetailStatGrid columns={3}>
+          <AccountDetailStatCell label="Routeable" value="YES" />
+          <AccountDetailStatCell label="Models" value="12" meta="synced" />
+          <AccountDetailStatCell label="Requestable" value="WAIT" meta="sidecar candidate" />
+        </AccountDetailStatGrid>
+        <AccountDetailEvidenceGrid>
+          <AccountDetailEvidenceRow label="runtime_status" value="ROUTEABLE" />
+          <AccountDetailEvidenceRow label="routeable" value="true" />
+          <AccountDetailEvidenceRow label="account_status" value="ACTIVE" />
+        </AccountDetailEvidenceGrid>
+      </AccountDetailSection>
+
+      <AccountDetailSection eyebrow="Status" title="状态通知">
+        <AccountDetailNotice tone="success">账号连接正常，路由可用。</AccountDetailNotice>
+        <AccountDetailNotice tone="warning">配额接近上限，建议关注。</AccountDetailNotice>
+        <AccountDetailNotice tone="danger">验证失败，请检查 API Key。</AccountDetailNotice>
+      </AccountDetailSection>
+
+      <AccountDetailSection eyebrow="Badges" title="状态标签">
+        <div className="flex flex-wrap gap-2">
+          <AccountDetailPill tone="success">Healthy</AccountDetailPill>
+          <AccountDetailPill tone="warning">Degraded</AccountDetailPill>
+          <AccountDetailPill tone="danger">Error</AccountDetailPill>
+          <AccountDetailPill>Default</AccountDetailPill>
+        </div>
+      </AccountDetailSection>
+
+      <AccountDetailSection eyebrow="Empty" title="空状态">
+        <AccountDetailEmptyState>暂无数据，请添加账号或刷新。</AccountDetailEmptyState>
+      </AccountDetailSection>
+    </div>
+  );
+}
+
 export const businessDesignSystemPreviews = [
   {
     ...businessDesignSystemPreviewCatalog[0],
     render: () => <SessionPluginConsolePreview />,
+  },
+  {
+    ...businessDesignSystemPreviewCatalog[1],
+    render: () => <AccountDetailPrimitivesPreview />,
   },
 ] as const satisfies readonly BusinessDesignSystemPreview[];

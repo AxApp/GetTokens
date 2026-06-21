@@ -1,4 +1,3 @@
-import { Play } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Combobox } from '../../../components/ui/Combobox.tsx';
 import { normalizeAPIKeyModelNames } from '../model/apiKeyModelCatalog';
@@ -114,8 +113,7 @@ export function OAuthModelProbeSection({
             className={oauthModelProbeButtonClass}
             data-oauth-model-probe-button="run"
           >
-            <Play className="h-3.5 w-3.5" strokeWidth={4} />
-            {running ? '测试中' : '测试模型'}
+            {running ? '测试中...' : '测试'}
           </button>
         </div>
         {message ? (

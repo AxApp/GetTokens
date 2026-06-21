@@ -38,6 +38,7 @@ import { QuotaCalibrationPanel } from './QuotaCalibrationPanel';
 import { QuotaThresholdRulePanel } from './QuotaThresholdRulePanel';
 import {
   AccountDetailEvidenceGrid,
+  AccountDetailEvidenceRow,
   AccountDetailEmptyState,
   AccountDetailStatCell,
   AccountDetailStatGrid,
@@ -148,23 +149,23 @@ const accountDetailHeaderShellClass =
 const accountDetailHeaderRailClass =
   'flex min-w-0 items-center border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
 const accountDetailHeaderTypeClass =
-  'w-full min-w-0 text-left text-base font-semibold italic leading-tight tracking-normal text-[var(--text-primary)]';
+  'w-full min-w-0 text-left text-base font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailHeaderPillClass =
-  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[length:var(--font-size-ui-2xs)] !font-semibold !text-[var(--text-primary)]';
+  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[10px] !font-semibold !text-[var(--gt-ink-primary)]';
 const accountDetailHeaderPrimaryPillClass =
-  '!min-h-0 !border !border-[var(--text-primary)] !bg-[var(--text-primary)] !py-1 !text-[length:var(--font-size-ui-2xs)] !font-semibold !text-[var(--gt-surface-canvas)]';
+  '!min-h-0 !border !border-[var(--gt-ink-primary)] !bg-[var(--gt-ink-primary)] !py-1 !text-[10px] !font-semibold !text-[var(--gt-surface-canvas)]';
 const accountDetailHeaderDescriptionClass =
-  'flex min-w-0 items-center pl-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-semibold leading-tight text-[var(--text-muted)]';
+  'flex min-w-0 items-center pl-0.5 font-sans text-xs font-semibold leading-tight text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeMetaLabelClass =
-  'font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeMetaSmallClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeDecisionTitleClass =
-  'min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'min-w-0 truncate font-sans text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailRuntimeDecisionMetaClass =
-  'mt-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'mt-1 min-w-0 truncate font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeDecisionDetailClass =
-  'mt-1 text-[length:var(--font-size-ui-xs)] font-medium leading-5 text-[var(--text-secondary)]';
+  'mt-1 text-xs font-medium leading-5 text-[var(--gt-ink-secondary)]';
 const accountDetailRuntimeEvidenceClass =
   'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
 const accountDetailRuntimeReasonDetailClass =
@@ -178,38 +179,38 @@ const accountDetailRuntimeDecisionClass = (unresolved: boolean) =>
 const accountDetailCredentialPaneDividerClass =
   'grid min-w-0 content-start gap-4 border-t border-[var(--gt-border-subtle)] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0';
 const accountDetailCredentialSectionTitleClass =
-  'text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailCredentialMetaLabelClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailCredentialSubheadingClass =
-  'mt-1 text-[length:var(--font-size-ui-xs)] font-semibold italic tracking-normal text-[var(--text-primary)]';
+  'mt-1 text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailCredentialPillClass =
-  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[length:var(--font-size-ui-2xs)] !font-semibold !text-[var(--text-primary)]';
+  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[10px] !font-semibold !text-[var(--gt-ink-primary)]';
 const accountDetailCredentialFieldLabelClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailCredentialHelpClass =
-  'text-[length:var(--font-size-ui-2xs)] font-medium leading-relaxed text-[var(--text-muted)]';
+  'text-[10px] font-medium leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailCredentialInputClass =
-  'min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--text-primary)]';
+  'min-w-0 rounded-md border border-[var(--gt-border-default)] bg-white px-3 py-2 font-mono text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1';
 const accountDetailCredentialButtonClass =
-  'shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+  'shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[10px] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailCredentialPrimaryButtonClass =
-  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-xs font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailCredentialMenuClass =
   'absolute left-0 top-full z-20 mt-1 max-h-48 w-full overflow-auto rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const accountDetailCredentialMenuItemClass = (active: boolean) =>
-  `block w-full px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal transition-colors ${
+  `block w-full px-3 py-1.5 text-left text-xs font-semibold tracking-normal transition-colors ${
     active
-      ? 'bg-[var(--text-primary)] text-[var(--gt-surface-canvas)]'
-      : 'text-[var(--text-primary)] hover:bg-[var(--gt-surface-muted)]'
+      ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+      : 'text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]'
   }`;
 const accountDetailCredentialStatusClass = (status?: APIKeyVerifyState['status']) =>
-  `text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal ${
+  `text-xs font-semibold tracking-normal ${
     status === 'success'
       ? 'text-[var(--gt-status-success)]'
       : status === 'error'
         ? 'text-[var(--gt-status-danger)]'
-        : 'text-[var(--text-muted)]'
+        : 'text-[var(--gt-ink-muted)]'
   }`;
 const accountDetailResourcePaneDividerClass =
   'grid min-w-0 grid-rows-[auto_minmax(0,1fr)] gap-3 self-stretch border-t border-[var(--gt-border-subtle)] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0';
@@ -220,33 +221,33 @@ const accountDetailResourceScriptCardClass =
 const accountDetailResourceCompactCardClass =
   'grid gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const accountDetailResourceButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[10px] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailResourcePrimaryButtonClass =
-  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-50';
+  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[10px] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailResourceHeadingClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourcePanelClass =
   'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const accountDetailResourcePanelValueClass =
-  'mt-1 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)]';
+  'mt-1 text-sm font-semibold text-[var(--gt-ink-primary)]';
 const accountDetailResourceHelpClass =
-  'text-[length:var(--font-size-ui-xs)] font-medium leading-relaxed text-[var(--text-muted)]';
+  'text-xs font-medium leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailResourceEmptyScriptClass =
-  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-4 text-[length:var(--font-size-ui-xs)] font-medium text-[var(--text-muted)]';
+  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-4 text-xs font-medium text-[var(--gt-ink-muted)]';
 const accountDetailResourceDataRowClass =
   'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2 md:grid-cols-3';
 const accountDetailResourceMessageClass = (tone: 'neutral' | 'success' | 'danger') =>
-  `text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal ${
+  `text-xs font-semibold tracking-normal ${
     tone === 'success'
       ? 'text-[var(--gt-status-success)]'
       : tone === 'danger'
         ? 'text-[var(--gt-status-danger)]'
-        : 'text-[var(--text-muted)]'
+        : 'text-[var(--gt-ink-muted)]'
   }`;
 const accountDetailResourceKvLabelClass =
-  'font-mono text-[length:var(--font-size-ui-2xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourceKvValueClass =
-  'mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-primary)]';
+  'mt-1 truncate font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetModalOverlayClass =
   'fixed inset-0 z-[1000] grid place-items-center bg-black/35 px-6 py-8 backdrop-blur-[18px]';
 const accountDetailQuotaResetModalPanelClass =
@@ -254,67 +255,40 @@ const accountDetailQuotaResetModalPanelClass =
 const accountDetailQuotaResetHeroClass =
   'relative h-36 overflow-hidden border-b border-white/40';
 const accountDetailQuotaResetHeroMarkClass =
-  'absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded border border-white/40 bg-[linear-gradient(150deg,rgba(171,149,255,0.8),rgba(36,65,255,0.88))] font-mono text-3xl font-semibold text-white shadow-lg backdrop-blur-md';
+  'absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded border border-white/40 bg-[linear-gradient(150deg,rgba(171,149,255,0.8),rgba(36,65,255,0.88))] font-sans text-3xl font-semibold text-white shadow-lg backdrop-blur-md';
 const accountDetailQuotaResetCloseButtonClass =
-  'absolute right-4 top-4 grid h-10 w-10 place-items-center rounded border border-white/55 bg-white/45 text-xl font-semibold text-[var(--text-primary)] shadow-lg backdrop-blur-xl transition-colors hover:bg-white/65';
+  'absolute right-4 top-4 grid h-10 w-10 place-items-center rounded border border-white/55 bg-white/45 text-xl font-semibold text-[var(--gt-ink-primary)] shadow-lg backdrop-blur-xl transition-colors hover:bg-white/65';
 const accountDetailQuotaResetBodyClass =
   'grid gap-5 bg-white/35 px-8 py-7 text-center backdrop-blur-xl';
 const accountDetailQuotaResetTitleClass =
-  'text-xl font-semibold italic leading-tight tracking-normal text-[var(--text-primary)]';
+  'text-xl font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetDescriptionClass =
-  'mx-auto max-w-[28rem] text-[length:var(--font-size-ui-sm)] font-medium leading-relaxed text-[var(--text-muted)]';
+  'mx-auto max-w-[28rem] text-sm font-medium leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailQuotaResetResultClass =
-  'grid gap-2 border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_78%,transparent)] p-4 text-left font-mono text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] backdrop-blur-xl';
+  'grid gap-2 border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_78%,transparent)] p-4 text-left font-sans text-xs font-semibold text-[var(--gt-ink-primary)] backdrop-blur-xl';
 const accountDetailQuotaResetErrorClass =
-  'border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-4 text-left text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-status-danger)] backdrop-blur-xl';
+  'border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-4 text-left text-sm font-semibold text-[var(--gt-status-danger)] backdrop-blur-xl';
 const accountDetailQuotaResetPrimaryButtonClass =
-  'h-12 rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-4 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60';
+  'h-12 rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-4 text-sm font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60';
 const accountDetailQuotaResetSecondaryButtonClass =
-  'h-12 rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_72%,transparent)] px-4 text-[length:var(--font-size-ui-sm)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+  'h-12 rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_72%,transparent)] px-4 text-sm font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountDetailFooterStatusClass =
-  'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[length:var(--font-size-ui-xs)] font-semibold tracking-normal text-[var(--text-muted)]';
+  'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailFooterActionsClass = 'flex items-center gap-2';
 const accountDetailFooterButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] hover:bg-[var(--gt-surface-canvas)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-xs font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountDetailFooterPrimaryButtonClass =
-  'rounded border border-[var(--text-primary)] bg-[var(--text-primary)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
+  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-xs font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 
 export function AccountDetailHeader({
   account,
 }: AccountDetailHeaderProps) {
   const accountTypeLabel = resolveAccountHeaderTypeLabel(account);
-  const credentialLabel = account.credentialSource === 'auth-file'
-    ? 'Database OAuth'
-    : account.provider === 'codex'
-      ? 'Codex Key'
-      : 'API Key';
-  const routeLabel = account.proxyUrl ? 'Proxy Node' : 'Default Route';
-  const balanceLabel = account.credentialSource === 'auth-file' ? 'Provider' : 'Configured';
-  const description = account.credentialSource === 'auth-file'
-    ? 'Database-managed OAuth account · config preview/apply · provider managed quota'
-    : account.provider === 'codex'
-      ? 'Codex API key account · prefix · short-message verification · quota/billing scripts'
-      : 'API Key provider · custom headers · model mapping · short-message verification';
 
   return (
-    <div data-account-detail-header="quiet" className={accountDetailHeaderShellClass}>
-      <div data-account-detail-header-account-type="true" className={accountDetailHeaderRailClass}>
-        <div className={accountDetailHeaderTypeClass}>
-          <span className="block whitespace-normal break-words [overflow-wrap:break-word]">{accountTypeLabel}</span>
-        </div>
-      </div>
-
-      <div className="grid min-w-0 content-center gap-1 px-2.5 py-2">
-        <div data-account-detail-header-chips="true" className="flex min-w-0 items-center gap-1.5 overflow-hidden">
-          <AccountDetailPill className={accountDetailHeaderPrimaryPillClass}>类型: {account.credentialSource === 'auth-file' ? 'Codex Auth-file / OAuth' : account.provider === 'codex' ? 'Codex API Key' : 'OpenAI-compatible'}</AccountDetailPill>
-          <AccountDetailPill className={accountDetailHeaderPillClass}>凭据: {credentialLabel}</AccountDetailPill>
-          <AccountDetailPill className={accountDetailHeaderPillClass}>验证: Short Message</AccountDetailPill>
-          <AccountDetailPill className={accountDetailHeaderPillClass}>路由: {routeLabel}</AccountDetailPill>
-          <AccountDetailPill className={accountDetailHeaderPillClass}>余额/额度: {balanceLabel}</AccountDetailPill>
-        </div>
-        <div data-account-detail-header-description="true" className={accountDetailHeaderDescriptionClass}>
-          <span className="truncate">{description}</span>
-        </div>
+    <div data-account-detail-header="quiet">
+      <div className="text-sm font-semibold text-[var(--gt-ink-primary)]">
+        {accountTypeLabel}
       </div>
     </div>
   );
@@ -442,14 +416,22 @@ export function AccountRuntimeRouteSection({
             />
           </AccountDetailStatGrid>
           <div data-account-runtime-route-evidence="detail">
-            <AccountDetailEvidenceGrid rows={detailRows} />
+            <AccountDetailEvidenceGrid>
+              {detailRows.map((row, i) => (
+                <AccountDetailEvidenceRow key={i} label={row.label} value={row.value} />
+              ))}
+            </AccountDetailEvidenceGrid>
           </div>
           {repairRows.length > 0 ? (
             <div data-account-runtime-route-repair="diagnostics" className="grid gap-2">
               <div className={accountDetailRuntimeMetaLabelClass}>
                 Bounded Reconcile
               </div>
-              <AccountDetailEvidenceGrid rows={repairRows} />
+              <AccountDetailEvidenceGrid>
+                {repairRows.map((row, i) => (
+                  <AccountDetailEvidenceRow key={i} label={row.label} value={row.value} />
+                ))}
+              </AccountDetailEvidenceGrid>
             </div>
           ) : null}
           {routeDecisions.length > 0 ? (
@@ -467,7 +449,7 @@ export function AccountRuntimeRouteSection({
                     <div className={accountDetailRuntimeDecisionTitleClass}>
                       {decision.title}
                     </div>
-                    <AccountDetailPill tone={decision.unresolved ? 'danger' : 'neutral'} className="!min-h-0 !py-0.5 !text-[length:var(--font-size-ui-2xs)]">
+                    <AccountDetailPill tone={decision.unresolved ? 'danger' : 'neutral'} className="!min-h-0 !py-0.5 !text-[10px]">
                       {decision.matchedAs === 'selected' ? '命中' : '候选'}
                     </AccountDetailPill>
                   </div>
@@ -633,85 +615,35 @@ function RuntimeRouteResilienceEvidenceMarker({
         </div>
         <AccountDetailPill
           tone={evidence.matchedRouteBlocking ? 'danger' : 'neutral'}
-          className="!min-h-0 !py-0.5 !text-[length:var(--font-size-ui-2xs)]"
+          className="!min-h-0 !py-0.5 !text-[10px]"
         >
           {evidence.digestDisplayMode === 'reference'
             ? evidence.matchedRouteBlocking ? 'REF BLOCKING' : 'REF OBSERVE'
             : evidence.matchedRouteBlocking ? 'BLOCKING' : 'OBSERVE'}
         </AccountDetailPill>
       </div>
-      <AccountDetailEvidenceGrid
-        rows={evidence.digestDisplayMode === 'reference'
-          ? [
-              {
-                label: 'Stable Target ID',
-                value: evidence.id,
-                title: evidence.id,
-              },
-              {
-                label: 'This Decision',
-                value: formatRouteResilienceCurrentDecisionLabel(evidence),
-                title: buildRouteResilienceCurrentDecisionTitle(evidence),
-              },
-              {
-                label: 'Digest Coverage',
-                value: formatRouteResilienceCoverageLabel(evidence),
-                title: buildRouteResilienceCoverageTitle(evidence),
-              },
-              {
-                label: 'Digest Above',
-                value: formatRouteResilienceReferenceLabel(evidence),
-                title: buildRouteResilienceLatestEvidenceTitle(evidence),
-              },
-            ]
-          : [
-              {
-                label: 'Stable Target ID',
-                value: evidence.id,
-                title: evidence.id,
-              },
-              {
-                label: 'Latest Evidence',
-                value: formatRouteResilienceLatestEvidenceLabel(evidence),
-                title: buildRouteResilienceLatestEvidenceTitle(evidence),
-              },
-              {
-                label: 'This Decision',
-                value: formatRouteResilienceCurrentDecisionLabel(evidence),
-                title: buildRouteResilienceCurrentDecisionTitle(evidence),
-              },
-              {
-                label: 'First Seen',
-                value: formatRouteResilienceObservedAt(evidence.firstObservedAt),
-                title: buildRouteResilienceObservedTitle(evidence.firstObservedAt, evidence.firstObservedDecisionID),
-              },
-              {
-                label: 'Last Seen',
-                value: formatRouteResilienceObservedAt(evidence.lastObservedAt),
-                title: buildRouteResilienceObservedTitle(evidence.lastObservedAt, evidence.lastObservedDecisionID),
-              },
-              {
-                label: 'Relevant Decisions',
-                value: formatRouteResilienceRelevantDecisionsLabel(evidence),
-                title: buildRouteResilienceRelevantDecisionsTitle(evidence),
-              },
-              {
-                label: 'Digest Coverage',
-                value: formatRouteResilienceCoverageLabel(evidence),
-                title: buildRouteResilienceCoverageTitle(evidence),
-              },
-              {
-                label: 'Reason Summary',
-                value: evidence.reasonSummary || '—',
-                title: evidence.reasonSummary || '—',
-              },
-              {
-                label: 'Source / Scope / Model',
-                value: sourceScopeModelLabel,
-                title: [evidence.source, evidence.scope, evidence.model].filter(Boolean).join(' / ') || sourceScopeModelLabel,
-              },
-            ]}
-      />
+      <AccountDetailEvidenceGrid>
+        {evidence.digestDisplayMode === 'reference' ? (
+          <>
+            <AccountDetailEvidenceRow label="Stable Target ID" value={evidence.id} />
+            <AccountDetailEvidenceRow label="This Decision" value={formatRouteResilienceCurrentDecisionLabel(evidence)} />
+            <AccountDetailEvidenceRow label="Digest Coverage" value={formatRouteResilienceCoverageLabel(evidence)} />
+            <AccountDetailEvidenceRow label="Digest Above" value={formatRouteResilienceReferenceLabel(evidence)} />
+          </>
+        ) : (
+          <>
+            <AccountDetailEvidenceRow label="Stable Target ID" value={evidence.id} />
+            <AccountDetailEvidenceRow label="Latest Evidence" value={formatRouteResilienceLatestEvidenceLabel(evidence)} />
+            <AccountDetailEvidenceRow label="This Decision" value={formatRouteResilienceCurrentDecisionLabel(evidence)} />
+            <AccountDetailEvidenceRow label="First Seen" value={formatRouteResilienceObservedAt(evidence.firstObservedAt)} />
+            <AccountDetailEvidenceRow label="Last Seen" value={formatRouteResilienceObservedAt(evidence.lastObservedAt)} />
+            <AccountDetailEvidenceRow label="Relevant Decisions" value={formatRouteResilienceRelevantDecisionsLabel(evidence)} />
+            <AccountDetailEvidenceRow label="Digest Coverage" value={formatRouteResilienceCoverageLabel(evidence)} />
+            <AccountDetailEvidenceRow label="Reason Summary" value={evidence.reasonSummary || '—'} />
+            <AccountDetailEvidenceRow label="Source / Scope / Model" value={sourceScopeModelLabel} />
+          </>
+        )}
+      </AccountDetailEvidenceGrid>
       {evidence.matchedReasonDetails?.length ? (
         <div data-account-runtime-route-reason-details="current-decision" className="grid gap-1">
           <div className={accountDetailRuntimeMetaSmallClass}>
@@ -726,12 +658,12 @@ function RuntimeRouteResilienceEvidenceMarker({
               >
                 <AccountDetailPill
                   tone={reasonDetail.routeBlocking ? 'danger' : 'neutral'}
-                  className="!min-h-0 w-fit !py-0.5 !text-[length:var(--font-size-ui-2xs)]"
+                  className="!min-h-0 w-fit !py-0.5 !text-[10px]"
                 >
                   {reasonDetail.routeBlocking ? 'BLOCKING' : 'OBSERVE'}
                 </AccountDetailPill>
                 <div
-                  className="min-w-0 truncate text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-primary)]"
+                  className="min-w-0 truncate text-xs font-semibold text-[var(--gt-ink-primary)]"
                   title={formatRouteResilienceReasonDetailTitle(reasonDetail.reason, reasonDetail.routeBlocking)}
                 >
                   {reasonDetail.reason || 'reason:unknown'}
@@ -864,9 +796,6 @@ export function AccountCredentialVerifySection({
       <div data-account-credential-verify-layout="quiet-split" className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div data-account-credential-left-pane="credential-connection" className="grid content-start gap-4 lg:pr-4">
           <section data-account-credential-list-item="credential" className="grid content-start gap-3">
-            <div className={accountDetailCredentialSectionTitleClass}>
-              账号凭据
-            </div>
             <div data-account-credential-fields="balanced-grid" className="grid gap-3">
               <CredentialInputField
                 label="账号名称"
@@ -933,18 +862,8 @@ function CapabilityEndpointsPanel({
 }) {
   return (
     <section data-account-credential-list-item="capability-endpoints" className="grid gap-3">
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
-        <div>
-          <div className={accountDetailCredentialMetaLabelClass}>
-            ENDPOINTS
-          </div>
-          <div className={accountDetailCredentialSubheadingClass}>
-            协议端点
-          </div>
-          <p className="mt-2 max-w-[42rem] text-[length:var(--font-size-ui-2xs)] font-medium leading-relaxed text-[var(--text-muted)]">
-            留空使用默认基础 URL。
-          </p>
-        </div>
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <span className="text-xs font-medium text-[var(--gt-ink-muted)]">端点配置</span>
         <AccountDetailPill className={accountDetailCredentialPillClass}>
           {CAPABILITY_ENDPOINTS.length} 端
         </AccountDetailPill>
@@ -1057,27 +976,19 @@ function CredentialProxyRoutePanel({
     );
   }
 
+  const proxyUrlOptions = ['', ...proxyOptions.map((item) => item.proxyUrl)];
+
   return (
     <section data-account-credential-list-item="proxy-route" className="grid gap-3 pt-4">
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-        <div>
-          <div className={accountDetailCredentialMetaLabelClass}>
-            ROUTE
-          </div>
-          <div className={accountDetailCredentialSubheadingClass}>
-            {t('accounts.proxy_route_title')}
-          </div>
-        </div>
-        <AccountDetailPill className={accountDetailCredentialPillClass}>
-          {summary.label}
-        </AccountDetailPill>
-      </div>
-
-      <AccountProxyRouteEditor
-        draft={draft}
-        proxyOptions={proxyOptions}
-        hasDetachedCurrentURL={hasDetachedCurrentURL}
-        onProxySelect={selectProxy}
+      <CredentialInputField
+        label={t('accounts.proxy_route_title')}
+        value={draft.proxyUrl}
+        placeholder="留空使用直连"
+        options={proxyUrlOptions}
+        onChange={(value) => {
+          setDraft((prev) => ({ ...prev, proxyUrl: value, mode: 'custom' }));
+          onProxyUrlChange?.(value);
+        }}
       />
     </section>
   );
@@ -1134,6 +1045,7 @@ function CredentialInputField({
   onCopy,
   secret: _secret,
   help,
+  options,
   className = 'md:col-span-12',
 }: {
   label: string;
@@ -1143,39 +1055,51 @@ function CredentialInputField({
   onCopy?: () => void;
   secret?: boolean;
   help?: string;
+  options?: string[];
   className?: string;
 }) {
   return (
     <label data-account-credential-field="plaintext" className={`grid min-w-0 gap-1.5 ${className}`}>
-      <span
-        data-account-credential-field-label="above"
-        className={accountDetailCredentialFieldLabelClass}
-      >
-        {label}
-      </span>
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex items-baseline gap-2">
+        <span
+          data-account-credential-field-label="above"
+          className={accountDetailCredentialFieldLabelClass}
+        >
+          {label}
+        </span>
+        {help && (
+          <span className={accountDetailCredentialHelpClass}>
+            {help}
+          </span>
+        )}
+      </div>
+      {options && options.length > 0 ? (
+        <div className="relative inline-block w-full max-w-sm">
+          <select
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            className={`${accountDetailCredentialInputClass} w-full appearance-none pr-8`}
+          >
+            <option value="">{placeholder || '请选择...'}</option>
+            {options.filter(Boolean).map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[var(--gt-ink-muted)]">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M3 5l3 3 3-3" />
+            </svg>
+          </div>
+        </div>
+      ) : (
         <input
           type="text"
           value={value}
-          placeholder={placeholder}
+          placeholder={placeholder || '请输入...'}
           onChange={(event) => onChange(event.target.value)}
-          className={`${accountDetailCredentialInputClass} flex-1`}
+          className={`${accountDetailCredentialInputClass} w-full max-w-sm`}
         />
-        {onCopy ? (
-          <button
-            type="button"
-            onClick={onCopy}
-            className={accountDetailCredentialButtonClass}
-          >
-            复制
-          </button>
-        ) : null}
-      </div>
-      {help ? (
-        <span className={accountDetailCredentialHelpClass}>
-          {help}
-        </span>
-      ) : null}
+      )}
     </label>
   );
 }
@@ -1228,7 +1152,7 @@ function VerifyConnectionPanel({
         连通验证
       </div>
       {vs.lastVerifiedAt ? (
-        <div className="text-[length:var(--font-size-ui-2xs)] font-medium tracking-normal text-[var(--text-muted)]">
+        <div className="text-[10px] font-medium tracking-normal text-[var(--gt-ink-muted)]">
           上次发送：{new Date(vs.lastVerifiedAt).toLocaleString()}
         </div>
       ) : null}
@@ -1584,7 +1508,7 @@ export function AccountQuotaSection({
               {visibleQuotaDisplay ? <QuotaBars quotaDisplay={visibleQuotaDisplay} t={t} showDivider={false} /> : null}
             </div>
           ) : (
-            <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)]">
+            <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-xs">
               {readOnlyScripts
                 ? '暂无额度数据'
                 : hasQuotaScript ? '暂无额度数据，可测试额度脚本确认接口返回' : '暂无额度脚本，添加后可测试并展示额度'}
@@ -1616,7 +1540,7 @@ export function AccountQuotaSection({
             <div className={quotaScriptCardClassName}>
               <div
                 data-account-quota-script-preview="two-line"
-                className="line-clamp-2 min-h-[2.75rem] overflow-hidden break-all font-mono text-[length:var(--font-size-ui-xs)] leading-[1.35rem] text-[var(--text-muted)]"
+                className="line-clamp-2 min-h-[2.75rem] overflow-hidden break-all font-sans text-xs leading-[1.35rem] text-[var(--gt-ink-muted)]"
                 title={draft.quotaCurl || undefined}
               >
                 {draft.quotaCurl || '未配置额度脚本'}
@@ -1939,7 +1863,7 @@ export function AccountBillingSection({
           ))}
         </div>
       ) : (
-        <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)]">
+        <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-xs">
           {readOnlyScripts
             ? '暂无余额数据'
             : hasBillingScript ? '暂无余额数据，可测试余额脚本确认接口返回' : '暂无余额脚本，添加后可测试并展示余额'}
@@ -1948,7 +1872,7 @@ export function AccountBillingSection({
 
       {hasBillingScript ? (
         <div className={accountDetailResourceCompactCardClass}>
-          <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.billingCurl || undefined}>
+          <div className="truncate font-sans text-xs text-[var(--gt-ink-muted)]" title={draft.billingCurl || undefined}>
             {draft.billingCurl || '未配置余额脚本'}
           </div>
         </div>

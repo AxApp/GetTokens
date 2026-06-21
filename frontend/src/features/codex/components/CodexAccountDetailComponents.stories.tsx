@@ -141,7 +141,7 @@ function CodexAccountDetailDesktopDraft() {
           />
 
           <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.28fr)_minmax(22rem,0.72fr)]">
-            <AccountDetailModuleStack layout="cards" cardColumns={1} className="content-start">
+            <AccountDetailModuleStack layout="cards" className="content-start">
               <AccountCredentialVerifySection
                 draft={configDraft}
                 setDraft={setConfigDraft}
@@ -173,7 +173,7 @@ function CodexAccountDetailDesktopDraft() {
               </div>
             </AccountDetailModuleStack>
 
-            <AccountDetailModuleStack layout="cards" cardColumns={1} className="content-start">
+            <AccountDetailModuleStack layout="cards" className="content-start">
               <AccountProxyRouteSection
                 proxyUrl={configDraft.proxyUrl}
                 onProxyUrlChange={(url) => setConfigDraft((prev) => ({ ...prev, proxyUrl: url }))}

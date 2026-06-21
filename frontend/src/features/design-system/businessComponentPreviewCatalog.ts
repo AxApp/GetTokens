@@ -14,6 +14,13 @@ export const businessDesignSystemPreviewCatalog = [
     sourcePath: 'frontend/src/features/session-management/components/SessionPluginConsolePanel.tsx',
     states: ['ready', 'running', 'done'],
   },
+  {
+    id: 'account-detail-primitives',
+    title: '账号详情原语',
+    description: 'AccountDetailPrimitives 组件预览：Section、StatGrid、Pill、Notice、EmptyState、EvidenceGrid。',
+    sourcePath: 'frontend/src/features/accounts/components/AccountDetailPrimitives.tsx',
+    states: ['default', 'with-actions', 'empty'],
+  },
 ] as const satisfies readonly BusinessDesignSystemPreviewCatalogEntry[];
 
 export function getBusinessDesignSystemPreviewStats(

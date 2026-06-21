@@ -32,7 +32,7 @@ const sizeClassNames: Record<ModalFrameSize, string> = {
   md: 'max-w-[min(42rem,calc(100vw-1.5rem))]',
   lg: 'max-w-[min(56rem,calc(100vw-1.5rem))]',
   xl: 'max-w-[min(64rem,calc(100vw-1.5rem))]',
-  detail: 'max-w-none',
+  detail: 'max-w-[min(64rem,calc(100vw-3rem))]',
 };
 
 const panelMaxHeightClassNames: Record<ModalFramePosition, string> = {
