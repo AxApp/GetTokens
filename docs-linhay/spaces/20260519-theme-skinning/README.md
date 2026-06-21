@@ -99,8 +99,8 @@ And 截图命名遵守项目规范。
 - 当前类型定义：`frontend/src/types.ts`
 
 ## 当前状态
-- 状态：Settings AntD adapter spike
-- 最近更新：2026-06-20
+- 状态：单运行态样式收敛已提交，提交后 test:unit 阻塞已收敛
+- 最近更新：2026-06-21
 - 已确认方向：不默认全站接入完整预设 UI 框架；允许 AntD 作为受控 adapter 先在 Settings 页试点，仍由 `ThemeMode + ThemePreset + Semantic Tokens + Component Skin Contracts` 驱动。
 - 首套非默认风格：`Parchment Trust Console`。
 - 设计规范：Parchment 迁移先定义组件 anatomy 和状态矩阵，再迁移页面；当前 Settings / Design System 首版视觉属于过渡稿，后续需按组件规范重做。
@@ -138,4 +138,5 @@ And 截图命名遵守项目规范。
 - `./scripts/wails-cli.sh build` 应能生成 dev build 产物；本地未签名产物不作为分发签名验收。
 - `npm run typecheck` 已恢复通过；账号详情 props 类型漂移已作为本轮阻塞处理修正。
 - `go test .` 已恢复通过；`build/darwin/Info.plist` 已补齐，prod/dev plist 均固定注册 `gt` scheme 且不注册 `gt-dev`。
-- `npm run test:unit` 仍有既有 Sidebar / Account Detail / Design System 源码契约漂移红灯，不归因于本轮颜色一致性收敛；后续应按账号详情/设计系统契约独立处理。
+- `npm run test:unit` 提交后已恢复通过（983 pass）：Sidebar 字体 token、账号详情 section-nav 契约、Design System manifest、rateLimit 注入测试和 legacy typography residue 已同步收敛。
+- 沉淀判断：提交后阻塞处理属于既有前端设计契约门禁的同步，不新增 skill、不升级 `AGENTS.md`。

@@ -194,7 +194,7 @@ export default function Sidebar({
                 style={{
                   color: isActive ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
                   backgroundColor: isActive ? 'var(--gt-surface-muted)' : 'transparent',
-                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+                  fontFamily: 'var(--gt-font-family-sans)',
                   fontSize: '13px',
                   lineHeight: '20px',
                   fontWeight: isActive ? 500 : 400,
@@ -236,7 +236,7 @@ export default function Sidebar({
                       style={{
                         color: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
                         backgroundColor: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'var(--gt-surface-muted)' : 'transparent',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+                        fontFamily: 'var(--gt-font-family-sans)',
                         fontSize: '13px',
                         lineHeight: '20px',
                         fontWeight: activePage === 'codex' && activeCodexWorkspace === ws.id ? 500 : 400,
@@ -253,7 +253,7 @@ export default function Sidebar({
                       style={{
                         color: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
                         backgroundColor: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'var(--gt-surface-muted)' : 'transparent',
-                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+                        fontFamily: 'var(--gt-font-family-sans)',
                         fontSize: '13px',
                         lineHeight: '20px',
                         fontWeight: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 500 : 400,

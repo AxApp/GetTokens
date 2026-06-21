@@ -82,7 +82,7 @@ export function AccountDetailStatCell({
 }) {
   return (
     <div className={`min-w-0 border-b border-r border-[var(--gt-border-subtle)] px-4 py-3 last:border-r-0 ${className}`}>
-      <div className="truncate text-xs font-medium uppercase tracking-wider text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="truncate text-xs font-medium tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
       <div className="mt-1 truncate font-semibold tabular-nums text-[var(--gt-ink-primary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
       {meta && <div className="mt-1 truncate text-xs text-[var(--gt-ink-muted)]">{meta}</div>}
     </div>
@@ -180,7 +180,7 @@ export function AccountDetailEvidenceRow({
 }) {
   return (
     <div className={`grid gap-2 border-b border-[var(--gt-border-subtle)] px-4 py-3 last:border-b-0 md:grid-cols-[10rem_minmax(0,1fr)] md:items-start ${className}`}>
-      <div className="truncate text-xs font-medium uppercase tracking-wider text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="truncate text-xs font-medium tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
       <div className="min-w-0 break-all text-[var(--gt-ink-primary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
     </div>
   );

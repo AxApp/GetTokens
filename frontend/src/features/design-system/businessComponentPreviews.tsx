@@ -213,7 +213,7 @@ function AccountDetailPrimitivesPreview() {
         <AccountDetailStatGrid columns={3}>
           <AccountDetailStatCell label="Routeable" value="YES" />
           <AccountDetailStatCell label="Models" value="12" meta="synced" />
-          <AccountDetailStatCell label="Requestable" value="WAIT" meta="sidecar candidate" />
+          <AccountDetailStatCell label="Requestable" value="WAIT" meta="route candidate" />
         </AccountDetailStatGrid>
         <AccountDetailEvidenceGrid>
           <AccountDetailEvidenceRow label="runtime_status" value="ROUTEABLE" />

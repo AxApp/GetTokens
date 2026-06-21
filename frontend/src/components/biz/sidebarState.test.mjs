@@ -60,11 +60,12 @@ test('submenu motion state matches placement and visibility', () => {
   assert.equal(getSidebarSubmenuMotionState('bottom', false), 'closed-bottom');
 });
 
-test('sidebar typography keeps the brand and nav labels readable', async () => {
+test('sidebar typography keeps nav labels readable in the compact workspace shell', async () => {
   const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /text-2xl font-bold/);
-  assert.match(source, /text-sm font-medium/);
+  assert.match(source, /fontSize: '13px'/);
+  assert.match(source, /lineHeight: '20px'/);
+  assert.match(source, /fontWeight: isActive \? 500 : 400/);
   assert.match(source, /--gt-font-family-sans/);
   assert.match(source, /--gt-ink-primary/);
 });
@@ -73,7 +74,7 @@ test('sidebar section clicks still select the section page before opening submen
   const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /if \(isSectionId\(item\.id\)\) \{\n\s*setActivePage\(item\.id as AppPage\)/);
-  assert.match(source, /setActivePage\('accounts'\)/);
+  assert.match(source, /function handleSubmenuItemClick\(section: 'codex' \| 'claude', workspaceId: string\) \{\n\s*setActivePage\(section\)/);
   assert.doesNotMatch(source, /展开时：只 toggle 子菜单，不切换页面/);
 });
 

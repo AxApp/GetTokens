@@ -515,6 +515,10 @@ test('account detail modules expose design-system anatomy and runtime states', a
     new URL('../../features/accounts/components/AccountDetailPrimitives.tsx', import.meta.url),
     'utf8',
   );
+  const layoutSource = await readFile(
+    new URL('../../features/accounts/components/AccountDetailLayout.tsx', import.meta.url),
+    'utf8',
+  );
   const modalStorySource = await readFile(
     new URL('../../features/accounts/components/AccountModalComponents.stories.tsx', import.meta.url),
     'utf8',
@@ -531,39 +535,53 @@ test('account detail modules expose design-system anatomy and runtime states', a
     new URL('../../features/accounts/components/AccountDetailSections.tsx', import.meta.url),
     'utf8',
   );
+  const authFileSource = await readFile(
+    new URL('../../features/accounts/components/AccountDetailAuthFileSection.tsx', import.meta.url),
+    'utf8',
+  );
+  const modelsSource = await readFile(
+    new URL('../../features/accounts/components/AccountDetailModelsSection.tsx', import.meta.url),
+    'utf8',
+  );
   const sectionsEntry = designSystemComponentManifest.find((entry) => entry.id === 'accounts-account-detail-sections');
+  const layoutEntry = designSystemComponentManifest.find((entry) => entry.id === 'accounts-account-detail-layout');
+  const authFileEntry = designSystemComponentManifest.find((entry) => entry.id === 'accounts-account-detail-auth-file-section');
+  const modelsEntry = designSystemComponentManifest.find((entry) => entry.id === 'accounts-account-detail-models-section');
 
   assert.ok(sectionsEntry, 'account detail sections must be registered in the design system manifest');
+  assert.ok(layoutEntry, 'account detail layout must be registered in the design system manifest');
+  assert.ok(authFileEntry, 'account detail auth-file section must be registered in the design system manifest');
+  assert.ok(modelsEntry, 'account detail models section must be registered in the design system manifest');
   assert.match(primitivesSource, /data-design-system-component="true"/);
   assert.match(primitivesSource, /data-design-system-component-name=\{componentName\}/);
-  assert.match(primitivesSource, /AccountDetailSectionDensity/);
-  assert.match(primitivesSource, /AccountDetailModuleStackLayout/);
-  assert.match(primitivesSource, /AccountDetailSectionHeader/);
-  assert.match(primitivesSource, /data-account-detail-section-header="standard"/);
-  assert.match(primitivesSource, /data-account-detail-section-body="compact"/);
+  assert.match(primitivesSource, /AccountDetailSectionSpan/);
+  assert.match(primitivesSource, /AccountDetailStatGrid/);
+  assert.match(primitivesSource, /AccountDetailEvidenceGrid/);
   assert.doesNotMatch(primitivesSource, /<div className="min-w-0 space-y-4">/);
-  assert.match(primitivesSource, /AccountDetailOverviewGrid/);
-  assert.match(primitivesSource, /data-account-detail-overview-grid="runtime-evidence"/);
-  assert.match(primitivesSource, /data-account-detail-overview-equal-height/);
-  assert.match(primitivesSource, /data-account-detail-overview-slot="runtime"[^>]+h-full/);
-  assert.match(primitivesSource, /data-account-detail-overview-slot="evidence"[^>]+h-full/);
-  assert.match(primitivesSource, /data-account-detail-module-layout=\{layout\}/);
+  assert.match(layoutSource, /function SectionNav/);
+  assert.match(layoutSource, /aria-label="Account detail sections"/);
+  assert.match(layoutSource, /IntersectionObserver/);
+  assert.match(layoutSource, /data-account-detail-section/);
+  assert.match(authFileSource, /data-auth-file-config-management="quiet"/);
+  assert.match(modelsSource, /data-account-model-mapping-grid="source-route"/);
   assert.doesNotMatch(sectionsSource, /data-account-runtime-resource-grid="quota-balance"/);
   assert.doesNotMatch(modalStorySource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(modalStorySource, /AccountRuntimeSnapshotSection/);
   assert.match(modalStorySource, /layout="cards"/);
-  assert.match(unifiedDetailSource, /layout="bands"/);
+  assert.match(unifiedDetailSource, /<AccountDetailLayout sectionNavItems=\{sectionNavItems\}/);
   assert.doesNotMatch(unifiedDetailSource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(unifiedDetailSource, /AccountDetailOverviewGrid/);
   assert.match(codexDetailSource, /layout="cards"/);
   assert.doesNotMatch(sectionsSource, /componentName="AccountQuotaSection"[\s\S]{0,220}span="wide"/);
   assert.doesNotMatch(sectionsSource, /componentName="AccountBillingSection"[\s\S]{0,220}span="wide"/);
   assert.ok(!sectionsEntry.requiredStates?.includes('runtime-snapshot'));
-  assert.ok(sectionsEntry.requiredStates?.includes('module-layout'));
-  assert.ok(sectionsEntry.requiredStates?.includes('card-mode'));
+  assert.ok(layoutEntry.requiredStates?.includes('section-nav'));
+  assert.ok(layoutEntry.requiredStates?.includes('scroll-spy'));
+  assert.ok(authFileEntry.requiredStates?.includes('apply-boundary'));
+  assert.ok(modelsEntry.requiredStates?.includes('editable-mapping'));
   assert.ok(!sectionsEntry.requiredStates?.includes('runtime-evidence-overview'));
   assert.ok(!sectionsEntry.requiredStates?.includes('quota-balance-grid'));
-  assert.ok(sectionsEntry.requiredStates?.includes('quota-billing-side-by-side'));
+  assert.ok(!sectionsEntry.requiredStates?.includes('quota-billing-side-by-side'));
   assert.ok(sectionsEntry.requiredStates?.includes('standard-module-header'));
 }
 );
