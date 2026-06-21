@@ -148,14 +148,16 @@ test('status model catalog toggle writes config in both directions', async () =>
 
 test('status panels use the quiet workspace shell', async () => {
   const statusPanelSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
-  const actionSelectSource = await readFile(new URL('../../../components/ui/ActionSelect.tsx', import.meta.url), 'utf8');
   const snippetPanelSource = await readFile(new URL('../components/StatusSnippetPanel.tsx', import.meta.url), 'utf8');
 
   assert.match(statusPanelSource, /const statusPanelClass =/);
   assert.match(statusPanelSource, /const statusMutedPanelClass =/);
-  assert.match(statusPanelSource, /const statusPrimaryButtonClass =/);
   assert.match(statusPanelSource, /from 'antd'/);
+  assert.match(statusPanelSource, /<Button\b/);
+  assert.match(statusPanelSource, /<Input\b/);
+  assert.match(statusPanelSource, /<Select\b/);
   assert.match(statusPanelSource, /<Segmented\b/);
+  assert.match(statusPanelSource, /<Switch\b/);
   assert.match(statusPanelSource, /data-status-local-cli-panel="true"/);
   assert.match(statusPanelSource, /data-status-local-cli-target=\{activeTarget\}/);
   assert.match(statusPanelSource, /data-status-quota-evidence-section="true"/);
@@ -170,13 +172,16 @@ test('status panels use the quiet workspace shell', async () => {
   assert.doesNotMatch(statusPanelSource, /shadow-\[/);
   assert.doesNotMatch(statusPanelSource, /tracking-(wide|wider|widest|tight|tighter|tightest|normal|\[)/);
   assert.doesNotMatch(statusPanelSource, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
-  assert.match(actionSelectSource, /--gt-surface-raised/);
+  assert.doesNotMatch(statusPanelSource, /components\/ui\/ActionSelect|components\/ui\/ToggleSwitch/);
+  assert.doesNotMatch(statusPanelSource, /\{ FieldLabel, SelectField, TextInputField \}/);
+  assert.doesNotMatch(statusPanelSource, /<ActionSelect|<ToggleSwitch|<SelectField|<TextInputField/);
   assert.match(snippetPanelSource, /--gt-border-subtle/);
   assert.match(snippetPanelSource, /--gt-status-success/);
   assert.match(snippetPanelSource, /--gt-status-danger/);
   assert.match(snippetPanelSource, /--gt-ink-primary/);
   assert.match(snippetPanelSource, /--gt-ink-muted/);
-  assert.doesNotMatch(actionSelectSource, /btn-swiss/);
+  assert.match(snippetPanelSource, /<Button\b/);
+  assert.doesNotMatch(snippetPanelSource, /<button\b/);
   assert.doesNotMatch(snippetPanelSource, /btn-swiss/);
   assert.doesNotMatch(snippetPanelSource, /--color-status-/);
   assert.doesNotMatch(snippetPanelSource, /--text-primary|--text-muted/);
@@ -192,12 +197,18 @@ test('status local CLI apply panel uses the workbench plan layout', async () => 
   assert.match(statusPanelSource, /data-status-local-cli-plan-rail="true"/);
   assert.match(statusPanelSource, /data-status-local-cli-plan-status="true"/);
   assert.match(statusPanelSource, /statusLocalCliCapabilityRowClass/);
+  assert.match(statusPanelSource, /const fieldPairGridClass = 'grid gap-3'/);
+  assert.doesNotMatch(statusPanelSource, /const fieldPairGridClass = 'grid gap-3 md:grid-cols-2'/);
   assert.match(statusPanelSource, /status\.local_cli_target_label/);
   assert.match(statusPanelSource, /status\.local_cli_preflight_title/);
   assert.match(statusPanelSource, /status\.local_cli_apply_plan_title/);
   assert.match(statusPanelSource, /status\.local_cli_capability_websocket_title/);
   assert.match(statusPanelSource, /status\.local_cli_capability_model_catalog_title/);
   assert.doesNotMatch(statusPanelSource, /<div className="mb-2 flex w-full">\s*<SegmentedControl/);
+  assert.match(statusPanelSource, /<StatusActionSelect/);
+  assert.match(statusPanelSource, /<StatusSelectField/);
+  assert.match(statusPanelSource, /<StatusTextInputField/);
+  assert.match(statusPanelSource, /<Button\s+type="primary"/);
 
   assert.equal(zh.status.local_cli_target_label, '目标客户端');
   assert.equal(zh.status.local_cli_preflight_title, '运行前检查');

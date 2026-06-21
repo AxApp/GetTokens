@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Segmented } from 'antd';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { Button, Input, Segmented, Select, Space, Switch } from 'antd';
 import type { main } from '../../../../wailsjs/go/models';
-import ActionSelect, { type ActionSelectOption } from '../../../components/ui/ActionSelect';
-import FormField, { FieldLabel, SelectField, TextInputField } from '../../../components/ui/FormField';
+import FormField, { FieldLabel } from '../../../components/ui/FormField';
 import ModalFrame from '../../../components/ui/ModalFrame';
-import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { RelayModelEditorModal } from './RelayEditors';
 import StatusSnippetPanel from './StatusSnippetPanel';
 import type { StatusQuotaEvidenceSectionState } from '../model/quotaEvidenceSection';
@@ -35,12 +33,6 @@ const statusEyebrowClass = 'text-[length:var(--gt-font-size-xs)] font-semibold t
 const statusTitleClass = 'text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]';
 const statusMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const statusValueClass = 'font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
-const statusSecondaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const statusPrimaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
-const statusCompactButtonClass =
-  'inline-flex h-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const statusNoticeClass =
   'rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
 const statusToggleRowClass =
@@ -53,6 +45,147 @@ const statusLocalCliCapabilityRowClass =
   'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center';
 const statusLocalCliPlanStatusClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
+
+interface StatusSelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+interface StatusActionSelectProps {
+  title: string;
+  value: string;
+  options: readonly StatusSelectOption[];
+  onSelect: (value: string) => void;
+  onCreate: () => void;
+  onCopy?: () => void;
+  createDisabled?: boolean;
+  copyDisabled?: boolean;
+  selectDisabled?: boolean;
+  onDelete?: () => void;
+  deleteDisabled?: boolean;
+  copyLabel?: string;
+  copyTitle?: string;
+}
+
+function StatusActionSelect({
+  title,
+  value,
+  options,
+  onSelect,
+  onCreate,
+  onCopy,
+  createDisabled = false,
+  copyDisabled = false,
+  selectDisabled = false,
+  onDelete,
+  deleteDisabled = false,
+  copyLabel = 'Copy',
+  copyTitle,
+}: StatusActionSelectProps) {
+  return (
+    <FormField title={title} as="div">
+      <Space.Compact block>
+        <Select
+          size="middle"
+          value={value}
+          options={options.map((option) => ({ value: option.value, label: option.label, disabled: option.disabled }))}
+          onChange={onSelect}
+          disabled={selectDisabled}
+          popupMatchSelectWidth={false}
+          className="min-w-0 flex-1"
+        />
+        {onCopy ? (
+          <Button
+            type="default"
+            size="middle"
+            onClick={onCopy}
+            disabled={copyDisabled}
+            aria-label={copyTitle}
+            title={copyTitle}
+          >
+            {copyLabel}
+          </Button>
+        ) : null}
+        <Button
+          type="default"
+          size="middle"
+          onClick={onCreate}
+          disabled={createDisabled}
+          aria-label={`Create ${title}`}
+          title={`Create ${title}`}
+        >
+          +
+        </Button>
+        {onDelete ? (
+          <Button
+            type="default"
+            size="middle"
+            onClick={onDelete}
+            disabled={deleteDisabled}
+            aria-label={`Delete ${title}`}
+            title={`Delete ${title}`}
+          >
+            ×
+          </Button>
+        ) : null}
+      </Space.Compact>
+    </FormField>
+  );
+}
+
+function StatusSelectField({
+  title,
+  value,
+  options,
+  onChange,
+}: {
+  title: string;
+  value: string;
+  options: readonly StatusSelectOption[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <FormField title={title} as="div">
+      <Select
+        size="middle"
+        value={value}
+        options={options.map((option) => ({ value: option.value, label: option.label, disabled: option.disabled }))}
+        onChange={onChange}
+        className="w-full"
+      />
+    </FormField>
+  );
+}
+
+function StatusTextInputField({
+  title,
+  value,
+  onChange,
+  inputMode,
+  placeholder,
+  readOnly,
+}: {
+  title: string;
+  value: string;
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+  inputMode?: 'numeric';
+  placeholder?: string;
+  readOnly?: boolean;
+}) {
+  return (
+    <FormField title={title} as="div">
+      <Input
+        size="middle"
+        value={value}
+        onChange={onChange}
+        inputMode={inputMode}
+        placeholder={placeholder}
+        readOnly={readOnly}
+      />
+    </FormField>
+  );
+}
 
 export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEvidenceSectionState }) {
   if (state.items.length === 0 && !state.notice) {
@@ -336,7 +469,7 @@ export function StatusApplyLocalSection({
   const [modelEditorTarget, setModelEditorTarget] = useState<ModelEditorTarget | null>(null);
   const [modelEditor, setModelEditor] = useState<RelayModelEditorState | null>(null);
   const [modelCatalogPreviewOpen, setModelCatalogPreviewOpen] = useState(false);
-  const fieldPairGridClass = 'grid gap-3 md:grid-cols-2';
+  const fieldPairGridClass = 'grid gap-3';
   const [claudeDraft, setClaudeDraft] = useState<ClaudeCodeLocalApplyDraft>(() => ({
     relayKeyIndex: selectedKeyIndex,
     baseUrl: selectedEndpointBaseUrl,
@@ -687,7 +820,7 @@ export function StatusApplyLocalSection({
               />
 
               <div className={fieldPairGridClass}>
-                <ActionSelect
+                <StatusActionSelect
                   title={t('status.provider_title')}
                   value={selectedRelayProviderID}
                   options={relayProviderSelectOptions}
@@ -697,7 +830,7 @@ export function StatusApplyLocalSection({
                   deleteDisabled={relayProviderOptions.length <= 1}
                 />
 
-                <SelectField
+                <StatusSelectField
                   title={t('status.reasoning_effort_title')}
                   value={selectedRelayReasoningEffort}
                   options={relayReasoningEffortOptions.map((effort) => ({ value: effort, label: effort }))}
@@ -706,7 +839,7 @@ export function StatusApplyLocalSection({
               </div>
 
               <div className={fieldPairGridClass}>
-                <SelectField
+                <StatusSelectField
                   title={t('status.auth_strategy_title')}
                   value={codexLocalAuthStrategy}
                   options={codexLocalAuthStrategyOptions}
@@ -734,7 +867,7 @@ export function StatusApplyLocalSection({
                   onCreate={() => openModelEditor({ target: 'codex' }, selectedRelayModel)}
                 />
 
-                <TextInputField title={t('status.local_cli_wire_api')} value="responses" readOnly />
+                <StatusTextInputField title={t('status.local_cli_wire_api')} value="responses" readOnly />
               </div>
 
               {selectedRelayProvider.id !== 'openai' ? (
@@ -757,11 +890,9 @@ export function StatusApplyLocalSection({
                     ) : null}
                   </div>
                   <div className="flex justify-end">
-                    <ToggleSwitch
-                      label="supports_websockets"
+                    <Switch
                       checked={supportsWebsockets}
                       disabled={isApplyingToLocal}
-                      className="h-9 w-16"
                       onChange={onToggleSupportsWebsockets}
                     />
                   </div>
@@ -783,23 +914,22 @@ export function StatusApplyLocalSection({
                       ? t('status.local_cli_capability_model_catalog_on')
                       : t('status.local_cli_capability_model_catalog_off')}
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    type="link"
+                    size="small"
                     aria-label="preview sync_model_catalog"
-                    className="mt-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] underline-offset-4 hover:underline active:scale-95"
+                    className="!mt-2 !h-auto !p-0 !text-[length:var(--gt-font-size-xs)] !font-semibold"
                     onClick={() => setModelCatalogPreviewOpen(true)}
                   >
                     {t('status.local_cli_model_catalog_preview')}
-                  </button>
+                  </Button>
                 </div>
                 <div className="flex justify-end">
-                  <ToggleSwitch
-                    label="sync_model_catalog"
-                    checked={syncCodexModelCatalog}
-                    disabled={isApplyingToLocal || isDisablingModelCatalog}
-                    className="h-9 w-16"
-                    onChange={onChangeSyncCodexModelCatalog}
-                  />
+                    <Switch
+                      checked={syncCodexModelCatalog}
+                      disabled={isApplyingToLocal || isDisablingModelCatalog}
+                      onChange={onChangeSyncCodexModelCatalog}
+                    />
                 </div>
               </div>
 
@@ -838,29 +968,29 @@ export function StatusApplyLocalSection({
                 {activeTarget === 'codex' && codexLocalApplyState.recoveryAction ? (
                   <div className="mt-3">
                     {codexLocalApplyState.recoveryAction === 'create_relay_key' ? (
-                      <button type="button" className={statusSecondaryButtonClass} onClick={onOpenCreateRelayKeyEditor}>
+                      <Button type="default" size="small" onClick={onOpenCreateRelayKeyEditor}>
                         {t('status.codex_local_recovery_create_key')}
-                      </button>
+                      </Button>
                     ) : codexLocalApplyState.recoveryAction === 'switch_auth_to_apikey' ? (
-                      <button
-                        type="button"
-                        className={statusSecondaryButtonClass}
+                      <Button
+                        type="default"
+                        size="small"
                         onClick={() => onSelectCodexLocalAuthStrategy('replace_auth_with_apikey')}
                       >
                         {t('status.codex_local_recovery_use_apikey')}
-                      </button>
+                      </Button>
                     ) : codexLocalApplyState.recoveryAction === 'switch_to_custom_provider' && codexLocalApplyState.nextProviderID ? (
-                      <button
-                        type="button"
-                        className={statusSecondaryButtonClass}
+                      <Button
+                        type="default"
+                        size="small"
                         onClick={() => onSelectRelayProviderID(codexLocalApplyState.nextProviderID || '')}
                       >
                         {t('status.codex_local_recovery_switch_provider')} {codexLocalRecoveryProvider?.name || codexLocalApplyState.nextProviderID}
-                      </button>
+                      </Button>
                     ) : codexLocalApplyState.recoveryAction === 'create_provider' ? (
-                      <button type="button" className={statusSecondaryButtonClass} onClick={onOpenCreateRelayProviderEditor}>
+                      <Button type="default" size="small" onClick={onOpenCreateRelayProviderEditor}>
                         {t('status.codex_local_recovery_create_provider')}
-                      </button>
+                      </Button>
                     ) : null}
                   </div>
                 ) : null}
@@ -869,15 +999,16 @@ export function StatusApplyLocalSection({
                 title={t('status.codex_local_diff')}
                 content={codexDiff}
                 onCopy={() => onCopyText(codexDiff, t('status.codex_local_diff_copied'))}
+                copyLabel={t('common.copy')}
                 headerAction={
-                  <button
-                    type="button"
+                  <Button
+                    type="primary"
+                    size="small"
                     onClick={onApplyRelayConfigToLocal}
                     disabled={!codexLocalApplyState.canApply}
-                    className={statusPrimaryButtonClass}
                   >
                     {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local_codex')}
-                  </button>
+                  </Button>
                 }
                 preClassName="max-h-[32rem]"
               />
@@ -986,14 +1117,14 @@ export function StatusApplyLocalSection({
               </div>
 
               <div className={fieldPairGridClass}>
-                <TextInputField
+                <StatusTextInputField
                   title={t('status.claude_max_output_tokens')}
                   value={claudeDraft.maxOutputTokens}
                   onChange={(event) => updateClaudeDraft({ maxOutputTokens: event.target.value })}
                   inputMode="numeric"
                   placeholder="6000"
                 />
-                <TextInputField
+                <StatusTextInputField
                   title={t('status.claude_api_timeout_ms')}
                   value={claudeDraft.apiTimeoutMs}
                   onChange={(event) => updateClaudeDraft({ apiTimeoutMs: event.target.value })}
@@ -1007,11 +1138,9 @@ export function StatusApplyLocalSection({
                   <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
                     {t('status.claude_disable_nonessential_traffic')}
                   </span>
-                  <ToggleSwitch
-                    label={t('status.claude_disable_nonessential_traffic')}
+                  <Switch
                     checked={claudeDraft.disableNonEssentialTraffic}
                     disabled={isApplyingClaude}
-                    className="h-8 w-14"
                     onChange={(checked) => updateClaudeDraft({ disableNonEssentialTraffic: checked })}
                   />
                 </div>
@@ -1019,11 +1148,9 @@ export function StatusApplyLocalSection({
                   <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
                     {t('status.claude_code_attribution_header')}
                   </span>
-                  <ToggleSwitch
-                    label={t('status.claude_code_attribution_header')}
+                  <Switch
                     checked={claudeDraft.claudeCodeAttributionHeader}
                     disabled={isApplyingClaude}
-                    className="h-8 w-14"
                     onChange={(checked) => updateClaudeDraft({ claudeCodeAttributionHeader: checked })}
                   />
                 </div>
@@ -1058,15 +1185,16 @@ export function StatusApplyLocalSection({
                 title={t('status.claude_settings_diff')}
                 content={claudeDiff}
                 onCopy={() => onCopyText(claudeDiff, t('status.claude_settings_diff_copied'))}
+                copyLabel={t('common.copy')}
                 headerAction={
-                  <button
-                    type="button"
+                  <Button
+                    type="primary"
+                    size="small"
                     onClick={() => onApplyClaude({ ...claudeDraft, baseUrl: selectedEndpointBaseUrl })}
                     disabled={isApplyingClaude || !isReady || !selectedClaudeRelayKey.trim()}
-                    className={statusPrimaryButtonClass}
                   >
                     {isApplyingClaude ? t('status.applying_local') : t('status.apply_local_claude')}
-                  </button>
+                  </Button>
                 }
                 preClassName="max-h-[32rem]"
               />
@@ -1102,9 +1230,9 @@ export function StatusApplyLocalSection({
                   Codex /model 模型目录预览
                 </h3>
               </div>
-              <button type="button" onClick={() => setModelCatalogPreviewOpen(false)} className={statusSecondaryButtonClass}>
+              <Button type="default" size="small" onClick={() => setModelCatalogPreviewOpen(false)}>
                 关闭
-              </button>
+              </Button>
             </div>
           }
           bodyClassName="bg-[var(--gt-surface-canvas)]"
@@ -1163,7 +1291,7 @@ interface StatusRelayKeyPickerProps {
   value: number;
   selectedRelayKey: string;
   relayKeysLength: number;
-  relayKeyOptions: ActionSelectOption[];
+  relayKeyOptions: StatusSelectOption[];
   isReady: boolean;
   onSelect: (index: number) => void;
   onCreate: () => void;
@@ -1184,13 +1312,14 @@ function StatusRelayKeyPicker({
   const selectedIndex = Math.min(Math.max(0, value), Math.max(0, relayKeysLength - 1));
 
   return (
-    <ActionSelect
+    <StatusActionSelect
       title={t('status.local_cli_relay_key')}
       value={String(selectedIndex)}
       options={relayKeyOptions}
       onSelect={(nextValue) => onSelect(Number(nextValue))}
       onCreate={onCreate}
       onCopy={onCopySelectedRelayKey}
+      copyLabel={t('common.copy')}
       copyDisabled={!selectedRelayKey.trim()}
       copyTitle={t('status.service_key_copy')}
       createDisabled={!isReady}
@@ -1224,49 +1353,35 @@ function StatusEndpointPicker({
     <div className="grid gap-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <FieldLabel>{t('status.endpoint_title')}</FieldLabel>
-        <button
-          type="button"
+        <Button
+          type="default"
+          size="small"
           onClick={onToggleLANAccess}
-          className={`${statusSecondaryButtonClass} ${
-            isLANAccessEnabled ? '!border-[var(--gt-border-strong)] !bg-[var(--gt-ink-primary)] !text-[var(--gt-surface-canvas)]' : ''
-          }`}
         >
           {isLANAccessEnabled ? t('status.lan_access_on') : t('status.lan_access_off')}
-        </button>
+        </Button>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {visibleRelayEndpoints.map((endpoint) => {
-          const isSelected = selectedEndpointID === endpoint.id;
-          const endpointLabel =
+      <Segmented
+        size="small"
+        value={selectedEndpointID}
+        options={visibleRelayEndpoints.map((endpoint) => ({
+          value: endpoint.id,
+          label:
             endpoint.kind === 'localhost'
               ? t('status.endpoint_localhost')
               : endpoint.kind === 'hostname'
                 ? t('status.endpoint_hostname')
-                : t('status.endpoint_lan');
-
-          return (
-            <button
-              key={endpoint.id}
-              type="button"
-              onClick={() => onSelectEndpointID(endpoint.id)}
-              className={`rounded border px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal transition ${
-                isSelected
-                  ? 'border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
-                  : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
-              }`}
-            >
-              {endpointLabel}
-            </button>
-          );
-        })}
-      </div>
+                : t('status.endpoint_lan'),
+        }))}
+        onChange={(value) => onSelectEndpointID(String(value))}
+      />
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2">
         <span className="truncate font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
           {selectedEndpointBaseUrl}
         </span>
-        <button type="button" onClick={onCopyEndpointBaseUrl} className={statusCompactButtonClass}>
+        <Button type="default" size="small" onClick={onCopyEndpointBaseUrl}>
           {t('common.copy')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -1292,7 +1407,7 @@ function StatusModelPicker({
   const selectOptions = options.includes(value) ? options : [value, ...options].filter(Boolean);
 
   return (
-    <ActionSelect
+    <StatusActionSelect
       title={title || t('status.model_name_title')}
       value={value}
       options={selectOptions.map((model) => ({ value: model, label: model }))}

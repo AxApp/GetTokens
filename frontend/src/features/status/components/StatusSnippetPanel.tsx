@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Button } from 'antd';
 import SnippetPre from '../../../components/ui/SnippetPre';
 import { resolveUnifiedDiffLineTone } from '../model/relayLocalState';
 
@@ -6,6 +7,7 @@ interface StatusSnippetPanelProps {
   title: string;
   content: string;
   onCopy?: () => void;
+  copyLabel?: string;
   headerAction?: ReactNode;
   preClassName?: string;
 }
@@ -14,6 +16,7 @@ export default function StatusSnippetPanel({
   title,
   content,
   onCopy,
+  copyLabel = 'Copy',
   headerAction,
   preClassName = '',
 }: StatusSnippetPanelProps) {
@@ -46,13 +49,13 @@ export default function StatusSnippetPanel({
         {onCopy || headerAction ? (
           <div className="flex items-center gap-2">
             {onCopy ? (
-              <button
-                type="button"
+              <Button
+                type="default"
+                size="small"
                 onClick={onCopy}
-                className="inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               >
-                复制
-              </button>
+                {copyLabel}
+              </Button>
             ) : null}
             {headerAction}
           </div>

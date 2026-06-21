@@ -495,10 +495,11 @@ test('status Relay key picker wires a copy action to the selected key', async ()
   assert.match(statusPanelsSource, /status\.service_key_copied/);
 });
 
-test('status local apply form pairs use equal-width field grids', async () => {
+test('status local apply form pairs keep controls readable in the narrow config rail', async () => {
   const statusPanelsSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
 
-  assert.match(statusPanelsSource, /fieldPairGridClass = 'grid gap-3 md:grid-cols-2'/);
+  assert.match(statusPanelsSource, /fieldPairGridClass = 'grid gap-3'/);
+  assert.doesNotMatch(statusPanelsSource, /fieldPairGridClass = 'grid gap-3 md:grid-cols-2'/);
   assert.doesNotMatch(statusPanelsSource, /md:grid-cols-\[minmax\(0,1fr\)_12rem\]/);
   assert.doesNotMatch(statusPanelsSource, /md:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)_auto\]/);
 });
