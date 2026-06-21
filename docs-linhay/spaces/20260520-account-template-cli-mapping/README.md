@@ -57,7 +57,7 @@
 1. Given 账号卡匹配到应用模板且支持 Codex 目标格式，When 用户打开右上角菜单，Then 菜单展示 `应用到 Codex` 动作。
 2. Given 账号卡匹配到应用模板且支持 Claude Code 目标格式，When 用户打开右上角菜单，Then 菜单展示 `应用到 Claude Code` 动作。
 3. Given 用户已打开账号详情页，When 该账号匹配到可展示的本地 CLI 应用目标，Then 详情页 footer 同样展示 `应用到 Codex` / `应用到 Claude Code` 动作，disabled 状态和原因必须复用账号卡同一套 mapping。
-4. Given 账号详情页 footer 同时存在关闭、本地 CLI 应用和保存类动作，When 用户扫描 footer，Then 关闭入口必须以左侧低权重图标按钮呈现，不能夹在本地 CLI 应用与保存按钮之间，避免误点。
+4. Given 账号详情页同时存在关闭、本地 CLI 应用和保存类动作，When 用户扫描详情页，Then 关闭入口必须以内容区右上角低权重图标按钮呈现，footer 只保留本地 CLI 应用与保存类动作，避免关闭与写入/保存混在一起。
 5. Given 账号没有可识别模板，When 用户打开右上角菜单，Then 不展示 Codex / Claude Code 映射动作，避免用户误以为可以安全套用未知配置。
 6. Given DeepSeek 账号命中官方应用模板，When 用户打开右上角菜单，Then 只展示 `应用到 Claude Code`，不展示 `应用到 Codex` 按钮。
 7. Given 账号被禁用或当前不可请求，When 用户查看模板映射动作，Then 动作不可执行并展示禁用原因；不会写入本机配置。

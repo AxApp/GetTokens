@@ -568,7 +568,8 @@ test('account detail modules expose design-system anatomy and runtime states', a
   assert.doesNotMatch(modalStorySource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(modalStorySource, /AccountRuntimeSnapshotSection/);
   assert.match(modalStorySource, /layout="cards"/);
-  assert.match(unifiedDetailSource, /<AccountDetailLayout sectionNavItems=\{sectionNavItems\}/);
+  assert.match(unifiedDetailSource, /<AccountDetailLayout[\s\S]*sectionNavItems=\{sectionNavItems\}/);
+  assert.match(unifiedDetailSource, /<AccountDetailLayout[\s\S]*onClose=\{props\.onClose\}/);
   assert.doesNotMatch(unifiedDetailSource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(unifiedDetailSource, /AccountDetailOverviewGrid/);
   assert.match(codexDetailSource, /layout="cards"/);

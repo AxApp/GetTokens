@@ -64,21 +64,27 @@ test('account detail footer exposes local CLI apply actions from the account map
   assert.match(sectionsSource, /action\.disabledReason \|\| action\.detail \|\| action\.label/);
 });
 
-test('account detail footer renders close as a left-side icon action', async () => {
-  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
-  const footerSource = sourceBlock(source, 'export function AccountDetailFooter', 'function normalizeBillingDisplay');
-  const leadingSource = sourceBlock(footerSource, 'data-account-detail-footer-leading-actions', 'data-account-detail-footer-actions');
-  const mainActionsSource = sourceBlock(footerSource, 'data-account-detail-footer-actions', '{isApiKey || rateLimitDirty ?');
+test('account detail layout renders close as a top-right icon action', async () => {
+  const layoutSource = await readFile(new URL('../components/AccountDetailLayout.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const footerSource = sourceBlock(sectionsSource, 'export function AccountDetailFooter', 'function normalizeBillingDisplay');
+  const layoutComponentSource = sourceBlock(layoutSource, 'export function AccountDetailLayout', undefined);
+  const layoutReturnSource = sourceBlock(layoutComponentSource, 'return (', ');\n}');
 
-  assert.match(source, /import \{ Button \} from 'antd'/);
-  assert.match(source, /import \{ X \} from 'lucide-react'/);
-  assert.match(leadingSource, /<Button[\s\S]*shape="circle"/);
-  assert.match(leadingSource, /type="text"/);
-  assert.match(leadingSource, /icon=\{<X/);
-  assert.match(leadingSource, /aria-label=\{t\('common\.close'\)\}/);
-  assert.match(leadingSource, /onClick=\{onClose\}/);
-  assert.doesNotMatch(leadingSource, />\s*\{t\('common\.close'\)\}\s*<\/Button>/);
-  assert.doesNotMatch(mainActionsSource, /onClick=\{onClose\}/);
+  assert.match(layoutSource, /import \{ Button \} from 'antd'/);
+  assert.match(layoutSource, /import \{ X \} from 'lucide-react'/);
+  assert.match(layoutSource, /onClose:\s*\(\) => void/);
+  assert.match(layoutReturnSource, /data-account-detail-layout-close/);
+  assert.match(layoutReturnSource, /<Button[\s\S]*shape="circle"/);
+  assert.match(layoutReturnSource, /type="text"/);
+  assert.match(layoutReturnSource, /icon=\{<X/);
+  assert.match(layoutReturnSource, /aria-label="关闭面板"/);
+  assert.match(layoutReturnSource, /onClick=\{onClose\}/);
+  assert.match(layoutSource, /!absolute right-4 top-4/);
+  assert.match(modalSource, /<AccountDetailLayout[\s\S]*onClose=\{props\.onClose\}/);
+  assert.doesNotMatch(footerSource, /onClose/);
+  assert.doesNotMatch(footerSource, /data-account-detail-footer-leading-actions/);
 });
 
 test('accounts page loads auth-file rows from unified account store only', async () => {
@@ -987,7 +993,7 @@ test('real account detail modal uses section-nav layout instead of legacy band g
   assert.match(layoutSource, /aria-label="Account detail sections"/);
   assert.match(layoutSource, /data-account-detail-section/);
   assert.match(layoutSource, /IntersectionObserver/);
-  assert.match(modalSource, /<AccountDetailLayout sectionNavItems=\{sectionNavItems\} header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}>/);
+  assert.match(modalSource, /<AccountDetailLayout[\s\S]*sectionNavItems=\{sectionNavItems\}[\s\S]*header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}[\s\S]*onClose=\{props\.onClose\}/);
   assert.doesNotMatch(modalSource, /<AccountDetailModuleStack layout="bands">/);
   assert.doesNotMatch(modalSource, /<AccountDetailModuleStack layout="cards">/);
 });
@@ -1074,7 +1080,7 @@ test('openai compatible account detail uses the single unified detail page', asy
   assert.doesNotMatch(featureSource, /openAICompatibleState\.openDetailModal/);
   assert.match(featureSource, /findOpenAICompatibleAccountForProvider/);
   assert.match(featureSource, /setSelectedAccount\(providerAccount\)/);
-  assert.match(unifiedSource, /<AccountDetailLayout sectionNavItems=\{sectionNavItems\}/);
+  assert.match(unifiedSource, /<AccountDetailLayout[\s\S]*sectionNavItems=\{sectionNavItems\}/);
 });
 
 test('account detail production path has one detail modal surface', async () => {

@@ -275,12 +275,15 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
           missingFields={missingFields}
           savingConfig={savingConfig}
           localCliActions={props.localCliActions}
-          onClose={props.onClose}
           onSaveConfig={saveConfig}
         />
       }
     >
-      <AccountDetailLayout sectionNavItems={sectionNavItems} header={<AccountDetailHeader {...props} />}>
+      <AccountDetailLayout
+        sectionNavItems={sectionNavItems}
+        header={<AccountDetailHeader {...props} />}
+        onClose={props.onClose}
+      >
         {modulePlan.map((moduleID) => (
           <div key={moduleID} data-account-detail-section={moduleID}>
             {renderActiveSection(moduleID)}

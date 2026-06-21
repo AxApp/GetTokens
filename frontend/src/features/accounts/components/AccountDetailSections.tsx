@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { Button } from 'antd';
-import { X } from 'lucide-react';
 import type { AccountRecord, ApiFormat, BillingDisplay } from '../../../types';
 import type { main } from '../../../../wailsjs/go/models';
 import {
@@ -136,7 +134,6 @@ export interface AccountDetailFooterProps {
   missingFields: string[];
   savingConfig: boolean;
   localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
-  onClose: () => void;
   onSaveConfig: () => void;
 }
 
@@ -286,12 +283,9 @@ const accountDetailQuotaResetSecondaryButtonClass =
   'h-12 rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_72%,transparent)] px-4 text-sm font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountDetailFooterStatusClass =
   'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
-const accountDetailFooterLeadingActionsClass = 'flex min-w-0 items-center gap-3';
 const accountDetailFooterActionsClass = 'flex items-center gap-2';
 const accountDetailFooterButtonClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-xs font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
-const accountDetailFooterCloseIconClass =
-  '!grid !h-8 !w-8 !min-w-8 !place-items-center !rounded-md !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !text-[var(--gt-ink-muted)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] hover:!text-[var(--gt-ink-primary)]';
 const accountDetailFooterPrimaryButtonClass =
   'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-xs font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 
@@ -1959,7 +1953,6 @@ export function AccountDetailFooter({
   missingFields,
   savingConfig,
   localCliActions = [],
-  onClose,
   onSaveConfig,
 }: AccountDetailFooterProps) {
   const { t } = useI18n();
@@ -1974,26 +1967,13 @@ export function AccountDetailFooter({
 
   return (
     <>
-      <div data-account-detail-footer-leading-actions className={accountDetailFooterLeadingActionsClass}>
-        <Button
-          htmlType="button"
-          type="text"
-          shape="circle"
-          size="small"
-          aria-label={t('common.close')}
-          title={t('common.close')}
-          onClick={onClose}
-          icon={<X className="h-4 w-4" aria-hidden="true" />}
-          className={accountDetailFooterCloseIconClass}
-        />
-        <div
-          data-account-detail-footer-status="single-line"
-          className={accountDetailFooterStatusClass}
-        >
-          {isApiKey && missingFields.length > 0
-            ? `缺少：${missingFields.join(', ')}`
-            : dirtyMessage}
-        </div>
+      <div
+        data-account-detail-footer-status="single-line"
+        className={accountDetailFooterStatusClass}
+      >
+        {isApiKey && missingFields.length > 0
+          ? `缺少：${missingFields.join(', ')}`
+          : dirtyMessage}
       </div>
       <div data-account-detail-footer-actions className={accountDetailFooterActionsClass}>
         {localCliActions.length > 0 ? (

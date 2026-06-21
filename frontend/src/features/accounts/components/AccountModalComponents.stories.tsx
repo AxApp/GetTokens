@@ -516,7 +516,6 @@ function AccountDetailSectionsSample({
             configDirty
             missingFields={missingFields}
             savingConfig={saving}
-            onClose={() => undefined}
             onSaveConfig={() => undefined}
           />
         }

@@ -71,7 +71,7 @@ cc-switch 提供了较重的配置编辑参考：
 5. 如果 Codex 和 Claude Code 都可用，展示两个动作。
 6. 点击动作后不写文件，先打开确认页面。
 7. 用户打开账号详情页时，footer 复用同一批 mapping 结果展示 `应用到 Codex` / `应用到 Claude Code`；详情页不重新判断模板、禁用态或写入目标。
-8. 账号详情页 footer 的关闭入口放在左侧低权重 icon-only 按钮中，右侧仅保留本地 CLI 应用与保存类主操作，避免关闭与写入/保存相邻导致误点。
+8. 账号详情页关闭入口放在 `AccountDetailLayout` 内容区右上角低权重 icon-only 按钮中；footer 仅保留本地 CLI 应用与保存类主操作，避免关闭与写入/保存混在一起。
 
 DeepSeek 特例：
 
