@@ -31,6 +31,7 @@
 - AccountStoreDiagnosticsPanel 改为 AntD Card + Tag，保留 sidecar 诊断事实来源，不在前端伪造状态。
 - StatusApplyLocalSection 的 Codex / Claude Code 目标切换由项目自定义 SegmentedControl 改为 AntD Segmented，并固定到 4px 网格宽度避免文案截断。
 - 2026-06-22 复核 StatusApplyLocalSection：将本地 CLI 写入面板内的旧自定义 ActionSelect / SelectField / TextInputField / ToggleSwitch / button 操作替换为 AntD Button / Select / Input / Switch / Space.Compact，并把窄 rail 内字段改为单列，避免控件挤压。
+- 2026-06-22 二次复核 StatusApplyLocalSection：将 line 789 附近的超长双 rail div 拆为 AntD Card 栈，Codex 分支按连接与凭证、Provider 与 Model、能力开关、运行前检查、最小 Diff 分块；Claude Code 分支按连接与凭证、Model 映射、运行参数、运行前检查、settings Diff 分块。
 - 旧面板阴影 shadow-sm 移除，surface 使用 8px 圆角、细边框和 AntD flat-first 层级。
 
 ## 验收证据
@@ -44,6 +45,7 @@
 - 浏览器验收：`http://localhost:5173/#frame=status` 在 1280×860 无头截图确认 compact hero、双 rail 和 AntD Segmented 均渲染正常；顶部 hero 高度约 84px，overview 残留为 0；截图归档到 `docs-linhay/spaces/20260519-theme-skinning/screenshots/20260621/status-page-antd-redesign/20260621-status-page-antd-header-compact-after-v02.png`。
 - 2026-06-22 本地 CLI 面板复核：浏览器度量确认 `data-status-local-cli-panel` 内 native button/select 为 0，AntD Button 10、Select 5、Switch 2、Segmented 2；截图归档到 `docs-linhay/spaces/20260519-theme-skinning/screenshots/20260622/status-local-cli-audit/20260622-status-local-cli-panel-after-v03.png`。
 - 控制台验收：warnings 为 0；仍有 Vite browser preview 既有 `favicon.ico` 404 和缺少 Wails runtime 的 `window.go.main` 错误，不是本轮 AntD 改造引入。
+- 2026-06-22 本地 CLI 拆卡片复核：浏览器度量确认 Codex 分支渲染 5 张 AntD Card，其中 4 张带 `data-status-local-cli-card` 业务分区；截图归档到 `docs-linhay/spaces/20260519-theme-skinning/screenshots/20260622/status-local-cli-card-split/20260622-status-local-cli-card-split-after-v01.png`。
 
 ## Session Skill Distillation
 

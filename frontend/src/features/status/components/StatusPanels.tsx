@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
-import { Button, Input, Segmented, Select, Space, Switch } from 'antd';
+import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
+import { Button, Card, Input, Segmented, Select, Space, Switch } from 'antd';
 import type { main } from '../../../../wailsjs/go/models';
 import FormField, { FieldLabel } from '../../../components/ui/FormField';
 import ModalFrame from '../../../components/ui/ModalFrame';
@@ -40,11 +40,11 @@ const statusToggleRowClass =
 const statusLocalCliSummaryItemClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
 const statusLocalCliRailClass =
-  'grid min-w-0 gap-4 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-4';
+  'grid min-w-0 content-start gap-4';
 const statusLocalCliCapabilityRowClass =
   'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center';
 const statusLocalCliPlanStatusClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
+  'text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
 
 interface StatusSelectOption {
   value: string;
@@ -184,6 +184,38 @@ function StatusTextInputField({
         readOnly={readOnly}
       />
     </FormField>
+  );
+}
+
+function StatusLocalCliCard({
+  eyebrow,
+  title,
+  section,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  section: string;
+  children: ReactNode;
+}) {
+  return (
+    <Card
+      size="small"
+      className="min-w-0"
+      data-status-local-cli-card={section}
+      title={
+        <div className="py-1">
+          <div className={statusEyebrowClass}>{eyebrow}</div>
+          <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
+            {title}
+          </div>
+        </div>
+      }
+    >
+      <div className="grid gap-3">
+        {children}
+      </div>
+    </Card>
   );
 }
 
@@ -700,9 +732,9 @@ export function StatusApplyLocalSection({
     activeTarget === 'codex'
       ? codexLocalApplyGuidance || t('status.local_cli_preflight_ready')
       : !isReady
-        ? t('status.codex_local_apply_blocked_not_ready')
+        ? t('status.local_cli_apply_blocked_not_ready')
         : !selectedClaudeRelayKey.trim()
-          ? t('status.codex_local_apply_blocked_missing_key')
+          ? t('status.local_cli_apply_blocked_missing_key')
           : t('status.local_cli_preflight_ready');
   const activePlanStateLabel = activeApplyReady
     ? t('status.local_cli_plan_ready')
@@ -788,213 +820,217 @@ export function StatusApplyLocalSection({
         {activeTarget === 'codex' ? (
           <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
             <div className={statusLocalCliRailClass} data-status-local-cli-config-rail="true">
-              <div>
-                <div className={statusEyebrowClass}>
-                  {t('status.local_cli_config_input_title')}
-                </div>
-                <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
-                  {t('status.local_cli_config_codex_title')}
-                </div>
-              </div>
-              <StatusRelayKeyPicker
-                t={t}
-                value={selectedKeyIndex}
-                selectedRelayKey={selectedRelayKey}
-                relayKeysLength={relayKeyItems.length}
-                relayKeyOptions={relayKeyOptions}
-                isReady={isReady}
-                onSelect={onSelectKeyIndex}
-                onCreate={onOpenCreateRelayKeyEditor}
-                onCopySelectedRelayKey={() => onCopyText(selectedRelayKey, t('status.service_key_copied'))}
-              />
-
-              <StatusEndpointPicker
-                t={t}
-                isLANAccessEnabled={isLANAccessEnabled}
-                visibleRelayEndpoints={visibleRelayEndpoints}
-                selectedEndpointID={selectedEndpointID}
-                selectedEndpointBaseUrl={selectedEndpointBaseUrl}
-                onToggleLANAccess={onToggleLANAccess}
-                onSelectEndpointID={onSelectEndpointID}
-                onCopyEndpointBaseUrl={onCopyEndpointBaseUrl}
-              />
-
-              <div className={fieldPairGridClass}>
-                <StatusActionSelect
-                  title={t('status.provider_title')}
-                  value={selectedRelayProviderID}
-                  options={relayProviderSelectOptions}
-                  onSelect={onSelectRelayProviderID}
-                  onCreate={onOpenCreateRelayProviderEditor}
-                  onDelete={() => onDeleteRelayProviderOption(selectedRelayProviderID)}
-                  deleteDisabled={relayProviderOptions.length <= 1}
-                />
-
-                <StatusSelectField
-                  title={t('status.reasoning_effort_title')}
-                  value={selectedRelayReasoningEffort}
-                  options={relayReasoningEffortOptions.map((effort) => ({ value: effort, label: effort }))}
-                  onChange={onSelectRelayReasoningEffort}
-                />
-              </div>
-
-              <div className={fieldPairGridClass}>
-                <StatusSelectField
-                  title={t('status.auth_strategy_title')}
-                  value={codexLocalAuthStrategy}
-                  options={codexLocalAuthStrategyOptions}
-                  onChange={(value) => onSelectCodexLocalAuthStrategy(value as CodexLocalAuthStrategy)}
-                />
-
-                <FormField title={t('status.codex_local_auth_state_title')} as="div">
-                  <div className={`${statusFieldBoxClass} text-[length:var(--gt-font-size-md-compact)] font-normal text-[var(--gt-ink-primary)]`}>
-                    <div>{codexLocalAuthSummary}</div>
-                    {localCodexAuthState?.accountEmail ? (
-                      <div className="mt-1 font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]">
-                        {localCodexAuthState.accountEmail}
-                      </div>
-                    ) : null}
-                  </div>
-                </FormField>
-              </div>
-
-              <div className={fieldPairGridClass}>
-                <StatusModelPicker
+              <StatusLocalCliCard
+                eyebrow={t('status.local_cli_config_input_title')}
+                title={t('status.local_cli_connection_card_title')}
+                section="codex-connection"
+              >
+                <StatusRelayKeyPicker
                   t={t}
-                  value={selectedRelayModel}
-                  options={relayModelSelectOptionNames}
-                  onSelect={onCommitRelayModelSelection}
-                  onCreate={() => openModelEditor({ target: 'codex' }, selectedRelayModel)}
+                  value={selectedKeyIndex}
+                  selectedRelayKey={selectedRelayKey}
+                  relayKeysLength={relayKeyItems.length}
+                  relayKeyOptions={relayKeyOptions}
+                  isReady={isReady}
+                  onSelect={onSelectKeyIndex}
+                  onCreate={onOpenCreateRelayKeyEditor}
+                  onCopySelectedRelayKey={() => onCopyText(selectedRelayKey, t('status.service_key_copied'))}
                 />
 
-                <StatusTextInputField title={t('status.local_cli_wire_api')} value="responses" readOnly />
-              </div>
+                <StatusEndpointPicker
+                  t={t}
+                  isLANAccessEnabled={isLANAccessEnabled}
+                  visibleRelayEndpoints={visibleRelayEndpoints}
+                  selectedEndpointID={selectedEndpointID}
+                  selectedEndpointBaseUrl={selectedEndpointBaseUrl}
+                  onToggleLANAccess={onToggleLANAccess}
+                  onSelectEndpointID={onSelectEndpointID}
+                  onCopyEndpointBaseUrl={onCopyEndpointBaseUrl}
+                />
+              </StatusLocalCliCard>
 
-              {selectedRelayProvider.id !== 'openai' ? (
+              <StatusLocalCliCard
+                eyebrow={t('status.local_cli_config_input_title')}
+                title={t('status.local_cli_codex_routing_card_title')}
+                section="codex-routing"
+              >
+                <div className={fieldPairGridClass}>
+                  <StatusActionSelect
+                    title={t('status.provider_title')}
+                    value={selectedRelayProviderID}
+                    options={relayProviderSelectOptions}
+                    onSelect={onSelectRelayProviderID}
+                    onCreate={onOpenCreateRelayProviderEditor}
+                    onDelete={() => onDeleteRelayProviderOption(selectedRelayProviderID)}
+                    deleteDisabled={relayProviderOptions.length <= 1}
+                  />
+
+                  <StatusSelectField
+                    title={t('status.reasoning_effort_title')}
+                    value={selectedRelayReasoningEffort}
+                    options={relayReasoningEffortOptions.map((effort) => ({ value: effort, label: effort }))}
+                    onChange={onSelectRelayReasoningEffort}
+                  />
+                </div>
+
+                <div className={fieldPairGridClass}>
+                  <StatusSelectField
+                    title={t('status.auth_strategy_title')}
+                    value={codexLocalAuthStrategy}
+                    options={codexLocalAuthStrategyOptions}
+                    onChange={(value) => onSelectCodexLocalAuthStrategy(value as CodexLocalAuthStrategy)}
+                  />
+
+                  <FormField title={t('status.codex_local_auth_state_title')} as="div">
+                    <div className={`${statusFieldBoxClass} text-[length:var(--gt-font-size-md-compact)] font-normal text-[var(--gt-ink-primary)]`}>
+                      <div>{codexLocalAuthSummary}</div>
+                      {localCodexAuthState?.accountEmail ? (
+                        <div className="mt-1 font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]">
+                          {localCodexAuthState.accountEmail}
+                        </div>
+                      ) : null}
+                    </div>
+                  </FormField>
+                </div>
+
+                <div className={fieldPairGridClass}>
+                  <StatusModelPicker
+                    t={t}
+                    value={selectedRelayModel}
+                    options={relayModelSelectOptionNames}
+                    onSelect={onCommitRelayModelSelection}
+                    onCreate={() => openModelEditor({ target: 'codex' }, selectedRelayModel)}
+                  />
+
+                  <StatusTextInputField title={t('status.local_cli_wire_api')} value="responses" readOnly />
+                </div>
+              </StatusLocalCliCard>
+
+              <StatusLocalCliCard
+                eyebrow={t('status.local_cli_apply_plan_title')}
+                title={t('status.local_cli_capability_card_title')}
+                section="codex-capabilities"
+              >
+                {selectedRelayProvider.id !== 'openai' ? (
+                  <div className={statusLocalCliCapabilityRowClass}>
+                    <div className="min-w-0">
+                      <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
+                        {t('status.local_cli_capability_websocket_title')}
+                      </div>
+                      <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
+                        {supportsWebsockets
+                          ? t('status.local_cli_capability_websocket_on')
+                          : t('status.local_cli_capability_websocket_off')}
+                      </div>
+                      {localCodexProviderWebsocketRisk ? (
+                        <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-normal leading-snug text-[var(--gt-status-danger)]">
+                          {supportsWebsockets
+                            ? t('status.local_cli_websocket_risk_opt_in')
+                            : t('status.local_cli_websocket_risk_detected')}
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="flex justify-end">
+                      <Switch
+                        checked={supportsWebsockets}
+                        disabled={isApplyingToLocal}
+                        onChange={onToggleSupportsWebsockets}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className={statusLocalCliCapabilityRowClass}>
                   <div className="min-w-0">
                     <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
-                      {t('status.local_cli_capability_websocket_title')}
+                      {t('status.local_cli_capability_model_catalog_title')}
+                      {isDisablingModelCatalog ? (
+                        <span className="ml-2 font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
+                          {t('status.local_cli_model_catalog_disabling')}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
-                      {supportsWebsockets
-                        ? t('status.local_cli_capability_websocket_on')
-                        : t('status.local_cli_capability_websocket_off')}
+                      {syncCodexModelCatalog
+                        ? t('status.local_cli_capability_model_catalog_on')
+                        : t('status.local_cli_capability_model_catalog_off')}
                     </div>
-                    {localCodexProviderWebsocketRisk ? (
-                      <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-normal leading-snug text-[var(--gt-status-danger)]">
-                        {supportsWebsockets
-                          ? t('status.local_cli_websocket_risk_opt_in')
-                          : t('status.local_cli_websocket_risk_detected')}
-                      </div>
-                    ) : null}
+                    <Button
+                      type="link"
+                      size="small"
+                      aria-label="preview sync_model_catalog"
+                      className="!mt-2 !h-auto !p-0 !text-[length:var(--gt-font-size-xs)] !font-semibold"
+                      onClick={() => setModelCatalogPreviewOpen(true)}
+                    >
+                      {t('status.local_cli_model_catalog_preview')}
+                    </Button>
                   </div>
                   <div className="flex justify-end">
-                    <Switch
-                      checked={supportsWebsockets}
-                      disabled={isApplyingToLocal}
-                      onChange={onToggleSupportsWebsockets}
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              <div className={statusLocalCliCapabilityRowClass}>
-                <div className="min-w-0">
-                  <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
-                    {t('status.local_cli_capability_model_catalog_title')}
-                    {isDisablingModelCatalog ? (
-                      <span className="ml-2 font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
-                        {t('status.local_cli_model_catalog_disabling')}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
-                    {syncCodexModelCatalog
-                      ? t('status.local_cli_capability_model_catalog_on')
-                      : t('status.local_cli_capability_model_catalog_off')}
-                  </div>
-                  <Button
-                    type="link"
-                    size="small"
-                    aria-label="preview sync_model_catalog"
-                    className="!mt-2 !h-auto !p-0 !text-[length:var(--gt-font-size-xs)] !font-semibold"
-                    onClick={() => setModelCatalogPreviewOpen(true)}
-                  >
-                    {t('status.local_cli_model_catalog_preview')}
-                  </Button>
-                </div>
-                <div className="flex justify-end">
                     <Switch
                       checked={syncCodexModelCatalog}
                       disabled={isApplyingToLocal || isDisablingModelCatalog}
                       onChange={onChangeSyncCodexModelCatalog}
                     />
+                  </div>
                 </div>
-              </div>
 
-              {codexLocalAuthStrategy === 'preserve_chatgpt_auth' && codexLocalCanApply ? (
-                <div className={statusNoticeClass}>
-                  {t('status.codex_local_preserve_hint')}
-                  {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
-                </div>
-              ) : null}
+                {codexLocalAuthStrategy === 'preserve_chatgpt_auth' && codexLocalCanApply ? (
+                  <div className={statusNoticeClass}>
+                    {t('status.codex_local_preserve_hint')}
+                    {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
+                  </div>
+                ) : null}
 
-              {localApplyMessage ? (
-                <div className={statusNoticeClass}>
-                  {localApplyMessage}
-                </div>
-              ) : null}
-
+                {localApplyMessage ? (
+                  <div className={statusNoticeClass}>
+                    {localApplyMessage}
+                  </div>
+                ) : null}
+              </StatusLocalCliCard>
             </div>
 
             <div className={statusLocalCliRailClass} data-status-local-cli-plan-rail="true">
-              <div>
-                <div className={statusEyebrowClass}>
-                  {t('status.local_cli_apply_plan_title')}
-                </div>
-                <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
-                  {t('status.codex_local_diff')}
-                </div>
-              </div>
-              <div className={statusLocalCliPlanStatusClass} data-status-local-cli-plan-status="true">
-                <div className={statusEyebrowClass}>
-                  {t('status.local_cli_preflight_title')}
-                </div>
-                <div className="mt-1 leading-snug">
-                  {activePreflightMessage}
-                  {activeTarget === 'codex' && localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
-                </div>
-                {activeTarget === 'codex' && codexLocalApplyState.recoveryAction ? (
-                  <div className="mt-3">
-                    {codexLocalApplyState.recoveryAction === 'create_relay_key' ? (
-                      <Button type="default" size="small" onClick={onOpenCreateRelayKeyEditor}>
-                        {t('status.codex_local_recovery_create_key')}
-                      </Button>
-                    ) : codexLocalApplyState.recoveryAction === 'switch_auth_to_apikey' ? (
-                      <Button
-                        type="default"
-                        size="small"
-                        onClick={() => onSelectCodexLocalAuthStrategy('replace_auth_with_apikey')}
-                      >
-                        {t('status.codex_local_recovery_use_apikey')}
-                      </Button>
-                    ) : codexLocalApplyState.recoveryAction === 'switch_to_custom_provider' && codexLocalApplyState.nextProviderID ? (
-                      <Button
-                        type="default"
-                        size="small"
-                        onClick={() => onSelectRelayProviderID(codexLocalApplyState.nextProviderID || '')}
-                      >
-                        {t('status.codex_local_recovery_switch_provider')} {codexLocalRecoveryProvider?.name || codexLocalApplyState.nextProviderID}
-                      </Button>
-                    ) : codexLocalApplyState.recoveryAction === 'create_provider' ? (
-                      <Button type="default" size="small" onClick={onOpenCreateRelayProviderEditor}>
-                        {t('status.codex_local_recovery_create_provider')}
-                      </Button>
-                    ) : null}
+              <StatusLocalCliCard
+                eyebrow={t('status.local_cli_apply_plan_title')}
+                title={t('status.local_cli_preflight_title')}
+                section="codex-preflight"
+              >
+                <div className={statusLocalCliPlanStatusClass} data-status-local-cli-plan-status="true">
+                  <div className="leading-snug">
+                    {activePreflightMessage}
+                    {activeTarget === 'codex' && localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
                   </div>
-                ) : null}
-              </div>
+                  {activeTarget === 'codex' && codexLocalApplyState.recoveryAction ? (
+                    <div className="mt-3">
+                      {codexLocalApplyState.recoveryAction === 'create_relay_key' ? (
+                        <Button type="default" size="small" onClick={onOpenCreateRelayKeyEditor}>
+                          {t('status.codex_local_recovery_create_key')}
+                        </Button>
+                      ) : codexLocalApplyState.recoveryAction === 'switch_auth_to_apikey' ? (
+                        <Button
+                          type="default"
+                          size="small"
+                          onClick={() => onSelectCodexLocalAuthStrategy('replace_auth_with_apikey')}
+                        >
+                          {t('status.codex_local_recovery_use_apikey')}
+                        </Button>
+                      ) : codexLocalApplyState.recoveryAction === 'switch_to_custom_provider' && codexLocalApplyState.nextProviderID ? (
+                        <Button
+                          type="default"
+                          size="small"
+                          onClick={() => onSelectRelayProviderID(codexLocalApplyState.nextProviderID || '')}
+                        >
+                          {t('status.codex_local_recovery_switch_provider')} {codexLocalRecoveryProvider?.name || codexLocalApplyState.nextProviderID}
+                        </Button>
+                      ) : codexLocalApplyState.recoveryAction === 'create_provider' ? (
+                        <Button type="default" size="small" onClick={onOpenCreateRelayProviderEditor}>
+                          {t('status.codex_local_recovery_create_provider')}
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </StatusLocalCliCard>
               <StatusSnippetPanel
                 title={t('status.codex_local_diff')}
                 content={codexDiff}
@@ -1017,170 +1053,174 @@ export function StatusApplyLocalSection({
         ) : (
           <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
             <div className={statusLocalCliRailClass} data-status-local-cli-config-rail="true">
-              <div>
-                <div className={statusEyebrowClass}>
-                  {t('status.local_cli_config_input_title')}
-                </div>
-                <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
-                  {t('status.local_cli_config_claude_title')}
-                </div>
-              </div>
-              <StatusRelayKeyPicker
-                t={t}
-                value={claudeDraft.relayKeyIndex}
-                selectedRelayKey={selectedClaudeRelayKey}
-                relayKeysLength={relayKeyItems.length}
-                relayKeyOptions={relayKeyOptions}
-                isReady={isReady}
-                onSelect={(index) => updateClaudeDraft({ relayKeyIndex: index })}
-                onCreate={onOpenCreateRelayKeyEditor}
-                onCopySelectedRelayKey={() => onCopyText(selectedClaudeRelayKey, t('status.service_key_copied'))}
-              />
-
-              <StatusEndpointPicker
-                t={t}
-                isLANAccessEnabled={isLANAccessEnabled}
-                visibleRelayEndpoints={visibleRelayEndpoints}
-                selectedEndpointID={selectedEndpointID}
-                selectedEndpointBaseUrl={selectedEndpointBaseUrl}
-                onToggleLANAccess={onToggleLANAccess}
-                onSelectEndpointID={onSelectEndpointID}
-                onCopyEndpointBaseUrl={onCopyEndpointBaseUrl}
-              />
-
-              <div className="grid gap-3">
-                <StatusModelPicker
+              <StatusLocalCliCard
+                eyebrow={t('status.local_cli_config_input_title')}
+                title={t('status.local_cli_connection_card_title')}
+                section="claude-connection"
+              >
+                <StatusRelayKeyPicker
                   t={t}
-                  title={t('status.model_name_title')}
-                  value={claudeDraft.model || claudeModelOptions[0]}
-                  options={claudeModelOptions}
-                  onSelect={(value) => updateClaudeDraft({ model: value })}
-                  onCreate={() =>
-                    openModelEditor({ target: 'claude', field: 'model' }, claudeDraft.model || claudeModelOptions[0])
-                  }
+                  value={claudeDraft.relayKeyIndex}
+                  selectedRelayKey={selectedClaudeRelayKey}
+                  relayKeysLength={relayKeyItems.length}
+                  relayKeyOptions={relayKeyOptions}
+                  isReady={isReady}
+                  onSelect={(index) => updateClaudeDraft({ relayKeyIndex: index })}
+                  onCreate={onOpenCreateRelayKeyEditor}
+                  onCopySelectedRelayKey={() => onCopyText(selectedClaudeRelayKey, t('status.service_key_copied'))}
                 />
-              </div>
 
-              <div className={fieldPairGridClass}>
-                <StatusModelPicker
+                <StatusEndpointPicker
                   t={t}
-                  title={t('status.claude_default_haiku_model')}
-                  value={claudeDraft.defaultHaikuModel || 'claude-haiku-4-5'}
-                  options={claudeModelOptions}
-                  onSelect={(value) => updateClaudeDraft({ defaultHaikuModel: value })}
-                  onCreate={() =>
-                    openModelEditor(
-                      { target: 'claude', field: 'defaultHaikuModel' },
-                      claudeDraft.defaultHaikuModel || 'claude-haiku-4-5'
-                    )
-                  }
+                  isLANAccessEnabled={isLANAccessEnabled}
+                  visibleRelayEndpoints={visibleRelayEndpoints}
+                  selectedEndpointID={selectedEndpointID}
+                  selectedEndpointBaseUrl={selectedEndpointBaseUrl}
+                  onToggleLANAccess={onToggleLANAccess}
+                  onSelectEndpointID={onSelectEndpointID}
+                  onCopyEndpointBaseUrl={onCopyEndpointBaseUrl}
                 />
-                <StatusModelPicker
-                  t={t}
-                  title={t('status.claude_default_sonnet_model')}
-                  value={claudeDraft.defaultSonnetModel || 'claude-sonnet-4-5'}
-                  options={claudeModelOptions}
-                  onSelect={(value) => updateClaudeDraft({ defaultSonnetModel: value })}
-                  onCreate={() =>
-                    openModelEditor(
-                      { target: 'claude', field: 'defaultSonnetModel' },
-                      claudeDraft.defaultSonnetModel || 'claude-sonnet-4-5'
-                    )
-                  }
-                />
-                <StatusModelPicker
-                  t={t}
-                  title={t('status.claude_default_opus_model')}
-                  value={claudeDraft.defaultOpusModel || 'claude-opus-4-5'}
-                  options={claudeModelOptions}
-                  onSelect={(value) => updateClaudeDraft({ defaultOpusModel: value })}
-                  onCreate={() =>
-                    openModelEditor(
-                      { target: 'claude', field: 'defaultOpusModel' },
-                      claudeDraft.defaultOpusModel || 'claude-opus-4-5'
-                    )
-                  }
-                />
-                <StatusModelPicker
-                  t={t}
-                  title={t('status.claude_small_fast_model')}
-                  value={claudeDraft.smallFastModel || 'claude-haiku-4-5'}
-                  options={claudeModelOptions}
-                  onSelect={(value) => updateClaudeDraft({ smallFastModel: value })}
-                  onCreate={() =>
-                    openModelEditor(
-                      { target: 'claude', field: 'smallFastModel' },
-                      claudeDraft.smallFastModel || 'claude-haiku-4-5'
-                    )
-                  }
-                />
-              </div>
+              </StatusLocalCliCard>
 
-              <div className={fieldPairGridClass}>
-                <StatusTextInputField
-                  title={t('status.claude_max_output_tokens')}
-                  value={claudeDraft.maxOutputTokens}
-                  onChange={(event) => updateClaudeDraft({ maxOutputTokens: event.target.value })}
-                  inputMode="numeric"
-                  placeholder="6000"
-                />
-                <StatusTextInputField
-                  title={t('status.claude_api_timeout_ms')}
-                  value={claudeDraft.apiTimeoutMs}
-                  onChange={(event) => updateClaudeDraft({ apiTimeoutMs: event.target.value })}
-                  inputMode="numeric"
-                  placeholder="600000"
-                />
-              </div>
-
-              <div className={fieldPairGridClass}>
-                <div className={statusToggleRowClass}>
-                  <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
-                    {t('status.claude_disable_nonessential_traffic')}
-                  </span>
-                  <Switch
-                    checked={claudeDraft.disableNonEssentialTraffic}
-                    disabled={isApplyingClaude}
-                    onChange={(checked) => updateClaudeDraft({ disableNonEssentialTraffic: checked })}
+              <StatusLocalCliCard
+                eyebrow={t('status.local_cli_config_input_title')}
+                title={t('status.local_cli_claude_model_card_title')}
+                section="claude-models"
+              >
+                <div className="grid gap-3">
+                  <StatusModelPicker
+                    t={t}
+                    title={t('status.model_name_title')}
+                    value={claudeDraft.model || claudeModelOptions[0]}
+                    options={claudeModelOptions}
+                    onSelect={(value) => updateClaudeDraft({ model: value })}
+                    onCreate={() =>
+                      openModelEditor({ target: 'claude', field: 'model' }, claudeDraft.model || claudeModelOptions[0])
+                    }
                   />
                 </div>
-                <div className={statusToggleRowClass}>
-                  <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
-                    {t('status.claude_code_attribution_header')}
-                  </span>
-                  <Switch
-                    checked={claudeDraft.claudeCodeAttributionHeader}
-                    disabled={isApplyingClaude}
-                    onChange={(checked) => updateClaudeDraft({ claudeCodeAttributionHeader: checked })}
+
+                <div className={fieldPairGridClass}>
+                  <StatusModelPicker
+                    t={t}
+                    title={t('status.claude_default_haiku_model')}
+                    value={claudeDraft.defaultHaikuModel || 'claude-haiku-4-5'}
+                    options={claudeModelOptions}
+                    onSelect={(value) => updateClaudeDraft({ defaultHaikuModel: value })}
+                    onCreate={() =>
+                      openModelEditor(
+                        { target: 'claude', field: 'defaultHaikuModel' },
+                        claudeDraft.defaultHaikuModel || 'claude-haiku-4-5'
+                      )
+                    }
+                  />
+                  <StatusModelPicker
+                    t={t}
+                    title={t('status.claude_default_sonnet_model')}
+                    value={claudeDraft.defaultSonnetModel || 'claude-sonnet-4-5'}
+                    options={claudeModelOptions}
+                    onSelect={(value) => updateClaudeDraft({ defaultSonnetModel: value })}
+                    onCreate={() =>
+                      openModelEditor(
+                        { target: 'claude', field: 'defaultSonnetModel' },
+                        claudeDraft.defaultSonnetModel || 'claude-sonnet-4-5'
+                      )
+                    }
+                  />
+                  <StatusModelPicker
+                    t={t}
+                    title={t('status.claude_default_opus_model')}
+                    value={claudeDraft.defaultOpusModel || 'claude-opus-4-5'}
+                    options={claudeModelOptions}
+                    onSelect={(value) => updateClaudeDraft({ defaultOpusModel: value })}
+                    onCreate={() =>
+                      openModelEditor(
+                        { target: 'claude', field: 'defaultOpusModel' },
+                        claudeDraft.defaultOpusModel || 'claude-opus-4-5'
+                      )
+                    }
+                  />
+                  <StatusModelPicker
+                    t={t}
+                    title={t('status.claude_small_fast_model')}
+                    value={claudeDraft.smallFastModel || 'claude-haiku-4-5'}
+                    options={claudeModelOptions}
+                    onSelect={(value) => updateClaudeDraft({ smallFastModel: value })}
+                    onCreate={() =>
+                      openModelEditor(
+                        { target: 'claude', field: 'smallFastModel' },
+                        claudeDraft.smallFastModel || 'claude-haiku-4-5'
+                      )
+                    }
                   />
                 </div>
-              </div>
+              </StatusLocalCliCard>
 
-              {claudeApplyMessage ? (
-                <div className={statusNoticeClass}>
-                  {claudeApplyMessage}
+              <StatusLocalCliCard
+                eyebrow={t('status.local_cli_apply_plan_title')}
+                title={t('status.local_cli_claude_runtime_card_title')}
+                section="claude-runtime"
+              >
+                <div className={fieldPairGridClass}>
+                  <StatusTextInputField
+                    title={t('status.claude_max_output_tokens')}
+                    value={claudeDraft.maxOutputTokens}
+                    onChange={(event) => updateClaudeDraft({ maxOutputTokens: event.target.value })}
+                    inputMode="numeric"
+                    placeholder="6000"
+                  />
+                  <StatusTextInputField
+                    title={t('status.claude_api_timeout_ms')}
+                    value={claudeDraft.apiTimeoutMs}
+                    onChange={(event) => updateClaudeDraft({ apiTimeoutMs: event.target.value })}
+                    inputMode="numeric"
+                    placeholder="600000"
+                  />
                 </div>
-              ) : null}
 
+                <div className={fieldPairGridClass}>
+                  <div className={statusToggleRowClass}>
+                    <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
+                      {t('status.claude_disable_nonessential_traffic')}
+                    </span>
+                    <Switch
+                      checked={claudeDraft.disableNonEssentialTraffic}
+                      disabled={isApplyingClaude}
+                      onChange={(checked) => updateClaudeDraft({ disableNonEssentialTraffic: checked })}
+                    />
+                  </div>
+                  <div className={statusToggleRowClass}>
+                    <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
+                      {t('status.claude_code_attribution_header')}
+                    </span>
+                    <Switch
+                      checked={claudeDraft.claudeCodeAttributionHeader}
+                      disabled={isApplyingClaude}
+                      onChange={(checked) => updateClaudeDraft({ claudeCodeAttributionHeader: checked })}
+                    />
+                  </div>
+                </div>
+
+                {claudeApplyMessage ? (
+                  <div className={statusNoticeClass}>
+                    {claudeApplyMessage}
+                  </div>
+                ) : null}
+              </StatusLocalCliCard>
             </div>
 
             <div className={statusLocalCliRailClass} data-status-local-cli-plan-rail="true">
-              <div>
-                <div className={statusEyebrowClass}>
-                  {t('status.local_cli_apply_plan_title')}
+              <StatusLocalCliCard
+                eyebrow={t('status.local_cli_apply_plan_title')}
+                title={t('status.local_cli_preflight_title')}
+                section="claude-preflight"
+              >
+                <div className={statusLocalCliPlanStatusClass} data-status-local-cli-plan-status="true">
+                  <div className="leading-snug">
+                    {activePreflightMessage}
+                  </div>
                 </div>
-                <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">
-                  {t('status.claude_settings_diff')}
-                </div>
-              </div>
-              <div className={statusLocalCliPlanStatusClass} data-status-local-cli-plan-status="true">
-                <div className={statusEyebrowClass}>
-                  {t('status.local_cli_preflight_title')}
-                </div>
-                <div className="mt-1 leading-snug">
-                  {activePreflightMessage}
-                </div>
-              </div>
+              </StatusLocalCliCard>
               <StatusSnippetPanel
                 title={t('status.claude_settings_diff')}
                 content={claudeDiff}

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button } from 'antd';
+import { Button, Card, Space } from 'antd';
 import SnippetPre from '../../../components/ui/SnippetPre';
 import { resolveUnifiedDiffLineTone } from '../model/relayLocalState';
 
@@ -41,26 +41,27 @@ export default function StatusSnippetPanel({
   }
 
   return (
-    <div className="min-h-0 overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[var(--gt-border-subtle)] px-1 pb-2">
-        <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
+    <Card
+      size="small"
+      className="min-h-0 overflow-hidden"
+      title={
+        <span className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
           {title}
-        </div>
-        {onCopy || headerAction ? (
-          <div className="flex items-center gap-2">
+        </span>
+      }
+      extra={
+        onCopy || headerAction ? (
+          <Space size={8}>
             {onCopy ? (
-              <Button
-                type="default"
-                size="small"
-                onClick={onCopy}
-              >
+              <Button type="default" size="small" onClick={onCopy}>
                 {copyLabel}
               </Button>
             ) : null}
             {headerAction}
-          </div>
-        ) : null}
-      </div>
+          </Space>
+        ) : null
+      }
+    >
       <SnippetPre className={preClassName}>
         {lines.map((line, index) => (
           <code key={`${index}-${line}`} className={`block min-h-6 whitespace-pre ${lineClassName(line)}`}>
@@ -68,6 +69,6 @@ export default function StatusSnippetPanel({
           </code>
         ))}
       </SnippetPre>
-    </div>
+    </Card>
   );
 }
