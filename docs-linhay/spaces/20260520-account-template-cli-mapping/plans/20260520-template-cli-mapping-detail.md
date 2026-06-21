@@ -274,11 +274,11 @@ Claude 确认页必须显示：
 
 ```text
 frontend/src/features/accounts/model/
-  accountLocalCliMapping.ts        # 模板识别、目标可用性、草稿生成
+  accountLocalCliMapping.ts        # 模板识别、目标可用性、草稿生成、preview file / diff 拆分的单一维护入口
   accountLocalCliMapping.test.mjs
 
 frontend/src/features/accounts/components/
-  AccountLocalCliApplyConfirm.tsx  # 账号来源 + 确认页 shell
+  AccountLocalCliApplyConfirm.tsx  # 账号来源 + 确认页 shell，只渲染 draft 与 preview files
 
 frontend/src/features/status/components/
   LocalCliFileDiffPreview.tsx      # 可选抽取：文件列表 + diff preview

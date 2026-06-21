@@ -1,6 +1,10 @@
 import type { ApiFormat } from '../../../types';
 import { resolveClaudeCodeProviderProfile } from '../../claude-code/model/claudeCodeAccountList.ts';
-import type { LocalCodexAuthStateLike } from '../../status/model/relayLocalState.ts';
+import {
+  buildClaudeCodeSettingsDiff,
+  buildCodexLocalApplyDiff,
+  type LocalCodexAuthStateLike,
+} from '../../status/model/relayLocalState.ts';
 import { CODEX_CHATGPT_BACKEND_BASE_URL } from './accountConfig.ts';
 import type { AccountRecord } from './types.ts';
 import { normalizeBaseURL, resolveVendorPresetID } from './vendorPresetHelpers.ts';
@@ -103,6 +107,12 @@ export interface AccountLocalCliMapping {
   draft: AccountCliApplyDraft;
 }
 
+export interface AccountLocalCliPreviewFile {
+  id: string;
+  path: string;
+  diff: string;
+}
+
 export type AccountCliApplyDraft =
   | {
       target: 'codex';
@@ -154,6 +164,89 @@ export type AccountCliApplyDraft =
         authField: ClaudeCodeLocalAuthField;
       };
     };
+
+export function buildAccountLocalCliPreviewFiles(
+  draft: AccountCliApplyDraft,
+  relayKeyItems: AccountLocalCliRelayKeyLike[],
+): AccountLocalCliPreviewFile[] {
+  const relayKey = relayKeyItems[draft.source.relayKeyIndex]?.value || '';
+  if (draft.target === 'claude') {
+    const apiKey = draft.claude.apiKey || relayKey;
+    return [
+      {
+        id: 'claude-settings',
+        path: '~/.claude/settings.json',
+        diff: buildClaudeCodeSettingsDiff({
+          apiKey,
+          baseUrl: draft.claude.baseUrl,
+          model: draft.claude.model,
+          defaultHaikuModel: draft.claude.defaultHaikuModel,
+          defaultSonnetModel: draft.claude.defaultSonnetModel,
+          defaultOpusModel: draft.claude.defaultOpusModel,
+          smallFastModel: draft.claude.smallFastModel,
+          maxOutputTokens: draft.claude.maxOutputTokens,
+          apiTimeoutMs: draft.claude.apiTimeoutMs,
+          disableNonEssentialTraffic: draft.claude.disableNonEssentialTraffic,
+          claudeCodeAttributionHeader: draft.claude.claudeCodeAttributionHeader,
+          authField: draft.claude.authField,
+        }),
+      },
+    ];
+  }
+
+  const codexAPIKey = draft.codex.authStrategy === 'replace_auth_with_apikey'
+    ? draft.codex.apiKey
+    : relayKey;
+  const diff = buildCodexLocalApplyDiff({
+    apiKey: codexAPIKey,
+    apiKeySet: draft.codex.apiKeySet,
+    authFileContentSet: draft.codex.authFileContentSet,
+    baseUrl: draft.codex.baseUrl,
+    baseUrlSet: draft.codex.baseUrlSet,
+    model: draft.codex.model,
+    modelSet: draft.codex.modelSet,
+    reasoningEffort: draft.codex.reasoningEffort,
+    reasoningEffortSet: draft.codex.reasoningEffortSet,
+    providerID: draft.codex.providerID,
+    providerIDSet: draft.codex.providerIDSet,
+    providerName: draft.codex.providerName,
+    providerNameSet: draft.codex.providerNameSet,
+    requiresOpenAIAuth: draft.codex.requiresOpenAIAuth,
+    requiresOpenAIAuthSet: draft.codex.requiresOpenAIAuthSet,
+    wireAPI: draft.codex.wireAPI,
+    wireAPISet: draft.codex.wireAPISet,
+    supportsWebsockets: draft.codex.supportsWebsockets,
+    supportsWebsocketsSet: draft.codex.supportsWebsocketsSet,
+    authStrategy: draft.codex.authStrategy,
+  });
+  const configDiffStart = diff.indexOf('--- CODEX_HOME/config.toml');
+  const authDiff = configDiffStart >= 0 ? diff.slice(0, configDiffStart).trim() : diff;
+  let configDiff = configDiffStart >= 0 ? diff.slice(configDiffStart).trim() : diff;
+  configDiff = `${configDiff}
+
+@@ model catalog @@
+${draft.codex.modelCatalogProjectionMode === 'gettokens'
+  ? '+model_catalog_json = "gettokens-model-catalog.json"'
+  : '-model_catalog_json = "gettokens-model-catalog.json" # only when currently GetTokens-owned'}
+# sync_model_catalog ${draft.codex.modelCatalogProjectionMode === 'gettokens' ? 'writes' : 'removes'} the GetTokens-owned Codex /model catalog pointer`;
+
+  return [
+    ...(draft.codex.authStrategy === 'replace_auth_with_apikey' || draft.codex.authStrategy === 'replace_auth_with_oauth'
+      ? [
+          {
+            id: 'codex-auth',
+            path: 'CODEX_HOME/auth.json',
+            diff: authDiff || '# CODEX_HOME/auth.json 无写入 diff',
+          },
+        ]
+      : []),
+    {
+      id: 'codex-config',
+      path: 'CODEX_HOME/config.toml',
+      diff: configDiff,
+    },
+  ];
+}
 
 const defaultRelayEndpoint: AccountLocalCliRelayEndpointLike = {
   id: 'localhost',

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import {
+  buildAccountLocalCliPreviewFiles,
   resolveAccountLocalCliMappings,
 } from '../model/accountLocalCliMapping.ts';
 import {
@@ -596,6 +597,50 @@ test('Codex OAuth auth-file draft blocks when auth-file name cannot be resolved'
   ), true);
 });
 
+test('account local CLI preview files are built in the shared model layer for Codex', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      provider: 'codex',
+      credentialSource: 'api-key',
+      apiKey: 'sk-current-account',
+      baseUrl: 'https://api.openai.com/v1',
+      supportedFormats: ['openai_responses'],
+    }),
+    relayKeyItems,
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+    modelCatalogProjectionMode: 'gettokens',
+  });
+
+  const codex = actions.find((item) => item.target === 'codex');
+  const files = buildAccountLocalCliPreviewFiles(codex.draft, relayKeyItems);
+
+  assert.deepEqual(files.map((file) => file.path), ['CODEX_HOME/auth.json', 'CODEX_HOME/config.toml']);
+  assert.match(files[0].diff, /OPENAI_API_KEY/);
+  assert.match(files[1].diff, /model_catalog_json = "gettokens-model-catalog\.json"/);
+});
+
+test('account local CLI preview files are built in the shared model layer for Claude Code', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      provider: 'deepseek',
+      baseUrl: 'https://api.deepseek.com/v1',
+      supportedFormats: ['anthropic'],
+    }),
+    relayKeyItems,
+    relayEndpoint,
+    sidecarReady: true,
+  });
+
+  const claude = actions.find((item) => item.target === 'claude');
+  const files = buildAccountLocalCliPreviewFiles(claude.draft, relayKeyItems);
+
+  assert.deepEqual(files.map((file) => file.path), ['~/.claude/settings.json']);
+  assert.match(files[0].diff, /ANTHROPIC_BASE_URL/);
+});
+
 test('Claude draft uses relay endpoint instead of upstream anthropic format URL for non-direct templates', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
@@ -646,6 +691,9 @@ test('AccountLocalCliApplyConfirm exposes editable Claude Code draft fields', as
   const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /onDraftChange/);
+  assert.match(source, /buildAccountLocalCliPreviewFiles/);
+  assert.doesNotMatch(source, /function buildPreviewFiles/);
+  assert.doesNotMatch(source, /buildClaudeCodeSettingsDiff|buildCodexLocalApplyDiff/);
   assert.match(source, /ClaudeSettingsField/);
   assert.match(source, /Claude Code 配置/);
   assert.match(source, /field="apiKey"/);
@@ -666,6 +714,9 @@ test('AccountLocalCliApplyConfirm exposes editable Codex local apply settings', 
   const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /Codex 配置/);
+  assert.match(source, /buildAccountLocalCliPreviewFiles/);
+  assert.doesNotMatch(source, /function buildPreviewFiles/);
+  assert.doesNotMatch(source, /buildClaudeCodeSettingsDiff|buildCodexLocalApplyDiff/);
   assert.match(source, /handleCodexTextChange/);
   assert.match(source, /handleCodexBooleanChange/);
   assert.match(source, /handleCodexAuthStrategyChange/);
