@@ -142,6 +142,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
             setDraft={setConfigDraft}
             verifyState={props.verifyState}
             modelNames={props.modelNames}
+            span="wide"
             onVerify={props.onVerify}
             onProxyValidityChange={setProxyRouteError}
           />

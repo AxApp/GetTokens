@@ -793,9 +793,12 @@ export function AccountCredentialVerifySection({
       title="凭据与验证"
       span={span}
     >
-      <div data-account-credential-verify-layout="quiet-split" className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div data-account-credential-verify-layout="quiet-split" className="grid min-w-0 gap-4 lg:grid-cols-[minmax(20rem,7fr)_minmax(16rem,5fr)]">
         <div data-account-credential-left-pane="credential-connection" className="grid content-start gap-4 lg:pr-4">
           <section data-account-credential-list-item="credential" className="grid content-start gap-3">
+            <div className={accountDetailCredentialSectionTitleClass}>
+              账号凭据
+            </div>
             <div data-account-credential-fields="balanced-grid" className="grid gap-3">
               <CredentialInputField
                 label="账号名称"
@@ -863,7 +866,10 @@ function CapabilityEndpointsPanel({
   return (
     <section data-account-credential-list-item="capability-endpoints" className="grid gap-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <span className="text-xs font-medium text-[var(--gt-ink-muted)]">端点配置</span>
+        <div className="min-w-0">
+          <span className="text-xs font-medium text-[var(--gt-ink-muted)]">协议端点</span>
+          <p className="mt-1 text-[10px] font-medium leading-relaxed text-[var(--gt-ink-muted)]">留空使用默认基础 URL。</p>
+        </div>
         <AccountDetailPill className={accountDetailCredentialPillClass}>
           {CAPABILITY_ENDPOINTS.length} 端
         </AccountDetailPill>
@@ -1074,7 +1080,7 @@ function CredentialInputField({
         )}
       </div>
       {options && options.length > 0 ? (
-        <div className="relative inline-block w-full max-w-sm">
+        <div className="relative inline-block w-full">
           <select
             value={value}
             onChange={(event) => onChange(event.target.value)}
@@ -1097,7 +1103,7 @@ function CredentialInputField({
           value={value}
           placeholder={placeholder || '请输入...'}
           onChange={(event) => onChange(event.target.value)}
-          className={`${accountDetailCredentialInputClass} w-full max-w-sm`}
+          className={`${accountDetailCredentialInputClass} w-full`}
         />
       )}
     </label>
@@ -1157,8 +1163,8 @@ function VerifyConnectionPanel({
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div ref={modelMenuRef} className="relative flex-1">
+      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <div ref={modelMenuRef} className="relative min-w-0">
           <div className="flex items-center gap-2">
             <input
               value={verifyModel}
@@ -1167,7 +1173,7 @@ function VerifyConnectionPanel({
                 setModelMenuMode('custom');
               }}
               onFocus={() => setIsModelMenuOpen(true)}
-              className={`${accountDetailCredentialInputClass} flex-1`}
+              className={`${accountDetailCredentialInputClass} min-w-0 w-full`}
               placeholder={DEFAULT_VERIFY_MODEL}
             />
             {modelNames && modelNames.length > 0 ? (

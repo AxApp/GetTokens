@@ -22,14 +22,17 @@ test('getSettingsSectionBadge reflects settings section order', () => {
   assert.equal(getSettingsSectionBadge('updates'), '05');
 });
 
-test('settings appearance exposes theme mode and theme preset controls via useTheme', async () => {
+test('settings appearance keeps one runtime style and exposes only non-style preferences', async () => {
   const source = await readFile(new URL('./SettingsFeature.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /const \{ themeMode, setThemeMode, themePreset, setThemePreset \} = useTheme\(\)/);
-  assert.match(source, /<Segmented\b/);
+  assert.doesNotMatch(source, /useTheme\(\)/);
+  assert.doesNotMatch(source, /themeMode|setThemeMode|themePreset|setThemePreset/);
+  assert.doesNotMatch(source, /data-theme-preset-control="true"/);
+  assert.doesNotMatch(source, /settings\.theme_preset|settings\.theme_mode/);
+  assert.match(source, /settings\.appearance/);
+  assert.match(source, /settings\.language/);
+  assert.match(source, /settings\.text_scale/);
   assert.match(source, /<Switch\b/);
-  assert.match(source, /data-theme-preset-control="true"/);
-  assert.match(source, /settings\.theme_preset/);
   assert.match(source, /parchment-settings-row/);
   assert.match(source, /settings-group/);
   assert.match(source, /settings-section-title/);
@@ -55,7 +58,7 @@ test('settings page uses Ant Design adapter and macOS preferences layout', async
   const source = await readFile(new URL('./SettingsFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /from 'antd'/);
-  assert.match(source, /GetTokensAntdThemeProvider/);
+  assert.doesNotMatch(source, /GetTokensAntdThemeProvider/);
   assert.match(source, /data-settings-antd-spike="true"/);
   assert.match(source, /data-settings-redesign="macos-preferences"/);
   assert.match(source, /settings-page/);

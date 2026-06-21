@@ -19,21 +19,21 @@ import {
 } from './theme.ts';
 
 test('isThemeMode only accepts supported mode values', () => {
-  assert.equal(isThemeMode('system'), true);
   assert.equal(isThemeMode('light'), true);
-  assert.equal(isThemeMode('dark'), true);
+  assert.equal(isThemeMode('system'), false);
+  assert.equal(isThemeMode('dark'), false);
   assert.equal(isThemeMode('parchment-trust-console'), false);
   assert.equal(isThemeMode(null), false);
 });
 
 test('isThemePreset only accepts supported preset values', () => {
   assert.equal(isThemePreset('classic'), true);
-  assert.equal(isThemePreset('parchment-trust-console'), true);
+  assert.equal(isThemePreset('parchment-trust-console'), false);
   assert.equal(isThemePreset('dark'), false);
   assert.equal(isThemePreset(null), false);
 });
 
-test('theme storage readers keep mode and preset independent', () => {
+test('theme storage readers ignore legacy runtime style choices', () => {
   const storage = {
     getItem(key) {
       if (key === THEME_MODE_STORAGE_KEY) {
@@ -46,8 +46,8 @@ test('theme storage readers keep mode and preset independent', () => {
     },
   };
 
-  assert.equal(readStoredThemeMode(storage), 'dark');
-  assert.equal(readStoredThemePreset(storage), 'parchment-trust-console');
+  assert.equal(readStoredThemeMode(storage), DEFAULT_THEME_MODE);
+  assert.equal(readStoredThemePreset(storage), DEFAULT_THEME_PRESET);
 });
 
 test('theme storage readers fall back for invalid values or unavailable storage', () => {
@@ -67,23 +67,23 @@ test('theme persistence writes stable localStorage keys', () => {
     },
   };
 
-  persistThemeMode(storage, 'light');
+  persistThemeMode(storage, 'dark');
   persistThemePreset(storage, 'parchment-trust-console');
 
   assert.deepEqual(writes, [
     [THEME_MODE_STORAGE_KEY, 'light'],
-    [THEME_PRESET_STORAGE_KEY, 'parchment-trust-console'],
+    [THEME_PRESET_STORAGE_KEY, 'classic'],
   ]);
 });
 
-test('theme preset registry exposes classic and parchment preview tokens', () => {
+test('theme preset registry exposes only the single runtime style', () => {
   assert.deepEqual(
     themePresetDefinitions.map((definition) => definition.id),
-    ['classic', 'parchment-trust-console'],
+    ['classic'],
   );
 
-  const parchment = getThemePresetDefinition('parchment-trust-console');
-  assert.equal(parchment.rootAttribute, 'parchment-trust-console');
-  assert.equal(parchment.previewTokens.canvas, '#f5f4ed');
-  assert.equal(parchment.previewTokens.accent, '#c96442');
+  const classic = getThemePresetDefinition('parchment-trust-console');
+  assert.equal(classic.rootAttribute, 'classic');
+  assert.equal(classic.previewTokens.canvas, '#ffffff');
+  assert.equal(classic.previewTokens.accent, '#111111');
 });

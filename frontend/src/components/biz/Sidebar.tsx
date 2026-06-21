@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Download, ExternalLink, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { ChevronDown, Download, ExternalLink } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
 import type { AppPage, ClaudeWorkspace, CodexWorkspace, ReleaseInfo } from '../../types';
 import { formatSidebarVersion } from '../../utils/version';
@@ -8,7 +8,7 @@ import { getSidebarNavItems } from './sidebarNav';
 import { resolveSidebarUpdatePrompt } from './sidebarUpdatePrompt';
 import { getSidebarToggleTranslationKey } from './sidebarState';
 
-type OpenSection = 'accounts' | 'codex' | 'claude' | null;
+type OpenSection = 'codex' | 'claude' | null;
 
 interface SidebarProps {
   activePage: AppPage;
@@ -55,9 +55,11 @@ const claudeWorkspaceItems = [
 
 const SECTION_IDS = ['codex', 'claude'] as const;
 
-function isSectionId(id: string): id is 'accounts' | 'codex' | 'claude' {
+function isSectionId(id: string): id is 'codex' | 'claude' {
   return SECTION_IDS.includes(id as any);
 }
+
+const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1';
 
 export default function Sidebar({
   activePage,
@@ -127,57 +129,47 @@ export default function Sidebar({
   }
 
   function handleSectionMouseEnter(sectionId: string) {
-    // 折叠时 hover 打开飞出菜单
     if (!isExpanded && isSectionId(sectionId)) {
       setOpenSection(sectionId as OpenSection);
     }
   }
 
   function handleSectionMouseLeave() {
-    // 折叠时 mouseLeave 关闭飞出菜单
     if (!isExpanded) setOpenSection(null);
   }
 
   return (
     <aside
-      className={`relative z-20 flex h-full shrink-0 flex-col border-r transition-[width] duration-200 ease-out ${
-        isCollapsed ? 'w-[4.75rem]' : 'w-60'
+      className={`relative z-20 flex h-full shrink-0 flex-col transition-[width] duration-150 ${
+        isCollapsed ? 'w-[48px]' : 'w-[220px]'
       }`}
-      style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-panel)' }}
+      style={{ borderRight: '1px solid var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-canvas)' }}
       data-collaboration-id="NAV_SIDEBAR"
       data-sidebar-collapsed={isCollapsed ? 'true' : 'false'}
     >
-      {/* Brand */}
-      <div className={`border-b transition-[padding] duration-200 ease-out ${isCollapsed ? 'p-3' : 'p-5'}`} style={{ borderColor: 'var(--gt-border-subtle)' }}>
-        <div className={`flex transition-[gap] duration-200 ease-out ${isCollapsed ? 'flex-col items-center gap-3' : 'items-center justify-between gap-4'}`}>
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            aria-label={t(getSidebarToggleTranslationKey(isCollapsed))}
-            title={t(getSidebarToggleTranslationKey(isCollapsed))}
-            aria-expanded={isExpanded}
-            className={`flex items-center rounded-md transition duration-150 hover:bg-[var(--gt-surface-muted)] active:scale-[0.98] ${isCollapsed ? 'justify-center' : 'gap-3'}`}
-            style={{ color: 'var(--gt-ink-secondary)' }}
-          >
-            <div className="h-8 w-8 shrink-0" style={{ color: 'var(--gt-accent-primary)' }}>
-              <svg viewBox="0 0 100 100" className="h-full w-full" fill="currentColor" aria-hidden="true">
-                <rect x="10" y="14" width="80" height="32" rx="4" />
-                <rect x="58" y="46" width="32" height="24" rx="4" />
-                <rect x="74" y="70" width="16" height="16" rx="3" />
-                <circle cx="26" cy="30" r="6.4" fill="var(--gt-surface-panel)" />
-              </svg>
-            </div>
-            {isExpanded && (
-              <div className="text-2xl font-bold" style={{ fontFamily: 'var(--gt-font-family-sans)', color: 'var(--gt-ink-primary)' }}>
-                GetTokens
-              </div>
-            )}
-          </button>
-        </div>
+      {/* Header: traffic light zone + toggle */}
+      <div
+        className={`flex items-center ${isCollapsed ? 'justify-center px-2 pt-[22px] pb-1' : 'px-3 pt-[22px] pb-1'}`}
+      >
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label={t(getSidebarToggleTranslationKey(isCollapsed))}
+          title={t(getSidebarToggleTranslationKey(isCollapsed))}
+          className={`flex items-center gap-1.5 rounded p-0.5 transition duration-75 hover:bg-[var(--gt-surface-muted)] active:scale-95 ${FOCUS_RING}`}
+          style={{ color: 'var(--gt-ink-muted)' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M2 3h8M2 6h8M2 9h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+        </button>
       </div>
 
       {/* Nav */}
-      <nav className={`flex-1 overflow-y-auto transition-[padding] duration-200 ease-out ${isCollapsed ? 'space-y-1 p-2' : 'space-y-1 p-3'}`}>
+      <nav
+        className="flex-1 overflow-y-auto px-2 py-1"
+        style={{ overscrollBehavior: 'contain' }}
+      >
         {navItems.map((item) => {
           const hasSubmenu = isSectionId(item.id);
           const isActive = activePage === item.id;
@@ -187,7 +179,6 @@ export default function Sidebar({
             <div
               key={item.id}
               ref={(el) => { navItemRefs.current.set(item.id, el); }}
-              className="relative"
               onMouseEnter={() => handleSectionMouseEnter(item.id)}
               onMouseLeave={() => handleSectionMouseLeave()}
             >
@@ -197,28 +188,36 @@ export default function Sidebar({
                 aria-expanded={hasSubmenu ? isOpen : undefined}
                 title={isCollapsed ? t(item.label) : undefined}
                 onClick={() => handleNavItemClick(item)}
-                className={`flex w-full items-center rounded-lg py-2 text-sm font-medium transition duration-150 active:scale-[0.98] ${
-                  isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
+                className={`flex w-full items-center rounded-md transition duration-75 ${FOCUS_RING} ${
+                  isCollapsed ? 'justify-center px-0 py-1.5' : 'px-2 py-1'
                 }`}
                 style={{
-                  color: isActive ? 'var(--gt-accent-primary)' : 'var(--gt-ink-secondary)',
-                  backgroundColor: isActive ? 'color-mix(in srgb, var(--gt-accent-primary) 8%, transparent)' : 'transparent',
-                  fontFamily: 'var(--gt-font-family-sans)',
+                  color: isActive ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
+                  backgroundColor: isActive ? 'var(--gt-surface-muted)' : 'transparent',
+                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+                  fontSize: '13px',
+                  lineHeight: '20px',
+                  fontWeight: isActive ? 500 : 400,
+                  gap: isCollapsed ? 0 : '6px',
                 }}
               >
-                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <svg className="shrink-0 opacity-60" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d={item.icon} />
                 </svg>
                 {isExpanded && (
-                  <span className="flex-1 text-left">{t(item.label)}</span>
+                  <span className="min-w-0 flex-1 truncate text-left">{t(item.label)}</span>
                 )}
                 {hasSubmenu && isExpanded && (
-                  <svg
-                    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"
-                  >
-                    <path d="M9 6l6 6-6 6" />
-                  </svg>
+                  <ChevronDown
+                    className="shrink-0 transition-transform duration-100"
+                    width="10" height="10"
+                    style={{
+                      color: 'var(--gt-ink-muted)',
+                      opacity: 0.4,
+                      transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                    }}
+                    strokeWidth={2}
+                  />
                 )}
               </button>
 
@@ -233,11 +232,14 @@ export default function Sidebar({
                     <button
                       key={ws.id}
                       onClick={() => handleSubmenuItemClick('codex', ws.id)}
-                      className="w-full rounded-md px-3 py-1.5 text-left text-sm font-medium transition duration-150 active:scale-[0.98]"
+                      className={`w-full rounded-md px-2 py-1 text-left transition duration-75 ${FOCUS_RING}`}
                       style={{
-                        color: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'var(--gt-accent-primary)' : 'var(--gt-ink-secondary)',
-                        backgroundColor: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'color-mix(in srgb, var(--gt-accent-primary) 8%, transparent)' : 'transparent',
-                        fontFamily: 'var(--gt-font-family-sans)',
+                        color: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
+                        backgroundColor: activePage === 'codex' && activeCodexWorkspace === ws.id ? 'var(--gt-surface-muted)' : 'transparent',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+                        fontSize: '13px',
+                        lineHeight: '20px',
+                        fontWeight: activePage === 'codex' && activeCodexWorkspace === ws.id ? 500 : 400,
                       }}
                     >
                       {t(ws.label)}
@@ -247,11 +249,14 @@ export default function Sidebar({
                     <button
                       key={ws.id}
                       onClick={() => handleSubmenuItemClick('claude', ws.id)}
-                      className="w-full rounded-md px-3 py-1.5 text-left text-sm font-medium transition duration-150 active:scale-[0.98]"
+                      className={`w-full rounded-md px-2 py-1 text-left transition duration-75 ${FOCUS_RING}`}
                       style={{
-                        color: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'var(--gt-accent-primary)' : 'var(--gt-ink-secondary)',
-                        backgroundColor: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'color-mix(in srgb, var(--gt-accent-primary) 8%, transparent)' : 'transparent',
-                        fontFamily: 'var(--gt-font-family-sans)',
+                        color: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'var(--gt-ink-primary)' : 'var(--gt-ink-secondary)',
+                        backgroundColor: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 'var(--gt-surface-muted)' : 'transparent',
+                        fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+                        fontSize: '13px',
+                        lineHeight: '20px',
+                        fontWeight: activePage === 'claude' && activeClaudeWorkspace === ws.id ? 500 : 400,
                       }}
                     >
                       {t(ws.label)}
@@ -265,57 +270,68 @@ export default function Sidebar({
       </nav>
 
       {/* Bottom: version + update */}
-      <div className={`border-t transition-[padding] duration-200 ease-out ${isCollapsed ? 'p-3' : 'p-4'}`} style={{ borderColor: 'var(--gt-border-subtle)' }}>
-        <div className="grid place-items-center">
-          {isExpanded && (
+      <div
+        className="px-3 py-2"
+        style={{ borderTop: '1px solid var(--gt-border-subtle)' }}
+      >
+        {isExpanded ? (
+          <div className="flex flex-col items-center">
             <div
-              className="col-start-1 row-start-1 flex w-full flex-col items-center justify-center text-xs"
-              style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
+              style={{
+                color: 'var(--gt-ink-muted)',
+                fontFamily: 'var(--gt-font-family-mono)',
+                fontSize: '10px',
+                lineHeight: '14px',
+                fontVariantNumeric: 'tabular-nums',
+              }}
             >
-              <div className="max-w-full truncate text-center">v{sidebarVersion}</div>
-              {updatePrompt && (
-                <>
-                  <div className="mt-2 max-w-full truncate text-center text-[10px] font-medium" style={{ color: 'var(--gt-status-success)' }}>
-                    {t('nav.update_available')}
-                  </div>
-                  <button
-                    type="button"
-                    className="mt-2 inline-flex min-h-7 w-full min-w-0 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition duration-150 hover:opacity-90 active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
-                    style={{ backgroundColor: 'var(--gt-status-success)', color: '#ffffff' }}
-                    aria-label={updatePromptLabel}
-                    title={updatePromptTitle}
-                    onClick={onUpdateAction}
-                    disabled={!onUpdateAction || isUpdateActionPending}
-                  >
-                    <UpdateActionIcon className="h-3 w-3 shrink-0" aria-hidden="true" />
-                    <span className="min-w-0 truncate">{updateButtonLabel}</span>
-                  </button>
-                </>
-              )}
+              v{sidebarVersion}
             </div>
-          )}
-          {isCollapsed && updatePrompt ? (
-            <button
-              type="button"
-              className="col-start-1 row-start-1 flex h-7 w-7 items-center justify-center rounded-full transition duration-200 hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-70"
-              style={{ backgroundColor: 'var(--gt-status-success)', color: '#ffffff' }}
-              aria-label={updatePromptLabel}
-              title={updatePromptTitle}
-              onClick={onUpdateAction}
-              disabled={!onUpdateAction || isUpdateActionPending}
-            >
-              <UpdateActionIcon className="h-3 w-3" aria-hidden="true" />
-            </button>
-          ) : isCollapsed ? (
-            <div
-              className="col-start-1 row-start-1 h-2 w-2 rounded-full"
-              style={{ backgroundColor: 'var(--gt-accent-primary)' }}
-              role="img"
-              aria-label={`v${sidebarVersion}`}
-              title={`v${sidebarVersion}`}
-            />
-          ) : null}
-        </div>
+            {updatePrompt && (
+              <>
+                <div className="mt-1 font-medium" style={{ color: 'var(--gt-status-success)', fontSize: '9px', lineHeight: '12px' }}>
+                  {t('nav.update_available')}
+                </div>
+                <button
+                  type="button"
+                  className={`mt-1 flex h-5 w-full items-center justify-center gap-1 rounded transition duration-75 hover:opacity-90 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ${FOCUS_RING}`}
+                  style={{ backgroundColor: 'var(--gt-status-success)', color: '#ffffff', fontSize: '10px', fontWeight: 500, lineHeight: '14px' }}
+                  aria-label={updatePromptLabel}
+                  title={updatePromptTitle}
+                  aria-live="polite"
+                  onClick={onUpdateAction}
+                  disabled={!onUpdateAction || isUpdateActionPending}
+                >
+                  <UpdateActionIcon className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+                  <span className="min-w-0 truncate">{updateButtonLabel}</span>
+                </button>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="grid place-items-center">
+            {updatePrompt ? (
+              <button
+                type="button"
+                className={`flex h-4 w-4 items-center justify-center rounded-full transition duration-75 hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-60 ${FOCUS_RING}`}
+                style={{ backgroundColor: 'var(--gt-status-success)', color: '#ffffff' }}
+                aria-label={updatePromptLabel}
+                title={updatePromptTitle}
+                aria-live="polite"
+                onClick={onUpdateAction}
+                disabled={!onUpdateAction || isUpdateActionPending}
+              >
+                <UpdateActionIcon className="h-2 w-2" aria-hidden="true" />
+              </button>
+            ) : (
+              <div
+                className="h-1 w-1 rounded-full"
+                style={{ backgroundColor: 'var(--gt-ink-muted)', opacity: 0.4 }}
+                aria-hidden="true"
+              />
+            )}
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -339,33 +355,30 @@ function Submenu({
     const rect = parentRef.current.getBoundingClientRect();
     return createPortal(
       <div
-        className="pointer-events-auto fixed z-[9999] w-56 rounded-lg border p-2"
+        className="pointer-events-auto fixed z-[9999] w-48 rounded-lg p-1"
+        role="menu"
         style={{
           left: rect.right + 4,
-          top: rect.top,
-          borderColor: 'var(--gt-border-subtle)',
+          top: rect.top - 2,
           backgroundColor: 'var(--gt-surface-raised)',
-          boxShadow: 'var(--gt-elevation-raised-2)',
+          boxShadow: '0 4px 16px rgb(0 0 0 / 0.12), 0 0 0 1px var(--gt-border-subtle)',
         }}
       >
-        <div className="space-y-0.5">{children}</div>
+        {children}
       </div>,
       document.body,
     );
   }
 
-  // Expand below
   return (
     <div
-      className={`grid w-full overflow-hidden transition-[grid-template-rows,opacity] duration-200 ease-out ${
+      className={`grid w-full overflow-hidden transition-[grid-template-rows,opacity] duration-100 ease-out ${
         isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
       }`}
     >
       <div className="min-h-0 overflow-hidden">
-        <div className="pt-1">
-          <div className="rounded-lg border p-2" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}>
-            <div className="space-y-0.5">{children}</div>
-          </div>
+        <div className="py-0.5 pl-5 pr-1" role="menu">
+          {children}
         </div>
       </div>
     </div>

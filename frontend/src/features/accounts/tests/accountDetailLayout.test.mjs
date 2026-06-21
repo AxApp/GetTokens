@@ -143,10 +143,12 @@ test('quota curl test result normalizes returned windows for detail quota bars',
 test('api key credential module uses left-right credential and connection layout', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const targetSource = sourceBlock(source, 'export function AccountCredentialVerifySection', 'function CapabilityEndpointsPanel');
 
   assert.match(source, /export function AccountCredentialVerifySection/);
   assert.match(source, /data-account-credential-verify-layout="quiet-split"/);
-  assert.match(source, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
+  assert.match(targetSource, /lg:grid-cols-\[minmax\(20rem,7fr\)_minmax\(16rem,5fr\)\]/);
+  assert.doesNotMatch(targetSource, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
   assert.match(source, /data-account-credential-left-pane="credential-connection"/);
   assert.match(source, /data-account-credential-right-pane="route"/);
   assert.match(source, /accountDetailCredentialPaneDividerClass/);
@@ -190,6 +192,18 @@ test('api key credential module uses left-right credential and connection layout
   assert.doesNotMatch(source, /export function AccountCredentialsSection/);
   assert.doesNotMatch(source, /export function AccountVerifySection/);
   assert.doesNotMatch(source, /data-account-credential-verify-layout="v09-low-nesting"/);
+});
+
+test('api key credential module keeps fields and verify row from clipping in the modal', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const inputSource = sourceBlock(source, 'function CredentialInputField', 'function VerifyConnectionPanel');
+  const verifySource = sourceBlock(source, 'function VerifyConnectionPanel', 'export function AccountQuotaSection');
+
+  assert.doesNotMatch(inputSource, /max-w-sm/);
+  assert.match(inputSource, /className=\{`\$\{accountDetailCredentialInputClass\} w-full`\}/);
+  assert.match(verifySource, /grid gap-2 sm:grid-cols-\[minmax\(0,1fr\)_auto\] sm:items-center/);
+  assert.match(verifySource, /className="relative min-w-0"/);
+  assert.match(verifySource, /className=\{`\$\{accountDetailCredentialInputClass\} min-w-0 w-full`\}/);
 });
 
 test('credential endpoint copy explains default base url versus protocol overrides', async () => {
