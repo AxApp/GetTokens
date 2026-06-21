@@ -66,9 +66,9 @@ const mcpFilterOptions: ReadonlyArray<SegmentedOption<McpFilter>> = [
 ];
 
 const codexExtensionsActionButtonClass =
-  'inline-flex h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const codexExtensionsNoticeClass =
-  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
+  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
 const codexExtensionsListContentClass =
   'scrollbar-stable min-h-0 flex-1 overflow-auto divide-y divide-[var(--gt-border-subtle)]';
 const codexExtensionsListRowClass =
@@ -76,13 +76,13 @@ const codexExtensionsListRowClass =
 const codexExtensionsListTitleClass =
   'min-w-0 truncate text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]';
 const codexExtensionsListSubtitleClass =
-  'mt-1 line-clamp-2 text-[length:var(--gt-font-size-sm)] font-medium leading-snug text-[var(--gt-ink-muted)]';
+  'mt-1 line-clamp-2 text-[length:var(--gt-font-size-sm)] font-normal leading-snug text-[var(--gt-ink-muted)]';
 const codexExtensionsListMetaClass =
-  'mt-2 break-all text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+  'mt-2 break-all text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const codexExtensionsEmptyClass =
-  'px-4 py-12 text-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]';
+  'px-4 py-12 text-center text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]';
 const codexExtensionsTransportBadgeClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)]';
 
 interface ConfigEditorState {
   open: boolean;

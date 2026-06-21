@@ -58,8 +58,8 @@ function ComboboxOverview() {
   return (
     <div className="grid w-full max-w-6xl gap-4 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Combobox</h2>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">Combobox</h2>
+        <p className="mt-2 max-w-2xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '同屏检查默认、长值、空选项、右对齐和禁用状态。'
             : 'Default, long value, empty options, right-aligned, and disabled states on one page.'}
@@ -68,19 +68,19 @@ function ComboboxOverview() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-          <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '默认' : 'Default'}</h3>
+          <h3 className="text-sm font-semibold tracking-normal">{zh ? '默认' : 'Default'}</h3>
           <ComboboxSample />
         </section>
         <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-          <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '长值' : 'Long Value'}</h3>
+          <h3 className="text-sm font-semibold tracking-normal">{zh ? '长值' : 'Long Value'}</h3>
           <ComboboxSample initialValue="openai-compatible-provider-with-long-model-name" />
         </section>
         <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-          <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '空选项' : 'Empty Options'}</h3>
+          <h3 className="text-sm font-semibold tracking-normal">{zh ? '空选项' : 'Empty Options'}</h3>
           <ComboboxSample empty />
         </section>
         <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-          <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '右对齐 / 禁用' : 'Right Aligned / Disabled'}</h3>
+          <h3 className="text-sm font-semibold tracking-normal">{zh ? '右对齐 / 禁用' : 'Right Aligned / Disabled'}</h3>
           <ComboboxSample align="right" disabled />
         </section>
       </div>

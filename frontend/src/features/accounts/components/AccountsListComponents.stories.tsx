@@ -360,10 +360,10 @@ function AccountsListSample({
           )}
           emptyContent={
             <div className="border-2 border-dashed border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-10 text-center">
-              <p className="text-sm font-black uppercase italic tracking-normal text-[var(--gt-ink-primary)]">
+              <p className="text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                 No matching accounts
               </p>
-              <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-bold uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
+              <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                 Search and filters are preserved while the list renders an empty group.
               </p>
             </div>
@@ -378,14 +378,14 @@ function AccountsListOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号列表</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">账号列表</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           账号列表整体进入设计系统：页头、搜索筛选、视图切换、分组容器和真实账号卡片用同一组 mock 组合验收。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Workbench states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Workbench states</h3>
         <div className="grid gap-5">
           <AccountsListSample label="DS-ACCOUNTS-LIST-FULL" />
           <AccountsListSample

@@ -70,8 +70,8 @@ function TokenSection({
   return (
     <section className="grid gap-4 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-5">
       <div>
-        <h3 className="text-xl font-black uppercase italic tracking-normal">{title}</h3>
-        <p className="mt-1 max-w-4xl text-[length:var(--gt-font-size-md)] font-bold leading-relaxed text-[var(--gt-ink-muted)]">
+        <h3 className="text-xl font-semibold tracking-normal">{title}</h3>
+        <p className="mt-1 max-w-4xl text-[length:var(--gt-font-size-md)] font-semibold leading-relaxed text-[var(--gt-ink-muted)]">
           {description}
         </p>
       </div>
@@ -87,8 +87,8 @@ function ScaleSample() {
   return (
     <div className="grid gap-5 bg-[var(--gt-surface-panel)] p-6 text-[var(--gt-ink-primary)]">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">字体系统</h2>
-        <p className="mt-2 max-w-4xl text-sm font-bold leading-relaxed text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">字体系统</h2>
+        <p className="mt-2 max-w-4xl text-sm font-semibold leading-relaxed text-[var(--gt-ink-muted)]">
           字族、字号、行高和 Tailwind 常用文字类都映射到设计系统 token。业务代码需要特殊尺寸时，使用
           {' '}text-[length:var(--gt-font-size-*)]，不再直接写 rem 字面量。
         </p>
@@ -98,8 +98,8 @@ function ScaleSample() {
         <div className="grid gap-3 md:grid-cols-2">
           {familyRows.map(([token, zhLabel, enLabel]) => (
             <Card key={token} size="small">
-              <div className="font-mono text-[length:var(--gt-font-size-sm)] font-black text-[var(--gt-ink-muted)]">{token}</div>
-              <div className="mt-2 break-all text-[length:var(--gt-font-size-lg)] font-black uppercase italic tracking-normal" style={{ fontFamily: `var(${token})` }}>
+              <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">{token}</div>
+              <div className="mt-2 break-all text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal" style={{ fontFamily: `var(${token})` }}>
                 {zh ? zhLabel : enLabel} / GetTokens / openai-compatible-provider
               </div>
             </Card>
@@ -111,8 +111,8 @@ function ScaleSample() {
         <div className="grid gap-3">
           {typeRows.map(([token, zhLabel, enLabel]) => (
             <Card key={token} size="small">
-              <div className="font-mono text-[length:var(--gt-font-size-sm)] font-black text-[var(--gt-ink-muted)]">{token}</div>
-              <div className="mt-2 font-black uppercase italic tracking-normal" style={{ fontSize: `var(${token})` }}>
+              <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">{token}</div>
+              <div className="mt-2 font-semibold tracking-normal" style={{ fontSize: `var(${token})` }}>
                 {zh ? zhLabel : enLabel} / 长中文标签 / openai-compatible-provider-with-long-name / 1234567890
               </div>
             </Card>
@@ -124,8 +124,8 @@ function ScaleSample() {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {lineHeightRows.map(([token, zhLabel, enLabel]) => (
             <Card key={token} size="small">
-              <div className="font-mono text-[length:var(--gt-font-size-sm)] font-black text-[var(--gt-ink-muted)]">{token}</div>
-              <p className="mt-2 text-[length:var(--gt-font-size-md)] font-bold text-[var(--gt-ink-primary)]" style={{ lineHeight: `var(${token})` }}>
+              <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">{token}</div>
+              <p className="mt-2 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]" style={{ lineHeight: `var(${token})` }}>
                 {zh ? zhLabel : enLabel} / 这是一段用于验证行高的说明文本，覆盖中文、英文和数字 123456。
               </p>
             </Card>
@@ -137,9 +137,9 @@ function ScaleSample() {
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
           {tailwindRows.map(([className, token]) => (
             <div key={className} className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-3">
-              <div className="font-mono text-[length:var(--gt-font-size-sm)] font-black text-[var(--gt-ink-muted)]">{className}</div>
-              <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-bold text-[var(--gt-ink-muted)]">{token}</div>
-              <div className={`${className} mt-2 font-black uppercase italic tracking-normal`}>
+              <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">{className}</div>
+              <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">{token}</div>
+              <div className={`${className} mt-2 font-semibold tracking-normal`}>
                 {zh ? '中文预览' : 'Preview'} / GT
               </div>
             </div>

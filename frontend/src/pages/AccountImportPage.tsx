@@ -53,7 +53,7 @@ const accountImportDropzoneClass = (active: boolean) =>
 const accountImportDropzoneTitleClass =
   'text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportDropzoneHintClass =
-  'max-w-sm text-[length:var(--gt-font-size-xs)] font-medium leading-relaxed tracking-normal text-[var(--gt-ink-muted)]';
+  'max-w-sm text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportTextareaClass =
   'min-h-36 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-xs text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountImportButtonClass =

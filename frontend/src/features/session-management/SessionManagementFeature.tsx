@@ -338,7 +338,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
         title={t('session_management.title')}
         meta={
           <span
-            className="block max-w-[min(62rem,70vw)] truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]"
+            className="block max-w-[min(62rem,70vw)] truncate text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]"
             title={copy.headerSubtitleLine(stats)}
           >
             {copy.headerSubtitleLine(stats)}
@@ -348,7 +348,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
         actions={
           <>
             {snapshotRefreshing ? (
-              <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+              <div className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
                 {copy.refreshing}
               </div>
             ) : null}

@@ -84,7 +84,7 @@ test('ClaudeCodeAccountListFeature uses the quiet workspace page shell', async (
   assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-(wide|wider|widest|tight|tighter|tightest|\[)/);
 });

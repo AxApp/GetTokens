@@ -165,7 +165,7 @@ const accountDetailRuntimeDecisionTitleClass =
 const accountDetailRuntimeDecisionMetaClass =
   'mt-1 min-w-0 truncate font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeDecisionDetailClass =
-  'mt-1 text-xs font-medium leading-5 text-[var(--gt-ink-secondary)]';
+  'mt-1 text-xs font-normal leading-5 text-[var(--gt-ink-secondary)]';
 const accountDetailRuntimeEvidenceClass =
   'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
 const accountDetailRuntimeReasonDetailClass =
@@ -189,7 +189,7 @@ const accountDetailCredentialPillClass =
 const accountDetailCredentialFieldLabelClass =
   'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailCredentialHelpClass =
-  'text-[10px] font-medium leading-relaxed text-[var(--gt-ink-muted)]';
+  'text-[10px] font-normal leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailCredentialInputClass =
   'min-w-0 rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1';
 const accountDetailCredentialButtonClass =
@@ -231,9 +231,9 @@ const accountDetailResourcePanelClass =
 const accountDetailResourcePanelValueClass =
   'mt-1 text-sm font-semibold text-[var(--gt-ink-primary)]';
 const accountDetailResourceHelpClass =
-  'text-xs font-medium leading-relaxed text-[var(--gt-ink-muted)]';
+  'text-xs font-normal leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailResourceEmptyScriptClass =
-  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-4 text-xs font-medium text-[var(--gt-ink-muted)]';
+  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-4 text-xs font-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourceDataRowClass =
   'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2 md:grid-cols-3';
 const accountDetailResourceMessageClass = (tone: 'neutral' | 'success' | 'danger') =>
@@ -263,7 +263,7 @@ const accountDetailQuotaResetBodyClass =
 const accountDetailQuotaResetTitleClass =
   'text-xl font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetDescriptionClass =
-  'mx-auto max-w-[28rem] text-sm font-medium leading-relaxed text-[var(--gt-ink-muted)]';
+  'mx-auto max-w-[28rem] text-sm font-normal leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailQuotaResetResultClass =
   'grid gap-2 border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_78%,transparent)] p-4 text-left font-sans text-xs font-semibold text-[var(--gt-ink-primary)] backdrop-blur-xl';
 const accountDetailQuotaResetErrorClass =
@@ -867,8 +867,8 @@ function CapabilityEndpointsPanel({
     <section data-account-credential-list-item="capability-endpoints" className="grid gap-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
-          <span className="text-xs font-medium text-[var(--gt-ink-muted)]">协议端点</span>
-          <p className="mt-1 text-[10px] font-medium leading-relaxed text-[var(--gt-ink-muted)]">留空使用默认基础 URL。</p>
+          <span className="text-xs font-normal text-[var(--gt-ink-muted)]">协议端点</span>
+          <p className="mt-1 text-[10px] font-normal leading-relaxed text-[var(--gt-ink-muted)]">留空使用默认基础 URL。</p>
         </div>
         <AccountDetailPill className={accountDetailCredentialPillClass}>
           {CAPABILITY_ENDPOINTS.length} 端
@@ -1158,7 +1158,7 @@ function VerifyConnectionPanel({
         连通验证
       </div>
       {vs.lastVerifiedAt ? (
-        <div className="text-[10px] font-medium tracking-normal text-[var(--gt-ink-muted)]">
+        <div className="text-[10px] font-normal tracking-normal text-[var(--gt-ink-muted)]">
           上次发送：{new Date(vs.lastVerifiedAt).toLocaleString()}
         </div>
       ) : null}

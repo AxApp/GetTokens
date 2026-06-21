@@ -280,14 +280,14 @@ function StatusCodexRootSettingsOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页 Codex Root Settings</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">状态页 Codex Root Settings</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           Codex root 面板展示 config.toml 顶层设置、预览和保存反馈，覆盖 boolean、enum、number、string 与 array 等不同类型的机器级设置。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Root setting states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Root setting states</h3>
         <div className="grid gap-4">
           <RootSettingsSample label="DS-CODEX-ROOT-READY" message="loaded from config.toml" />
           <RootSettingsSample

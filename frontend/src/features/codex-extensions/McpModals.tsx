@@ -30,15 +30,15 @@ const codexExtensionModalHeaderClass =
 const codexExtensionModalFooterClass =
   'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexExtensionModalButtonClass =
-  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexExtensionModalPrimaryButtonClass =
-  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const codexExtensionModalIconButtonClass =
   'inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const codexExtensionModalFieldClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
 const codexExtensionModalSelectClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
 
 export function McpServerEditorModal({
   draft,
@@ -115,7 +115,7 @@ export function McpServerEditorModal({
       >
         <header className={`${codexExtensionModalHeaderClass} grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center`}>
           <div className="min-w-0">
-            <div className="font-mono text-xl font-semibold italic text-[var(--gt-ink-primary)]">
+            <div className="font-mono text-xl font-semibold text-[var(--gt-ink-primary)]">
               {draft.label}
             </div>
             <div className="mt-1 break-all text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
@@ -297,7 +297,7 @@ export function McpServerEditorModal({
               {preview.length > 0 ? preview.map((change) => (
                 <div key={change.key} className="py-2">
                   <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">{change.key}</div>
-                  <div className="mt-1 break-all text-[length:var(--gt-font-size-xs)] font-bold text-[var(--gt-ink-muted)]">
+                  <div className="mt-1 break-all text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
                     {change.before} -&gt; {change.after}
                   </div>
                 </div>
@@ -357,7 +357,7 @@ function McpPreflightPanel({ result, t }: { result: McpPreflightResult; t: (key:
             <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
               {check.label}
             </div>
-            <div className="min-w-0 break-words font-mono text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-primary)]">
+            <div className="min-w-0 break-words font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
               {check.detail || '-'}
             </div>
             <div className={`font-mono text-[length:var(--gt-font-size-xs)] font-semibold ${preflightCheckClass(check.status)}`}>

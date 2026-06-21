@@ -130,7 +130,7 @@ test('openai compatible provider card uses the quiet workspace shell', async () 
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
-  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.04em\]|tracking-\[0\.06em\]|tracking-\[0\.08em\]|tracking-\[0\.16em\]/);
   assert.doesNotMatch(targetSource, /shadow-\[/);
@@ -145,7 +145,7 @@ test('vendor logo mark uses quiet provider badge tokens', async () => {
   assert.match(source, /--gt-surface-muted/);
   assert.doesNotMatch(source, /--gt-border-strong/);
   assert.doesNotMatch(source, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /\buppercase\b/);
 });
 
@@ -171,7 +171,7 @@ test('openai compatible compose modal uses the quiet workspace shell', async () 
   assert.doesNotMatch(source, /border-2|border-t-2|border-b-2|border-dashed/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]|bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /color-status-/);
-  assert.doesNotMatch(source, /font-black|\buppercase\b|shadow-hard|shadow-\[/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)|\buppercase\b|shadow-hard|shadow-\[/);
   assert.doesNotMatch(source, /tracking-\[/);
 });
 
@@ -192,7 +192,7 @@ test('openai compatible workspace uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /border-dashed/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /\buppercase\b/);
   assert.doesNotMatch(source, /tracking-\[0\.2em\]|tracking-tight/);
 });

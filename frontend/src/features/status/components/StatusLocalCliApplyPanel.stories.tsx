@@ -254,14 +254,14 @@ function StatusLocalCliApplyOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页本地 CLI 应用</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">状态页本地 CLI 应用</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           把本地 Codex / Claude Code 配置应用面板纳入设计系统，用固定 relay key、endpoint、provider、auth state 和 diff mock 覆盖关键分支。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Codex states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Codex states</h3>
         <div className="grid gap-4">
           <LocalCliApplySample label="DS-CODEX-READY" />
           <div className="grid gap-4 xl:grid-cols-3">
@@ -286,12 +286,12 @@ function StatusLocalCliApplyOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Claude state</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Claude state</h3>
           <LocalCliApplySample label="DS-CLAUDE-READY" initialActiveTarget="claude" claudeApplyMessage="settings.json preview ready" />
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">账号模板确认页</h3>
+        <h3 className="text-sm font-semibold tracking-normal">账号模板确认页</h3>
         <AccountTemplateLocalApplyConfirmSample label="DS-ACCOUNT-TEMPLATE-CONFIRM" />
       </section>
     </div>
@@ -412,13 +412,13 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
       <div className="grid gap-4 bg-[var(--gt-surface-panel)] p-4">
         <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="min-w-0">
-            <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
+            <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
               TEMPLATE APPLY CONFIRM
             </div>
-            <h2 className="mt-1 text-xl font-black uppercase italic tracking-normal text-[var(--gt-ink-primary)]">
+            <h2 className="mt-1 text-xl font-semibold tracking-normal text-[var(--gt-ink-primary)]">
               {templateSource.templateName} {'->'} {targetLabel}
             </h2>
-            <div className="mt-2 grid gap-2 text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)] md:grid-cols-2">
+            <div className="mt-2 grid gap-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)] md:grid-cols-2">
               <span>来源账号：{templateSource.accountTitle}</span>
               <span>模板：{templateSource.templateID}</span>
               <span>格式：{templateSource.sourceFormat}</span>
@@ -455,7 +455,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
             {target === 'codex' ? (
               <ConfirmSection title="Codex 配置">
                 <label className="grid gap-2">
-                  <span className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
+                  <span className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                     Provider
                   </span>
                   <Select
@@ -468,7 +468,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
+                  <span className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                     Auth Strategy
                   </span>
                   <Select
@@ -481,7 +481,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
+                  <span className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                     Model
                   </span>
                   <Input value={codexModel} onChange={(event) => setCodexModel(event.target.value)} />
@@ -502,7 +502,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
             ) : (
               <ConfirmSection title="Claude Code 配置">
                 <label className="grid gap-2">
-                  <span className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
+                  <span className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                     ANTHROPIC_MODEL
                   </span>
                   <Input value={claudeModel} onChange={(event) => setClaudeModel(event.target.value)} />
@@ -541,7 +541,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
           <Button onClick={() => setResult('已取消 / 未写入任何本地文件')}>
             取消
           </Button>
-          <div className="font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-[0.12em] text-[var(--gt-ink-primary)]">
+          <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
             {result || '等待确认 / 未写入'}
           </div>
         </div>
@@ -553,7 +553,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
 function ConfirmSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-      <h3 className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
+      <h3 className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
         {title}
       </h3>
       {children}
@@ -572,11 +572,11 @@ function ConfirmRow({
 }) {
   return (
     <div className="grid gap-1">
-      <span className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
+      <span className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
         {label}
       </span>
       <span
-        className={`break-all font-mono text-[length:var(--gt-font-size-sm)] font-bold ${
+        className={`break-all font-mono text-[length:var(--gt-font-size-sm)] font-semibold ${
           tone === 'warning' ? 'text-[var(--color-status-warning)]' : 'text-[var(--gt-ink-primary)]'
         }`}
       >
@@ -589,14 +589,14 @@ function ConfirmRow({
 function ConfirmList({ title, items }: { title: string; items: string[] }) {
   return (
     <div className="grid gap-2">
-      <div className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
+      <div className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
         {title}
       </div>
       <div className="grid gap-1">
         {items.map((item) => (
           <div
             key={item}
-            className="border-l-4 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-primary)]"
+            className="border-l-4 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]"
           >
             {item}
           </div>
@@ -615,7 +615,7 @@ function ConfirmNotice({ tone, text }: { tone: 'success' | 'warning' | 'danger';
         : 'var(--color-status-warning)';
   return (
     <div
-      className="border-2 border-dashed bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-wide"
+      className="border-2 border-dashed bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal"
       style={{ borderColor: color, color }}
     >
       {text}

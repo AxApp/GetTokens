@@ -48,10 +48,10 @@ const projectCandidateRulesPanelClass =
 const projectCandidateRulesPanelBodyClass = 'flex min-h-0 flex-1 flex-col gap-3 p-3';
 const projectCandidateRulesLabelClass = 'mb-1 block text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]';
 const projectCandidateRulesSelectClass =
-  'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] outline-none transition-colors focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+  'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition-colors focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const projectCandidateRulesListClass =
   'min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
-const projectCandidateRulesEmptyClass = 'px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const projectCandidateRulesEmptyClass = 'px-3 py-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const projectCandidateRulesAccountRowClass =
   'grid min-w-0 grid-cols-[1rem_2rem_minmax(0,1fr)_auto] items-center gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2 last:border-b-0';
 const projectCandidateRulesRankClass =
@@ -65,13 +65,13 @@ const projectCandidateRulesIconButtonClass =
 const projectCandidateRulesMetaClass =
   'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const projectCandidateRulesChipClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)]';
 const projectCandidateRulesStrongChipClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]';
 const projectCandidateRulesDangerChipClass =
   'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,transparent)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-danger)]';
 const projectCandidateRulesMessageClass =
-  'mt-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)]';
+  'mt-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)]';
 
 export default function ProjectCandidatePoolRulesPanel({
   channel,
@@ -365,7 +365,7 @@ export default function ProjectCandidatePoolRulesPanel({
 
         <section className={projectCandidateRulesPanelClass} data-project-candidate-rule-list>
           {rows.length === 0 ? (
-            <div className="min-h-0 flex-1 px-3 py-4 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="min-h-0 flex-1 px-3 py-4 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               暂无项目候选池规则
             </div>
           ) : (

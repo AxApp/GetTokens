@@ -71,8 +71,8 @@ function StatusSnippetPanelOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页片段面板</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">状态页片段面板</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '把 Status 页里用于展示配置片段和 diff 的代码面板拆成独立组件并纳入设计系统，统一检查复制按钮、额外操作、diff 着色和长行横向滚动。'
             : 'Admitted the Status code snippet panel for copy actions, extra header actions, diff coloring, and horizontal scrolling with long lines.'}
@@ -80,7 +80,7 @@ function StatusSnippetPanelOverview() {
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '配置片段' : 'Config snippets'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? '配置片段' : 'Config snippets'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <SnippetSample />
           <SnippetSample title="READ ONLY" copy={false} action />
@@ -88,7 +88,7 @@ function StatusSnippetPanelOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? 'Diff 与长行' : 'Diff and long lines'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? 'Diff 与长行' : 'Diff and long lines'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <SnippetSample title="CONFIG DIFF" content={diffConfig} action />
           <SnippetSample title="LONG LINE" content={longConfig} />

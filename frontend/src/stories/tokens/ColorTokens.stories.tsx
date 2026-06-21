@@ -111,11 +111,11 @@ function TokenSwatch({
           style={{ backgroundColor: `var(${token.name})` }}
         />
         <div className="min-w-0">
-          <div className="font-mono text-[length:var(--gt-font-size-md)] font-black">{token.name}</div>
-          <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-xs)] font-bold text-[var(--gt-ink-muted)]">
+          <div className="font-mono text-[length:var(--gt-font-size-md)] font-semibold">{token.name}</div>
+          <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
             {resolved || '解析中'}
           </div>
-          <div className="mt-2 text-[length:var(--gt-font-size-sm)] font-bold leading-relaxed text-[var(--gt-ink-muted)]">
+          <div className="mt-2 text-[length:var(--gt-font-size-sm)] font-semibold leading-relaxed text-[var(--gt-ink-muted)]">
             {token.usage}
           </div>
         </div>
@@ -135,17 +135,17 @@ function FixedSwatch({ color }: { color: FixedColor }) {
         style={{ backgroundColor: color.value }}
       />
       <div className="min-w-0">
-        <div className="font-mono text-[length:var(--gt-font-size-md)] font-black">{color.name}</div>
-        <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-bold uppercase text-[var(--gt-ink-muted)]">
+        <div className="font-mono text-[length:var(--gt-font-size-md)] font-semibold">{color.name}</div>
+        <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
           {color.value}
         </div>
-        <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-bold uppercase text-[var(--gt-ink-muted)]">
+        <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
           {resolved || '解析中'}
         </div>
-        <div className="mt-2 text-[length:var(--gt-font-size-sm)] font-bold leading-relaxed text-[var(--gt-ink-muted)]">
+        <div className="mt-2 text-[length:var(--gt-font-size-sm)] font-semibold leading-relaxed text-[var(--gt-ink-muted)]">
           {color.usage}
         </div>
-        <div className="mt-2 inline-flex border border-[var(--gt-border-strong)] px-2 py-0.5 font-mono text-[length:var(--gt-font-size-2xs)] font-black uppercase text-[var(--gt-ink-muted)]">
+        <div className="mt-2 inline-flex border border-[var(--gt-border-strong)] px-2 py-0.5 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">
           {color.source}
         </div>
       </div>
@@ -165,8 +165,8 @@ function TokenSection({
   return (
     <section className="grid gap-4 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-5">
       <div>
-        <h3 className="text-lg font-black uppercase italic tracking-normal">{title}</h3>
-        <p className="mt-1 max-w-4xl text-[length:var(--gt-font-size-md)] font-bold leading-relaxed text-[var(--gt-ink-muted)]">
+        <h3 className="text-lg font-semibold tracking-normal">{title}</h3>
+        <p className="mt-1 max-w-4xl text-[length:var(--gt-font-size-md)] font-semibold leading-relaxed text-[var(--gt-ink-muted)]">
           {description}
         </p>
       </div>
@@ -179,8 +179,8 @@ function PaletteSample() {
   return (
     <div className="grid gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">颜色系统</h2>
-        <p className="mt-2 max-w-4xl text-sm font-bold leading-relaxed text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">颜色系统</h2>
+        <p className="mt-2 max-w-4xl text-sm font-semibold leading-relaxed text-[var(--gt-ink-muted)]">
           这里展示项目当前实际使用的颜色入口。主题色、状态色、图表色和供应商图标色都从设计系统 token 进入业务代码。
         </p>
       </div>

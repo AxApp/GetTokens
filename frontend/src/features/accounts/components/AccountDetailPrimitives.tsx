@@ -82,7 +82,7 @@ export function AccountDetailStatCell({
 }) {
   return (
     <div className={`min-w-0 border-b border-r border-[var(--gt-border-subtle)] px-4 py-3 last:border-r-0 ${className}`}>
-      <div className="truncate text-xs font-medium tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="truncate text-xs font-normal tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
       <div className="mt-1 truncate font-semibold tabular-nums text-[var(--gt-ink-primary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
       {meta && <div className="mt-1 truncate text-xs text-[var(--gt-ink-muted)]">{meta}</div>}
     </div>
@@ -107,7 +107,7 @@ export function AccountDetailPill({
     danger: 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
   };
   return (
-    <span className={`inline-flex min-h-7 items-center rounded-full border px-2 py-1 text-xs font-medium ${toneStyles[tone]} ${className}`}>
+    <span className={`inline-flex min-h-7 items-center rounded-full border px-2 py-1 text-xs font-normal ${toneStyles[tone]} ${className}`}>
       {children}
     </span>
   );
@@ -131,7 +131,7 @@ export function AccountDetailNotice({
     danger: 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
   };
   return (
-    <div className={`rounded-lg border px-4 py-3 font-medium leading-relaxed ${toneStyles[tone]} ${className}`}>
+    <div className={`rounded-lg border px-4 py-3 font-normal leading-relaxed ${toneStyles[tone]} ${className}`}>
       {children}
     </div>
   );
@@ -147,7 +147,7 @@ export function AccountDetailEmptyState({
   className?: string;
 }) {
   return (
-    <div className={`rounded-lg border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-6 text-center font-medium text-[var(--gt-ink-muted)] ${className}`}>
+    <div className={`rounded-lg border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-6 text-center font-normal text-[var(--gt-ink-muted)] ${className}`}>
       {children}
     </div>
   );
@@ -180,7 +180,7 @@ export function AccountDetailEvidenceRow({
 }) {
   return (
     <div className={`grid gap-2 border-b border-[var(--gt-border-subtle)] px-4 py-3 last:border-b-0 md:grid-cols-[10rem_minmax(0,1fr)] md:items-start ${className}`}>
-      <div className="truncate text-xs font-medium tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="truncate text-xs font-normal tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
       <div className="min-w-0 break-all text-[var(--gt-ink-primary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
     </div>
   );
@@ -240,8 +240,8 @@ export function AccountDetailField({
 }) {
   return (
     <div className={`min-w-0 ${align === 'right' ? 'text-right' : ''} ${className}`}>
-      <div className="font-medium text-[var(--gt-ink-muted)]">{label}</div>
-      <div className="break-all font-medium text-[var(--gt-ink-primary)]">{value}</div>
+      <div className="font-normal text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="break-all font-normal text-[var(--gt-ink-primary)]">{value}</div>
     </div>
   );
 }

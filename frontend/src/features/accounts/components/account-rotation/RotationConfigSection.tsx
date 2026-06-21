@@ -13,9 +13,9 @@ interface RotationConfigSectionProps {
 const rotationConfigPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
 const rotationConfigInputShellClass = 'flex items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-1.5';
 const rotationConfigInputClass =
-  'w-full border-0 bg-transparent px-1 py-1 font-mono text-[length:var(--gt-font-size-md)] font-medium tracking-normal text-[var(--gt-ink-primary)] outline-none placeholder:text-[var(--gt-ink-muted)]/80';
-const rotationConfigMetaClass = 'text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
-const rotationConfigUnitClass = 'shrink-0 border-l border-[var(--gt-border-subtle)] pl-2 text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
+  'w-full border-0 bg-transparent px-1 py-1 font-mono text-[length:var(--gt-font-size-md)] font-normal tracking-normal text-[var(--gt-ink-primary)] outline-none placeholder:text-[var(--gt-ink-muted)]/80';
+const rotationConfigMetaClass = 'text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
+const rotationConfigUnitClass = 'shrink-0 border-l border-[var(--gt-border-subtle)] pl-2 text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
 const rotationConfigToggleClass = 'h-4 w-4 shrink-0 accent-[var(--gt-status-warning)]';
 
 export function RotationConfigSection({
@@ -57,7 +57,7 @@ export function RotationConfigSection({
             <button
               type="button"
               onClick={() => setIsStrategyMenuOpen((prev) => !prev)}
-              className="flex min-h-10 w-full items-center justify-between gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+              className="flex min-h-10 w-full items-center justify-between gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               aria-haspopup="listbox"
               aria-expanded={isStrategyMenuOpen}
             >
@@ -86,7 +86,7 @@ export function RotationConfigSection({
                           setRoutingDraft((prev) => (prev ? { ...prev, strategy: option.value } : prev));
                           setIsStrategyMenuOpen(false);
                         }}
-                        className={`flex w-full items-center justify-between rounded border px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-medium tracking-normal transition ${
+                        className={`flex w-full items-center justify-between rounded border px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal tracking-normal transition ${
                           isSelected
                             ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]'
                             : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)]'
@@ -95,7 +95,7 @@ export function RotationConfigSection({
                         aria-selected={isSelected}
                       >
                         <span>{option.label}</span>
-                        {isSelected ? <span className="text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal">ACTIVE</span> : null}
+                        {isSelected ? <span className="text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal">ACTIVE</span> : null}
                       </button>
                     );
                   })}
@@ -200,7 +200,7 @@ export function RotationConfigSection({
             className="flex min-h-[76px] items-center justify-between gap-4 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4"
           >
             <div className="space-y-1">
-              <span className="block text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]">
+              <span className="block text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]">
                 {t('common.status')}
               </span>
               <span className="block text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">

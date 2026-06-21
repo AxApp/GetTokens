@@ -22,5 +22,5 @@ test('SessionPluginConsolePanel uses the quiet workspace component shell', async
   assert.doesNotMatch(source, /--color-status-success/);
   assert.doesNotMatch(source, /shadow-\[10px_10px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(source, /shadow-\[/);
-  assert.doesNotMatch(source, /font-black uppercase/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
 });

@@ -236,7 +236,7 @@ export function AccountCurlEditorModal({
               <div className={accountCurlEditorSectionLabelClass}>
                 获取 Cookie 指引
               </div>
-              <ol className="list-decimal space-y-1 pl-4 text-[length:var(--gt-font-size-xs)] font-bold leading-relaxed text-[var(--gt-ink-primary)]">
+              <ol className="list-decimal space-y-1 pl-4 text-[length:var(--gt-font-size-xs)] font-semibold leading-relaxed text-[var(--gt-ink-primary)]">
                 {setupGuide.map((step) => (
                   <li key={step}>{step}</li>
                 ))}

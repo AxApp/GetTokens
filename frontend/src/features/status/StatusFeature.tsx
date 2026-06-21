@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Badge, Card, Space, Tag, Typography } from 'antd';
 import {
   ApplyClaudeCodeAPIKeyConfigToLocal,
   ApplyRelayServiceConfigToLocal,
@@ -16,7 +17,6 @@ import {
   UpdateRelayServiceAPIKeys,
 } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
-import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/useDebug';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import { useI18n } from '../../context/I18nContext';
@@ -84,21 +84,71 @@ const defaultSidecarStatus: SidecarStatus = {
 };
 
 const statusDiagnosticsPanelClass =
-  'grid gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4';
+  'status-diagnostics-card border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const statusDiagnosticsTitleClass =
   'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const statusDiagnosticsHeadlineClass =
   'mt-1 truncate text-[length:var(--gt-font-size-md)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const statusDiagnosticsToneClass =
-  'shrink-0 rounded border px-3 py-1 text-right text-[length:var(--gt-font-size-xs)] font-medium tracking-normal';
+  'shrink-0 rounded border px-3 py-1 text-right text-[length:var(--gt-font-size-xs)] font-normal tracking-normal';
 const statusDiagnosticsErrorClass =
-  'min-w-0 overflow-hidden rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-status-warning)]';
-const statusHeaderHealthClass =
-  'flex items-center gap-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
-const statusHeaderStatusDotClass =
-  'h-2.5 w-2.5 shrink-0 rounded-full border border-[var(--gt-border-subtle)]';
-const statusHeaderStatusBadgeClass =
-  'max-w-[18rem] rounded border px-4 py-1 text-right text-[length:var(--gt-font-size-xs)] font-medium tracking-normal';
+  'min-w-0 overflow-hidden rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-status-warning)]';
+const statusPageShellClass =
+  'h-full w-full overflow-auto bg-[var(--gt-surface-panel)] px-6 py-6 lg:px-8 lg:py-8';
+const statusPageContentClass = 'mx-auto flex w-full max-w-[1180px] flex-col gap-6';
+const statusHeroCardClass = 'status-hero-card border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const statusOverviewGridClass = 'grid gap-3 md:grid-cols-2 xl:grid-cols-4';
+const statusOverviewCardClass = 'status-overview-card h-full border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const statusWorkbenchGridClass = 'grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.34fr)]';
+const statusPrimaryRailClass = 'min-w-0';
+const statusDiagnosticsRailClass = 'grid min-w-0 gap-4';
+
+type StatusBadgeState = 'success' | 'processing' | 'default' | 'error' | 'warning';
+
+interface StatusOverviewCardProps {
+  label: string;
+  value: string;
+  meta: string;
+  status?: StatusBadgeState;
+  tagColor?: string;
+}
+
+function StatusOverviewCard({ label, value, meta, status, tagColor }: StatusOverviewCardProps) {
+  return (
+    <Card
+      size="small"
+      variant="outlined"
+      className={statusOverviewCardClass}
+      styles={{ body: { padding: 14 } }}
+      data-status-overview-card="true"
+    >
+      <Space orientation="vertical" size={6} className="w-full">
+        <Typography.Text type="secondary" className="text-[length:var(--gt-font-size-xs)]">
+          {label}
+        </Typography.Text>
+        <div className="min-w-0">
+          {status ? (
+            <Badge
+              status={status}
+              text={
+                <Typography.Text strong ellipsis className="max-w-full text-[length:var(--gt-font-size-sm)]">
+                  {value}
+                </Typography.Text>
+              }
+            />
+          ) : (
+            <Typography.Text strong ellipsis className="block text-[length:var(--gt-font-size-sm)]">
+              {value}
+            </Typography.Text>
+          )}
+        </div>
+        <Tag bordered color={tagColor || 'default'} className="m-0 max-w-full truncate">
+          {meta}
+        </Tag>
+      </Space>
+    </Card>
+  );
+}
 
 function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildAccountStoreDiagnosticsView> }) {
   const toneClass =
@@ -110,23 +160,35 @@ function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildA
           ? 'border-[var(--gt-status-success)] text-[var(--gt-status-success)]'
           : 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)]';
 
+  const toneTagColor =
+    view.tone === 'critical'
+      ? 'error'
+      : view.tone === 'warning'
+        ? 'warning'
+        : view.tone === 'success'
+          ? 'success'
+          : 'default';
+
   return (
-    <section
+    <Card
+      size="small"
+      variant="outlined"
       className={statusDiagnosticsPanelClass}
+      styles={{ body: { padding: 16 } }}
       data-account-store-diagnostics-panel="quiet"
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <div className={statusDiagnosticsTitleClass}>
-            ACCOUNT STORE
+            Account store
           </div>
           <div className={statusDiagnosticsHeadlineClass}>
             {view.headline}
           </div>
         </div>
-        <div className={`${statusDiagnosticsToneClass} ${toneClass}`}>
+        <Tag bordered color={toneTagColor} className={[statusDiagnosticsToneClass, toneClass, 'm-0'].join(' ')}>
           {view.recoveryLine}
-        </div>
+        </Tag>
       </div>
       {view.errorSummary ? (
         <div
@@ -137,7 +199,7 @@ function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildA
           {view.errorSummary}
         </div>
       ) : null}
-    </section>
+    </Card>
   );
 }
 
@@ -1111,72 +1173,127 @@ export default function StatusFeature({
         : trimmedStatusMessage
           ? trimmedStatusMessage
           : t('status.offline');
+  const statusBadgeState: StatusBadgeState =
+    sidecarStatus.code === 'ready' && !healthzHasError
+      ? 'success'
+      : healthzHasError
+        ? 'error'
+        : healthz === 'CHECKING...'
+          ? 'processing'
+          : 'default';
+  const statusToneColor =
+    statusBadgeState === 'success'
+      ? 'success'
+      : statusBadgeState === 'error'
+        ? 'error'
+        : statusBadgeState === 'processing'
+          ? 'blue'
+          : 'default';
+  const runtimeLabel = hasWailsAppBindings() ? 'Wails runtime' : 'browser runtime';
+  const statusDisplayValue = statusHeadline === runtimeLabel ? healthz : statusHeadline;
+  const overviewCards = [
+    {
+      label: t('status.title'),
+      value: statusDisplayValue,
+      meta: healthz,
+      status: statusBadgeState,
+      tagColor: statusToneColor,
+    },
+    {
+      label: t('status.local_cli_target_label'),
+      value: selectedRelayProvider.id || 'gettokens',
+      meta: selectedRelayModel || RELAY_CODEX_DEFAULT_MODEL,
+      tagColor: 'blue',
+    },
+    {
+      label: t('status.endpoint_title'),
+      value: selectedEndpoint.baseUrl,
+      meta: isLANAccessEnabled ? 'LAN access enabled' : 'Localhost',
+      tagColor: isLANAccessEnabled ? 'success' : 'default',
+    },
+    {
+      label: 'Runtime',
+      value: version,
+      meta: runtimeLabel,
+      tagColor: hasWailsAppBindings() ? 'success' : 'warning',
+    },
+  ] satisfies StatusOverviewCardProps[];
 
   return (
-    <div className="h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_STATUS">
-      <div className="w-full space-y-8">
-        <WorkspacePageHeader
-          title={t('status.title')}
-          subtitle={
-            <span className={statusHeaderHealthClass} data-status-header-health="quiet">
-              <span
-                className={`${statusHeaderStatusDotClass} ${
-                  sidecarStatus.code === 'ready' ? 'bg-[var(--gt-status-success)]' : 'bg-[var(--gt-status-danger)]'
-                }`}
-                aria-hidden="true"
-              />
-              <span className="truncate">{healthz}</span>
-            </span>
-          }
-          align="center"
-          actionsClassName="shrink-0"
-          actions={
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <div
-                className={`${statusHeaderStatusBadgeClass} ${
-                  sidecarStatus.code === 'ready' && !healthzHasError
-                    ? 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)]'
-                    : 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]'
-                }`}
-                data-status-header-state="quiet"
-              >
-                {statusHeadline}
-              </div>
+    <div className={statusPageShellClass} data-collaboration-id="PAGE_STATUS">
+      <div className={statusPageContentClass}>
+        <Card
+          variant="outlined"
+          className={statusHeroCardClass}
+          styles={{ body: { padding: 24 } }}
+          data-status-hero="true"
+        >
+          <div className="grid gap-5">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+              <Space orientation="vertical" size={8} className="min-w-0">
+                <Typography.Title level={2} className="!m-0 !text-[length:var(--gt-font-size-2xl)] !font-semibold">
+                  {t('status.title')}
+                </Typography.Title>
+                <div data-status-header-health="quiet">
+                  <Badge
+                    status={statusBadgeState}
+                    text={
+                      <Typography.Text className="text-[length:var(--gt-font-size-sm)]">
+                        {healthz}
+                      </Typography.Text>
+                    }
+                  />
+                </div>
+              </Space>
+              <Space wrap align="start" className="justify-start lg:justify-end">
+                <Tag bordered color={statusToneColor} className="m-0">
+                  {statusDisplayValue}
+                </Tag>
+                <Tag bordered color={hasWailsAppBindings() ? 'success' : 'warning'} className="m-0">
+                  {runtimeLabel}
+                </Tag>
+              </Space>
             </div>
-          }
-        />
+            <div className={statusOverviewGridClass} data-status-overview-grid="true">
+              {overviewCards.map((item) => (
+                <StatusOverviewCard key={item.label} {...item} />
+              ))}
+            </div>
+          </div>
+        </Card>
 
-        <section className="space-y-6">
-          <StatusApplyLocalSection
-            t={t}
-            localApplyMessage={localApplyMessage}
-            claudeApplyMessage={claudeApplyMessage}
-            isLANAccessEnabled={isLANAccessEnabled}
-            isApplyingToLocal={isApplyingToLocal}
-            isApplyingClaude={isApplyingClaude}
-            isReady={sidecarStatus.code === 'ready'}
-            codexLocalConfigLoaded={localCodexProviderStateLoaded}
-            relayKeyItems={relayKeyItems}
-            selectedKeyIndex={selectedKeyIndex}
-            visibleRelayEndpoints={visibleRelayEndpoints}
-            selectedEndpointID={selectedEndpointID}
-            selectedEndpointBaseUrl={selectedEndpoint.baseUrl}
-            relayProviderOptions={relayProviderOptions}
-            selectedRelayProviderID={selectedRelayProviderID}
-            codexLocalAuthStrategy={codexLocalAuthStrategy}
-            localCodexAuthState={localCodexAuthState}
-            codexLocalCanApply={codexLocalPreflight.canApply}
-            codexLocalApplyBlockedMessage={codexLocalApplyBlockedMessage}
-            relayReasoningEffortOptions={relayReasoningProfile.options}
-            selectedRelayReasoningEffort={selectedRelayReasoningEffort}
-            selectedRelayModel={selectedRelayModel}
-            resolvedRelayModels={resolvedRelayModels}
-            onOpenCreateRelayKeyEditor={openCreateRelayKeyEditor}
-            onToggleLANAccess={() => setIsLANAccessEnabled((prev) => !prev)}
-            onApplyRelayConfigToLocal={() => void applyRelayConfigToLocal()}
-            onApplyClaude={(draft) => void applyClaudeConfigToLocal(draft)}
-            onSelectKeyIndex={setSelectedKeyIndex}
-            onSelectEndpointID={setSelectedEndpointID}
+        <section className={statusWorkbenchGridClass} data-status-workbench-grid="true">
+          <div className={statusPrimaryRailClass} data-status-primary-rail="true">
+            <StatusApplyLocalSection
+              t={t}
+              localApplyMessage={localApplyMessage}
+              claudeApplyMessage={claudeApplyMessage}
+              isLANAccessEnabled={isLANAccessEnabled}
+              isApplyingToLocal={isApplyingToLocal}
+              isApplyingClaude={isApplyingClaude}
+              isReady={sidecarStatus.code === 'ready'}
+              codexLocalConfigLoaded={localCodexProviderStateLoaded}
+              relayKeyItems={relayKeyItems}
+              selectedKeyIndex={selectedKeyIndex}
+              visibleRelayEndpoints={visibleRelayEndpoints}
+              selectedEndpointID={selectedEndpointID}
+              selectedEndpointBaseUrl={selectedEndpoint.baseUrl}
+              relayProviderOptions={relayProviderOptions}
+              selectedRelayProviderID={selectedRelayProviderID}
+              codexLocalAuthStrategy={codexLocalAuthStrategy}
+              localCodexAuthState={localCodexAuthState}
+              codexLocalCanApply={codexLocalPreflight.canApply}
+              codexLocalApplyBlockedMessage={codexLocalApplyBlockedMessage}
+              relayReasoningEffortOptions={relayReasoningProfile.options}
+              selectedRelayReasoningEffort={selectedRelayReasoningEffort}
+              selectedRelayModel={selectedRelayModel}
+              resolvedRelayModels={resolvedRelayModels}
+              onOpenCreateRelayKeyEditor={openCreateRelayKeyEditor}
+              onToggleLANAccess={() => setIsLANAccessEnabled((prev) => !prev)}
+              onApplyRelayConfigToLocal={() => void applyRelayConfigToLocal()}
+              onApplyClaude={(draft) => void applyClaudeConfigToLocal(draft)}
+              onSelectKeyIndex={setSelectedKeyIndex}
+              onSelectEndpointID={setSelectedEndpointID}
             onCopyEndpointBaseUrl={() => void copyText(selectedEndpoint.baseUrl, t('status.endpoint_copied'))}
             onOpenCreateRelayProviderEditor={openCreateRelayProviderEditor}
             onSelectRelayProviderID={selectRelayProviderID}
@@ -1192,9 +1309,12 @@ export default function StatusFeature({
             syncCodexModelCatalog={syncCodexModelCatalog}
             isDisablingModelCatalog={isDisablingModelCatalog}
             onChangeSyncCodexModelCatalog={(nextValue) => void changeSyncCodexModelCatalog(nextValue)}
-          />
-          <StatusQuotaEvidenceSection state={quotaEvidenceSection} />
-          <AccountStoreDiagnosticsPanel view={accountStoreDiagnosticsView} />
+            />
+          </div>
+          <aside className={statusDiagnosticsRailClass} data-status-diagnostics-rail="true">
+            <AccountStoreDiagnosticsPanel view={accountStoreDiagnosticsView} />
+            <StatusQuotaEvidenceSection state={quotaEvidenceSection} />
+          </aside>
         </section>
       </div>
 

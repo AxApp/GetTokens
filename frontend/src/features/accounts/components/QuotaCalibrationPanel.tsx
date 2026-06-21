@@ -15,13 +15,13 @@ interface QuotaCalibrationPanelProps {
 const quotaCalibrationPanelClass = 'grid gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const quotaCalibrationHeaderClass = 'flex min-w-0 items-center justify-between gap-2';
 const quotaCalibrationItemClass = 'flex min-w-0 items-center justify-between gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1.5';
-const quotaCalibrationButtonClass = 'inline-flex min-h-8 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const quotaCalibrationButtonClass = 'inline-flex min-h-8 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const quotaCalibrationPrimaryButtonClass = `${quotaCalibrationButtonClass} bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-muted)]`;
-const quotaCalibrationInputClass = 'h-8 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:opacity-60';
-const quotaCalibrationMetaClass = 'font-mono text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]';
-const quotaCalibrationValueClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-medium tabular-nums text-[var(--gt-ink-primary)]';
+const quotaCalibrationInputClass = 'h-8 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:opacity-60';
+const quotaCalibrationMetaClass = 'font-mono text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
+const quotaCalibrationValueClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal tabular-nums text-[var(--gt-ink-primary)]';
 const quotaCalibrationDividerClass = 'grid gap-2 border-t border-[var(--gt-border-subtle)] pt-2';
-const quotaCalibrationErrorClass = 'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-status-danger)]';
+const quotaCalibrationErrorClass = 'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-status-danger)]';
 
 export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationPanelProps) {
   const { trackRequest } = useDebug();
@@ -117,7 +117,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
             CALIBRATION
           </div>
           {activeCalibrations.length > 0 ? (
-            <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]">
+            <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]">
               {activeCalibrations.length} 个活跃校准
             </div>
           ) : null}

@@ -145,7 +145,7 @@ export default function AttributionCard({
             <div className="flex items-center gap-2">
               <span className={`h-2 w-2 shrink-0 rounded-full ${accentFillClass}`} />
               <span
-                className="min-w-0 truncate text-xs font-medium"
+                className="min-w-0 truncate text-xs font-normal"
                 style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
               >
                 {listStatusText || listEyebrow}
@@ -242,7 +242,7 @@ export default function AttributionCard({
           </div>
         ) : null}
         {failureReason ? (
-          <div className="mt-1.5 text-xs font-medium" style={{ color: 'var(--gt-status-danger)' }}>{failureReason}</div>
+          <div className="mt-1.5 text-xs font-normal" style={{ color: 'var(--gt-status-danger)' }}>{failureReason}</div>
         ) : null}
       </div>
 

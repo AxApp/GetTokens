@@ -97,7 +97,7 @@ export default function ModalFrame({
         aria-modal="true"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
-        className={`flex w-full min-w-0 ${sizeClassNames[size]} ${panelViewportClassName} flex-col overflow-hidden rounded-xl border bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] ${panelClassName}`}
+        className={`flex w-full min-w-0 ${sizeClassNames[size]} ${panelViewportClassName} flex-col overflow-hidden rounded-lg border bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] ${panelClassName}`}
         style={{ borderColor: 'var(--gt-border-subtle)', boxShadow: 'var(--gt-elevation-raised-3)' }}
         onClick={stopPanelClick}
       >

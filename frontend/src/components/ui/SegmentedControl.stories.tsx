@@ -54,8 +54,8 @@ function SegmentedOverview() {
   return (
     <div className="grid w-full max-w-5xl gap-4 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase tracking-normal">SegmentedControl</h2>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">SegmentedControl</h2>
+        <p className="mt-2 max-w-2xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '同一基础样式下检查短标签、长标签、窄容器和当前选中态，便于回归主题和字号变化。'
             : 'One base style checked across short labels, long labels, narrow width, and selected states for theme and text-scale review.'}
@@ -63,11 +63,11 @@ function SegmentedOverview() {
       </div>
 
       <section className="grid gap-4 border-[1px] border-[color:color-mix(in_srgb,var(--gt-border-strong)_55%,transparent)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase tracking-normal">{zh ? '基础样式' : 'Base Style'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? '基础样式' : 'Base Style'}</h3>
 
         <div className="grid gap-4">
           <div className="grid gap-2 md:grid-cols-[7rem_minmax(0,1fr)] md:items-center">
-            <span className="font-mono text-[length:var(--gt-font-size-md-compact)] font-black uppercase tracking-normal text-[var(--gt-ink-muted)]">
+            <span className="font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
               {zh ? '短标签' : 'Short'}
             </span>
             <DesignSystemStoryFrame>
@@ -76,7 +76,7 @@ function SegmentedOverview() {
           </div>
 
           <div className="grid gap-2 md:grid-cols-[7rem_minmax(0,1fr)] md:items-center">
-            <span className="font-mono text-[length:var(--gt-font-size-md-compact)] font-black uppercase tracking-normal text-[var(--gt-ink-muted)]">
+            <span className="font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
               {zh ? '长标签' : 'Long'}
             </span>
             <DesignSystemStoryFrame>
@@ -87,7 +87,7 @@ function SegmentedOverview() {
           </div>
 
           <div className="grid gap-2 md:grid-cols-[7rem_minmax(0,1fr)] md:items-center">
-            <span className="font-mono text-[length:var(--gt-font-size-md-compact)] font-black uppercase tracking-normal text-[var(--gt-ink-muted)]">
+            <span className="font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
               {zh ? '窄容器' : 'Narrow'}
             </span>
             <DesignSystemStoryFrame>

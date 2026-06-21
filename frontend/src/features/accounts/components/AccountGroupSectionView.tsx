@@ -253,7 +253,7 @@ export default function AccountGroupSectionView({
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           <p
-            className="font-mono text-[length:var(--gt-font-size-xs)] font-medium leading-none"
+            className="font-mono text-[length:var(--gt-font-size-xs)] font-normal leading-none"
             style={{ color: 'var(--gt-ink-muted)' }}
           >
             {group.accounts.length} {t('accounts.plan_group_meta')}
@@ -264,7 +264,7 @@ export default function AccountGroupSectionView({
               aria-pressed={allGroupSelected}
               onClick={() => groupSelectionAction(group.accounts)}
               disabled={!hasAccounts}
-              className="flex h-7 items-center gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-7 items-center gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <SquareCheckBig size={13} strokeWidth={2} />
               {allGroupSelected ? t('accounts.unselect_group') : t('accounts.select_group')}
@@ -313,7 +313,7 @@ export default function AccountGroupSectionView({
                           closeGroupActionsMenu();
                           onSetGroupDisabled(group.accounts, false);
                         }}
-                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Power size={14} strokeWidth={2} />
                         {t('accounts.enable_group')}
@@ -326,7 +326,7 @@ export default function AccountGroupSectionView({
                           closeGroupActionsMenu();
                           onSetGroupDisabled(group.accounts, true);
                         }}
-                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Power size={14} strokeWidth={2} />
                         {t('accounts.disable_group')}
@@ -340,14 +340,14 @@ export default function AccountGroupSectionView({
                         role="menuitem"
                         disabled={!canDeleteGroup}
                         onClick={() => setIsGroupDeleteConfirming(true)}
-                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Trash2 size={14} strokeWidth={2} />
                         {deleteGroupLabel}
                       </button>
                       {isGroupDeleteConfirming ? (
                         <div className="mt-1 grid gap-2 rounded border p-2" style={{ borderColor: 'var(--gt-status-danger)', backgroundColor: 'color-mix(in srgb, var(--gt-status-danger) 10%, transparent)' }}>
-                          <div className="text-xs font-medium text-[var(--gt-status-danger)]">
+                          <div className="text-xs font-normal text-[var(--gt-status-danger)]">
                             {deleteGroupConfirmLabel} · {deleteGroupResolution.targets.length}/{group.accounts.length}
                           </div>
                           <div className="grid grid-cols-2 gap-2">

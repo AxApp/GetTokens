@@ -27,7 +27,7 @@ interface StatusCodexConfigRowsProps {
 }
 
 const codexConfigRowsChipClass =
-  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 
 function groupRowsByPrimaryPath(rows: CodexFeatureRow[]): CodexPathGroup[] {
   const groups: CodexPathGroup[] = [];
@@ -84,7 +84,7 @@ export default function StatusCodexConfigRows({
               </span>
             ))}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
             <span className={codexConfigRowsChipClass}>
               {badgeLabel}
             </span>

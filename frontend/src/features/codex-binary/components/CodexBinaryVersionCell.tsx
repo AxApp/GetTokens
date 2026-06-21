@@ -20,7 +20,7 @@ const codexBinaryVersionCellHeaderClass =
 const codexBinaryVersionCellTitleClass =
   'min-w-0 truncate text-[length:var(--gt-font-size-lg)] font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const codexBinaryVersionCellMetaClass =
-  'mt-1 text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
+  'mt-1 text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
 const codexBinaryVersionCellBadgeBaseClass =
   'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal';
 const codexBinaryVersionCellBadgeToneClass = {
@@ -52,7 +52,7 @@ const codexBinaryVersionCellMenuButtonClass =
 const codexBinaryVersionCellMenuClass =
   'absolute right-0 top-[calc(100%+0.35rem)] z-20 w-48 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-1 shadow-lg';
 const codexBinaryVersionCellMenuItemClass =
-  'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-45';
+  'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-45';
 const codexBinaryVersionCellMenuDangerItemClass =
   'text-[var(--gt-status-danger)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_7%,var(--gt-surface-canvas))]';
 const codexBinaryVersionCellStaticActionClass =

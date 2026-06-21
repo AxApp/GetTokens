@@ -159,16 +159,16 @@ function ChartSample({
         onSelectPoint={(key) => setSelectedPointKey(key)}
         status={
           <>
-            <span className="font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-primary)]">
+            <span className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
               Usage curve
             </span>
-            <span className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.16em] text-[var(--gt-ink-muted)]">
+            <span className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
               mock data
             </span>
           </>
         }
         footerExtra={
-          <span className="border-2 border-[var(--gt-border-strong)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase">
+          <span className="border-2 border-[var(--gt-border-strong)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold">
             selected {selectedPointKey}
           </span>
         }
@@ -216,14 +216,14 @@ function UsageDeskOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">用量工作台组件</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">用量工作台组件</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           把 Usage Desk 中已经提取的图表、明细表、信息卡和会话下钻面板纳入设计系统，用固定 mock 数据检查曲线、空态、选中行和高密度指标布局。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">图表状态</h3>
+        <h3 className="text-sm font-semibold tracking-normal">图表状态</h3>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)]">
           <ChartSample />
           <ChartSample empty />
@@ -231,7 +231,7 @@ function UsageDeskOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">明细表与面板</h3>
+        <h3 className="text-sm font-semibold tracking-normal">明细表与面板</h3>
         <div className="grid gap-4">
           <TableSample />
           <PanelsSample />

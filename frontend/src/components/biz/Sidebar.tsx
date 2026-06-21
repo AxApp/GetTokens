@@ -289,7 +289,7 @@ export default function Sidebar({
             </div>
             {updatePrompt && (
               <>
-                <div className="mt-1 font-medium" style={{ color: 'var(--gt-status-success)', fontSize: 'var(--gt-font-size-3xs)', lineHeight: 'var(--gt-line-height-tight)' }}>
+                <div className="mt-1 font-normal" style={{ color: 'var(--gt-status-success)', fontSize: 'var(--gt-font-size-3xs)', lineHeight: 'var(--gt-line-height-tight)' }}>
                   {t('nav.update_available')}
                 </div>
                 <button

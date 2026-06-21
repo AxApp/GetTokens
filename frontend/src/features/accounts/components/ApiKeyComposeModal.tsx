@@ -14,7 +14,7 @@ const apiKeyComposeFooterClass =
 const apiKeyComposeLabelClass =
   'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const apiKeyComposeInputClass =
-  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-disabled)] focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
+  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-disabled)] focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 const apiKeyComposeTextareaClass = `${apiKeyComposeInputClass} min-h-28 resize-y font-mono`;
 const apiKeyComposeToggleClass =
   'flex items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';

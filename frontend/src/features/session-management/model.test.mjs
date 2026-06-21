@@ -300,7 +300,7 @@ test('session management analysis and raw json use the quiet detail shell', asyn
   const resultBlock = viewSource.match(/function SessionAnalysisResultGrid[\s\S]*?function getAnalysisWordCloud/)?.[0] ?? '';
   assert.doesNotMatch(resultBlock, /border-\[var\(--gt-border-strong\)\]/, 'analysis results must not keep legacy border tokens');
   assert.doesNotMatch(resultBlock, /\bfont-black\b/, 'analysis results must not use heavy brutalist weight');
-  assert.doesNotMatch(resultBlock, /\buppercase\b/, 'analysis results must not force uppercase labels');
+  assert.doesNotMatch(resultBlock, /\buppercase\b/, 'analysis results must not force labels');
   assert.doesNotMatch(resultBlock, /tracking-\[/, 'analysis results must not use wide tracking');
 
   const detailBlock = viewSource.match(/selectedSessionDetail\.messages\.map[\s\S]*?detailState\.rawJSONError/)?.[0] ?? '';
@@ -308,7 +308,7 @@ test('session management analysis and raw json use the quiet detail shell', asyn
   assert.doesNotMatch(detailBlock, /border-2/, 'raw JSON preview must not use thick borders');
   assert.doesNotMatch(detailBlock, /bg-\[var\(--bg-surface\)\]/, 'raw JSON preview must not use the old surface token');
   assert.doesNotMatch(detailBlock, /\bfont-black\b/, 'message metadata must not use heavy brutalist weight');
-  assert.doesNotMatch(detailBlock, /\buppercase\b/, 'message metadata must not force uppercase labels');
+  assert.doesNotMatch(detailBlock, /\buppercase\b/, 'message metadata must not force labels');
   assert.doesNotMatch(detailBlock, /tracking-\[/, 'message metadata must not use wide tracking');
 });
 

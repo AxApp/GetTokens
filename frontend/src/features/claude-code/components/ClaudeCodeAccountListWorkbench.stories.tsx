@@ -173,8 +173,8 @@ function ClaudeCodeAccountListOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Claude Code Account List</h2>
-        <p className="mt-2 max-w-4xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">Claude Code Account List</h2>
+        <p className="mt-2 max-w-4xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           设计系统业务入口覆盖 Anthropic 格式账号筛选、请求顺序、官方默认 profile、模型映射草稿和路由探测状态；所有示例使用固定 mock 数据。
         </p>
       </div>

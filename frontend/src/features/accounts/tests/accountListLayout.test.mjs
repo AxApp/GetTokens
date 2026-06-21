@@ -89,8 +89,8 @@ test('account plan groups can collapse without changing group actions scope', as
   assert.match(viewSource, /className="flex min-w-0 items-center gap-2"/);
   assert.match(viewSource, /className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-\[var\(--gt-surface-canvas\)\]"/);
   assert.match(viewSource, /className="min-w-0 truncate text-sm font-semibold leading-tight"/);
-  assert.match(viewSource, /className="font-mono text-\[length:var\(--gt-font-size-xs\)\] font-medium leading-none"/);
-  assert.match(viewSource, /className="flex h-7 items-center gap-1 rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] px-2 text-\[length:var\(--gt-font-size-xs\)\] font-medium text-\[var\(--gt-ink-secondary\)\] transition-colors hover:bg-\[var\(--gt-surface-muted\)\] disabled:cursor-not-allowed disabled:opacity-40"/);
+  assert.match(viewSource, /className="font-mono text-\[length:var\(--gt-font-size-xs\)\] font-normal leading-none"/);
+  assert.match(viewSource, /className="flex h-7 items-center gap-1 rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] px-2 text-\[length:var\(--gt-font-size-xs\)\] font-normal text-\[var\(--gt-ink-secondary\)\] transition-colors hover:bg-\[var\(--gt-surface-muted\)\] disabled:cursor-not-allowed disabled:opacity-40"/);
   assert.match(viewSource, /aria-label=\{t\('accounts\.refresh_group'\)\}[\s\S]*className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-\[var\(--gt-surface-muted\)\] disabled:cursor-not-allowed disabled:opacity-40"[\s\S]*title=\{t\('accounts\.refresh_group'\)\}/);
   assert.match(viewSource, /className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-\[var\(--gt-surface-muted\)\]"/);
   assert.doesNotMatch(viewSource, /<RefreshCw size=\{13\} strokeWidth=\{2\} \/>\s*\{t\('accounts\.refresh_group'\)\}/);
@@ -173,7 +173,7 @@ test('accounts toolbar display mode switch only offers full and list views', asy
 
   assert.match(source, /grid-cols-2/);
   assert.match(source, /className="grid h-8 shrink-0 grid-cols-2 overflow-hidden rounded-md border"/);
-  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\] font-medium leading-none/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\] font-normal leading-none/);
   assert.match(source, /onDisplayModeChange\('full'\)/);
   assert.match(source, /onDisplayModeChange\('list'\)/);
   assert.doesNotMatch(source, /onDisplayModeChange\('compact'\)|display_mode_compact/);

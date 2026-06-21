@@ -20,11 +20,11 @@ const accountProxyRouteSummaryPillClass =
   '!border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-canvas)] !text-[var(--gt-ink-primary)]';
 const accountProxyRouteEditorClass = 'grid gap-2';
 const accountProxyRouteHintClass =
-  'text-[length:var(--gt-font-size-xs)] font-medium leading-5 tracking-normal text-[var(--gt-ink-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-normal leading-5 tracking-normal text-[var(--gt-ink-muted)]';
 const accountProxyRouteSelectClass =
-  'min-h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] outline-none transition-colors focus:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:bg-[var(--gt-surface-muted)] disabled:text-[var(--gt-ink-muted)]';
+  'min-h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none transition-colors focus:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:bg-[var(--gt-surface-muted)] disabled:text-[var(--gt-ink-muted)]';
 const accountProxyRouteEmptyClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium leading-5 tracking-normal text-[var(--gt-ink-muted)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal leading-5 tracking-normal text-[var(--gt-ink-muted)]';
 
 interface AccountProxyRouteSectionProps {
   proxyUrl?: string;

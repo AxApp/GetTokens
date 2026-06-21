@@ -88,7 +88,7 @@ test('OAuthModelProbeSection uses the quiet workspace control shell', async () =
   assert.match(source, /--gt-status-danger/);
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /border-2/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
   assert.doesNotMatch(source, /--color-status-/);
@@ -382,7 +382,7 @@ test('unified compose modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
-  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.08em\]|tracking-\[0\.12em\]|tracking-\[0\.14em\]|tracking-\[0\.18em\]|tracking-\[0\.2em\]/);
   assert.doesNotMatch(targetSource, /shadow-hard|shadow-\[/);
@@ -445,7 +445,7 @@ test('account curl editor modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /border-2|border-t-2|border-b-2|border-r-2/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.08em\]|tracking-\[0\.14em\]|tracking-\[0\.18em\]|tracking-\[0\.2em\]/);
   assert.doesNotMatch(targetSource, /shadow-\[/);
@@ -792,7 +792,7 @@ test('account detail footer uses the quiet workspace action shell', async () => 
   assert.match(source, /--gt-border-subtle/);
   assert.doesNotMatch(targetSource, /btn-swiss/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
-  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.08em\]/);
 });
@@ -846,7 +846,7 @@ test('account detail proxy route uses the quiet workspace control shell', async 
   assert.doesNotMatch(source, /!border-2/);
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
 });
@@ -970,7 +970,7 @@ test('real account detail header uses compact account type summary', async () =>
   assert.match(sectionSource, /return 'OPENAI COMPATIBLE'/);
   assert.match(modalSource, /headerClassName="hidden"/);
   assert.doesNotMatch(sectionSource, /data-account-detail-header-chips/);
-  assert.doesNotMatch(sectionSource, /text-base font-black uppercase italic/);
+  assert.doesNotMatch(sectionSource, /text-base font-(?:medium|bold|extrabold|black)/);
 });
 
 test('account detail primitives use the current quiet token shell', async () => {
@@ -986,7 +986,7 @@ test('account detail primitives use the current quiet token shell', async () => 
   assert.match(primitiveSource, /--gt-status-danger/);
   assert.doesNotMatch(primitiveSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(primitiveSource, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(primitiveSource, /font-black/);
+  assert.doesNotMatch(primitiveSource, /font-(?:medium|bold|extrabold|black)/);
 });
 
 test('account detail quota and billing render as stacked section-nav modules', async () => {

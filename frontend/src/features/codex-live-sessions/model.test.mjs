@@ -1122,7 +1122,7 @@ test('codex live sessions workbench uses the quiet workspace shell', async () =>
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /shadow-\[/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /\buppercase\b/);
   assert.doesNotMatch(source, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-\[0\.18em\]/);
 });
@@ -1197,13 +1197,13 @@ test('codex live session detail typography uses the quiet workspace shell', asyn
   assert.match(detailSource, /data-codex-live-timing-title="quiet"/, 'timing trend title must expose the quiet typography marker');
 
   const overviewBlock = detailSource.match(/function SessionOverview\([\s\S]*?function HistoryWindowControl/)?.[0] ?? '';
-  assert.doesNotMatch(overviewBlock, /font-mono text-\[length:var\(--gt-font-size-xs\)\] font-semibold tracking-\[/, 'overview cards must not keep wide tracked mono kickers');
-  assert.doesNotMatch(overviewBlock, /font-mono text-\[length:var\(--gt-font-size-xl\)\] font-semibold tracking-\[/, 'overview titles must not keep wide tracked mono headings');
+  assert.doesNotMatch(overviewBlock, /font-mono text-\[length:var\(--gt-font-size-xs\)\] font-(?:medium|bold|extrabold|black) tracking-\[/, 'overview cards must not keep wide tracked mono kickers');
+  assert.doesNotMatch(overviewBlock, /font-mono text-\[length:var\(--gt-font-size-xl\)\] font-(?:medium|bold|extrabold|black) tracking-\[/, 'overview titles must not keep wide tracked mono headings');
   assert.doesNotMatch(overviewBlock, /border-dashed/, 'overview meta panels must not rely on dashed borders');
 
   const timingBlock = detailSource.match(/function OverviewTimingTrend\([\s\S]*?const timingTrendSeries/)?.[0] ?? '';
-  assert.doesNotMatch(timingBlock, /font-mono text-\[length:var\(--gt-font-size-xl\)\] font-semibold tracking-\[/, 'timing trend titles must not keep wide tracked mono headings');
-  assert.doesNotMatch(timingBlock, /font-mono text-\[length:var\(--gt-font-size-xs\)\] font-semibold tracking-\[/, 'timing trend metadata must not keep wide tracked mono labels');
+  assert.doesNotMatch(timingBlock, /font-mono text-\[length:var\(--gt-font-size-xl\)\] font-(?:medium|bold|extrabold|black) tracking-\[/, 'timing trend titles must not keep wide tracked mono headings');
+  assert.doesNotMatch(timingBlock, /font-mono text-\[length:var\(--gt-font-size-xs\)\] font-(?:medium|bold|extrabold|black) tracking-\[/, 'timing trend metadata must not keep wide tracked mono labels');
 });
 
 test('codex live overview loading notice does not push the timing trend down', async () => {
@@ -1861,7 +1861,7 @@ test('codex live session feed uses the quiet workspace shell', async () => {
   assert.doesNotMatch(feedSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(feedSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(feedSource, /border-2 border-dashed/);
-  assert.doesNotMatch(feedSource, /font-black/);
+  assert.doesNotMatch(feedSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(feedSource, /\buppercase\b/);
   assert.doesNotMatch(feedSource, /tracking-\[/);
   assert.doesNotMatch(feedSource, /color-status-/);

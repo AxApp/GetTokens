@@ -53,8 +53,8 @@ function ClaudeCodeAssetWorkbenchOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Claude Code Asset Workbench</h2>
-        <p className="mt-2 max-w-4xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">Claude Code Asset Workbench</h2>
+        <p className="mt-2 max-w-4xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           设计系统先固定 Skills / Commands、MCP scope、diff preview、candidate 和 deferred 状态；所有示例只使用 mock 数据。
         </p>
       </div>

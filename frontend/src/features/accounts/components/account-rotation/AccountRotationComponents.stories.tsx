@@ -122,14 +122,14 @@ function AccountRotationOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号轮换</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">账号轮换</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           把账号轮换里的优先级条目和 routing 配置表单纳入设计系统，用固定账号和 routing draft 检查拖拽态、禁用态、pending 态和策略菜单。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Priority item states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Priority item states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <PriorityListSample />
           <PriorityListSample dragged="codex-api-key:local-relay" />
@@ -138,7 +138,7 @@ function AccountRotationOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Routing config states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Routing config states</h3>
         <div className="grid gap-4">
           <ConfigSample />
           <ConfigSample menuOpen strategy="fill-first" />

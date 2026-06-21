@@ -18,20 +18,20 @@ const accountRotationModalFooterClass =
 const accountRotationModalSectionHeaderClass =
   'flex flex-wrap items-end justify-between gap-3 border-b border-[var(--gt-border-subtle)] pb-3';
 const accountRotationModalEyebrowClass =
-  'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const accountRotationModalTitleClass = 'mt-1 text-lg font-semibold text-[var(--gt-ink-primary)]';
 const accountRotationModalSectionTitleClass =
   'text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]';
 const accountRotationModalMetaClass =
-  'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const accountRotationModalCloseButtonClass =
   'inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-lg font-semibold text-[var(--gt-ink-muted)] transition hover:border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,transparent)] hover:text-[var(--gt-status-danger)]';
 const accountRotationModalButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-45';
+  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-45';
 const accountRotationModalPrimaryButtonClass =
   `${accountRotationModalButtonClass} bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-muted)]`;
 const accountRotationModalNoticeClass =
-  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]';
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]';
 
 interface AccountRotationModalProps {
   accounts: AccountRecord[];

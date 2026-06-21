@@ -22,7 +22,7 @@ test('vendor status feature uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-(wide|wider|widest|tight|tighter|tightest|normal|\[)/);
   assert.doesNotMatch(source, /shadow-\[/);

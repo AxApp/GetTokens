@@ -353,7 +353,7 @@ export default function AccountDetailModal({
                   </span>
                 ))
               ) : !loadingModels ? (
-                <div className="text-[length:var(--gt-font-size-sm)] font-bold italic text-[var(--gt-ink-muted)]">{t('accounts.ui_no_data_available')}</div>
+                <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">{t('accounts.ui_no_data_available')}</div>
               ) : null}
             </div>
           </section>

@@ -42,9 +42,9 @@ const scopeIcons: Record<string, ReactNode> = {
 };
 
 const subagentCatalogActionButtonClass =
-  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-xs font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const subagentCatalogDangerButtonClass =
-  'inline-flex items-center gap-1 rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-1 text-xs font-medium text-[var(--gt-status-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--gt-status-warning)_16%,transparent)]';
+  'inline-flex items-center gap-1 rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-1 text-xs font-normal text-[var(--gt-status-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--gt-status-warning)_16%,transparent)]';
 const subagentCatalogListClass = 'divide-y divide-[var(--gt-border-subtle)]';
 const subagentCatalogRowClass =
   'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
@@ -154,7 +154,7 @@ export default function ClaudeCodeSubagentCatalog({
                 </span>
                 <span className="text-[var(--gt-ink-secondary)]">{scopeIcons[agent.scope] ?? <Bot className="h-4 w-4" />}</span>
                 <div className="flex-1 text-left">
-                  <span className="text-sm font-medium">{agent.name || <span className="italic text-[var(--gt-ink-muted)]">unnamed</span>}</span>
+                  <span className="text-sm font-normal">{agent.name || <span className="text-[var(--gt-ink-muted)]">unnamed</span>}</span>
                   {agent.scope && (
                     <span className="ml-2 rounded bg-[var(--gt-surface-muted)] px-1.5 py-0.5 text-xs text-[var(--gt-ink-muted)]">{agent.scope}</span>
                   )}
@@ -201,7 +201,7 @@ export default function ClaudeCodeSubagentCatalog({
 
                   {agent.knownFields && Object.keys(agent.knownFields).length > 0 && (
                     <div className="mb-3">
-                      <div className="mb-1 text-xs font-medium text-[var(--gt-ink-secondary)]">Configuration</div>
+                      <div className="mb-1 text-xs font-normal text-[var(--gt-ink-secondary)]">Configuration</div>
                       <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
                         {Object.entries(agent.knownFields).map(([key, value]) => (
                           <AgentFieldRow key={key} fieldKey={key} value={value} ignored={agent.ignoredFields?.includes(key)} />
@@ -218,7 +218,7 @@ export default function ClaudeCodeSubagentCatalog({
 
                   {agent.bodyPreview && (
                     <div className="mb-3">
-                      <div className="mb-1 text-xs font-medium text-[var(--gt-ink-secondary)]">Body Preview</div>
+                      <div className="mb-1 text-xs font-normal text-[var(--gt-ink-secondary)]">Body Preview</div>
                       <SnippetPre className="max-h-32 overflow-auto text-xs">{agent.bodyPreview}</SnippetPre>
                     </div>
                   )}
@@ -248,14 +248,14 @@ export default function ClaudeCodeSubagentCatalog({
 
       {(creatingNew || editingPath) && (
         <div className={subagentCatalogEditorClass} data-claude-subagent-editor="quiet">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-normal">
             {creatingNew ? <Plus className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
             {creatingNew ? 'New Subagent' : `Editing: ${editingPath}`}
           </h3>
 
           <div className="space-y-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--gt-ink-secondary)]">Name *</label>
+              <label className="mb-1 block text-xs font-normal text-[var(--gt-ink-secondary)]">Name *</label>
               <input
                 type="text"
                 className={`${subagentCatalogInputClass} font-mono`}
@@ -265,7 +265,7 @@ export default function ClaudeCodeSubagentCatalog({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--gt-ink-secondary)]">Description *</label>
+              <label className="mb-1 block text-xs font-normal text-[var(--gt-ink-secondary)]">Description *</label>
               <input
                 type="text"
                 className={subagentCatalogInputClass}
@@ -275,7 +275,7 @@ export default function ClaudeCodeSubagentCatalog({
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-[var(--gt-ink-secondary)]">Body (Markdown)</label>
+              <label className="mb-1 block text-xs font-normal text-[var(--gt-ink-secondary)]">Body (Markdown)</label>
               <textarea
                 className={subagentCatalogTextareaClass}
                 value={draftBody ?? ''}
@@ -295,7 +295,7 @@ export default function ClaudeCodeSubagentCatalog({
 
           {savePreview && (
             <div className="mt-3">
-              <span className="text-xs font-medium">Preview</span>
+              <span className="text-xs font-normal">Preview</span>
               <SnippetPre className="max-h-40 mt-1 overflow-auto text-xs">{savePreview}</SnippetPre>
             </div>
           )}

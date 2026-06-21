@@ -164,5 +164,5 @@ test('doctor workbench uses the quiet workspace shell', async () => {
   assert.doesNotMatch(featureSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(featureSource, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
   assert.doesNotMatch(featureSource, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(featureSource, /font-black uppercase/);
+  assert.doesNotMatch(featureSource, /font-(?:medium|bold|extrabold|black)/);
 });

@@ -113,14 +113,14 @@ function RateLimitRulesOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">限流规则</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">限流规则</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           路由守卫规则编辑区块进入设计系统后，用 mock CRUD API 覆盖规则列表、空规则和评估超限状态。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Rule states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Rule states</h3>
         <div className="grid gap-4">
           <RateLimitRulesSample label="DS-RATE-LIMIT-RULES-ACTIVE" />
           <RateLimitRulesSample

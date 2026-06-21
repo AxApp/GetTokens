@@ -342,14 +342,14 @@ function CodexAccountOrderOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Codex Account Order</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">Codex Account Order</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           把 Codex 账号请求顺序里的排序行纳入设计系统，用固定 row、policy、quota、usage 和 rate-limit mock 覆盖密度、拖拽、命中、跳过、禁用和限流状态。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Row density and route states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Row density and route states</h3>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
           <RowSample label="DS-FULL" density="full" />
           <div className="grid gap-4">
@@ -366,7 +366,7 @@ function CodexAccountOrderOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Section states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Section states</h3>
         <div className="grid gap-4">
           <SectionSample label="DS-SECTION-FULL" density="full" message="policy preview / 4 accounts" />
           <SectionSample label="DS-SECTION-FULL-UNSAVED" density="full" orderChanged message="manual order changed" />
@@ -380,7 +380,7 @@ function CodexAccountOrderOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Detail modal states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Detail modal states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <DetailSample label="DS-DETAIL-MAPPED" row={rows[2]} />
           <DetailSample label="DS-DETAIL-EMPTY" row={rows[3]} />

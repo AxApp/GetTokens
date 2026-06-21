@@ -21,11 +21,11 @@ const codexConfigSectionHeaderClass = 'border-b border-[var(--gt-border-subtle)]
 const codexConfigSectionGroupHeaderClass =
   'flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2';
 const codexConfigSectionChipClass =
-  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]';
+  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]';
 const codexConfigSectionSecondaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexConfigSectionPrimaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 
 interface StatusCodexRootSettingsSectionProps {
   t: (key: string) => string;
@@ -76,7 +76,7 @@ export default function StatusCodexRootSettingsSection({
           <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">
             {t('status.codex_root_settings_title')}
           </div>
-          <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+          <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
             {snapshot?.configPath || t('status.codex_root_settings_unavailable')}
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function StatusCodexRootSettingsSection({
       </div>
 
       {message ? (
-        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">
+        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
           {message}
         </div>
       ) : null}
@@ -111,7 +111,7 @@ export default function StatusCodexRootSettingsSection({
               <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                 {resolveGroupTitle(group.id)}
               </div>
-              <div className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+              <div className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                 {group.rows.length} {t('design_system.items')}
               </div>
             </div>
@@ -127,7 +127,7 @@ export default function StatusCodexRootSettingsSection({
           </div>
         ))}
         {rows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+          <div className="px-4 py-8 text-center text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
             {isLoading ? t('status.codex_root_settings_loading') : t('status.codex_root_settings_empty')}
           </div>
         ) : null}
@@ -142,7 +142,7 @@ export default function StatusCodexRootSettingsSection({
             {preview.changes.map((change) => (
               <div
                 key={`${change.key}-${change.kind}`}
-                className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]"
+                className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]"
               >
                 <span className="font-mono">{change.key}</span>
                 <span className="text-[var(--gt-ink-muted)]"> / {change.kind} / </span>
@@ -154,7 +154,7 @@ export default function StatusCodexRootSettingsSection({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
-        <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+        <div className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
           {t('status.codex_root_settings_save_hint')}
         </div>
         <div className="flex flex-wrap gap-2">

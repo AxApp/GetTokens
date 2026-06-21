@@ -122,15 +122,15 @@ const accountsFeatureNoticeToneClass = {
     "border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]",
 } satisfies Record<"error" | "warning" | "success" | "neutral", string>;
 const accountsFeatureInlineButtonClass =
-  "inline-flex h-7 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]";
+  "inline-flex h-7 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]";
 const accountsFeatureEmptyStateClass =
   "grid gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-16 text-center";
 const accountsFeatureEmptyTitleClass =
   "font-mono text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]";
 const accountsFeatureEmptyBodyClass =
-  "mx-auto max-w-2xl text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-muted)]";
+  "mx-auto max-w-2xl text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-muted)]";
 const accountsFeatureEmptyActionButtonClass =
-  "inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]";
+  "inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]";
 
 export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const { t } = useI18n();

@@ -169,8 +169,8 @@ function StatusRelayEditorsOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页 Relay 编辑器</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">状态页 Relay 编辑器</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '把 Status 页中用于 Relay key、provider 和 model 的编辑弹窗纳入设计系统，统一检查 modal shell、表单密度、错误态和禁用输入。'
             : 'Admitted relay key, provider, and model editor dialogs from Status for modal shell, form density, error states, and disabled inputs.'}
@@ -178,7 +178,7 @@ function StatusRelayEditorsOverview() {
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? 'Key 编辑器' : 'Key editor'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? 'Key 编辑器' : 'Key editor'}</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <KeyEditorSample />
           <KeyEditorSample mode="rename" />
@@ -187,7 +187,7 @@ function StatusRelayEditorsOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? 'Provider / Model 编辑器' : 'Provider / Model editors'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? 'Provider / Model 编辑器' : 'Provider / Model editors'}</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ProviderEditorSample />
           <ProviderEditorSample error="Provider ID is required" />

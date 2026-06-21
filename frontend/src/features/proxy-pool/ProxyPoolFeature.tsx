@@ -556,7 +556,7 @@ export default function ProxyPoolFeature() {
           meta={
             <span
               data-proxy-pool-summary="true"
-              className="block max-w-[min(62rem,70vw)] truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]"
+              className="block max-w-[min(62rem,70vw)] truncate text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]"
               title={summaryText}
             >
               {summaryText}
@@ -664,7 +664,7 @@ export default function ProxyPoolFeature() {
             </div>
             <div className="min-w-0">
               <label className="grid min-w-0 items-center gap-2 sm:grid-cols-[max-content_minmax(0,1fr)]">
-                <span className="text-left text-sm font-medium text-[var(--gt-ink-muted)]">测速网址</span>
+                <span className="text-left text-sm font-normal text-[var(--gt-ink-muted)]">测速网址</span>
                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                   <AutoComplete
                     allowClear
@@ -703,35 +703,35 @@ export default function ProxyPoolFeature() {
           </div>
 
           {isSelectionMode ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--gt-border-subtle)] pt-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--gt-border-subtle)] pt-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               <span className="mr-1">{selectedCount > 0 ? `已选 ${selectedCount}` : '选择模式'}</span>
-              <button type="button" onClick={toggleSelectCurrentPage} className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
+              <button type="button" onClick={toggleSelectCurrentPage} className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
                 {allCurrentPageSelected ? '取消当前页' : '全选当前页'}
               </button>
-              <button type="button" onClick={toggleSelectAllFiltered} className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
+              <button type="button" onClick={toggleSelectAllFiltered} className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
                 {allFilteredSelected ? '取消当前筛选' : '全选当前筛选'}
               </button>
               {selectedCount > 0 ? (
                 <>
-                  <button type="button" onClick={handleSelectedRetest} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
+                  <button type="button" onClick={handleSelectedRetest} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
                     <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.4} />
                     测速
                   </button>
-                  <button type="button" onClick={exportSelectedNodes} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
+                  <button type="button" onClick={exportSelectedNodes} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
                     <Download className="h-3.5 w-3.5" strokeWidth={2.4} />
                     导出
                   </button>
-                  <button type="button" onClick={clearSelection} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
+                  <button type="button" onClick={clearSelection} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
                     <X className="h-3.5 w-3.5" strokeWidth={2.4} />
                     清空
                   </button>
-                  <button type="button" onClick={handleBatchDelete} className="inline-flex h-8 items-center gap-1.5 rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-status-danger)] transition hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_16%,transparent)]">
+                  <button type="button" onClick={handleBatchDelete} className="inline-flex h-8 items-center gap-1.5 rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-status-danger)] transition hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_16%,transparent)]">
                     <Trash2 className="h-3.5 w-3.5" strokeWidth={2.4} />
                     删除
                   </button>
                 </>
               ) : null}
-              <button type="button" onClick={disableSelectionMode} className="ml-auto inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-border-strong)] hover:text-[var(--gt-ink-primary)]">
+              <button type="button" onClick={disableSelectionMode} className="ml-auto inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-border-strong)] hover:text-[var(--gt-ink-primary)]">
                 结束选择
               </button>
             </div>
@@ -766,7 +766,7 @@ export default function ProxyPoolFeature() {
               <tbody>
                 {filteredNodes.length === 0 ? (
                   <tr>
-                    <td colSpan={isSelectionMode ? 8 : 7} className="px-4 py-16 text-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+                    <td colSpan={isSelectionMode ? 8 : 7} className="px-4 py-16 text-center text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
                       当前筛选结果为空
                     </td>
                   </tr>
@@ -790,7 +790,7 @@ export default function ProxyPoolFeature() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
-            <div className="flex flex-wrap items-center gap-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="flex flex-wrap items-center gap-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               <span>
                 第 {pagination.page} / {pagination.pageCount} 页
               </span>
@@ -800,7 +800,7 @@ export default function ProxyPoolFeature() {
               <select
                 value={pageSize}
                 onChange={(event) => setPageSize(Number(event.target.value))}
-                className="h-8 min-w-[96px] rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] outline-none"
+                className="h-8 min-w-[96px] rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none"
               >
                 {proxyPoolPageSizeOptions.map((size) => (
                   <option key={size} value={size}>
@@ -814,7 +814,7 @@ export default function ProxyPoolFeature() {
               <button
                 type="button"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
-                className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={pagination.page <= 1}
               >
                 上一页
@@ -822,7 +822,7 @@ export default function ProxyPoolFeature() {
               <button
                 type="button"
                 onClick={() => setPage((current) => Math.min(pagination.pageCount, current + 1))}
-                className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={pagination.page >= pagination.pageCount}
               >
                 下一页
@@ -966,15 +966,15 @@ function ProxyNodeRow({
       </td>
       <td className="w-[88px] whitespace-nowrap px-3 py-3 align-middle font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">{node.protocol}</td>
       <td
-        className="w-[180px] max-w-[180px] break-words px-3 py-3 align-middle font-mono text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]"
+        className="w-[180px] max-w-[180px] break-words px-3 py-3 align-middle font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]"
         title={`${node.host}:${node.port}`}
       >
         {node.host}:{node.port}
       </td>
-      <td className="w-[96px] whitespace-nowrap px-3 py-3 align-middle text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">{node.latencyMs} ms</td>
-      <td className="w-[112px] whitespace-nowrap px-3 py-3 align-middle text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">{formatRelativeProxyCheckedTime(node.lastCheckedAt)}</td>
+      <td className="w-[96px] whitespace-nowrap px-3 py-3 align-middle text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">{node.latencyMs} ms</td>
+      <td className="w-[112px] whitespace-nowrap px-3 py-3 align-middle text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">{formatRelativeProxyCheckedTime(node.lastCheckedAt)}</td>
       <td className="min-w-[180px] px-3 py-3 align-middle">
-        <div className="truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]" title={node.sourceLabel || '未标记'}>
+        <div className="truncate text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]" title={node.sourceLabel || '未标记'}>
           {node.sourceLabel || '未标记'}
         </div>
       </td>
@@ -1065,11 +1065,11 @@ const proxyPoolModalBackdropClass = 'fixed inset-0 z-50 flex items-center justif
 const proxyPoolModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const proxyPoolModalHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-6 py-4';
 const proxyPoolModalFooterClass = 'flex items-center justify-between border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
-const proxyPoolInputClass = 'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-lg)] font-medium text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
-const proxyPoolTextareaClass = 'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-lg)] font-medium text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
-const proxyPoolSecondaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
-const proxyPoolPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
-const proxyPoolErrorClass = 'rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]';
+const proxyPoolInputClass = 'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-lg)] font-normal text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
+const proxyPoolTextareaClass = 'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-lg)] font-normal text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
+const proxyPoolSecondaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const proxyPoolPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90';
+const proxyPoolErrorClass = 'rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]';
 
 function ProxyNodeComposeModal({
   draft,
@@ -1229,7 +1229,7 @@ function ProxyPoolImportModal({
             <button type="button" onClick={onOpenFilePicker} className={proxyPoolSecondaryButtonClass}>
               读取本地 JSON 文件
             </button>
-            <div className="min-w-0 flex-1 text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
+            <div className="min-w-0 flex-1 text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]">
               支持粘贴导出的 JSON 数组，也支持逐行填写 `scheme://host:port` 或 `host:port`。重复 ID 会在导入时自动覆盖。
             </div>
           </div>
@@ -1300,7 +1300,7 @@ function ProxyPoolSubscriptionModal({
               placeholder="例如：hookzof/socks5_list"
             />
           </FormField>
-          <div className="text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
+          <div className="text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]">
             当前支持拉取纯文本订阅，每行一条 `scheme://host:port` 或 `host:port`。导入后的所有节点都会打上这个来源标签。
           </div>
           {error ? <div className={proxyPoolErrorClass}>{error}</div> : null}
@@ -1341,12 +1341,12 @@ function ProxyPoolSubscriptionManagerModal({
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--gt-border-subtle)] px-6 py-4">
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-[var(--gt-ink-primary)]">订阅源管理</h3>
-            <p className="mt-1 text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
+            <p className="mt-1 text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]">
               管理本地订阅源，集中查看同步状态，并执行刷新或删除。
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">{sources.length} 个订阅源</span>
+            <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">{sources.length} 个订阅源</span>
             <button type="button" onClick={onRefreshAll} className={proxyPoolSecondaryButtonClass}>
               刷新全部
             </button>
@@ -1354,7 +1354,7 @@ function ProxyPoolSubscriptionManagerModal({
         </header>
         <div className="max-h-[70vh] overflow-auto p-4 md:p-6">
           {sources.length === 0 ? (
-            <div className="py-16 text-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="py-16 text-center text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
               当前没有已保存的订阅源
             </div>
           ) : (
@@ -1369,7 +1369,7 @@ function ProxyPoolSubscriptionManagerModal({
                           <div className="flex flex-wrap items-center gap-2">
                             <h4 className="text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">{source.label}</h4>
                             <span
-                              className={`rounded-full border px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-medium ${
+                              className={`rounded-full border px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-normal ${
                                 isHealthy
                                   ? 'border-[color-mix(in_srgb,var(--gt-status-success)_30%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]'
                                   : 'border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] text-[var(--gt-status-danger)]'
@@ -1395,17 +1395,17 @@ function ProxyPoolSubscriptionManagerModal({
                           </ActionButton>
                         </div>
                       </div>
-                      <div className="grid gap-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)] md:grid-cols-3">
+                      <div className="grid gap-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)] md:grid-cols-3">
                         <div className="border-t border-[var(--gt-border-subtle)] pt-3">
-                          <div className="text-[length:var(--gt-font-size-xs)] font-medium">最近同步</div>
+                          <div className="text-[length:var(--gt-font-size-xs)] font-normal">最近同步</div>
                           <div className="mt-1 text-[length:var(--gt-font-size-md-compact)] text-[var(--gt-ink-primary)]">{formatTableTime(source.lastSyncedAt)}</div>
                         </div>
                         <div className="border-t border-[var(--gt-border-subtle)] pt-3">
-                          <div className="text-[length:var(--gt-font-size-xs)] font-medium">上次导入</div>
+                          <div className="text-[length:var(--gt-font-size-xs)] font-normal">上次导入</div>
                           <div className="mt-1 text-[length:var(--gt-font-size-md-compact)] text-[var(--gt-ink-primary)]">{source.lastImportCount} 条</div>
                         </div>
                         <div className="border-t border-[var(--gt-border-subtle)] pt-3">
-                          <div className="text-[length:var(--gt-font-size-xs)] font-medium">状态详情</div>
+                          <div className="text-[length:var(--gt-font-size-xs)] font-normal">状态详情</div>
                           <div className={`mt-1 text-[length:var(--gt-font-size-md-compact)] ${isHealthy ? 'text-[var(--gt-ink-primary)]' : 'text-[var(--gt-status-danger)]'}`}>
                             {isHealthy ? '最近一次同步正常' : source.lastError}
                           </div>
@@ -1488,7 +1488,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-8 items-center justify-start gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-left text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''} ${className}`}
+      className={`inline-flex h-8 items-center justify-start gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-left text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''} ${className}`}
     >
       {children}
     </button>
@@ -1514,8 +1514,8 @@ function MenuActionButton({
     >
       {icon ? <span className="mt-0.5 shrink-0 text-[var(--gt-ink-muted)]">{icon}</span> : null}
       <span className="min-w-0">
-        <span className="block text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">{label}</span>
-        <span className="mt-0.5 block text-[length:var(--gt-font-size-xs)] font-medium leading-4 text-[var(--gt-ink-muted)]">{description}</span>
+        <span className="block text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">{label}</span>
+        <span className="mt-0.5 block text-[length:var(--gt-font-size-xs)] font-normal leading-4 text-[var(--gt-ink-muted)]">{description}</span>
       </span>
     </button>
   );
@@ -1532,7 +1532,7 @@ function FormField({
 }) {
   return (
     <label className={`space-y-2 ${className}`}>
-      <span className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">{label}</span>
+      <span className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">{label}</span>
       {children}
     </label>
   );

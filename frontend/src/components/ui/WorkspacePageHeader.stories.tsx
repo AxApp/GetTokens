@@ -45,8 +45,8 @@ function WorkspacePageHeaderOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">WorkspacePageHeader</h2>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">WorkspacePageHeader</h2>
+        <p className="mt-2 max-w-2xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '工作区页头统一使用“设计系统”这一种标准样式。'
             : 'Workspace page headers use the Design System standard style.'}

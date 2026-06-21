@@ -207,7 +207,7 @@ test('accounts feature page chrome uses the quiet workspace shell', async () => 
   assert.doesNotMatch(renderBlock, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(renderBlock, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(renderBlock, /color-status-/);
-  assert.doesNotMatch(renderBlock, /font-black/);
+  assert.doesNotMatch(renderBlock, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(renderBlock, /\buppercase\b/);
   assert.doesNotMatch(renderBlock, /tracking-wide|tracking-\[/);
 });
@@ -237,7 +237,7 @@ test('account import queue candidates render with account card styling', async (
   assert.doesNotMatch(queueSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(queueSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(queueSource, /color-status-/);
-  assert.doesNotMatch(queueSource, /font-black/);
+  assert.doesNotMatch(queueSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(queueSource, /\buppercase\b/);
   assert.doesNotMatch(queueSource, /tracking-\[0\.12em\]/);
   assert.doesNotMatch(queueSource, /grid-cols-\[2\.25rem_minmax\(0,1fr\)_auto\]/);
@@ -295,7 +295,7 @@ test('account import page uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
-  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-\[0\.14em\]|tracking-\[0\.2em\]/);
   assert.doesNotMatch(targetSource, /shadow-\[/);
@@ -325,7 +325,7 @@ test('account import modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
-  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.1em\]|tracking-\[0\.12em\]|tracking-\[0\.14em\]|tracking-\[0\.18em\]|tracking-\[0\.2em\]/);
   assert.doesNotMatch(targetSource, /shadow-\[/);
@@ -357,7 +357,7 @@ test('api key compose modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(targetSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(targetSource, /color-status-/);
-  assert.doesNotMatch(targetSource, /font-black/);
+  assert.doesNotMatch(targetSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(targetSource, /uppercase/);
   assert.doesNotMatch(targetSource, /tracking-\[0\.12em\]|tracking-\[0\.18em\]|tracking-\[0\.2em\]|tracking-wide/);
   assert.doesNotMatch(targetSource, /shadow-hard|shadow-\[/);

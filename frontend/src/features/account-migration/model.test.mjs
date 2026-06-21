@@ -83,7 +83,7 @@ test('AccountMigrationGate uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /color-status-/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /shadow-hard|shadow-\[/);
 });

@@ -44,15 +44,15 @@ const codexLiveMutedPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveChipClass =
-  'inline-flex h-6 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]';
+  'inline-flex h-6 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]';
 const codexLiveSecondaryButtonClass =
-  'inline-flex h-8 w-fit items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const codexLiveMetaTextClass = 'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+  'inline-flex h-8 w-fit items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const codexLiveMetaTextClass = 'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const codexLiveKickerTextClass = 'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveSectionLabelClass = 'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveTitleTextClass = 'text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const codexLiveMetaPanelClass = `${codexLiveMutedPanelClass} flex min-h-10 items-center justify-between gap-3 px-3 py-2 ${codexLiveMetaTextClass}`;
-const codexLiveInlineMetaClass = 'min-w-0 max-w-full truncate text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[color:color-mix(in_srgb,var(--gt-ink-muted)_72%,var(--gt-ink-primary))]';
+const codexLiveInlineMetaClass = 'min-w-0 max-w-full truncate text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[color:color-mix(in_srgb,var(--gt-ink-muted)_72%,var(--gt-ink-primary))]';
 
 export function SessionDetail({
   session,
@@ -290,7 +290,7 @@ function OverviewStatusNotice({ loading, errorMessage, t }: { loading?: boolean;
 
   return (
     <div
-      className={`${codexLiveMutedPanelClass} pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-10 flex max-w-[min(32rem,100%)] items-center gap-3 px-2.5 py-1 text-[length:var(--gt-font-size-2xs)] font-medium`}
+      className={`${codexLiveMutedPanelClass} pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-10 flex max-w-[min(32rem,100%)] items-center gap-3 px-2.5 py-1 text-[length:var(--gt-font-size-2xs)] font-normal`}
       data-codex-overview-status-overlay="true"
       role="status"
       aria-live="polite"
@@ -606,7 +606,7 @@ function TimingTrendChart({
 
   if (!trend.hasData || selectedMetricMaxMs <= 0) {
     return (
-      <div className={`${codexLiveMutedPanelClass} grid h-[230px] place-items-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]`}>
+      <div className={`${codexLiveMutedPanelClass} grid h-[230px] place-items-center text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]`}>
         {t('codex_live_sessions.timing_trend_empty')}
       </div>
     );
@@ -904,12 +904,12 @@ function TransportLane({ events, t }: { events: readonly CodexLiveTimelineEvent[
             </div>
             <div className="mt-2 grid gap-1">
               {lanes[lane].length === 0 ? (
-                <span className="text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">{t('codex_live_sessions.no_event')}</span>
+                <span className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">{t('codex_live_sessions.no_event')}</span>
               ) : (
                 lanes[lane].slice(0, 2).map((event) => (
                   <div key={event.id} className="grid grid-cols-[8px_1fr] gap-2">
                     <span className={`mt-1 h-2 w-2 ${severityDotClass(event.severity)}`} />
-                    <span className="min-w-0 truncate text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">
+                    <span className="min-w-0 truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
                       {event.kind}
                     </span>
                   </div>
@@ -1166,7 +1166,7 @@ function SessionCard({ session, request, t }: { session: CodexLiveSession; reque
         {rows.map(([label, value]) => (
           <div key={label} className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_30%,transparent)] py-1 text-[length:var(--gt-font-size-sm)]">
             <span className="shrink-0 font-mono font-semibold text-[var(--gt-ink-muted)]">{label}</span>
-            <span className="truncate font-mono font-bold text-[var(--gt-ink-primary)]">{value}</span>
+            <span className="truncate font-mono font-semibold text-[var(--gt-ink-primary)]">{value}</span>
           </div>
         ))}
       </div>
@@ -1210,7 +1210,7 @@ function Timeline({
             {title ?? t('codex_live_sessions.request_timeline')}
           </h3>
           {title ? (
-            <p className="mt-1 text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">
+            <p className="mt-1 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
               {t('codex_live_sessions.request_timeline')}
             </p>
           ) : null}
@@ -1444,7 +1444,7 @@ function RequestTimelineDetailModal({
         </div>
 
         {request.error ? (
-          <div className="border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-status-danger)]">
+          <div className="border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-status-danger)]">
             {request.error.statusCode ? `${request.error.statusCode} ` : ''}
             {request.error.code ? `${request.error.code}: ` : ''}
             {request.error.message}
@@ -1504,7 +1504,7 @@ function TimelineEventsPanel({ events, t }: { events: readonly CodexLiveTimeline
       </div>
       <div className="mt-3 grid gap-2">
         {events.length === 0 ? (
-          <span className="text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">
+          <span className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
             {t('codex_live_sessions.no_event')}
           </span>
         ) : (
@@ -1519,7 +1519,7 @@ function RequestInfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid min-w-0 gap-2 border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_28%,transparent)] py-1 font-mono text-[length:var(--gt-font-size-sm)] md:grid-cols-[9.5rem_1fr]">
       <span className="font-semibold text-[var(--gt-ink-muted)]">{label}</span>
-      <span className="min-w-0 truncate font-bold text-[var(--gt-ink-primary)]">{value}</span>
+      <span className="min-w-0 truncate font-semibold text-[var(--gt-ink-primary)]">{value}</span>
     </div>
   );
 }
@@ -1542,9 +1542,9 @@ function EventDetailLine({ event }: { event: CodexLiveTimelineEvent }) {
         {event.lane}.{event.kind}
       </span>
       <span className="min-w-0">
-        <span className="block truncate font-bold text-[var(--gt-ink-muted)]">{event.label}</span>
+        <span className="block truncate font-semibold text-[var(--gt-ink-muted)]">{event.label}</span>
         {event.detail ? (
-          <span className="mt-1 block truncate font-mono text-[length:var(--gt-font-size-xs)] font-bold text-[var(--gt-ink-muted)]">
+          <span className="mt-1 block truncate font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
             {event.detail}
           </span>
         ) : null}
@@ -1563,7 +1563,7 @@ function StatusBadge({ status, t }: { status: CodexLiveSessionStatus; t: Transla
           ? 'bg-[color-mix(in_srgb,var(--gt-status-success)_12%,var(--gt-surface-canvas))]'
           : 'bg-[var(--gt-surface-muted)]';
   return (
-    <span className={`shrink-0 rounded border border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] ${tone}`}>
+    <span className={`shrink-0 rounded border border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] ${tone}`}>
       {t(statusLabelKeys[status])}
     </span>
   );

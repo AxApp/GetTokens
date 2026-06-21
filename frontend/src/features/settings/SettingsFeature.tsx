@@ -57,7 +57,7 @@ function toAntdSegmentedOptions<T extends string>(options: ReadonlyArray<Segment
 
 const settingsRowClass = 'flex items-center justify-between gap-4 border-b px-4 py-3 last:border-b-0';
 const settingsRowLabelClass = 'text-[length:var(--gt-font-size-body)] font-semibold text-[var(--gt-ink-primary)]';
-const settingsRowDescriptionClass = 'mt-1 text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-muted)]';
+const settingsRowDescriptionClass = 'mt-1 text-[length:var(--gt-font-size-xs)] font-normal leading-5 text-[var(--gt-ink-muted)]';
 const settingsRowControlClass = 'flex shrink-0 items-center justify-end';
 
 interface SettingsFeatureProps {
@@ -439,7 +439,7 @@ export default function SettingsFeature({
     >
       <div className="mx-auto max-w-3xl space-y-8 px-8 py-10">
         <header className="space-y-1">
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>
+          <h1 className="text-2xl font-semibold" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>
             {t('settings.title')}
           </h1>
           <p className="text-sm" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}>
@@ -669,7 +669,7 @@ export default function SettingsFeature({
         </section>
 
         <footer className="border-t pt-6 text-center" style={{ borderColor: 'var(--gt-border-subtle)' }}>
-          <div className="text-xs font-medium" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>
+          <div className="text-xs font-normal" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>
             GetTokens {currentVersionLabel} · {releaseLabel || 'DEV'}
           </div>
         </footer>

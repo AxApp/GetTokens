@@ -21,7 +21,7 @@ import { StatePanel, UsageDeskEvidenceStatus, UsageProjectDrilldownPanel, UsageS
 
 const usageDeskPageShellClass = 'h-full w-full overflow-auto bg-[var(--gt-surface-page)]';
 const usageDeskHeaderSubtitleClass =
-  'mt-1 max-w-3xl text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]';
+  'mt-1 max-w-3xl text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]';
 const usageDeskProjectedProgressClass =
   'text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const usageDeskStickyChartShellClass = 'sticky top-0 z-20 -mx-12 bg-[var(--gt-surface-page)] px-12 pb-3 pt-3';

@@ -114,3 +114,62 @@ test('runtime color literals are restricted to the Ant Design color specificatio
 
   assert.deepEqual(findings, []);
 });
+
+test('runtime typography weights follow Ant Design 400 and 600 emphasis only', () => {
+  const findings = [];
+  const files = [...listRuntimeSourceFiles(sourceRoot), tailwindConfig];
+  const disallowedUtilityPattern = /\bfont-(?:medium|bold|extrabold|black)\b/g;
+  const disallowedCssPattern = /font-weight:\s*(?:500|[7-9]00|650)\b/g;
+  const disallowedInlinePattern = /fontWeight:\s*['\"](?:500|[7-9]00|650)['\"]/g;
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    const relativePath = file.replace(repoFrontendRoot + '/', '');
+    const matches = [
+      ...source.matchAll(disallowedUtilityPattern),
+      ...source.matchAll(disallowedCssPattern),
+      ...source.matchAll(disallowedInlinePattern),
+    ];
+
+    for (const match of matches) {
+      findings.push(relativePath + ': unsupported typography weight ' + match[0]);
+    }
+  }
+
+  assert.deepEqual(findings, []);
+});
+
+test('runtime typography avoids ornamental casing and italics outside Ant Design language', () => {
+  const findings = [];
+  const files = [...listRuntimeSourceFiles(sourceRoot), tailwindConfig];
+  const ornamentalTypographyPattern =
+    /\buppercase\b|\bitalic\b|tracking-\[[^\]]+\]|tracking-(?:wide|wider|widest)|text-transform:\s*uppercase/g;
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    const relativePath = file.replace(repoFrontendRoot + '/', '');
+
+    for (const match of source.matchAll(ornamentalTypographyPattern)) {
+      findings.push(relativePath + ': unsupported ornamental typography ' + match[0]);
+    }
+  }
+
+  assert.deepEqual(findings, []);
+});
+
+test('runtime radius utilities stay within Ant Design control and surface radii', () => {
+  const findings = [];
+  const files = [...listRuntimeSourceFiles(sourceRoot), tailwindConfig];
+  const oversizedRadiusPattern = /\brounded-(?:xl|2xl|3xl)\b/g;
+
+  for (const file of files) {
+    const source = readFileSync(file, 'utf8');
+    const relativePath = file.replace(repoFrontendRoot + '/', '');
+
+    for (const match of source.matchAll(oversizedRadiusPattern)) {
+      findings.push(relativePath + ': unsupported radius utility ' + match[0]);
+    }
+  }
+
+  assert.deepEqual(findings, []);
+});

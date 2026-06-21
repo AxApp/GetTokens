@@ -37,13 +37,13 @@ const stagedApplyConfigText = [
   '',
 ].join('\n');
 
-const extensionRegistryButtonClass = 'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:border-dashed disabled:text-[var(--gt-ink-muted)] disabled:opacity-60';
+const extensionRegistryButtonClass = 'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:border-dashed disabled:text-[var(--gt-ink-muted)] disabled:opacity-60';
 const extensionRegistryPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const extensionRegistryMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const extensionRegistrySectionTitleClass = 'flex items-center gap-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
-const extensionRegistryMetaClass = 'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
-const extensionRegistryTinyMetaClass = 'text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]';
-const extensionRegistryChipClass = 'inline-flex items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const extensionRegistryMetaClass = 'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
+const extensionRegistryTinyMetaClass = 'text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
+const extensionRegistryChipClass = 'inline-flex items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 
 export default function GetTokensExtensionRegistryFeature({ input }: GetTokensExtensionRegistryFeatureProps) {
   const [snapshot, setSnapshot] = useState<main.GetTokensExtensionRegistrySnapshot>(() => getGetTokensExtensionRegistryPreviewSnapshot());
@@ -239,7 +239,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
         </>
       }
       notice={
-        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium leading-5 text-[var(--gt-ink-muted)]">
+        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal leading-5 text-[var(--gt-ink-muted)]">
           此页展示 extension registry snapshot、diagnostics、capability kinds、source/root 信息；enable/disable 仅更新 GetTokens dev/app-local extension enable-state file，不写 Codex config，不执行 capability。
           Codex config preview 是 dry-run diff/validation，不读取或写入真实 ~/.codex/config.toml。
         </div>
@@ -261,7 +261,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
       <div className="grid min-h-0 gap-0" data-gettokens-extension-registry-panel="true">
         <div
           data-gettokens-extension-registry-list-header="true"
-          className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]"
+          className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]"
         >
           <span>Extension</span>
           <span>Enable State</span>
@@ -270,7 +270,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
         </div>
         <div className="scrollbar-stable min-h-0 overflow-auto">
           {view.extensions.length === 0 ? (
-            <div className="grid place-items-center px-6 py-10 text-center text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-muted)]">
+            <div className="grid place-items-center px-6 py-10 text-center text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
               当前过滤条件下没有 extension snapshot。
             </div>
           ) : (
@@ -289,7 +289,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
                 >
                   <div className="min-w-0">
                     <div className="truncate text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">{extension.name}</div>
-                    <div className="mt-1 truncate font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                    <div className="mt-1 truncate font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                       {extension.id || 'missing-id'} / {extension.version}
                     </div>
                     <div
@@ -308,7 +308,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
                     </div>
                     <div
                       data-gettokens-extension-action-availability={extension.actionAvailability.state}
-                      className="rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]"
+                      className="rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]"
                     >
                       {extension.actionAvailability.label}
                     </div>
@@ -326,7 +326,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
                       <span
                         key={`${extension.id}-${kind}`}
                         data-gettokens-extension-registry-capability-kind={kind}
-                        className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]"
+                        className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]"
                       >
                         {kind}
                       </span>
@@ -416,7 +416,7 @@ function GetTokensExtensionRegistryAside({
           </div>
           <div className="grid gap-2">
             {codexConfigDryRunView.operations.length === 0 ? (
-              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                 No candidate operations
               </div>
             ) : (
@@ -456,7 +456,7 @@ function GetTokensExtensionRegistryAside({
           </div>
           <div className="grid gap-2">
             {codexConfigDryRunView.validation.length === 0 ? (
-              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                 No dry-run validation errors
               </div>
             ) : (
@@ -524,12 +524,12 @@ function GetTokensExtensionRegistryAside({
               <KeyValueRow label="Operations" value={stagedApplyView.appliedOperations.join(', ') || '-'} monospace />
             </div>
             {stagedApplyView.disabledReason ? (
-              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+              <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                 {stagedApplyView.disabledReason}
               </div>
             ) : null}
             {stagedApplyView.errorDetail ? (
-              <div className="border px-2 py-2 text-[length:var(--gt-font-size-xs)] font-bold text-[var(--gt-status-danger)]" style={{ borderColor: 'color-mix(in srgb, var(--gt-status-danger) 34%, transparent)', backgroundColor: 'color-mix(in srgb, var(--gt-status-danger) 10%, transparent)' }}>
+              <div className="border px-2 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-danger)]" style={{ borderColor: 'color-mix(in srgb, var(--gt-status-danger) 34%, transparent)', backgroundColor: 'color-mix(in srgb, var(--gt-status-danger) 10%, transparent)' }}>
                 {stagedApplyView.errorDetail}
               </div>
             ) : null}
@@ -573,7 +573,7 @@ function GetTokensExtensionRegistryAside({
         </div>
         <div className="mt-3 grid gap-2">
           {view.registryDiagnostics.length === 0 ? (
-            <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               No registry diagnostics
             </div>
           ) : (
@@ -593,7 +593,7 @@ function GetTokensExtensionRegistryAside({
           <div data-gettokens-extension-registry-selected="true" className="mt-3 grid gap-3">
             <div className={`${extensionRegistryPanelClass} px-3 py-3`}>
               <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">{view.selectedExtension.name}</div>
-              <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+              <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                 {view.selectedExtension.id || 'missing-id'} / {view.selectedExtension.version}
               </div>
               <div className="mt-3 grid gap-2 text-[length:var(--gt-font-size-xs)]">
@@ -676,7 +676,7 @@ function GetTokensExtensionRegistryAside({
 
             <div className="grid gap-2">
               {view.selectedExtension.diagnostics.length === 0 ? (
-                <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                <div className="rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                   No extension diagnostics
                 </div>
               ) : (
@@ -687,7 +687,7 @@ function GetTokensExtensionRegistryAside({
             </div>
           </div>
         ) : (
-          <div className="mt-3 rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-4 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+          <div className="mt-3 rounded border border-dashed border-[var(--gt-border-subtle)] px-3 py-4 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
             选择一个 extension 查看 diagnostics、capability kinds 与 source/root 信息。
           </div>
         )}
@@ -712,7 +712,7 @@ function ExtensionEnableActionButton({
         type="button"
         disabled
         data-gettokens-extension-enable-action="disabled"
-        className="inline-flex h-8 items-center justify-center gap-2 rounded border border-dashed border-[var(--gt-border-subtle)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]"
+        className="inline-flex h-8 items-center justify-center gap-2 rounded border border-dashed border-[var(--gt-border-subtle)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]"
       >
         <Power className="h-3.5 w-3.5" strokeWidth={2.5} />
         Disabled

@@ -20,13 +20,13 @@ const codexOAuthModalEyebrowClass =
 const codexOAuthModalTitleClass =
   'text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const codexOAuthModalHintClass =
-  'text-[length:var(--gt-font-size-md-compact)] font-medium leading-relaxed text-[var(--gt-ink-secondary)]';
+  'text-[length:var(--gt-font-size-md-compact)] font-normal leading-relaxed text-[var(--gt-ink-secondary)]';
 const codexOAuthModalFooterClass =
   'flex flex-wrap items-center justify-end gap-2';
 const codexOAuthModalButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]';
+  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]';
 const codexOAuthModalPrimaryButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
+  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90';
 const codexOAuthModalLabelClass =
   'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexOAuthModalUrlClass =

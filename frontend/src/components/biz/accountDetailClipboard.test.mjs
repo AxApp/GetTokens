@@ -24,7 +24,7 @@ test('legacy account detail modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /border-b-2/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
   assert.doesNotMatch(source, /shadow-hard/);

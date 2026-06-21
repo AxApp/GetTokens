@@ -17,10 +17,10 @@ type Story = StoryObj;
 function ModalHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div>
-      <div className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.2em] text-[var(--gt-ink-muted)]">
+      <div className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
         {eyebrow}
       </div>
-      <h3 className="mt-1 text-sm font-black uppercase italic tracking-normal text-[var(--gt-ink-primary)]">
+      <h3 className="mt-1 text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]">
         {title}
       </h3>
     </div>
@@ -30,7 +30,7 @@ function ModalHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
 function ModalFooter({ confirmLabel, cancelLabel }: { confirmLabel: string; cancelLabel: string }) {
   return (
     <>
-      <div className="text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.15em] text-[var(--gt-ink-muted)]">
+      <div className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
         {confirmLabel}
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -51,7 +51,7 @@ function ModalContent({ long = false }: { long?: boolean }) {
     <div className="grid gap-3 p-6">
       {Array.from({ length: rows }, (_, index) => (
         <div key={index} className="grid gap-2 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-3">
-          <div className="font-mono text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-normal text-[var(--gt-ink-muted)]">
+          <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             FIELD {String(index + 1).padStart(2, '0')}
           </div>
           <div className="h-8 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)]" />
@@ -63,7 +63,7 @@ function ModalContent({ long = false }: { long?: boolean }) {
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="shrink-0 border-t-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-black uppercase tracking-normal text-[var(--color-status-danger)]">
+    <div className="shrink-0 border-t-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--color-status-danger)]">
       {message}
     </div>
   );
@@ -124,8 +124,8 @@ function ModalFrameOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">ModalFrame</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">ModalFrame</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '统一遮罩、窗口材质、尺寸、滚动边界、分区和设计系统准入标记。'
             : 'Shared scrim, panel material, sizing, scroll boundary, slots, and design-system admission marker.'}

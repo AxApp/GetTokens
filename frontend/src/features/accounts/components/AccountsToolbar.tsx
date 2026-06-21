@@ -24,13 +24,13 @@ const DEFAULT_AVAILABLE_PLAN_TYPES: readonly AccountPlanType[] = [];
 const accountsToolbarMenuDividerClass = 'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2';
 const accountsToolbarMenuFooterClass = 'flex justify-end border-t border-[var(--gt-border-subtle)] pt-2';
 const accountsToolbarModeOptionClass = (active: boolean) =>
-  `min-h-9 rounded border px-2 text-left text-xs font-medium leading-none transition-colors ${
+  `min-h-9 rounded border px-2 text-left text-xs font-normal leading-none transition-colors ${
     active
       ? 'border-[var(--gt-accent-primary)] bg-[var(--gt-accent-primary)] text-[var(--gt-ink-inverse)]'
       : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
   }`;
 const accountsToolbarFilterOptionClass = (active: boolean, disabled = false) =>
-  `flex min-h-9 items-center gap-2.5 rounded border px-2.5 text-xs font-medium leading-none transition-colors ${
+  `flex min-h-9 items-center gap-2.5 rounded border px-2.5 text-xs font-normal leading-none transition-colors ${
     disabled
       ? 'cursor-not-allowed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] opacity-50'
       : active
@@ -38,13 +38,13 @@ const accountsToolbarFilterOptionClass = (active: boolean, disabled = false) =>
         : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
   }`;
 const accountsToolbarPillOptionClass = (active: boolean) =>
-  `h-8 min-w-16 rounded border px-2 text-xs font-medium leading-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+  `h-8 min-w-16 rounded border px-2 text-xs font-normal leading-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
     active
       ? 'border-[var(--gt-accent-primary)] bg-[var(--gt-accent-primary)] text-[var(--gt-ink-inverse)]'
       : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
   }`;
 const accountsToolbarDisplayButtonClass = (active: boolean, bordered: boolean) =>
-  `h-full min-h-0 px-2.5 text-[length:var(--gt-font-size-xs)] font-medium leading-none transition-colors ${
+  `h-full min-h-0 px-2.5 text-[length:var(--gt-font-size-xs)] font-normal leading-none transition-colors ${
     bordered ? 'border-r border-[var(--gt-border-subtle)]' : ''
   } ${
     active
@@ -246,7 +246,7 @@ export default function AccountsToolbar({
             <button
               type="button"
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
+              className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
             >
               <SlidersHorizontal size={13} strokeWidth={2} />
               <span>{buildToolbarFilterLabel(t, filterSummaryParts)}</span>
@@ -292,7 +292,7 @@ export default function AccountsToolbar({
                           key={`${part.kind}-${part.label}-${index}`}
                           type="button"
                           onClick={() => removeFilterPart(index)}
-                          className="inline-flex h-8 max-w-[220px] items-center gap-1.5 rounded border px-2 text-xs font-medium"
+                          className="inline-flex h-8 max-w-[220px] items-center gap-1.5 rounded border px-2 text-xs font-normal"
                           style={{ borderColor: 'var(--gt-accent-primary)', backgroundColor: 'var(--gt-accent-primary)', color: 'var(--gt-ink-inverse)' }}
                           title={t('accounts.filter_remove_condition')}
                         >
@@ -304,7 +304,7 @@ export default function AccountsToolbar({
                   </div>
                 ) : null}
                 <div className="space-y-2">
-                  <p className="text-xs font-medium" style={{ color: 'var(--gt-ink-muted)' }}>
+                  <p className="text-xs font-normal" style={{ color: 'var(--gt-ink-muted)' }}>
                     {t('accounts.filter_group_plan_source')}
                   </p>
                   <div className="grid gap-2">
@@ -420,7 +420,7 @@ export default function AccountsToolbar({
                   key={`${part.kind}-${part.label}-${index}`}
                   type="button"
                   onClick={() => removeFilterPart(index)}
-                  className="inline-flex h-8 max-w-[210px] items-center gap-1.5 rounded-md border px-2 text-xs font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-status-danger)] hover:text-[var(--gt-ink-inverse)]"
+                  className="inline-flex h-8 max-w-[210px] items-center gap-1.5 rounded-md border px-2 text-xs font-normal text-[var(--gt-ink-primary)] hover:bg-[var(--gt-status-danger)] hover:text-[var(--gt-ink-inverse)]"
                   style={{ borderColor: 'var(--gt-border-default)', backgroundColor: 'var(--gt-surface-muted)' }}
                   title={t('accounts.filter_remove_condition')}
                 >
@@ -469,7 +469,7 @@ export default function AccountsToolbar({
             </div>
             <button
               onClick={onToggleSelectionMode}
-              className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
+              className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
             >
               {isSelectionMode ? t('accounts.cancel_selection') : t('accounts.selection_mode')}
             </button>
@@ -620,7 +620,7 @@ export function AccountsSelectionActions({
     return (
       <div className="absolute right-0 top-full z-30 mt-3 grid min-w-[240px] gap-2 rounded-lg border p-3"
         style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}>
-        <p className="px-1 text-xs font-medium" style={{ color: 'var(--gt-ink-muted)' }}>
+        <p className="px-1 text-xs font-normal" style={{ color: 'var(--gt-ink-muted)' }}>
           {t('common.more_actions')}
         </p>
         <BulkMenuAction
@@ -651,7 +651,7 @@ export function AccountsSelectionActions({
 
         {isBulkDeleteConfirming ? (
           <div className="mt-1 grid gap-2 rounded border p-2" style={{ borderColor: 'var(--gt-status-danger)', backgroundColor: 'color-mix(in srgb, var(--gt-status-danger) 10%, transparent)' }}>
-            <div className="text-xs font-medium text-[var(--gt-status-danger)]">
+            <div className="text-xs font-normal text-[var(--gt-status-danger)]">
               {t('accounts.bulk_remove_confirm')} · {selectedAccountCount}
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -737,7 +737,7 @@ export function AccountsSelectionActions({
         className="pointer-events-none absolute left-0 top-0 -z-10 flex w-max items-center gap-2 opacity-0"
         style={{ visibility: 'hidden' }}
       >
-        <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-sm font-medium" style={{ color: 'var(--gt-ink-primary)' }}>
+        <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-sm font-normal" style={{ color: 'var(--gt-ink-primary)' }}>
           {selectedAccountCount} {t('accounts.selected_count')}
         </span>
         <Button size="small" htmlType="button">
@@ -751,7 +751,7 @@ export function AccountsSelectionActions({
         </Button>
         {renderInlineBulkActions()}
       </div>
-      <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-sm font-medium" style={{ color: 'var(--gt-ink-primary)' }}>
+      <span className="mr-1 flex h-10 shrink-0 items-center px-3 text-sm font-normal" style={{ color: 'var(--gt-ink-primary)' }}>
         {selectedAccountCount} {t('accounts.selected_count')}
       </span>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -889,14 +889,14 @@ function ToolbarModeMenu<T extends string>({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
+        className="flex h-8 items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
       >
         {label} · {activeLabel}
       </button>
       {open ? (
         <div className="absolute right-0 top-full z-20 mt-3 grid min-w-[220px] gap-2 rounded-lg border p-3"
           style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}>
-          <p className="px-1 text-xs font-medium" style={{ color: 'var(--gt-ink-muted)' }}>
+          <p className="px-1 text-xs font-normal" style={{ color: 'var(--gt-ink-muted)' }}>
             {label}
           </p>
           {options.map(([optionValue, optionLabel]) => (

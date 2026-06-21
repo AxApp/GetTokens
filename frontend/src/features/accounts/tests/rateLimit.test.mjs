@@ -171,7 +171,7 @@ test('rate limit rules section edits account-card rules without matchKey fallbac
   assert.doesNotMatch(source, /border-2|border-t-2|border-b-2|border-dashed/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]|bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /color-status-/);
-  assert.doesNotMatch(source, /font-black|\buppercase\b|shadow-hard|shadow-\[/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)|\buppercase\b|shadow-hard|shadow-\[/);
   assert.doesNotMatch(source, /tracking-\[|tracking-wide|tracking-wider|tracking-widest|tracking-tight|tracking-tighter|tracking-tightest/);
   assert.match(source, /density="dense"/);
   assert.match(source, /rate_limit_add_rule/);

@@ -73,7 +73,7 @@ function ColorSwatch({ label, varName }: { label: string; varName: string }) {
         style={{ backgroundColor: value, borderColor: 'var(--gt-border-default)' }}
       />
       <div className="min-w-0">
-        <div className="text-xs font-medium" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
+        <div className="text-xs font-normal" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
         <div className="text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>{value}</div>
       </div>
     </div>
@@ -89,7 +89,7 @@ function RadiusSwatch({ label, varName }: { label: string; varName: string }) {
         style={{ borderRadius: value, backgroundColor: 'var(--gt-surface-raised)', borderColor: 'var(--gt-border-default)' }}
       />
       <div className="text-center">
-        <div className="text-xs font-medium" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
+        <div className="text-xs font-normal" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
         <div className="text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>{value}</div>
       </div>
     </div>
@@ -105,7 +105,7 @@ function ElevationSwatch({ label, varName }: { label: string; varName: string })
         style={{ boxShadow: value || 'none', backgroundColor: 'var(--gt-surface-raised)', border: '1px solid var(--gt-border-subtle)' }}
       />
       <div className="text-center">
-        <div className="text-xs font-medium" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
+        <div className="text-xs font-normal" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
         <div className="max-w-[10rem] break-all text-center text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>{value || 'none'}</div>
       </div>
     </div>
@@ -119,7 +119,7 @@ function AnatomySettingsRow() {
     <div className="flex items-center justify-between gap-4 rounded border px-4 py-3" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
       <div className="min-w-0 flex-1">
         <div className="text-[length:var(--gt-font-size-body)] font-semibold text-[var(--gt-ink-primary)]">Setting Label</div>
-        <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">Description text for this setting</div>
+        <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">Description text for this setting</div>
       </div>
       <Switch defaultChecked />
     </div>
@@ -140,7 +140,7 @@ function AnatomyMetricTile() {
   return (
     <div className="rounded border p-4" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
       <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">Spend</div>
-      <div className="mt-1 text-[length:var(--gt-font-size-number)] font-bold text-[var(--gt-ink-primary)]">$12.40</div>
+      <div className="mt-1 text-[length:var(--gt-font-size-number)] font-semibold text-[var(--gt-ink-primary)]">$12.40</div>
       <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-success)]">+2.1%</div>
     </div>
   );
@@ -367,7 +367,7 @@ export default function DesignSystemEntryFeature() {
               <tbody>
                 {STATE_MATRIX.map((row) => (
                   <tr key={row.component} style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
-                    <td className="px-4 py-2 font-medium" style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-mono)' }}>
+                    <td className="px-4 py-2 font-normal" style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-mono)' }}>
                       {row.component}
                     </td>
                     {STATE_COLUMNS.map((col) => (
@@ -410,7 +410,7 @@ export default function DesignSystemEntryFeature() {
                       className="flex items-baseline justify-between px-4 py-2"
                       style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}
                     >
-                      <span className="text-xs font-medium" style={{ color: 'var(--gt-ink-primary)' }}>{story.title}</span>
+                      <span className="text-xs font-normal" style={{ color: 'var(--gt-ink-primary)' }}>{story.title}</span>
                       <span className="truncate text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)', maxWidth: '60%' }}>
                         {story.storybookTitle}
                       </span>
@@ -430,7 +430,7 @@ function MetricTile({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded border p-4" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
       <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">{label}</div>
-      <div className="mt-1 text-[length:var(--gt-font-size-number)] font-bold text-[var(--gt-ink-primary)]">{value}</div>
+      <div className="mt-1 text-[length:var(--gt-font-size-number)] font-semibold text-[var(--gt-ink-primary)]">{value}</div>
     </div>
   );
 }

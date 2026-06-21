@@ -448,7 +448,7 @@ export function EmptyChartPlaceholder({
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,var(--color-chart-empty-overlay-from),var(--color-chart-empty-overlay-to))] px-6 text-center">
         <div className={usageDeskEmptyChartTitleClass}>{title}</div>
-        <p className="max-w-md text-[length:var(--gt-font-size-md-compact)] font-bold leading-6 text-[var(--gt-ink-muted)]">{body}</p>
+        <p className="max-w-md text-[length:var(--gt-font-size-md-compact)] font-semibold leading-6 text-[var(--gt-ink-muted)]">{body}</p>
       </div>
     </div>
   );

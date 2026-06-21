@@ -91,7 +91,7 @@ const claudeAccountListSummaryShellClass =
 const claudeAccountListSummaryCardClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const claudeAccountListSummaryLabelClass =
-  'text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
 const claudeAccountListSummaryValueClass =
   'mt-1 text-[length:var(--gt-font-size-2xl)] font-semibold tabular-nums text-[var(--gt-ink-primary)]';
 

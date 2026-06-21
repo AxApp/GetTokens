@@ -115,7 +115,7 @@ test('UsageDeskFeature uses the quiet workspace page shell', async () => {
   assert.doesNotMatch(featureSource, /btn-swiss/);
   assert.doesNotMatch(featureSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(featureSource, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(featureSource, /font-black/);
+  assert.doesNotMatch(featureSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(featureSource, /uppercase/);
   assert.doesNotMatch(featureSource, /tracking-(wide|wider|widest|tight|tighter|tightest|\[)/);
 });
@@ -316,7 +316,7 @@ test('UsageDeskPanels uses the quiet workspace shell', async () => {
   assert.doesNotMatch(panelsSource, /border-b-2/);
   assert.doesNotMatch(panelsSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(panelsSource, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(panelsSource, /font-black/);
+  assert.doesNotMatch(panelsSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(panelsSource, /uppercase/);
   assert.doesNotMatch(panelsSource, /tracking-\[0\.12em\]/);
   assert.doesNotMatch(panelsSource, /tracking-\[0\.18em\]/);
@@ -341,7 +341,7 @@ test('UsageDetailTable uses the quiet workspace table shell', async () => {
   assert.doesNotMatch(tableSource, /border-b-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(tableSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(tableSource, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(tableSource, /font-black/);
+  assert.doesNotMatch(tableSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(tableSource, /uppercase/);
   assert.doesNotMatch(tableSource, /tracking-\[/);
   assert.doesNotMatch(tableSource, /shadow-\[/);
@@ -373,7 +373,7 @@ test('UsageDeskChart uses the quiet workspace shell', async () => {
   assert.doesNotMatch(chartSource, /border-t-2/);
   assert.doesNotMatch(chartSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(chartSource, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(chartSource, /font-black/);
+  assert.doesNotMatch(chartSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(chartSource, /uppercase/);
   assert.doesNotMatch(chartSource, /tracking-\[0\.18em\]/);
   assert.doesNotMatch(chartSource, /shadow-\[/);

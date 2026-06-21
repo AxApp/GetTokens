@@ -69,7 +69,7 @@ test('codex oauth dialog uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /border-dashed/);
   assert.doesNotMatch(source, /bg-\[var\(--gt-surface-panel\)\]/);
   assert.doesNotMatch(source, /color-status-/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /\buppercase\b/);
   assert.doesNotMatch(source, /tracking-\[0\.18em\]|tracking-\[0\.2em\]|tracking-tight|tracking-wide/);
 });

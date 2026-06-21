@@ -141,7 +141,7 @@ test('quota calibration panel uses the quiet workspace shell', () => {
   assert.doesNotMatch(panel, /border-2|border-t-2|border-b-2|border-dashed/);
   assert.doesNotMatch(panel, /bg-\[var\(--bg-(main|surface)\)\]|bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(panel, /color-status-/);
-  assert.doesNotMatch(panel, /font-black|\buppercase\b|shadow-hard|shadow-\[/);
+  assert.doesNotMatch(panel, /font-(?:medium|bold|extrabold|black)|\buppercase\b|shadow-hard|shadow-\[/);
   assert.doesNotMatch(panel, /tracking-\[0\.12em\]|tracking-\[0\.16em\]|tracking-\[0\.18em\]/);
 });
 
@@ -165,7 +165,7 @@ test('quota threshold rule panel uses the quiet workspace shell', () => {
   assert.doesNotMatch(panel, /border-t-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(panel, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(panel, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(panel, /font-black/);
+  assert.doesNotMatch(panel, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(panel, /uppercase/);
   assert.doesNotMatch(panel, /tracking-\[0\.12em\]/);
   assert.doesNotMatch(panel, /tracking-\[0\.18em\]/);

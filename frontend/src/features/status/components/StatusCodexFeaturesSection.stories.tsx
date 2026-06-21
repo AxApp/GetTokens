@@ -245,14 +245,14 @@ function StatusCodexFeaturesOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页 Codex 功能</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">状态页 Codex 功能</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           Codex feature 开关列表进入设计系统后，用固定 snapshot、row 和 preview mock 覆盖配置型列表、筛选、空态和保存状态。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Feature list states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Feature list states</h3>
         <div className="grid gap-4">
           <FeatureSectionSample label="DS-CODEX-FEATURES-READY" message="loaded from config.toml" />
           <FeatureSectionSample

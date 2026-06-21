@@ -241,7 +241,7 @@ test('CodexAccountDetailModal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /border-b-2/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[0\.14em\]|tracking-\[0\.15em\]|tracking-\[0\.16em\]|tracking-\[0\.18em\]/);
   assert.doesNotMatch(source, /shadow-\[/);
@@ -1191,7 +1191,7 @@ test('Codex account order section uses a lighter shell instead of a nested card 
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-ink-muted/);
   assert.doesNotMatch(source, /border-t-2/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /\buppercase\b/);
   assert.doesNotMatch(source, /tracking-wide|tracking-wider|tracking-widest|tracking-\[/);
   assert.doesNotMatch(source, /border-t-2 border-\[var\(--gt-border-strong\)\] px-5 py-4/);
@@ -1305,7 +1305,7 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.doesNotMatch(toolbarSource, /border-t border-dashed/);
   assert.doesNotMatch(toolbarSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(toolbarSource, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(toolbarSource, /font-black/);
+  assert.doesNotMatch(toolbarSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(toolbarSource, /uppercase/);
   assert.doesNotMatch(toolbarSource, /tracking-\[0\.08em\]|tracking-\[0\.1em\]|tracking-\[0\.16em\]/);
   assert.doesNotMatch(toolbarSource, /shadow-\[/);
@@ -1336,7 +1336,7 @@ test('Codex route probe modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /xl:border-r-2/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[0\.16em\]/);
   assert.doesNotMatch(source, /shadow-hard/);

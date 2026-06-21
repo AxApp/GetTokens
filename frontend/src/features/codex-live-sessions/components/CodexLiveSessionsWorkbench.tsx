@@ -57,13 +57,13 @@ const codexLiveWorkbenchShellClass =
 const codexLiveWorkbenchTitleClass =
   'text-2xl font-semibold tracking-normal text-[var(--gt-ink-primary)] [word-break:keep-all] sm:text-3xl';
 const codexLiveWorkbenchActionButtonClass =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexLiveWorkbenchSegmentClass =
   'grid grid-cols-2 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveWorkbenchSegmentButtonClass =
   'h-9 min-w-16 px-3 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal transition-colors';
 const codexLiveWorkbenchFilterButtonClass =
-  'inline-flex h-10 w-full min-w-0 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] lg:w-auto';
+  'inline-flex h-10 w-full min-w-0 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] lg:w-auto';
 const codexLiveWorkbenchFilterMenuClass =
   'absolute left-1/2 top-[calc(100%+0.75rem)] z-30 grid min-w-[min(22rem,calc(100vw-2.5rem))] -translate-x-1/2 gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 [box-shadow:var(--gt-elevation-card)] lg:left-auto lg:right-0 lg:translate-x-0';
 const codexLiveWorkbenchFilterGroupLabelClass =

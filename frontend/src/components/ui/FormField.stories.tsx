@@ -65,8 +65,8 @@ function StatePanel({
   return (
     <section className="grid min-h-[9rem] gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
       <div>
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{title}</h3>
-        <p className="mt-1 text-xs font-bold text-[var(--gt-ink-muted)]">{description}</p>
+        <h3 className="text-sm font-semibold tracking-normal">{title}</h3>
+        <p className="mt-1 text-xs font-semibold text-[var(--gt-ink-muted)]">{description}</p>
       </div>
       {children}
     </section>
@@ -80,8 +80,8 @@ function FormFieldOverview() {
   return (
     <div className="grid w-full max-w-5xl gap-4 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">FormField</h2>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">FormField</h2>
+        <p className="mt-2 max-w-2xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '统一字段标题、select、input 和只读状态，确保业务区块里的字段标签都可被设计系统追踪。'
             : 'Shared field labels, select, input, and read-only states so business panels remain trackable by the design system.'}

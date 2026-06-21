@@ -36,7 +36,7 @@ function SectionNav({
             onClick={() => onSelect(item.id)}
             className={`w-full px-4 py-2 text-left text-sm transition duration-75 ${
               activeId === item.id
-                ? 'bg-[var(--gt-surface-muted)] font-medium text-[var(--gt-ink-primary)]'
+                ? 'bg-[var(--gt-surface-muted)] font-normal text-[var(--gt-ink-primary)]'
                 : 'text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)]'
             }`}
             style={{ fontFamily: 'var(--gt-font-family-sans)' }}

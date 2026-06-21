@@ -201,13 +201,13 @@ export function StatePanel({
     <div className="flex min-h-[10rem] flex-col items-start justify-center gap-2.5 px-6 py-8 text-left">
       <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">{title}</div>
       {description ? (
-        <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">{description}</div>
+        <div className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">{description}</div>
       ) : null}
       {actionLabel && onAction ? (
         <button
           type="button"
           onClick={onAction}
-          className="mt-1 inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+          className="mt-1 inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
         >
           {actionLabel}
         </button>
@@ -224,23 +224,23 @@ const sessionManagementModalBackdropClass = 'fixed inset-0 z-50 flex items-cente
 const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const sessionManagementModalHeaderClass = 'flex items-start justify-between gap-4 border-b border-[var(--gt-border-subtle)] px-5 py-4';
 const sessionManagementModalFooterClass = 'flex items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-3';
-const sessionManagementModalButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+const sessionManagementModalButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const sessionManagementModalIconButtonClass = 'flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90';
-const sessionManagementModalLabelClass = 'text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
-const sessionManagementModalErrorClass = 'border-b border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]';
+const sessionManagementModalLabelClass = 'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
+const sessionManagementModalErrorClass = 'border-b border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]';
 const sessionManagementAnalysisSectionClass = 'border-b border-[var(--gt-border-subtle)] px-4 py-3';
 const sessionManagementAnalysisColumnClass = 'border-b border-[var(--gt-border-subtle)] px-4 py-3 lg:border-b-0 lg:border-r lg:border-[var(--gt-border-subtle)]';
 const sessionManagementAnalysisTitleClass = 'mb-2 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const sessionManagementAnalysisCloudItemClass = 'max-w-full truncate font-semibold leading-none tracking-normal text-[var(--gt-ink-primary)]';
 const sessionManagementAnalysisCardClass = 'min-w-0 rounded-sm border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
 const sessionManagementAnalysisCardTitleClass = 'line-clamp-2 break-words text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
-const sessionManagementAnalysisCardMetaClass = 'mt-1 text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
+const sessionManagementAnalysisCardMetaClass = 'mt-1 text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
 const sessionManagementAnalysisMetricRowClass = 'grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[length:var(--gt-font-size-xs)]';
 const sessionManagementAnalysisMetricLabelClass = 'truncate font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const sessionManagementAnalysisMetricValueClass = 'font-semibold tabular-nums text-[var(--gt-ink-primary)]';
-const sessionManagementAnalysisMetricMetaClass = 'text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal text-[var(--gt-ink-muted)]';
-const sessionManagementMessageMetaClass = 'flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[length:var(--gt-font-size-2xs)] font-medium tracking-normal';
+const sessionManagementAnalysisMetricMetaClass = 'text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
+const sessionManagementMessageMetaClass = 'flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal';
 const sessionManagementRawJsonPanelClass = 'mt-3 overflow-hidden rounded-sm border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const sessionManagementRawJsonHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-3 py-1.5 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 
@@ -341,7 +341,7 @@ export function ProjectListPanel({
       <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
         <h2 className="text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">{copy.projectListTitle}</h2>
         {snapshotRefreshing ? (
-          <span className="animate-pulse text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+          <span className="animate-pulse text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
             {copy.refreshing}
           </span>
         ) : null}
@@ -383,7 +383,7 @@ export function ProjectListPanel({
                     ].map((tag) => (
                       <span
                         key={tag}
-                        className={`rounded border px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-medium leading-none ${
+                        className={`rounded border px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-normal leading-none ${
                           isActive
                             ? 'border-[var(--gt-border-strong)] text-[var(--gt-ink-primary)]'
                             : 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)]'
@@ -392,7 +392,7 @@ export function ProjectListPanel({
                         {tag}
                       </span>
                     ))}
-                    <span className={`truncate text-[length:var(--gt-font-size-2xs)] font-medium leading-none ${
+                    <span className={`truncate text-[length:var(--gt-font-size-2xs)] font-normal leading-none ${
                       isActive ? 'text-[var(--gt-ink-muted)]' : 'text-[var(--gt-ink-muted)]/70'
                     }`}>
                       {getProviderDisplayLabel(project.providerSummary, copy.unknownProvider)}
@@ -475,7 +475,7 @@ export function SessionAnalysisScopeModal({
       >
         <div className={sessionManagementModalHeaderClass}>
           <div className="min-w-0">
-            <div className="flex items-center gap-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="flex items-center gap-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               <BarChart3 className="h-3.5 w-3.5" strokeWidth={2.5} />
               <span>{copy.analysisTitle}</span>
             </div>
@@ -485,7 +485,7 @@ export function SessionAnalysisScopeModal({
             >
               {copy.analysisSelectorTitle}
             </h3>
-            <p className="mt-2 max-w-3xl text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
+            <p className="mt-2 max-w-3xl text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]">
               {copy.analysisSelectorHint}
             </p>
           </div>
@@ -524,7 +524,7 @@ export function SessionAnalysisScopeModal({
                 {copy.analysisRecent(recentLimit)}
               </button>
             </div>
-            <div className="mt-4 border-t border-[var(--gt-border-subtle)] pt-4 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="mt-4 border-t border-[var(--gt-border-subtle)] pt-4 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               {copy.analysisPluginName} / {activeProjectName}
             </div>
           </div>
@@ -550,7 +550,7 @@ export function SessionAnalysisScopeModal({
                     <div className="truncate text-[length:var(--gt-font-size-md)] font-semibold">
                       {project.name}
                     </div>
-                    <div className={`mt-1 text-[length:var(--gt-font-size-xs)] font-medium ${
+                    <div className={`mt-1 text-[length:var(--gt-font-size-xs)] font-normal ${
                       active ? 'text-[var(--gt-ink-muted)]' : 'text-[var(--gt-ink-muted)]'
                     }`}>
                       {copy.projectStatusLine(project)}
@@ -581,7 +581,7 @@ export function SessionAnalysisScopeModal({
                   <div className="truncate text-[length:var(--gt-font-size-md)] font-semibold">
                     {session.displayTitle || session.title || getFileName(session.fileLabel, session.id)}
                   </div>
-                  <div className="mt-1 flex min-w-0 items-center gap-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                  <div className="mt-1 flex min-w-0 items-center gap-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                     <span>{session.messageCount} {copy.metaMessages}</span>
                     <span>·</span>
                     <span className="truncate">{formatSessionMetadataDate(session.updatedAt)}</span>
@@ -642,7 +642,7 @@ export function SessionAnalysisDetailModal({
             >
               {copy.analysisDetailTitle}
             </h3>
-            <div className="mt-2 truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="mt-2 truncate text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
               {result
                 ? `${scopeLabel} / ${result.analyzedSessionCount} ${copy.sessionsUnit} / ${result.totalMessages} ${copy.metaMessages} / ${result.generatedAt}`
                 : scopeLabel}
@@ -650,7 +650,7 @@ export function SessionAnalysisDetailModal({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {loading ? (
-              <span className="animate-pulse text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+              <span className="animate-pulse text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
                 {copy.analysisRunning}
               </span>
             ) : null}
@@ -919,7 +919,7 @@ export function SessionsPanel({
       <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
         <div className="flex min-w-0 items-center gap-3">
           <h2 className="shrink-0 text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">{copy.projectSessionsTitle}</h2>
-          <span className="truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+          <span className="truncate text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
             {activeProjectName}
           </span>
         </div>
@@ -954,7 +954,7 @@ export function SessionsPanel({
                           onSelectFilter(filter.id);
                           setActionMenuOpen(false);
                         }}
-                        className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-medium transition-colors active:scale-95 ${
+                        className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal transition-colors active:scale-95 ${
                           isActive
                             ? 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]'
                             : 'text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]'
@@ -973,7 +973,7 @@ export function SessionsPanel({
                       setActionMenuOpen(false);
                       onRefresh();
                     }}
-                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-95"
+                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-95"
                   >
                     <RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                     <span>{copy.refresh}</span>
@@ -990,7 +990,7 @@ export function SessionsPanel({
                     key={filter.id}
                     type="button"
                     onClick={() => onSelectFilter(filter.id)}
-                    className={`rounded px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium transition-colors active:scale-95 ${
+                    className={`rounded px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors active:scale-95 ${
                       isActive
                         ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                         : 'bg-transparent text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
@@ -1018,7 +1018,7 @@ export function SessionsPanel({
       ) : (
         <>
           {snapshotError ? (
-            <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2.5 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]">
+            <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]">
               {copy.loadFailed} / {snapshotError}
             </div>
           ) : null}
@@ -1035,7 +1035,7 @@ export function SessionsPanel({
                     <div className="line-clamp-2 min-w-0 flex-1 break-words text-[length:var(--gt-font-size-lg)] font-semibold leading-tight text-[var(--gt-ink-primary)]">
                       {session.displayTitle || session.title || 'UNTITLED SESSION'}
                     </div>
-                    <span className={`shrink-0 rounded border px-2 py-0.5 text-[length:var(--gt-font-size-2xs)] font-medium leading-none ${
+                    <span className={`shrink-0 rounded border px-2 py-0.5 text-[length:var(--gt-font-size-2xs)] font-normal leading-none ${
                       session.status === 'active'
                         ? 'border-[color-mix(in_srgb,var(--gt-status-success)_35%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-ink-primary)]'
                         : 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)]'
@@ -1045,7 +1045,7 @@ export function SessionsPanel({
                   </div>
 
                   <div
-                    className={`mt-3 flex items-center border-t border-[var(--gt-border-subtle)] pt-2 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)] ${
+                    className={`mt-3 flex items-center border-t border-[var(--gt-border-subtle)] pt-2 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)] ${
                       useCompactSessionMetadata ? 'justify-between gap-x-6' : 'gap-x-2'
                     }`}
                   >
@@ -1129,7 +1129,7 @@ export function ProviderMergeModal({
             >
               {projectName}
             </h3>
-            <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
+            <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]">
               将来源 Provider 统一映射到目标标签，不同来源可归并到同一个目标
             </p>
           </div>
@@ -1153,7 +1153,7 @@ export function ProviderMergeModal({
                   <div className="truncate text-[length:var(--gt-font-size-lg)] font-semibold">
                     {sourceLabel}
                   </div>
-                  <div className="mt-0.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                  <div className="mt-0.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                     {row.count} 条会话
                   </div>
                 </div>
@@ -1171,14 +1171,14 @@ export function ProviderMergeModal({
             );
           })}
           {rows.length === 0 ? (
-            <div className="px-5 py-8 text-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="px-5 py-8 text-center text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
               暂无可归并的 Provider
             </div>
           ) : null}
         </div>
 
         {error ? (
-          <div className="border-t border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]">
+          <div className="border-t border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]">
             {error}
           </div>
         ) : null}
@@ -1298,7 +1298,7 @@ export function SessionDetailModal({
                 selectedSessionSummary?.title ??
                 getFileName(selectedSessionDetail?.fileLabel ?? selectedSessionSummary?.fileLabel, copy.unavailable)}
             </h3>
-            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
               <span>{modalProjectName}</span>
               <span className="opacity-40">·</span>
               <span>
@@ -1331,7 +1331,7 @@ export function SessionDetailModal({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {detailState.refreshing ? (
-              <span className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+              <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
                 {copy.refreshing}
               </span>
             ) : null}
@@ -1416,16 +1416,16 @@ export function SessionDetailModal({
                 </div>
               ))}
               {detailState.rawJSONError ? (
-                <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]">
+                <div className="border-b border-[var(--gt-border-subtle)] px-5 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]">
                   {copy.loadFailed} / {detailState.rawJSONError}
                 </div>
               ) : null}
               <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+                <div className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
                   {copy.messageLoadedLine(selectedSessionDetail.messages.length, selectedSessionDetail.messageCount)}
                 </div>
                 {detailState.messagePageError ? (
-                  <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]">
+                  <div className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]">
                     {copy.loadFailed} / {detailState.messagePageError}
                   </div>
                 ) : null}

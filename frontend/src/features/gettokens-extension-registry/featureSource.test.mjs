@@ -74,6 +74,6 @@ test('extension registry feature uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black uppercase/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase tracking-\[0\.18em\]/);
 });

@@ -60,6 +60,23 @@ test('status page header does not expose the retired sidecar management web pane
   assert.doesNotMatch(statusFeatureSource, /window\.location\.origin/);
 });
 
+test('status page uses AntD workbench shell for the redesigned status frame', async () => {
+  const statusFeatureSource = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(statusFeatureSource, /from 'antd'/);
+  assert.match(statusFeatureSource, /<Card\b/);
+  assert.match(statusFeatureSource, /<Tag\b/);
+  assert.match(statusFeatureSource, /<Badge\b/);
+  assert.match(statusFeatureSource, /<Typography\.Title\b/);
+  assert.match(statusFeatureSource, /<Space\b/);
+  assert.match(statusFeatureSource, /data-status-hero="true"/);
+  assert.match(statusFeatureSource, /data-status-overview-grid="true"/);
+  assert.match(statusFeatureSource, /data-status-workbench-grid="true"/);
+  assert.match(statusFeatureSource, /data-status-primary-rail="true"/);
+  assert.match(statusFeatureSource, /data-status-diagnostics-rail="true"/);
+  assert.doesNotMatch(statusFeatureSource, /data-status-hero="true"[\s\S]{0,500}shadow-/);
+});
+
 test('status provider creation only asks for model_provider value', async () => {
   const relayEditorsSource = await readFile(new URL('../components/RelayEditors.tsx', import.meta.url), 'utf8');
   const statusFeatureSource = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
@@ -87,7 +104,7 @@ test('status relay editor modals use the quiet workspace shell', async () => {
   assert.doesNotMatch(relayEditorsSource, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(relayEditorsSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(relayEditorsSource, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(relayEditorsSource, /font-black/);
+  assert.doesNotMatch(relayEditorsSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(relayEditorsSource, /uppercase/);
   assert.doesNotMatch(relayEditorsSource, /shadow-hard/);
 });
@@ -137,16 +154,19 @@ test('status panels use the quiet workspace shell', async () => {
   assert.match(statusPanelSource, /const statusPanelClass =/);
   assert.match(statusPanelSource, /const statusMutedPanelClass =/);
   assert.match(statusPanelSource, /const statusPrimaryButtonClass =/);
+  assert.match(statusPanelSource, /from 'antd'/);
+  assert.match(statusPanelSource, /<Segmented\b/);
   assert.match(statusPanelSource, /data-status-local-cli-panel="true"/);
   assert.match(statusPanelSource, /data-status-local-cli-target=\{activeTarget\}/);
   assert.match(statusPanelSource, /data-status-quota-evidence-section="true"/);
-  assert.match(statusPanelSource, /shadow-sm/);
   assert.match(statusPanelSource, /--gt-surface-canvas/);
   assert.match(statusPanelSource, /--gt-border-subtle/);
   assert.doesNotMatch(statusPanelSource, /card-swiss grid gap-4 p-4/);
   assert.doesNotMatch(statusPanelSource, /btn-swiss/);
   assert.doesNotMatch(statusPanelSource, /border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(statusPanelSource, /relative overflow-visible border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(statusPanelSource, /SegmentedControl/);
+  assert.doesNotMatch(statusPanelSource, /shadow-sm/);
   assert.doesNotMatch(statusPanelSource, /shadow-\[/);
   assert.doesNotMatch(statusPanelSource, /tracking-(wide|wider|widest|tight|tighter|tightest|normal|\[)/);
   assert.doesNotMatch(statusPanelSource, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
@@ -328,7 +348,7 @@ test('codex config sibling sections use the quiet workspace shell', async () => 
     assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
     assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
     assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-    assert.doesNotMatch(source, /font-black/);
+    assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
     assert.doesNotMatch(source, /uppercase/);
   }
 });
@@ -402,24 +422,36 @@ test('status page exposes account-store diagnostics panel with summarized errors
 test('status page diagnostics and header status use the quiet workspace shell', async () => {
   const source = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
   const diagnosticsBlock = source.match(/function AccountStoreDiagnosticsPanel[\s\S]*?function normalizeRelayEndpointURL/)?.[0] || '';
-  const headerBlock = source.match(/<WorkspacePageHeader[\s\S]*?<section className="space-y-6">/)?.[0] || '';
+  const headerBlock = source.match(/data-status-hero="true"[\s\S]*?data-status-workbench-grid="true"/)?.[0] || '';
 
   assert.match(source, /const statusDiagnosticsPanelClass =/);
   assert.match(source, /const statusDiagnosticsToneClass =/);
-  assert.match(source, /const statusHeaderHealthClass =/);
-  assert.match(source, /const statusHeaderStatusBadgeClass =/);
+  assert.match(source, /const statusHeroCardClass =/);
+  assert.match(source, /const statusOverviewGridClass =/);
+  assert.match(source, /const statusWorkbenchGridClass =/);
+  assert.match(source, /<Card\b/);
+  assert.match(source, /<Badge\b/);
+  assert.match(source, /<Tag\b/);
+  assert.match(source, /<Typography\.Title\b/);
+  assert.match(source, /<Space\b/);
   assert.match(source, /data-account-store-diagnostics-panel="quiet"/);
   assert.match(source, /data-status-header-health="quiet"/);
-  assert.match(source, /data-status-header-state="quiet"/);
+  assert.match(source, /data-status-hero="true"/);
+  assert.match(source, /data-status-overview-grid="true"/);
+  assert.match(source, /data-status-workbench-grid="true"/);
+  assert.match(source, /data-status-primary-rail="true"/);
+  assert.match(source, /data-status-diagnostics-rail="true"/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-danger/);
+  assert.doesNotMatch(source, /<WorkspacePageHeader/);
+  assert.doesNotMatch(source, /direction="vertical"/);
 
   for (const block of [diagnosticsBlock, headerBlock]) {
     assert.doesNotMatch(block, /card-swiss/);
     assert.doesNotMatch(block, /border-2/);
     assert.doesNotMatch(block, /bg-\[var\(--bg-(main|surface)\)\]/);
-    assert.doesNotMatch(block, /font-black/);
+    assert.doesNotMatch(block, /font-(?:medium|bold|extrabold|black)/);
     assert.doesNotMatch(block, /\buppercase\b/);
     assert.doesNotMatch(block, /tracking-\[0\.(04|08|14|18)em\]|tracking-widest/);
     assert.doesNotMatch(block, /color-status-/);

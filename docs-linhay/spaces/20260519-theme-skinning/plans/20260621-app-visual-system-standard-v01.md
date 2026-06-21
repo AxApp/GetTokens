@@ -198,3 +198,22 @@
 - 组件：优先 AntD component 和 component token；primary 只给单个主行动。
 
 本轮新增 frontend/src/context/antdColorContract.test.mjs，把运行态 hex/rgb 色值限制到 AntD 设计语言允许集合。
+
+## 2026-06-21 Ant Design 全量核对修复
+
+用户要求“核对我们项目是否符合，不符合直接修改”。本轮按 AntD 设计语言继续收窄运行态：
+
+- 字重：运行态禁止 \`font-medium\` / \`font-bold\` / \`font-extrabold\` / \`font-black\` 与 500 / 700 / 900 字重；统一为 AntD 允许的 400 / 600。
+- 排版：运行态禁止旧装饰性 \`uppercase\`、\`italic\`、任意字距 \`tracking-[...]\` 与 wide/wider/widest，用常规 AntD 文本层级表达信息。
+- 圆角：运行态禁止 \`rounded-xl\` / \`rounded-2xl\` / \`rounded-3xl\`，surface 收敛到 8px，控件继续使用 6px / 4px。
+- 覆盖范围：frontend/src 运行态与设计系统 stories 同步收敛；测试断言同步改为允许 AntD 600、禁止旧 500/700/900 与装饰性排版。
+- 新门禁：frontend/src/context/antdColorContract.test.mjs 从颜色合约扩展为颜色 + 字重 + 装饰性排版 + 圆角合约；legacyStyleResidue 门禁同步允许 \`font-semibold\`，禁止旧重字重。
+
+验证：
+
+- \`rg\` 运行态扫描无 \`font-medium|font-bold|font-extrabold|font-black|font-weight:500/700/900|rounded-xl/2xl/3xl|dark:|uppercase|italic|tracking-[...]|tracking-wide/wider/widest|text-transform:uppercase\` 命中。
+- \`node --test frontend/src/context/antdColorContract.test.mjs frontend/src/features/design-system/legacyStyleResidue.test.mjs\` 通过。
+- \`npm --prefix frontend run test:unit\` 通过，988 pass。
+- \`npm --prefix frontend run typecheck\` 通过。
+- \`npm --prefix frontend run build\` 通过，仅保留既有 Vite chunk size warning。
+- \`docs-linhay/scripts/check-docs.sh\` 与 \`git diff --check\` 通过。

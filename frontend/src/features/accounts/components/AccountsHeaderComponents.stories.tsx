@@ -76,14 +76,14 @@ function AccountsHeaderOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号页头</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">账号页头</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           账号页头进入设计系统后，用固定 mock 检查 WorkspacePageHeader、刷新按钮和统一收敛后的添加菜单。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Header states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Header states</h3>
         <div className="grid gap-4">
           <AccountsHeaderSample label="DS-ACCOUNTS-HEADER-DEFAULT" />
           <AccountsHeaderSample label="DS-ACCOUNTS-HEADER-LOADING" loading />

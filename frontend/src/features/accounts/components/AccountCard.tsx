@@ -306,7 +306,7 @@ export default function AccountCard({
                     type="button"
                     role="menuitem"
                     onClick={() => void copyAccountContent()}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]"
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]"
                   >
                     <FileText size={14} strokeWidth={2} />
                     {t('accounts.copy_account_config')}
@@ -323,7 +323,7 @@ export default function AccountCard({
                         onStartReauth(account);
                       }}
                       disabled={isOAuthPending}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50"
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50"
                     >
                       <RotateCw size={14} strokeWidth={2} />
                       {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
@@ -346,7 +346,7 @@ export default function AccountCard({
                             action.onSelect(account);
                           }}
                           title={action.disabledReason || action.detail || action.label}
-                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <Terminal size={14} strokeWidth={2} className="shrink-0" />
                           <span>{action.label}</span>
@@ -363,7 +363,7 @@ export default function AccountCard({
                         onToggleDisabled(account);
                       }}
                       disabled={!ready || isStatusPending}
-                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50 ${
+                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50 ${
                         account.disabled ? 'text-[var(--gt-ink-primary)]' : 'text-[var(--gt-status-danger)]'
                       }`}
                     >
@@ -379,7 +379,7 @@ export default function AccountCard({
                         setIsActionMenuOpen(false);
                         onRequestDelete(account.id);
                       }}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)]"
+                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)]"
                     >
                       <Trash2 size={14} strokeWidth={2} />
                       {t('accounts.card_delete')}
@@ -387,7 +387,7 @@ export default function AccountCard({
                   ) : null}
                   {copyState !== 'idle' ? (
                     <div
-                      className={`border-t border-dashed px-3 py-2 text-xs font-medium ${
+                      className={`border-t border-dashed px-3 py-2 text-xs font-normal ${
                         copyState === 'success' ? 'text-[var(--gt-status-success)]' : 'text-[var(--gt-status-danger)]'
                       }`}
                       style={{ borderColor: 'var(--gt-border-subtle)' }}

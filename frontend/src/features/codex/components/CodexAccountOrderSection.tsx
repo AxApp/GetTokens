@@ -27,7 +27,7 @@ import {
 
 function EmptyState({ children }: { children: string }) {
   return (
-    <div className="border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-8 py-14 text-center text-[length:var(--gt-font-size-md)] font-medium text-[var(--gt-ink-muted)]">
+    <div className="border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-8 py-14 text-center text-[length:var(--gt-font-size-md)] font-normal text-[var(--gt-ink-muted)]">
       {children}
     </div>
   );

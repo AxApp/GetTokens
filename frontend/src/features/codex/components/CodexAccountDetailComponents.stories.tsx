@@ -112,7 +112,7 @@ function CodexAccountDetailDesktopDraft() {
         header={<CodexAccountDetailHeader row={row} t={t} onClose={() => undefined} />}
         footer={
           <>
-            <div className="min-w-0 text-[length:var(--gt-font-size-xs)] font-black uppercase tracking-[0.15em] text-[var(--gt-ink-muted)]">
+            <div className="min-w-0 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
               Desktop draft · OpenAI compatible
             </div>
             <div className="flex items-center gap-2">
@@ -271,15 +271,15 @@ function OperationalMetric({
         <span className="inline-flex h-7 w-7 items-center justify-center bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]">
           {icon}
         </span>
-        <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
+        <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
           {label}
         </span>
       </div>
       <div className="min-w-0">
-        <div className="truncate font-mono text-[length:var(--gt-font-size-sm)] font-black uppercase text-[var(--gt-ink-primary)]">
+        <div className="truncate font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
           {value}
         </div>
-        <div className="mt-1 truncate text-[length:var(--gt-font-size-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--gt-ink-muted)]">
+        <div className="mt-1 truncate text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
           {meta}
         </div>
       </div>
@@ -325,7 +325,7 @@ function CodexModelRoutingPreview({
     >
       {mappings.length > 0 ? (
         <div className="border-2 border-[var(--gt-border-strong)]">
-          <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-2xs)] font-black uppercase tracking-[0.18em] text-[var(--gt-ink-muted)]">
+          <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             <span>{t('codex.account_list_real_model')}</span>
             <span className="text-center">-&gt;</span>
             <span className="text-right">{t('codex.account_list_codex_model')}</span>
@@ -335,7 +335,7 @@ function CodexModelRoutingPreview({
             {mappings.map((mapping, index) => (
               <div
                 key={`mapping-${index}`}
-                className="grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 px-3 py-2 text-[length:var(--gt-font-size-sm)] font-bold text-[var(--gt-ink-primary)]"
+                className="grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]"
               >
                 {editable ? (
                   <ModelCombobox
@@ -345,11 +345,11 @@ function CodexModelRoutingPreview({
                     placeholder={modelOptionNames[0] || 'deepseek-chat'}
                   />
                 ) : (
-                  <span className="min-w-0 break-all font-mono text-[length:var(--gt-font-size-md-compact)] font-black text-[var(--gt-ink-primary)]">
+                  <span className="min-w-0 break-all font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]">
                     {mapping.realModel}
                   </span>
                 )}
-                <span className="text-center font-black text-[var(--gt-ink-muted)]">-&gt;</span>
+                <span className="text-center font-semibold text-[var(--gt-ink-muted)]">-&gt;</span>
                 {editable ? (
                   <ModelCombobox
                     value={mapping.codexModel}
@@ -359,7 +359,7 @@ function CodexModelRoutingPreview({
                     align="right"
                   />
                 ) : (
-                  <span className="min-w-0 break-all text-right font-mono text-[length:var(--gt-font-size-md-compact)] font-black text-[var(--gt-ink-primary)]">
+                  <span className="min-w-0 break-all text-right font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]">
                     {mapping.codexModel}
                   </span>
                 )}

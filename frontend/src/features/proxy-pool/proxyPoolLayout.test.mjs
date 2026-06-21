@@ -29,7 +29,7 @@ test('ProxyPoolFeature uses the current workspace table layout', async () => {
   assert.match(source, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(26rem,36rem\)\]/);
   assert.match(source, /<SearchInput[\s\S]*className="rounded-md"/);
   assert.match(source, /className="grid min-w-0 items-center gap-2 sm:grid-cols-\[max-content_minmax\(0,1fr\)\]"/);
-  assert.match(source, /className="text-left text-sm font-medium text-\[var\(--gt-ink-muted\)\]">测速网址/);
+  assert.match(source, /className="text-left text-sm font-normal text-\[var\(--gt-ink-muted\)\]">测速网址/);
   assert.match(source, /className="grid min-w-0 grid-cols-\[minmax\(0,1fr\)_auto\] items-center gap-2"/);
   assert.match(source, /<Button[\s\S]*aria-label=\{probingIDs\.length > 0 \? '测速中' : '执行测速'\}[\s\S]*icon=\{<Play className="h-3\.5 w-3\.5" fill="currentColor" strokeWidth=\{2\.4\} \/>\}[\s\S]*loading=\{probingIDs\.length > 0\}[\s\S]*disabled=\{filteredNodes\.length === 0\}[\s\S]*className="proxy-pool-probe-target-button"[\s\S]*onClick=\{handleBatchRetest\}/);
   assert.match(source, /aria-label="新增代理"[\s\S]*className="inline-flex h-10 w-10 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--gt-ink-primary\)\] text-\[var\(--gt-surface-canvas\)\][\s\S]*<Plus className="h-5 w-5" strokeWidth=\{2\.5\} \/>/);
@@ -54,13 +54,13 @@ test('ProxyPoolFeature uses the current workspace table layout', async () => {
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /input-swiss/);
   assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
-  assert.doesNotMatch(source, /font-black uppercase/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
   assert.doesNotMatch(source, /subtitle=\{`网络代理池 \/ 本地维护/);
   assert.doesNotMatch(source, /subtitle="本地代理池 \/ 节点维护 \/ 可用性检测"/);
   assert.doesNotMatch(source, /<datalist id="proxy-probe-target-history">/);
-  assert.doesNotMatch(source, /<span className="text-\[length:var\(--gt-font-size-xs\)\] font-medium text-\[var\(--gt-ink-muted\)\]">历史<\/span>/);
+  assert.doesNotMatch(source, /<span className="text-\[length:var\(--gt-font-size-xs\)\] font-normal text-\[var\(--gt-ink-muted\)\]">历史<\/span>/);
   assert.doesNotMatch(source, /<span>新增代理<\/span>/);
   assert.doesNotMatch(source, /<span>更多<\/span>/);
   assert.doesNotMatch(source, /<span>\{probing \? '测速中' : '测速'\}<\/span>/);

@@ -92,14 +92,14 @@ function AccountProxyRouteOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号代理出口</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">账号代理出口</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           账号详情里的出口选择区块进入设计系统后，用注入的 proxy nodes mock 覆盖继承、直连、自定义、无节点和只读状态。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Proxy route states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Proxy route states</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountProxyRouteSample label="DS-PROXY-INHERIT" />
           <AccountProxyRouteSample label="DS-PROXY-DIRECT" proxyUrl="direct" />

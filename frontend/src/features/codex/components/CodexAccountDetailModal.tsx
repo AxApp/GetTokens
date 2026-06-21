@@ -45,7 +45,7 @@ const codexAccountDetailHeaderClass = 'flex items-start justify-between gap-4';
 const codexAccountDetailIdentityClass =
   'flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-2xs)] font-mono font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexAccountDetailTitleClass =
-  'truncate text-lg font-semibold italic tracking-normal text-[var(--gt-ink-primary)]';
+  'truncate text-lg font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const codexAccountDetailMetaClass =
   'inline-flex max-w-full items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1.5';
 const codexAccountDetailMetaLabelClass =
@@ -53,7 +53,7 @@ const codexAccountDetailMetaLabelClass =
 const codexAccountDetailMetaValueClass =
   'min-w-0 truncate font-mono text-[length:var(--gt-font-size-xs)] font-semibold leading-snug text-[var(--gt-ink-primary)]';
 const codexAccountDetailButtonClass =
-  'inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50';
 const codexAccountDetailIconButtonClass =
   'inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-border-subtle)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]';
 const codexAccountDetailPrimaryButtonClass =
@@ -61,7 +61,7 @@ const codexAccountDetailPrimaryButtonClass =
 const codexAccountDetailFooterClass =
   'flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between';
 const codexAccountDetailFooterStatusClass =
-  'min-w-0 text-[length:var(--gt-font-size-xs)] font-medium tracking-normal text-[var(--gt-ink-muted)] sm:max-w-[70%]';
+  'min-w-0 text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)] sm:max-w-[70%]';
 const codexAuthFileSummaryMetaClass =
   'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexModelRoutingPanelClass =
@@ -74,9 +74,9 @@ const codexModelRoutingValueClass =
   'min-w-0 break-all font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]';
 const codexModelRoutingArrowClass = 'text-center font-semibold text-[var(--gt-ink-muted)]';
 const codexModelRoutingErrorClass =
-  'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-status-danger)]';
+  'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]';
 const codexModelRoutingStatusClass =
-  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 
 export function CodexAccountDetailHeader({
   row,

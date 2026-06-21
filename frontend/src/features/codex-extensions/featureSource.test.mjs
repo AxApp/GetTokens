@@ -59,7 +59,7 @@ test('Codex extension modals use the quiet workspace shell', async () => {
   assert.doesNotMatch(combined, /border-t-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(combined, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(combined, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(combined, /font-black/);
+  assert.doesNotMatch(combined, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(combined, /uppercase/);
   assert.doesNotMatch(combined, /tracking-\[/);
   assert.doesNotMatch(combined, /tracking-(wide|wider|widest|tight|tighter|tightest|normal)/);
@@ -86,7 +86,7 @@ test('Codex extension workspaces use the quiet list shell', async () => {
   assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[0\.(16|18)em\]|tracking-wide/);
 });

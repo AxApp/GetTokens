@@ -275,7 +275,7 @@ test('CodexBinaryVersionCell uses the quiet workspace shell', () => {
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /\buppercase\b/);
   assert.doesNotMatch(source, /tracking-\[/);
 });
@@ -306,7 +306,7 @@ test('Codex binary summary and list use the quiet workspace shell', () => {
   assert.doesNotMatch(combined, /border-2 border-dashed border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(combined, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(combined, /shadow-\[5px_5px_0_var\(--gt-shadow-panel\)\]/);
-  assert.doesNotMatch(combined, /font-black/);
+  assert.doesNotMatch(combined, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(combined, /\buppercase\b/);
   assert.doesNotMatch(combined, /tracking-\[/);
 });

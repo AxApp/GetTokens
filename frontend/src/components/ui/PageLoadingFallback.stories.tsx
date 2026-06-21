@@ -20,8 +20,8 @@ function PageLoadingFallbackOverview() {
   return (
     <div className="grid w-full gap-4 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">PageLoadingFallback</h2>
-        <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">PageLoadingFallback</h2>
+        <p className="mt-2 max-w-2xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '同屏检查不同容器高度下的动画加载态。'
             : 'Animated loading state across several container heights.'}

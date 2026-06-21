@@ -96,7 +96,7 @@ test('full account card subtitle renders as its own header row', async () => {
   assert.match(fullSource, /<div className="account-card-meta-action-row -mr-4 grid min-w-0 grid-cols-\[minmax\(0,1fr\)_auto\] items-center gap-2">[\s\S]*\{topActions \? <div className="col-start-2 shrink-0 justify-self-end">\{topActions\}<\/div> : null\}\s*<\/div>\s*\) : null\}\s*<div className="flex items-center gap-2">/);
   assert.match(fullSource, /<div className="flex items-center gap-2">[\s\S]*<h3[\s\S]*\{title\}[\s\S]*<\/div>\s*<\/div>\s*\{subtitle \? \(/);
   assert.match(source, /className="mt-1\.5 break-all text-xs"/);
-  assert.match(source, /className="mt-1\.5 text-xs font-medium"/);
+  assert.match(source, /className="mt-1\.5 text-xs font-normal"/);
 });
 
 test('full account card tone dot starts the metadata row', async () => {
@@ -144,7 +144,7 @@ test('list density keeps only the plan badge before metrics and actions', async 
 
   assert.match(source, /const listStatusText = \[/);
   assert.match(source, /className="min-w-0 flex-1 space-y-1"/);
-  assert.match(source, /className="min-w-0 truncate text-xs font-medium"/);
+  assert.match(source, /className="min-w-0 truncate text-xs font-normal"/);
   assert.match(source, /priorityBadges\.find\(\(badge\) => badge\.backgroundColor\)/);
   assert.match(source, /join\(' · '\)/);
   assert.match(source, /formatCountMetric\(usageSummary\?\.requestCount \?\? 0\)/);

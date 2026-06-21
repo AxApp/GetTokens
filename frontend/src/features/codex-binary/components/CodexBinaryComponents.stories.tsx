@@ -252,8 +252,8 @@ function CodexBinaryOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Codex 二进制组件</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">Codex 二进制组件</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '把 Codex 二进制管理里的摘要面板、版本列表和可展开版本行纳入设计系统，统一检查托管 PATH、下载进度、筛选和 release notes。'
             : 'Admitted Codex binary summary, version list, and expandable version rows for managed PATH, download progress, filters, and release notes.'}
@@ -261,13 +261,13 @@ function CodexBinaryOverview() {
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '摘要面板' : 'Summary panels'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? '摘要面板' : 'Summary panels'}</h3>
         <SummarySample />
         <SummarySample snapshot={buildErrorSnapshot()} message={zh ? 'PATH 已托管，但 doctor 返回错误。' : 'Managed PATH is enabled while doctor reports an error.'} />
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '版本列表' : 'Version list'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? '版本列表' : 'Version list'}</h3>
         <VersionListSample />
         <VersionListSample empty />
       </section>

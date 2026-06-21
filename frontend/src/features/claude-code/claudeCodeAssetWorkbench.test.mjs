@@ -78,7 +78,7 @@ test('Claude Code asset workbench uses the quiet workspace shell', () => {
   assert.doesNotMatch(source, /border-t-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(source, /shadow-\[8px_8px_0_var\(--gt-shadow-panel\)\]/);
@@ -111,7 +111,7 @@ test('Claude Code account list workbench uses the quiet workspace shell', () => 
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /color-status-/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /shadow-hard|shadow-\[/);
 });

@@ -36,7 +36,7 @@ export default function WorkspacePageHeader({
     >
       <div className="min-w-0 flex-1">
         <h2
-          className={`text-2xl font-bold ${titleClassName}`}
+          className={`text-2xl font-semibold ${titleClassName}`}
           style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
         >
           {title}

@@ -88,8 +88,8 @@ export interface SessionPluginConsolePanelProps {
   topics: SessionPluginConsoleTopic[];
 }
 
-const sessionPluginConsoleButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
-const sessionPluginConsolePrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90';
+const sessionPluginConsoleButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const sessionPluginConsolePrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90';
 const sessionPluginConsolePanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const sessionPluginConsoleMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 
@@ -137,12 +137,12 @@ export default function SessionPluginConsolePanel({
               <h2 className="truncate text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">
                 {pluginHostTitle}
               </h2>
-              <p className="mt-1 truncate text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+              <p className="mt-1 truncate text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
                 {pluginHostSubtitle}
               </p>
             </div>
           </div>
-          <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-medium leading-5 text-[var(--gt-ink-muted)]">
+          <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]">
             {pluginHint}
           </p>
         </div>
@@ -157,7 +157,7 @@ export default function SessionPluginConsolePanel({
               <button
                 key={item.id}
                 type="button"
-                className={`min-h-8 border-r border-[var(--gt-border-subtle)] px-3 text-[length:var(--gt-font-size-xs)] font-medium last:border-r-0 ${
+                className={`min-h-8 border-r border-[var(--gt-border-subtle)] px-3 text-[length:var(--gt-font-size-xs)] font-normal last:border-r-0 ${
                   mode === item.id ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]' : 'text-[var(--gt-ink-muted)]'
                 }`}
               >
@@ -196,14 +196,14 @@ export default function SessionPluginConsolePanel({
                   <h3 className="truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                     {plugin.name}
                   </h3>
-                  <p className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium leading-4 text-[var(--gt-ink-muted)]">
+                  <p className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal leading-4 text-[var(--gt-ink-muted)]">
                     {plugin.description}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {plugin.tags.map((tag) => (
                       <span
                         key={`${plugin.id}-${tag}`}
-                        className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]"
+                        className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]"
                       >
                         {tag}
                       </span>
@@ -232,7 +232,7 @@ export default function SessionPluginConsolePanel({
                     <div className="text-[length:var(--gt-font-size-sm)] font-semibold">
                       {scope.title}
                     </div>
-                    <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium opacity-75">
+                    <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal opacity-75">
                       {scope.subtitle}
                     </div>
                   </div>
@@ -255,7 +255,7 @@ export default function SessionPluginConsolePanel({
                   {execution.dialLabel}
                 </div>
                 <div className="grid gap-2">
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]">
                     <span>{execution.headline}</span>
                     <b>{actionStatusLabel}</b>
                   </div>
@@ -265,10 +265,10 @@ export default function SessionPluginConsolePanel({
                       style={{ width: `${Math.max(0, Math.min(100, execution.progress))}%` }}
                     />
                   </div>
-                  <div className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                  <div className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                     {execution.detail}
                   </div>
-                  <div className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                  <div className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                     {execution.footer}
                   </div>
                 </div>
@@ -294,7 +294,7 @@ export default function SessionPluginConsolePanel({
                       <div className="truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                         {session.title}
                       </div>
-                      <div className="mt-1 truncate text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                      <div className="mt-1 truncate text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                         {session.metadata}
                       </div>
                     </div>
@@ -326,7 +326,7 @@ export default function SessionPluginConsolePanel({
                             : 'bg-[var(--gt-status-info)]'
                       }`} />
                     </div>
-                    <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                    <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                       {item.detail}
                     </div>
                   </div>
@@ -344,7 +344,7 @@ export default function SessionPluginConsolePanel({
                 <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                   {metricsTitle}
                 </div>
-                <span className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                <span className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                   {currentProjectLabel}
                 </span>
               </div>
@@ -355,7 +355,7 @@ export default function SessionPluginConsolePanel({
                     <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                       {metric.label}
                     </div>
-                    <div className="mt-1 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]">
+                    <div className="mt-1 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]">
                       {metric.meta}
                     </div>
                   </div>
@@ -373,7 +373,7 @@ export default function SessionPluginConsolePanel({
               <div className="grid gap-2 p-3">
                 {keywords.map((keyword) => (
                   <div key={keyword.term} className="grid grid-cols-[minmax(0,1fr)_42px] items-center gap-2">
-                    <div className="truncate text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]">
+                    <div className="truncate text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]">
                       {keyword.term}
                     </div>
                     <div className="h-2 overflow-hidden rounded bg-[var(--gt-surface-muted)]">
@@ -389,7 +389,7 @@ export default function SessionPluginConsolePanel({
                 <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                   {topicsTitle}
                 </div>
-                <span className="text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                <span className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                   {sessions.length} sessions
                 </span>
               </div>
@@ -399,7 +399,7 @@ export default function SessionPluginConsolePanel({
                     <h4 className="truncate p-2.5 pb-0 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
                       {topic.title}
                     </h4>
-                    <p className="p-2.5 pt-1 text-[length:var(--gt-font-size-2xs)] font-medium leading-4 text-[var(--gt-ink-muted)]">
+                    <p className="p-2.5 pt-1 text-[length:var(--gt-font-size-2xs)] font-normal leading-4 text-[var(--gt-ink-muted)]">
                       {topic.summary}
                     </p>
                   </article>
@@ -419,7 +419,7 @@ function PanelHead({ title, count }: { title: string; count: string }) {
       <div className="truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
         {title}
       </div>
-      <span className="inline-flex min-w-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]">
+      <span className="inline-flex min-w-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]">
         {count}
       </span>
     </div>

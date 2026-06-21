@@ -43,7 +43,7 @@ const scopeLabels: Record<string, string> = {
 };
 
 const memoryFilesPanelActionButtonClass =
-  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 text-xs font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 text-xs font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const memoryFilesPanelListClass = 'divide-y divide-[var(--gt-border-subtle)]';
 const memoryFilesPanelRowClass =
   'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
@@ -125,7 +125,7 @@ export default function ClaudeCodeMemoryFilesPanel({
                 </span>
                 <span className="text-[var(--gt-ink-secondary)]">{scopeIcons[file.scope] ?? <FileText className="h-4 w-4" />}</span>
                 <div className="flex-1 text-left">
-                  <span className="text-sm font-medium">{scopeLabels[file.scope] ?? file.scope}</span>
+                  <span className="text-sm font-normal">{scopeLabels[file.scope] ?? file.scope}</span>
                 </div>
                 {file.exists ? (
                   <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-success)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-success)]">
@@ -156,7 +156,7 @@ export default function ClaudeCodeMemoryFilesPanel({
                     <div className="mb-4">
                       <div className="mb-2 flex items-center gap-2">
                         <Import className="h-3.5 w-3.5 text-[var(--gt-ink-secondary)]" />
-                        <span className="text-xs font-medium">Imports ({file.imports.length})</span>
+                        <span className="text-xs font-normal">Imports ({file.imports.length})</span>
                       </div>
                       <div className="ml-5 space-y-1">
                         {file.imports.map((imp) => (
@@ -190,7 +190,7 @@ export default function ClaudeCodeMemoryFilesPanel({
                   )}
 
                   <div className="mb-3">
-                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-[var(--gt-ink-secondary)]">
+                    <div className="mb-1 flex items-center gap-2 text-xs font-normal text-[var(--gt-ink-secondary)]">
                       <Globe className="h-3.5 w-3.5" /> Content Preview
                     </div>
                     <SnippetPre className="max-h-60 overflow-auto text-xs">{file.content || ''}</SnippetPre>
@@ -225,7 +225,7 @@ export default function ClaudeCodeMemoryFilesPanel({
 
       {isEditing && editingPath && (
         <div className={memoryFilesPanelPanelClass} data-claude-memory-editor="quiet">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-normal">
             <Edit3 className="h-4 w-4" /> Editing: <span className="font-mono text-xs text-[var(--gt-ink-muted)]">{editingPath}</span>
           </h3>
           <textarea
@@ -235,7 +235,7 @@ export default function ClaudeCodeMemoryFilesPanel({
           />
           {savePreview && (
             <div className="mt-3">
-              <span className="text-xs font-medium">Preview</span>
+              <span className="text-xs font-normal">Preview</span>
               <SnippetPre className="max-h-40 mt-1 overflow-auto text-xs">{savePreview}</SnippetPre>
             </div>
           )}

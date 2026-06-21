@@ -287,7 +287,7 @@ test('RotationConfigSection uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /border-l-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[0\.12em\]/);
   assert.doesNotMatch(source, /tracking-\[0\.18em\]/);
@@ -310,7 +310,7 @@ test('RotationPriorityItem uses the quiet workspace row shell', async () => {
   assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
 });
@@ -341,7 +341,7 @@ test('AccountRotationModal uses the quiet workspace modal shell', async () => {
   assert.doesNotMatch(source, /border-2 border-dashed/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-black/);
+  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /shadow-\[/);
 });

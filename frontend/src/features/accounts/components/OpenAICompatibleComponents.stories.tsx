@@ -245,14 +245,14 @@ function OpenAICompatibleOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">OpenAI 兼容</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">OpenAI 兼容</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           把 OpenAI-compatible provider 卡片纳入设计系统，用固定 provider、验证结果、usage 和限流 mock 覆盖可用、错误、禁用、空模型、pending 和限流状态。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Provider card states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Provider card states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ProviderCardSample label="DS-READY" />
           <ProviderCardSample label="DS-ERROR" providerKey="error" />
@@ -263,7 +263,7 @@ function OpenAICompatibleOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Workspace states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Workspace states</h3>
         <div className="grid gap-4">
           <WorkspaceSample label="DS-WORKSPACE-GRID" />
           <div className="grid gap-4 xl:grid-cols-3">
@@ -275,7 +275,7 @@ function OpenAICompatibleOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Compose modal states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Compose modal states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ComposeModalSample label="DS-COMPOSE-EMPTY" formKey="empty" />
           <ComposeModalSample label="DS-COMPOSE-PRESET" formKey="preset" selectedPresetID="deepseek" />

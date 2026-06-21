@@ -124,8 +124,8 @@ function DebugPanelOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">调试面板组件</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">调试面板组件</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           {zh
             ? '把调试面板中已经提取的业务组件纳入设计系统，统一检查工具栏、日志卡片、错误态、折叠态和空状态。'
             : 'Admitted debug panel feature components for toolbar, trace card, error, collapsed, and empty states.'}
@@ -133,13 +133,13 @@ function DebugPanelOverview() {
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '工具栏状态' : 'Header states'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? '工具栏状态' : 'Header states'}</h3>
         <HeaderSample />
         <HeaderSample count={2} selectedCount={2} copyState="success" />
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '日志卡片状态' : 'Entry card states'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? '日志卡片状态' : 'Entry card states'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <EntryCardSample selected />
           <EntryCardSample status="error" />
@@ -148,7 +148,7 @@ function DebugPanelOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '空状态' : 'Empty state'}</h3>
+        <h3 className="text-sm font-semibold tracking-normal">{zh ? '空状态' : 'Empty state'}</h3>
         <EmptyStateSample />
       </section>
     </div>

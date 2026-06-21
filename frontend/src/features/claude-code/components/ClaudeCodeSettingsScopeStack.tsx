@@ -51,7 +51,7 @@ const scopePriorityLabels: Record<string, string> = {
 };
 
 const settingsScopeStackActionButtonClass =
-  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 text-xs font-medium text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
+  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 text-xs font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const settingsScopeStackListClass = 'divide-y divide-[var(--gt-border-subtle)]';
 const settingsScopeStackRowClass =
   'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
@@ -131,7 +131,7 @@ export default function ClaudeCodeSettingsScopeStack({
                 </span>
                 <span className="text-[var(--gt-ink-secondary)]">{scopeIcons[`${layer.scope}`] ?? <FileJson className="h-4 w-4" />}</span>
                 <div className="flex-1 text-left">
-                  <span className="text-sm font-medium">{scopeLabels[`${layer.scope}`] ?? `${layer.scope}`}</span>
+                  <span className="text-sm font-normal">{scopeLabels[`${layer.scope}`] ?? `${layer.scope}`}</span>
                   <span className="ml-2 text-xs text-[var(--gt-ink-muted)]">{scopePriorityLabels[`${layer.scope}`] ?? ''}</span>
                 </div>
                 {layer.parseError ? (
@@ -179,7 +179,7 @@ export default function ClaudeCodeSettingsScopeStack({
 
                       {layer.knownFields?.env && `${layer.scope}` !== 'managed' && (
                         <div className="flex items-center justify-between ml-6 mt-4">
-                          <span className="text-sm font-medium text-[var(--gt-ink-primary)]">{attributionHeaderLabel}</span>
+                          <span className="text-sm font-normal text-[var(--gt-ink-primary)]">{attributionHeaderLabel}</span>
                           <ToggleSwitch
                             label={attributionHeaderLabel ?? 'Attribution Header'}
                             checked={'CLAUDE_CODE_ATTRIBUTION_HEADER' in layer.knownFields.env}
@@ -250,7 +250,7 @@ export default function ClaudeCodeSettingsScopeStack({
 
       {savePreview && (
         <div className={settingsScopeStackPanelClass} data-claude-settings-preview="quiet">
-          <h3 className="mb-2 text-sm font-medium">Save Preview</h3>
+          <h3 className="mb-2 text-sm font-normal">Save Preview</h3>
           <SnippetPre className="max-h-60 overflow-auto text-xs">{savePreview}</SnippetPre>
           {saveError && <p className="mt-2 text-sm text-[var(--gt-status-danger)]">{saveError}</p>}
         </div>
@@ -276,7 +276,7 @@ function SettingsFieldSection({ icon, title, children }: { icon: ReactNode; titl
     <div>
       <div className="mb-2 flex items-center gap-2">
         <span className="text-[var(--gt-ink-secondary)]">{icon}</span>
-        <span className="text-sm font-medium">{title}</span>
+        <span className="text-sm font-normal">{title}</span>
       </div>
       <div className="ml-6">{children}</div>
     </div>

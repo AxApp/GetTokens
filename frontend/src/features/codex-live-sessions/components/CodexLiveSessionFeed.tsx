@@ -22,7 +22,7 @@ const codexLiveFeedStaticHeaderClass =
 const codexLiveFeedTitleClass =
   'font-mono text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const codexLiveFeedHintClass =
-  'mt-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]';
+  'mt-1 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedCountClass =
   'font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedEmptyClass =
@@ -36,7 +36,7 @@ const codexLiveFeedPrimaryTextClass =
 const codexLiveFeedRightTextClass =
   'col-start-2 row-start-1 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--gt-font-size-sm)] font-semibold leading-snug tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedMetaTextClass =
-  'col-start-1 row-start-2 min-w-0 self-center truncate font-mono text-[length:var(--gt-font-size-sm)] font-medium leading-snug tracking-normal text-[var(--gt-ink-muted)]';
+  'col-start-1 row-start-2 min-w-0 self-center truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal leading-snug tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedRightMetaTextClass =
   'col-start-2 row-start-2 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedCopyButtonClass =

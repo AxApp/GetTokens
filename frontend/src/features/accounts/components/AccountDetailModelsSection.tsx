@@ -23,7 +23,7 @@ import { getAccountsPreviewAuthFileModels } from '../previewData';
 const iconButtonClass =
   'inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] text-[var(--gt-ink-muted)] transition hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50';
 const buttonClass =
-  'inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] px-3 text-xs font-medium text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] px-3 text-xs font-normal text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50';
 const modelCardClass =
   'flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-[var(--gt-surface-muted)] transition-colors';
 const modelArrowClass =
@@ -31,9 +31,9 @@ const modelArrowClass =
 const modelValueClass =
   'truncate text-sm text-[var(--gt-ink-primary)]';
 const fetchStatusClass =
-  'rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] px-3 py-2 text-xs font-medium text-[var(--gt-ink-muted)]';
+  'rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] px-3 py-2 text-xs font-normal text-[var(--gt-ink-muted)]';
 const fetchErrorClass =
-  'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,white)] px-3 py-2 text-xs font-medium text-[var(--gt-status-danger)]';
+  'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,white)] px-3 py-2 text-xs font-normal text-[var(--gt-status-danger)]';
 
 function setConfigDraftModels(
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>,

@@ -31,7 +31,7 @@ export default function DebugHeader({
     >
       <div>
         <h2
-          className="text-2xl font-bold"
+          className="text-2xl font-semibold"
           style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
         >
           {t('debug.title')}

@@ -187,14 +187,14 @@ function CodexRouteProbeOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Codex Route Probe</h2>
-        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--gt-ink-muted)]">
+        <h2 className="text-2xl font-semibold tracking-normal">Codex Route Probe</h2>
+        <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
           把 Codex 账号请求顺序里的路由探测工作台纳入设计系统，用固定队列和终端日志检查候选队列、运行态、fallback 命中和空候选状态。
         </p>
       </div>
 
       <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">Probe states</h3>
+        <h3 className="text-sm font-semibold tracking-normal">Probe states</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <ProbeSample />
           <ProbeSample running />

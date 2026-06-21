@@ -30,13 +30,13 @@ const codexFeatureInsetPanelClass = 'rounded border border-[var(--gt-border-subt
 const codexFeatureHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexFeatureSectionHeaderClass = 'border-b border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexFeatureTitleClass = 'font-mono text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]';
-const codexFeatureMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const codexFeatureMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const codexFeatureChipClass =
-  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+  'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const codexFeatureSecondaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexFeaturePrimaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 
 function resolveCodexFeatureDescription(t: (key: string) => string, row: CodexFeatureRow) {
   const translationKey = `status.codex_feature_descriptions.${row.key}`;
@@ -188,7 +188,7 @@ export default function StatusCodexFeaturesSection({
               </span>
             ))}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-medium tracking-normal text-[var(--gt-ink-muted)]">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-muted)]">
             {row.hiddenByDefault ? (
               <span className={codexFeatureChipClass}>
                 {t('status.codex_features_hidden_default')}
@@ -197,14 +197,14 @@ export default function StatusCodexFeaturesSection({
             <span className="min-w-0">{resolveCodexFeatureDescription(t, row)}</span>
           </div>
           {row.legacyAliases.length > 0 ? (
-            <div className="mt-2 inline-flex max-w-full rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]">
+            <div className="mt-2 inline-flex max-w-full rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]">
               <span className="truncate">
                 {t('status.codex_features_legacy_alias')}: {row.legacyAliases.join(', ')}
               </span>
             </div>
           ) : null}
           {row.unsupported ? (
-            <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+            <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               {t('status.codex_features_unsupported_hint')}
             </div>
           ) : null}
@@ -232,7 +232,7 @@ export default function StatusCodexFeaturesSection({
           <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
             {fieldLabel}
           </div>
-          <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium leading-relaxed text-[var(--gt-ink-muted)]">
+          <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed text-[var(--gt-ink-muted)]">
             {resolveCodexFeatureDescription(t, row)}
           </div>
         </div>
@@ -294,14 +294,14 @@ export default function StatusCodexFeaturesSection({
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 max-w-2xl text-[length:var(--gt-font-size-sm)] font-medium leading-relaxed text-[var(--gt-ink-primary)]">
+              <p className="mt-1 max-w-2xl text-[length:var(--gt-font-size-sm)] font-normal leading-relaxed text-[var(--gt-ink-primary)]">
                 {t('status.codex_features_multi_agent_v2_description')}
               </p>
             </div>
           </div>
           {enabledRow ? (
             <div className="flex items-center justify-start gap-3 lg:justify-end">
-              <span className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">
+              <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
                 {t('status.codex_features_multi_agent_v2_active')}
               </span>
               <div className="w-20">{renderCodexValueEditor(enabledRow.row, enabledRow.row.readOnly || isBusy, onChangeFeature, onRemoveFeature)}</div>
@@ -360,7 +360,7 @@ export default function StatusCodexFeaturesSection({
                   {pathGroup.primaryLabel}
                 </div>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-medium leading-relaxed text-[var(--gt-ink-muted)]">
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-normal leading-relaxed text-[var(--gt-ink-muted)]">
                 <span>{resolveCodexFeatureDescription(t, groupedRow.row)}</span>
                 <span className={codexFeatureChipClass}>
                   {t(`status.codex_features_stage_${groupedRow.row.stage}`)}
@@ -377,12 +377,12 @@ export default function StatusCodexFeaturesSection({
               {groupedRow.row.legacyAliases.length > 0 || groupedRow.row.unsupported ? (
                 <div className="mt-2 flex flex-wrap gap-2">
                   {groupedRow.row.legacyAliases.length > 0 ? (
-                    <span className="min-w-0 truncate rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)]">
+                    <span className="min-w-0 truncate rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]">
                       {t('status.codex_features_legacy_alias')}: {groupedRow.row.legacyAliases.join(', ')}
                     </span>
                   ) : null}
                   {groupedRow.row.unsupported ? (
-                    <span className="text-[length:var(--gt-font-size-2xs)] font-medium text-[var(--gt-ink-muted)]">
+                    <span className="text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]">
                       {t('status.codex_features_unsupported_hint')}
                     </span>
                   ) : null}
@@ -428,7 +428,7 @@ export default function StatusCodexFeaturesSection({
             </div>
           </div>
           {description ? (
-            <div className="min-w-0 text-[length:var(--gt-font-size-sm)] font-medium leading-relaxed text-[var(--gt-ink-muted)]">
+            <div className="min-w-0 text-[length:var(--gt-font-size-sm)] font-normal leading-relaxed text-[var(--gt-ink-muted)]">
               {description}
             </div>
           ) : null}
@@ -448,7 +448,7 @@ export default function StatusCodexFeaturesSection({
           <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">
             {t('status.codex_features_title')}
           </div>
-          <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+          <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
             {snapshot?.configPath || t('status.codex_features_unavailable')}
           </div>
         </div>
@@ -477,7 +477,7 @@ export default function StatusCodexFeaturesSection({
               key={filter}
               type="button"
               onClick={() => onChangeStageFilter(filter)}
-              className={`rounded border px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium transition ${
+              className={`rounded border px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal transition ${
                 stageFilter === filter
                   ? 'border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                   : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
@@ -498,7 +498,7 @@ export default function StatusCodexFeaturesSection({
       </div>
 
       {message ? (
-        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">
+        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
           {message}
         </div>
       ) : null}
@@ -523,7 +523,7 @@ export default function StatusCodexFeaturesSection({
           </div>
         ))}
         {rows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+          <div className="px-4 py-8 text-center text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
             {isLoading ? t('status.codex_features_loading') : t('status.codex_features_empty')}
           </div>
         ) : null}
@@ -538,7 +538,7 @@ export default function StatusCodexFeaturesSection({
             {preview.changes.map((change) => (
               <div
                 key={`${change.key}-${change.kind}`}
-                className={`${codexFeatureInsetPanelClass} px-3 py-2 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]`}
+                className={`${codexFeatureInsetPanelClass} px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]`}
               >
                 <span className="font-mono">{change.key}</span>
                 <span className="text-[var(--gt-ink-muted)]"> / {change.kind} / </span>
@@ -550,7 +550,7 @@ export default function StatusCodexFeaturesSection({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
-        <div className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+        <div className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
           {t('status.codex_features_save_hint')}
         </div>
         <div className="flex flex-wrap gap-2">

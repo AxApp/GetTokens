@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Segmented } from 'antd';
 import type { main } from '../../../../wailsjs/go/models';
 import ActionSelect, { type ActionSelectOption } from '../../../components/ui/ActionSelect';
 import FormField, { FieldLabel, SelectField, TextInputField } from '../../../components/ui/FormField';
 import ModalFrame from '../../../components/ui/ModalFrame';
-import SegmentedControl from '../../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { RelayModelEditorModal } from './RelayEditors';
 import StatusSnippetPanel from './StatusSnippetPanel';
@@ -26,23 +26,23 @@ import { RELAY_CODEX_DEFAULT_MODEL } from '../../accounts/model/accountConfig';
 type LocalCliPanelTarget = 'codex' | 'claude';
 
 const statusPanelClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
-const statusMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const statusInsetPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)]';
+  'rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const statusMutedPanelClass = 'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+const statusInsetPanelClass = 'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)]';
 const statusFieldBoxClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2';
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2';
 const statusEyebrowClass = 'text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]';
 const statusTitleClass = 'text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]';
-const statusMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]';
+const statusMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const statusValueClass = 'font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
 const statusSecondaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const statusPrimaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const statusCompactButtonClass =
-  'inline-flex h-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+  'inline-flex h-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const statusNoticeClass =
-  'rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
+  'rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
 const statusToggleRowClass =
   'flex items-center justify-between gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 md:min-h-[2.875rem]';
 const statusLocalCliSummaryItemClass =
@@ -52,7 +52,7 @@ const statusLocalCliRailClass =
 const statusLocalCliCapabilityRowClass =
   'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center';
 const statusLocalCliPlanStatusClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
 
 export function StatusQuotaEvidenceSection({ state }: { state: StatusQuotaEvidenceSectionState }) {
   if (state.items.length === 0 && !state.notice) {
@@ -619,11 +619,17 @@ export function StatusApplyLocalSection({
               <div className="mt-1 text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">
                 {activeTargetLabel}
               </div>
-              <div className="mt-1 text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+              <div className="mt-1 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
                 {t('status.local_cli_workbench_hint')}
               </div>
             </div>
-            <SegmentedControl options={localCliTargetOptions} value={activeTarget} onChange={setActiveTarget} />
+            <Segmented
+              block
+              className="w-full sm:w-56"
+              options={localCliTargetOptions.map((option) => ({ label: option.label, value: option.id }))}
+              value={activeTarget}
+              onChange={(value) => setActiveTarget(value as LocalCliPanelTarget)}
+            />
           </div>
           <dl className="grid gap-2 md:grid-cols-3">
             <div className={statusLocalCliSummaryItemClass}>
@@ -708,7 +714,7 @@ export function StatusApplyLocalSection({
                 />
 
                 <FormField title={t('status.codex_local_auth_state_title')} as="div">
-                  <div className={`${statusFieldBoxClass} text-[length:var(--gt-font-size-md-compact)] font-medium text-[var(--gt-ink-primary)]`}>
+                  <div className={`${statusFieldBoxClass} text-[length:var(--gt-font-size-md-compact)] font-normal text-[var(--gt-ink-primary)]`}>
                     <div>{codexLocalAuthSummary}</div>
                     {localCodexAuthState?.accountEmail ? (
                       <div className="mt-1 font-mono text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]">
@@ -737,13 +743,13 @@ export function StatusApplyLocalSection({
                     <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                       {t('status.local_cli_capability_websocket_title')}
                     </div>
-                    <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                    <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                       {supportsWebsockets
                         ? t('status.local_cli_capability_websocket_on')
                         : t('status.local_cli_capability_websocket_off')}
                     </div>
                     {localCodexProviderWebsocketRisk ? (
-                      <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-medium leading-snug text-[var(--gt-status-danger)]">
+                      <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-normal leading-snug text-[var(--gt-status-danger)]">
                         {supportsWebsockets
                           ? t('status.local_cli_websocket_risk_opt_in')
                           : t('status.local_cli_websocket_risk_detected')}
@@ -772,7 +778,7 @@ export function StatusApplyLocalSection({
                       </span>
                     ) : null}
                   </div>
-                  <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-medium text-[var(--gt-ink-muted)]">
+                  <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                     {syncCodexModelCatalog
                       ? t('status.local_cli_capability_model_catalog_on')
                       : t('status.local_cli_capability_model_catalog_off')}
@@ -998,7 +1004,7 @@ export function StatusApplyLocalSection({
 
               <div className={fieldPairGridClass}>
                 <div className={statusToggleRowClass}>
-                  <span className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">
+                  <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
                     {t('status.claude_disable_nonessential_traffic')}
                   </span>
                   <ToggleSwitch
@@ -1010,7 +1016,7 @@ export function StatusApplyLocalSection({
                   />
                 </div>
                 <div className={statusToggleRowClass}>
-                  <span className="text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-primary)]">
+                  <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
                     {t('status.claude_code_attribution_header')}
                   </span>
                   <ToggleSwitch
@@ -1139,7 +1145,7 @@ export function StatusApplyLocalSection({
               ))}
               {modelCatalogPreviewModels.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-8 text-center font-mono text-[length:var(--gt-font-size-sm)] font-medium text-[var(--gt-ink-muted)]">
+                  <td colSpan={3} className="px-4 py-8 text-center font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
                     暂无可同步模型
                   </td>
                 </tr>
@@ -1243,7 +1249,7 @@ function StatusEndpointPicker({
               key={endpoint.id}
               type="button"
               onClick={() => onSelectEndpointID(endpoint.id)}
-              className={`rounded border px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-medium transition ${
+              className={`rounded border px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal transition ${
                 isSelected
                   ? 'border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                   : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
