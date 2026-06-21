@@ -37,6 +37,7 @@ description: "GetTokens 桌面/Wails 前端设计质量统一 skill，合并 tas
 - 不直接引入参考项目源码、CLI、浏览器扩展或运行时依赖；如需引入检测器/工具，单独开 space 并先写测试。
 - 不用前端假状态掩盖 sidecar 事实：账号、quota、routing、live sessions 等热路径必须尊重 sidecar 数据边界。
 - 2026-06-21 用户明确视觉系统收敛方向：只保留 AntD，且只保留新的 gt-* 语义 token 层；随后进一步明确不允许保留过渡态。新增 UI 默认走 AntD component / GetTokens AntD adapter；旧 Swiss / parchment visual primitive、legacy alias token、Tailwind named colors、dark:* 和裸 px 字号不能作为完成闭包继续留在运行态。确需保留的只能登记为产品例外，并说明存在理由与验收边界。
+- 2026-06-21 用户继续明确 AntD 对齐不止色彩，而是 Ant Design introduce/spec 的整套设计语言。GetTokens 前端默认遵守 AntD v6 设计价值观 Natural / Certain / Meaningful / Growing，并以 antd design.md --format json 作为本地可执行基线：AntD palette-only 色彩、14px body、系统字体栈、400/600 字重、4px spacing grid、6px 控件圆角、8px surface 圆角、flat-first elevation、primary 单主行动规则。不得只导入 AntD 组件却保留自定义视觉语言。
 - 当前运行态只保留一套 `classic light` 样式；不要新增或恢复 `system/dark/light` 切换、`theme-preset` 选择、`.dark` token override、parchment 平行 token 或 Wails 透明窗口合成，除非用户重新开启主题 space 并先更新需求、测试和验收边界。
 
 ## 1. 选择模式

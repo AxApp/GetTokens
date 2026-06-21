@@ -26,9 +26,9 @@ export const themePresetDefinitions: ReadonlyArray<ThemePresetDefinition> = [
     rootAttribute: 'classic',
     previewTokens: {
       canvas: '#ffffff',
-      panel: '#f9f9f9',
+      panel: '#fafafa',
       ink: '#000000',
-      accent: '#111111',
+      accent: '#1677ff',
     },
   },
 ] as const;

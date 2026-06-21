@@ -191,7 +191,7 @@ const accountDetailCredentialFieldLabelClass =
 const accountDetailCredentialHelpClass =
   'text-[10px] font-medium leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailCredentialInputClass =
-  'min-w-0 rounded-md border border-[var(--gt-border-default)] bg-white px-3 py-2 font-mono text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1';
+  'min-w-0 rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1';
 const accountDetailCredentialButtonClass =
   'shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[10px] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailCredentialPrimaryButtonClass =
@@ -249,17 +249,17 @@ const accountDetailResourceKvLabelClass =
 const accountDetailResourceKvValueClass =
   'mt-1 truncate font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetModalOverlayClass =
-  'fixed inset-0 z-[1000] grid place-items-center bg-black/35 px-6 py-8 backdrop-blur-[18px]';
+  'fixed inset-0 z-[1000] grid place-items-center bg-[color-mix(in_srgb,#000000_35%,transparent)] px-6 py-8 backdrop-blur-[18px]';
 const accountDetailQuotaResetModalPanelClass =
   'relative grid w-full max-w-[38rem] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-canvas)_78%,transparent)] shadow-lg backdrop-blur-2xl';
 const accountDetailQuotaResetHeroClass =
-  'relative h-36 overflow-hidden border-b border-white/40';
+  'relative h-36 overflow-hidden border-b border-[color-mix(in_srgb,var(--gt-surface-canvas)_40%,transparent)]';
 const accountDetailQuotaResetHeroMarkClass =
-  'absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded border border-white/40 bg-[linear-gradient(150deg,rgba(171,149,255,0.8),rgba(36,65,255,0.88))] font-sans text-3xl font-semibold text-white shadow-lg backdrop-blur-md';
+  'absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded border border-[color-mix(in_srgb,var(--gt-surface-canvas)_40%,transparent)] bg-[linear-gradient(150deg,color-mix(in_srgb,#722ed1_80%,transparent),color-mix(in_srgb,#1677ff_88%,transparent))] font-sans text-3xl font-semibold text-[var(--gt-ink-inverse)] shadow-lg backdrop-blur-md';
 const accountDetailQuotaResetCloseButtonClass =
-  'absolute right-4 top-4 grid h-10 w-10 place-items-center rounded border border-white/55 bg-white/45 text-xl font-semibold text-[var(--gt-ink-primary)] shadow-lg backdrop-blur-xl transition-colors hover:bg-white/65';
+  'absolute right-4 top-4 grid h-10 w-10 place-items-center rounded border border-[color-mix(in_srgb,var(--gt-surface-canvas)_55%,transparent)] bg-[color-mix(in_srgb,var(--gt-surface-canvas)_45%,transparent)] text-xl font-semibold text-[var(--gt-ink-primary)] shadow-lg backdrop-blur-xl transition-colors hover:bg-[color-mix(in_srgb,var(--gt-surface-canvas)_65%,transparent)]';
 const accountDetailQuotaResetBodyClass =
-  'grid gap-5 bg-white/35 px-8 py-7 text-center backdrop-blur-xl';
+  'grid gap-5 bg-[color-mix(in_srgb,var(--gt-surface-canvas)_35%,transparent)] px-8 py-7 text-center backdrop-blur-xl';
 const accountDetailQuotaResetTitleClass =
   'text-xl font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetDescriptionClass =
@@ -1641,10 +1641,10 @@ function OpenAIQuotaResetConfirmationModal({
         <div className={accountDetailQuotaResetHeroClass}>
           <div
             data-openai-quota-reset-gradient="dynamic"
-            className="absolute -inset-5 animate-[openaiQuotaResetGradient_14s_ease-in-out_infinite] bg-[radial-gradient(circle_at_63%_58%,rgba(182,239,0,0.98)_0,rgba(120,137,0,0.82)_20%,transparent_34%),radial-gradient(circle_at_77%_60%,rgba(255,167,38,0.96)_0,rgba(255,171,46,0.78)_24%,transparent_40%),linear-gradient(120deg,rgba(69,199,237,0.94)_0%,rgba(188,198,255,0.88)_48%,rgba(231,182,255,0.9)_100%)] bg-[length:165%_165%,150%_150%,180%_180%] blur-[1px]"
+            className="absolute -inset-5 animate-[openaiQuotaResetGradient_14s_ease-in-out_infinite] bg-[radial-gradient(circle_at_63%_58%,color-mix(in_srgb,#a0d911_98%,transparent)_0,color-mix(in_srgb,#7cb305_82%,transparent)_20%,transparent_34%),radial-gradient(circle_at_77%_60%,color-mix(in_srgb,#faad14_96%,transparent)_0,color-mix(in_srgb,#ffc53d_78%,transparent)_24%,transparent_40%),linear-gradient(120deg,color-mix(in_srgb,#13c2c2_94%,transparent)_0%,color-mix(in_srgb,#adc6ff_88%,transparent)_48%,color-mix(in_srgb,#d3adf7_90%,transparent)_100%)] bg-[length:165%_165%,150%_150%,180%_180%] blur-[1px]"
           />
-          <div className="absolute inset-0 bg-white/10 backdrop-blur-[3px]" />
-          <div className="absolute inset-0 opacity-45 [background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.58)_0_1px,transparent_1px_44px)]" />
+          <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--gt-surface-canvas)_10%,transparent)] backdrop-blur-[3px]" />
+          <div className="absolute inset-0 opacity-45 [background-image:repeating-linear-gradient(90deg,color-mix(in_srgb,#ffffff_58%,transparent)_0_1px,transparent_1px_44px)]" />
           <div className={accountDetailQuotaResetHeroMarkClass}>
             ›_
           </div>

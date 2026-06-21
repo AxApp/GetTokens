@@ -184,3 +184,17 @@
 
 - 本次完成口径是“运行态视觉系统只保留 AntD 主题入口与新的 gt-* 语义 token，不保留旧 Swiss / Parchment / legacy alias 过渡层”。
 - 仍存在原生 HTML 控件用于导航、菜单、表格行、可访问性按钮和局部交互；它们不能继续挂旧视觉 primitive，也不能新增旧 token。若后续把“只保留 AntD”升级为“运行态所有交互控件必须用 AntD 组件实例”，需要单独开控件替换工程，因为当前扫描约 441 处原生 button/input/select/textarea，直接机械替换会跨越行为语义和表单提交边界。
+
+## 2026-06-21 Ant Design 设计语言升级
+
+用户明确 AntD 对齐不止色彩，而是 Ant Design introduce/spec 的整套设计语言。本 space 后续完成口径升级为：
+
+- 价值观：Natural / Certain / Meaningful / Growing，优先确定性、可预期、状态清楚、服务任务的企业级界面。
+- 色彩：运行态直接色值只允许 Ant Design palette / neutral palette；provider、chart、status、accent 不再保留自定义色例外。透明层必须来自黑色 alpha 或 color-mix 加 AntD palette 色。
+- 字体：默认 14px body、系统字体栈；产品 chrome 只使用 400 / 600 字重。
+- 间距：默认 4px grid，避免一次性 magic spacing。
+- 圆角：控件 6px，surface 8px，小 tag/chip 4px，pill 仅用于头像、badge、dot。
+- 阴影：flat-first，只有浮层类 surface 使用阴影。
+- 组件：优先 AntD component 和 component token；primary 只给单个主行动。
+
+本轮新增 frontend/src/context/antdColorContract.test.mjs，把运行态 hex/rgb 色值限制到 AntD 设计语言允许集合。

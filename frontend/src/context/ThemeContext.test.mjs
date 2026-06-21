@@ -85,5 +85,5 @@ test('theme preset registry exposes only the single runtime style', () => {
   const classic = getThemePresetDefinition('parchment-trust-console');
   assert.equal(classic.rootAttribute, 'classic');
   assert.equal(classic.previewTokens.canvas, '#ffffff');
-  assert.equal(classic.previewTokens.accent, '#111111');
+  assert.equal(classic.previewTokens.accent, '#1677ff');
 });

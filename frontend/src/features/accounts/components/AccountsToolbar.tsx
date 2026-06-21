@@ -420,7 +420,7 @@ export default function AccountsToolbar({
                   key={`${part.kind}-${part.label}-${index}`}
                   type="button"
                   onClick={() => removeFilterPart(index)}
-                  className="inline-flex h-8 max-w-[210px] items-center gap-1.5 rounded-md border px-2 text-xs font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-status-danger)] hover:text-white"
+                  className="inline-flex h-8 max-w-[210px] items-center gap-1.5 rounded-md border px-2 text-xs font-medium text-[var(--gt-ink-primary)] hover:bg-[var(--gt-status-danger)] hover:text-[var(--gt-ink-inverse)]"
                   style={{ borderColor: 'var(--gt-border-default)', backgroundColor: 'var(--gt-surface-muted)' }}
                   title={t('accounts.filter_remove_condition')}
                 >
