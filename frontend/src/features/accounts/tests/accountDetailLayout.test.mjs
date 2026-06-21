@@ -64,6 +64,23 @@ test('account detail footer exposes local CLI apply actions from the account map
   assert.match(sectionsSource, /action\.disabledReason \|\| action\.detail \|\| action\.label/);
 });
 
+test('account detail footer renders close as a left-side icon action', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const footerSource = sourceBlock(source, 'export function AccountDetailFooter', 'function normalizeBillingDisplay');
+  const leadingSource = sourceBlock(footerSource, 'data-account-detail-footer-leading-actions', 'data-account-detail-footer-actions');
+  const mainActionsSource = sourceBlock(footerSource, 'data-account-detail-footer-actions', '{isApiKey || rateLimitDirty ?');
+
+  assert.match(source, /import \{ Button \} from 'antd'/);
+  assert.match(source, /import \{ X \} from 'lucide-react'/);
+  assert.match(leadingSource, /<Button[\s\S]*shape="circle"/);
+  assert.match(leadingSource, /type="text"/);
+  assert.match(leadingSource, /icon=\{<X/);
+  assert.match(leadingSource, /aria-label=\{t\('common\.close'\)\}/);
+  assert.match(leadingSource, /onClick=\{onClose\}/);
+  assert.doesNotMatch(leadingSource, />\s*\{t\('common\.close'\)\}\s*<\/Button>/);
+  assert.doesNotMatch(mainActionsSource, /onClick=\{onClose\}/);
+});
+
 test('accounts page loads auth-file rows from unified account store only', async () => {
   const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
 
