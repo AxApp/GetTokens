@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Input } from 'antd';
 import {
   DownloadAuthFile,
   NormalizeAuthFileContent,
@@ -103,7 +104,7 @@ export function AuthFileSummarySection({ account }: { account: AccountRecord }) 
         <div className="space-y-2">
           <label className="grid gap-1.5">
             <span className={labelClass}>账号名称</span>
-            <input className={inputClass} value={account.displayName} readOnly />
+            <Input className={inputClass} value={account.displayName} readOnly />
           </label>
         </div>
       </div>

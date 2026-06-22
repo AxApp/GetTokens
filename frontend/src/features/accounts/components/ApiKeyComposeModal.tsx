@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Input } from 'antd';
 import { Loader2 } from 'lucide-react';
 import type { ApiKeyFormState, ClickEventLike, TextInputEvent, Translator } from '../model/types';
 
@@ -143,7 +144,7 @@ export default function ApiKeyComposeModal({
               <span className={apiKeyComposeLabelClass}>
                 {t('accounts.api_key_label')}
               </span>
-              <input
+              <Input
                 value={form.label}
                 onChange={(event: TextInputEvent) => onChange('label', event.target.value)}
                 className={apiKeyComposeInputClass}
@@ -154,19 +155,18 @@ export default function ApiKeyComposeModal({
               <span className={apiKeyComposeLabelClass}>
                 {t('accounts.api_key_value')}
               </span>
-              <input
+              <Input.Password
                 value={form.apiKey}
                 onChange={(event: TextInputEvent) => onChange('apiKey', event.target.value)}
                 className={apiKeyComposeInputClass}
                 placeholder={t('accounts.api_key_value_placeholder')}
-                type="password"
               />
             </label>
             <label className="space-y-2">
               <span className={apiKeyComposeLabelClass}>
                 Base URL
               </span>
-              <input
+              <Input
                 value={form.baseUrl}
                 onChange={(event: TextInputEvent) => onChange('baseUrl', event.target.value)}
                 className={apiKeyComposeInputClass}
@@ -264,7 +264,7 @@ export default function ApiKeyComposeModal({
                     ))}
                   </datalist>
                   <div className="flex items-center gap-2">
-                    <input
+                    <Input
                       value={verifyModel}
                       onChange={(e: TextInputEvent) => setVerifyModel(e.target.value)}
                       list="api-key-compose-probe-models"

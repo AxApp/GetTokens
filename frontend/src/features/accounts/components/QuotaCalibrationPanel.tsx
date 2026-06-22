@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Select } from 'antd';
 import { useDebug } from '../../../context/useDebug';
 import { buildQuotaCalibrationInput, isQuotaCalibrationActive, type QuotaCalibrationMode } from '../model/quotaCalibration';
 import type { QuotaWindowDisplay } from '../model/types';
@@ -199,14 +200,15 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
               <span className={quotaCalibrationMetaClass}>
                 模式
               </span>
-              <select
+              <Select
                 value={mode}
-                onChange={(e) => setMode(e.target.value as QuotaCalibrationMode)}
+                onChange={(val: string) => setMode(val as QuotaCalibrationMode)}
+                options={[
+                  { value: 'delta', label: 'Delta (差值)' },
+                  { value: 'set-effective', label: 'Set (设定值)' },
+                ]}
                 className={quotaCalibrationInputClass}
-              >
-                <option value="delta">Delta (差值)</option>
-                <option value="set-effective">Set (设定值)</option>
-              </select>
+              />
             </label>
             <label className="grid gap-1">
               <span className={quotaCalibrationMetaClass}>
@@ -224,19 +226,13 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
               <span className={quotaCalibrationMetaClass}>
                 窗口
               </span>
-              <select
-                value={windowKey}
-                onChange={(e) => setWindowKey(e.target.value)}
+              <Select
+                value={windowKey || undefined}
+                onChange={(val: string) => setWindowKey(val)}
+                placeholder="无窗口数据"
+                options={windowOptions.map((w) => ({ value: w.id, label: w.label }))}
                 className={quotaCalibrationInputClass}
-              >
-                {windowOptions.length > 0 ? (
-                  windowOptions.map((w) => (
-                    <option key={w.id} value={w.id}>{w.label}</option>
-                  ))
-                ) : (
-                  <option value="">无窗口数据</option>
-                )}
-              </select>
+              />
             </label>
           </div>
           {error ? (

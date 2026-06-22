@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Select } from 'antd';
 import { useI18n } from '../../../context/I18nContext';
 import {
   buildProxyURLFromNode,
@@ -180,25 +181,23 @@ export function AccountProxyRouteEditor({
       <div className={accountProxyRouteHintClass}>
         账号详情只选择已保存的代理池节点；刷新、测速、增删节点在代理池页面完成。
       </div>
-      <select
-        value={draft.proxyUrl}
-        onChange={(event) => onProxySelect(event.target.value)}
+      <Select
+        value={draft.proxyUrl || undefined}
+        onChange={(val: string) => onProxySelect(val)}
         disabled={proxyOptions.length === 0 && !hasDetachedCurrentURL}
+        placeholder={t('accounts.proxy_route_select_placeholder')}
+        options={[
+          ...(hasDetachedCurrentURL
+            ? [{ value: draft.proxyUrl, label: `${t('accounts.proxy_route_current_url')}: ${draft.proxyUrl}` }]
+            : []),
+          ...proxyOptions.map(({ node, proxyUrl: nodeProxyURL }) => ({
+            value: nodeProxyURL,
+            label: `${node.name} · ${node.protocol} · ${node.host}:${node.port} · ${node.latencyMs}ms`,
+          })),
+        ]}
         className={accountProxyRouteSelectClass}
         data-account-proxy-route-select="saved-node"
-      >
-        {draft.proxyUrl ? null : <option value="">{t('accounts.proxy_route_select_placeholder')}</option>}
-        {hasDetachedCurrentURL ? (
-          <option value={draft.proxyUrl}>
-            {t('accounts.proxy_route_current_url')}: {draft.proxyUrl}
-          </option>
-        ) : null}
-        {proxyOptions.map(({ node, proxyUrl: nodeProxyURL }) => (
-          <option key={node.id} value={nodeProxyURL}>
-            {node.name} · {node.protocol} · {node.host}:{node.port} · {node.latencyMs}ms
-          </option>
-        ))}
-      </select>
+      />
       {proxyOptions.length === 0 && !draft.proxyUrl ? (
         <div className={accountProxyRouteEmptyClass} data-account-proxy-route-empty="quiet">
           {t('accounts.proxy_route_no_nodes')}

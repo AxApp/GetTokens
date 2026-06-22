@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Input, Select } from 'antd';
 import { useDebug } from '../../../context/useDebug';
 import type { QuotaThresholdRule, RouteGuardReasonTraceStep, RouteGuardSimulationResult } from '../../../types';
 import useQuotaThresholdRules from '../hooks/useQuotaThresholdRules';
@@ -474,22 +475,32 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
             <div className="grid grid-cols-2 gap-2">
               <label className="grid gap-1">
                 <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">ID</span>
-                <input value={definitionID} onChange={(event) => setDefinitionID(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
+                <Input value={definitionID} onChange={(event) => setDefinitionID(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
               </label>
               <label className="grid gap-1">
                 <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">Kind</span>
-                <select value={definitionKind} onChange={(event) => setDefinitionKind(event.target.value as BudgetWindowKind)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`}>
-                  <option value="daily">daily</option>
-                  <option value="multi-day">multi-day calendar</option>
-                  <option value="bounded">bounded</option>
-                </select>
+                <Select
+                  value={definitionKind}
+                  onChange={(val: string) => setDefinitionKind(val as BudgetWindowKind)}
+                  options={[
+                    { value: 'daily', label: 'daily' },
+                    { value: 'multi-day', label: 'multi-day calendar' },
+                    { value: 'bounded', label: 'bounded' },
+                  ]}
+                  className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`}
+                />
               </label>
               <label className="grid gap-1">
                 <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">Metric</span>
-                <select value={definitionMetric} onChange={(event) => setDefinitionMetric(event.target.value as BudgetWindowMetric)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`}>
-                  <option value="tokens">tokens</option>
-                  <option value="requests">requests</option>
-                </select>
+                <Select
+                  value={definitionMetric}
+                  onChange={(val: string) => setDefinitionMetric(val as BudgetWindowMetric)}
+                  options={[
+                    { value: 'tokens', label: 'tokens' },
+                    { value: 'requests', label: 'requests' },
+                  ]}
+                  className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`}
+                />
               </label>
               <label className="grid gap-1">
                 <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">Limit</span>
@@ -498,7 +509,7 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
               {definitionKind !== 'bounded' ? (
                 <label className="grid gap-1">
                   <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">Timezone</span>
-                  <input value={definitionTimezone} onChange={(event) => setDefinitionTimezone(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
+                  <Input value={definitionTimezone} onChange={(event) => setDefinitionTimezone(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
                 </label>
               ) : null}
               {definitionKind === 'multi-day' ? (
@@ -534,19 +545,13 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
               <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                 窗口
               </span>
-              <select
-                value={windowKey}
-                onChange={(event) => { setWindowKey(event.target.value); setError(''); }}
+              <Select
+                value={windowKey || undefined}
+                onChange={(val: string) => { setWindowKey(val); setError(''); }}
+                placeholder="无窗口数据"
+                options={windowOptions.map((w) => ({ value: w.id, label: w.label }))}
                 className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`}
-              >
-                {windowOptions.length > 0 ? (
-                  windowOptions.map((window) => (
-                    <option key={window.id} value={window.id}>{window.label}</option>
-                  ))
-                ) : (
-                  <option value="">无窗口数据</option>
-                )}
-              </select>
+              />
             </label>
             <label className="grid gap-1">
               <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">

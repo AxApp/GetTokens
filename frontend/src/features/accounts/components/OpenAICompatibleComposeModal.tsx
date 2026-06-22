@@ -1,3 +1,4 @@
+import { Input, Select } from 'antd';
 import type { Translator } from '../model/types';
 import {
   getOpenAICompatibleProviderPreset,
@@ -66,18 +67,16 @@ export default function OpenAICompatibleComposeModal({
               <div className={openAICompatibleComposeLabelClass}>
                 {t('accounts.openai_provider_preset')}
               </div>
-              <select
-                value={selectedPresetID}
-                onChange={(event) => onPresetChange(event.target.value)}
+              <Select
+                value={selectedPresetID || undefined}
+                onChange={(val: string) => onPresetChange(val)}
+                placeholder={t('accounts.openai_provider_preset_custom')}
+                options={openAICompatibleProviderPresets.map((preset) => ({
+                  value: preset.id,
+                  label: preset.label,
+                }))}
                 className={openAICompatibleComposeInputClass}
-              >
-                <option value="">{t('accounts.openai_provider_preset_custom')}</option>
-                {openAICompatibleProviderPresets.map((preset) => (
-                  <option key={preset.id} value={preset.id}>
-                    {preset.label}
-                  </option>
-                ))}
-              </select>
+              />
               <p className={openAICompatibleComposeHintClass}>
                 {t('accounts.openai_provider_preset_hint')}
               </p>
@@ -88,7 +87,7 @@ export default function OpenAICompatibleComposeModal({
                 <div className={openAICompatibleComposeLabelClass}>
                   {t('accounts.openai_provider_name')}
                 </div>
-                <input
+                <Input
                   value={form.name}
                   onChange={(event) => onChange({ ...form, name: event.target.value })}
                   className={openAICompatibleComposeInputClass}
@@ -100,7 +99,7 @@ export default function OpenAICompatibleComposeModal({
                 <div className={openAICompatibleComposeLabelClass}>
                   {t('accounts.ui_base_url')}
                 </div>
-                <input
+                <Input
                   value={form.baseUrl}
                   onChange={(event) => onChange({ ...form, baseUrl: event.target.value })}
                   className={openAICompatibleComposeInputClass}
@@ -113,11 +112,10 @@ export default function OpenAICompatibleComposeModal({
               <div className={openAICompatibleComposeLabelClass}>
                 {t('accounts.ui_api_key')}
               </div>
-              <input
+              <Input.Password
                 value={form.apiKey}
                 onChange={(event) => onChange({ ...form, apiKey: event.target.value })}
                 className={openAICompatibleComposeInputClass}
-                type="password"
                 placeholder={selectedPreset?.apiKeyPlaceholder || 'sk-...'}
               />
             </label>

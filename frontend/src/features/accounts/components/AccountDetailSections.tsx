@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { Input, Select } from 'antd';
 import type { AccountRecord, ApiFormat, BillingDisplay } from '../../../types';
 import type { main } from '../../../../wailsjs/go/models';
 import {
@@ -1086,26 +1087,15 @@ function CredentialInputField({
         )}
       </div>
       {options && options.length > 0 ? (
-        <div className="relative inline-block w-full">
-          <select
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            className={`${accountDetailCredentialInputClass} w-full appearance-none pr-8`}
-          >
-            <option value="">{placeholder || '请选择...'}</option>
-            {options.filter(Boolean).map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[var(--gt-ink-muted)]">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M3 5l3 3 3-3" />
-            </svg>
-          </div>
-        </div>
+        <Select
+          value={value || undefined}
+          onChange={(val: string) => onChange(val)}
+          placeholder={placeholder || '请选择...'}
+          options={options.filter(Boolean).map((opt) => ({ value: opt, label: opt }))}
+          className="w-full"
+        />
       ) : (
-        <input
-          type="text"
+        <Input
           value={value}
           placeholder={placeholder || '请输入...'}
           onChange={(event) => onChange(event.target.value)}
@@ -1123,21 +1113,12 @@ function VerifyConnectionPanel({
   onVerify,
 }: VerifyConnectionPanelProps) {
   const [verifyModel, setVerifyModel] = useState(DEFAULT_VERIFY_MODEL);
-  const modelMenuRef = useRef<HTMLDivElement | null>(null);
-  const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
-  const [modelMenuMode, setModelMenuMode] = useState<'all' | 'custom'>('all');
 
   useEffect(() => {
     if (verifyState?.model) {
       setVerifyModel(verifyState.model);
     }
   }, [verifyState?.model]);
-
-  const displayedModelNames = useMemo(() => {
-    if (!modelNames || modelNames.length === 0) return [];
-    if (modelMenuMode === 'all') return modelNames;
-    return modelNames.filter((name) => name.toLowerCase().includes(verifyModel.toLowerCase()));
-  }, [modelMenuMode, modelNames, verifyModel]);
 
   const vs = verifyState ?? {
     model: verifyModel,
@@ -1146,17 +1127,10 @@ function VerifyConnectionPanel({
     lastVerifiedAt: null,
   };
 
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!modelMenuRef.current?.contains(event.target as Node)) {
-        setIsModelMenuOpen(false);
-      }
-    }
-    if (isModelMenuOpen) {
-      window.addEventListener('mousedown', handlePointerDown);
-      return () => window.removeEventListener('mousedown', handlePointerDown);
-    }
-  }, [isModelMenuOpen]);
+  const modelOptions = (modelNames ?? []).map((name) => ({
+    value: name,
+    label: name,
+  }));
 
   return (
     <section data-account-credential-list-item="connection" className="grid gap-3 border-t border-[var(--gt-border-subtle)] pt-4">
@@ -1170,40 +1144,16 @@ function VerifyConnectionPanel({
       ) : null}
 
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-        <div ref={modelMenuRef} className="relative min-w-0">
-          <div className="flex items-center gap-2">
-            <input
-              value={verifyModel}
-              onChange={(event) => {
-                setVerifyModel(event.target.value);
-                setModelMenuMode('custom');
-              }}
-              onFocus={() => setIsModelMenuOpen(true)}
-              className={`${accountDetailCredentialInputClass} min-w-0 w-full`}
-              placeholder={DEFAULT_VERIFY_MODEL}
-            />
-            {modelNames && modelNames.length > 0 ? (
-              <button type="button" onClick={() => setIsModelMenuOpen((prev) => !prev)} className={accountDetailCredentialButtonClass}>
-                ▼
-              </button>
-            ) : null}
-          </div>
-          {isModelMenuOpen && displayedModelNames.length > 0 ? (
-            <div className={accountDetailCredentialMenuClass}>
-              {displayedModelNames.map((name) => (
-                <button
-                  key={name}
-                  onClick={() => {
-                    setVerifyModel(name);
-                    setIsModelMenuOpen(false);
-                  }}
-                  className={accountDetailCredentialMenuItemClass(verifyModel === name)}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-          ) : null}
+        <div className="min-w-0">
+          <Select
+            showSearch
+            optionFilterProp="label"
+            value={verifyModel}
+            onChange={(value: string) => setVerifyModel(value)}
+            placeholder={DEFAULT_VERIFY_MODEL}
+            options={modelOptions}
+            className="w-full"
+          />
         </div>
 
         <button

@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { Select } from 'antd';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { toErrorMessage } from '../../../utils/error';
 import {
@@ -456,39 +457,29 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                 >
                   <legend className="sr-only">{t('accounts.rate_limit_rule_legend')}</legend>
                   <RuleField label={t('accounts.rate_limit_strategy')} htmlFor={`${ruleDomID}-strategy`}>
-                    <select
+                    <Select
                       id={`${ruleDomID}-strategy`}
                       value={draft.strategy}
-                      onChange={(event) => {
-                        const nextStrategy = strategies.find((item) => item.id === event.target.value);
+                      onChange={(val: string) => {
+                        const nextStrategy = strategies.find((item) => item.id === val);
                         const nextWindows = supportedWindowsForStrategy(nextStrategy);
                         updateRateLimitDraft(index, {
-                          strategy: event.target.value,
+                          strategy: val,
                           window: nextWindows.includes(draft.window) ? draft.window : nextWindows[0] || '24h',
                         });
                       }}
+                      options={strategies.map((item) => ({ value: item.id, label: item.name }))}
                       className={rateLimitRulesInputClass}
-                    >
-                      {strategies.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </RuleField>
                   <RuleField label={t('accounts.rate_limit_window')} htmlFor={`${ruleDomID}-window`}>
-                    <select
+                    <Select
                       id={`${ruleDomID}-window`}
                       value={draft.window}
-                      onChange={(event) => updateRateLimitDraft(index, { window: event.target.value })}
+                      onChange={(val: string) => updateRateLimitDraft(index, { window: val })}
+                      options={windows.map((w) => ({ value: w, label: formatRateLimitWindowLabel(w) }))}
                       className={rateLimitRulesInputClass}
-                    >
-                      {windows.map((window) => (
-                        <option key={window} value={window}>
-                          {formatRateLimitWindowLabel(window)}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </RuleField>
                   <RuleField label={t('accounts.rate_limit_limit')} htmlFor={`${ruleDomID}-limit`}>
                     <div className="flex h-9 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]">
@@ -511,15 +502,16 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                     </div>
                   </RuleField>
                   <RuleField label={t('accounts.rate_limit_action')} htmlFor={`${ruleDomID}-action`}>
-                    <select
+                    <Select
                       id={`${ruleDomID}-action`}
                       value={draft.action}
-                      onChange={(event) => updateRateLimitDraft(index, { action: event.target.value })}
+                      onChange={(val: string) => updateRateLimitDraft(index, { action: val })}
+                      options={[
+                        { value: 'block', label: t('accounts.rate_limit_action_block') },
+                        { value: 'warn', label: t('accounts.rate_limit_action_warn') },
+                      ]}
                       className={rateLimitRulesInputClass}
-                    >
-                      <option value="block">{t('accounts.rate_limit_action_block')}</option>
-                      <option value="warn">{t('accounts.rate_limit_action_warn')}</option>
-                    </select>
+                    />
                   </RuleField>
                   <div className="flex min-w-0 items-end justify-end self-end md:col-span-4 xl:col-span-1 xl:self-end">
                     <button

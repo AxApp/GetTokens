@@ -1,4 +1,5 @@
 import { useMemo, type RefObject } from 'react';
+import { Input } from 'antd';
 import { useI18n } from '../../../../context/I18nContext';
 import type { main } from '../../../../../wailsjs/go/models';
 
@@ -110,7 +111,7 @@ export function RotationConfigSection({
             {t('status.routing_session_affinity_ttl')}
           </span>
           <div className={rotationConfigInputShellClass}>
-            <input
+            <Input
               value={routingDraft.sessionAffinityTTL}
               onChange={(event) =>
                 setRoutingDraft((prev) => (prev ? { ...prev, sessionAffinityTTL: event.target.value } : prev))
@@ -126,7 +127,7 @@ export function RotationConfigSection({
             {t('status.routing_request_retry')}
           </span>
           <div className={rotationConfigInputShellClass}>
-            <input
+            <Input
               value={String(routingDraft.requestRetry)}
               onChange={(event) =>
                 setRoutingDraft((prev) =>
@@ -148,7 +149,7 @@ export function RotationConfigSection({
             {t('status.routing_max_retry_credentials')}
           </span>
           <div className={rotationConfigInputShellClass}>
-            <input
+            <Input
               value={String(routingDraft.maxRetryCredentials)}
               onChange={(event) =>
                 setRoutingDraft((prev) =>
@@ -175,7 +176,7 @@ export function RotationConfigSection({
             {t('status.routing_max_retry_interval')}
           </span>
           <div className={rotationConfigInputShellClass}>
-            <input
+            <Input
               value={String(routingDraft.maxRetryInterval)}
               onChange={(event) =>
                 setRoutingDraft((prev) =>

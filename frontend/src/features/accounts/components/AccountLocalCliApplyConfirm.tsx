@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Input, Select } from 'antd';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import StatusSnippetPanel from '../../status/components/StatusSnippetPanel';
 import type {
@@ -267,15 +268,16 @@ export default function AccountLocalCliApplyConfirm({
                 <span className={accountLocalCliMetaClass}>
                   Auth Strategy
                 </span>
-                <select
+                <Select
                   value={draft.codex.authStrategy}
-                  onChange={(event) => handleCodexAuthStrategyChange(event.target.value as CodexAuthStrategy)}
+                  onChange={(val: string) => handleCodexAuthStrategyChange(val as CodexAuthStrategy)}
+                  options={[
+                    { value: 'replace_auth_with_apikey', label: '覆盖为 API Key' },
+                    { value: 'replace_auth_with_oauth', label: '覆盖为 OAuth' },
+                    { value: 'preserve_chatgpt_auth', label: '保留 ChatGPT Auth' },
+                  ]}
                   className={accountLocalCliInputClass}
-                >
-                  <option value="replace_auth_with_apikey">覆盖为 API Key</option>
-                  <option value="replace_auth_with_oauth">覆盖为 OAuth</option>
-                  <option value="preserve_chatgpt_auth">保留 ChatGPT Auth</option>
-                </select>
+                />
               </label>
               <ReadOnlyCodexSetting label="本地 auth 状态" value={draft.codex.localAuthStatus || '未检测到本地 auth 状态'} />
               <ReadOnlyCodexSetting label="Wire API" value={draft.codex.wireAPI || 'responses'} />
@@ -366,14 +368,15 @@ export default function AccountLocalCliApplyConfirm({
                 <span className={accountLocalCliMetaClass}>
                   AUTH FIELD
                 </span>
-                <select
+                <Select
                   value={draft.claude.authField}
-                  onChange={(event) => handleClaudeAuthFieldChange(event.target.value as ClaudeDraft['authField'])}
+                  onChange={(val: string) => handleClaudeAuthFieldChange(val as ClaudeDraft['authField'])}
+                  options={[
+                    { value: 'ANTHROPIC_API_KEY', label: 'ANTHROPIC_API_KEY' },
+                    { value: 'ANTHROPIC_AUTH_TOKEN', label: 'ANTHROPIC_AUTH_TOKEN' },
+                  ]}
                   className={accountLocalCliInputClass}
-                >
-                  <option value="ANTHROPIC_API_KEY">ANTHROPIC_API_KEY</option>
-                  <option value="ANTHROPIC_AUTH_TOKEN">ANTHROPIC_AUTH_TOKEN</option>
-                </select>
+                />
               </label>
               <label className="flex items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-primary)]">
                 <input
@@ -452,13 +455,21 @@ function ClaudeSettingsField({
       <span className={accountLocalCliMetaClass}>
         {label}
       </span>
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(field, event.target.value)}
-        className={accountLocalCliInputClass}
-      />
+      {type === 'password' ? (
+        <Input.Password
+          value={value}
+          placeholder={placeholder}
+          onChange={(event) => onChange(field, event.target.value)}
+          className={accountLocalCliInputClass}
+        />
+      ) : (
+        <Input
+          value={value}
+          placeholder={placeholder}
+          onChange={(event) => onChange(field, event.target.value)}
+          className={accountLocalCliInputClass}
+        />
+      )}
     </label>
   );
 }
@@ -481,8 +492,7 @@ function CodexSettingsField({
       <span className={accountLocalCliMetaClass}>
         {label}
       </span>
-      <input
-        type="text"
+      <Input
         value={value}
         list={listID}
         onChange={(event) => onChange(field, event.target.value)}
