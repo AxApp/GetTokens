@@ -1,4 +1,5 @@
 import { type DragEvent } from 'react';
+import { X } from 'lucide-react';
 import { useI18n } from '../../../context/I18nContext';
 import type { AccountRecord } from '../../../types';
 import type { CodexQuotaState } from '../model/types';
@@ -25,7 +26,7 @@ const accountRotationModalSectionTitleClass =
 const accountRotationModalMetaClass =
   'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const accountRotationModalCloseButtonClass =
-  'inline-flex h-9 w-9 items-center justify-center rounded-md border border-transparent text-lg font-semibold text-[var(--gt-ink-muted)] transition hover:border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,transparent)] hover:text-[var(--gt-status-danger)]';
+  '!absolute right-4 top-4 !z-10 !grid !h-8 !w-8 !min-w-8 !place-items-center !rounded-md !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !text-[var(--gt-ink-muted)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] hover:!text-[var(--gt-ink-primary)]';
 const accountRotationModalButtonClass =
   'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-45';
 const accountRotationModalPrimaryButtonClass =
@@ -93,8 +94,8 @@ export default function AccountRotationModal({
               <span className={accountRotationModalMetaClass}>{routingMessage}</span>
             </div>
           </div>
-          <button type="button" onClick={onClose} className={accountRotationModalCloseButtonClass} aria-label={t('common.cancel')}>
-            ×
+          <button type="button" onClick={onClose} className={accountRotationModalCloseButtonClass} aria-label={t('common.close')}>
+            <X size={14} />
           </button>
         </header>
 

@@ -904,9 +904,9 @@ export default function StatusFeature({
           }))
       );
       const catalogMessage = result.existingExternalModelCatalogPath
-        ? ` / 保留外部 model_catalog_json：${result.existingExternalModelCatalogPath}`
+        ? ` / ${t('status.model_catalog_kept_external', { path: result.existingExternalModelCatalogPath })}`
         : result.modelCatalogPath
-          ? ` / /model 同步：${result.modelCatalogPath}，重启 Codex 后生效`
+          ? ` / ${t('status.model_catalog_synced', { path: result.modelCatalogPath })}，${t('status.model_catalog_restart_required')}`
           : '';
       const warningMessage = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';
       setLocalApplyMessage(`${t('status.apply_local_done')}: ${result.codexHomePath}${catalogMessage}${warningMessage}`);
@@ -981,8 +981,8 @@ export default function StatusFeature({
         { args: [] },
         () => DisableGetTokensCodexModelCatalogProjection()
       );
-      const restartMessage = result.modelCatalogRequiresRestart ? '，重启 Codex 后生效' : '';
-      setLocalApplyMessage(`已停用 GetTokens /model 同步：${result.configPath}${restartMessage}`);
+      const restartMessage = result.modelCatalogRequiresRestart ? `，${t('status.model_catalog_restart_required')}` : '';
+      setLocalApplyMessage(`${t('status.model_catalog_disabled', { path: result.configPath })}${restartMessage}`);
       return true;
     } catch (error) {
       console.error(error);
@@ -1004,10 +1004,10 @@ export default function StatusFeature({
       );
       if (result.existingExternalModelCatalogPath) {
         const warningMessage = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';
-        setLocalApplyMessage(`保留外部 model_catalog_json：${result.existingExternalModelCatalogPath}${warningMessage}`);
+        setLocalApplyMessage(`${t('status.model_catalog_kept_external', { path: result.existingExternalModelCatalogPath })}${warningMessage}`);
         return false;
       }
-      setLocalApplyMessage(`/model 同步已启用：${result.modelCatalogPath || result.configPath}，重启 Codex 后生效`);
+      setLocalApplyMessage(`${t('status.model_catalog_enabled', { path: result.modelCatalogPath || result.configPath })}，${t('status.model_catalog_restart_required')}`);
       return true;
     } catch (error) {
       console.error(error);
@@ -1028,7 +1028,7 @@ export default function StatusFeature({
       return true;
     } catch (error) {
       console.error(error);
-      setLocalApplyMessage(`sync_model_catalog 保存失败：${toErrorMessage(error)}`);
+      setLocalApplyMessage(t('status.model_catalog_sync_save_failed', { error: toErrorMessage(error) }));
       return false;
     }
   }
@@ -1142,7 +1142,7 @@ export default function StatusFeature({
         : statusBadgeState === 'processing'
           ? 'blue'
           : 'default';
-  const runtimeLabel = hasWailsAppBindings() ? 'Wails runtime' : 'browser runtime';
+  const runtimeLabel = hasWailsAppBindings() ? t('status.runtime_wails') : t('status.runtime_browser');
   const statusDisplayValue = statusHeadline === runtimeLabel ? healthz : statusHeadline;
   return (
     <div className={statusPageShellClass} data-collaboration-id="PAGE_STATUS">

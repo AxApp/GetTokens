@@ -109,7 +109,7 @@ function CodexAccountDetailDesktopDraft() {
     <ModalViewport>
       <AccountDetailModalFrame
         onClose={() => undefined}
-        header={<CodexAccountDetailHeader row={row} t={t} onClose={() => undefined} />}
+        header={<CodexAccountDetailHeader row={row} t={t} />}
         footer={
           <>
             <div className="min-w-0 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">

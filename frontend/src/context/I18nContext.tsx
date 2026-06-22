@@ -3,10 +3,15 @@ import zh from '../locales/zh.json';
 import en from '../locales/en.json';
 import type { LocaleCode, TranslationTree, TranslationValue } from '../types';
 
+type TFunction = {
+  (key: string): string;
+  (key: string, params: Record<string, string | number>): string;
+};
+
 interface I18nContextValue {
   locale: LocaleCode;
   setLocale: (value: LocaleCode) => void;
-  t: (key: string) => string;
+  t: TFunction;
 }
 
 const locales: Record<LocaleCode, TranslationTree> = {
@@ -36,7 +41,7 @@ export function I18nProvider({ children }: { children?: ReactNode }) {
   }, []);
 
   const t = useCallback(
-    (key: string) => {
+    ((key: string, params?: Record<string, string | number>) => {
       const keys = key.split('.');
       let value: TranslationValue | undefined = locales[locale];
 
@@ -48,8 +53,16 @@ export function I18nProvider({ children }: { children?: ReactNode }) {
         }
       }
 
-      return resolveTranslation(value, key);
-    },
+      const resolved = resolveTranslation(value, key);
+      if (!params) {
+        return resolved;
+      }
+
+      return Object.entries(params).reduce(
+        (result, [paramKey, paramValue]) => result.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue)),
+        resolved,
+      );
+    }) as TFunction,
     [locale]
   );
 

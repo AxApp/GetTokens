@@ -1,4 +1,4 @@
-import { Settings2, X } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 import { useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import type {
@@ -21,9 +21,6 @@ interface ProjectCandidatePoolRulesModalProps {
   onRulesChange: (rules: ProjectCandidatePoolRuleLike[]) => void;
   onPreviewRule?: (rule: ProjectCandidatePoolRuleLike) => void;
 }
-
-const projectCandidateRulesModalButtonClass =
-  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)]';
 
 export default function ProjectCandidatePoolRulesModal({
   channel,
@@ -58,18 +55,7 @@ export default function ProjectCandidatePoolRulesModal({
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <div ref={setPrimaryActionSlot} className="flex shrink-0 items-center" />
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="关闭项目配置"
-              className={projectCandidateRulesModalButtonClass}
-            >
-              <X className="h-3.5 w-3.5" strokeWidth={3} />
-              关闭
-            </button>
-          </div>
+          <div ref={setPrimaryActionSlot} className="flex shrink-0 items-center" />
         </div>
       }
       bodyClassName="flex min-h-0 flex-col overflow-x-hidden p-4 sm:p-5"

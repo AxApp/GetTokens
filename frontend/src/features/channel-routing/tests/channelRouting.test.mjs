@@ -1559,7 +1559,7 @@ test('ProjectCandidatePoolRulesPanel stays flat inside the project config modal'
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-danger/);
-  assert.match(modalSource, /const projectCandidateRulesModalButtonClass =/);
+  assert.doesNotMatch(modalSource, /const projectCandidateRulesModalButtonClass =/);
   assert.match(modalSource, /data-project-candidate-rules-modal-header/);
   assert.match(source, /projectOptions\.map/);
   assert.match(source, /请选择历史项目/);

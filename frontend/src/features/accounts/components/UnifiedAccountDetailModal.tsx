@@ -281,7 +281,6 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
       <AccountDetailLayout
         sectionNavItems={sectionNavItems}
         header={<AccountDetailHeader {...props} />}
-        onClose={props.onClose}
         localCliActions={props.localCliActions}
       >
         {modulePlan.map((moduleID) => (

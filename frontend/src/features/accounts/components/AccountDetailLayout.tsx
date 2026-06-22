@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Button } from 'antd';
-import { X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Button, Menu } from 'antd';
+import type { MenuProps } from 'antd';
 import type { AccountDetailLocalCliAction } from './AccountDetailSections';
 
 export interface AccountDetailSectionNavItem {
@@ -8,8 +8,6 @@ export interface AccountDetailSectionNavItem {
   title: string;
 }
 
-const accountDetailLayoutCloseButtonClass =
-  '!absolute right-4 top-4 !z-10 !grid !h-8 !w-8 !min-w-8 !place-items-center !rounded-md !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !text-[var(--gt-ink-muted)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] hover:!text-[var(--gt-ink-primary)]';
 const accountDetailNavLocalActionsClass =
   'border-t border-[var(--gt-border-subtle)] px-3 py-3';
 const accountDetailNavLocalActionButtonClass =
@@ -30,6 +28,15 @@ function SectionNav({
   header?: ReactNode;
   localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
 }) {
+  const menuItems = useMemo<MenuProps['items']>(
+    () => items.map((item) => ({ key: item.id, label: item.title })),
+    [items],
+  );
+
+  const handleMenuClick: MenuProps['onClick'] = (info) => {
+    onSelect(info.key);
+  };
+
   return (
     <nav
       className="flex w-[200px] shrink-0 flex-col border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]"
@@ -40,25 +47,25 @@ function SectionNav({
           {header}
         </div>
       )}
-      <div className="flex-1 overflow-y-auto py-2">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSelect(item.id)}
-            className={`w-full px-4 py-2 text-left text-sm transition duration-75 ${
-              activeId === item.id
-                ? 'bg-[var(--gt-surface-muted)] font-normal text-[var(--gt-ink-primary)]'
-                : 'text-[var(--gt-ink-secondary)] hover:bg-[var(--gt-surface-muted)]'
-            }`}
-            style={{ fontFamily: 'var(--gt-font-family-sans)' }}
-          >
-            {item.title}
-          </button>
-        ))}
+      <div className="flex-1 overflow-y-auto py-1">
+        <Menu
+          mode="inline"
+          selectable
+          items={menuItems}
+          selectedKeys={[activeId]}
+          onClick={handleMenuClick}
+          data-account-detail-section-nav="antd"
+          style={{
+            borderInlineEnd: 0,
+            background: 'transparent',
+            fontFamily: 'var(--gt-font-family-sans)',
+            fontSize: 14,
+            userSelect: 'text',
+          }}
+        />
       </div>
       {localCliActions.length > 0 ? (
-        <div data-account-detail-nav-local-cli-actions className={accountDetailNavLocalActionsClass}>
+        <div data-account-detail-nav-local-cli-actions className={accountDetailNavLocalActionsClass} style={{ userSelect: 'text' }}>
           {localCliActions.map((action) => (
             <Button
               key={action.id}
@@ -92,13 +99,11 @@ function SectionNav({
 export function AccountDetailLayout({
   sectionNavItems,
   header,
-  onClose,
   localCliActions,
   children,
 }: {
   sectionNavItems: AccountDetailSectionNavItem[];
   header?: ReactNode;
-  onClose: () => void;
   localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
   children: ReactNode;
 }) {
@@ -164,7 +169,7 @@ export function AccountDetailLayout({
         style={{ userSelect: 'text' }}
       >
         <div
-          className="relative mx-auto max-w-[42rem] space-y-6 px-8 py-6 pr-16"
+          className="mx-auto max-w-[42rem] space-y-6 px-8 py-6"
           style={{
             fontFamily: 'var(--gt-font-family-sans)',
             fontSize: 'var(--gt-font-size-lg)',
@@ -173,18 +178,6 @@ export function AccountDetailLayout({
             userSelect: 'text',
           }}
         >
-          <Button
-            data-account-detail-layout-close="true"
-            htmlType="button"
-            type="text"
-            shape="circle"
-            size="small"
-            aria-label="关闭面板"
-            title="关闭面板"
-            onClick={onClose}
-            icon={<X className="h-4 w-4" aria-hidden="true" />}
-            className={accountDetailLayoutCloseButtonClass}
-          />
           {children}
         </div>
       </div>

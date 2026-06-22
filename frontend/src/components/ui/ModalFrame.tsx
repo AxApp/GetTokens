@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { Modal } from 'antd';
 import type { ModalProps } from 'antd';
+import { X } from 'lucide-react';
 
 type ModalFrameSize = 'sm' | 'md' | 'lg' | 'xl' | 'detail';
 type ModalFramePosition = 'fixed' | 'absolute';
@@ -89,6 +90,7 @@ export default function ModalFrame({
     root: 'm-0 p-0',
     container: `flex w-full min-w-0 ${sizeClassNames[size]} ${panelViewportClassName} flex-col overflow-hidden rounded-lg border bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] ${panelClassName}`,
     body: 'flex min-h-0 flex-1 flex-col overflow-hidden !p-0',
+    close: '!absolute !right-4 !top-4 !z-10 !grid !h-8 !w-8 !min-w-8 !place-items-center !rounded-md !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !text-[var(--gt-ink-muted)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] hover:!text-[var(--gt-ink-primary)]',
   };
   const modalStyles: ModalProps['styles'] = {
     mask: {
@@ -142,7 +144,7 @@ export default function ModalFrame({
   return (
     <Modal
       open
-      closable={false}
+      closable={{ closeIcon: <X size={14} /> }}
       footer={null}
       title={null}
       width={modalWidths[size]}

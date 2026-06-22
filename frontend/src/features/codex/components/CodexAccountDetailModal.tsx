@@ -1,4 +1,4 @@
-import { Plus, RefreshCw, Trash2, X } from 'lucide-react';
+import { Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import AccountDetailModalFrame from '../../accounts/components/AccountDetailModalFrame';
 import {
@@ -81,11 +81,9 @@ const codexModelRoutingStatusClass =
 export function CodexAccountDetailHeader({
   row,
   t,
-  onClose,
 }: {
   row: CodexAccountRow;
   t: (key: string) => string;
-  onClose: () => void;
 }) {
   const endpointLabel = buildEndpointLabel(row);
 
@@ -124,10 +122,6 @@ export function CodexAccountDetailHeader({
           />
         </dl>
       </div>
-
-      <button type="button" onClick={onClose} className={codexAccountDetailIconButtonClass} aria-label={t('common.close')}>
-        <X className="h-4 w-4" strokeWidth={2.5} />
-      </button>
     </div>
   );
 }
@@ -406,7 +400,7 @@ export function CodexAccountDetailModal({
   return (
     <AccountDetailModalFrame
       onClose={onClose}
-      header={<CodexAccountDetailHeader row={row} t={t} onClose={onClose} />}
+      header={<CodexAccountDetailHeader row={row} t={t} />}
       footer={
         isApiLikeAccount || editableModelMappings || rateLimitDirty ? (
           <div data-codex-account-detail-footer className={codexAccountDetailFooterClass}>

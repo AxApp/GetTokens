@@ -71,7 +71,7 @@ test('account detail section nav exposes local CLI apply actions from the accoun
   assert.doesNotMatch(footerSource, /data-account-detail-local-cli-actions/);
 });
 
-test('account detail layout renders close as a top-right icon action', async () => {
+test('account detail layout delegates close to ModalFrame', async () => {
   const layoutSource = await readFile(new URL('../components/AccountDetailLayout.tsx', import.meta.url), 'utf8');
   const sectionsSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
@@ -80,16 +80,11 @@ test('account detail layout renders close as a top-right icon action', async () 
   const layoutReturnSource = sourceBlock(layoutComponentSource, 'return (', ');\n}');
 
   assert.match(layoutSource, /import \{ Button \} from 'antd'/);
-  assert.match(layoutSource, /import \{ X \} from 'lucide-react'/);
-  assert.match(layoutSource, /onClose:\s*\(\) => void/);
-  assert.match(layoutReturnSource, /data-account-detail-layout-close/);
-  assert.match(layoutReturnSource, /<Button[\s\S]*shape="circle"/);
-  assert.match(layoutReturnSource, /type="text"/);
-  assert.match(layoutReturnSource, /icon=\{<X/);
-  assert.match(layoutReturnSource, /aria-label="关闭面板"/);
-  assert.match(layoutReturnSource, /onClick=\{onClose\}/);
-  assert.match(layoutSource, /!absolute right-4 top-4/);
-  assert.match(modalSource, /<AccountDetailLayout[\s\S]*onClose=\{props\.onClose\}/);
+  assert.doesNotMatch(layoutSource, /import \{ X \} from 'lucide-react'/);
+  assert.doesNotMatch(layoutSource, /onClose:\s*\(\) => void/);
+  assert.doesNotMatch(layoutReturnSource, /data-account-detail-layout-close/);
+  assert.doesNotMatch(layoutReturnSource, /aria-label="关闭面板"/);
+  assert.doesNotMatch(modalSource, /<AccountDetailLayout[\s\S]*onClose=\{props\.onClose\}/);
   assert.doesNotMatch(footerSource, /onClose/);
   assert.doesNotMatch(footerSource, /data-account-detail-footer-leading-actions/);
 });
