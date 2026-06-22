@@ -112,6 +112,7 @@ export function buildGetTokensAntdTheme(_input?: GetTokensAntdThemeInput): Theme
         borderRadius: 6,
         controlHeight: 32,
         controlHeightSM: 24,
+        colorBgContainer: 'color-mix(in srgb, var(--gt-surface-muted) 54%, transparent)',
         itemActiveBg: palette.primary,
         itemColor: palette.textSecondary,
         itemHoverBg: palette.primarySoft,
