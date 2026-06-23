@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { Button, Segmented, Space } from 'antd';
+import { Button, Dropdown, Segmented } from 'antd';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
 import type { SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from '../../types';
@@ -10,14 +10,13 @@ import {
 } from './hooks/useUsageDeskFeature';
 import {
   usageDeskProjectedActionImpacts,
-  usageDeskProjectedSurfaceViewOptions,
   type UsageDeskProjectedSurfaceView,
   type UsageDeskRangeOption,
   type UsageDeskResolution,
 } from './model/usageDesk';
 import { UsageChartCard } from './components/usage-desk/UsageDeskChart';
 import { UsageDetailTable } from './components/usage-desk/UsageDetailTable';
-import { StatePanel, UsageDeskEvidenceStatus, UsageProjectDrilldownPanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
+import { StatePanel, UsageProjectDrilldownPanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
 
 const usageDeskPageShellClass = 'h-full w-full overflow-auto bg-[var(--gt-surface-page)]';
 const usageDeskHeaderSubtitleClass =
@@ -25,13 +24,6 @@ const usageDeskHeaderSubtitleClass =
 const usageDeskProjectedProgressClass =
   'text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const usageDeskStickyChartShellClass = 'sticky top-0 z-20 -mx-12 bg-[var(--gt-surface-page)] px-12 pb-3 pt-3';
-const usageDeskSourceToggleClass = (active: boolean) =>
-  [
-    'h-9 rounded border px-3 text-[length:var(--gt-font-size-sm)] font-semibold transition-colors',
-    active
-      ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
-      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]',
-  ].join(' ');
 
 export default function UsageDeskFeature({
   sidecarStatus,
@@ -72,8 +64,6 @@ export default function UsageDeskFeature({
     projectedDrilldownDayKey,
     observedSummaryItems,
     projectedSummaryItems,
-    observedStatusEvidence,
-    projectedStatusEvidence,
     projectedChartUnit,
     projectedPrimaryChartPoints,
     selectedProjectedProjectUsages,
@@ -134,28 +124,16 @@ export default function UsageDeskFeature({
           subtitle={pageDescription}
           subtitleClassName={usageDeskHeaderSubtitleClass}
           actions={
-            <>
-              <button
-                type="button"
-                onClick={() => setSource('observed')}
-                className={usageDeskSourceToggleClass(source === 'observed')}
-                aria-pressed={source === 'observed'}
-                data-usage-desk-source-toggle="observed"
-              >
-                Sidecar 归因
-              </button>
-              {supportsProjectedUsage ? (
-                <button
-                  type="button"
-                  onClick={() => setSource('projected')}
-                  className={usageDeskSourceToggleClass(source === 'projected')}
-                  aria-pressed={source === 'projected'}
-                  data-usage-desk-source-toggle="projected"
-                >
-                  本地文件投影
-                </button>
-              ) : null}
-            </>
+            <Segmented
+              size="small"
+              value={source}
+              onChange={(value) => setSource(value as 'observed' | 'projected')}
+              options={[
+                { label: t('usage.observed_source'), value: 'observed' },
+                ...(supportsProjectedUsage ? [{ label: t('usage.projected_source'), value: 'projected' }] : []),
+              ]}
+              data-usage-desk-source-toggle="true"
+            />
           }
         />
 
@@ -180,7 +158,6 @@ export default function UsageDeskFeature({
                             compactProgress={stickyProgress}
                             unit="count"
                             summaryItems={observedSummaryItems}
-                            status={observedStatusEvidence ? <UsageDeskEvidenceStatus evidence={observedStatusEvidence} /> : undefined}
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"
@@ -243,7 +220,6 @@ export default function UsageDeskFeature({
                             compactProgress={stickyProgress}
                             unit={projectedChartUnit}
                             summaryItems={projectedSummaryItems}
-                            status={projectedStatusEvidence ? <UsageDeskEvidenceStatus evidence={projectedStatusEvidence} /> : undefined}
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"
@@ -325,6 +301,7 @@ function UsageDeskObservedControls({
   onResolutionSelect: (option: UsageDeskResolution) => void;
   onViewScaleChange: (scale: UsageDeskViewScale) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <UsageDeskRangeResolutionControl
@@ -339,8 +316,8 @@ function UsageDeskObservedControls({
         size="small"
         value={viewScale}
         options={[
-          { label: '天级趋势', value: 'daily' },
-          { label: '分钟明细', value: 'minute' },
+          { label: t('accounts.usage_view_daily'), value: 'daily' },
+          { label: t('accounts.usage_view_minute'), value: 'minute' },
         ]}
         onChange={(value) => onViewScaleChange(value as UsageDeskViewScale)}
       />
@@ -381,6 +358,7 @@ function UsageDeskProjectedControls({
   onRebuildProjectedUsage: () => Promise<void>;
   onRebuildProjectedUsageDay: (dayKey: string | null) => Promise<void>;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <UsageDeskRangeResolutionControl
@@ -391,38 +369,63 @@ function UsageDeskProjectedControls({
         onResolutionSelect={onResolutionSelect}
       />
 
-      <Space size={8} wrap>
-        <Segmented
-          size="small"
-          value={projectedSurfaceView === 'chart' ? viewScale : projectedSurfaceView}
-          options={usageDeskProjectedSurfaceViewOptions.map((option) => ({ label: option.label, value: option.id }))}
-          onChange={(value) => onSurfaceViewChange(value as UsageDeskProjectedSurfaceView)}
-        />
-        <Segmented
-          size="small"
-          value={projectedChartMetric}
-          options={[
-            { label: 'Tokens', value: 'tokens' },
-            { label: '请求数', value: 'requests' },
-          ]}
-          onChange={(value) => onMetricChange(value as UsageDeskMetric)}
-        />
-        {usageDeskProjectedActionImpacts.map((action) => {
-          const disabled = projectedLoading || (action.id === 'rebuild-day' && !selectedDayKey);
-          const handleClick =
-            action.id === 'refresh'
-              ? () => void onRefreshProjectedUsage()
-              : action.id === 'rebuild-day'
-                ? () => void onRebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)
-                : () => void onRebuildProjectedUsage();
-
-          return (
-            <Button key={action.id} size="small" onClick={handleClick} disabled={disabled} title={action.description}>
-              {action.label}
-            </Button>
-          );
-        })}
-      </Space>
+      <Dropdown
+        menu={{
+          items: [
+            {
+              key: 'view',
+              label: t('accounts.usage_view'),
+              type: 'group',
+              children: [
+                { key: 'daily', label: t('accounts.usage_view_daily') },
+                { key: 'minute', label: t('accounts.usage_view_minute') },
+                { key: 'projects', label: t('accounts.usage_surface_projects') },
+                { key: 'sessions', label: t('accounts.usage_surface_sessions') },
+              ],
+            },
+            ...(projectedSurfaceView === 'chart' ? [{
+              key: 'metric',
+              label: t('accounts.usage_metric'),
+              type: 'group' as const,
+              children: [
+                { key: 'tokens', label: 'Tokens' },
+                { key: 'requests', label: t('accounts.usage_metric_requests') },
+              ],
+            }] : []),
+            { type: 'divider' },
+            ...usageDeskProjectedActionImpacts.map((action) => ({
+              key: action.id,
+              label: action.label,
+              disabled: projectedLoading || (action.id === 'rebuild-day' && !selectedDayKey),
+            })),
+          ],
+          selectedKeys: [
+            projectedSurfaceView === 'chart' ? viewScale : projectedSurfaceView,
+            ...(projectedSurfaceView === 'chart' ? [projectedChartMetric] : []),
+          ],
+          onClick: ({ key }) => {
+            if (key === 'daily' || key === 'minute' || key === 'projects' || key === 'sessions') {
+              onSurfaceViewChange(key as UsageDeskProjectedSurfaceView);
+            } else if (key === 'tokens' || key === 'requests') {
+              onMetricChange(key as UsageDeskMetric);
+            } else if (key === 'refresh') {
+              void onRefreshProjectedUsage();
+            } else if (key === 'rebuild-day') {
+              void onRebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey);
+            } else if (key === 'rebuild-all') {
+              void onRebuildProjectedUsage();
+            }
+          },
+        }}
+        trigger={['click']}
+      >
+        <Button size="small" disabled={projectedLoading}>
+          {projectedSurfaceView === 'chart'
+            ? (viewScale === 'daily' ? t('accounts.usage_view_daily') : t('accounts.usage_view_minute'))
+            : (projectedSurfaceView === 'projects' ? t('accounts.usage_surface_projects') : t('accounts.usage_surface_sessions'))
+          }
+        </Button>
+      </Dropdown>
     </div>
   );
 }
@@ -440,12 +443,13 @@ function UsageDeskRangeResolutionControl({
   onRangeSelect: (option: UsageDeskRangeOption) => void;
   onResolutionSelect: (option: UsageDeskResolution) => void;
 }) {
+  const { t } = useI18n();
   if (viewScale === 'daily') {
     return (
       <Segmented
         size="small"
         value={range}
-        options={rangeOptions.map((option) => ({ label: formatUsageDeskRangeLabel(option), value: option }))}
+        options={rangeOptions.map((option) => ({ label: formatUsageDeskRangeLabel(option, t), value: option }))}
         onChange={(value) => onRangeSelect(value as UsageDeskRangeOption)}
       />
     );
@@ -461,8 +465,8 @@ function UsageDeskRangeResolutionControl({
   );
 }
 
-function formatUsageDeskRangeLabel(option: UsageDeskRangeOption) {
-  return option === 'TODAY' ? '今日' : option === '7D' ? '7天' : option === '14D' ? '14天' : option === '30D' ? '30天' : option;
+function formatUsageDeskRangeLabel(option: UsageDeskRangeOption, t: (key: string) => string) {
+  return option === 'TODAY' ? t('accounts.usage_range_today') : option === '7D' ? t('accounts.usage_range_7d') : option === '14D' ? t('accounts.usage_range_14d') : option === '30D' ? t('accounts.usage_range_30d') : option;
 }
 
 function formatUsageDeskResolutionLabel(option: UsageDeskResolution) {

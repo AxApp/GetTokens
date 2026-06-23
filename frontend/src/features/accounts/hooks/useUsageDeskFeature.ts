@@ -574,7 +574,25 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   const activeDetailColumns = useMemo(() => resolveUsageDetailColumns(activeDetailRows), [activeDetailRows]);
 
   const selectedProjectedSessionUsages = useMemo<UsageDeskProjectedSessionUsage[]>(() => {
-    if (source !== 'projected' || !selectedDetailRowKey) {
+    if (source !== 'projected') {
+      return [];
+    }
+
+    // When viewing projects/sessions without a specific row selection, aggregate all visible days
+    if (projectedSurfaceView === 'projects' || projectedSurfaceView === 'sessions') {
+      if (!selectedDetailRowKey) {
+        const allSessions: UsageDeskProjectedSessionUsage[] = [];
+        for (const point of visibleProjectedDailyPoints) {
+          const sessions = projectedSnapshot.sessionUsageByDayKey[point.dayKey];
+          if (sessions) {
+            allSessions.push(...sessions);
+          }
+        }
+        return allSessions;
+      }
+    }
+
+    if (!selectedDetailRowKey) {
       return [];
     }
     const selectedRow = activeDetailRows.find((row) => buildUsageDetailRowKey(row) === selectedDetailRowKey);
@@ -589,7 +607,7 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
 
     const dayKey = 'drilldownDayKey' in selectedRow ? selectedRow.drilldownDayKey : undefined;
     return dayKey ? (projectedSnapshot.sessionUsageByDayKey[dayKey] ?? []) : [];
-  }, [activeDetailRows, projectedDrilldownDayKey, projectedSnapshot.sessionUsageByBucket, projectedSnapshot.sessionUsageByDayKey, selectedDetailRowKey, source]);
+  }, [activeDetailRows, projectedDrilldownDayKey, projectedSurfaceView, projectedSnapshot.sessionUsageByBucket, projectedSnapshot.sessionUsageByDayKey, selectedDetailRowKey, source, visibleProjectedDailyPoints]);
 
   const selectedProjectedProjectUsages = useMemo<UsageDeskProjectedProjectUsage[]>(
     () => buildUsageDeskProjectedProjectUsageRows(selectedProjectedSessionUsages),

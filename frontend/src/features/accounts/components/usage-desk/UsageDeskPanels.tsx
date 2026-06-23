@@ -5,7 +5,6 @@ import {
   usageDeskSessionDrilldownColumnLabels,
   type UsageDeskProjectedProjectUsage,
   type UsageDeskProjectedSessionUsage,
-  type UsageDeskStatusEvidence,
 } from '../../model/usageDesk';
 
 const usageDeskPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
@@ -42,74 +41,6 @@ export function InfoCard({ title, highlight, body }: { title: string; highlight:
       <div className={usageDeskMetaClass}>{title}</div>
       <div className="mt-3 text-[length:var(--gt-font-size-4xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">{highlight}</div>
       <p className="mt-3 text-[length:var(--gt-font-size-md-compact)] leading-6 text-[var(--gt-ink-muted)]">{body}</p>
-    </div>
-  );
-}
-
-export function UsageDeskEvidenceStatus({ evidence }: { evidence: UsageDeskStatusEvidence }) {
-  if (!('view' in evidence)) {
-    return (
-      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3" data-usage-desk-evidence-status="missing-quota-fact">
-        <div className="min-w-0 flex-1">
-          <div className={usageDeskMetaClass}>
-            NON-AUTHORITATIVE
-          </div>
-          <div className={`mt-1 ${usageDeskStrongMetaClass}`}>
-            {evidence.title}
-          </div>
-          <div className={`mt-1 ${usageDeskMetaClass}`}>
-            {evidence.summary}
-          </div>
-          <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-semibold leading-5 text-[var(--gt-ink-muted)]">
-            {evidence.description}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const metaItems = [
-    evidence.view.stateLabel,
-    evidence.view.sourceLabel,
-    evidence.view.freshnessLabel,
-    evidence.view.confidenceLabel,
-    evidence.view.riskLabel,
-  ];
-  const evidenceRefsTitle = evidence.view.evidenceRefs.join('\n');
-
-  return (
-    <div className="flex min-w-0 flex-1 flex-wrap items-start gap-3" data-usage-desk-evidence-status="quota-fact">
-      <div className="min-w-0 flex-1">
-        <div className="text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
-          {evidence.title}
-        </div>
-        <div className={`mt-1 ${usageDeskStrongMetaClass}`}>
-          {evidence.summary}
-        </div>
-        {evidence.view.explanation ? (
-          <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-semibold leading-5 text-[var(--gt-ink-muted)]">
-            {evidence.view.explanation}
-          </div>
-        ) : null}
-      </div>
-      <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
-        {metaItems.map((item) => (
-          <span
-            key={item}
-            className={usageDeskBadgeClass}
-          >
-            {item}
-          </span>
-        ))}
-        {evidence.view.evidenceRefs.length > 0 ? (
-          <span
-            title={evidenceRefsTitle}
-            className={usageDeskBadgeClass}
-          >
-            refs {evidence.view.evidenceRefs.length}
-          </span>
-        ) : null}
-      </div>
     </div>
   );
 }
@@ -190,16 +121,6 @@ export function UsageProjectDrilldownPanel({
 }) {
   return (
     <section data-usage-desk-project-drilldown="true" className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden bg-[var(--gt-surface-canvas)]' : usageDeskPanelClass}`}>
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] px-4 py-3">
-        <div>
-          <div className={usageDeskMetaClass}>PROJECT TOTALS</div>
-          <h3 className="mt-1 text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">{title}</h3>
-        </div>
-        <div className={usageDeskCountBadgeClass}>
-          {new Intl.NumberFormat('zh-CN').format(rows.length)} 个项目
-        </div>
-      </div>
-
       {rows.length > 0 ? (
         <div className={`${embedded ? 'flex-1 overflow-auto' : 'overflow-x-auto'}`}>
           <table className="w-full min-w-[920px] border-collapse">

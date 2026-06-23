@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { Card, Divider, Empty, Space, Typography } from 'antd';
 import {
   buildUsageDeskChartPointStyle,
   buildUsageDeskChartValueScale,
@@ -8,25 +9,11 @@ import {
   type UsageDeskChartUnit,
 } from '../../model/usageDesk';
 
-const usageDeskChartShellClass =
-  'flex flex-col overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
-const usageDeskChartToolbarClass = 'flex flex-col border-b border-[var(--gt-border-subtle)]';
-const usageDeskChartStatusClass =
-  'flex items-center justify-between border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2';
-const usageDeskChartControlsClass = 'flex w-full items-center bg-[var(--gt-surface-canvas)]';
 const usageDeskChartSurfaceClass = 'overflow-x-auto overflow-y-hidden bg-[var(--gt-surface-canvas)]';
-const usageDeskChartFooterClass =
-  'flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
-const usageDeskChartFooterValueClass =
-  'text-[length:var(--gt-font-size-md-compact)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const usageDeskChartPointRingClass =
   'rounded-full border border-[var(--gt-surface-canvas)] transition-transform';
 const usageDeskChartAxisLabelClass =
   'absolute whitespace-nowrap font-semibold transition-all -translate-x-1/2 pointer-events-none';
-const usageDeskEmptyChartClass =
-  'relative overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
-const usageDeskEmptyChartTitleClass =
-  'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 
 export function UsageChartCard({
   rangeAnimationVersion = 0,
@@ -58,12 +45,27 @@ export function UsageChartCard({
   curveMotion?: UsageDeskCurveMotion;
 }) {
   return (
-    <div className={usageDeskChartShellClass} data-usage-desk-chart-card>
+    <Card
+      size="small"
+      variant="outlined"
+      className="overflow-hidden"
+      data-usage-desk-chart-card
+      styles={{ body: { padding: 0 } }}
+    >
       {status || controls ? (
-        <div className={usageDeskChartToolbarClass}>
-          {status && <div className={usageDeskChartStatusClass}>{status}</div>}
-          {controls && <div className={usageDeskChartControlsClass}>{controls}</div>}
-        </div>
+        <>
+          {status && (
+            <div className="bg-[var(--gt-surface-muted)] px-4 py-2">
+              {status}
+            </div>
+          )}
+          {status && controls && <Divider className="!my-0" />}
+          {controls && (
+            <div className="px-4 py-2">
+              {controls}
+            </div>
+          )}
+        </>
       ) : null}
 
       <div className="relative">
@@ -82,16 +84,25 @@ export function UsageChartCard({
       </div>
 
       {(summaryItems.length > 0 || footerExtra) && (
-        <footer className={usageDeskChartFooterClass}>
-          {summaryItems.map((item, idx) => (
-            <div key={idx} className="flex flex-col gap-1">
-              <span className={usageDeskChartFooterValueClass}>{item}</span>
-            </div>
-          ))}
-          {footerExtra && <div className="ml-auto">{footerExtra}</div>}
-        </footer>
+        <>
+          <Divider className="!my-0" />
+          <footer className="flex flex-wrap items-center gap-x-8 gap-y-2 bg-[var(--gt-surface-muted)] px-4 py-3">
+            <Space size={32} wrap>
+              {summaryItems.map((item, idx) => (
+                <Typography.Text
+                  key={idx}
+                  strong
+                  className="!text-[length:var(--gt-font-size-md-compact)]"
+                >
+                  {item}
+                </Typography.Text>
+              ))}
+            </Space>
+            {footerExtra && <div className="ml-auto">{footerExtra}</div>}
+          </footer>
+        </>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -437,19 +448,29 @@ export function EmptyChartPlaceholder({
   const chartHeight = 268 - 44 * progress;
 
   return (
-    <div
-      className={usageDeskEmptyChartClass}
+    <Card
+      size="small"
+      variant="outlined"
+      className="relative overflow-hidden"
       data-usage-desk-empty-chart
+      styles={{ body: { padding: 0, height: `${chartHeight}px` } }}
       style={{
-        height: `${chartHeight}px`,
         backgroundImage:
           'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid-strong) calc(25% - 1px), var(--color-chart-grid-strong) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid-strong) calc(50% - 1px), var(--color-chart-grid-strong) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid-strong) calc(75% - 1px), var(--color-chart-grid-strong) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, var(--color-chart-grid) 55px, var(--color-chart-grid) 56px)',
       }}
     >
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,var(--color-chart-empty-overlay-from),var(--color-chart-empty-overlay-to))] px-6 text-center">
-        <div className={usageDeskEmptyChartTitleClass}>{title}</div>
-        <p className="max-w-md text-[length:var(--gt-font-size-md-compact)] font-semibold leading-6 text-[var(--gt-ink-muted)]">{body}</p>
+      <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(180deg,var(--color-chart-empty-overlay-from),var(--color-chart-empty-overlay-to))]">
+        <Empty
+          description={
+            <Space direction="vertical" size={4} className="text-center">
+              <Typography.Text strong>{title}</Typography.Text>
+              <Typography.Text type="secondary" className="!text-[length:var(--gt-font-size-md-compact)]">
+                {body}
+              </Typography.Text>
+            </Space>
+          }
+        />
       </div>
-    </div>
+    </Card>
   );
 }

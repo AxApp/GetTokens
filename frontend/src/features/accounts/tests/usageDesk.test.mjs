@@ -90,9 +90,6 @@ test('usage desk chart header removes source and facet summary strip', async () 
   assert.match(featureSource, /t\('accounts\.usage_desk_claude_title'\)/);
   assert.doesNotMatch(featureSource, /usage-desk-index-overflow-section/);
   assert.match(featureSource, /title=\{action\.description\}/);
-  assert.match(featureSource, /status=\{observedStatusEvidence \?/);
-  assert.match(featureSource, /status=\{projectedStatusEvidence \?/);
-  assert.match(featureSource, /UsageDeskEvidenceStatus/);
   assert.match(zhLocaleSource, /"usage_desk_codex_title": "Codex 用量分析"/);
   assert.match(zhLocaleSource, /"usage_desk_claude_title": "Claude 用量分析"/);
   assert.match(enLocaleSource, /"usage_desk_codex_title": "Codex Usage Desk"/);
@@ -104,7 +101,6 @@ test('UsageDeskFeature uses the quiet workspace page shell', async () => {
 
   assert.match(featureSource, /const usageDeskPageShellClass =/);
   assert.match(featureSource, /const usageDeskHeaderSubtitleClass =/);
-  assert.match(featureSource, /const usageDeskSourceToggleClass =/);
   assert.match(featureSource, /const usageDeskStickyChartShellClass =/);
   assert.match(featureSource, /data-usage-desk-feature="quiet"/);
   assert.match(featureSource, /data-usage-desk-source-toggle/);
@@ -358,9 +354,7 @@ test('usage desk chart grid fills the scroll viewport', async () => {
 test('UsageDeskChart uses the quiet workspace shell', async () => {
   const chartSource = await readFile(new URL('../components/usage-desk/UsageDeskChart.tsx', import.meta.url), 'utf8');
 
-  assert.match(chartSource, /const usageDeskChartShellClass =/);
   assert.match(chartSource, /const usageDeskChartSurfaceClass =/);
-  assert.match(chartSource, /const usageDeskChartFooterClass =/);
   assert.match(chartSource, /const usageDeskChartPointRingClass =/);
   assert.match(chartSource, /data-usage-desk-chart-card/);
   assert.match(chartSource, /data-usage-desk-chart-surface/);
