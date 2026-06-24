@@ -9,7 +9,7 @@ export interface AccountDetailSectionNavItem {
 }
 
 const accountDetailNavLocalActionsClass =
-  'border-t border-[var(--gt-border-subtle)] px-3 py-3';
+  'select-text border-t border-[var(--gt-border-subtle)] px-3 py-3';
 const accountDetailNavLocalActionButtonClass =
   '!h-8 !w-full !rounded-md !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !px-3 !text-xs !font-semibold !text-[var(--gt-ink-primary)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] disabled:!cursor-not-allowed disabled:!opacity-45';
 
@@ -48,16 +48,11 @@ function SectionNav({
           selectedKeys={[activeId]}
           onClick={handleMenuClick}
           data-account-detail-section-nav="antd"
-          style={{
-            borderInlineEnd: 0,
-            background: 'transparent',
-            fontFamily: 'var(--gt-font-family-sans)',
-            userSelect: 'text',
-          }}
+          className="select-text !bg-transparent !font-sans ![border-inline-end:0]"
         />
       </div>
       {localCliActions.length > 0 ? (
-        <div data-account-detail-nav-local-cli-actions className={accountDetailNavLocalActionsClass} style={{ userSelect: 'text' }}>
+        <div data-account-detail-nav-local-cli-actions className={accountDetailNavLocalActionsClass}>
           {localCliActions.map((action) => (
             <Tooltip title={action.disabledReason || action.detail || action.label}>
               <Button
@@ -159,14 +154,10 @@ export function AccountDetailLayout({
       />
       <div
         ref={scrollRef}
-        className="min-w-0 flex-1 overflow-y-auto"
-        style={{ userSelect: 'text' }}
+        className="min-w-0 flex-1 select-text overflow-y-auto"
       >
         <div
-          className="mx-auto max-w-[42rem] space-y-6 px-8 pt-14 pb-6 font-sans text-[length:var(--gt-font-size-lg)] leading-[1.6] text-[var(--gt-ink-primary)]"
-          style={{
-            userSelect: 'text',
-          }}
+          className="mx-auto max-w-[42rem] select-text space-y-6 px-8 pt-14 pb-6 font-sans text-[length:var(--gt-font-size-lg)] leading-[1.6] text-[var(--gt-ink-primary)]"
         >
           {header}
           {notice}

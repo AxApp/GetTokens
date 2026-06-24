@@ -171,3 +171,29 @@ test('DesignSystemEntryFeature keeps inline styles limited to dynamic token demo
 
   assert.deepEqual(findings, []);
 });
+
+test('account detail shell keeps static selection and menu styling in classes', async () => {
+  const relativePaths = [
+    'features/accounts/components/AccountDetailLayout.tsx',
+    'features/accounts/components/AccountDetailPrimitives.tsx',
+  ];
+  const staticInlineStylePatterns = [
+    /userSelect:\s*'text'/,
+    /fontFamily:\s*'var\(--gt-font-family-sans\)'/,
+    /background:\s*'transparent'/,
+    /borderInlineEnd:\s*0/,
+  ];
+  const findings = [];
+
+  for (const relativePath of relativePaths) {
+    const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
+    const lines = source.split('\n');
+    lines.forEach((line, index) => {
+      if (staticInlineStylePatterns.some((pattern) => pattern.test(line))) {
+        findings.push(`${relativePath}:${index + 1}:${line.trim()}`);
+      }
+    });
+  }
+
+  assert.deepEqual(findings, []);
+});

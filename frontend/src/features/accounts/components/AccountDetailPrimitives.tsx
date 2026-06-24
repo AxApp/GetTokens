@@ -38,7 +38,7 @@ export function AccountDetailSection({
       className={`space-y-3 ${className}`}
     >
       {(title || actions) && (
-        <div className="flex items-center justify-between gap-4" style={{ userSelect: 'text' }}>
+        <div className="flex select-text items-center justify-between gap-4">
           {title && (
             <Typography.Title level={5} className="!m-0 !font-semibold">
               {title}
