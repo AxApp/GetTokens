@@ -20,7 +20,6 @@ import {
 
 const COLOR_TOKENS = [
   { label: 'Canvas', var: '--gt-surface-canvas' },
-  { label: 'Panel', var: '--gt-surface-panel' },
   { label: 'Raised', var: '--gt-surface-raised' },
   { label: 'Muted', var: '--gt-surface-muted' },
   { label: 'Inverse', var: '--gt-surface-inverse' },

@@ -92,7 +92,7 @@ const statusDiagnosticsHeadlineClass =
 const statusDiagnosticsToneClass =
   'shrink-0 rounded border px-3 py-1 text-right text-[length:var(--gt-font-size-xs)] font-normal tracking-normal';
 const statusPageShellClass =
-  'h-full w-full overflow-auto bg-[var(--gt-surface-panel)] px-6 py-6 lg:px-8 lg:py-8';
+  'h-full w-full overflow-auto bg-[var(--gt-surface-muted)] px-6 py-6 lg:px-8 lg:py-8';
 const statusPageContentClass = 'mx-auto flex w-full max-w-[1180px] flex-col gap-6';
 const statusHeroCardClass = 'status-hero-card border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const statusWorkbenchGridClass = 'grid items-start gap-4';

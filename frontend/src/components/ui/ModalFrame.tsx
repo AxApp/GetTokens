@@ -134,7 +134,7 @@ export default function ModalFrame({
       {footer ? (
         <footer
           className={`flex shrink-0 flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between ${footerClassName}`}
-          style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-panel)' }}
+          style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-muted)' }}
         >
           {footer}
         </footer>

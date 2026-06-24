@@ -119,3 +119,11 @@ test('account quota and billing editors use the quiet workspace shell', async ()
   assert.doesNotMatch(targetSource, /border-dashed/);
   assert.doesNotMatch(targetSource, /shadow-\[/);
 });
+
+test('account detail model fetch state uses current surface tokens', async () => {
+  const source = await readFile(new URL('../components/AccountDetailModelsSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const fetchStatusClass =/);
+  assert.match(source, /--gt-surface-muted/);
+  assert.doesNotMatch(source, /bg-\[var\(--gt-surface-panel\)\]/);
+});

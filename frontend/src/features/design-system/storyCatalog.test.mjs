@@ -168,6 +168,8 @@ test('modal frame constrains detail dialogs to the viewport width', async () => 
   assert.match(source, /absolute: 'max-h-\[calc\(100%-2rem\)\]/);
   assert.match(source, /\{footer\}/);
   assert.match(source, /overflow-auto/);
+  assert.doesNotMatch(source, /backgroundColor: 'var\(--gt-surface-panel\)'/);
+  assert.match(source, /backgroundColor: 'var\(--gt-surface-muted\)'/);
   assert.doesNotMatch(source, /detail: 'max-w-6xl'/);
 });
 
@@ -324,6 +326,8 @@ test('design system entry renders without theme preset switching UI', async () =
   assert.ok(!entrySource.includes('themePresetDefinitions'), 'should not import themePresetDefinitions');
   assert.ok(!entrySource.includes('setThemePreset'), 'should not use setThemePreset');
   assert.match(entrySource, /WorkspacePageHeader/);
+  assert.doesNotMatch(entrySource, /label: 'Panel', var: '--gt-surface-panel'/);
+  assert.match(entrySource, /label: 'Muted', var: '--gt-surface-muted'/);
   assert.match(colorTokenSource, /--gt-surface-canvas/);
   assert.match(colorTokenSource, /--gt-accent-primary/);
 });

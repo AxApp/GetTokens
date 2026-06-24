@@ -28,7 +28,7 @@ const modelArrowClass =
 const modelValueClass =
   'truncate text-sm text-[var(--gt-ink-primary)]';
 const fetchStatusClass =
-  'rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] px-3 py-2 text-xs font-normal text-[var(--gt-ink-muted)]';
+  'rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-muted)] px-3 py-2 text-xs font-normal text-[var(--gt-ink-muted)]';
 const fetchErrorClass =
   'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,white)] px-3 py-2 text-xs font-normal text-[var(--gt-status-danger)]';
 
