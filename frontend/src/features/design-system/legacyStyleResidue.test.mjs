@@ -228,3 +228,28 @@ test('selected UI sources keep small static layout styles in classes', async () 
 
   assert.deepEqual(findings, []);
 });
+
+test('selected UI sources keep discrete conditional styles in classes', async () => {
+  const relativePaths = [
+    'components/ui/Combobox.tsx',
+    'features/session-management/components/SessionPluginConsolePanel.tsx',
+  ];
+  const conditionalInlineStylePatterns = [
+    /textAlign:\s*align === 'right'/,
+    /borderColor:/,
+    /borderRightColor:/,
+  ];
+  const findings = [];
+
+  for (const relativePath of relativePaths) {
+    const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
+    const lines = source.split('\n');
+    lines.forEach((line, index) => {
+      if (conditionalInlineStylePatterns.some((pattern) => pattern.test(line))) {
+        findings.push(`${relativePath}:${index + 1}:${line.trim()}`);
+      }
+    });
+  }
+
+  assert.deepEqual(findings, []);
+});

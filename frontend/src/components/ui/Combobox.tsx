@@ -62,7 +62,7 @@ export function Combobox({
         options={antdOptions}
         placeholder={placeholder}
         disabled={disabled}
-        style={{ textAlign: align === 'right' ? 'right' : undefined }}
+        className={align === 'right' ? 'text-right' : undefined}
         onSearch={(text) => {
           setInputValue(text);
           onChange(text);

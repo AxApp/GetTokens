@@ -243,13 +243,11 @@ export default function SessionPluginConsolePanel({
               <PanelHead title={executionTitle} count={mode.toUpperCase()} />
               <div className="grid grid-cols-[74px_minmax(0,1fr)] gap-3 p-3">
                 <div
-                  className="grid h-[74px] w-[74px] place-items-center rounded-full border-[8px] border-solid text-[length:var(--gt-font-size-md)] font-semibold"
-                  style={{
-                    borderColor:
-                      execution.tone === 'green' ? 'var(--gt-status-success)' : 'var(--gt-status-info)',
-                    borderRightColor:
-                      execution.tone === 'green' ? 'var(--gt-status-success)' : 'var(--gt-surface-muted)',
-                  }}
+                  className={`grid h-[74px] w-[74px] place-items-center rounded-full border-[8px] border-solid text-[length:var(--gt-font-size-md)] font-semibold ${
+                    execution.tone === 'green'
+                      ? 'border-[var(--gt-status-success)]'
+                      : 'border-[var(--gt-status-info)] border-r-[var(--gt-surface-muted)]'
+                  }`}
                 >
                   {execution.dialLabel}
                 </div>
