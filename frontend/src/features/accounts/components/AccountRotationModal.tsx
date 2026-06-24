@@ -11,7 +11,7 @@ import { RotationConfigSection } from './account-rotation/RotationConfigSection'
 const accountRotationModalOverlayClass =
   'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6';
 const accountRotationModalPanelClass =
-  'flex max-h-[calc(100vh-3rem)] w-full max-w-7xl flex-col overflow-hidden rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-lg';
+  'flex max-h-[calc(100vh-3rem)] w-full max-w-7xl flex-col overflow-hidden rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const accountRotationModalHeaderClass =
   'flex items-start justify-between gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-6 py-5';
 const accountRotationModalBodyClass = 'flex-1 space-y-8 overflow-auto p-6';

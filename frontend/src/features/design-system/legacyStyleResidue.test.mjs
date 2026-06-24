@@ -13,7 +13,7 @@ const ignoredFilePatterns = [
 ];
 
 const legacyRuntimeStylePattern =
-  /btn-swiss|input-swiss|select-swiss|card-swiss|shadow-\[|border-2|bg-\[var\(--bg-(main|surface)\)\]|font-(?:medium|bold|extrabold|black)|\buppercase\b|tracking-\[|backdrop-blur/;
+  /btn-swiss|input-swiss|select-swiss|card-swiss|shadow-\[|shadow-(?:lg|xl|2xl)|drop-shadow|border-2|bg-\[var\(--bg-(main|surface)\)\]|font-(?:medium|bold|extrabold|black)|\buppercase\b|tracking-\[|backdrop-blur/;
 
 function extensionOf(filePath) {
   const match = filePath.match(/(\.[^.]+)$/);

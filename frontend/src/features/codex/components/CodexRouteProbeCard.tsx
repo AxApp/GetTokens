@@ -76,7 +76,7 @@ export function RouteProbeCard({
       onClick={onClose}
     >
       <section
-        className="flex h-full w-full max-w-none flex-col overflow-hidden bg-[var(--gt-surface-canvas)] shadow-lg"
+        className="flex h-full w-full max-w-none flex-col overflow-hidden bg-[var(--gt-surface-canvas)] shadow-sm"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-4">

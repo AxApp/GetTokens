@@ -418,7 +418,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                       {openRuleMenuIndex === index ? (
                         <div
                           role="menu"
-                          className="absolute right-0 top-full z-30 mt-2 w-40 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-1 shadow-lg"
+                          className="absolute right-0 top-full z-30 mt-2 w-40 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-1 shadow-sm"
                         >
                           <Button
                             type="text"
