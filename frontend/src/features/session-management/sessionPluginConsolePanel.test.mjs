@@ -8,7 +8,8 @@ test('SessionPluginConsolePanel uses the quiet workspace component shell', async
   assert.match(source, /data-session-plugin-console-panel="true"/);
   assert.match(source, /data-session-plugin-console-plugin-list="true"/);
   assert.match(source, /data-session-plugin-console-output="true"/);
-  assert.match(source, /const sessionPluginConsoleButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-\[var\(--gt-border-subtle\)\]/);
+  assert.match(source, /import \{ Button, Tag \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] shadow-sm/);
   assert.match(source, /function PanelHead/);
   assert.match(source, /rounded bg-\[var\(--gt-surface-muted\)\]/);
@@ -18,7 +19,6 @@ test('SessionPluginConsolePanel uses the quiet workspace component shell', async
   assert.doesNotMatch(source, /className="btn-swiss/);
   assert.doesNotMatch(source, /border-4 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
-  assert.doesNotMatch(source, /--gt-surface-muted/);
   assert.doesNotMatch(source, /--color-status-success/);
   assert.doesNotMatch(source, /shadow-\[10px_10px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(source, /shadow-\[/);

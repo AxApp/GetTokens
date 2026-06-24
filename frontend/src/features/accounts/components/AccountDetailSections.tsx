@@ -248,23 +248,23 @@ const accountDetailResourceKvLabelClass =
 const accountDetailResourceKvValueClass =
   'mt-1 truncate font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetModalOverlayClass =
-  'fixed inset-0 z-[1000] grid place-items-center bg-[color-mix(in_srgb,#000000_35%,transparent)] px-6 py-8 backdrop-blur-[18px]';
+  'fixed inset-0 z-[1000] grid place-items-center bg-[var(--overlay-scrim-80)] px-6 py-8 backdrop-blur-sm';
 const accountDetailQuotaResetModalPanelClass =
-  'relative grid w-full max-w-[38rem] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-canvas)_78%,transparent)] shadow-lg backdrop-blur-2xl';
+  'relative grid w-full max-w-[38rem] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const accountDetailQuotaResetHeroClass =
-  'relative h-36 overflow-hidden border-b border-[color-mix(in_srgb,var(--gt-surface-canvas)_40%,transparent)]';
+  'relative grid gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-8 py-6 text-center';
 const accountDetailQuotaResetHeroMarkClass =
-  'absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded border border-[color-mix(in_srgb,var(--gt-surface-canvas)_40%,transparent)] bg-[linear-gradient(150deg,color-mix(in_srgb,#722ed1_80%,transparent),color-mix(in_srgb,#1677ff_88%,transparent))] font-sans text-3xl font-semibold text-[var(--gt-ink-inverse)] shadow-lg backdrop-blur-md';
+  'mx-auto grid h-12 w-12 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-sans text-2xl font-semibold text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetBodyClass =
-  'grid gap-5 bg-[color-mix(in_srgb,var(--gt-surface-canvas)_35%,transparent)] px-8 py-7 text-center backdrop-blur-xl';
+  'grid gap-5 px-8 py-7 text-center';
 const accountDetailQuotaResetTitleClass =
   'text-xl font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetDescriptionClass =
   'mx-auto max-w-[28rem] text-sm font-normal leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailQuotaResetResultClass =
-  'grid gap-2 border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_78%,transparent)] p-4 text-left font-sans text-xs font-semibold text-[var(--gt-ink-primary)] backdrop-blur-xl';
+  'grid gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 text-left font-sans text-xs font-semibold text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetErrorClass =
-  'border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-4 text-left text-sm font-semibold text-[var(--gt-status-danger)] backdrop-blur-xl';
+  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-4 text-left text-sm font-semibold text-[var(--gt-status-danger)]';
 const accountDetailFooterStatusClass =
   'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailFooterActionsClass = 'flex items-center gap-2';
@@ -1570,24 +1570,8 @@ function OpenAIQuotaResetConfirmationModal({
 
   return (
     <div data-openai-quota-reset-modal={resetStatus} className={accountDetailQuotaResetModalOverlayClass}>
-      <style>{`
-        @keyframes openaiQuotaResetGradient {
-          0% { background-position: 0% 50%, 78% 52%, 0% 50%; transform: scale(1); }
-          50% { background-position: 100% 50%, 40% 44%, 100% 50%; transform: scale(1.035); }
-          100% { background-position: 0% 50%, 78% 52%, 0% 50%; transform: scale(1); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          [data-openai-quota-reset-gradient] { animation: none !important; transform: none !important; }
-        }
-      `}</style>
       <div className={accountDetailQuotaResetModalPanelClass}>
         <div className={accountDetailQuotaResetHeroClass}>
-          <div
-            data-openai-quota-reset-gradient="dynamic"
-            className="absolute -inset-5 animate-[openaiQuotaResetGradient_14s_ease-in-out_infinite] bg-[radial-gradient(circle_at_63%_58%,color-mix(in_srgb,#a0d911_98%,transparent)_0,color-mix(in_srgb,#7cb305_82%,transparent)_20%,transparent_34%),radial-gradient(circle_at_77%_60%,color-mix(in_srgb,#faad14_96%,transparent)_0,color-mix(in_srgb,#ffc53d_78%,transparent)_24%,transparent_40%),linear-gradient(120deg,color-mix(in_srgb,#13c2c2_94%,transparent)_0%,color-mix(in_srgb,#adc6ff_88%,transparent)_48%,color-mix(in_srgb,#d3adf7_90%,transparent)_100%)] bg-[length:165%_165%,150%_150%,180%_180%] blur-[1px]"
-          />
-          <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--gt-surface-canvas)_10%,transparent)] backdrop-blur-[3px]" />
-          <div className="absolute inset-0 opacity-45 [background-image:repeating-linear-gradient(90deg,color-mix(in_srgb,#ffffff_58%,transparent)_0_1px,transparent_1px_44px)]" />
           <div className={accountDetailQuotaResetHeroMarkClass}>
             ›_
           </div>
@@ -1596,6 +1580,7 @@ function OpenAIQuotaResetConfirmationModal({
             size="small"
             onClick={onClose}
             aria-label="关闭重置弹框"
+            className="absolute right-4 top-4"
           >
             ×
           </Button>

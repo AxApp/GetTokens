@@ -44,7 +44,7 @@ const scopeIcons: Record<string, ReactNode> = {
 
 const subagentCatalogListClass = 'divide-y divide-[var(--gt-border-subtle)]';
 const subagentCatalogRowClass =
-  'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
+  'flex w-full items-center gap-3 bg-[var(--gt-surface-canvas)] p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
 const subagentCatalogPanelClass =
   'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
 const subagentCatalogWarningPanelClass =

@@ -31,16 +31,17 @@ test('quota reset modal keeps confirm success and failure states in the same dia
   assert.match(sectionSource, /重置失败/);
 });
 
-test('quota reset modal uses dynamic gradient and glass treatment', () => {
-  assert.match(sectionSource, /@keyframes openaiQuotaResetGradient/);
-  assert.match(sectionSource, /data-openai-quota-reset-gradient="dynamic"/);
-  assert.match(sectionSource, /animate-\[openaiQuotaResetGradient_14s_ease-in-out_infinite\]/);
-  assert.match(sectionSource, /backdrop-blur-\[18px\]/);
-  assert.match(sectionSource, /backdrop-blur-2xl/);
-  assert.match(sectionSource, /bg-white\/35/);
+test('quota reset modal uses the quiet workspace shell without gradient glass', () => {
+  assert.match(sectionSource, /const accountDetailQuotaResetModalOverlayClass =/);
+  assert.match(sectionSource, /const accountDetailQuotaResetModalPanelClass =/);
+  assert.match(sectionSource, /const accountDetailQuotaResetHeroClass =/);
+  assert.doesNotMatch(sectionSource, /@keyframes openaiQuotaResetGradient/);
+  assert.doesNotMatch(sectionSource, /data-openai-quota-reset-gradient="dynamic"/);
+  assert.doesNotMatch(sectionSource, /radial-gradient|linear-gradient\(/);
+  assert.doesNotMatch(sectionSource, /backdrop-blur-\[18px\]|backdrop-blur-2xl|backdrop-blur-xl/);
 });
 
-test('quota reset modal uses quiet dialog controls while preserving the gradient hero', () => {
+test('quota reset modal uses AntD dialog controls', () => {
   const modalSource = sourceBlock(
     sectionSource,
     'function OpenAIQuotaResetConfirmationModal',
@@ -48,11 +49,9 @@ test('quota reset modal uses quiet dialog controls while preserving the gradient
   );
 
   assert.match(sectionSource, /const accountDetailQuotaResetModalPanelClass =/);
-  assert.match(sectionSource, /const accountDetailQuotaResetPrimaryButtonClass =/);
-  assert.match(sectionSource, /const accountDetailQuotaResetSecondaryButtonClass =/);
+  assert.match(sectionSource, /import \{ Button, Input, Select, Tooltip \} from 'antd';/);
   assert.match(modalSource, /className=\{accountDetailQuotaResetModalPanelClass\}/);
-  assert.match(modalSource, /className=\{accountDetailQuotaResetPrimaryButtonClass\}/);
-  assert.match(modalSource, /data-openai-quota-reset-gradient="dynamic"/);
+  assert.match(modalSource, /<Button[\s\S]*type="primary"/);
   assert.match(sectionSource, /--gt-surface-canvas/);
   assert.match(sectionSource, /--gt-surface-muted/);
   assert.match(sectionSource, /--gt-border-subtle/);

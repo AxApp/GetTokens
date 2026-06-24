@@ -193,9 +193,11 @@ test('selected bulk delete uses the sidecar batch endpoint', async () => {
   assert.notEqual(bulkDeleteEnd, -1);
   const bulkDeleteSource = actionsSource.slice(bulkDeleteStart, bulkDeleteEnd);
 
-  assert.match(bulkDeleteSource, /resolveBulkDeleteTargets\(selectedAccounts\)/);
-  assert.match(bulkDeleteSource, /DeleteAccountsBatch/);
-  assert.match(bulkDeleteSource, /main\.DeleteAccountsBatchInput\.createFrom/);
+  assert.match(actionsSource, /const runAccountsBulkDelete = useCallback/);
+  assert.match(actionsSource, /resolveBulkDeleteTargets\(targetAccounts\)/);
+  assert.match(bulkDeleteSource, /runAccountsBulkDelete\(selectedAccounts/);
+  assert.match(actionsSource, /DeleteAccountsBatch/);
+  assert.match(actionsSource, /main\.DeleteAccountsBatchInput\.createFrom/);
   assert.doesNotMatch(bulkDeleteSource, /executeDeleteAccount/);
   assert.doesNotMatch(bulkDeleteSource, /for \(const account of selectedAccounts\)/);
 });

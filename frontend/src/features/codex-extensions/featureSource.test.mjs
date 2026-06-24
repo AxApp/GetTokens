@@ -36,9 +36,11 @@ test('Codex extension modals use the quiet workspace shell', async () => {
   const combined = `${mcpSource}\n${skillsSource}`;
 
   assert.match(mcpSource, /const codexExtensionModalPanelClass =/);
-  assert.match(mcpSource, /const codexExtensionModalButtonClass =/);
+  assert.match(mcpSource, /import \{ Button, Input, Select \} from 'antd';/);
+  assert.match(mcpSource, /<Button/);
   assert.match(skillsSource, /const codexSkillModalPanelClass =/);
-  assert.match(skillsSource, /const codexSkillModalButtonClass =/);
+  assert.match(skillsSource, /import \{ Button, Input \} from 'antd';/);
+  assert.match(skillsSource, /<Button/);
   assert.match(mcpSource, /data-codex-extension-mcp-modal/);
   assert.match(mcpSource, /data-codex-extension-config-modal/);
   assert.match(skillsSource, /data-codex-extension-skill-install-modal/);
@@ -71,7 +73,8 @@ test('Codex extension modals use the quiet workspace shell', async () => {
 test('Codex extension workspaces use the quiet list shell', async () => {
   const source = await readFile(new URL('./CodexExtensionsFeature.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /const codexExtensionsActionButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const codexExtensionsNoticeClass =/);
   assert.match(source, /const codexExtensionsListContentClass =/);
   assert.match(source, /const codexExtensionsListRowClass =/);

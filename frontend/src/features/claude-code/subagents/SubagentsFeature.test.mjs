@@ -102,10 +102,12 @@ test('Plugin subagents show ignored fields', () => {
 test('Subagent catalog uses the quiet workspace shell', () => {
   const source = readFileSync(componentPath, 'utf8');
 
-  assert.match(source, /const subagentCatalogActionButtonClass =/);
+  assert.match(source, /from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const subagentCatalogRowClass =/);
   assert.match(source, /const subagentCatalogPanelClass =/);
-  assert.match(source, /const subagentCatalogInputClass =/);
+  assert.match(source, /<Input/);
+  assert.match(source, /<Input\.TextArea/);
   assert.match(source, /data-claude-subagent-catalog="quiet"/);
   assert.match(source, /data-claude-subagent-row=\{agent\.path\}/);
   assert.match(source, /data-claude-subagent-editor="quiet"/);

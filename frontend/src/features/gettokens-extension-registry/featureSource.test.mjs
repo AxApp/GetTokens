@@ -65,7 +65,8 @@ test('extension registry feature consumes snapshot plus local enable-state bindi
 test('extension registry feature uses the quiet workspace shell', async () => {
   const source = await readFile(new URL('./GetTokensExtensionRegistryFeature.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /const extensionRegistryButtonClass = 'inline-flex h-8 items-center justify-center rounded border border-\[var\(--gt-border-subtle\)\]/);
+  assert.match(source, /import \{ Button \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const extensionRegistryPanelClass = 'rounded border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]/);
   assert.match(source, /data-gettokens-extension-registry-list-header="true"/);
   assert.match(source, /data-gettokens-extension-registry-aside="true"/);

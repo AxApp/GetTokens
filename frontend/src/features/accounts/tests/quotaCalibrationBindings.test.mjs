@@ -125,7 +125,8 @@ test('quota calibration panel uses the quiet workspace shell', () => {
 
   assert.match(panel, /const quotaCalibrationPanelClass =/);
   assert.match(panel, /const quotaCalibrationItemClass =/);
-  assert.match(panel, /const quotaCalibrationButtonClass =/);
+  assert.match(panel, /import \{ Button, Input, Select, Tooltip \} from 'antd';/);
+  assert.match(panel, /<Button/);
   assert.match(panel, /const quotaCalibrationInputClass =/);
   assert.match(panel, /const quotaCalibrationMetaClass =/);
   assert.match(panel, /const quotaCalibrationErrorClass =/);
@@ -149,7 +150,8 @@ test('quota threshold rule panel uses the quiet workspace shell', () => {
   const panel = readFileSync(path.join(repoRoot, 'frontend/src/features/accounts/components/QuotaThresholdRulePanel.tsx'), 'utf8');
 
   assert.match(panel, /const quotaThresholdPanelClass =/);
-  assert.match(panel, /const quotaThresholdButtonClass =/);
+  assert.match(panel, /import \{ Button, Checkbox, Input, Select \} from 'antd';/);
+  assert.match(panel, /<Button/);
   assert.match(panel, /const quotaThresholdInputClass =/);
   assert.match(panel, /const quotaThresholdMetaClass =/);
   assert.match(panel, /data-account-quota-threshold-rule-panel/);

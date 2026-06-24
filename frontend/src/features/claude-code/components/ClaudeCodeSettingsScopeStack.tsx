@@ -53,7 +53,7 @@ const scopePriorityLabels: Record<string, string> = {
 
 const settingsScopeStackListClass = 'divide-y divide-[var(--gt-border-subtle)]';
 const settingsScopeStackRowClass =
-  'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
+  'flex w-full items-center gap-3 bg-[var(--gt-surface-canvas)] p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
 const settingsScopeStackPanelClass =
   'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
 const settingsScopeStackErrorPanelClass =

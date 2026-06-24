@@ -37,7 +37,8 @@ test('Settings scope stack component renders all layer states', () => {
 test('ClaudeCodeSettingsScopeStack uses the quiet workspace shell', () => {
   const source = readFileSync(componentPath, 'utf8');
 
-  assert.match(source, /const settingsScopeStackActionButtonClass =/);
+  assert.match(source, /from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const settingsScopeStackRowClass =/);
   assert.match(source, /const settingsScopeStackPanelClass =/);
   assert.match(source, /const settingsScopeStackErrorPanelClass =/);

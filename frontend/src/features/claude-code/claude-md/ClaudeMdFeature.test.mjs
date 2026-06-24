@@ -42,10 +42,11 @@ test('Memory Files Panel component renders all file states', () => {
 test('ClaudeCodeMemoryFilesPanel uses the quiet workspace shell', () => {
   const source = readFileSync(componentPath, 'utf8');
 
-  assert.match(source, /const memoryFilesPanelActionButtonClass =/);
+  assert.match(source, /from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const memoryFilesPanelRowClass =/);
   assert.match(source, /const memoryFilesPanelPanelClass =/);
-  assert.match(source, /const memoryFilesPanelTextareaClass =/);
+  assert.match(source, /<Input\.TextArea/);
   assert.match(source, /data-claude-memory-files-panel="quiet"/);
   assert.match(source, /data-claude-memory-file-row=\{file\.path\}/);
   assert.match(source, /data-claude-memory-editor="quiet"/);
