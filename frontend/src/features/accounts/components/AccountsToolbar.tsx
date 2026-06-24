@@ -201,7 +201,7 @@ export default function AccountsToolbar({
             content={
               <div data-accounts-toolbar-filter-menu="quiet" className="flex flex-col gap-3.5">
                 <div className="grid gap-2">
-                  <p className="text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
+                  <p className="text-xs font-semibold text-[var(--gt-ink-muted)]">
                     {t('accounts.filter_group_presets')}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -227,7 +227,7 @@ export default function AccountsToolbar({
                 </div>
                 {filterSummaryParts.length > 0 ? (
                   <div className="grid gap-2 border-y border-[var(--gt-border-subtle)] py-2">
-                    <p className="text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
+                    <p className="text-xs font-semibold text-[var(--gt-ink-muted)]">
                       {t('accounts.filter_active_conditions')}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -246,12 +246,12 @@ export default function AccountsToolbar({
                   </div>
                 ) : null}
                 <div className="space-y-2">
-                  <p className="text-xs font-normal" style={{ color: 'var(--gt-ink-muted)' }}>
+                  <p className="text-xs font-normal text-[var(--gt-ink-muted)]">
                     {t('accounts.filter_group_plan_source')}
                   </p>
                   <div className="grid gap-2">
                     <div className="grid grid-cols-3 gap-1">
-                      <p className="col-span-3 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
+                      <p className="col-span-3 text-xs font-semibold text-[var(--gt-ink-muted)]">
                         {t('accounts.filter_group_source')}
                       </p>
                       <FilterPillOption active={filters.source.authFile && filters.source.apiKey} onClick={() => setSourceMode('all')}>
@@ -266,7 +266,7 @@ export default function AccountsToolbar({
                     </div>
                     {planOptions.length > 0 || !planAvailabilityResolved ? (
                       <div className="grid grid-cols-2 gap-1">
-                        <p className="col-span-2 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
+                        <p className="col-span-2 text-xs font-semibold text-[var(--gt-ink-muted)]">
                           {t('accounts.filter_group_plan')}
                         </p>
                         {planOptions.map((planType) => (
@@ -284,7 +284,7 @@ export default function AccountsToolbar({
                 </div>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-1">
-                    <p className="col-span-2 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
+                    <p className="col-span-2 text-xs font-semibold text-[var(--gt-ink-muted)]">
                       {t('accounts.filter_group_status')}
                     </p>
                     <FilterCheckOption active={filters.status.error} onClick={() => setStatusOption('error')}>
@@ -299,7 +299,7 @@ export default function AccountsToolbar({
                   </div>
                   {availableRequestStatusCodes.length > 0 ? (
                     <div className="grid grid-cols-2 gap-1">
-                      <p className="col-span-2 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
+                      <p className="col-span-2 text-xs font-semibold text-[var(--gt-ink-muted)]">
                         {t('accounts.filter_group_request_status')}
                       </p>
                       {availableRequestStatusCodes.map((statusCode) => (
@@ -315,7 +315,7 @@ export default function AccountsToolbar({
                   ) : null}
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
+                  <p className="text-xs font-semibold text-[var(--gt-ink-muted)]">
                     {t('accounts.filter_group_other')}
                   </p>
                   <FilterTernaryOptionRow
@@ -770,7 +770,7 @@ function FilterTernaryOptionRow({
 }) {
   return (
     <div className="grid gap-1">
-      <p className="px-2.5 text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
+      <p className="px-2.5 text-xs font-semibold text-[var(--gt-ink-muted)]">
         {title}
       </p>
       <div className="grid grid-cols-3 gap-1">
