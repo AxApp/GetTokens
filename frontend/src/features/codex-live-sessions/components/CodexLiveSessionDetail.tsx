@@ -368,6 +368,7 @@ function OverviewTimingTrend({
   const trend = buildCodexLiveRequestTimingTrend(requests, activeRequest, { nowMs });
   const latestPoint = trend.points[trend.points.length - 1];
   const selectedSeries = getTimingTrendSeries(selectedMetric);
+  const seriesPaint = selectedSeries.color;
   const selectedRequestID = activeRequest?.requestID || latestPoint?.requestID || '';
 
   return (
@@ -407,7 +408,7 @@ function OverviewTimingTrend({
 
           <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
             <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)]">
-              <span className="h-2 w-2" style={{ backgroundColor: selectedSeries.color }} />
+              <span className="h-2 w-2" style={{ background: seriesPaint }} />
               <span className="font-semibold text-[var(--gt-ink-muted)]">{t(selectedSeries.labelKey)}</span>
               <span className="font-semibold text-[var(--gt-ink-primary)]">
                 {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}
@@ -490,6 +491,7 @@ function RequestTimingTrend({
   const currentRequestID = request?.requestID || session.lastRequestID || session.sessionID;
   const latestPoint = trend.points[trend.points.length - 1];
   const selectedSeries = getTimingTrendSeries(selectedMetric);
+  const seriesPaint = selectedSeries.color;
 
   return (
     <section
@@ -534,7 +536,7 @@ function RequestTimingTrend({
 
           <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
             <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)]">
-              <span className="h-2 w-2" style={{ backgroundColor: selectedSeries.color }} />
+              <span className="h-2 w-2" style={{ background: seriesPaint }} />
               <span className="font-semibold text-[var(--gt-ink-muted)]">{t(selectedSeries.labelKey)}</span>
               <span className="font-semibold text-[var(--gt-ink-primary)]">
                 {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}

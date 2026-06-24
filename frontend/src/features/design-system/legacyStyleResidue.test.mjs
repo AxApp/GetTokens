@@ -24,6 +24,7 @@ const inlineTypographyGateFiles = [
   'features/accounts/components/AttributionCard.tsx',
   'features/accounts/components/AccountGroupSectionView.tsx',
   'features/settings/components/SettingsReleasePanel.tsx',
+  'features/codex-live-sessions/components/CodexLiveSessionDetail.tsx',
 ];
 
 function extensionOf(filePath) {
