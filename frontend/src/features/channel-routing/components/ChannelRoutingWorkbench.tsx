@@ -193,7 +193,7 @@ export default function ChannelRoutingWorkbench({
               <Split className="h-4 w-4" strokeWidth={4} />
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <h2 className="min-w-0 text-[length:var(--gt-font-size-lg)] font-semibold leading-5 text-[var(--gt-ink-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
+              <h2 className="min-w-0 text-[length:var(--gt-font-size-lg)] font-semibold leading-5 text-[var(--gt-ink-primary)]">
                 请求模式
               </h2>
               <Button

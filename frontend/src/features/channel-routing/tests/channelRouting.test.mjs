@@ -1731,7 +1731,7 @@ test('ChannelRoutingWorkbench presents route mode heading as a large status lock
   const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /flex h-11 w-11 shrink-0 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--gt-ink-primary\)\] text-\[var\(--gt-surface-canvas\)\]/);
-  assert.match(source, /<h2 className="min-w-0 text-\[length:var\(--gt-font-size-lg\)\] font-semibold leading-5 text-\[var\(--gt-ink-primary\)\] sm:text-\[length:var\(--font-size-heading-sm\)\] sm:leading-normal">/);
+  assert.match(source, /<h2 className="min-w-0 text-\[length:var\(--gt-font-size-lg\)\] font-semibold leading-5 text-\[var\(--gt-ink-primary\)\]">/);
   assert.doesNotMatch(source, /tracking-\[0\]/);
   assert.match(source, /查看请求模式说明/);
   assert.doesNotMatch(source, /preview\?: boolean/);
