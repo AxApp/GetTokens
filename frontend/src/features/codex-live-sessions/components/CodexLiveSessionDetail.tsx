@@ -576,7 +576,6 @@ function TimingTrendChart({
   const [chartWidth, setChartWidth] = useState(0);
   const selectedSeries = getTimingTrendSeries(selectedMetric);
   const width = chartWidth > 0 ? chartWidth : timingTrendChartFallbackWidthPx;
-  const svgWidthStyle = chartWidth > 0 ? '100%' : `${timingTrendChartFallbackWidthPx}px`;
   const visibleRequestCount = resolveTimingTrendVisibleRequestCount(width, padding);
   const visiblePoints = trend.points.slice(-visibleRequestCount);
   const selectedMetricMaxMs = getTimingTrendMetricMax(visiblePoints, selectedMetric);
@@ -620,17 +619,12 @@ function TimingTrendChart({
     >
       <div
         ref={chartShellRef}
-        className="relative h-full w-full"
-        style={{
-          height: `${chartHeight}px`,
-          width: '100%',
-        }}
+        className="relative h-[230px] w-full"
       >
         <svg
           viewBox={`0 0 ${width} ${height}`}
           preserveAspectRatio="xMinYMin meet"
-          className="absolute inset-y-0 left-0 h-full"
-          style={{ width: svgWidthStyle }}
+          className={`absolute inset-y-0 left-0 h-full ${chartWidth > 0 ? 'w-full' : 'w-[560px]'}`}
           aria-hidden="true"
         >
           <defs>

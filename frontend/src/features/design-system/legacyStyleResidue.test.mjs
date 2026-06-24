@@ -242,6 +242,9 @@ test('selected UI sources keep discrete conditional styles in classes', async ()
   const conditionalInlineStylePatterns = [
     /textAlign:\s*align === 'right'/,
     /style=\{\{ background: seriesPaint \}\}/,
+    /height:.*chartHeight/,
+    /width:\s*'100%'/,
+    /style=\{\{ width: svgWidthStyle \}\}/,
     /borderColor:/,
     /borderRightColor:/,
   ];

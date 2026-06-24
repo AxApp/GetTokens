@@ -1696,9 +1696,10 @@ test('codex live session timing chart uses a fixed viewport without horizontal p
   assert.match(detailSource, /ResizeObserver/);
   assert.match(detailSource, /element\.clientWidth/);
   assert.match(detailSource, /const width = chartWidth > 0 \? chartWidth : timingTrendChartFallbackWidthPx/);
-  assert.match(detailSource, /const svgWidthStyle = chartWidth > 0 \? '100%' : `\$\{timingTrendChartFallbackWidthPx\}px`/);
   assert.match(detailSource, /preserveAspectRatio="xMinYMin meet"/);
-  assert.match(detailSource, /style=\{\{ width: svgWidthStyle \}\}/);
+  assert.match(detailSource, /className="relative h-\[230px\] w-full"/);
+  assert.match(detailSource, /chartWidth > 0 \? 'w-full' : 'w-\[560px\]'/);
+  assert.doesNotMatch(detailSource, /style=\{\{ width: svgWidthStyle \}\}/);
   assert.doesNotMatch(detailSource, /visibility: .*'hidden'/);
   assert.doesNotMatch(detailSource, /preserveAspectRatio="none"/);
   assert.doesNotMatch(detailSource, /chartWidth \|\| 0/);
