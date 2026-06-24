@@ -97,7 +97,8 @@ test('status relay editor modals use the quiet workspace shell', async () => {
   const relayEditorsSource = await readFile(new URL('../components/RelayEditors.tsx', import.meta.url), 'utf8');
 
   assert.match(relayEditorsSource, /const relayEditorModalPanelClass =/);
-  assert.match(relayEditorsSource, /const relayEditorPrimaryButtonClass =/);
+  assert.match(relayEditorsSource, /import \{ Button, Input \} from 'antd';/);
+  assert.match(relayEditorsSource, /<Button/);
   assert.match(relayEditorsSource, /data-status-relay-editor-modal/);
   assert.match(relayEditorsSource, /--gt-surface-canvas/);
   assert.match(relayEditorsSource, /--gt-border-subtle/);
@@ -378,7 +379,8 @@ test('codex config sibling sections use the quiet workspace shell', async () => 
 
   for (const source of sources) {
     assert.match(source, /const codexConfigSectionPanelClass =/);
-    assert.match(source, /const codexConfigSectionPrimaryButtonClass =/);
+    assert.match(source, /import \{ Button \} from 'antd';/);
+    assert.match(source, /<Button/);
     assert.match(source, /--gt-surface-canvas/);
     assert.match(source, /--gt-border-subtle/);
     assert.doesNotMatch(source, /btn-swiss/);
@@ -421,7 +423,8 @@ test('codex feature rows render a settings table and a grouped multi_agent_v2 co
   assert.doesNotMatch(featureSectionSource, /border-l-\[6px\]/);
   assert.match(featureSectionSource, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(13rem,18rem\)\]/);
   assert.match(featureSectionSource, /const codexFeaturePanelClass =/);
-  assert.match(featureSectionSource, /const codexFeaturePrimaryButtonClass =/);
+  assert.match(featureSectionSource, /import \{ Button, Tag \} from 'antd';/);
+  assert.match(featureSectionSource, /<Button/);
   assert.match(featureSectionSource, /--gt-surface-canvas/);
   assert.match(featureSectionSource, /--gt-border-subtle/);
   assert.match(featureSectionSource, /divide-y divide-\[var\(--gt-border-subtle\)\]/);

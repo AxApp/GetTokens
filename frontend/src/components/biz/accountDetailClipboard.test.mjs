@@ -10,7 +10,8 @@ test('legacy account detail modal uses the quiet workspace shell', async () => {
   assert.match(source, /const accountDetailModalOverlayClass =/);
   assert.match(source, /const accountDetailModalPanelClass =/);
   assert.match(source, /const accountDetailModalHeaderClass =/);
-  assert.match(source, /const accountDetailModalActionButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const accountDetailModalFieldLabelClass =/);
   assert.match(source, /const accountDetailModalRawContentClass =/);
   assert.match(source, /data-account-detail-modal="quiet"/);

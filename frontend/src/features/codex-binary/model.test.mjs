@@ -258,8 +258,8 @@ test('CodexBinaryVersionCell uses the quiet workspace shell', () => {
   const source = readFileSync(new URL('./components/CodexBinaryVersionCell.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /const codexBinaryVersionCellShellClass =/);
-  assert.match(source, /const codexBinaryVersionCellButtonClass =/);
-  assert.match(source, /const codexBinaryVersionCellMenuClass =/);
+  assert.match(source, /import \{ Button \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /data-codex-binary-version-cell="quiet"/);
   assert.match(source, /data-codex-binary-version-progress/);
   assert.match(source, /data-codex-binary-version-notes/);
@@ -286,7 +286,8 @@ test('Codex binary summary and list use the quiet workspace shell', () => {
   const combined = `${summarySource}\n${listSource}`;
 
   assert.match(summarySource, /const codexBinarySummaryPanelClass =/);
-  assert.match(summarySource, /const codexBinarySummaryActionButtonClass =/);
+  assert.match(summarySource, /import \{ Button \} from 'antd';/);
+  assert.match(summarySource, /<Button/);
   assert.match(summarySource, /const codexBinarySummaryStatusClass =/);
   assert.match(summarySource, /data-codex-binary-summary-panel="quiet"/);
   assert.match(summarySource, /--gt-surface-canvas/);

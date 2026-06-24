@@ -56,8 +56,9 @@ test('Claude Code asset workbench uses the quiet workspace shell', () => {
   const source = readFileSync(componentPath, 'utf8');
 
   assert.match(source, /const claudeAssetPanelClass =/);
-  assert.match(source, /const claudeAssetButtonClass =/);
-  assert.match(source, /const claudeAssetInputClass =/);
+  assert.match(source, /import \{ Button, Input, Tag \} from 'antd';/);
+  assert.match(source, /<Button/);
+  assert.match(source, /<Input/);
   assert.match(source, /data-claude-asset-workbench-shell/);
   assert.match(source, /data-claude-asset-skill-matrix/);
   assert.match(source, /data-claude-asset-mcp-matrix/);
@@ -90,7 +91,8 @@ test('Claude Code account list workbench uses the quiet workspace shell', () => 
 
   assert.match(source, /const claudeAccountWorkbenchShellClass =/);
   assert.match(source, /const claudeAccountPanelClass =/);
-  assert.match(source, /const claudeAccountButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const claudeAccountStatusToneClass =/);
   assert.match(source, /data-claude-account-workbench-shell/);
   assert.match(source, /data-claude-account-workbench-header/);

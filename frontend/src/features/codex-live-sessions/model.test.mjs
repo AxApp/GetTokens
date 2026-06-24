@@ -998,8 +998,8 @@ test('codex live session feed renders session id as an independent copy target',
   assert.match(feedSource, /onCopySessionID/);
   assert.match(feedSource, /event\.stopPropagation\(\)/);
   assert.match(feedSource, /\`\$\{t\('codex_live_sessions\.copy_session_id'\)\} \$\{summary\.sessionIDLabel\}\`/);
-  assert.match(feedSource, /const codexLiveFeedCopyButtonClass =[\s\S]*inline-flex h-6 shrink-0 items-center justify-center/);
-  assert.match(feedSource, /className=\{`\$\{codexLiveFeedCopyButtonClass\} \$\{copied \? codexLiveFeedCopyButtonCopiedClass : ''\}`\}/);
+  assert.match(feedSource, /import \{ Button \} from 'antd';/);
+  assert.match(feedSource, /<Button[\s\S]*aria-label=\{`\$\{t\('codex_live_sessions\.copy_session_id'\)\} \$\{summary\.sessionIDLabel\}`\}/);
   assert.match(feedSource, /ClipboardSetText/);
   assert.match(feedSource, /document\.execCommand\('copy'\)/);
   assert.match(feedSource, /aria-live="polite"/);
@@ -1105,10 +1105,12 @@ test('codex live sessions workbench uses the quiet workspace shell', async () =>
   const source = await readFile(new URL('./components/CodexLiveSessionsWorkbench.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /const codexLiveWorkbenchShellClass =/);
-  assert.match(source, /const codexLiveWorkbenchActionButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const codexLiveWorkbenchSegmentClass =/);
   assert.match(source, /const codexLiveWorkbenchFilterMenuClass =/);
-  assert.match(source, /const codexLiveWorkbenchFilterOptionClass =/);
+  assert.match(source, /const codexLiveWorkbenchFilterOptionGridClass =/);
+  assert.match(source, /const codexLiveWorkbenchFilterGroupLabelClass =/);
   assert.match(source, /data-codex-live-sessions-workbench-shell="quiet"/);
   assert.match(source, /data-codex-live-sessions-header-actions="quiet"/);
   assert.match(source, /data-codex-live-sessions-filter-menu="quiet"/);
@@ -1849,14 +1851,15 @@ test('codex live session feed uses the quiet workspace shell', async () => {
   assert.match(feedSource, /const codexLiveFeedShellClass =/);
   assert.match(feedSource, /const codexLiveFeedHeaderClass =/);
   assert.match(feedSource, /const codexLiveFeedRowClass =/);
-  assert.match(feedSource, /const codexLiveFeedCopyButtonClass =/);
+  assert.match(feedSource, /import \{ Button \} from 'antd';/);
+  assert.match(feedSource, /<Button/);
   assert.match(feedSource, /data-codex-live-session-feed="quiet"/);
   assert.match(feedSource, /data-codex-live-project-feed="quiet"/);
   assert.match(feedSource, /data-codex-live-feed-empty="quiet"/);
   assert.match(feedSource, /--gt-surface-canvas/);
   assert.match(feedSource, /--gt-surface-muted/);
   assert.match(feedSource, /--gt-border-subtle/);
-  assert.match(feedSource, /--gt-status-success/);
+  assert.match(feedSource, /--gt-ink-primary/);
 
   assert.doesNotMatch(feedSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(feedSource, /bg-\[var\(--bg-surface\)\]/);

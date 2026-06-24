@@ -365,7 +365,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                     }
                     setAnalysisSelectorOpen(true);
                   }}
-                  disabled={!projects.length || analysisLoading}
+                  aria-disabled={!projects.length || analysisLoading ? 'true' : undefined}
                   icon={<BarChart3 className="h-5 w-5" strokeWidth={2.4} />}
                   className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
                 />

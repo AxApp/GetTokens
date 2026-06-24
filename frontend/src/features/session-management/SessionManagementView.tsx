@@ -658,7 +658,7 @@ export function SessionAnalysisDetailModal({
               size="small"
               ref={initialFocusRef}
               onClick={loading ? undefined : onBackToSelection}
-              disabled={loading}
+              aria-disabled={loading ? 'true' : undefined}
             >
               {copy.analysisBackToSelection}
             </Button>

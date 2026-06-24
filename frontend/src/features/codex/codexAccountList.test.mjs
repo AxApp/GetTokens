@@ -222,8 +222,8 @@ test('CodexAccountDetailModal uses the quiet workspace shell', async () => {
 
   assert.match(source, /const codexAccountDetailHeaderClass =/);
   assert.match(source, /const codexAccountDetailMetaClass =/);
-  assert.match(source, /const codexAccountDetailButtonClass =/);
-  assert.match(source, /const codexAccountDetailPrimaryButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const codexModelRoutingPanelClass =/);
   assert.match(source, /const codexModelRoutingErrorClass =/);
   assert.match(source, /data-codex-account-detail-header="quiet"/);
@@ -1241,10 +1241,12 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
 
   assert.match(source, /CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS/);
   assert.match(source, /'pt-4'/);
-  assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_BUTTON_CLASS =/);
+  assert.match(source, /import \{ Button, Checkbox \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_MENU_CLASS =/);
   assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_TITLE_CLASS =/);
-  assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_CHIP_CLASS =/);
+  assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_OPTION_CLASS =/);
+  assert.match(source, /import \{ Button, Checkbox \} from 'antd';/);
   assert.match(source, /const CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS =/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
@@ -1260,7 +1262,8 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.match(source, /\biconOnly\b/);
   assert.doesNotMatch(source, /loading \? loadingLabel : refreshLabel/);
   assert.match(refreshButtonSource, /RefreshCw/);
-  assert.match(refreshButtonSource, /loading \? 'animate-spin' : ''/);
+  assert.match(refreshButtonSource, /loading=\{loading\}/);
+  assert.match(refreshButtonSource, /!loading && <RefreshCw/);
   assert.match(refreshButtonSource, /iconOnly \? null/);
   assert.doesNotMatch(source, /SegmentedControl/);
   assert.doesNotMatch(source, /fitContent/);
@@ -1297,7 +1300,7 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.match(source, /function FilterBinaryOptionRow/);
   assert.match(source, /aria-pressed=\{active\}/);
   assert.match(source, /CODEX_ACCOUNT_ORDER_FILTER_OPTION_CLASS/);
-  assert.match(source, /CODEX_ACCOUNT_ORDER_FILTER_PILL_CLASS/);
+  assert.match(source, /function FilterPillOption/);
   assert.doesNotMatch(toolbarSource, /btn-swiss/);
   assert.doesNotMatch(toolbarSource, /border-2/);
   assert.doesNotMatch(toolbarSource, /border-t-2|border-r-2|border-l-2/);
@@ -1317,7 +1320,8 @@ test('Codex route probe modal uses the quiet workspace shell', async () => {
   const source = await readFile(new URL('./components/CodexRouteProbeCard.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /const codexRouteProbePanelClass =/);
-  assert.match(source, /const codexRouteProbeButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd';/);
+  assert.match(source, /<Button/);
   assert.match(source, /const codexRouteProbeBadgeClass =/);
   assert.match(source, /data-codex-route-probe-shell/);
   assert.match(source, /data-codex-route-probe-control-panel/);

@@ -72,7 +72,8 @@ test('ClaudeCodeAccountListFeature uses the quiet workspace page shell', async (
   const source = await readFile(new URL('./ClaudeCodeAccountListFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /const claudeAccountListPageShellClass =/);
-  assert.match(source, /const claudeAccountListRouteProbeButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd';/);
+  assert.match(source, /<Button[\s\S]*onClick=\{openRouteProbeModal\}/);
   assert.match(source, /const claudeAccountListSummaryShellClass =/);
   assert.match(source, /const claudeAccountListSummaryCardClass =/);
   assert.match(source, /data-claude-account-list-feature="quiet"/);
