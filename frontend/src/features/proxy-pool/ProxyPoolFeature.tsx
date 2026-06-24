@@ -658,7 +658,7 @@ export default function ProxyPoolFeature() {
             </div>
             <div className="min-w-0">
               <label className="grid min-w-0 items-center gap-2 sm:grid-cols-[max-content_minmax(0,1fr)]">
-                <span className="text-left text-sm font-normal text-[var(--gt-ink-muted)]">测速网址</span>
+                <span className="text-left text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">测速网址</span>
                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                   <AutoComplete
                     allowClear
@@ -1073,7 +1073,7 @@ function ProxyNodeComposeModal({
         onClick={(event) => event.stopPropagation()}
       >
         <header className={proxyPoolModalHeaderClass}>
-          <h3 className="text-sm font-semibold text-[var(--gt-ink-primary)]">
+          <h3 className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
             {isEditing ? '编辑本地代理节点' : '新增本地代理节点'}
           </h3>
         </header>
@@ -1168,7 +1168,7 @@ function ProxyPoolImportModal({
         onClick={(event) => event.stopPropagation()}
       >
         <header className={proxyPoolModalHeaderClass}>
-          <h3 className="text-sm font-semibold text-[var(--gt-ink-primary)]">导入本地代理列表</h3>
+          <h3 className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">导入本地代理列表</h3>
         </header>
         <div className="space-y-4 p-6">
           <div className="grid gap-4 md:grid-cols-2">
@@ -1211,7 +1211,7 @@ function ProxyPoolImportModal({
             autoFocus
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            className="h-72 resize-none font-mono text-sm"
+            className="h-72 resize-none font-mono text-[length:var(--gt-font-size-sm)]"
             placeholder={'[{"id":"proxy-sha-01","name":"上海 Alpha",...}]\n或\nsocks5://127.0.0.1:1080\n10.0.0.8:8080'}
           />
           {error ? <div className={proxyPoolErrorClass}>{error}</div> : null}
@@ -1254,7 +1254,7 @@ function ProxyPoolSubscriptionModal({
         onClick={(event) => event.stopPropagation()}
       >
         <header className={proxyPoolModalHeaderClass}>
-          <h3 className="text-sm font-semibold text-[var(--gt-ink-primary)]">导入代理订阅</h3>
+          <h3 className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">导入代理订阅</h3>
         </header>
         <div className="grid gap-4 p-6">
           <FormField label="订阅链接">
@@ -1314,7 +1314,7 @@ function ProxyPoolSubscriptionManagerModal({
       >
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--gt-border-subtle)] px-6 py-4">
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-[var(--gt-ink-primary)]">订阅源管理</h3>
+            <h3 className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">订阅源管理</h3>
             <p className="mt-1 text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]">
               管理本地订阅源，集中查看同步状态，并执行刷新或删除。
             </p>

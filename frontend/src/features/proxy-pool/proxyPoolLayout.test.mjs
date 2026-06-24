@@ -29,7 +29,7 @@ test('ProxyPoolFeature uses the current workspace table layout', async () => {
   assert.match(source, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(26rem,36rem\)\]/);
   assert.match(source, /<SearchInput[\s\S]*className="rounded-md"/);
   assert.match(source, /className="grid min-w-0 items-center gap-2 sm:grid-cols-\[max-content_minmax\(0,1fr\)\]"/);
-  assert.match(source, /className="text-left text-sm font-normal text-\[var\(--gt-ink-muted\)\]">测速网址/);
+  assert.match(source, /className="text-left text-\[length:var\(--gt-font-size-sm\)\] font-normal text-\[var\(--gt-ink-muted\)\]">测速网址/);
   assert.match(source, /className="grid min-w-0 grid-cols-\[minmax\(0,1fr\)_auto\] items-center gap-2"/);
   assert.match(source, /<Button[\s\S]*aria-label=\{probingIDs\.length > 0 \? '测速中' : '执行测速'\}[\s\S]*icon=\{<Play className="h-3\.5 w-3\.5" fill="currentColor" strokeWidth=\{2\.4\} \/>\}[\s\S]*loading=\{probingIDs\.length > 0\}[\s\S]*disabled=\{filteredNodes\.length === 0\}[\s\S]*className="proxy-pool-probe-target-button"[\s\S]*onClick=\{handleBatchRetest\}/);
   assert.match(source, /<Button[\s\S]*type="primary"[\s\S]*aria-label="新增代理"[\s\S]*icon=\{<Plus className="h-5 w-5" strokeWidth=\{2\.5\} \/>\}/);
@@ -43,7 +43,7 @@ test('ProxyPoolFeature uses the current workspace table layout', async () => {
   assert.match(source, /<Input[\s\S]*placeholder="例如：127\.0\.0\.1"/);
   assert.match(source, /<Input\.TextArea/);
   assert.match(source, /<Button type="primary" size="small" onClick=\{onSubmit\}/);
-  assert.match(source, /<h3 className="text-sm font-semibold text-\[var\(--gt-ink-primary\)\]">导入代理订阅<\/h3>/);
+  assert.match(source, /<h3 className="text-\[length:var\(--gt-font-size-sm\)\] font-semibold text-\[var\(--gt-ink-primary\)\]">导入代理订阅<\/h3>/);
   assert.match(source, /<section key=\{source\.id\} className="rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]">/);
   assert.match(styleSource, /\.proxy-pool-probe-target-autocomplete\.ant-select \{[\s\S]*height: 2\.75rem;/);
   assert.match(styleSource, /\.proxy-pool-probe-target-autocomplete\.ant-select \{[\s\S]*font-size: var\(--gt-font-size-lg\);/);
@@ -58,6 +58,7 @@ test('ProxyPoolFeature uses the current workspace table layout', async () => {
   assert.doesNotMatch(source, /input-swiss/);
   assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /--text-on-accent|--bg-(main|surface|subtle|warning)/);
   assert.doesNotMatch(source, /subtitle=\{`网络代理池 \/ 本地维护/);
