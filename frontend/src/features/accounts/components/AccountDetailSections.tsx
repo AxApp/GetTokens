@@ -159,21 +159,21 @@ const accountDetailHeaderShellClass =
 const accountDetailHeaderRailClass =
   'flex min-w-0 items-center border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
 const accountDetailHeaderTypeClass =
-  'w-full min-w-0 text-left text-base font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
+  'w-full min-w-0 text-left text-[length:var(--gt-font-size-2xl)] font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailHeaderPillClass =
-  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-xs !font-semibold !text-[var(--gt-ink-primary)]';
+  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[length:var(--gt-font-size-xs)] !font-semibold !text-[var(--gt-ink-primary)]';
 const accountDetailHeaderPrimaryPillClass =
-  '!min-h-0 !border !border-[var(--gt-ink-primary)] !bg-[var(--gt-ink-primary)] !py-1 !text-xs !font-semibold !text-[var(--gt-surface-canvas)]';
+  '!min-h-0 !border !border-[var(--gt-ink-primary)] !bg-[var(--gt-ink-primary)] !py-1 !text-[length:var(--gt-font-size-xs)] !font-semibold !text-[var(--gt-surface-canvas)]';
 const accountDetailRuntimeMetaLabelClass =
-  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeMetaSmallClass =
-  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeDecisionTitleClass =
-  'min-w-0 truncate font-sans text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+  'min-w-0 truncate font-sans text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailRuntimeDecisionMetaClass =
-  'mt-1 min-w-0 truncate font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'mt-1 min-w-0 truncate font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeDecisionDetailClass =
-  'mt-1 text-xs font-normal leading-5 text-[var(--gt-ink-secondary)]';
+  'mt-1 text-[length:var(--gt-font-size-xs)] font-normal leading-5 text-[var(--gt-ink-secondary)]';
 const accountDetailRuntimeEvidenceClass =
   'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
 const accountDetailRuntimeReasonDetailClass =
@@ -186,29 +186,29 @@ const accountDetailRuntimeDecisionClass = (unresolved: boolean) =>
 const accountDetailCredentialPaneDividerClass =
   'grid min-w-0 content-start gap-4 border-t border-[var(--gt-border-subtle)] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0';
 const accountDetailCredentialSectionTitleClass =
-  'text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailCredentialMetaLabelClass =
-  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailCredentialSubheadingClass =
-  'mt-1 text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+  'mt-1 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailCredentialPillClass =
-  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-xs !font-semibold !text-[var(--gt-ink-primary)]';
+  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[length:var(--gt-font-size-xs)] !font-semibold !text-[var(--gt-ink-primary)]';
 const accountDetailCredentialFieldLabelClass =
-  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailCredentialHelpClass =
-  'text-xs font-normal leading-relaxed text-[var(--gt-ink-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailCredentialButtonClass =
-  'shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-xs font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+  'shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailCredentialMenuClass =
   'absolute left-0 top-full z-20 mt-1 max-h-48 w-full overflow-auto rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const accountDetailCredentialMenuItemClass = (active: boolean) =>
-  `block w-full px-3 py-1.5 text-left text-xs font-semibold tracking-normal transition-colors ${
+  `block w-full px-3 py-1.5 text-left text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal transition-colors ${
     active
       ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
       : 'text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]'
   }`;
 const accountDetailCredentialStatusClass = (status?: APIKeyVerifyState['status']) =>
-  `text-xs font-semibold tracking-normal ${
+  `text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal ${
     status === 'success'
       ? 'text-[var(--gt-status-success)]'
       : status === 'error'
@@ -224,19 +224,19 @@ const accountDetailResourceScriptCardClass =
 const accountDetailResourceCompactCardClass =
   'grid gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const accountDetailResourceHeadingClass =
-  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourcePanelClass =
   'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const accountDetailResourcePanelValueClass =
-  'mt-1 text-sm font-semibold text-[var(--gt-ink-primary)]';
+  'mt-1 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
 const accountDetailResourceHelpClass =
-  'text-xs font-normal leading-relaxed text-[var(--gt-ink-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailResourceEmptyScriptClass =
-  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-4 text-xs font-normal text-[var(--gt-ink-muted)]';
+  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-4 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourceDataRowClass =
   'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2 md:grid-cols-3';
 const accountDetailResourceMessageClass = (tone: 'neutral' | 'success' | 'danger') =>
-  `text-xs font-semibold tracking-normal ${
+  `text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal ${
     tone === 'success'
       ? 'text-[var(--gt-status-success)]'
       : tone === 'danger'
@@ -244,9 +244,9 @@ const accountDetailResourceMessageClass = (tone: 'neutral' | 'success' | 'danger
         : 'text-[var(--gt-ink-muted)]'
   }`;
 const accountDetailResourceKvLabelClass =
-  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourceKvValueClass =
-  'mt-1 truncate font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+  'mt-1 truncate font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetModalOverlayClass =
   'fixed inset-0 z-[1000] grid place-items-center bg-[var(--overlay-scrim-80)] px-6 py-8';
 const accountDetailQuotaResetModalPanelClass =
@@ -254,19 +254,19 @@ const accountDetailQuotaResetModalPanelClass =
 const accountDetailQuotaResetHeroClass =
   'relative grid gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-8 py-6 text-center';
 const accountDetailQuotaResetHeroMarkClass =
-  'mx-auto grid h-12 w-12 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-sans text-2xl font-semibold text-[var(--gt-ink-primary)]';
+  'mx-auto grid h-12 w-12 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-sans text-[length:var(--gt-font-size-2xl)] font-semibold text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetBodyClass =
   'grid gap-5 px-8 py-7 text-center';
 const accountDetailQuotaResetTitleClass =
-  'text-xl font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
+  'text-[length:var(--gt-font-size-xl)] font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetDescriptionClass =
-  'mx-auto max-w-[28rem] text-sm font-normal leading-relaxed text-[var(--gt-ink-muted)]';
+  'mx-auto max-w-[28rem] text-[length:var(--gt-font-size-sm)] font-normal leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailQuotaResetResultClass =
-  'grid gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 text-left font-sans text-xs font-semibold text-[var(--gt-ink-primary)]';
+  'grid gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 text-left font-sans text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetErrorClass =
-  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-4 text-left text-sm font-semibold text-[var(--gt-status-danger)]';
+  'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-4 text-left text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-status-danger)]';
 const accountDetailFooterStatusClass =
-  'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailFooterActionsClass = 'flex items-center gap-2';
 
 export function AccountDetailHeader({
@@ -276,7 +276,7 @@ export function AccountDetailHeader({
 
   return (
     <div data-account-detail-header="quiet">
-      <div className="text-sm font-semibold text-[var(--gt-ink-primary)]">
+      <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
         {accountTypeLabel}
       </div>
     </div>
@@ -438,7 +438,7 @@ export function AccountRuntimeRouteSection({
                     <div className={accountDetailRuntimeDecisionTitleClass}>
                       {decision.title}
                     </div>
-                    <AccountDetailPill tone={decision.unresolved ? 'danger' : 'neutral'} className="!min-h-0 !py-0.5 !text-xs">
+                    <AccountDetailPill tone={decision.unresolved ? 'danger' : 'neutral'} className="!min-h-0 !py-0.5 !text-[length:var(--gt-font-size-xs)]">
                       {decision.matchedAs === 'selected' ? '命中' : '候选'}
                     </AccountDetailPill>
                   </div>
@@ -604,7 +604,7 @@ function RuntimeRouteResilienceEvidenceMarker({
         </div>
         <AccountDetailPill
           tone={evidence.matchedRouteBlocking ? 'danger' : 'neutral'}
-          className="!min-h-0 !py-0.5 !text-xs"
+          className="!min-h-0 !py-0.5 !text-[length:var(--gt-font-size-xs)]"
         >
           {evidence.digestDisplayMode === 'reference'
             ? evidence.matchedRouteBlocking ? 'REF BLOCKING' : 'REF OBSERVE'
@@ -647,12 +647,12 @@ function RuntimeRouteResilienceEvidenceMarker({
               >
                 <AccountDetailPill
                   tone={reasonDetail.routeBlocking ? 'danger' : 'neutral'}
-                  className="!min-h-0 w-fit !py-0.5 !text-xs"
+                  className="!min-h-0 w-fit !py-0.5 !text-[length:var(--gt-font-size-xs)]"
                 >
                   {reasonDetail.routeBlocking ? 'BLOCKING' : 'OBSERVE'}
                 </AccountDetailPill>
                 <div
-                  className="min-w-0 truncate text-xs font-semibold text-[var(--gt-ink-primary)]"
+                  className="min-w-0 truncate text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]"
                   title={formatRouteResilienceReasonDetailTitle(reasonDetail.reason, reasonDetail.routeBlocking)}
                 >
                   {reasonDetail.reason || 'reason:unknown'}
@@ -858,8 +858,8 @@ function CapabilityEndpointsPanel({
     <section data-account-credential-list-item="capability-endpoints" className="grid gap-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
-          <span className="text-xs font-normal text-[var(--gt-ink-muted)]">协议端点</span>
-          <p className="mt-1 text-xs font-normal leading-relaxed text-[var(--gt-ink-muted)]">留空使用默认基础 URL。</p>
+          <span className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">协议端点</span>
+          <p className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed text-[var(--gt-ink-muted)]">留空使用默认基础 URL。</p>
         </div>
         <AccountDetailPill className={accountDetailCredentialPillClass}>
           {CAPABILITY_ENDPOINTS.length} 端
@@ -1122,7 +1122,7 @@ function VerifyConnectionPanel({
         连通验证
       </div>
       {vs.lastVerifiedAt ? (
-        <div className="text-xs font-normal tracking-normal text-[var(--gt-ink-muted)]">
+        <div className="text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]">
           上次发送：{new Date(vs.lastVerifiedAt).toLocaleString()}
         </div>
       ) : null}
@@ -1456,7 +1456,7 @@ export function AccountQuotaSection({
               {visibleQuotaDisplay ? <QuotaBars quotaDisplay={visibleQuotaDisplay} t={t} showDivider={false} /> : null}
             </div>
           ) : (
-            <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-xs">
+            <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--gt-font-size-xs)]">
               {readOnlyScripts
                 ? '暂无额度数据'
                 : hasQuotaScript ? '暂无额度数据，可测试额度脚本确认接口返回' : '暂无额度脚本，添加后可测试并展示额度'}
@@ -1489,7 +1489,7 @@ export function AccountQuotaSection({
               <Tooltip title={draft.quotaCurl || undefined}>
                 <div
                   data-account-quota-script-preview="two-line"
-                  className="line-clamp-2 min-h-[2.75rem] overflow-hidden break-all font-sans text-xs leading-[1.35rem] text-[var(--gt-ink-muted)]"
+                  className="line-clamp-2 min-h-[2.75rem] overflow-hidden break-all font-sans text-[length:var(--gt-font-size-xs)] leading-[1.35rem] text-[var(--gt-ink-muted)]"
                 >
                   {draft.quotaCurl || '未配置额度脚本'}
                 </div>
@@ -1801,7 +1801,7 @@ export function AccountBillingSection({
           ))}
         </div>
       ) : (
-        <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-xs">
+        <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--gt-font-size-xs)]">
           {readOnlyScripts
             ? '暂无余额数据'
             : hasBillingScript ? '暂无余额数据，可测试余额脚本确认接口返回' : '暂无余额脚本，添加后可测试并展示余额'}
@@ -1811,7 +1811,7 @@ export function AccountBillingSection({
       {hasBillingScript ? (
         <div className={accountDetailResourceCompactCardClass}>
           <Tooltip title={draft.billingCurl || undefined}>
-            <div className="truncate font-sans text-xs text-[var(--gt-ink-muted)]">
+            <div className="truncate font-sans text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
               {draft.billingCurl || '未配置余额脚本'}
             </div>
           </Tooltip>

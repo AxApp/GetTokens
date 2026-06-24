@@ -1017,6 +1017,7 @@ test('real account detail header uses compact account type summary', async () =>
   assert.match(modalSource, /headerClassName="hidden"/);
   assert.match(modalSource, /header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}/);
   assert.doesNotMatch(sectionSource, /data-account-detail-header-chips/);
+  assert.doesNotMatch(sectionSource, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.doesNotMatch(sectionSource, /text-base font-(?:medium|bold|extrabold|black)/);
 });
 
