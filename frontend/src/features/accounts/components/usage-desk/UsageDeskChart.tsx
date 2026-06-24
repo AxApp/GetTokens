@@ -4,19 +4,16 @@ import {
   buildUsageDeskChartPointStyle,
   buildUsageDeskChartValueScale,
   formatUsageDeskChartValue,
-  resolveUsageDeskCurveAnimationConfig,
-  type UsageDeskCurveMotion,
   type UsageDeskChartUnit,
 } from '../../model/usageDesk';
 
 const usageDeskChartSurfaceClass = 'overflow-x-auto overflow-y-hidden bg-[var(--gt-surface-canvas)]';
 const usageDeskChartPointRingClass =
-  'rounded-full border border-[var(--gt-surface-canvas)] transition-transform';
+  'rounded-full border border-[var(--gt-surface-canvas)]';
 const usageDeskChartAxisLabelClass =
-  'absolute whitespace-nowrap font-semibold transition-all -translate-x-1/2 pointer-events-none';
+  'absolute whitespace-nowrap font-semibold -translate-x-1/2 pointer-events-none';
 
 export function UsageChartCard({
-  rangeAnimationVersion = 0,
   compactProgress = 0,
   unit,
   summaryItems,
@@ -28,9 +25,7 @@ export function UsageChartCard({
   status,
   surfaceContent,
   footerExtra,
-  curveMotion = 'standard',
 }: {
-  rangeAnimationVersion?: number;
   compactProgress?: number;
   unit: UsageDeskChartUnit;
   summaryItems: string[];
@@ -42,7 +37,6 @@ export function UsageChartCard({
   status?: ReactNode;
   surfaceContent?: ReactNode;
   footerExtra?: ReactNode;
-  curveMotion?: UsageDeskCurveMotion;
 }) {
   return (
     <Card
@@ -77,8 +71,6 @@ export function UsageChartCard({
             compactProgress={compactProgress}
             selectedPointKey={selectedPointKey}
             onSelectPoint={onSelectPoint}
-            rangeAnimationVersion={rangeAnimationVersion}
-            curveMotion={curveMotion}
           />
         )}
       </div>
@@ -113,8 +105,6 @@ function ChartSurface({
   compactProgress = 0,
   selectedPointKey,
   onSelectPoint,
-  rangeAnimationVersion = 0,
-  curveMotion = 'standard',
 }: {
   primary: Array<{ label: string; value: number; color: string; drilldownDayKey?: string }>;
   secondary?: Array<{ label: string; value: number; color: string; drilldownDayKey?: string }>;
@@ -122,8 +112,6 @@ function ChartSurface({
   compactProgress?: number;
   selectedPointKey: string;
   onSelectPoint: (chartSelectionKey: string, drilldownDayKey?: string) => void;
-  rangeAnimationVersion?: number;
-  curveMotion?: UsageDeskCurveMotion;
 }) {
   const chartHeight = 280;
   const chartTopInset = 42;
@@ -138,7 +126,6 @@ function ChartSurface({
   const chartWidth = Math.max(420, chartPlotWidth + chartSideInset * 2);
   const allValues = [...primary, ...(secondary ?? [])].map((point) => point.value);
   const valueScale = buildUsageDeskChartValueScale(allValues);
-  const curveAnimation = resolveUsageDeskCurveAnimationConfig(curveMotion, pointCount);
   const primaryTone = 'var(--color-chart-primary)';
   const primaryAreaTone = 'var(--color-chart-primary-area)';
   const secondaryTone = 'var(--color-chart-secondary)';
@@ -222,26 +209,12 @@ function ChartSurface({
       data-usage-desk-chart-surface
     >
       <div
-        className="relative mx-auto transition-all duration-300 ease-out"
+        className="relative mx-auto"
         style={{
           height: `${chartHeight}px`,
           width: `${chartWidth}px`,
         }}
       >
-        <style>{`
-            @keyframes usage-desk-curve-sweep {
-              0% { stroke-dashoffset: 1; opacity: 0.32; }
-              100% { stroke-dashoffset: 0; opacity: 1; }
-            }
-            @keyframes usage-desk-area-fade {
-              0% { opacity: 0; transform: translateY(8px); }
-              100% { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes usage-desk-point-rise {
-              0% { opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(0.86); }
-              100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-            }
-          `}</style>
         {/* 背景与曲线层 */}
         <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
           <defs>
@@ -265,17 +238,13 @@ function ChartSurface({
             ))}
           </g>
           <path
-            key={`primary-area-${rangeAnimationVersion}-${primary.length}`}
             d={buildSmoothAreaPath(primaryCoords)}
             fill="url(#usage-primary-area-live)"
-            style={{ transformBox: 'fill-box', transformOrigin: 'center bottom', animation: 'usage-desk-area-fade 320ms cubic-bezier(0.22,1,0.36,1)' }}
           />
           {secondary?.length ? (
             <path
-              key={`secondary-area-${rangeAnimationVersion}-${secondary.length}`}
               d={buildSmoothAreaPath(secondaryCoords)}
               fill="url(#usage-secondary-area-live)"
-              style={{ transformBox: 'fill-box', transformOrigin: 'center bottom', animation: 'usage-desk-area-fade 320ms cubic-bezier(0.22,1,0.36,1)' }}
             />
           ) : null}
           {selectedPrimaryX !== null ? (
@@ -291,7 +260,6 @@ function ChartSurface({
             />
           ) : null}
           <path
-            key={`primary-line-${rangeAnimationVersion}-${primary.length}`}
             d={buildSmoothLinePath(primaryCoords)}
             fill="none"
             stroke={primaryTone}
@@ -301,11 +269,9 @@ function ChartSurface({
             pathLength={1}
             strokeDasharray={1}
             strokeDashoffset={0}
-            style={{ animation: `usage-desk-curve-sweep ${curveAnimation.durationMs}ms cubic-bezier(0.22,1,0.36,1)` }}
           />
           {secondary?.length ? (
             <path
-              key={`secondary-line-${rangeAnimationVersion}-${secondary.length}`}
               d={buildSmoothLinePath(secondaryCoords)}
               fill="none"
               stroke={secondaryTone}
@@ -315,7 +281,6 @@ function ChartSurface({
               strokeLinejoin="round"
               pathLength={1}
               strokeDashoffset={0}
-              style={{ animation: `usage-desk-curve-sweep ${curveAnimation.durationMs}ms cubic-bezier(0.22,1,0.36,1)` }}
             />
           ) : null}
         </svg>
@@ -328,7 +293,7 @@ function ChartSurface({
               if (!coord) return null;
               return (
                 <ChartPoint
-                  key={`primary-${rangeAnimationVersion}-${point.label}`}
+                  key={`primary-${point.label}`}
                   x={coord.x}
                   y={coord.y}
                   label={formatUsageDeskChartValue(point.value, unit)}
@@ -337,8 +302,6 @@ function ChartSurface({
                   helperY={labelBaseY}
                   selected={selectedPointKey === point.label}
                   onSelect={() => onSelectPoint(point.label, point.drilldownDayKey)}
-                  animationDelayMs={curveAnimation.pointDelayMs * index}
-                  animate
                 />
               );
             })}
@@ -347,7 +310,7 @@ function ChartSurface({
               if (!coord) return null;
               return (
                 <ChartPoint
-                  key={`secondary-${rangeAnimationVersion}-${point.label}`}
+                  key={`secondary-${point.label}`}
                   x={coord.x}
                   y={coord.y}
                   label={formatUsageDeskChartValue(point.value, unit)}
@@ -357,8 +320,6 @@ function ChartSurface({
                   labelPosition="bottom"
                   small
                   selected={selectedPointKey === point.label}
-                  animationDelayMs={curveAnimation.pointDelayMs * index}
-                  animate
                 />
               );
             })}
@@ -380,8 +341,6 @@ function ChartPoint({
   small = false,
   selected = false,
   onSelect,
-  animate = false,
-  animationDelayMs = 0,
 }: {
   x: number;
   y: number;
@@ -393,26 +352,16 @@ function ChartPoint({
   small?: boolean;
   selected?: boolean;
   onSelect?: () => void;
-  animate?: boolean;
-  animationDelayMs?: number;
 }) {
   return (
     <div
-      style={
-        animate
-          ? {
-              ...buildUsageDeskChartPointStyle(x, y),
-              animation: 'usage-desk-point-rise 360ms cubic-bezier(0.22,1,0.36,1) both',
-              animationDelay: `${animationDelayMs}ms`,
-            }
-          : buildUsageDeskChartPointStyle(x, y)
-      }
+      style={buildUsageDeskChartPointStyle(x, y)}
       className={`absolute flex items-center justify-center ${onSelect ? 'cursor-pointer' : ''}`}
       onClick={onSelect}
     >
       {/* 1. 数值标签 (不占用空间) */}
       <div
-        className={`absolute whitespace-nowrap text-center transition-all pointer-events-none ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
+        className={`absolute whitespace-nowrap text-center pointer-events-none ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
         style={{ color, fontSize: selected ? 'var(--gt-font-size-md)' : 'var(--gt-font-size-md-compact)', fontWeight: selected ? 700 : 600 }}
       >
         {label}
@@ -421,7 +370,7 @@ function ChartPoint({
       {/* 2. 中心圆点 */}
       <div className="relative flex items-center justify-center">
         {selected && (
-          <div className="absolute h-8 w-8 rounded-full bg-[var(--gt-ink-primary)] opacity-10 animate-pulse" />
+          <div className="absolute h-8 w-8 rounded-full bg-[var(--gt-ink-primary)] opacity-10" />
         )}
         <div
           className={`${usageDeskChartPointRingClass} ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}

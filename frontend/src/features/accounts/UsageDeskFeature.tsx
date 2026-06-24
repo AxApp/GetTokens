@@ -51,8 +51,6 @@ export default function UsageDeskFeature({
     projectedSurfaceView,
     selectedDetailRowKey,
     selectedChartPointKey,
-    detailTransitionActive,
-    rangeAnimationVersion,
     stickyProgress,
     scrollContainerRef,
     refreshProjectedUsage,
@@ -152,15 +150,13 @@ export default function UsageDeskFeature({
                       ) : loadError ? (
                         <StatePanel title="加载失败" body={loadError} tone="error" />
                       ) : (
-                        <div className={`transition-all duration-300 ease-out ${detailTransitionActive ? 'scale-[0.995] opacity-85' : 'scale-100 opacity-100'}`}>
+                        <div>
                           <UsageChartCard
-                            rangeAnimationVersion={rangeAnimationVersion}
                             compactProgress={stickyProgress}
                             unit="count"
                             summaryItems={observedSummaryItems}
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
-                            curveMotion="realtime"
                             controls={
                               <UsageDeskObservedControls
                                 range={range}
@@ -214,15 +210,13 @@ export default function UsageDeskFeature({
                       ) : projectedLoadError ? (
                         <StatePanel title="加载失败" body={projectedLoadError} tone="error" />
                       ) : (
-                        <div className={`transition-all duration-300 ease-out ${detailTransitionActive ? 'scale-[0.995] opacity-85' : 'scale-100 opacity-100'}`}>
+                        <div>
                           <UsageChartCard
-                            rangeAnimationVersion={rangeAnimationVersion}
                             compactProgress={stickyProgress}
                             unit={projectedChartUnit}
                             summaryItems={projectedSummaryItems}
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
-                            curveMotion="realtime"
                             surfaceContent={
                               projectedSurfaceView === 'projects' ? (
                                 <UsageProjectDrilldownPanel

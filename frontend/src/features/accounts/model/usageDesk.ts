@@ -266,7 +266,6 @@ export function shouldOpenUsageDeskProjectedSessionSurface(source: UsageDeskSour
 }
 export type UsageDeskRangeOption = 'TODAY' | '7D' | '14D' | '30D' | '全部';
 export type UsageDeskResolution = '1M' | '5M' | '15M' | '30M' | '60M';
-export type UsageDeskCurveMotion = 'standard' | 'realtime';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -493,29 +492,6 @@ export function buildUsageDeskChartPointStyle(x: number, y: number) {
     left: `${x}px`,
     top: `${y}px`,
     transform: 'translate(-50%, -50%)',
-  };
-}
-
-export interface UsageDeskCurveAnimationConfig {
-  durationMs: number;
-  pointDelayMs: number;
-}
-
-export function resolveUsageDeskCurveAnimationConfig(
-  motion: UsageDeskCurveMotion,
-  pointCount: number,
-): UsageDeskCurveAnimationConfig {
-  if (motion === 'realtime') {
-    const normalizedPointCount = Math.max(1, Number.isFinite(pointCount) ? pointCount : 1);
-    return {
-      durationMs: Math.min(3200, Math.max(1400, normalizedPointCount * 48)),
-      pointDelayMs: Math.min(60, 1600 / normalizedPointCount),
-    };
-  }
-
-  return {
-    durationMs: 420,
-    pointDelayMs: 0,
   };
 }
 

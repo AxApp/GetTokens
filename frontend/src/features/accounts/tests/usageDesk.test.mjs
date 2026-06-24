@@ -17,7 +17,6 @@ import {
   formatUsageDeskChartValue,
   readUsageDeskProjectedStats,
   resolveUsageDeskStatusEvidence,
-  resolveUsageDeskCurveAnimationConfig,
   resolveUsageDeskChartSelectionKey,
   resolveUsageDeskLinkedRowKey,
   resolveUsageDeskRangeDrilldownDayKey,
@@ -425,23 +424,6 @@ test('projected usage index actions explain scope and raw session safety', async
 
   assert.match(featureSource, /usageDeskProjectedActionImpacts\.map/);
   assert.match(featureSource, /\{action\.description\}/);
-});
-
-test('resolveUsageDeskCurveAnimationConfig keeps realtime motion bounded', () => {
-  assert.deepEqual(resolveUsageDeskCurveAnimationConfig('standard', 1440), {
-    durationMs: 420,
-    pointDelayMs: 0,
-  });
-
-  assert.deepEqual(resolveUsageDeskCurveAnimationConfig('realtime', 10), {
-    durationMs: 1400,
-    pointDelayMs: 60,
-  });
-
-  assert.deepEqual(resolveUsageDeskCurveAnimationConfig('realtime', 1440), {
-    durationMs: 3200,
-    pointDelayMs: 1600 / 1440,
-  });
 });
 
 test('collectUsageDeskObservedDetails keeps provider and model from nested usage payload', () => {

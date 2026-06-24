@@ -176,8 +176,6 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   });
   const [selectedDetailRowKey, setSelectedDetailRowKey] = useState('');
   const [selectedChartPointKey, setSelectedChartPointKey] = useState('');
-  const [detailTransitionActive, setDetailTransitionActive] = useState(false);
-  const [rangeAnimationVersion, setRangeAnimationVersion] = useState(0);
   const [stickyProgress, setStickyProgress] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -652,18 +650,6 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   }, [activeDetailRows]);
 
   useEffect(() => {
-    if (!detailTransitionActive) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setDetailTransitionActive(false);
-    }, 220);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [detailTransitionActive]);
-
-  useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) {
       return;
@@ -748,13 +734,11 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     setRange(option);
     setSelectedDetailRowKey('');
     setSelectedChartPointKey('');
-    setRangeAnimationVersion((current) => current + 1);
     const nextDayKey = resolveUsageDeskRangeDrilldownDayKey(
       option,
       source === 'observed' ? activeObservedDayKey : activeProjectedDayKey,
     );
     if (nextDayKey) {
-      setDetailTransitionActive(true);
       setSelectedDayKey(nextDayKey);
       return;
     }
@@ -768,7 +752,6 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     }));
     setSelectedDetailRowKey('');
     setSelectedChartPointKey('');
-    setRangeAnimationVersion((current) => current + 1);
   }
 
   return {
@@ -795,8 +778,6 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     activeFacetSummary,
     selectedDetailRowKey,
     selectedChartPointKey,
-    detailTransitionActive,
-    rangeAnimationVersion,
     stickyProgress,
     scrollContainerRef,
     refreshProjectedUsage,
