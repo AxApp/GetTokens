@@ -67,6 +67,8 @@ test('account card frame does not render a tone-colored side border', async () =
   assert.doesNotMatch(toneSource, /border-l-\[var\(--gt-status-/);
   assert.doesNotMatch(toneSource, /border-l-\[var\(--gt-border-default\)\]/);
   assert.match(source, /const tintClass = ATTRIBUTION_CARD_TONE_TINT_CLASS\[tone\];/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.match(source, /className=\{`min-h-\[4\.5rem\] p-0 \$\{tintClass\} \$\{className\}`\}/);
   assert.match(source, /className=\{`p-0 \$\{tintClass\} \$\{className\}`\}/);
 });
@@ -96,8 +98,8 @@ test('full account card subtitle renders as its own header row', async () => {
 
   assert.match(fullSource, /<div className="account-card-meta-action-row -mr-4 grid min-w-0 grid-cols-\[minmax\(0,1fr\)_auto\] items-center gap-2">[\s\S]*\{topActions \? <div className="col-start-2 shrink-0 justify-self-end">\{topActions\}<\/div> : null\}\s*<\/div>\s*\) : null\}\s*<div className="flex items-center gap-2">/);
   assert.match(fullSource, /<div className="flex items-center gap-2">[\s\S]*<h3[\s\S]*\{title\}[\s\S]*<\/div>\s*<\/div>\s*\{subtitle \? \(/);
-  assert.match(source, /className="mt-1\.5 break-all font-mono text-xs text-\[var\(--gt-ink-muted\)\]"/);
-  assert.match(source, /className="mt-1\.5 text-xs font-normal text-\[var\(--gt-status-danger\)\]"/);
+  assert.match(source, /className="mt-1\.5 break-all font-mono text-\[length:var\(--gt-font-size-xs\)\] text-\[var\(--gt-ink-muted\)\]"/);
+  assert.match(source, /className="mt-1\.5 text-\[length:var\(--gt-font-size-xs\)\] font-normal text-\[var\(--gt-status-danger\)\]"/);
 });
 
 test('full account card tone dot starts the metadata row', async () => {
@@ -147,7 +149,7 @@ test('list density keeps only the plan badge before metrics and actions', async 
 
   assert.match(source, /const listStatusText = \[/);
   assert.match(source, /className="min-w-0 flex-1 space-y-1"/);
-  assert.match(source, /className="min-w-0 truncate font-mono text-xs font-normal text-\[var\(--gt-ink-muted\)\]"/);
+  assert.match(source, /className="min-w-0 truncate font-mono text-\[length:var\(--gt-font-size-xs\)\] font-normal text-\[var\(--gt-ink-muted\)\]"/);
   assert.match(source, /priorityBadges\.find\(\(badge\) => badge\.backgroundColor\)/);
   assert.match(source, /join\(' · '\)/);
   assert.match(source, /formatCountMetric\(usageSummary\?\.requestCount \?\? 0\)/);

@@ -144,15 +144,15 @@ export default function AttributionCard({
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-center gap-2">
               <span className={`h-2 w-2 shrink-0 rounded-full ${accentFillClass}`} />
-              <span className="min-w-0 truncate font-mono text-xs font-normal text-[var(--gt-ink-muted)]">
+              <span className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                 {listStatusText || listEyebrow}
               </span>
             </div>
-            <h3 className="truncate text-sm font-semibold leading-tight text-[var(--gt-ink-primary)]">
+            <h3 className="truncate text-[length:var(--gt-font-size-sm)] font-semibold leading-tight text-[var(--gt-ink-primary)]">
               {title}
             </h3>
             {secondaryCopy ? (
-              <div className={`min-w-0 truncate font-mono text-xs ${failureReason ? 'text-[var(--gt-status-danger)]' : 'text-[var(--gt-ink-muted)]'}`}>
+              <div className={`min-w-0 truncate font-mono text-[length:var(--gt-font-size-xs)] ${failureReason ? 'text-[var(--gt-status-danger)]' : 'text-[var(--gt-ink-muted)]'}`}>
                 {secondaryCopy}
               </div>
             ) : null}
@@ -214,18 +214,18 @@ export default function AttributionCard({
             </div>
           ) : null}
           <div className="flex items-center gap-2">
-            <h3 className="truncate text-sm font-semibold leading-tight text-[var(--gt-ink-primary)]">
+            <h3 className="truncate text-[length:var(--gt-font-size-sm)] font-semibold leading-tight text-[var(--gt-ink-primary)]">
               {title}
             </h3>
           </div>
         </div>
         {subtitle ? (
-          <div className="mt-1.5 break-all font-mono text-xs text-[var(--gt-ink-muted)]">
+          <div className="mt-1.5 break-all font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
             {subtitle}
           </div>
         ) : null}
         {failureReason ? (
-          <div className="mt-1.5 text-xs font-normal text-[var(--gt-status-danger)]">{failureReason}</div>
+          <div className="mt-1.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-status-danger)]">{failureReason}</div>
         ) : null}
       </div>
 
