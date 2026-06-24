@@ -27,10 +27,9 @@ const codexSkillModalFooterClass =
 export function SuccessHud({ title, detail }: { title: string; detail: string }) {
   return (
     <div className="pointer-events-none fixed left-1/2 top-5 z-[80] w-[min(92vw,28rem)] -translate-x-1/2" role="status" aria-live="polite">
-      <div className={`${codexSkillModalPanelClass} codex-success-hud flex items-center gap-3 px-4 py-3`}>
+      <div className={`${codexSkillModalPanelClass} flex items-center gap-3 px-4 py-3`}>
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded border border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)]">
-          <span className="codex-success-hud-ring absolute inset-0 rounded border border-[var(--gt-status-success)]" />
-          <CheckCircle2 className="codex-success-hud-icon h-6 w-6 text-[var(--gt-status-success)]" />
+          <CheckCircle2 className="h-6 w-6 text-[var(--gt-status-success)]" />
         </div>
         <div className="min-w-0">
           <div className="font-mono text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">

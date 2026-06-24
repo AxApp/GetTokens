@@ -9,11 +9,10 @@ const runtimeExtensions = new Set(['.ts', '.tsx', '.js', '.jsx']);
 const ignoredFilePatterns = [
   /\.test\.[cm]?[jt]sx?$/,
   /\.stories\.[cm]?[jt]sx?$/,
-  /^style\.css$/,
 ];
 
 const legacyRuntimeStylePattern =
-  /btn-swiss|input-swiss|select-swiss|card-swiss|shadow-\[|shadow-(?:lg|xl|2xl)|drop-shadow|border-2|bg-\[var\(--bg-(main|surface)\)\]|font-(?:medium|bold|extrabold|black)|\buppercase\b|tracking-\[|backdrop-blur|usage-desk-(?:curve|area|point)|rangeAnimationVersion|curveMotion|detailTransitionActive|codex-live-(?:chart-enter|point-pulse)/;
+  /btn-swiss|input-swiss|select-swiss|card-swiss|shadow-\[|shadow-(?:lg|xl|2xl)|drop-shadow|border-2|bg-\[var\(--bg-(main|surface)\)\]|font-(?:medium|bold|extrabold|black)|\buppercase\b|tracking-\[|backdrop-blur|usage-desk-(?:curve|area|point)|rangeAnimationVersion|curveMotion|detailTransitionActive|codex-live-(?:chart-enter|point-pulse)|codex-success-hud/;
 
 function extensionOf(filePath) {
   const match = filePath.match(/(\.[^.]+)$/);
