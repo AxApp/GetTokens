@@ -161,13 +161,13 @@ const accountDetailHeaderRailClass =
 const accountDetailHeaderTypeClass =
   'w-full min-w-0 text-left text-base font-semibold leading-tight tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailHeaderPillClass =
-  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[10px] !font-semibold !text-[var(--gt-ink-primary)]';
+  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-xs !font-semibold !text-[var(--gt-ink-primary)]';
 const accountDetailHeaderPrimaryPillClass =
-  '!min-h-0 !border !border-[var(--gt-ink-primary)] !bg-[var(--gt-ink-primary)] !py-1 !text-[10px] !font-semibold !text-[var(--gt-surface-canvas)]';
+  '!min-h-0 !border !border-[var(--gt-ink-primary)] !bg-[var(--gt-ink-primary)] !py-1 !text-xs !font-semibold !text-[var(--gt-surface-canvas)]';
 const accountDetailRuntimeMetaLabelClass =
   'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeMetaSmallClass =
-  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeDecisionTitleClass =
   'min-w-0 truncate font-sans text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailRuntimeDecisionMetaClass =
@@ -188,17 +188,17 @@ const accountDetailCredentialPaneDividerClass =
 const accountDetailCredentialSectionTitleClass =
   'text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailCredentialMetaLabelClass =
-  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailCredentialSubheadingClass =
   'mt-1 text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailCredentialPillClass =
-  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[10px] !font-semibold !text-[var(--gt-ink-primary)]';
+  '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-xs !font-semibold !text-[var(--gt-ink-primary)]';
 const accountDetailCredentialFieldLabelClass =
-  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailCredentialHelpClass =
-  'text-[10px] font-normal leading-relaxed text-[var(--gt-ink-muted)]';
+  'text-xs font-normal leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailCredentialButtonClass =
-  'shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[10px] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
+  'shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-xs font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailCredentialMenuClass =
   'absolute left-0 top-full z-20 mt-1 max-h-48 w-full overflow-auto rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const accountDetailCredentialMenuItemClass = (active: boolean) =>
@@ -224,7 +224,7 @@ const accountDetailResourceScriptCardClass =
 const accountDetailResourceCompactCardClass =
   'grid gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const accountDetailResourceHeadingClass =
-  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourcePanelClass =
   'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const accountDetailResourcePanelValueClass =
@@ -244,7 +244,7 @@ const accountDetailResourceMessageClass = (tone: 'neutral' | 'success' | 'danger
         : 'text-[var(--gt-ink-muted)]'
   }`;
 const accountDetailResourceKvLabelClass =
-  'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourceKvValueClass =
   'mt-1 truncate font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetModalOverlayClass =
@@ -438,7 +438,7 @@ export function AccountRuntimeRouteSection({
                     <div className={accountDetailRuntimeDecisionTitleClass}>
                       {decision.title}
                     </div>
-                    <AccountDetailPill tone={decision.unresolved ? 'danger' : 'neutral'} className="!min-h-0 !py-0.5 !text-[10px]">
+                    <AccountDetailPill tone={decision.unresolved ? 'danger' : 'neutral'} className="!min-h-0 !py-0.5 !text-xs">
                       {decision.matchedAs === 'selected' ? '命中' : '候选'}
                     </AccountDetailPill>
                   </div>
@@ -604,7 +604,7 @@ function RuntimeRouteResilienceEvidenceMarker({
         </div>
         <AccountDetailPill
           tone={evidence.matchedRouteBlocking ? 'danger' : 'neutral'}
-          className="!min-h-0 !py-0.5 !text-[10px]"
+          className="!min-h-0 !py-0.5 !text-xs"
         >
           {evidence.digestDisplayMode === 'reference'
             ? evidence.matchedRouteBlocking ? 'REF BLOCKING' : 'REF OBSERVE'
@@ -647,7 +647,7 @@ function RuntimeRouteResilienceEvidenceMarker({
               >
                 <AccountDetailPill
                   tone={reasonDetail.routeBlocking ? 'danger' : 'neutral'}
-                  className="!min-h-0 w-fit !py-0.5 !text-[10px]"
+                  className="!min-h-0 w-fit !py-0.5 !text-xs"
                 >
                   {reasonDetail.routeBlocking ? 'BLOCKING' : 'OBSERVE'}
                 </AccountDetailPill>
@@ -859,7 +859,7 @@ function CapabilityEndpointsPanel({
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
           <span className="text-xs font-normal text-[var(--gt-ink-muted)]">协议端点</span>
-          <p className="mt-1 text-[10px] font-normal leading-relaxed text-[var(--gt-ink-muted)]">留空使用默认基础 URL。</p>
+          <p className="mt-1 text-xs font-normal leading-relaxed text-[var(--gt-ink-muted)]">留空使用默认基础 URL。</p>
         </div>
         <AccountDetailPill className={accountDetailCredentialPillClass}>
           {CAPABILITY_ENDPOINTS.length} 端
@@ -1122,7 +1122,7 @@ function VerifyConnectionPanel({
         连通验证
       </div>
       {vs.lastVerifiedAt ? (
-        <div className="text-[10px] font-normal tracking-normal text-[var(--gt-ink-muted)]">
+        <div className="text-xs font-normal tracking-normal text-[var(--gt-ink-muted)]">
           上次发送：{new Date(vs.lastVerifiedAt).toLocaleString()}
         </div>
       ) : null}

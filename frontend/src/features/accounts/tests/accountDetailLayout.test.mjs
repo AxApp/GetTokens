@@ -1051,6 +1051,7 @@ test('account detail quota and billing render as stacked section-nav modules', a
 test('account detail quota pane renders runtime windows before falling back to test result', async () => {
   const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
 
+  assert.doesNotMatch(sectionSource, /text-\[10px\]/);
   assert.match(sectionSource, /buildQuotaDisplay\(\{/);
   assert.match(sectionSource, /runtimeQuotaDisplay\.windows\.length/);
   assert.match(sectionSource, /visibleQuotaDisplay = quotaDisplay\?\.windows\?\.length[\s\S]*runtimeQuotaDisplay\.windows\.length[\s\S]*testQuotaDisplay/);
@@ -1072,6 +1073,7 @@ test('unified account detail modal internals use the section-nav quiet workspace
   assert.match(authSource, /data-auth-file-config-notice/);
   assert.match(modelSource, /data-account-model-mapping-grid="source-route"/);
   assert.match(modelSource, /data-account-model-mapping-card/);
+  assert.doesNotMatch(modelSource, /text-\[10px\]/);
   assert.doesNotMatch(modalSource, /btn-swiss/);
   assert.doesNotMatch(modalSource, /input-swiss/);
   assert.doesNotMatch(modalSource, /data-account-balance-rail-toggle/);

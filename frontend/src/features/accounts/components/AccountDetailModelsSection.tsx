@@ -271,7 +271,7 @@ export function CompatibleModelsSection({
                     />
                   </Tooltip>
                 ) : (
-                  <AccountDetailPill className="!min-h-0 !py-0.5 text-[10px]">只读</AccountDetailPill>
+                  <AccountDetailPill className="!min-h-0 !py-0.5 text-xs">只读</AccountDetailPill>
                 )}
               </div>
             );
