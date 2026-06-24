@@ -26,8 +26,7 @@ function RuntimeWarningBanner({ warning, dataAttribute }: RuntimeWarningBannerPr
   return (
     <Tag
       color="warning"
-      className="min-w-0 overflow-hidden rounded border px-2 py-1 text-xs font-normal"
-      style={{ fontFamily: 'var(--gt-font-family-mono)' }}
+      className="min-w-0 overflow-hidden rounded border px-2 py-1 font-mono text-xs font-normal"
       title={display.full}
       {...dataProps}
     >
@@ -54,8 +53,7 @@ export function FormatBadges({ account }: FormatBadgesProps) {
         <Tag
           key={fmt}
           color="default"
-          className="rounded border px-2 py-0.5 text-xs font-normal"
-          style={{ fontFamily: 'var(--gt-font-family-mono)' }}
+          className="rounded border px-2 py-0.5 font-mono text-xs font-normal"
         >
           {formatLabel(fmt)}
         </Tag>
