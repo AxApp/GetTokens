@@ -11,7 +11,7 @@ export interface AccountDetailSectionNavItem {
 const accountDetailNavLocalActionsClass =
   'select-text border-t border-[var(--gt-border-subtle)] px-3 py-3';
 const accountDetailNavLocalActionButtonClass =
-  '!h-8 !w-full !rounded-md !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !px-3 !text-xs !font-semibold !text-[var(--gt-ink-primary)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] disabled:!cursor-not-allowed disabled:!opacity-45';
+  '!h-8 !w-full !rounded-md !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !px-3 !text-[length:var(--gt-font-size-xs)] !font-semibold !text-[var(--gt-ink-primary)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] disabled:!cursor-not-allowed disabled:!opacity-45';
 
 /* ── Sidebar Navigation ── */
 

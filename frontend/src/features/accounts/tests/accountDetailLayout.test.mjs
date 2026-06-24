@@ -997,6 +997,8 @@ test('real account detail modal uses section-nav layout instead of legacy band g
   assert.match(layoutSource, /aria-label="Account detail sections"/);
   assert.match(layoutSource, /data-account-detail-section/);
   assert.match(layoutSource, /IntersectionObserver/);
+  assert.match(layoutSource, /!text-\[length:var\(--gt-font-size-xs\)\]/);
+  assert.doesNotMatch(layoutSource, /!text-xs/);
   assert.match(modalSource, /<AccountDetailLayout[\s\S]*sectionNavItems=\{sectionNavItems\}[\s\S]*header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}/);
   assert.doesNotMatch(modalSource, /<AccountDetailLayout[\s\S]*onClose=\{props\.onClose\}/);
   assert.doesNotMatch(modalSource, /<AccountDetailModuleStack layout="bands">/);
