@@ -88,7 +88,7 @@ export function AccountDetailStatCell({
   return (
     <Descriptions.Item label={label} className={className}>
       <div className="font-sans font-semibold tabular-nums">{value}</div>
-      {meta && <div className="mt-1 text-xs text-[var(--gt-ink-muted)]">{meta}</div>}
+      {meta && <div className="mt-1 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">{meta}</div>}
     </Descriptions.Item>
   );
 }

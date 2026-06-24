@@ -1031,9 +1031,11 @@ test('account detail primitives use the current quiet token shell', async () => 
   assert.match(primitiveSource, /--gt-status-success/);
   assert.match(primitiveSource, /--gt-status-warning/);
   assert.match(primitiveSource, /--gt-status-danger/);
+  assert.match(primitiveSource, /text-\[length:var\(--gt-font-size-xs\)\]/);
   assert.doesNotMatch(primitiveSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(primitiveSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(primitiveSource, /font-(?:medium|bold|extrabold|black)/);
+  assert.doesNotMatch(primitiveSource, /\btext-xs\b/);
 });
 
 test('account detail quota and billing render as stacked section-nav modules', async () => {
