@@ -91,7 +91,7 @@ export default function ClaudeCodeMemoryFilesPanel({
       subtitle={snapshot.projectPath ? `Project: ${snapshot.projectPath}` : undefined}
       notice={
         stateMessage || hasWarnings ? (
-          <span className={`flex items-center gap-2 text-sm ${hasWarnings ? 'text-[var(--gt-status-warning)]' : 'text-[var(--gt-ink-secondary)]'}`}>
+          <span className={`flex items-center gap-2 text-[length:var(--gt-font-size-sm)] ${hasWarnings ? 'text-[var(--gt-status-warning)]' : 'text-[var(--gt-ink-secondary)]'}`}>
             {hasWarnings ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
             {stateMessage || (hasWarnings ? warnings[0] : `${existingFiles.length} file${existingFiles.length !== 1 ? 's' : ''} found`)}
           </span>
@@ -101,8 +101,8 @@ export default function ClaudeCodeMemoryFilesPanel({
       {existingFiles.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
           <FileText className="h-10 w-10 text-[var(--gt-ink-muted)]" />
-          <p className="text-sm text-[var(--gt-ink-muted)]">No CLAUDE.md files discovered</p>
-          <p className="max-w-md text-xs text-[var(--gt-ink-muted)]">
+          <p className="text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]">No CLAUDE.md files discovered</p>
+          <p className="max-w-md text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
             Create a CLAUDE.md in ~/.claude/ or your project root to provide persistent instructions to Claude Code.
             Use @imports to include AGENTS.md or other shared Markdown files.
           </p>
@@ -122,24 +122,24 @@ export default function ClaudeCodeMemoryFilesPanel({
                 </span>
                 <span className="text-[var(--gt-ink-secondary)]">{scopeIcons[file.scope] ?? <FileText className="h-4 w-4" />}</span>
                 <div className="flex-1 text-left">
-                  <span className="text-sm font-normal">{scopeLabels[file.scope] ?? file.scope}</span>
+                  <span className="text-[length:var(--gt-font-size-sm)] font-normal">{scopeLabels[file.scope] ?? file.scope}</span>
                 </div>
                 {file.exists ? (
-                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-success)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-success)]">
+                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-success)_12%,transparent)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] text-[var(--gt-status-success)]">
                     <CheckCircle2 className="h-3 w-3" /> {file.size > 1024 ? `${(file.size / 1024).toFixed(1)}KB` : `${file.size}B`}
                   </span>
                 ) : (
-                  <span className="rounded bg-[var(--gt-surface-muted)] px-2 py-0.5 text-xs text-[var(--gt-ink-muted)]">
+                  <span className="rounded bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
                     Not found
                   </span>
                 )}
                 {file.gitIgnored && (
-                  <span className="rounded bg-[color-mix(in_srgb,var(--gt-status-success)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-success)]">
+                  <span className="rounded bg-[color-mix(in_srgb,var(--gt-status-success)_12%,transparent)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] text-[var(--gt-status-success)]">
                     <GitBranch className="inline h-3 w-3" /> gitignored
                   </span>
                 )}
                 {file.scope === 'local' && !file.gitIgnored && file.exists && (
-                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-warning)]">
+                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] text-[var(--gt-status-warning)]">
                     <AlertTriangle className="h-3 w-3" /> not gitignored
                   </span>
                 )}
@@ -147,17 +147,17 @@ export default function ClaudeCodeMemoryFilesPanel({
 
               {expandedFiles.has(file.path) && file.exists && (
                 <div className={memoryFilesPanelPanelClass}>
-                  <p className="mb-3 font-mono text-xs text-[var(--gt-ink-muted)]">{file.path}</p>
+                  <p className="mb-3 font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">{file.path}</p>
 
                   {file.imports && file.imports.length > 0 && (
                     <div className="mb-4">
                       <div className="mb-2 flex items-center gap-2">
                         <Import className="h-3.5 w-3.5 text-[var(--gt-ink-secondary)]" />
-                        <span className="text-xs font-normal">Imports ({file.imports.length})</span>
+                        <span className="text-[length:var(--gt-font-size-xs)] font-normal">Imports ({file.imports.length})</span>
                       </div>
                       <div className="ml-5 space-y-1">
                         {file.imports.map((imp) => (
-                          <div key={imp.raw} className="flex items-center gap-2 text-xs">
+                          <div key={imp.raw} className="flex items-center gap-2 text-[length:var(--gt-font-size-xs)]">
                             <span className="font-mono text-[var(--gt-ink-secondary)]">@{imp.raw}</span>
                             <span className="text-[var(--gt-ink-muted)]">&rarr;</span>
                             {imp.exists ? (
@@ -181,16 +181,16 @@ export default function ClaudeCodeMemoryFilesPanel({
                   )}
 
                   {file.contentTruncated && (
-                    <div className="mb-2 rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] p-2 text-xs text-[var(--gt-status-warning)]">
+                    <div className="mb-2 rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] p-2 text-[length:var(--gt-font-size-xs)] text-[var(--gt-status-warning)]">
                       Content truncated (file exceeds 50KB limit)
                     </div>
                   )}
 
                   <div className="mb-3">
-                    <div className="mb-1 flex items-center gap-2 text-xs font-normal text-[var(--gt-ink-secondary)]">
+                    <div className="mb-1 flex items-center gap-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)]">
                       <Globe className="h-3.5 w-3.5" /> Content Preview
                     </div>
-                    <SnippetPre className="max-h-60 overflow-auto text-xs">{file.content || ''}</SnippetPre>
+                    <SnippetPre className="max-h-60 overflow-auto text-[length:var(--gt-font-size-xs)]">{file.content || ''}</SnippetPre>
                   </div>
 
                   <div className="flex justify-end">
@@ -222,8 +222,8 @@ export default function ClaudeCodeMemoryFilesPanel({
 
       {isEditing && editingPath && (
         <div className={memoryFilesPanelPanelClass} data-claude-memory-editor="quiet">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-normal">
-            <Edit3 className="h-4 w-4" /> Editing: <span className="font-mono text-xs text-[var(--gt-ink-muted)]">{editingPath}</span>
+          <h3 className="mb-2 flex items-center gap-2 text-[length:var(--gt-font-size-sm)] font-normal">
+            <Edit3 className="h-4 w-4" /> Editing: <span className="font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">{editingPath}</span>
           </h3>
           <Input.TextArea
             size="small"
@@ -232,11 +232,11 @@ export default function ClaudeCodeMemoryFilesPanel({
           />
           {savePreview && (
             <div className="mt-3">
-              <span className="text-xs font-normal">Preview</span>
-              <SnippetPre className="max-h-40 mt-1 overflow-auto text-xs">{savePreview}</SnippetPre>
+              <span className="text-[length:var(--gt-font-size-xs)] font-normal">Preview</span>
+              <SnippetPre className="max-h-40 mt-1 overflow-auto text-[length:var(--gt-font-size-xs)]">{savePreview}</SnippetPre>
             </div>
           )}
-          {saveError && <p className="mt-2 text-sm text-[var(--gt-status-danger)]">{saveError}</p>}
+          {saveError && <p className="mt-2 text-[length:var(--gt-font-size-sm)] text-[var(--gt-status-danger)]">{saveError}</p>}
         </div>
       )}
     </AssetWorkbenchShell>
