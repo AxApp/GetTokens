@@ -1331,6 +1331,8 @@ test('Codex route probe modal uses the quiet workspace shell', async () => {
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-danger/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xl\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.match(source, /shadow-sm/);
   assert.doesNotMatch(source, /shadow-(?:lg|xl|2xl)|drop-shadow/);
   assert.doesNotMatch(source, /btn-swiss/);

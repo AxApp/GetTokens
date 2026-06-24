@@ -84,7 +84,7 @@ export function RouteProbeCard({
             <div className={codexRouteProbeMetaClass}>
               {t('codex.account_list_probe_terminal')}
             </div>
-            <h3 className="mt-2 text-xl font-semibold leading-none tracking-normal text-[var(--gt-ink-primary)]">
+            <h3 className="mt-2 text-[length:var(--gt-font-size-xl)] font-semibold leading-none tracking-normal text-[var(--gt-ink-primary)]">
               {t('codex.account_list_probe_open')}
             </h3>
             <p className="mt-2 max-w-3xl text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-muted)]">
@@ -210,7 +210,7 @@ function ProbeControlPanel({
         <div className={codexRouteProbeMetaClass}>
           {t('codex.account_list_probe_open')}
         </div>
-        <div className="mt-2 text-lg font-semibold leading-none tracking-normal text-[var(--gt-ink-primary)]">
+        <div className="mt-2 text-[length:var(--gt-font-size-lg)] font-semibold leading-none tracking-normal text-[var(--gt-ink-primary)]">
           {t('codex.account_list_policy_headline')}
         </div>
       </div>
@@ -268,7 +268,7 @@ function RouteProbeCandidateQueue({ rows, t }: { rows: CodexAccountRow[]; t: (ke
           <div className={codexRouteProbeMetaClass}>
             {t('codex.account_list_policy_preview')}
           </div>
-          <div className="mt-1 text-base font-semibold leading-none tracking-normal text-[var(--gt-ink-primary)]">
+          <div className="mt-1 text-[length:var(--gt-font-size-md)] font-semibold leading-none tracking-normal text-[var(--gt-ink-primary)]">
             {t('codex.account_list_policy_order')}
           </div>
         </div>
