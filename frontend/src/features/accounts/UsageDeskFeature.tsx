@@ -395,7 +395,14 @@ function UsageDeskProjectedControls({
             { type: 'divider' },
             ...usageDeskProjectedActionImpacts.map((action) => ({
               key: action.id,
-              label: action.label,
+              label: (
+                <span className="grid gap-0.5">
+                  <span>{action.label}</span>
+                  <span className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
+                    {action.description}
+                  </span>
+                </span>
+              ),
               disabled: projectedLoading || (action.id === 'rebuild-day' && !selectedDayKey),
             })),
           ],

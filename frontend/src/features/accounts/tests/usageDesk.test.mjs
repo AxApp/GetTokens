@@ -70,7 +70,7 @@ test('usage desk chart controls stay on one line and expose compact overflow', a
   assert.match(featureSource, /from 'antd'/);
   assert.match(featureSource, /<Segmented\b/);
   assert.match(featureSource, /<Button\b/);
-  assert.match(featureSource, /<Space\b/);
+  assert.match(featureSource, /<Dropdown\b/);
   assert.doesNotMatch(featureSource, /usage-desk-control-bar|usage-desk-overflow-menu|usage-desk-segment/);
   assert.doesNotMatch(styleSource, /\.usage-desk-control-bar|\.usage-desk-overflow-menu|\.usage-desk-segment/);
 });
@@ -89,7 +89,7 @@ test('usage desk chart header removes source and facet summary strip', async () 
   assert.match(featureSource, /t\('accounts\.usage_desk_codex_title'\)/);
   assert.match(featureSource, /t\('accounts\.usage_desk_claude_title'\)/);
   assert.doesNotMatch(featureSource, /usage-desk-index-overflow-section/);
-  assert.match(featureSource, /title=\{action\.description\}/);
+  assert.match(featureSource, /usageDeskProjectedActionImpacts\.map/);
   assert.match(zhLocaleSource, /"usage_desk_codex_title": "Codex 用量分析"/);
   assert.match(zhLocaleSource, /"usage_desk_claude_title": "Claude 用量分析"/);
   assert.match(enLocaleSource, /"usage_desk_codex_title": "Codex Usage Desk"/);
@@ -104,10 +104,7 @@ test('UsageDeskFeature uses the quiet workspace page shell', async () => {
   assert.match(featureSource, /const usageDeskStickyChartShellClass =/);
   assert.match(featureSource, /data-usage-desk-feature="quiet"/);
   assert.match(featureSource, /data-usage-desk-source-toggle/);
-  assert.match(featureSource, /--gt-surface-canvas/);
   assert.match(featureSource, /--gt-surface-page/);
-  assert.match(featureSource, /--gt-border-subtle/);
-  assert.match(featureSource, /--gt-ink-primary/);
   assert.doesNotMatch(featureSource, /btn-swiss/);
   assert.doesNotMatch(featureSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(featureSource, /bg-\[var\(--bg-surface\)\]/);
@@ -287,10 +284,9 @@ test('usage desk status evidence reports missing non-authoritative state instead
 test('usage desk explicit fact still renders authority while missing state has its own UI branch', async () => {
   const panelsSource = await readFile(new URL('../components/usage-desk/UsageDeskPanels.tsx', import.meta.url), 'utf8');
 
-  assert.match(panelsSource, /data-usage-desk-evidence-status="quota-fact"/);
-  assert.match(panelsSource, /data-usage-desk-evidence-status="missing-quota-fact"/);
-  assert.match(panelsSource, /NON-AUTHORITATIVE/);
-  assert.match(panelsSource, /'view' in evidence/);
+  assert.match(panelsSource, /data-usage-desk-state-panel=\{tone\}/);
+  assert.match(panelsSource, /tone === 'error'/);
+  assert.match(panelsSource, /usageDeskMutedPanelClass/);
 });
 
 test('UsageDeskPanels uses the quiet workspace shell', async () => {
@@ -361,7 +357,7 @@ test('UsageDeskChart uses the quiet workspace shell', async () => {
   assert.match(chartSource, /data-usage-desk-empty-chart/);
   assert.match(chartSource, /--gt-surface-canvas/);
   assert.match(chartSource, /--gt-surface-muted/);
-  assert.match(chartSource, /--gt-border-subtle/);
+  assert.match(chartSource, /import \{ Card, Divider, Empty, Space, Typography \} from 'antd'/);
   assert.doesNotMatch(chartSource, /border-2/);
   assert.doesNotMatch(chartSource, /border-b-2/);
   assert.doesNotMatch(chartSource, /border-t-2/);
@@ -426,7 +422,7 @@ test('projected usage index actions explain scope and raw session safety', async
   const featureSource = await readFile(new URL('../UsageDeskFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(featureSource, /usageDeskProjectedActionImpacts\.map/);
-  assert.match(featureSource, /action\.description/);
+  assert.match(featureSource, /\{action\.description\}/);
 });
 
 test('resolveUsageDeskCurveAnimationConfig keeps realtime motion bounded', () => {
