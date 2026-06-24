@@ -626,16 +626,6 @@ function TimingTrendChart({
           width: '100%',
         }}
       >
-        <style>{`
-          @keyframes codex-live-chart-enter {
-            0% { opacity: 0; transform: translateY(4px); }
-            100% { opacity: 1; }
-          }
-          @keyframes codex-live-point-pulse {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 0.68; transform: scale(1.45); }
-          }
-        `}</style>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           preserveAspectRatio="xMinYMin meet"
@@ -706,7 +696,7 @@ function TimingTrendChart({
             );
           })}
 
-          <g key={`${selectedMetric}-latency-trend-layer`} data-codex-timing-line-layer="true" style={{ animation: 'codex-live-chart-enter 220ms cubic-bezier(0.16,1,0.3,1)' }}>
+          <g key={`${selectedMetric}-latency-trend-layer`} data-codex-timing-line-layer="true">
             {areaPath ? <path d={areaPath} fill="url(#codexTimingTrendArea)" data-codex-timing-area-path="true" /> : null}
             {linePath ? (
               <path
@@ -747,7 +737,6 @@ function TimingTrendChart({
                 strokeWidth="1.25"
                 opacity="0.36"
                 data-codex-timing-selected-ring="true"
-                style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'codex-live-point-pulse 1.8s ease-in-out infinite' }}
               />
             ) : null}
           </g>

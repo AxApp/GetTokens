@@ -1718,8 +1718,8 @@ test('codex live session timing chart uses a fixed viewport without horizontal p
 test('codex live session timing chart follows low-noise line chart primitives', async () => {
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
 
-  assert.match(detailSource, /codex-live-chart-enter/);
-  assert.match(detailSource, /codex-live-point-pulse/);
+  assert.doesNotMatch(detailSource, /codex-live-chart-enter/);
+  assert.doesNotMatch(detailSource, /codex-live-point-pulse/);
   assert.match(detailSource, /key=\{`\$\{selectedMetric\}-latency-trend-layer`\}/);
   assert.match(detailSource, /data-codex-timing-line-layer/);
   assert.match(detailSource, /function buildTimingTrendLinePoints/);
