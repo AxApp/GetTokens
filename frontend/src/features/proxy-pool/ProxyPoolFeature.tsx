@@ -699,29 +699,29 @@ export default function ProxyPoolFeature() {
           {isSelectionMode ? (
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--gt-border-subtle)] pt-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               <span className="mr-1">{selectedCount > 0 ? `已选 ${selectedCount}` : '选择模式'}</span>
-              <Button size="small" onClick={toggleSelectCurrentPage} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
+              <Button size="small" onClick={toggleSelectCurrentPage} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors">
                 {allCurrentPageSelected ? '取消当前页' : '全选当前页'}
               </Button>
-              <Button size="small" onClick={toggleSelectAllFiltered} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
+              <Button size="small" onClick={toggleSelectAllFiltered} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors">
                 {allFilteredSelected ? '取消当前筛选' : '全选当前筛选'}
               </Button>
               {selectedCount > 0 ? (
                 <>
-                  <Button size="small" onClick={handleSelectedRetest} icon={<RefreshCw className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
+                  <Button size="small" onClick={handleSelectedRetest} icon={<RefreshCw className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors">
                     测速
                   </Button>
-                  <Button size="small" onClick={exportSelectedNodes} icon={<Download className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
+                  <Button size="small" onClick={exportSelectedNodes} icon={<Download className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors">
                     导出
                   </Button>
-                  <Button size="small" onClick={clearSelection} icon={<X className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
+                  <Button size="small" onClick={clearSelection} icon={<X className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors">
                     清空
                   </Button>
-                  <Button size="small" onClick={handleBatchDelete} icon={<Trash2 className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition !border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] !bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] !text-[var(--gt-status-danger)] hover:!bg-[color-mix(in_srgb,var(--gt-status-danger)_16%,transparent)]">
+                  <Button size="small" onClick={handleBatchDelete} icon={<Trash2 className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors !border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] !bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] !text-[var(--gt-status-danger)] hover:!bg-[color-mix(in_srgb,var(--gt-status-danger)_16%,transparent)]">
                     删除
                   </Button>
                 </>
               ) : null}
-              <Button size="small" onClick={disableSelectionMode} className="ml-auto inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
+              <Button size="small" onClick={disableSelectionMode} className="ml-auto inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors">
                 结束选择
               </Button>
             </div>
@@ -800,7 +800,7 @@ export default function ProxyPoolFeature() {
               <Button
                 size="small"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
-                className="inline-flex h-8 items-center rounded px-3 text-[length:var(--gt-font-size-xs)] font-normal transition disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-8 items-center rounded px-3 text-[length:var(--gt-font-size-xs)] font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={pagination.page <= 1}
               >
                 上一页
@@ -808,7 +808,7 @@ export default function ProxyPoolFeature() {
               <Button
                 size="small"
                 onClick={() => setPage((current) => Math.min(pagination.pageCount, current + 1))}
-                className="inline-flex h-8 items-center rounded px-3 text-[length:var(--gt-font-size-xs)] font-normal transition disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-8 items-center rounded px-3 text-[length:var(--gt-font-size-xs)] font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={pagination.page >= pagination.pageCount}
               >
                 下一页
@@ -1462,7 +1462,7 @@ function ActionButton({
       size="small"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-8 items-center justify-start gap-1.5 rounded px-2.5 text-left text-[length:var(--gt-font-size-xs)] font-normal transition disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''} ${className}`}
+      className={`inline-flex h-8 items-center justify-start gap-1.5 rounded px-2.5 text-left text-[length:var(--gt-font-size-xs)] font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''} ${className}`}
     >
       {children}
     </Button>
@@ -1484,7 +1484,7 @@ function MenuActionButton({
     <Button
       size="small"
       onClick={onClick}
-      className="flex w-full items-start gap-2 rounded px-2.5 py-2 text-left transition hover:bg-[var(--gt-surface-muted)]"
+      className="flex w-full items-start gap-2 rounded px-2.5 py-2 text-left transition-colors hover:bg-[var(--gt-surface-muted)]"
     >
       {icon ? <span className="mt-0.5 shrink-0 text-[var(--gt-ink-muted)]">{icon}</span> : null}
       <span className="min-w-0">
