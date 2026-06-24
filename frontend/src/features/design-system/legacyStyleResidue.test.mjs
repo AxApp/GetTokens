@@ -236,10 +236,12 @@ test('selected UI sources keep small static layout styles in classes', async () 
 test('selected UI sources keep discrete conditional styles in classes', async () => {
   const relativePaths = [
     'components/ui/Combobox.tsx',
+    'features/codex-live-sessions/components/CodexLiveSessionDetail.tsx',
     'features/session-management/components/SessionPluginConsolePanel.tsx',
   ];
   const conditionalInlineStylePatterns = [
     /textAlign:\s*align === 'right'/,
+    /style=\{\{ background: seriesPaint \}\}/,
     /borderColor:/,
     /borderRightColor:/,
   ];

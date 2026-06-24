@@ -368,7 +368,6 @@ function OverviewTimingTrend({
   const trend = buildCodexLiveRequestTimingTrend(requests, activeRequest, { nowMs });
   const latestPoint = trend.points[trend.points.length - 1];
   const selectedSeries = getTimingTrendSeries(selectedMetric);
-  const seriesPaint = selectedSeries.color;
   const selectedRequestID = activeRequest?.requestID || latestPoint?.requestID || '';
 
   return (
@@ -408,7 +407,7 @@ function OverviewTimingTrend({
 
           <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
             <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)]">
-              <span className="h-2 w-2" style={{ background: seriesPaint }} />
+              <span className={`h-2 w-2 ${selectedSeries.dotClass}`} />
               <span className="font-semibold text-[var(--gt-ink-muted)]">{t(selectedSeries.labelKey)}</span>
               <span className="font-semibold text-[var(--gt-ink-primary)]">
                 {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}
@@ -453,15 +452,15 @@ function TimingMetricSelector({
   );
 }
 
-const timingTrendSeries: Array<{ id: CodexLiveTimingTrendMetric; labelKey: string; color: string }> = [
-  { id: 'firstEventMs', labelKey: 'codex_live_sessions.timing_ttft', color: 'var(--color-chart-blue)' },
-  { id: 'firstTokenMs', labelKey: 'codex_live_sessions.timing_first_token', color: 'var(--color-chart-peak)' },
-  { id: 'streamDurationMs', labelKey: 'codex_live_sessions.timing_stream', color: 'var(--gt-status-success)' },
-  { id: 'queueWaitMs', labelKey: 'codex_live_sessions.timing_queue', color: 'var(--gt-status-warning)' },
-  { id: 'authSelectMs', labelKey: 'codex_live_sessions.timing_auth', color: 'var(--color-chart-attribution)' },
-  { id: 'upstreamConnectMs', labelKey: 'codex_live_sessions.timing_connect', color: 'var(--color-chart-secondary)' },
-  { id: 'averageEventGapMs', labelKey: 'codex_live_sessions.timing_avg_gap', color: 'var(--gt-status-warning)' },
-  { id: 'longestEventGapMs', labelKey: 'codex_live_sessions.timing_max_gap', color: 'var(--gt-status-danger)' },
+const timingTrendSeries: Array<{ id: CodexLiveTimingTrendMetric; labelKey: string; color: string; dotClass: string }> = [
+  { id: 'firstEventMs', labelKey: 'codex_live_sessions.timing_ttft', color: 'var(--color-chart-blue)', dotClass: 'bg-[var(--color-chart-blue)]' },
+  { id: 'firstTokenMs', labelKey: 'codex_live_sessions.timing_first_token', color: 'var(--color-chart-peak)', dotClass: 'bg-[var(--color-chart-peak)]' },
+  { id: 'streamDurationMs', labelKey: 'codex_live_sessions.timing_stream', color: 'var(--gt-status-success)', dotClass: 'bg-[var(--gt-status-success)]' },
+  { id: 'queueWaitMs', labelKey: 'codex_live_sessions.timing_queue', color: 'var(--gt-status-warning)', dotClass: 'bg-[var(--gt-status-warning)]' },
+  { id: 'authSelectMs', labelKey: 'codex_live_sessions.timing_auth', color: 'var(--color-chart-attribution)', dotClass: 'bg-[var(--color-chart-attribution)]' },
+  { id: 'upstreamConnectMs', labelKey: 'codex_live_sessions.timing_connect', color: 'var(--color-chart-secondary)', dotClass: 'bg-[var(--color-chart-secondary)]' },
+  { id: 'averageEventGapMs', labelKey: 'codex_live_sessions.timing_avg_gap', color: 'var(--gt-status-warning)', dotClass: 'bg-[var(--gt-status-warning)]' },
+  { id: 'longestEventGapMs', labelKey: 'codex_live_sessions.timing_max_gap', color: 'var(--gt-status-danger)', dotClass: 'bg-[var(--gt-status-danger)]' },
 ];
 const requestTimelineVisibleLimit = 15;
 const timingTrendPointStepPx = 16;
@@ -491,7 +490,6 @@ function RequestTimingTrend({
   const currentRequestID = request?.requestID || session.lastRequestID || session.sessionID;
   const latestPoint = trend.points[trend.points.length - 1];
   const selectedSeries = getTimingTrendSeries(selectedMetric);
-  const seriesPaint = selectedSeries.color;
 
   return (
     <section
@@ -536,7 +534,7 @@ function RequestTimingTrend({
 
           <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
             <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)]">
-              <span className="h-2 w-2" style={{ background: seriesPaint }} />
+              <span className={`h-2 w-2 ${selectedSeries.dotClass}`} />
               <span className="font-semibold text-[var(--gt-ink-muted)]">{t(selectedSeries.labelKey)}</span>
               <span className="font-semibold text-[var(--gt-ink-primary)]">
                 {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}
