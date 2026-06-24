@@ -335,6 +335,13 @@ test('usage desk chart cards keep static body padding in classes', async () => {
   assert.match(source, /classNames=\{\{ body: '!p-0' \}\}/);
 });
 
+test('account card frame keeps static card body layout in classes', async () => {
+  const source = await readFile(join(srcRoot.pathname, 'features/accounts/components/AccountCardFrame.tsx'), 'utf8');
+
+  assert.doesNotMatch(source, /styles=\{\{\s*body:/);
+  assert.match(source, /classNames=\{\{ body: 'flex h-full flex-col !p-0' \}\}/);
+});
+
 test('runtime inline styles stay limited to approved dynamic rendering boundaries', async () => {
   const allowedInlineStyleBlocks = [
     { path: 'features/design-system/DesignSystemEntryFeature.tsx', pattern: /backgroundColor: value|borderRadius: value|boxShadow: value/ },

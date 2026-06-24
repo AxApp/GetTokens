@@ -1166,8 +1166,8 @@ test('Codex account order cards reuse the account pool card and drag the whole c
   assert.match(accountCardSource, /showFooterReauthAction && canReauth/);
   assert.match(accountCardSource, /eyebrowPrefix = ''/);
   assert.match(accountCardFrameSource, /<Card/);
-  assert.match(accountCardFrameSource, /body: \{ padding: 0, height: '100%', display: 'flex', flexDirection: 'column' \}/);
-  assert.match(accountCardFrameSource, /height: '100%'/);
+  assert.match(accountCardFrameSource, /classNames=\{\{ body: 'flex h-full flex-col !p-0' \}\}/);
+  assert.doesNotMatch(accountCardFrameSource, /styles=\{\{\s*body:/);
   assert.match(accountCardSource, /extraBadges = \[\]/);
   assert.match(accountCardSource, /onToggleDisabled\(account\)/);
 });
