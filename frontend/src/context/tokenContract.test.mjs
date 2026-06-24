@@ -40,8 +40,14 @@ const accentStatusTokens = [
   '--gt-accent-primary',
   '--gt-accent-hover',
   '--gt-status-success',
+  '--gt-status-success-soft',
+  '--gt-status-success-bar',
   '--gt-status-warning',
+  '--gt-status-warning-soft',
+  '--gt-status-warning-bar',
   '--gt-status-danger',
+  '--gt-status-danger-soft',
+  '--gt-status-danger-bar',
   '--gt-status-info',
 ];
 
@@ -159,6 +165,7 @@ test(':root contains all accent/status tokens', () => {
   for (const token of accentStatusTokens) {
     assertTokenExists(token, rootBlock, `:root should define ${token}`);
   }
+  assert.doesNotMatch(rootBlock, /--color-status-/);
 });
 
 test(':root contains all chart tokens without retired aliases', () => {

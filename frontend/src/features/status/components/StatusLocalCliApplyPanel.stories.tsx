@@ -577,7 +577,7 @@ function ConfirmRow({
       </span>
       <span
         className={`break-all font-mono text-[length:var(--gt-font-size-sm)] font-semibold ${
-          tone === 'warning' ? 'text-[var(--color-status-warning)]' : 'text-[var(--gt-ink-primary)]'
+          tone === 'warning' ? 'text-[var(--gt-status-warning)]' : 'text-[var(--gt-ink-primary)]'
         }`}
       >
         {value}
@@ -609,10 +609,10 @@ function ConfirmList({ title, items }: { title: string; items: string[] }) {
 function ConfirmNotice({ tone, text }: { tone: 'success' | 'warning' | 'danger'; text: string }) {
   const color =
     tone === 'success'
-      ? 'var(--color-status-success)'
+      ? 'var(--gt-status-success)'
       : tone === 'danger'
-        ? 'var(--color-status-danger)'
-        : 'var(--color-status-warning)';
+        ? 'var(--gt-status-danger)'
+        : 'var(--gt-status-warning)';
   return (
     <div
       className="rounded-md border border-dashed bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal"

@@ -32,15 +32,15 @@ const themeTokens: ColorToken[] = [
 ];
 
 const semanticColors: FixedColor[] = [
-  { name: '--color-status-success', value: 'var(--color-status-success)', usage: '成功状态、复制成功、健康状态', source: 'style.css token' },
-  { name: '--color-status-success-soft', value: 'var(--color-status-success-soft)', usage: 'Vendor Status 在线文本', source: 'style.css token' },
-  { name: '--color-status-success-bar', value: 'var(--color-status-success-bar)', usage: 'Vendor Status 在线条', source: 'style.css token' },
-  { name: '--color-status-warning', value: 'var(--color-status-warning)', usage: '警告状态、接近限额', source: 'style.css token' },
-  { name: '--color-status-warning-soft', value: 'var(--color-status-warning-soft)', usage: 'Vendor Status 降级文本', source: 'style.css token' },
-  { name: '--color-status-warning-bar', value: 'var(--color-status-warning-bar)', usage: 'Vendor Status 降级条', source: 'style.css token' },
-  { name: '--color-status-danger', value: 'var(--color-status-danger)', usage: '错误状态、验证失败', source: 'style.css token' },
-  { name: '--color-status-danger-soft', value: 'var(--color-status-danger-soft)', usage: 'Vendor Status 故障文本', source: 'style.css token' },
-  { name: '--color-status-danger-bar', value: 'var(--color-status-danger-bar)', usage: 'Vendor Status 故障条', source: 'style.css token' },
+  { name: '--gt-status-success', value: 'var(--gt-status-success)', usage: '成功状态、复制成功、健康状态', source: 'style.css token' },
+  { name: '--gt-status-success-soft', value: 'var(--gt-status-success-soft)', usage: 'Vendor Status 在线文本', source: 'style.css token' },
+  { name: '--gt-status-success-bar', value: 'var(--gt-status-success-bar)', usage: 'Vendor Status 在线条', source: 'style.css token' },
+  { name: '--gt-status-warning', value: 'var(--gt-status-warning)', usage: '警告状态、接近限额', source: 'style.css token' },
+  { name: '--gt-status-warning-soft', value: 'var(--gt-status-warning-soft)', usage: 'Vendor Status 降级文本', source: 'style.css token' },
+  { name: '--gt-status-warning-bar', value: 'var(--gt-status-warning-bar)', usage: 'Vendor Status 降级条', source: 'style.css token' },
+  { name: '--gt-status-danger', value: 'var(--gt-status-danger)', usage: '错误状态、验证失败', source: 'style.css token' },
+  { name: '--gt-status-danger-soft', value: 'var(--gt-status-danger-soft)', usage: 'Vendor Status 故障文本', source: 'style.css token' },
+  { name: '--gt-status-danger-bar', value: 'var(--gt-status-danger-bar)', usage: 'Vendor Status 故障条', source: 'style.css token' },
 ];
 
 const analyticsColors: FixedColor[] = [

@@ -143,7 +143,7 @@ function Footer() {
 
 function ErrorMessage() {
   return (
-    <div className="border-t-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-6 py-4 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--color-status-danger)]">
+    <div className="border-t-2 border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-6 py-4 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]">
       Quota probe returned 429 in the latest check.
     </div>
   );

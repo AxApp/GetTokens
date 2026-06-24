@@ -128,7 +128,7 @@ function MockAccountCard({ account, displayMode }: { account: AccountRecord; dis
             {account.planType}
           </span>
           {account.disabled ? (
-            <span className="border border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--color-status-danger)]">
+            <span className="border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-status-danger)]">
               Disabled
             </span>
           ) : null}

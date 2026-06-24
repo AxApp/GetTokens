@@ -63,7 +63,7 @@ function ModalContent({ long = false }: { long?: boolean }) {
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="shrink-0 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--color-status-danger)]">
+    <div className="shrink-0 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]">
       {message}
     </div>
   );

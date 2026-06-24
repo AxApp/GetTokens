@@ -21,8 +21,14 @@
     --gt-accent-primary: #1677ff;
     --gt-accent-hover: #4096ff;
     --gt-status-success: #52c41a;
+    --gt-status-success-soft: #95de64;
+    --gt-status-success-bar: #52c41a;
     --gt-status-warning: #faad14;
+    --gt-status-warning-soft: #ffd666;
+    --gt-status-warning-bar: #faad14;
     --gt-status-danger: #f5222d;
+    --gt-status-danger-soft: #ff7875;
+    --gt-status-danger-bar: #f5222d;
     --gt-status-info: #1677ff;
     --gt-chart-primary: #1677ff;
     --gt-chart-primary-area: #4096ff;
@@ -38,15 +44,6 @@
     --overlay-scrim-70: color-mix(in srgb, #000000 70%, transparent);
     --overlay-scrim-80: color-mix(in srgb, #000000 80%, transparent);
     --overlay-scrim-85: color-mix(in srgb, #000000 85%, transparent);
-    --color-status-success: var(--gt-status-success);
-    --color-status-success-soft: #95de64;
-    --color-status-success-bar: #52c41a;
-    --color-status-warning: var(--gt-status-warning);
-    --color-status-warning-soft: #ffd666;
-    --color-status-warning-bar: #faad14;
-    --color-status-danger: var(--gt-status-danger);
-    --color-status-danger-soft: #ff7875;
-    --color-status-danger-bar: #f5222d;
     --color-provider-aihubmix: #1677ff;
     --color-provider-aigocode: #597ef7;
     --color-provider-anthropic: #fa8c16;
@@ -418,8 +415,8 @@
 
   [data-design-system-inspect-mode='active'] [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-copied='true']::before {
     content: attr(data-design-system-component-name) ' / COPIED';
-    background: var(--color-status-success);
-    border-color: var(--color-status-success);
+    background: var(--gt-status-success);
+    border-color: var(--gt-status-success);
   }
 
   [data-design-system-inspect-mode='active'] [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-copied='error']::before {
