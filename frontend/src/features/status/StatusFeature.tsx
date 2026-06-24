@@ -94,7 +94,7 @@ const statusDiagnosticsToneClass =
 const statusPageShellClass =
   'h-full w-full overflow-auto bg-[var(--gt-surface-muted)] px-6 py-6 lg:px-8 lg:py-8';
 const statusPageContentClass = 'mx-auto flex w-full max-w-[1180px] flex-col gap-6';
-const statusHeroCardClass = 'status-hero-card border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const statusSummaryCardClass = 'status-summary-card border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const statusWorkbenchGridClass = 'grid items-start gap-4';
 const statusPrimaryRailClass = 'min-w-0';
 const statusDiagnosticsRailClass = 'grid min-w-0 gap-4';
@@ -1145,9 +1145,9 @@ export default function StatusFeature({
       <div className={statusPageContentClass}>
         <Card
           variant="outlined"
-          className={statusHeroCardClass}
+          className={statusSummaryCardClass}
           styles={{ body: { padding: 16 } }}
-          data-status-hero="true"
+          data-status-summary="true"
         >
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
             <Space orientation="vertical" size={8} className="min-w-0">

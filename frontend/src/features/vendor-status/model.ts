@@ -55,7 +55,7 @@ export interface VendorStatusPageViewModel {
   lastSyncLabel: string;
   feedUpdatedLabel: string;
   activeIncidentCount: number;
-  heroIncident: VendorIncidentViewModel | null;
+  leadIncident: VendorIncidentViewModel | null;
   groups: VendorStatusGroupViewModel[];
   recentIncidents: VendorIncidentViewModel[];
 }
@@ -415,7 +415,7 @@ function buildHistoryItemsFromIncidentLinks(incidentLinks: IncidentLinkRecord[] 
     }));
 }
 
-function buildHeroIncidentFromSummary(
+function buildLeadIncidentFromSummary(
   ongoingIncident: SummaryOngoingIncident,
   componentNameById: Map<string, string>,
   groupNameByComponentId: Map<string, string>,
@@ -453,7 +453,7 @@ function buildHeroIncidentFromSummary(
   };
 }
 
-function buildHeroIncident(
+function buildLeadIncident(
   rssIncidents: ParsedRssIncident[],
   summary: SummaryPayload['summary'],
   componentNameById: Map<string, string>,
@@ -495,7 +495,7 @@ function buildHeroIncident(
   if (!fallback) {
     return null;
   }
-  return buildHeroIncidentFromSummary(fallback, componentNameById, groupNameByComponentId, now, locale);
+  return buildLeadIncidentFromSummary(fallback, componentNameById, groupNameByComponentId, now, locale);
 }
 
 function toUTCStartOfDay(date: Date) {
@@ -655,7 +655,7 @@ export function buildVendorStatusViewModel(
   const rssIncidents = parseOpenAIStatusRSS(rssXML);
   const { componentNameById, groupNameByComponentId } = buildAffectedComponentMaps(summary);
   const groups = buildGroupViewModels(summary, impactsPayload, now, locale);
-  const heroIncident = buildHeroIncident(rssIncidents, summary, componentNameById, groupNameByComponentId, now, locale);
+  const leadIncident = buildLeadIncident(rssIncidents, summary, componentNameById, groupNameByComponentId, now, locale);
   const unresolvedCount = rssIncidents.filter((incident) => !['resolved', 'completed', 'closed'].includes(incident.status)).length;
   const lastFeedBuildDate = extractRSSLastBuildDate(rssXML);
   const publicUrl = summary.public_url || 'https://status.openai.com/';
@@ -669,7 +669,7 @@ export function buildVendorStatusViewModel(
     lastSyncLabel: formatShortDateTime(now.toISOString(), locale),
     feedUpdatedLabel: lastFeedBuildDate ? formatShortDateTime(lastFeedBuildDate, locale) : '--',
     activeIncidentCount: unresolvedCount,
-    heroIncident,
+    leadIncident,
     groups,
     recentIncidents: buildRecentIncidents(rssIncidents, impactsPayload, locale),
   };

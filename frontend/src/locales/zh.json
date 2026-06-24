@@ -705,12 +705,12 @@
     "data_source_json_summary_desc": "组件分组和当前降级状态来自 summary 接口。",
     "data_source_component_impacts": "Component Impacts",
     "data_source_component_impacts_desc": "uptime 条带来自最近 90 天的组件影响区间。",
-    "hero_all_operational": "当前全部正常",
-    "hero_no_incident": "当前 RSS feed 和实时状态摘要里都没有检测到进行中的 OpenAI 事故。",
+    "summary_all_operational": "当前全部正常",
+    "summary_no_incident": "当前 RSS feed 和实时状态摘要里都没有检测到进行中的 OpenAI 事故。",
     "open_official_status": "打开官方状态页",
-    "hero_active_issue": "当前存在进行中问题",
+    "summary_active_issue": "当前存在进行中问题",
     "scope_fallback": "OpenAI",
-    "hero_incident_fallback": "官方 feed 已发布事故，但暂时还没有更多正文细节。",
+    "summary_incident_fallback": "官方 feed 已发布事故，但暂时还没有更多正文细节。",
     "operational": "正常"
   },
   "session_management": {

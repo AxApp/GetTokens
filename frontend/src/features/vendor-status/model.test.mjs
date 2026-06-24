@@ -135,8 +135,8 @@ test('buildVendorStatusViewModel combines RSS and JSON into page sections', () =
   );
 
   assert.equal(viewModel.vendorName, 'OpenAI');
-  assert.equal(viewModel.heroIncident?.title, 'Partial Disruption of ChatGPT Workspace Connector Write Actions');
-  assert.equal(viewModel.heroIncident?.scopeLabel, 'ChatGPT');
+  assert.equal(viewModel.leadIncident?.title, 'Partial Disruption of ChatGPT Workspace Connector Write Actions');
+  assert.equal(viewModel.leadIncident?.scopeLabel, 'ChatGPT');
   assert.equal(viewModel.groups.length, 2);
   assert.equal(viewModel.groups[0].name, 'APIs');
   assert.equal(viewModel.groups[0].components.length, 1);
@@ -163,7 +163,7 @@ test('buildVendorStatusViewModel localizes time and uptime labels for zh locale'
 
   assert.equal(viewModel.groups[0].uptimeLabel, '99.99% 可用率');
   assert.match(viewModel.historyRangeLabel, /2026/);
-  assert.match(viewModel.heroIncident?.publishedLabel || '', /影响范围 ChatGPT/);
+  assert.match(viewModel.leadIncident?.publishedLabel || '', /影响范围 ChatGPT/);
 });
 
 test('buildVendorStatusViewModel falls back to incident links when RSS is unavailable', () => {
@@ -176,5 +176,5 @@ test('buildVendorStatusViewModel falls back to incident links when RSS is unavai
 
   assert.equal(viewModel.recentIncidents.length, 1);
   assert.equal(viewModel.recentIncidents[0].title, 'History incident');
-  assert.equal(viewModel.heroIncident, null);
+  assert.equal(viewModel.leadIncident, null);
 });

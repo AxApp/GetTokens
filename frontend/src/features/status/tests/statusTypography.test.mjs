@@ -69,7 +69,7 @@ test('status page uses AntD workbench shell for the redesigned status frame', as
   assert.match(statusFeatureSource, /<Badge\b/);
   assert.match(statusFeatureSource, /<Typography\.Title\b/);
   assert.match(statusFeatureSource, /<Space\b/);
-  assert.match(statusFeatureSource, /data-status-hero="true"/);
+  assert.match(statusFeatureSource, /data-status-summary="true"/);
   assert.doesNotMatch(statusFeatureSource, /data-status-overview-(?:grid|descriptions|card)="true"/);
   assert.match(statusFeatureSource, /data-status-workbench-grid="true"/);
   assert.match(statusFeatureSource, /data-status-primary-rail="true"/);
@@ -78,7 +78,7 @@ test('status page uses AntD workbench shell for the redesigned status frame', as
   assert.doesNotMatch(statusFeatureSource, /statusPageShellClass[\s\S]{0,120}--gt-surface-panel/);
   assert.match(statusFeatureSource, /const statusWorkbenchGridClass = 'grid items-start gap-4'/);
   assert.doesNotMatch(statusFeatureSource, /statusWorkbenchGridClass = 'grid items-start gap-6 lg:grid-cols/);
-  assert.doesNotMatch(statusFeatureSource, /data-status-hero="true"[\s\S]{0,500}shadow-/);
+  assert.doesNotMatch(statusFeatureSource, /data-status-summary="true"[\s\S]{0,500}shadow-/);
 });
 
 test('status provider creation only asks for model_provider value', async () => {
@@ -464,11 +464,11 @@ test('status page exposes account-store diagnostics panel with summarized errors
 test('status page diagnostics and header status use the quiet workspace shell', async () => {
   const source = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
   const diagnosticsBlock = source.match(/function AccountStoreDiagnosticsPanel[\s\S]*?function normalizeRelayEndpointURL/)?.[0] || '';
-  const headerBlock = source.match(/data-status-hero="true"[\s\S]*?data-status-workbench-grid="true"/)?.[0] || '';
+  const headerBlock = source.match(/data-status-summary="true"[\s\S]*?data-status-workbench-grid="true"/)?.[0] || '';
 
   assert.match(source, /const statusDiagnosticsPanelClass =/);
   assert.match(source, /const statusDiagnosticsToneClass =/);
-  assert.match(source, /const statusHeroCardClass =/);
+  assert.match(source, /const statusSummaryCardClass =/);
   assert.match(source, /const statusWorkbenchGridClass =/);
   assert.match(source, /<Card\b/);
   assert.match(source, /<Badge\b/);
@@ -477,7 +477,7 @@ test('status page diagnostics and header status use the quiet workspace shell', 
   assert.match(source, /<Space\b/);
   assert.match(source, /data-account-store-diagnostics-panel="quiet"/);
   assert.match(source, /data-status-header-health="quiet"/);
-  assert.match(source, /data-status-hero="true"/);
+  assert.match(source, /data-status-summary="true"/);
   assert.doesNotMatch(source, /data-status-overview-(?:grid|descriptions|card)="true"/);
   assert.match(source, /data-status-workbench-grid="true"/);
   assert.match(source, /data-status-primary-rail="true"/);

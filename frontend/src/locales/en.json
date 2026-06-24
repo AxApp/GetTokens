@@ -705,12 +705,12 @@
     "data_source_json_summary_desc": "Live component groups and current degradation come from the summary endpoint.",
     "data_source_component_impacts": "Component Impacts",
     "data_source_component_impacts_desc": "Uptime bars are built from the last 90 days of component impact intervals.",
-    "hero_all_operational": "All Systems Operational",
-    "hero_no_incident": "No active OpenAI incidents were detected from the current RSS feed or the live status summary.",
+    "summary_all_operational": "All Systems Operational",
+    "summary_no_incident": "No active OpenAI incidents were detected from the current RSS feed or the live status summary.",
     "open_official_status": "Open official status",
-    "hero_active_issue": "We're currently experiencing issues",
+    "summary_active_issue": "We're currently experiencing issues",
     "scope_fallback": "OpenAI",
-    "hero_incident_fallback": "OpenAI has posted an incident without additional detail in the public feed yet.",
+    "summary_incident_fallback": "OpenAI has posted an incident without additional detail in the public feed yet.",
     "operational": "Operational"
   },
   "session_management": {

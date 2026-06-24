@@ -8,7 +8,7 @@ test('vendor status feature uses the quiet workspace shell', async () => {
   assert.match(source, /const vendorStatusPanelClass =/);
   assert.match(source, /const vendorStatusPrimaryButtonClass =/);
   assert.match(source, /data-vendor-status-shell/);
-  assert.match(source, /data-vendor-status-hero/);
+  assert.match(source, /data-vendor-status-summary/);
   assert.match(source, /data-vendor-status-matrix/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-border-subtle/);

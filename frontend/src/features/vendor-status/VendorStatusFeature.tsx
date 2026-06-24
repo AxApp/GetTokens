@@ -107,7 +107,7 @@ function openExternalURL(url: string) {
   }
 }
 
-function HeroIncidentCard({
+function LeadIncidentCard({
   incident,
   publicUrl,
   t,
@@ -118,16 +118,16 @@ function HeroIncidentCard({
 }) {
   if (!incident) {
     return (
-      <section data-vendor-status-hero="operational" className={`${vendorStatusPanelClass} overflow-hidden`}>
+      <section data-vendor-status-summary="operational" className={`${vendorStatusPanelClass} overflow-hidden`}>
         <div className={`${vendorStatusHeaderClass} px-6 py-5`}>
           <div className="flex items-center gap-3 text-[var(--gt-ink-primary)]">
             <CheckCircle2 className="h-6 w-6" />
-            <h3 className="text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">{t('vendor_status.hero_all_operational')}</h3>
+            <h3 className="text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">{t('vendor_status.summary_all_operational')}</h3>
           </div>
         </div>
         <div className="px-6 py-6">
           <p className="text-sm leading-7 text-[var(--gt-ink-primary)]">
-            {t('vendor_status.hero_no_incident')}
+            {t('vendor_status.summary_no_incident')}
           </p>
           <div className="mt-5">
             <a href={publicUrl} target="_blank" rel="noreferrer" className={vendorStatusSecondaryButtonClass}>
@@ -140,11 +140,11 @@ function HeroIncidentCard({
   }
 
   return (
-    <section data-vendor-status-hero="incident" className={`${vendorStatusPanelClass} overflow-hidden`}>
+    <section data-vendor-status-summary="incident" className={`${vendorStatusPanelClass} overflow-hidden`}>
       <div className={`${vendorStatusHeaderClass} px-6 py-5`}>
         <div className="flex items-center gap-3 text-[var(--gt-ink-primary)]">
           <AlertTriangle className="h-6 w-6" />
-          <h3 className="text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">{t('vendor_status.hero_active_issue')}</h3>
+          <h3 className="text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">{t('vendor_status.summary_active_issue')}</h3>
         </div>
       </div>
       <div className="border-b border-dashed border-[var(--gt-border-subtle)] px-6 py-5">
@@ -158,7 +158,7 @@ function HeroIncidentCard({
           <div className="min-w-0">
             <h4 className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">{incident.title}</h4>
             <p className="mt-4 whitespace-pre-line text-[length:var(--gt-font-size-xl-plus)] leading-8 text-[var(--gt-ink-primary)]">
-              {incident.body || t('vendor_status.hero_incident_fallback')}
+              {incident.body || t('vendor_status.summary_incident_fallback')}
             </p>
             <p className="mt-6 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
               {incident.publishedLabel}
@@ -451,7 +451,7 @@ export default function VendorStatusFeature() {
               <span className="md:text-right">{t('vendor_status.last_sync')} {data.lastSyncLabel}</span>
             </div>
 
-            <HeroIncidentCard incident={data.heroIncident} publicUrl={data.publicUrl} t={t} />
+            <LeadIncidentCard incident={data.leadIncident} publicUrl={data.publicUrl} t={t} />
 
             <section data-vendor-status-matrix="true" className={`${vendorStatusPanelClass} overflow-hidden`}>
               <div className={`${vendorStatusHeaderClass} flex flex-col gap-3 px-5 py-5 md:flex-row md:items-end md:justify-between`}>
