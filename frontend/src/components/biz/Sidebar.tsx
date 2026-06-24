@@ -303,7 +303,7 @@ export default function Sidebar({
                 </div>
                 <Button
                   size="small"
-                  className={'mt-1 flex h-5 w-full items-center justify-center gap-1 rounded-md transition duration-75 hover:opacity-90 disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
+                  className={'mt-1 flex h-5 w-full items-center justify-center gap-1 rounded-md disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
                   style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)', fontSize: 'var(--gt-font-size-2xs)', fontWeight: 600, lineHeight: 'var(--gt-line-height-tight)' }}
                   aria-label={updatePromptLabel}
                   title={updatePromptTitle}
@@ -322,7 +322,7 @@ export default function Sidebar({
             {updatePrompt ? (
               <Button
                 size="small"
-                className={'flex h-6 w-6 items-center justify-center rounded-md transition duration-75 hover:opacity-90 disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
+                className={'flex h-6 w-6 items-center justify-center rounded-md disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
                 style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)' }}
                 aria-label={updatePromptLabel}
                 title={updatePromptTitle}

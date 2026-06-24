@@ -365,7 +365,7 @@ export function ProjectListPanel({
                 <Button
                   size="small"
                   onClick={() => onSelectProject(project.id, compactLayout)}
-                  className="flex min-w-0 flex-1 flex-col gap-2.5 py-4 pl-4 pr-3 text-left active:opacity-70"
+                  className="flex min-w-0 flex-1 flex-col gap-2.5 py-4 pl-4 pr-3 text-left"
                 >
                   <div className={`truncate text-[length:var(--gt-font-size-lg)] font-semibold leading-none ${
                     isActive ? 'text-[var(--gt-ink-primary)]' : 'text-[var(--gt-ink-primary)]'
@@ -541,7 +541,7 @@ export function SessionAnalysisScopeModal({
                     type="text"
                     onClick={() => onAnalyzeProject(project)}
                     block
-                    className={`block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors active:opacity-70 ${
+                    className={`block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors ${
                       active ? 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]' : 'hover:bg-[var(--gt-surface-muted)]'
                     }`}
                   >
@@ -576,7 +576,7 @@ export function SessionAnalysisScopeModal({
                   type="text"
                   onClick={() => onAnalyzeSession(session)}
                   block
-                  className="block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors hover:bg-[var(--gt-surface-muted)] active:opacity-70"
+                  className="block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors hover:bg-[var(--gt-surface-muted)]"
                 >
                   <div className="truncate text-[length:var(--gt-font-size-md)] font-semibold">
                     {session.displayTitle || session.title || getFileName(session.fileLabel, session.id)}

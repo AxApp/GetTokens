@@ -58,7 +58,7 @@ const projectCandidateRulesRankClass =
 const projectCandidateRulesButtonClass =
   'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 const projectCandidateRulesPrimaryButtonClass =
-  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const projectCandidateRulesIconButtonClass =
   'inline-flex h-7 w-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-45';
 const projectCandidateRulesMetaClass =

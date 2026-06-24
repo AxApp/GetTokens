@@ -38,7 +38,7 @@ const openAICompatibleWorkspaceActionsClass =
 const openAICompatibleWorkspaceActionButtonClass =
   'inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 const openAICompatibleWorkspacePrimaryButtonClass =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const openAICompatibleWorkspaceStateClass =
   'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-16 text-center';
 const openAICompatibleWorkspaceStateTitleClass =

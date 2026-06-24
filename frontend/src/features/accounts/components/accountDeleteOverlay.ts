@@ -34,9 +34,9 @@ const accountDeleteOverlayButtonClass =
 const accountDeleteOverlayListButtonClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)]';
 const accountDeleteOverlayDangerButtonClass =
-  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity hover:opacity-90';
+  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-surface-canvas)]';
 const accountDeleteOverlayListDangerButtonClass =
-  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity hover:opacity-90';
+  'rounded border border-[var(--gt-status-danger)] bg-[var(--gt-status-danger)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)]';
 const accountDeleteOverlayFieldLabelClass =
   'w-[3rem] shrink-0 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDeleteOverlayFieldValueClass =
