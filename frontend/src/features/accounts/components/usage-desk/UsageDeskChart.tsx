@@ -44,7 +44,7 @@ export function UsageChartCard({
       variant="outlined"
       className="overflow-hidden"
       data-usage-desk-chart-card
-      styles={{ body: { padding: 0 } }}
+      classNames={{ body: '!p-0' }}
     >
       {status || controls ? (
         <>
@@ -404,7 +404,8 @@ export function EmptyChartPlaceholder({
       variant="outlined"
       className="relative overflow-hidden"
       data-usage-desk-empty-chart
-      styles={{ body: { padding: 0, height: `${chartHeight}px` } }}
+      classNames={{ body: '!p-0' }}
+      styles={{ body: { height: `${chartHeight}px` } }}
     >
       <div className="absolute inset-0 flex items-center justify-center bg-[var(--gt-surface-canvas)]">
         <Empty

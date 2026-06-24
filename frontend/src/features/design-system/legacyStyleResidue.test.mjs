@@ -328,6 +328,13 @@ test('usage desk chart keeps static layout tokens in classes', async () => {
   assert.deepEqual(findings, []);
 });
 
+test('usage desk chart cards keep static body padding in classes', async () => {
+  const source = await readFile(join(srcRoot.pathname, 'features/accounts/components/usage-desk/UsageDeskChart.tsx'), 'utf8');
+
+  assert.doesNotMatch(source, /styles=\{\{\s*body:\s*\{\s*padding:\s*0/);
+  assert.match(source, /classNames=\{\{ body: '!p-0' \}\}/);
+});
+
 test('runtime inline styles stay limited to approved dynamic rendering boundaries', async () => {
   const allowedInlineStyleBlocks = [
     { path: 'features/design-system/DesignSystemEntryFeature.tsx', pattern: /backgroundColor: value|borderRadius: value|boxShadow: value/ },
