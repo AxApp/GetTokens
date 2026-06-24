@@ -51,7 +51,7 @@ type Story = StoryObj;
 function ModalViewport({ children }: { children: ReactNode }) {
   return (
     <DesignSystemStoryFrame label="DS-CODEX-DETAIL-DESKTOP-DRAFT">
-      <div className="relative h-[45rem] w-[76rem] min-w-[76rem] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
+      <div className="relative h-[45rem] w-[76rem] min-w-[76rem] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -128,7 +128,7 @@ function CodexAccountDetailDesktopDraft() {
       >
         <AccountDetailBody
           data-collaboration-id="DS-CODEX-ACCOUNT-DETAIL-DESKTOP-DRAFT"
-          className="!space-y-4 bg-[var(--gt-surface-panel)]"
+          className="!space-y-4 bg-[var(--gt-surface-muted)]"
         >
           <CodexOperationalDeck
             routeLabel={configDraft.proxyUrl || 'direct'}
@@ -266,7 +266,7 @@ function OperationalMetric({
   meta: string;
 }) {
   return (
-    <div className="grid min-h-[5.25rem] min-w-0 content-between rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-3">
+    <div className="grid min-h-[5.25rem] min-w-0 content-between rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3">
       <div className="flex min-w-0 items-center justify-between gap-2">
         <span className="inline-flex h-7 w-7 items-center justify-center bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]">
           {icon}
@@ -325,7 +325,7 @@ function CodexModelRoutingPreview({
     >
       {mappings.length > 0 ? (
         <div className="rounded-md border border-[var(--gt-border-subtle)]">
-          <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
+          <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             <span>{t('codex.account_list_real_model')}</span>
             <span className="text-center">-&gt;</span>
             <span className="text-right">{t('codex.account_list_codex_model')}</span>

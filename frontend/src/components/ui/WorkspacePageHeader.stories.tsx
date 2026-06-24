@@ -17,7 +17,7 @@ type Story = StoryObj;
 function HeaderWithActionsSample() {
   const { locale } = useI18n();
   return (
-    <div className="bg-[var(--gt-surface-panel)] p-8">
+    <div className="bg-[var(--gt-surface-muted)] p-8">
       <DesignSystemStoryFrame>
         <WorkspacePageHeader
           title={locale === 'zh' ? '设计系统' : 'DESIGN SYSTEM'}
@@ -43,7 +43,7 @@ function WorkspacePageHeaderOverview() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">WorkspacePageHeader</h2>
         <p className="mt-2 max-w-2xl text-sm font-semibold text-[var(--gt-ink-muted)]">

@@ -74,7 +74,7 @@ function AccountsHeaderSample({
 
 function AccountsHeaderOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">账号页头</h2>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">

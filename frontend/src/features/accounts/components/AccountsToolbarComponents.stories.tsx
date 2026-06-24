@@ -135,7 +135,7 @@ function AccountsToolbarSample({
 
 function AccountsToolbarOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">账号工具栏</h2>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">

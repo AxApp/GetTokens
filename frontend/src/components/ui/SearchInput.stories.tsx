@@ -46,7 +46,7 @@ function SearchInputOverview() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid w-full max-w-5xl gap-4 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full max-w-5xl gap-4 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">SearchInput</h2>
         <p className="mt-2 max-w-2xl text-sm font-semibold text-[var(--gt-ink-muted)]">

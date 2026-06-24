@@ -16,7 +16,7 @@ function ControlsAndSurfacesSample() {
   const { locale } = useI18n();
   const zh = locale === 'zh';
   return (
-    <div className="grid gap-6 bg-[var(--gt-surface-panel)] p-8">
+    <div className="grid gap-6 bg-[var(--gt-surface-muted)] p-8">
       <Card title={zh ? '按钮' : 'Buttons'}>
         <div className="flex flex-wrap gap-3">
           <Button>

@@ -144,7 +144,7 @@ const hitLines = [
 function ModalViewport({ children, label = 'DS-PROBE' }: { children: ReactNode; label?: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="relative h-[38rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
+      <div className="relative h-[38rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -185,7 +185,7 @@ function ProbeSample({
 
 function CodexRouteProbeOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">Codex Route Probe</h2>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">

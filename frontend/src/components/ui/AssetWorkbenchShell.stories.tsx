@@ -17,7 +17,7 @@ type Story = StoryObj;
 
 function AssetWorkbenchShellOverview() {
   return (
-    <div className="grid gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">AssetWorkbenchShell</h2>
         <p className="mt-2 max-w-2xl text-sm font-semibold text-[var(--gt-ink-muted)]">
@@ -51,12 +51,12 @@ function AssetWorkbenchShellOverview() {
               </>
             }
             notice={
-              <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">
+              <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">
                 Preview data loaded
               </div>
             }
             aside={
-              <div className="bg-[var(--gt-surface-panel)] p-3">
+              <div className="bg-[var(--gt-surface-muted)] p-3">
                 <div className="text-sm font-semibold tracking-normal">Preview Rail</div>
                 <p className="mt-2 text-xs font-semibold leading-5 text-[var(--gt-ink-muted)]">
                   Diff、详情和计划项放在同一个固定宽度侧栏。

@@ -16,7 +16,6 @@ interface FixedColor {
 
 const themeTokens: ColorToken[] = [
   { name: '--gt-surface-canvas', usage: '主应用背景、输入框背景、按钮默认背景' },
-  { name: '--gt-surface-panel', usage: '面板和页面二级表面' },
   { name: '--gt-surface-raised', usage: '抬升卡片和浮层表面' },
   { name: '--gt-surface-muted', usage: '弱化内嵌表面、骨架屏、低权重块背景' },
   { name: '--gt-ink-primary', usage: '主文本、主图标、强对比图形' },
@@ -176,7 +175,7 @@ function TokenSection({
 
 function PaletteSample() {
   return (
-    <div className="grid gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">颜色系统</h2>
         <p className="mt-2 max-w-4xl text-sm font-semibold leading-relaxed text-[var(--gt-ink-muted)]">

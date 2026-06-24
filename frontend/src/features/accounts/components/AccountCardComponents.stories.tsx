@@ -471,7 +471,7 @@ function AccountCardTemplateApplySample() {
 
   return (
     <DesignSystemStoryFrame label="DS-ACCOUNT-CARD-TEMPLATE-APPLY">
-      <div className="relative grid gap-4 bg-[var(--gt-surface-panel)] p-4">
+      <div className="relative grid gap-4 bg-[var(--gt-surface-muted)] p-4">
         <div className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             ACCOUNT CARD MENU / VERIFIED TEMPLATE ONLY
@@ -592,7 +592,7 @@ function AccountCardTemplateApplySample() {
             aria-modal="true"
             aria-label={previewTarget !== 'claude' ? '确认应用到 Codex' : '确认应用到 Claude Code'}
           >
-            <div className="grid max-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] shadow-sm">
+            <div className="grid max-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] shadow-sm">
               <div className="grid gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
                 <div className="min-w-0">
                   <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
@@ -606,7 +606,7 @@ function AccountCardTemplateApplySample() {
                   </p>
                   {previewTarget !== 'claude' ? (
                     <div className="mt-3 flex max-w-full flex-wrap gap-2">
-                      <span className="inline-flex rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
+                      <span className="inline-flex rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                         固定应用模式：{codexModeLabel}
                       </span>
                       <span className="inline-flex rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
@@ -633,8 +633,8 @@ function AccountCardTemplateApplySample() {
                         onClick={() => setSelectedFileID(file.id)}
                         className={`grid border px-3 py-3 text-left active:scale-[0.99] ${
                           selectedFileID === file.id
-                            ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] shadow-sm'
-                            : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] hover:bg-[var(--gt-surface-panel)]'
+                            ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-muted)] shadow-sm'
+                            : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] hover:bg-[var(--gt-surface-muted)]'
                         }`}
                       >
                         <span className="break-all font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
@@ -683,7 +683,7 @@ function AccountCardFrameSample({ selected = false }: { selected?: boolean }) {
   return (
     <DesignSystemStoryFrame label="DS-FRAME">
       <AccountCardFrame
-        className={selected ? 'border-[var(--gt-status-danger)] bg-[var(--gt-surface-panel)]' : ''}
+        className={selected ? 'border-[var(--gt-status-danger)] bg-[var(--gt-surface-muted)]' : ''}
         onOpen={() => undefined}
       >
         <div className="grid min-h-[9rem] gap-3 p-4">
@@ -823,7 +823,7 @@ function AccountCardsOverview() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">账号卡片组件</h2>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">

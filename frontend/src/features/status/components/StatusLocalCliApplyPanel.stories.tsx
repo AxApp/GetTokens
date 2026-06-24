@@ -252,7 +252,7 @@ function LocalCliApplySample({
 
 function StatusLocalCliApplyOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">状态页本地 CLI 应用</h2>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">
@@ -409,7 +409,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
 
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="grid gap-4 bg-[var(--gt-surface-panel)] p-4">
+      <div className="grid gap-4 bg-[var(--gt-surface-muted)] p-4">
         <div className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="min-w-0">
             <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
@@ -596,7 +596,7 @@ function ConfirmList({ title, items }: { title: string; items: string[] }) {
         {items.map((item) => (
           <div
             key={item}
-            className="border-l border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]"
+            className="border-l border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]"
           >
             {item}
           </div>
@@ -615,7 +615,7 @@ function ConfirmNotice({ tone, text }: { tone: 'success' | 'warning' | 'danger';
         : 'var(--color-status-warning)';
   return (
     <div
-      className="rounded-md border border-dashed bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal"
+      className="rounded-md border border-dashed bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal"
       style={{ borderColor: color, color }}
     >
       {text}

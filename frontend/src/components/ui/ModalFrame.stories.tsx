@@ -50,7 +50,7 @@ function ModalContent({ long = false }: { long?: boolean }) {
   return (
     <div className="grid gap-3 p-6">
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="grid gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-3">
+        <div key={index} className="grid gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             FIELD {String(index + 1).padStart(2, '0')}
           </div>
@@ -63,7 +63,7 @@ function ModalContent({ long = false }: { long?: boolean }) {
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="shrink-0 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--color-status-danger)]">
+    <div className="shrink-0 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--color-status-danger)]">
       {message}
     </div>
   );
@@ -82,7 +82,7 @@ function ModalFrameSample({
 
   return (
     <DesignSystemStoryFrame>
-      <div className="relative min-h-[32rem] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)]">
+      <div className="relative min-h-[32rem] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]">
         <ModalFrame
           onClose={() => undefined}
           size={isConfirm ? 'sm' : isDetail ? 'detail' : 'md'}
@@ -121,7 +121,7 @@ function ModalFrameOverview() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">ModalFrame</h2>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">

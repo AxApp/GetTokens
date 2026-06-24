@@ -85,7 +85,7 @@ function ScaleSample() {
   const zh = locale === 'zh';
 
   return (
-    <div className="grid gap-5 bg-[var(--gt-surface-panel)] p-6 text-[var(--gt-ink-primary)]">
+    <div className="grid gap-5 bg-[var(--gt-surface-muted)] p-6 text-[var(--gt-ink-primary)]">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">字体系统</h2>
         <p className="mt-2 max-w-4xl text-sm font-semibold leading-relaxed text-[var(--gt-ink-muted)]">

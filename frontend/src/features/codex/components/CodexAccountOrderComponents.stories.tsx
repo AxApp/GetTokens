@@ -242,7 +242,7 @@ function SectionSample({
   const storyT = (key: string) => (key === 'common.more_actions' ? '更多操作' : t(key));
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-4">
+      <div className="min-w-0 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4">
         <CodexAccountOrderSection
           title="Codex Request Order"
           hint="固定排序队列用于检查 section header、密度切换、筛选、空态和保存提示。"
@@ -294,7 +294,7 @@ function SectionSample({
 function DetailModalViewport({ children, label }: { children: ReactNode; label: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="relative h-[38rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
+      <div className="relative h-[38rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -340,7 +340,7 @@ function DetailSample({
 
 function CodexAccountOrderOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">Codex Account Order</h2>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">

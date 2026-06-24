@@ -40,7 +40,7 @@ type Story = StoryObj;
 function ModalViewport({ children, label = 'DS-MODAL' }: { children: ReactNode; label?: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="relative h-[32rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
+      <div className="relative h-[32rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -58,7 +58,7 @@ function Header({ title = 'Codex Account Detail', eyebrow = 'ACCOUNT DETAIL' }: 
           {title}
         </h3>
       </div>
-      <span className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-3 py-1 font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
+      <span className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1 font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
         READY
       </span>
     </div>
@@ -88,19 +88,19 @@ function Body({ long = false }: { long?: boolean }) {
   return (
     <div className="grid gap-4 p-6">
       <div className="grid gap-3 md:grid-cols-3">
-        <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-4">
+        <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             Requests
           </div>
           <div className="mt-2 text-2xl font-semibold tracking-normal text-[var(--gt-ink-primary)]">1,248</div>
         </div>
-        <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-4">
+        <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             Tokens
           </div>
           <div className="mt-2 text-2xl font-semibold tracking-normal text-[var(--gt-ink-primary)]">1.0M</div>
         </div>
-        <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-4">
+        <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             Latency
           </div>
@@ -634,7 +634,7 @@ function OAuthSample({
 
 function AccountModalsOverview() {
   return (
-    <div className="grid w-full gap-5 bg-[var(--gt-surface-panel)] p-6">
+    <div className="grid w-full gap-5 bg-[var(--gt-surface-muted)] p-6">
       <div>
         <h2 className="text-2xl font-semibold tracking-normal">账号弹窗</h2>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-[var(--gt-ink-muted)]">

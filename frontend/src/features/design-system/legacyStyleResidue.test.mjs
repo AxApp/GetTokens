@@ -58,7 +58,7 @@ test('runtime UI sources do not reintroduce legacy heavy workspace styling', asy
 
 test('storybook examples do not teach legacy heavy workspace styling', async () => {
   const findings = [];
-  const legacyStoryStylePattern = /border-2|shadow-\[|gt-shadow-panel|border-muted|SwissPrimitives/;
+  const legacyStoryStylePattern = /border-2|shadow-\[|gt-surface-panel|gt-shadow-panel|border-muted|SwissPrimitives/;
 
   for await (const filePath of walk(srcRoot.pathname)) {
     const relativePath = relative(srcRoot.pathname, filePath);
