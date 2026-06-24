@@ -247,6 +247,24 @@ test('account import queue keeps fixed card item height in classes', async () =>
   assert.deepEqual(findings, []);
 });
 
+test('usage desk chart keeps static layout tokens in classes', async () => {
+  const relativePath = 'features/accounts/components/usage-desk/UsageDeskChart.tsx';
+  const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
+  const findings = [];
+  const staticInlineStylePatterns = [
+    /^\s*height:.*chartHeight/,
+    /opacity:\s*'var\(--usage-chart-axis-opacity\)'/,
+  ];
+
+  source.split('\n').forEach((line, index) => {
+    if (staticInlineStylePatterns.some((pattern) => pattern.test(line))) {
+      findings.push(`${relativePath}:${index + 1}:${line.trim()}`);
+    }
+  });
+
+  assert.deepEqual(findings, []);
+});
+
 test('selected UI sources keep discrete conditional styles in classes', async () => {
   const relativePaths = [
     'components/ui/Combobox.tsx',

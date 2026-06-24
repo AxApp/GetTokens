@@ -209,11 +209,8 @@ function ChartSurface({
       data-usage-desk-chart-surface
     >
       <div
-        className="relative mx-auto"
-        style={{
-          height: `${chartHeight}px`,
-          width: `${chartWidth}px`,
-        }}
+        className="relative mx-auto h-[280px]"
+        style={{ width: `${chartWidth}px` }}
       >
         {/* 背景与曲线层 */}
         <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
@@ -380,11 +377,8 @@ function ChartPoint({
 
       {/* 3. 辅助轴向标签 (日期/时间) - 绝对定位到 chart 底部 */}
       <div
-        className={`${usageDeskChartAxisLabelClass} text-[var(--usage-chart-axis-paint)]`}
-        style={{
-          top: `${helperY - y}px`,
-          opacity: 'var(--usage-chart-axis-opacity)',
-        }}
+        className={`${usageDeskChartAxisLabelClass} text-[var(--usage-chart-axis-paint)] opacity-[var(--usage-chart-axis-opacity)]`}
+        style={{ top: `${helperY - y}px` }}
       >
         {helper}
       </div>
