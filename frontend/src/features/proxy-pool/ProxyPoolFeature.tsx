@@ -1015,7 +1015,7 @@ function ProxyNodeActionsMenu({
         aria-label="更多操作"
         onClick={() => setOpen((current) => !current)}
         icon={<MoreVertical className="h-4 w-4" strokeWidth={2.4} />}
-        className="flex h-8 w-8 items-center justify-center rounded active:scale-95"
+        className="flex h-8 w-8 items-center justify-center rounded"
       />
       {open ? (
         <div className="absolute right-0 top-[calc(100%+0.5rem)] z-10 flex min-w-[140px] flex-col gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-sm">

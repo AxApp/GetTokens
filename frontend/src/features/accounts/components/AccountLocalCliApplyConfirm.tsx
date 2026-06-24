@@ -397,7 +397,7 @@ export default function AccountLocalCliApplyConfirm({
               <Button
                 key={file.id}
                 onClick={() => setSelectedFileID(file.id)}
-                className={`grid rounded border px-3 py-3 text-left transition active:scale-[0.99] ${
+                className={`grid rounded border px-3 py-3 text-left transition ${
                   selectedFile?.id === file.id
                     ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-muted)]'
                     : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] hover:bg-[var(--gt-surface-muted)]'

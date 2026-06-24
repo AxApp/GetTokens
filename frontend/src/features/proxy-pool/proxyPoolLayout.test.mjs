@@ -36,7 +36,8 @@ test('ProxyPoolFeature uses the current workspace table layout', async () => {
   assert.match(source, /<Button[\s\S]*aria-label="更多操作"[\s\S]*icon=\{<MoreVertical className="h-5 w-5" strokeWidth=\{2\.5\} \/>\}/);
   assert.match(source, /className="overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]"/);
   assert.match(source, /<Button[\s\S]*aria-label=\{probing \? '测速中' : '测速'\}[\s\S]*disabled=\{probing\}[\s\S]*className="flex h-8 w-8 items-center justify-center rounded disabled:cursor-not-allowed disabled:opacity-50"/);
-  assert.match(source, /<Button[\s\S]*aria-label="更多操作"[\s\S]*icon=\{<MoreVertical className="h-4 w-4" strokeWidth=\{2\.4\} \/>\}[\s\S]*className="flex h-8 w-8 items-center justify-center rounded active:scale-95"/);
+  assert.match(source, /<Button[\s\S]*aria-label="更多操作"[\s\S]*icon=\{<MoreVertical className="h-4 w-4" strokeWidth=\{2\.4\} \/>\}[\s\S]*className="flex h-8 w-8 items-center justify-center rounded"/);
+  assert.doesNotMatch(source, /active:scale/);
   assert.match(source, /const proxyPoolModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] shadow-sm'/);
   assert.match(source, /<Input[\s\S]*placeholder="例如：127\.0\.0\.1"/);
   assert.match(source, /<Input\.TextArea/);

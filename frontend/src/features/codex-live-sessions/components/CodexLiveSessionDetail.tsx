@@ -963,7 +963,7 @@ function TimingMetrics({
             <Button
               key={metric.key}
               size="small"
-              className={`${rowClassName} text-left active:scale-95`}
+              className={`${rowClassName} text-left`}
               aria-pressed={selected}
               onClick={() => onSelectMetric(trendMetric)}
             >
@@ -1293,7 +1293,7 @@ function TimelineSummaryRow({
     <Button
       size="small"
       onClick={onOpen}
-      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_20%,transparent)] px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-[0.995] last:border-b-0 ${fallback ? 'bg-[color:color-mix(in_srgb,var(--gt-surface-muted)_54%,transparent)]' : ''}`}
+      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_20%,transparent)] px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] transition-colors hover:bg-[var(--gt-surface-muted)] last:border-b-0 ${fallback ? 'bg-[color:color-mix(in_srgb,var(--gt-surface-muted)_54%,transparent)]' : ''}`}
       title={t('codex_live_sessions.detail')}
       aria-label={t('codex_live_sessions.detail')}
     >

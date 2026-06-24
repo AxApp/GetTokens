@@ -45,7 +45,7 @@ const unifiedComposeProviderPickerClass = "space-y-4";
 const unifiedComposeProviderSectionStackClass = "space-y-4";
 const unifiedComposeProviderGridClass = "grid grid-cols-3 gap-2";
 const unifiedComposeProviderCardClass =
-  "group grid min-h-[7.25rem] grid-rows-[auto_1fr_auto] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-left transition-[border-color,background-color,transform] hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] active:scale-[0.98]";
+  "group grid min-h-[7.25rem] grid-rows-[auto_1fr_auto] overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-3 text-left transition-[border-color,background-color] hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]";
 const unifiedComposeProviderChipClass =
   "max-w-[6.75rem] truncate rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--gt-font-size-3xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]";
 const unifiedComposeProviderNameClass =

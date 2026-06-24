@@ -43,7 +43,7 @@ const accountImportPanelTitleClass =
 const accountImportPanelMetaClass =
   'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportDropzoneClass = (active: boolean) =>
-  `grid min-h-36 place-items-center rounded border px-5 py-6 text-center transition-[background-color,border-color,transform] active:scale-[0.99] disabled:opacity-45 ${
+  `grid min-h-36 place-items-center rounded border px-5 py-6 text-center transition-[background-color,border-color] disabled:opacity-45 ${
     active
       ? 'border-[var(--gt-ink-primary)] bg-[color-mix(in_srgb,var(--gt-ink-primary)_8%,var(--gt-surface-muted))]'
       : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'

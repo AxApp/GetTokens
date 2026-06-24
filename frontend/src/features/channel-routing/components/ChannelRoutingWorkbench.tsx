@@ -203,7 +203,7 @@ export default function ChannelRoutingWorkbench({
                 title="查看请求模式说明"
                 aria-pressed={helpOpen}
                 icon={<CircleHelp className="h-4 w-4" strokeWidth={4} />}
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded border transition-colors active:scale-95 ${
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded border transition-colors ${
                   helpOpen
                     ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                     : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] [@media(hover:hover)]:hover:border-[var(--gt-ink-primary)]'
@@ -412,7 +412,7 @@ export default function ChannelRoutingWorkbench({
                           key={target.id}
                           size="small"
                           onClick={() => setSelectedRouteActionTargetID(target.id)}
-                          className={`w-full rounded border px-3 py-2 text-left transition-colors active:scale-[0.99] ${
+                          className={`w-full rounded border px-3 py-2 text-left transition-colors ${
                             active
                               ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                               : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] [@media(hover:hover)]:hover:border-[var(--gt-ink-primary)]'
@@ -750,7 +750,7 @@ function StrategyButton({
       disabled={disabled}
       aria-pressed={active}
       icon={<Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />}
-      className={`grid min-h-10 grid-cols-[1.5rem_minmax(0,1fr)] items-center gap-2 rounded border px-3 py-2 text-left transition-colors active:scale-[0.98] ${
+      className={`grid min-h-10 grid-cols-[1.5rem_minmax(0,1fr)] items-center gap-2 rounded border px-3 py-2 text-left transition-colors ${
         active
           ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
           : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] [@media(hover:hover)]:hover:border-[var(--gt-ink-primary)]'

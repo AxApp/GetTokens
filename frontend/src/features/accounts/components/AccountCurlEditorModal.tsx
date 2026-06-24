@@ -34,12 +34,12 @@ const accountCurlEditorTextareaClass =
 const accountCurlEditorSectionLabelClass =
   'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountCurlEditorVariableButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-left transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] active:scale-[0.99]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-left transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountCurlEditorGuidePanelClass =
   'grid gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const accountCurlEditorAsideClass = 'grid content-start gap-4 p-4';
 const accountCurlEditorTemplateButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-left transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] active:scale-[0.99]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-left transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]';
 const accountCurlEditorTemplateTitleClass =
   'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 

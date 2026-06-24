@@ -402,7 +402,7 @@ export function ProjectListPanel({
                     onClick={() => onOpenProviderEditor(project.id)}
                     aria-label="Edit provider mapping"
                     icon={<Pencil className="h-3 w-3" strokeWidth={2.5} />}
-                    className={`flex h-7 w-7 items-center justify-center rounded border transition-colors active:scale-90 ${
+                    className={`flex h-7 w-7 items-center justify-center rounded border transition-colors ${
                       isActive
                         ? 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
                         : 'border-transparent text-[var(--gt-ink-muted)]/45 hover:border-[var(--gt-border-subtle)] hover:text-[var(--gt-ink-primary)]'
@@ -930,7 +930,7 @@ export function SessionsPanel({
                   aria-expanded={actionMenuOpen}
                   onClick={() => setActionMenuOpen((prev) => !prev)}
                   icon={<MoreVertical className="h-3.5 w-3.5" strokeWidth={2.5} />}
-                  className="flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90"
+                  className="flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]"
                 />
               </Tooltip>
               {actionMenuOpen ? (
@@ -953,7 +953,7 @@ export function SessionsPanel({
                         }}
                         icon={<Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'opacity-100' : 'opacity-0'}`} strokeWidth={3} />}
                         block
-                        className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal transition-colors active:scale-95 ${
+                        className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal transition-colors ${
                           isActive
                             ? 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]'
                             : 'text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]'
@@ -974,7 +974,7 @@ export function SessionsPanel({
                     }}
                     icon={<RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />}
                     block
-                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-95"
+                    className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition-colors hover:bg-[var(--gt-surface-muted)]"
                   >
                     <span>{copy.refresh}</span>
                   </Button>
@@ -991,7 +991,7 @@ export function SessionsPanel({
                     size="small"
                     type={isActive ? 'primary' : 'text'}
                     onClick={() => onSelectFilter(filter.id)}
-                    className={`rounded px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors active:scale-95 ${
+                    className={`rounded px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors ${
                       isActive
                         ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                         : 'bg-transparent text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
@@ -1008,7 +1008,7 @@ export function SessionsPanel({
                   onClick={onRefresh}
                   aria-label={copy.refresh}
                   icon={<RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />}
-                  className="flex h-8 w-8 items-center justify-center rounded border border-transparent text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-subtle)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90"
+                  className="flex h-8 w-8 items-center justify-center rounded border border-transparent text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-subtle)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]"
                 />
               </Tooltip>
             </>
