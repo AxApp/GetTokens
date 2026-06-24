@@ -88,7 +88,7 @@ export default function OpenAICompatibleProviderCard({
       usageSummary={usageSummary}
       rateLimitStatus={rateLimitStatus}
       tone={tone}
-      style={{ minHeight: '48rem' }}
+      className="min-h-[48rem]"
       customBody={
         <div
           className={openAICompatibleProviderCardBodyClass}

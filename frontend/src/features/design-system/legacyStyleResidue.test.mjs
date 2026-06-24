@@ -197,3 +197,34 @@ test('account detail shell keeps static selection and menu styling in classes', 
 
   assert.deepEqual(findings, []);
 });
+
+test('selected UI sources keep small static layout styles in classes', async () => {
+  const relativePaths = [
+    'components/biz/Sidebar.tsx',
+    'features/accounts/components/usage-desk/UsageDeskPanels.tsx',
+    'features/accounts/components/AccountsToolbar.tsx',
+    'features/accounts/components/OpenAICompatibleProviderCard.tsx',
+  ];
+  const staticInlineLayoutPatterns = [
+    /overscrollBehavior:\s*'contain'/,
+    /borderInlineEnd:\s*0/,
+    /background:\s*'transparent'/,
+    /fontFamily:\s*'var\(--gt-font-family-sans\)'/,
+    /tableLayout:\s*'auto'/,
+    /visibility:\s*'hidden'/,
+    /minHeight:\s*'48rem'/,
+  ];
+  const findings = [];
+
+  for (const relativePath of relativePaths) {
+    const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
+    const lines = source.split('\n');
+    lines.forEach((line, index) => {
+      if (staticInlineLayoutPatterns.some((pattern) => pattern.test(line))) {
+        findings.push(`${relativePath}:${index + 1}:${line.trim()}`);
+      }
+    });
+  }
+
+  assert.deepEqual(findings, []);
+});

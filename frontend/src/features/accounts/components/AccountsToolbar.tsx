@@ -598,8 +598,7 @@ export function AccountsSelectionActions({
       <div
         ref={inlineActionsMeasureRef}
         aria-hidden="true"
-        className="pointer-events-none absolute left-0 top-0 -z-10 flex w-max items-center gap-2 opacity-0"
-        style={{ visibility: 'hidden' }}
+        className="invisible pointer-events-none absolute left-0 top-0 -z-10 flex w-max items-center gap-2 opacity-0"
       >
         <Tag>{selectedAccountCount} {t('accounts.selected_count')}</Tag>
         <Button size="small">{t('accounts.cancel_selection')}</Button>

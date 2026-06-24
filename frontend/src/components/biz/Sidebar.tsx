@@ -253,12 +253,11 @@ export default function Sidebar({
       </div>
 
       <nav
-        className="min-h-0 flex-1 overflow-y-auto px-2 py-1"
-        style={{ overscrollBehavior: 'contain' }}
+        className="min-h-0 flex-1 overscroll-contain overflow-y-auto px-2 py-1"
         aria-label={t('nav.sidebar_navigation')}
       >
         <Menu
-          className="gt-sidebar-menu"
+          className="gt-sidebar-menu !bg-transparent !font-sans ![border-inline-end:0]"
           data-sidebar-menu="antd"
           mode="inline"
           selectable
@@ -269,11 +268,6 @@ export default function Sidebar({
           onClick={({ key }) => handleMenuClick({ key: String(key) })}
           onOpenChange={handleOpenChange}
           triggerSubMenuAction="click"
-          style={{
-            borderInlineEnd: 0,
-            background: 'transparent',
-            fontFamily: 'var(--gt-font-family-sans)',
-          }}
         />
       </nav>
 

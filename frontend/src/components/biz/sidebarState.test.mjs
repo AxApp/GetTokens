@@ -31,7 +31,7 @@ test('sidebar typography keeps nav labels readable in the compact workspace shel
   assert.match(source, /openKeys=\{sidebarOpenKeys\}/);
   assert.match(source, /inlineCollapsed=\{isCollapsed\}/);
   assert.match(source, /mode="inline"/);
-  assert.match(source, /--gt-font-family-sans/);
+  assert.match(source, /!font-sans/);
   assert.doesNotMatch(source, /fontWeight: .*500/);
   assert.doesNotMatch(source, /fontSize:/);
   assert.doesNotMatch(source, /\btransition(?![-\[])/);

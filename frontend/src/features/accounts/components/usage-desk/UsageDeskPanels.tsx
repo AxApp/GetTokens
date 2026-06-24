@@ -140,7 +140,7 @@ export function UsageProjectDrilldownPanel({
     <section data-usage-desk-project-drilldown="true" className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden bg-[var(--gt-surface-canvas)]' : usageDeskPanelClass} relative z-10`}>
       {rows.length > 0 ? (
         <div className={`${embedded ? 'flex-1 overflow-auto' : 'overflow-x-auto'}`}>
-          <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
+          <table className="w-full table-auto border-collapse">
             <thead>
               <tr className="bg-[var(--gt-surface-muted)]">
                 {usageDeskProjectDrilldownColumnLabels.map((label, index) => {
