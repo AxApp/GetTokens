@@ -11,7 +11,7 @@ const usageDeskChartSurfaceClass = 'overflow-x-auto overflow-y-hidden bg-[var(--
 const usageDeskChartPointRingClass =
   'rounded-full border border-[var(--gt-surface-canvas)]';
 const usageDeskChartAxisLabelClass =
-  'absolute whitespace-nowrap font-semibold -translate-x-1/2 pointer-events-none';
+  'pointer-events-none absolute -translate-x-1/2 whitespace-nowrap text-[length:var(--gt-font-size-sm)] font-semibold';
 
 export function UsageChartCard({
   compactProgress = 0,
@@ -361,8 +361,8 @@ function ChartPoint({
     >
       {/* 1. 数值标签 (不占用空间) */}
       <div
-        className={`absolute whitespace-nowrap text-center pointer-events-none ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
-        style={{ color, fontSize: selected ? 'var(--gt-font-size-md)' : 'var(--gt-font-size-md-compact)', fontWeight: selected ? 700 : 600 }}
+        className={`pointer-events-none absolute whitespace-nowrap text-center font-semibold ${selected ? 'text-[length:var(--gt-font-size-md)]' : 'text-[length:var(--gt-font-size-md-compact)]'} ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
+        style={{ color }}
       >
         {label}
       </div>
@@ -380,7 +380,6 @@ function ChartPoint({
         className={usageDeskChartAxisLabelClass}
         style={{
           top: `${helperY - y}px`,
-          fontSize: 'var(--gt-font-size-sm)',
           color: selected ? 'var(--gt-ink-primary)' : 'var(--gt-ink-muted)',
           opacity: selected ? 1 : 0.6
         }}

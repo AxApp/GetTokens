@@ -365,6 +365,7 @@ test('UsageDeskChart uses the quiet workspace shell', async () => {
   assert.doesNotMatch(chartSource, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(chartSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(chartSource, /font-(?:medium|bold|extrabold|black)/);
+  assert.doesNotMatch(chartSource, /fontSize:/);
   assert.doesNotMatch(chartSource, /uppercase/);
   assert.doesNotMatch(chartSource, /tracking-\[0\.18em\]/);
   assert.doesNotMatch(chartSource, /shadow-\[/);
