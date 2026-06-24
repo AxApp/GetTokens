@@ -20,6 +20,7 @@ const inlineTypographyGateFiles = [
   'features/debug/components/DebugEmptyState.tsx',
   'features/design-system/DesignSystemEntryFeature.tsx',
   'features/accounts/components/AccountsToolbar.tsx',
+  'features/settings/SettingsFeature.tsx',
 ];
 
 function extensionOf(filePath) {

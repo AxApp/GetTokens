@@ -439,10 +439,10 @@ export default function SettingsFeature({
     >
       <div className="mx-auto max-w-3xl space-y-8 px-8 py-10">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>
+          <h1 className="text-2xl font-semibold">
             {t('settings.title')}
           </h1>
-          <p className="text-sm" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}>
+          <p className="text-sm text-[var(--gt-ink-muted)]">
             {t('settings.subtitle')}
           </p>
         </header>
@@ -546,7 +546,7 @@ export default function SettingsFeature({
               </div>
             </div>
             {appRuntimeMessage ? (
-              <div className="px-4 py-3 text-sm" style={{ color: 'var(--gt-status-danger)' }}>
+              <div className="px-4 py-3 text-sm text-[var(--gt-status-danger)]">
                 {appRuntimeMessage}
               </div>
             ) : null}
@@ -577,7 +577,7 @@ export default function SettingsFeature({
               </div>
             </div>
             {localUsageMessage ? (
-              <div className="px-4 py-3 text-sm" style={{ color: 'var(--gt-status-danger)' }}>
+              <div className="px-4 py-3 text-sm text-[var(--gt-status-danger)]">
                 {localUsageMessage}
               </div>
             ) : null}
@@ -599,7 +599,7 @@ export default function SettingsFeature({
                       : t('settings.system_proxy_hint')}
                 </div>
                 {sidecarProxyConfigPath ? (
-                  <div className="mt-1 break-all text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>
+                  <div className="mt-1 break-all font-mono text-xs text-[var(--gt-ink-muted)]">
                     {sidecarProxyConfigPath}
                   </div>
                 ) : null}
@@ -614,7 +614,7 @@ export default function SettingsFeature({
               </div>
             </div>
             {sidecarProxyMessage ? (
-              <div className="px-4 py-3 text-sm" style={{ color: 'var(--gt-status-danger)' }}>
+              <div className="px-4 py-3 text-sm text-[var(--gt-status-danger)]">
                 {sidecarProxyMessage}
               </div>
             ) : null}
@@ -669,7 +669,7 @@ export default function SettingsFeature({
         </section>
 
         <footer className="border-t pt-6 text-center" style={{ borderColor: 'var(--gt-border-subtle)' }}>
-          <div className="text-xs font-normal" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>
+          <div className="font-mono text-xs font-normal text-[var(--gt-ink-muted)]">
             GetTokens {currentVersionLabel} · {releaseLabel || 'DEV'}
           </div>
         </footer>
