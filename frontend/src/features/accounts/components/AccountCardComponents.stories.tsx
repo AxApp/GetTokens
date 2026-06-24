@@ -472,7 +472,7 @@ function AccountCardTemplateApplySample() {
   return (
     <DesignSystemStoryFrame label="DS-ACCOUNT-CARD-TEMPLATE-APPLY">
       <div className="relative grid gap-4 bg-[var(--gt-surface-panel)] p-4">
-        <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <div className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             ACCOUNT CARD MENU / VERIFIED TEMPLATE ONLY
           </div>
@@ -592,8 +592,8 @@ function AccountCardTemplateApplySample() {
             aria-modal="true"
             aria-label={previewTarget !== 'claude' ? '确认应用到 Codex' : '确认应用到 Claude Code'}
           >
-            <div className="grid max-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] shadow-[10px_10px_0_var(--gt-shadow-panel)]">
-              <div className="grid gap-3 border-b-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+            <div className="grid max-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] shadow-sm">
+              <div className="grid gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
                 <div className="min-w-0">
                   <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                     FILE PREVIEW CONFIRM
@@ -606,10 +606,10 @@ function AccountCardTemplateApplySample() {
                   </p>
                   {previewTarget !== 'claude' ? (
                     <div className="mt-3 flex max-w-full flex-wrap gap-2">
-                      <span className="inline-flex border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
+                      <span className="inline-flex rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                         固定应用模式：{codexModeLabel}
                       </span>
-                      <span className="inline-flex border-2 border-[var(--border-muted)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
+                      <span className="inline-flex rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                         当前 provider：{currentCodexProviderID}
                       </span>
                     </div>
@@ -621,7 +621,7 @@ function AccountCardTemplateApplySample() {
               </div>
 
               <div className="grid h-[clamp(24rem,calc(100vh-12rem),38rem)] min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
-                <div className="grid min-h-0 content-start gap-3 overflow-auto border-b-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4 lg:border-b-0 lg:border-r-2">
+                <div className="grid min-h-0 content-start gap-3 overflow-auto border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 lg:border-b-0 lg:border-r-2">
                   <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                     文件列表
                   </div>
@@ -631,10 +631,10 @@ function AccountCardTemplateApplySample() {
                         key={file.id}
                         size="small"
                         onClick={() => setSelectedFileID(file.id)}
-                        className={`grid border-2 px-3 py-3 text-left active:scale-[0.99] ${
+                        className={`grid border px-3 py-3 text-left active:scale-[0.99] ${
                           selectedFileID === file.id
-                            ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] shadow-[4px_4px_0_var(--gt-shadow-panel)]'
-                            : 'border-[var(--border-muted)] bg-[var(--gt-surface-canvas)] hover:bg-[var(--gt-surface-panel)]'
+                            ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] shadow-sm'
+                            : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] hover:bg-[var(--gt-surface-panel)]'
                         }`}
                       >
                         <span className="break-all font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
@@ -655,7 +655,7 @@ function AccountCardTemplateApplySample() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-4 py-3">
                 <Button onClick={() => setConfirmOpen(false)}>
                   取消
                 </Button>
@@ -698,7 +698,7 @@ function AccountCardFrameSample({ selected = false }: { selected?: boolean }) {
             </div>
             <Button
               size="small"
-              className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal"
+              className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal"
               onClick={(event) => event.stopPropagation()}
             >
               Nested Action
@@ -716,7 +716,7 @@ function AccountCardFrameSample({ selected = false }: { selected?: boolean }) {
 function HealthBarSample({ summary = healthyUsageSummary }: { summary?: AccountUsageSummary }) {
   return (
     <DesignSystemStoryFrame label="DS-HEALTH">
-      <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <div className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <div className="flex items-end justify-between gap-3">
           <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             Request health
@@ -771,7 +771,7 @@ function CardSectionsSample() {
   const { t } = useStoryCopy();
   return (
     <DesignSystemStoryFrame label="DS-SECTIONS">
-      <div className="grid overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)]">
+      <div className="grid overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]">
         <div className="border-b border-dashed border-[var(--gt-border-strong)] p-4">
           <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
         </div>
@@ -789,7 +789,7 @@ function MiniMetricsSample() {
   const { t } = useStoryCopy();
   return (
     <DesignSystemStoryFrame label="DS-MINI-METRICS">
-      <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
       </div>
     </DesignSystemStoryFrame>
@@ -800,7 +800,7 @@ function QuotaBarsRefreshingSample() {
   const { t } = useStoryCopy();
   return (
     <DesignSystemStoryFrame label="DS-QUOTA-REFRESHING">
-      <div className="grid overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)]">
+      <div className="grid overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]">
         <QuotaBars quotaDisplay={refreshingQuotaDisplay} t={t} />
       </div>
     </DesignSystemStoryFrame>
@@ -833,7 +833,7 @@ function AccountCardsOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? '完整账号卡' : 'Full account card'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountCardSample label="DS-ACCOUNT-CARD-READY" />
@@ -844,12 +844,12 @@ function AccountCardsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? '模板应用菜单' : 'Template apply menu'}</h3>
         <AccountCardTemplateApplySample />
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? '交互外壳' : 'Interactive shell'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountCardFrameSample />
@@ -857,7 +857,7 @@ function AccountCardsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? '归因卡片状态' : 'Attribution card states'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AttributionCardSample />
@@ -867,7 +867,7 @@ function AccountCardsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? '指标段与健康条' : 'Metric sections and health'}</h3>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.65fr)]">
           <CardSectionsSample />
@@ -878,7 +878,7 @@ function AccountCardsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? '加载骨架' : 'Loading skeleton'}</h3>
         <SkeletonSample />
       </section>

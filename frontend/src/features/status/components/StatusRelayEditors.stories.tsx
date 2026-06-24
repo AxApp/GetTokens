@@ -85,7 +85,7 @@ function useStoryCopy() {
 function ModalViewport({ children, label }: { children: ReactNode; label: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="relative h-[25rem] min-w-0 overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
+      <div className="relative h-[25rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -177,7 +177,7 @@ function StatusRelayEditorsOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? 'Key 编辑器' : 'Key editor'}</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <KeyEditorSample />
@@ -186,7 +186,7 @@ function StatusRelayEditorsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? 'Provider / Model 编辑器' : 'Provider / Model editors'}</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ProviderEditorSample />

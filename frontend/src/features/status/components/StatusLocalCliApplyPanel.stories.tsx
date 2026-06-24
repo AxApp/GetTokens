@@ -162,7 +162,7 @@ const chatGPTAuthState: LocalCodexAuthStateLike = {
 function Frame({ label, children }: { label: string; children: ReactNode }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <div className="min-w-0 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -260,7 +260,7 @@ function StatusLocalCliApplyOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Codex states</h3>
         <div className="grid gap-4">
           <LocalCliApplySample label="DS-CODEX-READY" />
@@ -285,12 +285,12 @@ function StatusLocalCliApplyOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Claude state</h3>
           <LocalCliApplySample label="DS-CLAUDE-READY" initialActiveTarget="claude" claudeApplyMessage="settings.json preview ready" />
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">账号模板确认页</h3>
         <AccountTemplateLocalApplyConfirmSample label="DS-ACCOUNT-TEMPLATE-CONFIRM" />
       </section>
@@ -410,7 +410,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
       <div className="grid gap-4 bg-[var(--gt-surface-panel)] p-4">
-        <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+        <div className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
           <div className="min-w-0">
             <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
               TEMPLATE APPLY CONFIRM
@@ -537,7 +537,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-4 py-3">
           <Button onClick={() => setResult('已取消 / 未写入任何本地文件')}>
             取消
           </Button>
@@ -552,7 +552,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
 
 function ConfirmSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+    <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
       <h3 className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
         {title}
       </h3>
@@ -596,7 +596,7 @@ function ConfirmList({ title, items }: { title: string; items: string[] }) {
         {items.map((item) => (
           <div
             key={item}
-            className="border-l-4 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]"
+            className="border-l border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]"
           >
             {item}
           </div>
@@ -615,7 +615,7 @@ function ConfirmNotice({ tone, text }: { tone: 'success' | 'warning' | 'danger';
         : 'var(--color-status-warning)';
   return (
     <div
-      className="border-2 border-dashed bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal"
+      className="rounded-md border border-dashed bg-[var(--gt-surface-panel)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal"
       style={{ borderColor: color, color }}
     >
       {text}

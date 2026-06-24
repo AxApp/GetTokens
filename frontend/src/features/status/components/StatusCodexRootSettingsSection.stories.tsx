@@ -231,7 +231,7 @@ const preview: CodexFeaturePreview = {
 function Frame({ label, children }: { label: string; children: ReactNode }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">{children}</div>
+      <div className="min-w-0 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">{children}</div>
     </DesignSystemStoryFrame>
   );
 }
@@ -286,7 +286,7 @@ function StatusCodexRootSettingsOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Root setting states</h3>
         <div className="grid gap-4">
           <RootSettingsSample label="DS-CODEX-ROOT-READY" message="loaded from config.toml" />

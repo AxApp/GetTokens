@@ -40,7 +40,7 @@ type Story = StoryObj;
 function ModalViewport({ children, label = 'DS-MODAL' }: { children: ReactNode; label?: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="relative h-[32rem] min-w-0 overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
+      <div className="relative h-[32rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -58,7 +58,7 @@ function Header({ title = 'Codex Account Detail', eyebrow = 'ACCOUNT DETAIL' }: 
           {title}
         </h3>
       </div>
-      <span className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-3 py-1 font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
+      <span className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-3 py-1 font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
         READY
       </span>
     </div>
@@ -88,26 +88,26 @@ function Body({ long = false }: { long?: boolean }) {
   return (
     <div className="grid gap-4 p-6">
       <div className="grid gap-3 md:grid-cols-3">
-        <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-4">
+        <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-4">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             Requests
           </div>
           <div className="mt-2 text-2xl font-semibold tracking-normal text-[var(--gt-ink-primary)]">1,248</div>
         </div>
-        <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-4">
+        <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-4">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             Tokens
           </div>
           <div className="mt-2 text-2xl font-semibold tracking-normal text-[var(--gt-ink-primary)]">1.0M</div>
         </div>
-        <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-4">
+        <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-4">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             Latency
           </div>
           <div className="mt-2 text-2xl font-semibold tracking-normal text-[var(--gt-ink-primary)]">182MS</div>
         </div>
       </div>
-      <div className="grid overflow-hidden border-2 border-[var(--gt-border-strong)]">
+      <div className="grid overflow-hidden rounded-md border border-[var(--gt-border-subtle)]">
         {rows.map(([label, value]) => (
           <div key={label} className="grid gap-2 border-b border-dashed border-[var(--gt-border-strong)] px-4 py-3 last:border-b-0 md:grid-cols-[12rem_minmax(0,1fr)]">
             <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
@@ -642,7 +642,7 @@ function AccountModalsOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">弹窗框架状态</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <ModalSample />
@@ -652,7 +652,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">统一导入状态</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <AccountImportSample label="DS-IMPORT-EMPTY" />
@@ -661,7 +661,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">API 密钥新增状态</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <ApiKeyComposeSample label="DS-API-KEY-EMPTY" formKey="empty" />
@@ -676,7 +676,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">统一账号详情区块</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountDetailSectionsSample label="DS-ACCOUNT-DETAIL-SECTIONS-READY" />
@@ -684,7 +684,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">统一新增状态</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <UnifiedComposeSample label="DS-UNIFIED-PRESET-LIST" formKey="empty" />
@@ -703,7 +703,7 @@ function AccountModalsOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Codex OAuth 状态</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <OAuthSample label="DS-OAUTH-READY" />

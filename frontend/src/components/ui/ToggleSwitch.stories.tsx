@@ -50,15 +50,15 @@ function ToggleSwitchOverview() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <section className="grid min-h-[8rem] content-center gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <section className="grid min-h-[8rem] content-center gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-semibold tracking-normal">{zh ? '关闭' : 'Off'}</h3>
           <SwitchSample />
         </section>
-        <section className="grid min-h-[8rem] content-center gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <section className="grid min-h-[8rem] content-center gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-semibold tracking-normal">{zh ? '开启' : 'On'}</h3>
           <SwitchSample initial />
         </section>
-        <section className="grid min-h-[8rem] content-center gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <section className="grid min-h-[8rem] content-center gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-semibold tracking-normal">{zh ? '禁用' : 'Disabled'}</h3>
           <SwitchSample disabled />
         </section>

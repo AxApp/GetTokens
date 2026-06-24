@@ -68,7 +68,7 @@ function TokenSection({
   children: ReactNode;
 }) {
   return (
-    <section className="grid gap-4 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-5">
+    <section className="grid gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-5">
       <div>
         <h3 className="text-xl font-semibold tracking-normal">{title}</h3>
         <p className="mt-1 max-w-4xl text-[length:var(--gt-font-size-md)] font-semibold leading-relaxed text-[var(--gt-ink-muted)]">
@@ -136,7 +136,7 @@ function ScaleSample() {
       <TokenSection title="Tailwind 映射" description="项目里保留 text-xs / text-sm / text-2xl 等常用类，但它们现在由 tailwind.config.js 指向 token。">
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
           {tailwindRows.map(([className, token]) => (
-            <div key={className} className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-3">
+            <div key={className} className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3">
               <div className="font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">{className}</div>
               <div className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">{token}</div>
               <div className={`${className} mt-2 font-semibold tracking-normal`}>

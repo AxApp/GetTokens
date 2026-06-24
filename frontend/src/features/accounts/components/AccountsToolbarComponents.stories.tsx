@@ -58,7 +58,7 @@ function ToolbarViewport({
 }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-5">
+      <div className="min-w-0 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-5">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -143,7 +143,7 @@ function AccountsToolbarOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Toolbar states</h3>
         <div className="grid gap-4">
           <AccountsToolbarSample label="DS-ACCOUNTS-TOOLBAR-DEFAULT" />

@@ -29,7 +29,6 @@ const themeTokens: ColorToken[] = [
   { name: '--gt-focus-ring', usage: '键盘焦点和高优先级可操作控件描边' },
   { name: '--gt-accent-primary', usage: '当前皮肤的品牌强调色' },
   { name: '--gt-accent-hover', usage: '主强调色悬停态' },
-  { name: '--gt-shadow-panel', usage: '卡片与面板阴影色' },
   { name: '--gt-shadow-overlay', usage: '模态遮罩与浮层遮罩' },
 ];
 
@@ -104,10 +103,10 @@ function TokenSwatch({
 
   return (
     <div>
-      <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-3 text-[var(--gt-ink-primary)]">
+      <div className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 text-[var(--gt-ink-primary)]">
         <div
           ref={ref}
-          className="h-16 border-2 border-[var(--gt-border-strong)]"
+          className="h-16 rounded-md border border-[var(--gt-border-subtle)]"
           style={{ backgroundColor: `var(${token.name})` }}
         />
         <div className="min-w-0">
@@ -128,10 +127,10 @@ function FixedSwatch({ color }: { color: FixedColor }) {
   const { ref, resolved } = useResolvedColor(color.value);
 
   return (
-    <div className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-3">
+    <div className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3">
       <div
         ref={ref}
-        className="h-16 border-2 border-[var(--gt-border-strong)]"
+        className="h-16 rounded-md border border-[var(--gt-border-subtle)]"
         style={{ backgroundColor: color.value }}
       />
       <div className="min-w-0">
@@ -163,7 +162,7 @@ function TokenSection({
   children: ReactNode;
 }) {
   return (
-    <section className="grid gap-4 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-5">
+    <section className="grid gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-5">
       <div>
         <h3 className="text-lg font-semibold tracking-normal">{title}</h3>
         <p className="mt-1 max-w-4xl text-[length:var(--gt-font-size-md)] font-semibold leading-relaxed text-[var(--gt-ink-muted)]">

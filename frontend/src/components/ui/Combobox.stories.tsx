@@ -67,19 +67,19 @@ function ComboboxOverview() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-semibold tracking-normal">{zh ? '默认' : 'Default'}</h3>
           <ComboboxSample />
         </section>
-        <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-semibold tracking-normal">{zh ? '长值' : 'Long Value'}</h3>
           <ComboboxSample initialValue="openai-compatible-provider-with-long-model-name" />
         </section>
-        <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-semibold tracking-normal">{zh ? '空选项' : 'Empty Options'}</h3>
           <ComboboxSample empty />
         </section>
-        <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-semibold tracking-normal">{zh ? '右对齐 / 禁用' : 'Right Aligned / Disabled'}</h3>
           <ComboboxSample align="right" disabled />
         </section>

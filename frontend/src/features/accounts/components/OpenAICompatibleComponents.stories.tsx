@@ -28,7 +28,7 @@ type Story = StoryObj;
 function ModalViewport({ children, label }: { children: ReactNode; label: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="relative h-[34rem] min-w-0 overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
+      <div className="relative h-[34rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -251,7 +251,7 @@ function OpenAICompatibleOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Provider card states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ProviderCardSample label="DS-READY" />
@@ -262,7 +262,7 @@ function OpenAICompatibleOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Workspace states</h3>
         <div className="grid gap-4">
           <WorkspaceSample label="DS-WORKSPACE-GRID" />
@@ -274,7 +274,7 @@ function OpenAICompatibleOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Compose modal states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ComposeModalSample label="DS-COMPOSE-EMPTY" formKey="empty" />

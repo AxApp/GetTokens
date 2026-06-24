@@ -79,7 +79,7 @@ function StatusSnippetPanelOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? '配置片段' : 'Config snippets'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <SnippetSample />
@@ -87,7 +87,7 @@ function StatusSnippetPanelOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? 'Diff 与长行' : 'Diff and long lines'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <SnippetSample title="CONFIG DIFF" content={diffConfig} action />

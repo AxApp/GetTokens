@@ -359,7 +359,7 @@ function AccountsListSample({
             />
           )}
           emptyContent={
-            <div className="border-2 border-dashed border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-10 text-center">
+            <div className="rounded-md border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-10 text-center">
               <p className="text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                 No matching accounts
               </p>
@@ -384,7 +384,7 @@ function AccountsListOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Workbench states</h3>
         <div className="grid gap-5">
           <AccountsListSample label="DS-ACCOUNTS-LIST-FULL" />

@@ -108,7 +108,7 @@ export const designSystemStoryGroups = [
         id: 'antd-primitives',
         title: 'AntD 基础样式',
         storybookTitle: 'Design System/基础样式/AntD 基础样式',
-        path: 'frontend/src/stories/primitives/SwissPrimitives.stories.tsx',
+        path: 'frontend/src/stories/primitives/AntdPrimitives.stories.tsx',
       },
     ],
   },

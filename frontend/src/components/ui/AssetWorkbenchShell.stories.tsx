@@ -51,7 +51,7 @@ function AssetWorkbenchShellOverview() {
               </>
             }
             notice={
-              <div className="border-b-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">
+              <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">
                 Preview data loaded
               </div>
             }
@@ -68,7 +68,7 @@ function AssetWorkbenchShellOverview() {
               {['skill-installer', 'github-mcp', 'project-command'].map((item) => (
                 <div key={item} className="grid gap-2 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                   <div className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-lg)] font-semibold">{item}</div>
-                  <span className="border-2 border-[var(--gt-border-strong)] px-2 py-1 font-mono text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
+                  <span className="rounded-md border border-[var(--gt-border-subtle)] px-2 py-1 font-mono text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                     ready
                   </span>
                 </div>

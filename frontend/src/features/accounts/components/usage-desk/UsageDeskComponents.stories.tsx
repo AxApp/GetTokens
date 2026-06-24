@@ -168,7 +168,7 @@ function ChartSample({
           </>
         }
         footerExtra={
-          <span className="border-2 border-[var(--gt-border-strong)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold">
+          <span className="rounded-md border border-[var(--gt-border-subtle)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold">
             selected {selectedPointKey}
           </span>
         }
@@ -222,7 +222,7 @@ function UsageDeskOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">图表状态</h3>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)]">
           <ChartSample />
@@ -230,7 +230,7 @@ function UsageDeskOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">明细表与面板</h3>
         <div className="grid gap-4">
           <TableSample />

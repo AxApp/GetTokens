@@ -55,3 +55,29 @@ test('runtime UI sources do not reintroduce legacy heavy workspace styling', asy
 
   assert.deepEqual(findings, []);
 });
+
+test('storybook examples do not teach legacy heavy workspace styling', async () => {
+  const findings = [];
+  const legacyStoryStylePattern = /border-2|shadow-\[|gt-shadow-panel|border-muted|SwissPrimitives/;
+
+  for await (const filePath of walk(srcRoot.pathname)) {
+    const relativePath = relative(srcRoot.pathname, filePath);
+    if (!/\.stories\.[cm]?[jt]sx?$/.test(relativePath)) {
+      continue;
+    }
+
+    if (/SwissPrimitives/.test(relativePath)) {
+      findings.push(`${relativePath}:1:legacy story filename`);
+    }
+
+    const source = await readFile(filePath, 'utf8');
+    const lines = source.split('\n');
+    lines.forEach((line, index) => {
+      if (legacyStoryStylePattern.test(line)) {
+        findings.push(`${relativePath}:${index + 1}:${line.trim()}`);
+      }
+    });
+  }
+
+  assert.deepEqual(findings, []);
+});

@@ -242,7 +242,7 @@ function SectionSample({
   const storyT = (key: string) => (key === 'common.more_actions' ? '更多操作' : t(key));
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-4">
+      <div className="min-w-0 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-4">
         <CodexAccountOrderSection
           title="Codex Request Order"
           hint="固定排序队列用于检查 section header、密度切换、筛选、空态和保存提示。"
@@ -294,7 +294,7 @@ function SectionSample({
 function DetailModalViewport({ children, label }: { children: ReactNode; label: string }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="relative h-[38rem] min-w-0 overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
+      <div className="relative h-[38rem] min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] [transform:translateZ(0)]">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -348,7 +348,7 @@ function CodexAccountOrderOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Row density and route states</h3>
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
           <RowSample label="DS-FULL" density="full" />
@@ -365,7 +365,7 @@ function CodexAccountOrderOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Section states</h3>
         <div className="grid gap-4">
           <SectionSample label="DS-SECTION-FULL" density="full" message="policy preview / 4 accounts" />
@@ -379,7 +379,7 @@ function CodexAccountOrderOverview() {
         </div>
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Detail modal states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <DetailSample label="DS-DETAIL-MAPPED" row={rows[2]} />

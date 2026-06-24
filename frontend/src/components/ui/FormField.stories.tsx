@@ -43,7 +43,7 @@ function FormFieldSample({ variant = 'select' }: { variant?: 'select' | 'input' 
           />
         ) : (
           <FormField title={zh ? '认证状态' : 'Auth State'} as="div">
-            <div className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]">
+            <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]">
               {zh ? 'ChatGPT 授权已保留' : 'ChatGPT auth preserved'}
             </div>
           </FormField>
@@ -63,7 +63,7 @@ function StatePanel({
   title: string;
 }) {
   return (
-    <section className="grid min-h-[9rem] gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+    <section className="grid min-h-[9rem] gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
       <div>
         <h3 className="text-sm font-semibold tracking-normal">{title}</h3>
         <p className="mt-1 text-xs font-semibold text-[var(--gt-ink-muted)]">{description}</p>

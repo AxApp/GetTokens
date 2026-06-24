@@ -260,13 +260,13 @@ function CodexBinaryOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? '摘要面板' : 'Summary panels'}</h3>
         <SummarySample />
         <SummarySample snapshot={buildErrorSnapshot()} message={zh ? 'PATH 已托管，但 doctor 返回错误。' : 'Managed PATH is enabled while doctor reports an error.'} />
       </section>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">{zh ? '版本列表' : 'Version list'}</h3>
         <VersionListSample />
         <VersionListSample empty />

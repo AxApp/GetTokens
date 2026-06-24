@@ -50,11 +50,11 @@ function ModalContent({ long = false }: { long?: boolean }) {
   return (
     <div className="grid gap-3 p-6">
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className="grid gap-2 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] p-3">
+        <div key={index} className="grid gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] p-3">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             FIELD {String(index + 1).padStart(2, '0')}
           </div>
-          <div className="h-8 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)]" />
+          <div className="h-8 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]" />
         </div>
       ))}
     </div>
@@ -63,7 +63,7 @@ function ModalContent({ long = false }: { long?: boolean }) {
 
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="shrink-0 border-t-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--color-status-danger)]">
+    <div className="shrink-0 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--color-status-danger)]">
       {message}
     </div>
   );
@@ -82,7 +82,7 @@ function ModalFrameSample({
 
   return (
     <DesignSystemStoryFrame>
-      <div className="relative min-h-[32rem] overflow-hidden border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-panel)]">
+      <div className="relative min-h-[32rem] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-panel)]">
         <ModalFrame
           onClose={() => undefined}
           size={isConfirm ? 'sm' : isDetail ? 'detail' : 'md'}

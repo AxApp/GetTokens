@@ -58,11 +58,11 @@ function SnippetPreOverview() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-semibold tracking-normal">{zh ? '普通片段' : 'Plain snippet'}</h3>
           <SnippetPreSample />
         </section>
-        <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+        <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
           <h3 className="text-sm font-semibold tracking-normal">{zh ? '长行滚动' : 'Long line'}</h3>
           <SnippetPreSample long />
         </section>

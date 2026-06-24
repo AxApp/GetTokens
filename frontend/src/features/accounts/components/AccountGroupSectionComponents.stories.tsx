@@ -101,7 +101,7 @@ function GroupViewport({
 }) {
   return (
     <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-5">
+      <div className="min-w-0 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-5">
         {children}
       </div>
     </DesignSystemStoryFrame>
@@ -166,7 +166,7 @@ function AccountGroupSectionSample({
         onSetGroupDisabled={() => undefined}
         renderAccount={(account) => <MockAccountCard key={account.id} account={account} displayMode={displayMode} />}
         emptyContent={
-          <div className="border-2 border-dashed border-[var(--gt-border-strong)] p-8 text-center text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
+          <div className="rounded-md border border-dashed border-[var(--gt-border-subtle)] p-8 text-center text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
             No accounts in this group
           </div>
         }
@@ -231,7 +231,7 @@ function AccountGroupSectionOverview() {
         </p>
       </div>
 
-      <section className="grid gap-3 border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] p-4">
+      <section className="grid gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
         <h3 className="text-sm font-semibold tracking-normal">Group states</h3>
         <div className="grid gap-4">
           <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-FULL" />
