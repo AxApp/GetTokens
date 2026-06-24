@@ -114,6 +114,29 @@ test('storybook examples do not teach legacy heavy workspace styling', async () 
   assert.deepEqual(findings, []);
 });
 
+test('tailwind config does not expose retired visual aliases', async () => {
+  const relativePath = '../tailwind.config.js';
+  const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
+  const retiredConfigPatterns = [
+    /darkMode:\s*'class'/,
+    /'hard(?:-sm|-lg)?':/,
+    /\bbg:\s*\{/,
+    /\btext:\s*\{/,
+    /\bstatus:\s*\{/,
+    /\bchart:\s*\{/,
+    /gt-surface-panel/,
+  ];
+  const findings = [];
+
+  source.split('\n').forEach((line, index) => {
+    if (retiredConfigPatterns.some((pattern) => pattern.test(line))) {
+      findings.push('tailwind.config.js:' + (index + 1) + ':' + line.trim());
+    }
+  });
+
+  assert.deepEqual(findings, []);
+});
+
 test('selected UI sources keep static typography and colors in classes', async () => {
   const findings = [];
   const inlineTypographyPattern = /style=\{\{[^\n}]*(fontFamily|fontSize|fontWeight|color|lineHeight)/;
