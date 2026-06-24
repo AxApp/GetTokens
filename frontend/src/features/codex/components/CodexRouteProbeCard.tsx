@@ -70,7 +70,7 @@ export function RouteProbeCard({
 
   return (
     <div
-      className="scrollbar-stable fixed inset-0 z-50 overflow-hidden bg-[var(--overlay-scrim-80)] backdrop-blur-sm"
+      className="scrollbar-stable fixed inset-0 z-50 overflow-hidden bg-[var(--overlay-scrim-80)]"
       data-collaboration-id="MODAL_CODEX_ROUTE_PROBE"
       data-codex-route-probe-shell="true"
       onClick={onClose}

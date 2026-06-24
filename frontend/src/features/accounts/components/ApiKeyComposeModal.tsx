@@ -5,7 +5,7 @@ import type { ApiKeyFormState, ClickEventLike, TextInputEvent, Translator } from
 
 const DEFAULT_PROBE_MODEL = 'gpt-5.4-mini';
 const apiKeyComposeOverlayClass =
-  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm';
+  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8';
 const apiKeyComposePanelClass =
   'flex max-h-[calc(100vh-4rem)] w-full max-w-xl flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const apiKeyComposeHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-6 py-4';

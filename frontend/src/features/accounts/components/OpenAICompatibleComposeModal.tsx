@@ -17,7 +17,7 @@ interface OpenAICompatibleComposeModalProps {
   onSubmit: () => void;
 }
 
-const openAICompatibleComposeOverlayClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm';
+const openAICompatibleComposeOverlayClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6';
 const openAICompatibleComposePanelClass = 'flex w-full max-w-xl flex-col overflow-hidden rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-lg';
 const openAICompatibleComposeHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-6 py-4';
 const openAICompatibleComposeBodyClass = 'grid gap-6 p-6';

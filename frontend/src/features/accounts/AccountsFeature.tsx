@@ -109,7 +109,7 @@ const accountsFeatureShellClass =
 const accountsFeatureContentClass =
   "mx-auto max-w-6xl space-y-8 pb-32";
 const accountsFeatureSelectionToolbarShellClass =
-  "sticky -top-12 z-40 -mx-12 !mt-4 bg-[color-mix(in_srgb,var(--gt-surface-canvas)_94%,transparent)] px-12 py-1.5 backdrop-blur";
+  "sticky -top-12 z-40 -mx-12 !mt-4 bg-[var(--gt-surface-canvas)] px-12 py-1.5";
 const accountsFeatureNoticeClass =
   "flex items-start justify-between gap-3 rounded-md border px-4 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal";
 const accountsFeatureNoticeToneClass = {

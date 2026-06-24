@@ -443,7 +443,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
 
       {compactLayout && compactSessionsOpen ? (
         <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-[var(--overlay-scrim-60)] p-4 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-40 flex items-end justify-center bg-[var(--overlay-scrim-60)] p-4 sm:p-6"
           onClick={() => setCompactSessionsOpen(false)}
         >
           <div

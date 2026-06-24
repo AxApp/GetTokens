@@ -248,7 +248,7 @@ const accountDetailResourceKvLabelClass =
 const accountDetailResourceKvValueClass =
   'mt-1 truncate font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailQuotaResetModalOverlayClass =
-  'fixed inset-0 z-[1000] grid place-items-center bg-[var(--overlay-scrim-80)] px-6 py-8 backdrop-blur-sm';
+  'fixed inset-0 z-[1000] grid place-items-center bg-[var(--overlay-scrim-80)] px-6 py-8';
 const accountDetailQuotaResetModalPanelClass =
   'relative grid w-full max-w-[38rem] overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const accountDetailQuotaResetHeroClass =

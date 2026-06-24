@@ -1044,7 +1044,7 @@ function ProxyNodeActionsMenu({
   );
 }
 
-const proxyPoolModalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm';
+const proxyPoolModalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6';
 const proxyPoolModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const proxyPoolModalHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-6 py-4';
 const proxyPoolModalFooterClass = 'flex items-center justify-between border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';

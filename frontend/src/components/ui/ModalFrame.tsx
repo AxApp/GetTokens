@@ -85,7 +85,7 @@ export default function ModalFrame({
     : panelMaxHeightClassNames[position];
   const zIndex = resolveZIndex(zIndexClassName);
   const modalClassNames: ModalProps['classNames'] = {
-    mask: 'backdrop-blur-sm',
+    mask: '',
     wrapper: `${zIndexClassName} grid min-w-0 ${overlayLayoutClassName} ${overlayClassName}`,
     root: 'm-0 p-0',
     container: `flex w-full min-w-0 ${sizeClassNames[size]} ${panelViewportClassName} flex-col overflow-hidden rounded-lg border bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] ${panelClassName}`,

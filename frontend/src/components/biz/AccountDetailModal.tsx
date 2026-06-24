@@ -43,7 +43,7 @@ function getModelLabel(model: AuthModel): string {
 }
 
 const accountDetailModalOverlayClass =
-  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm';
+  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8';
 const accountDetailModalPanelClass =
   'flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-lg';
 const accountDetailModalHeaderClass =

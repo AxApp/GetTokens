@@ -221,7 +221,7 @@ export function LoadingBar({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse rounded-sm bg-[var(--gt-surface-muted)] ${className}`.trim()} />;
 }
 
-const sessionManagementModalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-4 backdrop-blur-sm sm:p-6';
+const sessionManagementModalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-4 sm:p-6';
 const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const sessionManagementModalHeaderClass = 'flex items-start justify-between gap-4 border-b border-[var(--gt-border-subtle)] px-5 py-4';
 const sessionManagementModalFooterClass = 'flex items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-3';

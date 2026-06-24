@@ -9,7 +9,7 @@ import { RotationPriorityItem } from './account-rotation/RotationPriorityItem';
 import { RotationConfigSection } from './account-rotation/RotationConfigSection';
 
 const accountRotationModalOverlayClass =
-  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm';
+  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6';
 const accountRotationModalPanelClass =
   'flex max-h-[calc(100vh-3rem)] w-full max-w-7xl flex-col overflow-hidden rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-lg';
 const accountRotationModalHeaderClass =

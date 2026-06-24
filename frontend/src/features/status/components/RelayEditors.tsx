@@ -7,7 +7,7 @@ import {
 } from '../model/relayLocalState';
 
 const relayEditorBackdropClass =
-  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm';
+  'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8';
 const relayEditorModalPanelClass =
   'flex w-full max-w-xl flex-col overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-lg';
 const relayEditorModalHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';

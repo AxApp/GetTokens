@@ -130,8 +130,8 @@ test('accounts selection toolbar stays sticky while scrolling selected accounts'
     source,
     /className=\{accountsFeatureSelectionToolbarShellClass\}/,
   );
-  assert.match(source, /bg-\[color-mix\(in_srgb,var\(--gt-surface-canvas\)_94%,transparent\)\]/);
-  assert.match(source, /backdrop-blur/);
+  assert.match(source, /bg-\[var\(--gt-surface-canvas\)\]/);
+  assert.doesNotMatch(source, /backdrop-blur/);
   assert.match(source, /className=\{isSelectionMode \? [\"']space-y-8 !mt-4[\"'] : [\"']space-y-8[\"']\}/);
   assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(source, /className="border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\] px-4 pb-4/);

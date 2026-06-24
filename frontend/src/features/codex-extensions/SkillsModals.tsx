@@ -61,7 +61,7 @@ export function GitSkillInstallModal({
 } & TProps) {
   return (
     <div
-      className="scrollbar-stable fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[var(--overlay-scrim-80)] p-3 backdrop-blur-sm sm:p-6"
+      className="scrollbar-stable fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[var(--overlay-scrim-80)] p-3 sm:p-6"
       data-collaboration-id="MODAL_CODEX_SKILL_GIT_INSTALL"
       onClick={onClose}
     >
@@ -234,7 +234,7 @@ export function SkillPreviewModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[var(--overlay-scrim-80)] px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10" onClick={onClose}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[var(--overlay-scrim-80)] px-3 py-6 sm:px-6 sm:py-10" onClick={onClose}>
         <div
           role="dialog"
           aria-modal="true"

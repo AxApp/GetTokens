@@ -94,7 +94,7 @@ export function McpServerEditorModal({
   const currentValueToml = draft.rawConfig?.trim() || formatMcpCurrentValueToml(draft);
   return (
     <div
-      className="scrollbar-stable fixed inset-0 z-50 overflow-y-auto bg-[var(--overlay-scrim-80)] px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10"
+      className="scrollbar-stable fixed inset-0 z-50 overflow-y-auto bg-[var(--overlay-scrim-80)] px-3 py-6 sm:px-6 sm:py-10"
       data-collaboration-id="MODAL_CODEX_MCP_SERVER_EDITOR"
       onClick={onClose}
     >
@@ -394,7 +394,7 @@ export function ConfigTomlEditorModal({
 } & TProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-3 sm:p-6"
       data-collaboration-id="MODAL_CODEX_CONFIG_TOML_EDITOR"
       onClick={onClose}
     >
