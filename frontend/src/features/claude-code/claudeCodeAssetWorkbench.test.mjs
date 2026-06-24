@@ -70,6 +70,8 @@ test('Claude Code asset workbench uses the quiet workspace shell', () => {
   assert.match(source, /--gt-status-success/);
   assert.match(source, /--gt-status-warning/);
   assert.match(source, /--gt-status-danger/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.doesNotMatch(source, /card-swiss/);
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /input-swiss/);

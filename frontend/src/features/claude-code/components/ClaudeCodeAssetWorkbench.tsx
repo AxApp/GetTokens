@@ -148,7 +148,7 @@ const toneClass: Record<'ready' | 'warning' | 'danger' | 'neutral', string> = {
 const claudeAssetPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const claudeAssetMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const claudeAssetMetaTextClass = 'font-mono text-xs font-normal tracking-normal text-[var(--gt-ink-muted)]';
+const claudeAssetMetaTextClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
 
 export function ClaudeCodeAssetWorkbench({
   state,
@@ -259,7 +259,7 @@ function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div className={`${claudeAssetMutedPanelClass} px-3 py-2`}>
       <div className={claudeAssetMetaTextClass}>{label}</div>
-      <div className="mt-1 text-xl font-semibold tabular-nums">{value}</div>
+      <div className="mt-1 text-[length:var(--gt-font-size-xl)] font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
@@ -276,8 +276,8 @@ function SectionTitle({ icon, title, note }: { icon: ReactNode; title: string; n
           {icon}
         </span>
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold tracking-normal">{title}</h3>
-          <p className="mt-0.5 text-xs font-normal leading-5 text-[var(--gt-ink-muted)]">{note}</p>
+          <h3 className="text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">{title}</h3>
+          <p className="mt-0.5 text-[length:var(--gt-font-size-xs)] font-normal leading-5 text-[var(--gt-ink-muted)]">{note}</p>
         </div>
       </div>
     </div>
@@ -456,7 +456,7 @@ function DiffPanel({ diffPreview }: { diffPreview?: ClaudeCodeDiffPreview }) {
       {diffPreview ? (
         <div className="mt-3 grid gap-2">
           <div className={claudeAssetMetaTextClass}>{diffPreview.sourcePath}</div>
-          <SnippetPre className="mt-2 bg-[var(--gt-surface-canvas)] p-3 text-xs leading-5">
+          <SnippetPre className="mt-2 bg-[var(--gt-surface-canvas)] p-3 text-[length:var(--gt-font-size-xs)] leading-5">
             {diffPreview.lines.map((line) => (
               <span
                 key={line}
@@ -470,7 +470,7 @@ function DiffPanel({ diffPreview }: { diffPreview?: ClaudeCodeDiffPreview }) {
           </SnippetPre>
         </div>
       ) : (
-        <p className="mt-3 text-sm font-normal leading-6 text-[var(--gt-ink-muted)]">No pending diff. Writes stay disabled until a target scope and server are selected.</p>
+        <p className="mt-3 text-[length:var(--gt-font-size-sm)] font-normal leading-6 text-[var(--gt-ink-muted)]">No pending diff. Writes stay disabled until a target scope and server are selected.</p>
       )}
     </section>
   );
@@ -484,11 +484,11 @@ function PlanPanel({ plannedAssets }: { plannedAssets: readonly ClaudeCodeAssetP
         {plannedAssets.map((item) => (
           <article key={item.id} className={`${claudeAssetPanelClass} p-3`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm font-semibold">{item.name}</span>
+              <span className="text-[length:var(--gt-font-size-sm)] font-semibold">{item.name}</span>
               <Badge>{item.status}</Badge>
             </div>
             <div className={`mt-2 ${claudeAssetMetaTextClass}`}>{item.owner}</div>
-            <p className="mt-2 text-xs font-normal leading-5 text-[var(--gt-ink-muted)]">{item.note}</p>
+            <p className="mt-2 text-[length:var(--gt-font-size-xs)] font-normal leading-5 text-[var(--gt-ink-muted)]">{item.note}</p>
           </article>
         ))}
       </div>
@@ -501,8 +501,8 @@ function EmptyPanel({ title, detail }: { title: string; detail: string }) {
     <div className="grid min-h-48 place-items-center rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-6 text-center">
       <div className="max-w-md">
         <FileCode2 className="mx-auto h-8 w-8 text-[var(--gt-ink-muted)]" />
-        <h3 className="mt-3 text-sm font-semibold tracking-normal">{title}</h3>
-        <p className="mt-2 text-sm font-normal leading-6 text-[var(--gt-ink-muted)]">{detail}</p>
+        <h3 className="mt-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">{title}</h3>
+        <p className="mt-2 text-[length:var(--gt-font-size-sm)] font-normal leading-6 text-[var(--gt-ink-muted)]">{detail}</p>
       </div>
     </div>
   );
