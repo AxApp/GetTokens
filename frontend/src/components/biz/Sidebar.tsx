@@ -219,10 +219,9 @@ export default function Sidebar({
   return (
     <aside
       className={[
-        'relative z-20 flex h-full shrink-0 flex-col transition-[width] duration-150',
+        'relative z-20 flex h-full shrink-0 flex-col border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] transition-[width] duration-150',
         isCollapsed ? 'w-[4.75rem]' : 'w-[15rem]',
       ].join(' ')}
-      style={{ borderRight: '1px solid var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-canvas)' }}
       data-collaboration-id="NAV_SIDEBAR"
       data-sidebar-collapsed={isCollapsed ? 'true' : 'false'}
     >
@@ -279,8 +278,7 @@ export default function Sidebar({
       </nav>
 
       <div
-        className="px-3 py-2"
-        style={{ borderTop: '1px solid var(--gt-border-subtle)' }}
+        className="border-t border-[var(--gt-border-subtle)] px-3 py-2"
       >
         {isExpanded ? (
           <div className="flex flex-col items-center">
@@ -323,8 +321,7 @@ export default function Sidebar({
               </Button>
             ) : (
               <div
-                className="h-1 w-1 rounded-full"
-                style={{ backgroundColor: 'var(--gt-ink-muted)', opacity: 0.4 }}
+                className="h-1 w-1 rounded-full bg-[var(--gt-ink-muted)] opacity-40"
                 aria-hidden="true"
               />
             )}
