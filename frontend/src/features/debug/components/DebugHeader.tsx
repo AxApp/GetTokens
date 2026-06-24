@@ -25,21 +25,12 @@ export default function DebugHeader({
   const { t } = useI18n();
 
   return (
-    <header
-      className="flex items-end justify-between border-b pb-4"
-      style={{ borderColor: 'var(--gt-border-subtle)' }}
-    >
+    <header className="flex items-end justify-between border-b border-[var(--gt-border-subtle)] pb-4">
       <div>
-        <h2
-          className="text-2xl font-semibold"
-          style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
-        >
+        <h2 className="text-2xl font-semibold text-[var(--gt-ink-primary)]">
           {t('debug.title')}
         </h2>
-        <p
-          className="mt-1 text-sm"
-          style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
-        >
+        <p className="mt-1 text-sm text-[var(--gt-ink-muted)]">
           {t('debug.subtitle')} · {count}
         </p>
       </div>

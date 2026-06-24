@@ -26,10 +26,10 @@ export default function DebugEntryCard({
 }: DebugEntryCardProps) {
   const { t } = useI18n();
 
-  const statusColor =
-    entry.status === 'success' ? 'var(--gt-status-success)'
-    : entry.status === 'error' ? 'var(--gt-status-danger)'
-    : 'var(--gt-ink-muted)';
+  const statusTextClass =
+    entry.status === 'success' ? 'text-[var(--gt-status-success)]'
+    : entry.status === 'error' ? 'text-[var(--gt-status-danger)]'
+    : 'text-[var(--gt-ink-muted)]';
 
   return (
     <Card
@@ -39,8 +39,7 @@ export default function DebugEntryCard({
     >
       {/* Header */}
       <div
-        className="sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-5 py-3"
-        style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}
+        className="sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-5 py-3"
       >
         <div className="flex items-start gap-3">
           <label className="mt-0.5 flex cursor-pointer items-center">
@@ -51,24 +50,18 @@ export default function DebugEntryCard({
             />
           </label>
           <div className="space-y-0.5">
-            <div
-              className="text-xs"
-              style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
-            >
+            <div className="font-mono text-xs text-[var(--gt-ink-muted)]">
               {entry.transport} · {entry.startedAt}
             </div>
-            <div
-              className="text-sm font-semibold"
-              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
-            >
+            <div className="text-sm font-semibold text-[var(--gt-ink-primary)]">
               {entry.name}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-right text-xs" style={{ fontFamily: 'var(--gt-font-family-mono)' }}>
-            <div style={{ color: statusColor, fontWeight: 600 }}>{entry.status}</div>
-            <div className="mt-0.5" style={{ color: 'var(--gt-ink-muted)' }}>{entry.durationMs ?? 0}ms</div>
+          <div className="text-right font-mono text-xs">
+            <div className={`font-semibold ${statusTextClass}`}>{entry.status}</div>
+            <div className="mt-0.5 text-[var(--gt-ink-muted)]">{entry.durationMs ?? 0}ms</div>
           </div>
           <Button
             size="small"
@@ -82,43 +75,25 @@ export default function DebugEntryCard({
       {/* Body */}
       {entry.isExpanded ? (
         <div className="grid flex-grow grid-cols-1 overflow-y-auto md:grid-cols-2">
-          <div
-            className="border-b p-4 md:border-b-0 md:border-r"
-            style={{ borderColor: 'var(--gt-border-subtle)' }}
-          >
-            <div
-              className="mb-2 text-xs font-semibold"
-              style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
-            >
+          <div className="border-b border-[var(--gt-border-subtle)] p-4 md:border-b-0 md:border-r">
+            <div className="mb-2 text-xs font-semibold text-[var(--gt-ink-muted)]">
               {t('debug.request')}
             </div>
-            <pre
-              className="overflow-auto whitespace-pre-wrap break-all text-sm leading-relaxed"
-              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-mono)' }}
-            >
+            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-sm leading-relaxed text-[var(--gt-ink-primary)]">
               {entry.requestText}
             </pre>
           </div>
           <div className="p-4">
-            <div
-              className="mb-2 text-xs font-semibold"
-              style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
-            >
+            <div className="mb-2 text-xs font-semibold text-[var(--gt-ink-muted)]">
               {entry.status === 'error' ? t('debug.response_error') : t('debug.response')}
             </div>
-            <pre
-              className="overflow-auto whitespace-pre-wrap break-all text-sm leading-relaxed"
-              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-mono)' }}
-            >
+            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-sm leading-relaxed text-[var(--gt-ink-primary)]">
               {entry.responseText}
             </pre>
           </div>
         </div>
       ) : (
-        <div
-          className="px-5 py-3 text-xs"
-          style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-sans)' }}
-        >
+        <div className="px-5 py-3 text-xs text-[var(--gt-ink-muted)]">
           {t('debug.collapsed_hint')}
         </div>
       )}
