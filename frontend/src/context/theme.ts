@@ -22,7 +22,7 @@ export const themePresetDefinitions: ReadonlyArray<ThemePresetDefinition> = [
   {
     id: 'classic',
     label: 'Classic Console',
-    description: 'Current Swiss hard-edge console style kept as the compatibility baseline.',
+    description: 'Current AntD quiet workspace style kept as the single runtime baseline.',
     rootAttribute: 'classic',
     previewTokens: {
       canvas: '#ffffff',

@@ -15,7 +15,6 @@ function assertTokenExists(token, block, message) {
 
 const surfaceTokens = [
   '--gt-surface-canvas',
-  '--gt-surface-panel',
   '--gt-surface-raised',
   '--gt-surface-muted',
   '--gt-surface-inverse',
@@ -34,7 +33,6 @@ const borderTokens = [
   '--gt-border-default',
   '--gt-border-strong',
   '--gt-focus-ring',
-  '--gt-shadow-panel',
   '--gt-shadow-overlay',
 ];
 
@@ -137,6 +135,11 @@ test(':root contains all border/focus/shadow tokens', () => {
   for (const token of borderTokens) {
     assertTokenExists(token, rootBlock, `:root should define ${token}`);
   }
+});
+
+test(':root does not keep retired compatibility surface tokens', () => {
+  assert.doesNotMatch(rootBlock, /--gt-surface-panel\s*:/);
+  assert.doesNotMatch(rootBlock, /--gt-shadow-panel\s*:/);
 });
 
 test(':root contains all accent/status tokens', () => {

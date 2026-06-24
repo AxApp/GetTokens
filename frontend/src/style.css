@@ -139,7 +139,6 @@
 @layer base {
   :root {
     --gt-surface-canvas: #ffffff;
-    --gt-surface-panel: #fafafa;
     --gt-surface-raised: #ffffff;
     --gt-surface-muted: #fafafa;
     --gt-surface-inverse: #000000;
@@ -152,7 +151,6 @@
     --gt-border-default: #d9d9d9;
     --gt-border-strong: #8c8c8c;
     --gt-focus-ring: #1677ff;
-    --gt-shadow-panel: #d9d9d9;
     --gt-shadow-overlay: color-mix(in srgb, #000000 24%, transparent);
     --gt-accent-primary: #1677ff;
     --gt-accent-hover: #4096ff;
