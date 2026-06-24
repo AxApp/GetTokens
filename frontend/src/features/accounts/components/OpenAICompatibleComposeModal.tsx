@@ -25,7 +25,7 @@ const openAICompatibleComposeFooterClass = 'flex items-center justify-between bo
 const openAICompatibleComposeLabelClass = 'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const openAICompatibleComposeTitleClass = 'mt-1 text-sm font-semibold text-[var(--gt-ink-primary)]';
 const openAICompatibleComposeHintClass = 'text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
-const openAICompatibleComposeInputClass = 'h-9 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-ink-muted)]';
+const openAICompatibleComposeInputClass = 'h-9 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-ink-muted)]';
 const openAICompatibleComposeErrorClass = 'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]';
 
 export default function OpenAICompatibleComposeModal({

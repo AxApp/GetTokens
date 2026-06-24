@@ -15,7 +15,7 @@ import {
 import { getAccountsPreviewAuthFileContent } from '../previewData';
 
 const inputClass =
-  'w-full rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-sm text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-focus-ring)]';
+  'w-full rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-sm text-[var(--gt-ink-primary)] outline-none transition-colors focus:border-[var(--gt-focus-ring)]';
 const labelClass =
   'text-xs font-normal text-[var(--gt-ink-muted)]';
 export function AuthFileSummarySection({ account }: { account: AccountRecord }) {

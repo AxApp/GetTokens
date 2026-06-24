@@ -16,7 +16,7 @@ interface QuotaCalibrationPanelProps {
 const quotaCalibrationPanelClass = 'grid gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const quotaCalibrationHeaderClass = 'flex min-w-0 items-center justify-between gap-2';
 const quotaCalibrationItemClass = 'flex min-w-0 items-center justify-between gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1.5';
-const quotaCalibrationInputClass = 'h-8 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:opacity-60';
+const quotaCalibrationInputClass = 'h-8 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none transition-colors focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:opacity-60';
 const quotaCalibrationMetaClass = 'font-mono text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
 const quotaCalibrationValueClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal tabular-nums text-[var(--gt-ink-primary)]';
 const quotaCalibrationDividerClass = 'grid gap-2 border-t border-[var(--gt-border-subtle)] pt-2';

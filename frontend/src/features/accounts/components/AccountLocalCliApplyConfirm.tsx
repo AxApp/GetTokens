@@ -47,7 +47,7 @@ type CodexBooleanField = 'supportsWebsockets';
 const accountLocalCliPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const accountLocalCliMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const accountLocalCliInputClass =
-  'min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none placeholder:text-[var(--gt-ink-muted)] transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
+  'min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none placeholder:text-[var(--gt-ink-muted)] transition-colors focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
 const accountLocalCliMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
 const accountLocalCliToggleClass = 'h-4 w-4 accent-[var(--gt-status-warning)]';
 
@@ -397,7 +397,7 @@ export default function AccountLocalCliApplyConfirm({
               <Button
                 key={file.id}
                 onClick={() => setSelectedFileID(file.id)}
-                className={`grid rounded border px-3 py-3 text-left transition ${
+                className={`grid rounded border px-3 py-3 text-left transition-colors ${
                   selectedFile?.id === file.id
                     ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-muted)]'
                     : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] hover:bg-[var(--gt-surface-muted)]'

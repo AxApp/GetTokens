@@ -38,6 +38,25 @@ import {
   rateLimitRuleLabel,
 } from '../model/rateLimit.ts';
 
+const accountComponentTransitionGateFiles = [
+  '../components/AccountDetailAuthFileSection.tsx',
+  '../components/AccountLocalCliApplyConfirm.tsx',
+  '../components/OpenAICompatibleComposeModal.tsx',
+  '../components/OpenAICompatibleWorkspace.tsx',
+  '../components/QuotaCalibrationPanel.tsx',
+  '../components/QuotaThresholdRulePanel.tsx',
+  '../components/RateLimitRulesSection.tsx',
+  '../components/account-rotation/RotationConfigSection.tsx',
+];
+
+test('accounts component controls do not use bare transition utilities', () => {
+  for (const file of accountComponentTransitionGateFiles) {
+    const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+
+    assert.doesNotMatch(source, /\btransition(?![-\[])/, `${file} should not use bare transition utilities`);
+  }
+});
+
 test('shouldLoadAccountsData allows browser preview data without Wails bindings', () => {
   assert.equal(shouldLoadAccountsData({ code: 'running' }, false), true);
 });
