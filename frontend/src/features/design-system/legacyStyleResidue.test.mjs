@@ -27,6 +27,10 @@ const inlineTypographyGateFiles = [
   'features/codex-live-sessions/components/CodexLiveSessionDetail.tsx',
   'features/accounts/components/usage-desk/UsageDeskChart.tsx',
   'features/accounts/components/CardSections.tsx',
+  'features/accounts/components/AccountDetailPrimitives.tsx',
+  'components/ui/WorkspacePageHeader.tsx',
+  'components/biz/Sidebar.tsx',
+  'features/gettokens-extension-registry/GetTokensExtensionRegistryFeature.tsx',
 ];
 
 function extensionOf(filePath) {

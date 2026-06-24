@@ -87,7 +87,7 @@ export function AccountDetailStatCell({
 }) {
   return (
     <Descriptions.Item label={label} className={className}>
-      <div className="font-semibold tabular-nums" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
+      <div className="font-sans font-semibold tabular-nums">{value}</div>
       {meta && <div className="mt-1 text-xs text-[var(--gt-ink-muted)]">{meta}</div>}
     </Descriptions.Item>
   );
@@ -198,7 +198,7 @@ export function AccountDetailEvidenceRow({
 }) {
   return (
     <Descriptions.Item label={label} className={className}>
-      <div className="break-all" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
+      <div className="break-all font-sans">{value}</div>
     </Descriptions.Item>
   );
 }

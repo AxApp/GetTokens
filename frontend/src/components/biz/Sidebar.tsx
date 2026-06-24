@@ -245,8 +245,7 @@ export default function Sidebar({
           onClick={toggleCollapsed}
           aria-label={t(getSidebarToggleTranslationKey(isCollapsed))}
           title={t(getSidebarToggleTranslationKey(isCollapsed))}
-          className={'flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-75 hover:bg-[var(--gt-surface-muted)] ' + FOCUS_RING}
-          style={{ color: 'var(--gt-ink-muted)' }}
+          className={'flex h-7 w-7 items-center justify-center rounded-md text-[var(--gt-ink-muted)] transition-colors duration-75 hover:bg-[var(--gt-surface-muted)] ' + FOCUS_RING}
         >
           <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M2 3h8M2 6h8M2 9h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
@@ -313,8 +312,7 @@ export default function Sidebar({
             {updatePrompt ? (
               <Button
                 size="small"
-                className={'flex h-6 w-6 items-center justify-center rounded-md disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
-                style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)' }}
+                className={'flex h-6 w-6 items-center justify-center rounded-md !bg-[var(--gt-status-success)] !text-[var(--gt-ink-inverse)] disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
                 aria-label={updatePromptLabel}
                 title={updatePromptTitle}
                 aria-live="polite"

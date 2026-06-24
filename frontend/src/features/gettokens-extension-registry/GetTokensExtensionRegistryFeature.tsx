@@ -527,7 +527,7 @@ function GetTokensExtensionRegistryAside({
               </div>
             ) : null}
             {stagedApplyView.errorDetail ? (
-              <div className="border px-2 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-danger)]" style={{ borderColor: 'color-mix(in srgb, var(--gt-status-danger) 34%, transparent)', backgroundColor: 'color-mix(in srgb, var(--gt-status-danger) 10%, transparent)' }}>
+              <div className="border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-2 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-danger)]">
                 {stagedApplyView.errorDetail}
               </div>
             ) : null}
