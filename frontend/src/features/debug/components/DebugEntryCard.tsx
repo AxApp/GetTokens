@@ -33,9 +33,8 @@ export default function DebugEntryCard({
 
   return (
     <Card
-      className="flex max-h-[600px] flex-col overflow-hidden"
-      style={isSelected ? { boxShadow: '0 0 0 2px var(--gt-accent-primary)' } : undefined}
-      styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 } }}
+      className={`flex max-h-[600px] flex-col overflow-hidden ${isSelected ? '[box-shadow:0_0_0_2px_var(--gt-accent-primary)]' : ''}`.trim()}
+      classNames={{ body: 'flex min-h-0 flex-1 flex-col !p-0' }}
     >
       {/* Header */}
       <div
@@ -50,16 +49,16 @@ export default function DebugEntryCard({
             />
           </label>
           <div className="space-y-0.5">
-            <div className="font-mono text-xs text-[var(--gt-ink-muted)]">
+            <div className="font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
               {entry.transport} · {entry.startedAt}
             </div>
-            <div className="text-sm font-semibold text-[var(--gt-ink-primary)]">
+            <div className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
               {entry.name}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-right font-mono text-xs">
+          <div className="text-right font-mono text-[length:var(--gt-font-size-xs)]">
             <div className={`font-semibold ${statusTextClass}`}>{entry.status}</div>
             <div className="mt-0.5 text-[var(--gt-ink-muted)]">{entry.durationMs ?? 0}ms</div>
           </div>
@@ -76,24 +75,24 @@ export default function DebugEntryCard({
       {entry.isExpanded ? (
         <div className="grid flex-grow grid-cols-1 overflow-y-auto md:grid-cols-2">
           <div className="border-b border-[var(--gt-border-subtle)] p-4 md:border-b-0 md:border-r">
-            <div className="mb-2 text-xs font-semibold text-[var(--gt-ink-muted)]">
+            <div className="mb-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
               {t('debug.request')}
             </div>
-            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-sm leading-relaxed text-[var(--gt-ink-primary)]">
+            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[length:var(--gt-font-size-sm)] leading-relaxed text-[var(--gt-ink-primary)]">
               {entry.requestText}
             </pre>
           </div>
           <div className="p-4">
-            <div className="mb-2 text-xs font-semibold text-[var(--gt-ink-muted)]">
+            <div className="mb-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
               {entry.status === 'error' ? t('debug.response_error') : t('debug.response')}
             </div>
-            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-sm leading-relaxed text-[var(--gt-ink-primary)]">
+            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[length:var(--gt-font-size-sm)] leading-relaxed text-[var(--gt-ink-primary)]">
               {entry.responseText}
             </pre>
           </div>
         </div>
       ) : (
-        <div className="px-5 py-3 text-xs text-[var(--gt-ink-muted)]">
+        <div className="px-5 py-3 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
           {t('debug.collapsed_hint')}
         </div>
       )}

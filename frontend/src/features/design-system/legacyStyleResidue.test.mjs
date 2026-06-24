@@ -170,6 +170,23 @@ test('snippet pre uses gt typography tokens', async () => {
   assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\]/);
 });
 
+test('debug components use gt typography tokens and class-based card styling', async () => {
+  const debugFiles = [
+    'features/debug/components/DebugHeader.tsx',
+    'features/debug/components/DebugEmptyState.tsx',
+    'features/debug/components/DebugEntryCard.tsx',
+  ];
+  const sources = await Promise.all(debugFiles.map((relativePath) => readFile(join(srcRoot.pathname, relativePath), 'utf8')));
+  const combined = sources.join('\n');
+
+  assert.doesNotMatch(combined, /\btext-(?:xs|sm|base|lg|xl|2xl|3xl|4xl)\b/);
+  assert.doesNotMatch(sources[2], /style=\{/);
+  assert.doesNotMatch(sources[2], /styles=\{\{\s*body/);
+  assert.match(combined, /text-\[length:var\(--gt-font-size-page-title\)\]/);
+  assert.match(combined, /text-\[length:var\(--gt-font-size-sm\)\]/);
+  assert.match(combined, /text-\[length:var\(--gt-font-size-xs\)\]/);
+});
+
 test('selected UI sources keep static surface and border tokens in classes', async () => {
   const findings = [];
   const inlineSurfacePattern = /style=\{\{[^\n}]*(backgroundColor|borderColor|border(?:Top|Right|Bottom|Left)?):\s*['"][^'"]*var\(--gt-(surface|border|ink|status)/;

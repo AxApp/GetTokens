@@ -27,10 +27,10 @@ export default function DebugHeader({
   return (
     <header className="flex items-end justify-between border-b border-[var(--gt-border-subtle)] pb-4">
       <div>
-        <h2 className="text-2xl font-semibold text-[var(--gt-ink-primary)]">
+        <h2 className="text-[length:var(--gt-font-size-page-title)] font-semibold text-[var(--gt-ink-primary)]">
           {t('debug.title')}
         </h2>
-        <p className="mt-1 text-sm text-[var(--gt-ink-muted)]">
+        <p className="mt-1 text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]">
           {t('debug.subtitle')} · {count}
         </p>
       </div>
