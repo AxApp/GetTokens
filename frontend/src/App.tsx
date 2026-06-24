@@ -1,5 +1,4 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
 import { ApplyUpdate, CheckUpdate } from '../wailsjs/go/main/App';
 import { BrowserOpenURL, EventsOn, Quit } from '../wailsjs/runtime/runtime';
 import Sidebar from './components/biz/Sidebar';
@@ -215,13 +214,13 @@ function AppShell() {
     <AccountsPageStateProvider sidecarStatus={sidecarStatus}>
       <AccountMigrationGate sidecarStatus={sidecarStatus}>
         <div
-          className="flex h-screen w-screen overflow-hidden bg-[var(--gt-surface-canvas)] selection:bg-[var(--gt-border-subtle)] selection:text-[var(--gt-ink-primary)]"
+          className={[
+            'flex h-screen w-screen overflow-hidden bg-[var(--gt-surface-canvas)] selection:bg-[var(--gt-border-subtle)] selection:text-[var(--gt-ink-primary)]',
+            isSidebarCollapsed ? '[--app-sidebar-width:4.75rem]' : '[--app-sidebar-width:15rem]',
+          ].join(' ')}
           data-collaboration-id="MAIN_FRAME"
           data-design-system-highlight={import.meta.env.DEV ? 'project' : undefined}
           data-text-scale={getTextScaleAttributeValue(textScale)}
-          style={{
-            '--app-sidebar-width': isSidebarCollapsed ? '4.75rem' : '15rem',
-          } as CSSProperties}
         >
           <Sidebar
             activePage={activePage}

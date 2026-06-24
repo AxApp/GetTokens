@@ -200,6 +200,7 @@ test('account detail shell keeps static selection and menu styling in classes', 
 
 test('selected UI sources keep small static layout styles in classes', async () => {
   const relativePaths = [
+    'App.tsx',
     'components/biz/Sidebar.tsx',
     'features/accounts/components/AccountCardFrame.tsx',
     'features/accounts/components/usage-desk/UsageDeskPanels.tsx',
@@ -215,6 +216,7 @@ test('selected UI sources keep small static layout styles in classes', async () 
     /visibility:\s*'hidden'/,
     /minHeight:\s*'48rem'/,
     /style=\{\{/,
+    /--app-sidebar-width':/,
   ];
   const findings = [];
 

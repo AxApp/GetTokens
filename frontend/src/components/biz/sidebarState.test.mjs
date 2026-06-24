@@ -70,7 +70,9 @@ test('app shell publishes sidebar width for fixed modal layout', async () => {
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
 
   assert.match(appSource, /--app-sidebar-width/);
-  assert.match(appSource, /isSidebarCollapsed \? '4\.75rem' : '15rem'/);
+  assert.match(appSource, /\[--app-sidebar-width:4\.75rem\]/);
+  assert.match(appSource, /\[--app-sidebar-width:15rem\]/);
+  assert.doesNotMatch(appSource, /style=\{\{[\s\S]*--app-sidebar-width/);
   assert.match(sidebarSource, /onCollapsedChange\?:/);
   assert.match(sidebarSource, /onCollapsedChange\?\.\(next\)/);
 });
