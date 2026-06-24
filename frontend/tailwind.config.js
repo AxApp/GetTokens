@@ -7,9 +7,6 @@ export default {
   ],
   theme: {
     extend: {
-      borderWidth: {
-        'DEFAULT': '2px',
-      },
       borderRadius: {
         'none': '0px',
         'gt-xs': 'var(--gt-radius-xs)',

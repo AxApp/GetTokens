@@ -125,6 +125,7 @@ test('tailwind config does not expose retired visual aliases', async () => {
     /\bstatus:\s*\{/,
     /\bchart:\s*\{/,
     /gt-surface-panel/,
+    /['"]?DEFAULT['"]?:\s*'2px'/,
   ];
   const findings = [];
 
