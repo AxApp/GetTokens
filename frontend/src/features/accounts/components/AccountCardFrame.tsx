@@ -47,14 +47,11 @@ export default function AccountCardFrame({
       data-account-card-id={cardID}
       data-account-card-open-details={interactive ? 'true' : undefined}
       hoverable={interactive}
-      className={`${interactive ? 'cursor-pointer' : ''} ${className}`}
+      className={`h-full ${interactive ? 'cursor-pointer' : ''} ${className}`}
       styles={{
         body: { padding: 0, height: '100%', display: 'flex', flexDirection: 'column' },
       }}
-      style={{
-        height: '100%',
-        ...style,
-      }}
+      style={style}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       role={interactive ? 'button' : undefined}
