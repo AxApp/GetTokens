@@ -74,7 +74,7 @@ export function GitSkillInstallModal({
       >
         <header className={`${codexSkillModalHeaderClass} flex shrink-0 items-start justify-between gap-4 px-5 py-4`}>
           <div className="min-w-0">
-            <div className="font-mono text-xl font-semibold text-[var(--gt-ink-primary)]">
+            <div className="font-mono text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">
               {t('codex_extensions.add_skill')}
             </div>
             <div className="mt-1 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
@@ -244,7 +244,7 @@ export function SkillPreviewModal({
         >
           <header className={`${codexSkillModalHeaderClass} grid shrink-0 gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center`}>
             <div className="min-w-0">
-              <div className="font-mono text-xl font-semibold text-[var(--gt-ink-primary)]">
+              <div className="font-mono text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">
                 {skill.name}
               </div>
               <div className="mt-1 break-all text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
@@ -310,7 +310,7 @@ export function SkillPreviewModal({
                   <Eye className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{selectedFile?.path || t('codex_extensions.skill_preview')}</span>
                 </div>
-                <div className="scrollbar-stable min-h-0 flex-1 overflow-y-auto break-words border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 text-[length:var(--gt-font-size-md)] font-semibold leading-relaxed text-[var(--gt-ink-primary)] [&_blockquote]:border-l [&_blockquote]:border-[var(--gt-border-subtle)] [&_blockquote]:pl-3 [&_code]:font-mono [&_code]:font-semibold [&_h1]:mb-4 [&_h1]:font-mono [&_h1]:text-xl [&_h1]:font-semibold [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:font-mono [&_h2]:text-base [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-mono [&_h3]:font-semibold [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:mb-4 [&_pre]:overflow-auto [&_pre]:border [&_pre]:border-[var(--gt-border-subtle)] [&_pre]:bg-[var(--gt-surface-canvas)] [&_pre]:p-3 [&_ul]:list-disc">
+                <div className="scrollbar-stable min-h-0 flex-1 overflow-y-auto break-words border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 text-[length:var(--gt-font-size-md)] font-semibold leading-relaxed text-[var(--gt-ink-primary)] [&_blockquote]:border-l [&_blockquote]:border-[var(--gt-border-subtle)] [&_blockquote]:pl-3 [&_code]:font-mono [&_code]:font-semibold [&_h1]:mb-4 [&_h1]:font-mono [&_h1]:text-[length:var(--gt-font-size-xl)] [&_h1]:font-semibold [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:font-mono [&_h2]:text-[length:var(--gt-font-size-base)] [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-mono [&_h3]:font-semibold [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:mb-4 [&_pre]:overflow-auto [&_pre]:border [&_pre]:border-[var(--gt-border-subtle)] [&_pre]:bg-[var(--gt-surface-canvas)] [&_pre]:p-3 [&_ul]:list-disc">
                   {filePreviewLoading ? (
                     <div className="flex min-h-full items-center justify-center text-center text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
                       {t('common.loading')}
@@ -377,7 +377,7 @@ export function SkillPreviewModal({
             <header className="flex items-start gap-3 border-b border-[var(--gt-status-danger)] bg-[var(--gt-surface-muted)] p-4">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--gt-status-danger)]" />
               <div className="min-w-0">
-                <div id="codex-skill-remove-alert-title" className="font-mono text-base font-semibold text-[var(--gt-ink-primary)]">
+                <div id="codex-skill-remove-alert-title" className="font-mono text-[length:var(--gt-font-size-base)] font-semibold text-[var(--gt-ink-primary)]">
                   {t('codex_extensions.skill_remove_alert_title')}
                 </div>
                 <div id="codex-skill-remove-alert-body" className="mt-1 break-all text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">
@@ -386,7 +386,7 @@ export function SkillPreviewModal({
               </div>
             </header>
             <div className="space-y-3 p-4">
-              <p className="text-sm font-semibold leading-relaxed text-[var(--gt-ink-primary)]">
+              <p className="text-[length:var(--gt-font-size-sm)] font-semibold leading-relaxed text-[var(--gt-ink-primary)]">
                 {t('codex_extensions.skill_remove_confirm')}
               </p>
               <p className="break-all font-mono text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-muted)]">

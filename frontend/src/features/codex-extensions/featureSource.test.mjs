@@ -65,6 +65,8 @@ test('Codex extension modals use the quiet workspace shell', async () => {
   assert.doesNotMatch(combined, /uppercase/);
   assert.doesNotMatch(combined, /tracking-\[/);
   assert.doesNotMatch(combined, /tracking-(wide|wider|widest|tight|tighter|tightest|normal)/);
+  assert.match(skillsSource, /text-\[length:var\(--gt-font-size-sm\)\]/);
+  assert.doesNotMatch(skillsSource, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.doesNotMatch(combined, /italicer/);
   assert.doesNotMatch(combined, /shadow-\[8px_8px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(combined, /shadow-hard/);
