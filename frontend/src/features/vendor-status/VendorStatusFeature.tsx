@@ -126,7 +126,7 @@ function LeadIncidentCard({
           </div>
         </div>
         <div className="px-6 py-6">
-          <p className="text-sm leading-7 text-[var(--gt-ink-primary)]">
+          <p className="text-[length:var(--gt-font-size-sm)] leading-7 text-[var(--gt-ink-primary)]">
             {t('vendor_status.summary_no_incident')}
           </p>
           <div className="mt-5">
@@ -429,14 +429,14 @@ export default function VendorStatusFeature() {
         {state.status === 'loading' && !data ? (
           <section className={`${vendorStatusPanelClass} flex min-h-[16rem] items-center justify-center gap-3 text-[var(--gt-ink-muted)]`}>
             <LoaderCircle className="h-5 w-5" />
-            <span className="text-sm font-normal">{t('vendor_status.loading')}</span>
+            <span className="text-[length:var(--gt-font-size-sm)] font-normal">{t('vendor_status.loading')}</span>
           </section>
         ) : null}
 
         {state.status === 'error' ? (
           <section className={`${vendorStatusMutedPanelClass} p-6`}>
-            <p className="text-sm font-semibold text-[var(--gt-ink-primary)]">{t('vendor_status.fetch_failed')}</p>
-            <p className="mt-3 text-sm leading-7 text-[var(--gt-ink-primary)]">{state.errorMessage}</p>
+            <p className="text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">{t('vendor_status.fetch_failed')}</p>
+            <p className="mt-3 text-[length:var(--gt-font-size-sm)] leading-7 text-[var(--gt-ink-primary)]">{state.errorMessage}</p>
             <p className="mt-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
               {t('vendor_status.fetch_failed_hint')}
             </p>
@@ -459,7 +459,7 @@ export default function VendorStatusFeature() {
                   <p className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                     {t('vendor_status.live_uptime_matrix')}
                   </p>
-                  <h3 className="mt-2 text-2xl font-semibold text-[var(--gt-ink-primary)]">
+                  <h3 className="mt-2 text-[length:var(--gt-font-size-2xl)] font-semibold text-[var(--gt-ink-primary)]">
                     {t('vendor_status.system_status')}
                   </h3>
                 </div>
