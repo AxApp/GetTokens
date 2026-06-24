@@ -322,8 +322,9 @@ test('AccountRotationModal uses the quiet workspace modal shell', async () => {
   assert.match(source, /const accountRotationModalPanelClass =/);
   assert.match(source, /const accountRotationModalHeaderClass =/);
   assert.match(source, /const accountRotationModalSectionHeaderClass =/);
-  assert.match(source, /const accountRotationModalButtonClass =/);
-  assert.match(source, /const accountRotationModalPrimaryButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd'/);
+  assert.match(source, /<Button/);
+  assert.match(source, /type="primary"/);
   assert.match(source, /data-account-rotation-modal/);
   assert.match(source, /data-account-rotation-modal-header/);
   assert.match(source, /data-account-rotation-modal-body/);
@@ -333,7 +334,6 @@ test('AccountRotationModal uses the quiet workspace modal shell', async () => {
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
-  assert.match(source, /--gt-status-danger/);
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /border-4 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /border-b-4 border-\[var\(--gt-border-strong\)\]/);

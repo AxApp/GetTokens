@@ -113,8 +113,9 @@ test('openai compatible provider card uses the quiet workspace shell', async () 
 
   assert.match(source, /const openAICompatibleProviderCardBodyClass =/);
   assert.match(source, /const openAICompatibleProviderCardPanelClass =/);
-  assert.match(source, /const openAICompatibleProviderCardButtonClass =/);
-  assert.match(source, /const openAICompatibleProviderCardDangerButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd'/);
+  assert.match(source, /<Button/);
+  assert.match(source, /danger/);
   assert.match(source, /const openAICompatibleProviderCardStatusClass =/);
   assert.match(targetSource, /data-openai-compatible-provider-card-body/);
   assert.match(targetSource, /data-openai-compatible-provider-card-models/);
@@ -156,7 +157,8 @@ test('openai compatible compose modal uses the quiet workspace shell', async () 
   assert.match(source, /const openAICompatibleComposePanelClass =/);
   assert.match(source, /const openAICompatibleComposeHeaderClass =/);
   assert.match(source, /const openAICompatibleComposeInputClass =/);
-  assert.match(source, /const openAICompatibleComposeButtonClass =/);
+  assert.match(source, /import \{ Button, Input, Select \} from 'antd'/);
+  assert.match(source, /<Button/);
   assert.match(source, /const openAICompatibleComposeErrorClass =/);
   assert.match(source, /data-openai-compatible-compose-modal/);
   assert.match(source, /data-openai-compatible-compose-header/);

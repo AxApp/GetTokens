@@ -115,7 +115,9 @@ test('full account card badges share the eyebrow metadata row', async () => {
   assert.match(fullSource, /eyebrow \|\| eyebrowPrefix \|\| priorityBadges\.length > 0/);
   assert.match(fullSource, /className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1\.5 overflow-hidden text-\[length:var\(--gt-font-size-sm-plus\)\] font-semibold leading-none"/);
   assert.match(fullSource, /\{eyebrow \? <span className="min-w-0 truncate">\{eyebrow\}<\/span> : null\}\s*\{priorityBadges\.length > 0 \? \(\s*<div className="account-card-meta-badges flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">/s);
-  assert.match(fullSource, /className=\{`account-card-meta-badge shrink-0 truncate rounded border px-1\.5 py-0\.5 text-\[length:var\(--gt-font-size-sm\)\] font-semibold leading-none \$\{ATTRIBUTION_CARD_BADGE_TONE_CLASS\[badge\.tone \|\| 'neutral'\]\}`\}/);
+  assert.match(source, /import \{ Tag \} from 'antd'/);
+  assert.match(fullSource, /<Tag[\s\S]*data-account-card-badge-priority=\{resolveAttributionCardBadgePriority\(badge\)\}/);
+  assert.match(fullSource, /className="m-0 shrink-0 truncate"/);
   assert.doesNotMatch(fullSource, /<div className="mt-2 flex flex-wrap gap-1">/);
   assert.doesNotMatch(fullSource, /\{topActions \? <div className="-mr-4 shrink-0 pl-4">\{topActions\}<\/div> : null\}/);
 });
@@ -261,8 +263,8 @@ test('account card footer only renders the reauth action when required', async (
 test('account card top action buttons render without inner gap', async () => {
   const cardSource = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
 
-  assert.match(cardSource, /<div className="flex shrink-0 items-center" data-account-card-ignore-click="true">/);
-  assert.doesNotMatch(cardSource, /<div className="flex shrink-0 items-center gap-\d" data-account-card-ignore-click="true">/);
+  assert.match(cardSource, /<div className="flex shrink-0 items-center gap-1" data-account-card-ignore-click="true">/);
+  assert.doesNotMatch(cardSource, /className="-mr-4 flex shrink-0 items-center/);
 });
 
 test('quota bars can toggle from percent to token progress when token counts exist', async () => {

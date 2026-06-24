@@ -154,8 +154,9 @@ test('rate limit rules section edits account-card rules without matchKey fallbac
   assert.doesNotMatch(source, /formatRateLimitMetric\(ruleState\.currentUsage\) \/ \$\{formatRateLimitMetric/);
   assert.match(source, /const rateLimitRulesShellClass =/);
   assert.match(source, /const rateLimitRulesPanelClass =/);
-  assert.match(source, /const rateLimitRulesButtonClass =/);
-  assert.match(source, /const rateLimitRulesInputClass =/);
+  assert.match(source, /import \{ Button, Checkbox, Input, Select, Tooltip \} from 'antd'/);
+  assert.match(source, /<Button/);
+  assert.match(source, /<Input/);
   assert.match(source, /const rateLimitRulesNoticeToneClass =/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);

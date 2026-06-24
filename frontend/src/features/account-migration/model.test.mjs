@@ -61,8 +61,9 @@ test('AccountMigrationGate uses the quiet workspace shell', async () => {
   assert.match(source, /const accountMigrationGateShellClass =/);
   assert.match(source, /const accountMigrationGateHeaderClass =/);
   assert.match(source, /const accountMigrationGatePanelClass =/);
-  assert.match(source, /const accountMigrationGateButtonClass =/);
-  assert.match(source, /const accountMigrationGatePrimaryButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd'/);
+  assert.match(source, /<Button/);
+  assert.match(source, /type="primary"/);
   assert.match(source, /const accountMigrationGateNoticeToneClass =/);
   assert.match(source, /data-account-migration-loading/);
   assert.match(source, /data-account-migration-gate/);

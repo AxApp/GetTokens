@@ -735,7 +735,8 @@ test('AccountLocalCliApplyConfirm uses the quiet workspace shell', async () => {
   const source = await readFile(new URL('../components/AccountLocalCliApplyConfirm.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /const accountLocalCliPanelClass =/);
-  assert.match(source, /const accountLocalCliButtonClass =/);
+  assert.match(source, /import \{ Button, Checkbox, Input, Select \} from 'antd'/);
+  assert.match(source, /<Button/);
   assert.match(source, /const accountLocalCliInputClass =/);
   assert.match(source, /const accountLocalCliMetaClass =/);
   assert.match(source, /data-account-local-cli-apply-confirm/);
@@ -778,7 +779,8 @@ test('deep link account import confirm uses the quiet workspace shell', async ()
   const targetSource = sourceBlock(source, 'export default function DeepLinkAccountImportConfirm', 'function SummaryTile');
 
   assert.match(source, /const deepLinkImportHeaderClass =/);
-  assert.match(source, /const deepLinkImportButtonClass =/);
+  assert.match(source, /import \{ Button \} from 'antd'/);
+  assert.match(source, /<Button/);
   assert.match(source, /const deepLinkImportPanelClass =/);
   assert.match(source, /const deepLinkImportSummaryTileClass =/);
   assert.match(source, /const deepLinkImportNoticeToneClass =/);
