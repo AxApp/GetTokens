@@ -148,7 +148,7 @@ const toneClass: Record<'ready' | 'warning' | 'danger' | 'neutral', string> = {
 const claudeAssetPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const claudeAssetMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const claudeAssetMetaTextClass = 'font-mono text-[10px] font-normal tracking-normal text-[var(--gt-ink-muted)]';
+const claudeAssetMetaTextClass = 'font-mono text-xs font-normal tracking-normal text-[var(--gt-ink-muted)]';
 
 export function ClaudeCodeAssetWorkbench({
   state,
@@ -456,7 +456,7 @@ function DiffPanel({ diffPreview }: { diffPreview?: ClaudeCodeDiffPreview }) {
       {diffPreview ? (
         <div className="mt-3 grid gap-2">
           <div className={claudeAssetMetaTextClass}>{diffPreview.sourcePath}</div>
-          <SnippetPre className="mt-2 bg-[var(--gt-surface-canvas)] p-3 text-[11px] leading-5">
+          <SnippetPre className="mt-2 bg-[var(--gt-surface-canvas)] p-3 text-xs leading-5">
             {diffPreview.lines.map((line) => (
               <span
                 key={line}

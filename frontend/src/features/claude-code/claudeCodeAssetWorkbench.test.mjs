@@ -80,6 +80,7 @@ test('Claude Code asset workbench uses the quiet workspace shell', () => {
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
+  assert.doesNotMatch(source, /text-\[(?:10|11)px\]/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(source, /shadow-\[8px_8px_0_var\(--gt-shadow-panel\)\]/);
