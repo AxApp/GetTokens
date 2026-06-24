@@ -428,6 +428,8 @@ test('AccountsToolbar filter controls use the quiet workspace shell', async () =
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /data-accounts-toolbar-filter-menu="quiet"/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
 
   for (const block of [filterMenuBlock, optionHelpersBlock]) {
     assert.doesNotMatch(block, /border-dashed border-\[var\(--gt-border-strong\)\]/);
