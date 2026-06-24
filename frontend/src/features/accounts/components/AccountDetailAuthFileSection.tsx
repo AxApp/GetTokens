@@ -110,6 +110,7 @@ export function AuthFileSummarySection({ account }: { account: AccountRecord }) 
         </div>
       ) : (
         <Alert
+          data-auth-file-config-notice
           type="info"
           message="配置预览基于账号数据库生成；可预览配置、下载配置，并在确认后应用到运行时。待接入 account-store management API。"
           className="mt-4"

@@ -84,15 +84,17 @@ test('account plan groups can collapse without changing group actions scope', as
   assert.match(viewSource, /onToggleCollapsed\?: \(groupID: string\) => void/);
   assert.match(viewSource, /data-account-group-collapsed=\{isCollapsed \? 'true' : 'false'\}/);
   assert.match(viewSource, /data-account-group-header="true"/);
-  assert.match(viewSource, /className="flex items-center justify-between gap-3 rounded-md border px-3 py-2\.5"/);
+  assert.match(viewSource, /className=\{isListMode/);
+  assert.match(viewSource, /'flex items-center justify-between gap-3 rounded-md border px-3 py-2\.5'/);
+  assert.match(viewSource, /'flex items-center justify-between gap-3 border-b border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-muted\)\] px-3 py-2\.5'/);
   assert.match(viewSource, /backgroundColor: 'color-mix\(in srgb, var\(--gt-surface-muted\) 54%, transparent\)'/);
   assert.match(viewSource, /className="flex min-w-0 items-center gap-2"/);
   assert.match(viewSource, /className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-\[var\(--gt-surface-canvas\)\]"/);
   assert.match(viewSource, /className="min-w-0 truncate text-sm font-semibold leading-tight"/);
   assert.match(viewSource, /className="font-mono text-\[length:var\(--gt-font-size-xs\)\] font-normal leading-none"/);
-  assert.match(viewSource, /className="flex h-7 items-center gap-1 rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] px-2 text-\[length:var\(--gt-font-size-xs\)\] font-normal text-\[var\(--gt-ink-secondary\)\] transition-colors hover:bg-\[var\(--gt-surface-muted\)\] disabled:cursor-not-allowed disabled:opacity-40"/);
-  assert.match(viewSource, /aria-label=\{t\('accounts\.refresh_group'\)\}[\s\S]*className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-\[var\(--gt-surface-muted\)\] disabled:cursor-not-allowed disabled:opacity-40"[\s\S]*title=\{t\('accounts\.refresh_group'\)\}/);
-  assert.match(viewSource, /className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-\[var\(--gt-surface-muted\)\]"/);
+  assert.match(viewSource, /<Button[\s\S]*aria-pressed=\{allGroupSelected\}[\s\S]*icon=\{<SquareCheckBig size=\{13\} strokeWidth=\{2\} \/>}/);
+  assert.match(viewSource, /<Tooltip title=\{t\('accounts\.refresh_group'\)\}>[\s\S]*aria-label=\{t\('accounts\.refresh_group'\)\}[\s\S]*icon=\{<RefreshCw size=\{13\} strokeWidth=\{2\} \/>}/);
+  assert.match(viewSource, /<Dropdown[\s\S]*label: deleteGroupLabel/);
   assert.doesNotMatch(viewSource, /<RefreshCw size=\{13\} strokeWidth=\{2\} \/>\s*\{t\('accounts\.refresh_group'\)\}/);
   assert.doesNotMatch(viewSource, /className="btn-swiss mb-1 flex h-8 w-8/);
   assert.doesNotMatch(viewSource, /className="flex items-center justify-between gap-4 border-b pb-4"/);
@@ -148,7 +150,8 @@ test('accounts selection actions render as one adaptive toolbar with overflow fa
   assert.match(source, /<BulkInlineAction/);
   assert.match(source, /<MoreVertical size=\{18\} strokeWidth=\{3\} \/>/);
   assert.match(source, /aria-label=\{t\('common\.more_actions'\)\}/);
-  assert.match(source, /<BulkMenuAction/);
+  assert.match(source, /const bulkMenuItems: MenuProps\['items'\] = \[/);
+  assert.match(source, /<Dropdown[\s\S]*menu=\{\{ items: bulkMenuItems \}\}/);
   assert.match(source, /label=\{t\('accounts\.export_selected'\)\}/);
   assert.doesNotMatch(source, /className="border-t border-dashed border-\[var\(--gt-border-strong\)\] pt-4"/);
   assert.doesNotMatch(source, /className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed/);
@@ -171,10 +174,10 @@ test('account group menu exposes destructive delete behind a confirmation state'
 test('accounts toolbar display mode switch only offers full and list views', async () => {
   const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /grid-cols-2/);
-  assert.match(source, /className="grid h-8 shrink-0 grid-cols-2 overflow-hidden rounded-md border"/);
-  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\] font-normal leading-none/);
-  assert.match(source, /onDisplayModeChange\('full'\)/);
-  assert.match(source, /onDisplayModeChange\('list'\)/);
+  assert.match(source, /<Segmented/);
+  assert.match(source, /options=\{\[/);
+  assert.match(source, /\{ label: t\('accounts\.display_mode_full'\), value: 'full' \}/);
+  assert.match(source, /\{ label: t\('accounts\.display_mode_list'\), value: 'list' \}/);
+  assert.match(source, /onChange=\{\(value\) => onDisplayModeChange\(value as AccountListDisplayMode\)\}/);
   assert.doesNotMatch(source, /onDisplayModeChange\('compact'\)|display_mode_compact/);
 });

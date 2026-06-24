@@ -108,10 +108,10 @@ test('account card action menu includes reauth for every codex auth-file account
   assert.match(source, /RotateCw/);
   assert.match(source, /isCodexAuthFile/);
   assert.match(source, /const canMenuReauth = isCodexAuthFile\(account\)/);
-  assert.match(source, /\{canMenuReauth \? \(/);
+  assert.match(source, /\.\.\.\(canMenuReauth \? \[\{/);
   assert.match(source, /onStartReauth\(account\)/);
   assert.match(source, /isOAuthPending \? t\('accounts\.reauth_pending'\) : t\('accounts\.reauth'\)/);
-  assert.match(source, /disabled=\{isOAuthPending\}/);
+  assert.match(source, /disabled: isOAuthPending/);
 });
 
 test('account card refresh action stays visible for openai-compatible runtime-only cards', () => {
@@ -166,7 +166,7 @@ test('account card exposes refresh as a top icon action only', async () => {
   assert.match(source, /title=\{t\(refreshAction\.labelKey\)\}/);
   assert.match(source, /onClick=\{\(\) => onRefreshQuota\(account\)\}/);
   assert.match(source, /<MoreVertical size=\{16\} strokeWidth=\{2\} \/>/);
-  assert.match(source, /className="flex shrink-0 items-center"/);
+  assert.match(source, /className="flex shrink-0 items-center gap-1"/);
   assert.doesNotMatch(source, /className="-mr-4 flex shrink-0 items-center gap-1"/);
   assert.doesNotMatch(source, /account-card-footer-refresh-button/);
   assert.match(attributionSource, /topActions \? <div className="col-start-2 shrink-0 justify-self-end">\{topActions\}<\/div> : null/);
@@ -188,7 +188,7 @@ test('accounts feature page chrome uses the quiet workspace shell', async () => 
   assert.match(source, /const accountsFeatureSelectionToolbarShellClass =/);
   assert.match(source, /const accountsFeatureNoticeClass =/);
   assert.match(source, /const accountsFeatureEmptyStateClass =/);
-  assert.match(source, /const accountsFeatureInlineButtonClass =/);
+  assert.match(source, /import \{ Button \} from "antd"/);
   assert.match(renderBlock, /data-accounts-feature-shell="quiet"/);
   assert.match(renderBlock, /data-account-selection-toolbar-sticky="quiet"/);
   assert.match(renderBlock, /data-account-action-notice/);
@@ -217,10 +217,11 @@ test('account import queue candidates render with account card styling', async (
   const queueSource = await readFile(new URL('../components/AccountImportQueueList.tsx', import.meta.url), 'utf8');
 
   assert.match(modalSource, /<AccountImportQueueList/);
+  assert.match(queueSource, /import \{ Button, Tag, Tooltip \} from 'antd'/);
   assert.match(queueSource, /const accountImportQueueViewportClass =/);
   assert.match(queueSource, /const accountImportQueueCardClass =/);
-  assert.match(queueSource, /const accountImportQueueBadgeClass =/);
-  assert.match(queueSource, /const accountImportQueueRemoveButtonClass =/);
+  assert.match(queueSource, /<Tag/);
+  assert.match(queueSource, /<Button/);
   assert.match(queueSource, /data-account-card/);
   assert.match(queueSource, /data-account-import-queue-viewport/);
   assert.match(queueSource, /data-account-import-queue-rendered-item/);
@@ -231,7 +232,7 @@ test('account import queue candidates render with account card styling', async (
   assert.match(queueSource, /--gt-surface-canvas/);
   assert.match(queueSource, /--gt-surface-muted/);
   assert.match(queueSource, /--gt-border-subtle/);
-  assert.match(queueSource, /--gt-status-danger/);
+  assert.match(queueSource, /<Tag/);
   assert.doesNotMatch(queueSource, /card-swiss/);
   assert.doesNotMatch(queueSource, /border-2|border-b-2/);
   assert.doesNotMatch(queueSource, /bg-\[var\(--bg-(main|surface)\)\]/);
@@ -277,7 +278,7 @@ test('account import page uses the quiet workspace shell', async () => {
   assert.match(source, /const accountImportPageShellClass =/);
   assert.match(source, /const accountImportHeaderClass =/);
   assert.match(source, /const accountImportPanelClass =/);
-  assert.match(source, /const accountImportButtonClass =/);
+  assert.match(source, /import \{ Button, Input, type InputRef, Upload \} from 'antd'/);
   assert.match(source, /const accountImportDropzoneClass =/);
   assert.match(source, /const accountImportMetaChipClass =/);
   assert.match(targetSource, /data-account-import-page/);
@@ -307,7 +308,7 @@ test('account import modal uses the quiet workspace shell', async () => {
 
   assert.match(source, /const accountImportModalHeaderClass =/);
   assert.match(source, /const accountImportModalPanelClass =/);
-  assert.match(source, /const accountImportModalButtonClass =/);
+  assert.match(source, /import \{ Button, Input, Upload \} from 'antd'/);
   assert.match(source, /const accountImportModalDropzoneClass =/);
   assert.match(source, /const accountImportModalMetaChipClass =/);
   assert.match(targetSource, /data-account-import-modal-header/);
@@ -338,8 +339,8 @@ test('api key compose modal uses the quiet workspace shell', async () => {
   assert.match(source, /const apiKeyComposeOverlayClass =/);
   assert.match(source, /const apiKeyComposePanelClass =/);
   assert.match(source, /const apiKeyComposeInputClass =/);
-  assert.match(source, /const apiKeyComposeButtonClass =/);
-  assert.match(source, /const apiKeyComposePrimaryButtonClass =/);
+  assert.match(source, /import \{ Button, Checkbox, Input \} from 'antd'/);
+  assert.match(targetSource, /type="primary"/);
   assert.match(source, /const apiKeyComposeStatusClass =/);
   assert.match(targetSource, /data-api-key-compose-modal/);
   assert.match(targetSource, /data-api-key-compose-header/);

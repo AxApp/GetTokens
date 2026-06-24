@@ -381,7 +381,7 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.filter_no_quota_and_balance_match'), false);
   assert.equal(source.includes('accounts.filter_no_quota_no_balance_match'), false);
   assert.equal(source.includes('uppercase={false}'), false);
-  assert.equal(source.includes('accountsToolbarFilterOptionClass(active, disabled)'), true);
+  assert.equal(source.includes("type={active ? 'primary' : 'default'}"), true);
   assert.equal(source.includes('accounts.filter_option_all'), true);
   assert.equal(source.includes("const DEFAULT_AVAILABLE_PLAN_TYPES: readonly AccountPlanType[] = []"), true);
   assert.equal(source.includes('accounts.group_mode_label'), true);
@@ -393,24 +393,24 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.sort_mode_quota'), true);
   assert.equal(source.includes('disabled={planAvailabilityResolved'), false);
   assert.equal(source.includes('data-accounts-toolbar-controls="true"'), true);
-  assert.equal(source.includes("backgroundColor: 'color-mix(in srgb, var(--gt-surface-muted) 54%, transparent)'"), true);
+  assert.equal(source.includes("overlayClassName=\"accounts-toolbar-filter-popover\""), true);
   assert.equal(source.includes('SlidersHorizontal'), true);
-  assert.equal(source.includes('className="flex h-8 items-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)]"'), true);
+  assert.equal(source.includes('icon={<SlidersHorizontal size={13} strokeWidth={2} />}'), true);
   assert.equal(source.includes('className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--gt-font-size-sm-plus)]"'), false);
   assert.equal(source.includes('text-[length:var(--gt-font-size-sm-plus)] font-semibold leading-none tracking-normal'), false);
-  assert.equal(source.includes('text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-secondary)]'), true);
+  assert.equal(source.includes('<Button'), true);
+  assert.equal(source.includes('size="small"'), true);
 });
 
 test('AccountsToolbar filter menu keeps options in compact list mode', async () => {
   const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
-  const menuPanelClass = 'mt-2 flex min-w-[460px]';
   const pillClass = source.slice(source.indexOf('function FilterPillOption'), source.indexOf('function FilterTernaryOptionRow'));
   const ternaryClass = source.slice(source.indexOf('function FilterTernaryOptionRow'), source.indexOf('function buildToolbarFilterLabel'));
 
-  assert.equal(source.includes(menuPanelClass), true);
-  assert.equal(source.includes('const accountsToolbarPillOptionClass ='), true);
-  assert.equal(source.includes('h-8 min-w-16 rounded border px-2'), true);
-  assert.equal(pillClass.includes('aria-pressed={active}'), true);
+  assert.equal(source.includes("import { Button, Dropdown, Popconfirm, Popover, Segmented, Space, Tag, Tooltip } from 'antd'"), true);
+  assert.equal(source.includes('data-accounts-toolbar-filter-menu="quiet"'), true);
+  assert.equal(pillClass.includes("type={active ? 'primary' : 'default'}"), true);
+  assert.equal(pillClass.includes('className="m-0"'), true);
   assert.equal(ternaryClass.includes("mode: 'all' | 'positive' | 'negative'"), true);
   assert.equal(source.includes('function FilterTernaryOptionRow'), true);
   assert.equal(source.includes('function FilterBinaryOptionRow'), false);
@@ -419,14 +419,13 @@ test('AccountsToolbar filter menu keeps options in compact list mode', async () 
 
 test('AccountsToolbar filter controls use the quiet workspace shell', async () => {
   const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
-  const filterMenuBlock = source.match(/<div className="absolute left-0 top-full[\s\S]*?<ToolbarModeMenu/)?.[0] || '';
+  const filterMenuBlock = source.match(/data-accounts-toolbar-filter-menu="quiet"[\s\S]*?<ToolbarModeMenu/)?.[0] || '';
   const optionHelpersBlock = source.match(/function ToolbarModeMenu[\s\S]*?function FilterTernaryOptionRow/)?.[0] || '';
 
-  assert.match(source, /const accountsToolbarMenuDividerClass =/);
-  assert.match(source, /const accountsToolbarModeOptionClass =/);
-  assert.match(source, /const accountsToolbarFilterOptionClass =/);
+  assert.match(source, /<Popover/);
+  assert.match(source, /<Dropdown menu=\{\{ items: menuItems \}\} trigger=\{\['click'\]\}>/);
+  assert.match(source, /<Segmented/);
   assert.match(source, /--gt-surface-canvas/);
-  assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /data-accounts-toolbar-filter-menu="quiet"/);
 

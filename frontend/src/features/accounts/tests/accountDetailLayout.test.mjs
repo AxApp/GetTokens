@@ -79,7 +79,7 @@ test('account detail layout delegates close to ModalFrame', async () => {
   const layoutComponentSource = sourceBlock(layoutSource, 'export function AccountDetailLayout', undefined);
   const layoutReturnSource = sourceBlock(layoutComponentSource, 'return (', ');\n}');
 
-  assert.match(layoutSource, /import \{ Button \} from 'antd'/);
+  assert.match(layoutSource, /import \{ Button, Menu, Tooltip \} from 'antd'/);
   assert.doesNotMatch(layoutSource, /import \{ X \} from 'lucide-react'/);
   assert.doesNotMatch(layoutSource, /onClose:\s*\(\) => void/);
   assert.doesNotMatch(layoutReturnSource, /data-account-detail-layout-close/);
@@ -116,17 +116,13 @@ test('OAuthModelProbeSection uses the quiet workspace control shell', async () =
   const source = await readFile(new URL('../components/OAuthModelProbeSection.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /const oauthModelProbeFieldLabelClass =/);
-  assert.match(source, /const oauthModelProbeButtonClass =/);
-  assert.match(source, /const oauthModelProbeStatusBaseClass =/);
-  assert.match(source, /const oauthModelProbeStatusToneClassNames =/);
+  assert.match(source, /import \{ Alert, Button \} from 'antd'/);
+  assert.match(source, /<Button[\s\S]*data-oauth-model-probe-button="run"/);
+  assert.match(source, /<Alert[\s\S]*data-oauth-model-probe-status=\{currentStatus\}/);
   assert.match(source, /data-oauth-model-probe-shell="quiet"/);
   assert.match(source, /data-oauth-model-probe-button="run"/);
   assert.match(source, /data-oauth-model-probe-status=\{currentStatus\}/);
-  assert.match(source, /--gt-surface-canvas/);
-  assert.match(source, /--gt-surface-muted/);
-  assert.match(source, /--gt-border-subtle/);
-  assert.match(source, /--gt-ink-primary/);
-  assert.match(source, /--gt-status-danger/);
+  assert.match(source, /Combobox/);
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
@@ -244,10 +240,10 @@ test('api key credential module keeps fields and verify row from clipping in the
   const verifySource = sourceBlock(source, 'function VerifyConnectionPanel', 'export function AccountQuotaSection');
 
   assert.doesNotMatch(inputSource, /max-w-sm/);
-  assert.match(inputSource, /className=\{`\$\{accountDetailCredentialInputClass\} w-full`\}/);
+  assert.match(inputSource, /<Input[\s\S]*className="w-full font-mono"/);
   assert.match(verifySource, /grid gap-2 sm:grid-cols-\[minmax\(0,1fr\)_auto\] sm:items-center/);
-  assert.match(verifySource, /className="relative min-w-0"/);
-  assert.match(verifySource, /className=\{`\$\{accountDetailCredentialInputClass\} min-w-0 w-full`\}/);
+  assert.match(verifySource, /<Select[\s\S]*className="w-full"/);
+  assert.match(verifySource, /<Button[\s\S]*className="whitespace-nowrap"/);
 });
 
 test('credential endpoint copy explains default base url versus protocol overrides', async () => {
@@ -470,7 +466,9 @@ test('account curl editor modal uses the quiet workspace shell', async () => {
 
   assert.match(source, /const accountCurlEditorHeaderClass =/);
   assert.match(source, /const accountCurlEditorPanelClass =/);
-  assert.match(source, /const accountCurlEditorButtonClass =/);
+  assert.match(source, /import \{ Button, Checkbox \} from 'antd'/);
+  assert.match(source, /<textarea[\s\S]*ref=\{textareaRef\}/);
+  assert.match(source, /className=\{accountCurlEditorTextareaClass\}/);
   assert.match(source, /const accountCurlEditorTextareaClass =/);
   assert.match(source, /const accountCurlEditorVariableButtonClass =/);
   assert.match(targetSource, /data-account-curl-editor-header/);
@@ -530,7 +528,8 @@ test('quota and billing detail share empty-state and script-card structure', asy
   assert.match(billingBlock, /const hasBillingScript = draft\.billingCurl\.trim\(\)\.length > 0/);
   assert.match(billingBlock, /const liveBalances = liveBilling\?\.isAvailable \? liveBilling\.balances : \[\]/);
   assert.match(billingBlock, /<AccountDetailEmptyState/);
-  assert.match(billingBlock, />\s*添加\s*<\/button>/);
+  assert.match(billingBlock, /aria-label="添加"/);
+  assert.match(billingBlock, /icon=\{<Plus size=\{14\} \/>}/);
   assert.match(billingBlock, /\{hasBillingScript \? \(/);
   assert.doesNotMatch(billingBlock, /justify-between gap-3/);
 });
@@ -826,7 +825,7 @@ test('account detail footer uses the quiet workspace action shell', async () => 
 
   assert.match(source, /const accountDetailFooterStatusClass =/);
   assert.match(source, /const accountDetailFooterActionsClass =/);
-  assert.match(source, /const accountDetailFooterPrimaryButtonClass =/);
+  assert.match(source, /import \{ Button, Input, Select, Tooltip \} from 'antd'/);
   assert.match(layoutSource, /const accountDetailNavLocalActionButtonClass =/);
   assert.match(sectionNavSource, /data-account-detail-nav-local-cli-actions/);
   assert.match(targetSource, /data-account-detail-footer-status="single-line"/);
@@ -998,7 +997,8 @@ test('real account detail modal uses section-nav layout instead of legacy band g
   assert.match(layoutSource, /aria-label="Account detail sections"/);
   assert.match(layoutSource, /data-account-detail-section/);
   assert.match(layoutSource, /IntersectionObserver/);
-  assert.match(modalSource, /<AccountDetailLayout[\s\S]*sectionNavItems=\{sectionNavItems\}[\s\S]*header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}[\s\S]*onClose=\{props\.onClose\}/);
+  assert.match(modalSource, /<AccountDetailLayout[\s\S]*sectionNavItems=\{sectionNavItems\}[\s\S]*header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}/);
+  assert.doesNotMatch(modalSource, /<AccountDetailLayout[\s\S]*onClose=\{props\.onClose\}/);
   assert.doesNotMatch(modalSource, /<AccountDetailModuleStack layout="bands">/);
   assert.doesNotMatch(modalSource, /<AccountDetailModuleStack layout="cards">/);
 });
@@ -1013,6 +1013,7 @@ test('real account detail header uses compact account type summary', async () =>
   assert.match(sectionSource, /return 'CODEX API KEY'/);
   assert.match(sectionSource, /return 'OPENAI COMPATIBLE'/);
   assert.match(modalSource, /headerClassName="hidden"/);
+  assert.match(modalSource, /header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}/);
   assert.doesNotMatch(sectionSource, /data-account-detail-header-chips/);
   assert.doesNotMatch(sectionSource, /text-base font-(?:medium|bold|extrabold|black)/);
 });
@@ -1118,7 +1119,7 @@ test('section-nav detail primitives do not carry legacy band divider controls', 
 test('nested account detail section headers use the current compact title and action stack', async () => {
   const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
 
-  assert.match(primitiveSource, /className="space-y-2"/);
-  assert.match(primitiveSource, /flex flex-wrap items-center gap-1\.5/);
+  assert.match(primitiveSource, /<Typography\.Title level=\{5\} className="!m-0 !font-semibold">/);
+  assert.match(primitiveSource, /className="flex shrink-0 items-center gap-1"/);
   assert.doesNotMatch(primitiveSource, /<div className="min-w-0 space-y-1">/);
 });

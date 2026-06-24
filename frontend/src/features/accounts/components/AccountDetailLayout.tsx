@@ -93,11 +93,13 @@ function SectionNav({
 export function AccountDetailLayout({
   sectionNavItems,
   localCliActions,
+  header,
   notice,
   children,
 }: {
   sectionNavItems: AccountDetailSectionNavItem[];
   localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
+  header?: ReactNode;
   notice?: ReactNode;
   children: ReactNode;
 }) {
@@ -171,6 +173,7 @@ export function AccountDetailLayout({
             userSelect: 'text',
           }}
         >
+          {header}
           {notice}
           {children}
         </div>

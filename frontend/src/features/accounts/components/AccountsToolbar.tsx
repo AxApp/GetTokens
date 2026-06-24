@@ -199,7 +199,7 @@ export default function AccountsToolbar({
             arrow={false}
             overlayClassName="accounts-toolbar-filter-popover"
             content={
-              <div className="flex flex-col gap-3.5">
+              <div data-accounts-toolbar-filter-menu="quiet" className="flex flex-col gap-3.5">
                 <div className="grid gap-2">
                   <p className="text-xs font-semibold" style={{ color: 'var(--gt-ink-muted)' }}>
                     {t('accounts.filter_group_presets')}
