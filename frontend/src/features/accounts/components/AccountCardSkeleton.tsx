@@ -1,7 +1,7 @@
 export default function AccountCardSkeleton() {
   return (
     <div
-      className="flex animate-pulse flex-col rounded-lg border p-5"
+      className="flex flex-col rounded-lg border p-5"
       style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}
     >
       <div className="mb-5 flex items-start justify-between gap-3">

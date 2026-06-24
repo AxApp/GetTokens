@@ -112,7 +112,7 @@ export default function AccountsHeader({
                 aria-busy={runtimeRefreshing ? 'true' : undefined}
                 data-accounts-runtime-refreshing={runtimeRefreshing ? 'true' : undefined}
                 aria-label={t('accounts.refresh_runtime')}
-                icon={<Activity className={['h-4 w-4', runtimeRefreshing ? 'animate-pulse' : ''].filter(Boolean).join(' ')} size={16} strokeWidth={2} />}
+                icon={<Activity className="h-4 w-4" size={16} strokeWidth={2} />}
               >
               </Button>
             </Tooltip>

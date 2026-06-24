@@ -218,7 +218,7 @@ export function StatePanel({
 }
 
 export function LoadingBar({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse rounded-sm bg-[var(--gt-surface-muted)] ${className}`.trim()} />;
+  return <div className={`rounded-sm bg-[var(--gt-surface-muted)] ${className}`.trim()} />;
 }
 
 const sessionManagementModalBackdropClass = 'fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-4 sm:p-6';
@@ -338,7 +338,7 @@ export function ProjectListPanel({
       <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5">
         <h2 className="text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">{copy.projectListTitle}</h2>
         {snapshotRefreshing ? (
-          <span className="animate-pulse text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
+          <span className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
             {copy.refreshing}
           </span>
         ) : null}
@@ -650,7 +650,7 @@ export function SessionAnalysisDetailModal({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {loading ? (
-              <span className="animate-pulse text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
+              <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
                 {copy.analysisRunning}
               </span>
             ) : null}
@@ -1397,7 +1397,7 @@ export function SessionDetailModal({
                       <span className="text-[var(--gt-ink-muted)]/50">JSONL:{message.lineNumber}</span>
                     ) : null}
                     {detailState.rawJSONLoadingMessageID === message.id ? (
-                      <span className="animate-pulse text-[var(--gt-ink-muted)]/50">RAW JSON</span>
+                      <span className="text-[var(--gt-ink-muted)]/50">RAW JSON</span>
                     ) : null}
                   </div>
                   <pre className="mt-2 max-h-80 overflow-y-auto whitespace-pre-wrap break-words font-mono text-[length:var(--gt-font-size-sm)] leading-5 text-[var(--gt-ink-primary)]">

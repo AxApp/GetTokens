@@ -104,7 +104,7 @@ export function AuthFileSummarySection({ account }: { account: AccountRecord }) 
         </div>
       </div>
       {loading ? (
-        <div className="mt-4 animate-pulse space-y-2">
+        <div className="mt-4 space-y-2">
           <div className="h-4 w-3/4 bg-[var(--gt-border-strong)]" />
           <div className="h-4 w-1/2 bg-[var(--gt-border-strong)]" />
         </div>

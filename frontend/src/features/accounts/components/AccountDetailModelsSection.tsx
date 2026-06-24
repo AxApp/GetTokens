@@ -217,7 +217,7 @@ export function CompatibleModelsSection({
         </div>
       ) : null}
       {loading ? (
-        <div className="h-4 w-1/3 animate-pulse bg-[var(--gt-border-strong)]" />
+        <div className="h-4 w-1/3 bg-[var(--gt-border-strong)]" />
       ) : displayedModels.length === 0 ? (
         <AccountDetailEmptyState>
           {editable ? '暂无模型映射；可拉取模型后添加映射，或直接手动添加。' : '暂无模型数据'}

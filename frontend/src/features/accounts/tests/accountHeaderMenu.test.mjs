@@ -82,7 +82,8 @@ test('AccountsHeader exposes separate account-list and runtime refresh actions',
   assert.match(headerSource, /accounts\.refresh_runtime_hint/);
   assert.match(headerSource, /disabled=\{!ready \|\| loading \|\| runtimeRefreshing\}/);
   assert.match(headerSource, /data-accounts-runtime-refreshing=\{runtimeRefreshing \? 'true' : undefined\}/);
-  assert.equal(headerSource.includes("className={['h-4 w-4', runtimeRefreshing ? 'animate-pulse' : ''].filter(Boolean).join(' ')}"), true);
+  assert.match(headerSource, /<Activity className="h-4 w-4" size=\{16\} strokeWidth=\{2\} \/>/);
+  assert.doesNotMatch(headerSource, /animate-pulse/);
   assert.doesNotMatch(headerSource, /<Activity className=\{`h-4 w-4 \$\{loading \? 'animate-pulse' : ''\}`\}/);
   assert.match(featureSource, /const \[runtimeRefreshing, setRuntimeRefreshing\] = useState\(false\)/);
   assert.match(featureSource, /await Promise\.allSettled\(\[/);
