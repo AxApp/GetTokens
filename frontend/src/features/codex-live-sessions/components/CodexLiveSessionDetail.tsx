@@ -657,7 +657,7 @@ function TimingTrendChart({
                     x={padding.left - 8}
                     y={y + 3}
                     textAnchor="end"
-                    className="fill-[var(--gt-ink-muted)] font-mono text-[9px] font-semibold"
+                    className="fill-[var(--gt-ink-muted)] font-mono text-xs font-semibold"
                     opacity="0.52"
                   >
                     {formatDuration(selectedMetricMaxMs * (1 - ratio))}
@@ -685,7 +685,7 @@ function TimingTrendChart({
                       x={x}
                       y={height - 8}
                       textAnchor="middle"
-                      className="fill-[var(--gt-ink-muted)] font-mono text-[9px] font-semibold"
+                      className="fill-[var(--gt-ink-muted)] font-mono text-xs font-semibold"
                       opacity={point.requestID === selectedRequestID || point.isLive ? 0.92 : 0.48}
                     >
                       #{point.sequence}
