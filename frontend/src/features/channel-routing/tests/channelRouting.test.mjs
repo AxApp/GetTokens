@@ -1635,6 +1635,7 @@ test('ChannelRoutingWorkbench uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
   assert.doesNotMatch(source, /tracking-(wide|wider|widest|tight|tighter|tightest|normal)/);
+  assert.doesNotMatch(source, /\btransition(?![-\[])/);
   assert.doesNotMatch(source, /shadow-\[4px_4px_0_var\(--gt-shadow-panel\)\]/);
 });
 
