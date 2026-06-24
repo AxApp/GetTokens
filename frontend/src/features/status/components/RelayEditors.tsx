@@ -15,7 +15,7 @@ const relayEditorEyebrowClass = 'text-[length:var(--gt-font-size-xs)] font-norma
 const relayEditorTitleClass = 'mt-1 text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]';
 const relayEditorLabelClass = 'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const relayEditorInputClass =
-  'h-9 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-60';
+  'h-9 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-60';
 const relayEditorErrorClass =
   'rounded border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]';
 const relayEditorFooterClass =

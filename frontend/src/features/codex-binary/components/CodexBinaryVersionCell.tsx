@@ -13,7 +13,7 @@ import {
 import { formatTaskSize, getVersionBrowserURL } from '../presentation';
 
 const codexBinaryVersionCellShellClass =
-  'overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] transition hover:border-[color-mix(in_srgb,var(--gt-ink-primary)_32%,var(--gt-border-subtle))]';
+  'overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] transition-colors hover:border-[color-mix(in_srgb,var(--gt-ink-primary)_32%,var(--gt-border-subtle))]';
 const codexBinaryVersionCellSelectedClass =
   'border-[color-mix(in_srgb,var(--gt-status-success)_38%,var(--gt-border-subtle))] bg-[color-mix(in_srgb,var(--gt-status-success)_4%,var(--gt-surface-canvas))]';
 const codexBinaryVersionCellHeaderClass =
