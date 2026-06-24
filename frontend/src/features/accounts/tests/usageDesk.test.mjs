@@ -339,12 +339,14 @@ test('UsageDetailTable uses the quiet workspace table shell', async () => {
   assert.doesNotMatch(tableSource, /shadow-\[/);
 });
 
-test('usage desk chart grid fills the scroll viewport', async () => {
+test('usage desk chart grid renders as svg guide lines', async () => {
   const chartSource = await readFile(new URL('../components/usage-desk/UsageDeskChart.tsx', import.meta.url), 'utf8');
 
-  assert.match(chartSource, /const chartGridBackgroundImage\s*=/);
-  assert.match(chartSource, /ref=\{chartScrollRef\}[\s\S]*?style=\{\{ backgroundImage: chartGridBackgroundImage \}\}/);
-  assert.doesNotMatch(chartSource, /height: `\$\{chartHeight\}px`,\s*width: `\$\{chartWidth\}px`,\s*backgroundImage:/);
+  assert.match(chartSource, /const horizontalGridLines = \[0\.25, 0\.5, 0\.75\]/);
+  assert.match(chartSource, /const verticalGridLines = Array\.from/);
+  assert.match(chartSource, /horizontalGridLines\.map/);
+  assert.match(chartSource, /verticalGridLines\.map/);
+  assert.doesNotMatch(chartSource, /chartGridBackgroundImage|backgroundImage|linear-gradient|repeating-linear-gradient/);
 });
 
 test('UsageDeskChart uses the quiet workspace shell', async () => {

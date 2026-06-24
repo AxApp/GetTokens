@@ -143,8 +143,11 @@ function ChartSurface({
   const primaryAreaTone = 'var(--color-chart-primary-area)';
   const secondaryTone = 'var(--color-chart-secondary)';
   const secondaryAreaTone = 'var(--color-chart-secondary-area)';
-  const chartGridBackgroundImage =
-    'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid) calc(25% - 1px), var(--color-chart-grid) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid) calc(50% - 1px), var(--color-chart-grid) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid) calc(75% - 1px), var(--color-chart-grid) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, var(--color-chart-grid-subtle) 55px, var(--color-chart-grid-subtle) 56px)';
+  const horizontalGridLines = [0.25, 0.5, 0.75].map((ratio) => chartHeight * ratio);
+  const verticalGridLines = Array.from(
+    { length: Math.floor(chartWidth / 55) },
+    (_, index) => (index + 1) * 55,
+  );
 
   const buildChartCoords = (points: Array<{ value: number }>) =>
     points.map((point, index) => ({
@@ -217,7 +220,6 @@ function ChartSurface({
       ref={chartScrollRef}
       className={usageDeskChartSurfaceClass}
       data-usage-desk-chart-surface
-      style={{ backgroundImage: chartGridBackgroundImage }}
     >
       <div
         className="relative mx-auto transition-all duration-300 ease-out"
@@ -254,6 +256,14 @@ function ChartSurface({
               </linearGradient>
             ) : null}
           </defs>
+          <g strokeWidth="1" vectorEffect="non-scaling-stroke">
+            {horizontalGridLines.map((y) => (
+              <line key={`h-${y}`} x1={0} x2={chartWidth} y1={y} y2={y} stroke="var(--color-chart-grid)" />
+            ))}
+            {verticalGridLines.map((x) => (
+              <line key={`v-${x}`} x1={x} x2={x} y1={0} y2={chartHeight} stroke="var(--color-chart-grid-subtle)" />
+            ))}
+          </g>
           <path
             key={`primary-area-${rangeAnimationVersion}-${primary.length}`}
             d={buildSmoothAreaPath(primaryCoords)}
@@ -454,12 +464,8 @@ export function EmptyChartPlaceholder({
       className="relative overflow-hidden"
       data-usage-desk-empty-chart
       styles={{ body: { padding: 0, height: `${chartHeight}px` } }}
-      style={{
-        backgroundImage:
-          'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid-strong) calc(25% - 1px), var(--color-chart-grid-strong) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid-strong) calc(50% - 1px), var(--color-chart-grid-strong) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid-strong) calc(75% - 1px), var(--color-chart-grid-strong) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, var(--color-chart-grid) 55px, var(--color-chart-grid) 56px)',
-      }}
     >
-      <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(180deg,var(--color-chart-empty-overlay-from),var(--color-chart-empty-overlay-to))]">
+      <div className="absolute inset-0 flex items-center justify-center bg-[var(--gt-surface-canvas)]">
         <Empty
           description={
             <Space direction="vertical" size={4} className="text-center">

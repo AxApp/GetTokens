@@ -50,8 +50,6 @@
     --color-chart-grid: color-mix(in srgb, var(--gt-border-strong) 12%, transparent);
     --color-chart-grid-subtle: color-mix(in srgb, var(--gt-border-strong) 8%, transparent);
     --color-chart-grid-strong: color-mix(in srgb, var(--gt-border-strong) 20%, transparent);
-    --color-chart-empty-overlay-from: color-mix(in srgb, var(--gt-surface-canvas) 72%, transparent);
-    --color-chart-empty-overlay-to: color-mix(in srgb, var(--gt-surface-canvas) 88%, transparent);
     --color-provider-aihubmix: #1677ff;
     --color-provider-aigocode: #597ef7;
     --color-provider-anthropic: #fa8c16;
