@@ -184,10 +184,10 @@ test('combobox keeps external value changes authoritative', async () => {
 
 test('page loading fallback uses the quiet workspace shell', async () => {
   const source = await readFile(new URL('../../components/ui/PageLoadingFallback.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../style.css', import.meta.url), 'utf8');
 
   assert.match(source, /const pageLoadingRootClass =/);
   assert.match(source, /const pageLoadingPanelClass =/);
-  assert.match(source, /const pageLoadingRailClass =/);
   assert.match(source, /const pageLoadingLabelClass =/);
   assert.match(source, /const pageLoadingMetaClass =/);
   assert.match(source, /const pageLoadingTrackClass =/);
@@ -197,6 +197,9 @@ test('page loading fallback uses the quiet workspace shell', async () => {
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-ink-primary/);
   assert.match(source, /shadow-sm/);
+  assert.doesNotMatch(source, /dataInfluxPacketStyles|page-loading-(?:influx|bitstream|orbit|scan|grid|ticker|step|pulse|rail)/);
+  assert.doesNotMatch(styleSource, /@keyframes page-loading|\.page-loading-(?:panel|rail|orbit|influx|bitstream|scan|grid|step|pulse|ticker)/);
+  assert.doesNotMatch(styleSource, /page-loading[\s\S]*?(?:linear-gradient|repeating-linear-gradient|radial-gradient)/);
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /border-r-2/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
