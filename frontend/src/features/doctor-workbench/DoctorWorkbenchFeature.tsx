@@ -83,7 +83,7 @@ const doctorSectionEyebrowClass = 'text-[length:var(--gt-font-size-xs)] font-nor
 const doctorTinyMetaClass = 'text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
 const doctorMetaClass = 'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const doctorStatusBadgeClass = 'inline-flex items-center gap-1.5 rounded border px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-semibold';
-const doctorLinkButtonClass = 'inline-flex items-center justify-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+const doctorLinkButtonClass = 'inline-flex items-center justify-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 
 function formatPreviewTime(unixMs: number) {
   return new Intl.DateTimeFormat('en-US', {
