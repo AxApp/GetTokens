@@ -33,6 +33,10 @@ const inlineTypographyGateFiles = [
   'features/gettokens-extension-registry/GetTokensExtensionRegistryFeature.tsx',
 ];
 
+const inlineStaticSurfaceGateFiles = [
+  'features/accounts/components/AccountCardSkeleton.tsx',
+];
+
 function extensionOf(filePath) {
   const match = filePath.match(/(\.[^.]+)$/);
   return match ? match[1] : '';
@@ -109,6 +113,23 @@ test('selected UI sources keep static typography and colors in classes', async (
     const lines = source.split('\n');
     lines.forEach((line, index) => {
       if (inlineTypographyPattern.test(line)) {
+        findings.push(`${relativePath}:${index + 1}:${line.trim()}`);
+      }
+    });
+  }
+
+  assert.deepEqual(findings, []);
+});
+
+test('selected UI sources keep static surface and border tokens in classes', async () => {
+  const findings = [];
+  const inlineSurfacePattern = /style=\{\{[^\n}]*(backgroundColor|borderColor):\s*['"]var\(--gt-(surface|border)/;
+
+  for (const relativePath of inlineStaticSurfaceGateFiles) {
+    const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
+    const lines = source.split('\n');
+    lines.forEach((line, index) => {
+      if (inlineSurfacePattern.test(line)) {
         findings.push(`${relativePath}:${index + 1}:${line.trim()}`);
       }
     });
