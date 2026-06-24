@@ -159,7 +159,7 @@ export default function AttributionCard({
           </div>
           {topActions ? <div className="shrink-0">{topActions}</div> : null}
         </div>
-        {customBody ? <div style={{ borderTop: '1px solid var(--gt-border-subtle)' }}>{customBody}</div> : null}
+        {customBody ? <div className="border-t border-[var(--gt-border-subtle)]">{customBody}</div> : null}
         {footer ? <div className="px-3 pb-3">{footer}</div> : null}
         {overlay ? <div className={overlayFrameClass}>{overlay}</div> : null}
       </AccountCardFrame>
@@ -178,7 +178,7 @@ export default function AttributionCard({
       onOpen={onOpen}
     >
       {/* Header */}
-      <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
+      <div className="border-b border-[var(--gt-border-subtle)] px-4 py-3">
         <div className="min-w-0 space-y-1.5">
           {eyebrow || eyebrowPrefix || priorityBadges.length > 0 || topActions ? (
             <div className="account-card-meta-action-row -mr-4 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -234,8 +234,8 @@ export default function AttributionCard({
       <BillingBalance billing={billing} />
       <RateLimitGuard rateLimitStatus={rateLimitStatus} usageSummary={usageSummary} refreshing={rateLimitRefreshing || usageRefreshing} t={t} />
 
-      {customBody ? <div className="shrink-0" style={{ borderTop: '1px solid var(--gt-border-subtle)' }}>{customBody}</div> : null}
-      {footer ? <div className="mt-auto px-4 pb-3 pt-2" style={{ borderTop: '1px solid var(--gt-border-subtle)' }}>{footer}</div> : null}
+      {customBody ? <div className="shrink-0 border-t border-[var(--gt-border-subtle)]">{customBody}</div> : null}
+      {footer ? <div className="mt-auto border-t border-[var(--gt-border-subtle)] px-4 pb-3 pt-2">{footer}</div> : null}
       {overlay ? <div className={overlayFrameClass}>{overlay}</div> : null}
     </AccountCardFrame>
   );

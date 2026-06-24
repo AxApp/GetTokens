@@ -249,7 +249,7 @@ test('account card footer only renders the reauth action when required', async (
   const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
-  assert.match(attributionSource, /footer \? <div className="mt-auto px-4 pb-3 pt-2" style=\{\{ borderTop: '1px solid var\(--gt-border-subtle\)' \}\}>\{footer\}<\/div> : null/);
+  assert.match(attributionSource, /footer \? <div className="mt-auto border-t border-\[var\(--gt-border-subtle\)\] px-4 pb-3 pt-2">\{footer\}<\/div> : null/);
   assert.match(cardSource, /const showFooterReauth = showFooterReauthAction && canReauth;/);
   assert.match(cardSource, /density === 'list' \|\| !showFooterReauth \? undefined/);
   assert.match(cardSource, /className="grid gap-2"/);

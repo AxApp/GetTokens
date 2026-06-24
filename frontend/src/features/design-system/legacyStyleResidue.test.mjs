@@ -36,6 +36,7 @@ const inlineTypographyGateFiles = [
 const inlineStaticSurfaceGateFiles = [
   'features/accounts/components/AccountCardSkeleton.tsx',
   'components/biz/Sidebar.tsx',
+  'features/accounts/components/AttributionCard.tsx',
 ];
 
 function extensionOf(filePath) {
