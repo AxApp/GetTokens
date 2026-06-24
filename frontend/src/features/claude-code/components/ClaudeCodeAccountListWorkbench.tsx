@@ -52,7 +52,7 @@ const claudeAccountHeaderClass =
   'grid gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4 xl:grid-cols-[minmax(0,1fr)_auto]';
 const claudeAccountMainGridClass = 'grid gap-4 p-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]';
 const claudeAccountBadgeClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const claudeAccountStatusToneClass = {
   success:
     'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-status-success)]',
@@ -66,16 +66,16 @@ const claudeAccountMetricClass =
 const claudeAccountPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const claudeAccountTerminalClass =
-  'mt-3 grid gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 font-mono text-xs font-normal leading-5 text-[var(--gt-ink-muted)]';
+  'mt-3 grid gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 font-mono text-[length:var(--gt-font-size-xs)] font-normal leading-5 text-[var(--gt-ink-muted)]';
 const claudeAccountIconClass =
   'grid h-8 w-8 shrink-0 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)]';
 const claudeAccountQueueRowClass =
   'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 lg:grid-cols-[auto_minmax(0,1fr)_auto]';
 const claudeAccountQueueIndexClass =
-  'grid h-10 w-10 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-mono text-xs font-semibold';
+  'grid h-10 w-10 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-mono text-[length:var(--gt-font-size-xs)] font-semibold';
 const claudeAccountChipClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 font-mono text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
-const claudeAccountStatusChipBaseClass = 'rounded border px-1.5 py-0.5 font-mono text-xs font-semibold tracking-normal';
+  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+const claudeAccountStatusChipBaseClass = 'rounded border px-1.5 py-0.5 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal';
 const claudeAccountProfileCardClass =
   'rounded border bg-[var(--gt-surface-muted)] p-3';
 const claudeAccountProfileToneClass: Record<ClaudeCodeProfileTone, string> = {
@@ -84,7 +84,7 @@ const claudeAccountProfileToneClass: Record<ClaudeCodeProfileTone, string> = {
   warning: 'border-[var(--gt-status-warning)]',
 };
 const claudeAccountMappingRowClass =
-  'grid gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-2 font-mono text-xs font-normal sm:grid-cols-[minmax(0,1fr)_auto]';
+  'grid gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal sm:grid-cols-[minmax(0,1fr)_auto]';
 
 const stateCopy: Record<ClaudeCodeAccountState, { label: string; value: string; tone: ClaudeAccountTone }> = {
   ready: {
@@ -146,8 +146,8 @@ export function ClaudeCodeAccountListWorkbench({
               {stateMeta.label}
             </span>
           </div>
-          <h2 className="mt-3 text-2xl font-semibold tracking-normal">账号列表 / 模型映射工作台</h2>
-          <p className="mt-2 max-w-4xl text-sm font-normal leading-6 text-[var(--gt-ink-muted)]">
+          <h2 className="mt-3 text-[length:var(--gt-font-size-2xl)] font-semibold tracking-normal">账号列表 / 模型映射工作台</h2>
+          <p className="mt-2 max-w-4xl text-[length:var(--gt-font-size-sm)] font-normal leading-6 text-[var(--gt-ink-muted)]">
             只收 `supportedFormats` 包含 `anthropic` 的账号；Claude Code 本地只应用一个 relay endpoint 和 key，多账号请求顺序由 GetTokens relay 执行。
           </p>
         </div>
@@ -202,8 +202,8 @@ export function ClaudeCodeAccountListWorkbench({
 function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div className={claudeAccountMetricClass}>
-      <div className="font-mono text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
-      <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
+      <div className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="mt-1 text-[length:var(--gt-font-size-2xl)] font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
@@ -216,8 +216,8 @@ function PanelTitle({ icon, title, note }: { icon: ReactNode; title: string; not
           {icon}
         </span>
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold tracking-normal">{title}</h3>
-          <p className="mt-0.5 text-xs font-normal text-[var(--gt-ink-muted)]">{note}</p>
+          <h3 className="text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">{title}</h3>
+          <p className="mt-0.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">{note}</p>
         </div>
       </div>
     </div>
@@ -241,7 +241,7 @@ function AccountQueueRow({ account, index }: { account: ClaudeCodeAccountRow; in
       </div>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="truncate text-sm font-semibold">{account.label}</span>
+          <span className="truncate text-[length:var(--gt-font-size-sm)] font-semibold">{account.label}</span>
           <span className={claudeAccountChipClass}>
             {account.provider}
           </span>
@@ -255,14 +255,14 @@ function AccountQueueRow({ account, index }: { account: ClaudeCodeAccountRow; in
             {blocked ? account.blockReason || 'blocked' : 'requestable'}
           </span>
         </div>
-        <div className="mt-2 grid gap-1 font-mono text-xs font-normal leading-5 text-[var(--gt-ink-muted)]">
+        <div className="mt-2 grid gap-1 font-mono text-[length:var(--gt-font-size-xs)] font-normal leading-5 text-[var(--gt-ink-muted)]">
           <span className="truncate">request base: {resolveRequestBaseUrl(account)}</span>
           <span>
             profile: {account.profileName} / mappings: {account.mappingCount}
           </span>
         </div>
       </div>
-      <div className="grid content-center gap-1 text-right font-mono text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]">
+      <div className="grid content-center gap-1 text-right font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
         <span>priority {account.priority}</span>
         <span>{account.supportedFormats.join(' + ')}</span>
       </div>
@@ -277,14 +277,14 @@ function ProviderProfileCard({ profile }: { profile: ClaudeCodeProviderProfile }
     <article className={`${claudeAccountProfileCardClass} ${claudeAccountProfileToneClass[tone]}`} data-claude-account-profile-card>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h4 className="text-sm font-semibold tracking-normal">{profile.provider}</h4>
-          <p className="mt-1 font-mono text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]">{profile.plan}</p>
+          <h4 className="text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal">{profile.provider}</h4>
+          <p className="mt-1 font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">{profile.plan}</p>
         </div>
         <span className={claudeAccountChipClass}>
           官网默认值
         </span>
       </div>
-      <div className="mt-3 grid gap-2 font-mono text-xs font-normal leading-5">
+      <div className="mt-3 grid gap-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal leading-5">
         <span>default: {profile.defaultModel}</span>
         {profile.haikuModel ? <span>haiku: {profile.haikuModel}</span> : null}
         <span className="text-[var(--gt-ink-muted)]">local apply: {profile.localApplyHint}</span>
@@ -296,7 +296,7 @@ function ProviderProfileCard({ profile }: { profile: ClaudeCodeProviderProfile }
           </span>
         ))}
       </div>
-      <p className="mt-2 text-xs font-normal text-[var(--gt-ink-muted)]">上方模型是官方可切换模型集合，不作为默认值候选。</p>
+      <p className="mt-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">上方模型是官方可切换模型集合，不作为默认值候选。</p>
     </article>
   );
 }

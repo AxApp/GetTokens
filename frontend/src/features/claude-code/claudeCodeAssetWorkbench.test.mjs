@@ -109,6 +109,8 @@ test('Claude Code account list workbench uses the quiet workspace shell', () => 
   assert.match(source, /--gt-status-success/);
   assert.match(source, /--gt-status-warning/);
   assert.match(source, /--gt-status-danger/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.doesNotMatch(source, /btn-swiss|input-swiss|select-swiss|card-swiss/);
   assert.doesNotMatch(source, /border-2|border-t-2|border-b-2/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
