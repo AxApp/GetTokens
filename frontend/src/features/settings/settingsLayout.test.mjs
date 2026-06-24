@@ -51,6 +51,13 @@ test('settings page uses Ant Design adapter and macOS preferences layout', async
   assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
 });
 
+test('settings release panel uses gt typography tokens', async () => {
+  const source = await readFile(new URL('./components/SettingsReleasePanel.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /text-\[length:var\(--gt-font-size-sm\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
+});
+
 test('settings browser preview protects Wails-only local usage and proxy settings', async () => {
   const source = await readFile(new URL('./SettingsFeature.tsx', import.meta.url), 'utf8');
 

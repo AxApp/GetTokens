@@ -50,7 +50,7 @@ function ReleaseRow({
         <div className="text-[length:var(--gt-font-size-body)] font-semibold text-[var(--gt-ink-primary)]">{label}</div>
       </div>
       <div className="flex items-center gap-2">
-        <span className={`select-text text-sm text-[var(--gt-ink-primary)] ${mono ? 'font-mono' : 'font-sans'}`}>
+        <span className={`select-text text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-primary)] ${mono ? 'font-mono' : 'font-sans'}`}>
           {value}
         </span>
         {actionURL && onOpenURL ? (
@@ -132,7 +132,7 @@ export default function SettingsReleasePanel({
       />
 
       {updateMessage ? (
-        <div className="px-4 py-3 text-sm text-[var(--gt-status-info)]">
+        <div className="px-4 py-3 text-[length:var(--gt-font-size-sm)] text-[var(--gt-status-info)]">
           {updateMessage}
         </div>
       ) : null}
@@ -155,7 +155,7 @@ export default function SettingsReleasePanel({
             {primaryUpdateLabel}
           </Button>
         ) : null}
-        <span className="text-xs text-[var(--gt-ink-muted)]">
+        <span className="text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
           {updateActionHint}
         </span>
       </div>
