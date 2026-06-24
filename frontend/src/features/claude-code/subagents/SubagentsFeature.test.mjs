@@ -115,7 +115,9 @@ test('Subagent catalog uses the quiet workspace shell', () => {
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-warning/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\]/);
 
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.doesNotMatch(source, /border-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /border-t-2 border-\[var\(--gt-border-strong\)\]/);
   assert.doesNotMatch(source, /divide-y-2 divide-\[var\(--gt-border-strong\)\]/);
