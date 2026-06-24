@@ -115,6 +115,7 @@ test('Claude Code account list workbench uses the quiet workspace shell', () => 
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /color-status-/);
   assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
+  assert.doesNotMatch(source, /text-\[(?:10|11)px\]/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /shadow-hard|shadow-\[/);
 });
