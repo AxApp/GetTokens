@@ -100,7 +100,7 @@ export default function ClaudeCodeSettingsScopeStack({
       subtitle={snapshot.projectPath ? `Project: ${snapshot.projectPath}` : undefined}
       notice={
         (stateMessage || hasErrors) ? (
-          <span className={`flex items-center gap-2 text-sm ${hasErrors ? 'text-[var(--gt-status-warning)]' : 'text-[var(--gt-ink-secondary)]'}`}>
+          <span className={`flex items-center gap-2 text-[length:var(--gt-font-size-sm)] ${hasErrors ? 'text-[var(--gt-status-warning)]' : 'text-[var(--gt-ink-secondary)]'}`}>
             {hasErrors ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
             {stateMessage || (hasErrors ? 'Some layers have parse errors' : `All ${snapshot.layers.filter((l) => l.exists).length} layers loaded`)}
           </span>
@@ -110,8 +110,8 @@ export default function ClaudeCodeSettingsScopeStack({
       {!hasAnyLayers ? (
         <div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
           <FileJson className="h-10 w-10 text-[var(--gt-ink-muted)]" />
-          <p className="text-sm text-[var(--gt-ink-muted)]">No Claude Code settings files discovered</p>
-          <p className="max-w-md text-xs text-[var(--gt-ink-muted)]">
+          <p className="text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]">No Claude Code settings files discovered</p>
+          <p className="max-w-md text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
             Create a settings.json file in ~/.claude/ or .claude/ to start configuring Claude Code
           </p>
         </div>
@@ -130,19 +130,19 @@ export default function ClaudeCodeSettingsScopeStack({
                 </span>
                 <span className="text-[var(--gt-ink-secondary)]">{scopeIcons[`${layer.scope}`] ?? <FileJson className="h-4 w-4" />}</span>
                 <div className="flex-1 text-left">
-                  <span className="text-sm font-normal">{scopeLabels[`${layer.scope}`] ?? `${layer.scope}`}</span>
-                  <span className="ml-2 text-xs text-[var(--gt-ink-muted)]">{scopePriorityLabels[`${layer.scope}`] ?? ''}</span>
+                  <span className="text-[length:var(--gt-font-size-sm)] font-normal">{scopeLabels[`${layer.scope}`] ?? `${layer.scope}`}</span>
+                  <span className="ml-2 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">{scopePriorityLabels[`${layer.scope}`] ?? ''}</span>
                 </div>
                 {layer.parseError ? (
-                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-warning)]">
+                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] text-[var(--gt-status-warning)]">
                     <AlertTriangle className="h-3 w-3" /> Parse Error
                   </span>
                 ) : layer.exists ? (
-                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-success)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-success)]">
+                  <span className="flex items-center gap-1 rounded bg-[color-mix(in_srgb,var(--gt-status-success)_12%,transparent)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] text-[var(--gt-status-success)]">
                     <CheckCircle2 className="h-3 w-3" /> Valid
                   </span>
                 ) : (
-                  <span className="rounded bg-[var(--gt-surface-muted)] px-2 py-0.5 text-xs text-[var(--gt-ink-muted)]">
+                  <span className="rounded bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
                     Not found
                   </span>
                 )}
@@ -150,7 +150,7 @@ export default function ClaudeCodeSettingsScopeStack({
                   <Lock className="h-3.5 w-3.5 text-[var(--gt-ink-muted)]" />
                 )}
                 {`${layer.scope}` === 'local' && layer.exists && (
-                  <span className="rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--gt-status-warning)]">
+                  <span className="rounded bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,transparent)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] text-[var(--gt-status-warning)]">
                     gitignored
                   </span>
                 )}
@@ -158,11 +158,11 @@ export default function ClaudeCodeSettingsScopeStack({
 
               {expandedScopes.has(`${layer.scope}`) && layer.exists && (
                 <div className={settingsScopeStackPanelClass}>
-                  <p className="mb-3 font-mono text-xs text-[var(--gt-ink-muted)]">{layer.path}</p>
+                  <p className="mb-3 font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">{layer.path}</p>
 
                   {layer.parseError ? (
                     <div className={settingsScopeStackErrorPanelClass}>
-                      <p className="text-sm text-[var(--gt-status-warning)]">{layer.parseError}</p>
+                      <p className="text-[length:var(--gt-font-size-sm)] text-[var(--gt-status-warning)]">{layer.parseError}</p>
                     </div>
                   ) : layer.knownFields ? (
                     <div className="space-y-4">
@@ -178,7 +178,7 @@ export default function ClaudeCodeSettingsScopeStack({
 
                       {layer.knownFields?.env && `${layer.scope}` !== 'managed' && (
                         <div className="flex items-center justify-between ml-6 mt-4">
-                          <span className="text-sm font-normal text-[var(--gt-ink-primary)]">{attributionHeaderLabel}</span>
+                          <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">{attributionHeaderLabel}</span>
                           <ToggleSwitch
                             label={attributionHeaderLabel ?? 'Attribution Header'}
                             checked={'CLAUDE_CODE_ATTRIBUTION_HEADER' in layer.knownFields.env}
@@ -190,13 +190,13 @@ export default function ClaudeCodeSettingsScopeStack({
 
                       {layer.knownFields.permissions && (
                         <SettingsFieldSection icon={<ShieldCheck className="h-4 w-4" />} title="Permissions">
-                          <SnippetPre className="max-h-40 overflow-auto text-xs">{JSON.stringify(layer.knownFields.permissions, null, 2)}</SnippetPre>
+                          <SnippetPre className="max-h-40 overflow-auto text-[length:var(--gt-font-size-xs)]">{JSON.stringify(layer.knownFields.permissions, null, 2)}</SnippetPre>
                         </SettingsFieldSection>
                       )}
 
                       {layer.knownFields.disableAllHooks !== undefined && (
                         <SettingsFieldSection icon={<AlertTriangle className="h-4 w-4" />} title="Hooks">
-                          <span className={`text-sm ${layer.knownFields.disableAllHooks ? 'text-[var(--gt-status-warning)]' : 'text-[var(--gt-status-success)]'}`}>
+                          <span className={`text-[length:var(--gt-font-size-sm)] ${layer.knownFields.disableAllHooks ? 'text-[var(--gt-status-warning)]' : 'text-[var(--gt-status-success)]'}`}>
                             {layer.knownFields.disableAllHooks ? 'All hooks disabled' : 'Hooks enabled'}
                           </span>
                         </SettingsFieldSection>
@@ -204,7 +204,7 @@ export default function ClaudeCodeSettingsScopeStack({
 
                       {layer.knownFields.outputStyle && (
                         <SettingsFieldSection icon={<Globe className="h-4 w-4" />} title="Output Style">
-                          <span className="text-sm">{layer.knownFields.outputStyle}</span>
+                          <span className="text-[length:var(--gt-font-size-sm)]">{layer.knownFields.outputStyle}</span>
                         </SettingsFieldSection>
                       )}
 
@@ -247,9 +247,9 @@ export default function ClaudeCodeSettingsScopeStack({
 
       {savePreview && (
         <div className={settingsScopeStackPanelClass} data-claude-settings-preview="quiet">
-          <h3 className="mb-2 text-sm font-normal">Save Preview</h3>
-          <SnippetPre className="max-h-60 overflow-auto text-xs">{savePreview}</SnippetPre>
-          {saveError && <p className="mt-2 text-sm text-[var(--gt-status-danger)]">{saveError}</p>}
+          <h3 className="mb-2 text-[length:var(--gt-font-size-sm)] font-normal">Save Preview</h3>
+          <SnippetPre className="max-h-60 overflow-auto text-[length:var(--gt-font-size-xs)]">{savePreview}</SnippetPre>
+          {saveError && <p className="mt-2 text-[length:var(--gt-font-size-sm)] text-[var(--gt-status-danger)]">{saveError}</p>}
         </div>
       )}
     </AssetWorkbenchShell>
@@ -273,7 +273,7 @@ function SettingsFieldSection({ icon, title, children }: { icon: ReactNode; titl
     <div>
       <div className="mb-2 flex items-center gap-2">
         <span className="text-[var(--gt-ink-secondary)]">{icon}</span>
-        <span className="text-sm font-normal">{title}</span>
+        <span className="text-[length:var(--gt-font-size-sm)] font-normal">{title}</span>
       </div>
       <div className="ml-6">{children}</div>
     </div>
@@ -286,8 +286,8 @@ function EnvRow({ envKey, value, isEditing }: { envKey: string; value: string; i
 
   return (
     <>
-      <span className="font-mono text-xs text-[var(--gt-ink-secondary)]">{envKey}</span>
-      <span className="font-mono text-xs text-[var(--gt-ink-primary)]">{displayValue}</span>
+      <span className="font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-secondary)]">{envKey}</span>
+      <span className="font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-primary)]">{displayValue}</span>
     </>
   );
 }
