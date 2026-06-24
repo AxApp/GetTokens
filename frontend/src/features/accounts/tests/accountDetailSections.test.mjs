@@ -125,5 +125,7 @@ test('account detail model fetch state uses current surface tokens', async () =>
 
   assert.match(source, /const fetchStatusClass =/);
   assert.match(source, /--gt-surface-muted/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-sm\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.doesNotMatch(source, /bg-\[var\(--gt-surface-panel\)\]/);
 });
