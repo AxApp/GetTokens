@@ -59,9 +59,9 @@ export function RotationPriorityItem({
     >
       <div className="flex items-center gap-4">
         <div className="cursor-grab active:cursor-grabbing" data-account-rotation-drag-handle>
-          <div className="grid grid-cols-2 gap-0.5 opacity-30">
+          <div className="grid grid-cols-2 gap-0.5">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-0.5 w-0.5 bg-[var(--gt-ink-primary)]" />
+              <div key={i} className="h-0.5 w-0.5 bg-[var(--gt-ink-muted)]" />
             ))}
           </div>
         </div>

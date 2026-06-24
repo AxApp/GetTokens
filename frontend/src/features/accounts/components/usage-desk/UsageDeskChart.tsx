@@ -369,9 +369,6 @@ function ChartPoint({
 
       {/* 2. 中心圆点 */}
       <div className="relative flex items-center justify-center">
-        {selected && (
-          <div className="absolute h-8 w-8 rounded-full bg-[var(--gt-ink-primary)] opacity-10" />
-        )}
         <div
           className={`${usageDeskChartPointRingClass} ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}
           style={{ backgroundColor: color }}
