@@ -144,27 +144,15 @@ export default function AttributionCard({
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-center gap-2">
               <span className={`h-2 w-2 shrink-0 rounded-full ${accentFillClass}`} />
-              <span
-                className="min-w-0 truncate text-xs font-normal"
-                style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
-              >
+              <span className="min-w-0 truncate font-mono text-xs font-normal text-[var(--gt-ink-muted)]">
                 {listStatusText || listEyebrow}
               </span>
             </div>
-            <h3
-              className="truncate text-sm font-semibold leading-tight"
-              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
-            >
+            <h3 className="truncate text-sm font-semibold leading-tight text-[var(--gt-ink-primary)]">
               {title}
             </h3>
             {secondaryCopy ? (
-              <div
-                className="min-w-0 truncate text-xs"
-                style={{
-                  color: failureReason ? 'var(--gt-status-danger)' : 'var(--gt-ink-muted)',
-                  fontFamily: 'var(--gt-font-family-mono)',
-                }}
-              >
+              <div className={`min-w-0 truncate font-mono text-xs ${failureReason ? 'text-[var(--gt-status-danger)]' : 'text-[var(--gt-ink-muted)]'}`}>
                 {secondaryCopy}
               </div>
             ) : null}
@@ -195,13 +183,10 @@ export default function AttributionCard({
           {eyebrow || eyebrowPrefix || priorityBadges.length > 0 || topActions ? (
             <div className="account-card-meta-action-row -mr-4 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
               {eyebrow || eyebrowPrefix || priorityBadges.length > 0 ? (
-                <div
-                  className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1.5 overflow-hidden text-[length:var(--gt-font-size-sm-plus)] font-semibold leading-none"
-                  style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
-                >
+                <div className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1.5 overflow-hidden font-mono text-[length:var(--gt-font-size-sm-plus)] font-semibold leading-none text-[var(--gt-ink-muted)]">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${accentFillClass}`} />
                   {eyebrowPrefix ? (
-                    <span className="shrink-0" style={{ color: 'var(--gt-ink-primary)' }}>{eyebrowPrefix}</span>
+                    <span className="shrink-0 text-[var(--gt-ink-primary)]">{eyebrowPrefix}</span>
                   ) : null}
                   {eyebrow ? <span className="min-w-0 truncate">{eyebrow}</span> : null}
                   {priorityBadges.length > 0 ? (
@@ -229,24 +214,18 @@ export default function AttributionCard({
             </div>
           ) : null}
           <div className="flex items-center gap-2">
-            <h3
-              className="truncate text-sm font-semibold leading-tight"
-              style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
-            >
+            <h3 className="truncate text-sm font-semibold leading-tight text-[var(--gt-ink-primary)]">
               {title}
             </h3>
           </div>
         </div>
         {subtitle ? (
-          <div
-            className="mt-1.5 break-all text-xs"
-            style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}
-          >
+          <div className="mt-1.5 break-all font-mono text-xs text-[var(--gt-ink-muted)]">
             {subtitle}
           </div>
         ) : null}
         {failureReason ? (
-          <div className="mt-1.5 text-xs font-normal" style={{ color: 'var(--gt-status-danger)' }}>{failureReason}</div>
+          <div className="mt-1.5 text-xs font-normal text-[var(--gt-status-danger)]">{failureReason}</div>
         ) : null}
       </div>
 

@@ -21,6 +21,7 @@ const inlineTypographyGateFiles = [
   'features/design-system/DesignSystemEntryFeature.tsx',
   'features/accounts/components/AccountsToolbar.tsx',
   'features/settings/SettingsFeature.tsx',
+  'features/accounts/components/AttributionCard.tsx',
 ];
 
 function extensionOf(filePath) {
