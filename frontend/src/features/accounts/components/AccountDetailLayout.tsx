@@ -52,7 +52,6 @@ function SectionNav({
             borderInlineEnd: 0,
             background: 'transparent',
             fontFamily: 'var(--gt-font-family-sans)',
-            fontSize: 14,
             userSelect: 'text',
           }}
         />
@@ -164,12 +163,8 @@ export function AccountDetailLayout({
         style={{ userSelect: 'text' }}
       >
         <div
-          className="mx-auto max-w-[42rem] space-y-6 px-8 pt-14 pb-6"
+          className="mx-auto max-w-[42rem] space-y-6 px-8 pt-14 pb-6 font-sans text-[length:var(--gt-font-size-lg)] leading-[1.6] text-[var(--gt-ink-primary)]"
           style={{
-            fontFamily: 'var(--gt-font-family-sans)',
-            fontSize: 'var(--gt-font-size-lg)',
-            lineHeight: '1.6',
-            color: 'var(--gt-ink-primary)',
             userSelect: 'text',
           }}
         >

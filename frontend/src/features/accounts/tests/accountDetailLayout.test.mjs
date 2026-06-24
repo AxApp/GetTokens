@@ -1069,6 +1069,7 @@ test('unified account detail modal internals use the section-nav quiet workspace
   assert.match(modalSource, /headerClassName="hidden"/);
   assert.match(layoutSource, /bg-\[var\(--gt-surface-canvas\)\]/);
   assert.match(layoutSource, /border-\[var\(--gt-border-subtle\)\]/);
+  assert.doesNotMatch(layoutSource, /fontSize:/);
   assert.match(authSource, /data-auth-file-config-management="quiet"/);
   assert.match(authSource, /data-auth-file-config-notice/);
   assert.match(modelSource, /data-account-model-mapping-grid="source-route"/);
