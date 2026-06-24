@@ -701,9 +701,16 @@ function SessionAnalysisResultGrid({ copy, result }: { copy: SessionManagementCo
           {wordCloud.slice(0, 28).map((item) => (
             <Tooltip key={item.term} title={`${item.term} / ${item.count}`}>
               <span
-                className={sessionManagementAnalysisCloudItemClass}
+                className={`${sessionManagementAnalysisCloudItemClass} ${
+                  item.weight >= 0.75
+                    ? 'text-3xl'
+                    : item.weight >= 0.5
+                      ? 'text-2xl'
+                      : item.weight >= 0.3
+                        ? 'text-xl'
+                        : 'text-base'
+                }`}
                 style={{
-                  fontSize: `${12 + Math.max(0.2, Math.min(item.weight, 1)) * 18}px`,
                   opacity: 0.68 + Math.max(0.2, Math.min(item.weight, 1)) * 0.32,
                 }}
               >

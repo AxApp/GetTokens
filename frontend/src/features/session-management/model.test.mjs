@@ -300,6 +300,7 @@ test('session management analysis and raw json use the quiet detail shell', asyn
 
   const resultBlock = viewSource.match(/function SessionAnalysisResultGrid[\s\S]*?function getAnalysisWordCloud/)?.[0] ?? '';
   assert.doesNotMatch(resultBlock, /border-\[var\(--gt-border-strong\)\]/, 'analysis results must not keep legacy border tokens');
+  assert.doesNotMatch(resultBlock, /fontSize:/, 'analysis word cloud must not use inline font sizing');
   assert.doesNotMatch(resultBlock, /\bfont-black\b/, 'analysis results must not use heavy brutalist weight');
   assert.doesNotMatch(resultBlock, /\buppercase\b/, 'analysis results must not force labels');
   assert.doesNotMatch(resultBlock, /tracking-\[/, 'analysis results must not use wide tracking');
