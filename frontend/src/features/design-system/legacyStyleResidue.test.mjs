@@ -265,6 +265,67 @@ test('usage desk chart keeps static layout tokens in classes', async () => {
   assert.deepEqual(findings, []);
 });
 
+test('runtime inline styles stay limited to approved dynamic rendering boundaries', async () => {
+  const allowedInlineStyleBlocks = [
+    { path: 'features/design-system/DesignSystemEntryFeature.tsx', pattern: /backgroundColor: value|borderRadius: value|boxShadow: value/ },
+    { path: 'features/codex-binary/components/CodexBinaryVersionCell.tsx', pattern: /progress/ },
+    { path: 'features/session-management/components/SessionPluginConsolePanel.tsx', pattern: /execution\.progress|keyword\.width/ },
+    { path: 'features/session-management/SessionManagementView.tsx', pattern: /item\.weight/ },
+    { path: 'features/accounts/components/AccountHealthBar.tsx', pattern: /statusBar\.blocks\.length/ },
+    { path: 'features/accounts/components/CardSections.tsx', pattern: /fillPercent|row\.fillPercent|activityPercent/ },
+    { path: 'features/accounts/components/AccountImportQueueList.tsx', pattern: /renderWindow\.totalHeight|renderWindow\.topOffset/ },
+    { path: 'features/accounts/components/AccountGroupSectionView.tsx', pattern: /renderWindow\.topSpacerHeight|renderWindow\.bottomSpacerHeight/ },
+    { path: 'features/accounts/components/usage-desk/UsageDeskChart.tsx', pattern: /chartWidth|helperY - y/ },
+  ];
+  const findings = [];
+
+  for await (const filePath of walk(srcRoot.pathname)) {
+    const relativePath = relative(srcRoot.pathname, filePath);
+    if (!runtimeExtensions.has(extensionOf(filePath))) {
+      continue;
+    }
+    if (ignoredFilePatterns.some((pattern) => pattern.test(relativePath))) {
+      continue;
+    }
+
+    const source = await readFile(filePath, 'utf8');
+    for (const block of collectInlineStyleBlocks(source)) {
+      const allowed = allowedInlineStyleBlocks.some(
+        (entry) => entry.path === relativePath && entry.pattern.test(block.text),
+      );
+      if (!allowed) {
+        findings.push(relativePath + ':' + block.line + ':' + block.text.replace(/\s+/g, ' ').trim());
+      }
+    }
+  }
+
+  assert.deepEqual(findings, []);
+});
+
+function collectInlineStyleBlocks(source) {
+  const blocks = [];
+  const lines = source.split('\n');
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!lines[index].includes('style={{')) {
+      continue;
+    }
+
+    const blockLines = [lines[index].trim()];
+    if (!lines[index].includes('}}')) {
+      for (let nextIndex = index + 1; nextIndex < lines.length; nextIndex += 1) {
+        blockLines.push(lines[nextIndex].trim());
+        if (lines[nextIndex].includes('}}')) {
+          break;
+        }
+      }
+    }
+    blocks.push({ line: index + 1, text: blockLines.join(' ') });
+  }
+
+  return blocks;
+}
+
 test('selected UI sources keep discrete conditional styles in classes', async () => {
   const relativePaths = [
     'components/ui/Combobox.tsx',
