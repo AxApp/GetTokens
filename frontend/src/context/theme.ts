@@ -1,7 +1,6 @@
 import type { ThemeMode, ThemePreset } from '../types';
 
 export const THEME_MODE_STORAGE_KEY = 'theme-mode';
-export const THEME_PRESET_STORAGE_KEY = 'theme-preset';
 export const DEFAULT_THEME_MODE: ThemeMode = 'light';
 export const DEFAULT_THEME_PRESET: ThemePreset = 'classic';
 
@@ -61,8 +60,8 @@ export function persistThemeMode(storage: Pick<Storage, 'setItem'> | null | unde
   storage?.setItem(THEME_MODE_STORAGE_KEY, DEFAULT_THEME_MODE);
 }
 
-export function persistThemePreset(storage: Pick<Storage, 'setItem'> | null | undefined, _themePreset: unknown) {
-  storage?.setItem(THEME_PRESET_STORAGE_KEY, DEFAULT_THEME_PRESET);
+export function persistThemePreset(_storage: Pick<Storage, 'setItem'> | null | undefined, _themePreset: unknown) {
+  // Intentionally no-op: runtime has one theme preset and should not keep a legacy storage key alive.
 }
 
 export function getThemePresetDefinition(themePreset: ThemePreset): ThemePresetDefinition {

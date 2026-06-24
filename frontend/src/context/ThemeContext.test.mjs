@@ -5,7 +5,6 @@ import {
   DEFAULT_THEME_MODE,
   DEFAULT_THEME_PRESET,
   THEME_MODE_STORAGE_KEY,
-  THEME_PRESET_STORAGE_KEY,
   getThemePresetDefinition,
   isThemeMode,
   isThemePreset,
@@ -39,7 +38,7 @@ test('theme storage readers ignore legacy runtime style choices', () => {
       if (key === THEME_MODE_STORAGE_KEY) {
         return 'dark';
       }
-      if (key === THEME_PRESET_STORAGE_KEY) {
+      if (key === 'theme-preset') {
         return 'parchment-trust-console';
       }
       return null;
@@ -59,7 +58,7 @@ test('theme storage readers fall back for invalid values or unavailable storage'
   assert.equal(readStoredThemePreset({ getItem: () => 'dark' }), DEFAULT_THEME_PRESET);
 });
 
-test('theme persistence writes stable localStorage keys', () => {
+test('theme persistence writes only the active runtime theme key', () => {
   const writes = [];
   const storage = {
     setItem(key, value) {
@@ -72,7 +71,6 @@ test('theme persistence writes stable localStorage keys', () => {
 
   assert.deepEqual(writes, [
     [THEME_MODE_STORAGE_KEY, 'light'],
-    [THEME_PRESET_STORAGE_KEY, 'classic'],
   ]);
 });
 
