@@ -703,12 +703,12 @@ function SessionAnalysisResultGrid({ copy, result }: { copy: SessionManagementCo
               <span
                 className={`${sessionManagementAnalysisCloudItemClass} ${
                   item.weight >= 0.75
-                    ? 'text-3xl'
+                    ? 'text-[length:var(--gt-font-size-3xl)]'
                     : item.weight >= 0.5
-                      ? 'text-2xl'
+                      ? 'text-[length:var(--gt-font-size-2xl)]'
                       : item.weight >= 0.3
-                        ? 'text-xl'
-                        : 'text-base'
+                        ? 'text-[length:var(--gt-font-size-xl)]'
+                        : 'text-[length:var(--gt-font-size-base)]'
                 }`}
                 style={{
                   opacity: 0.68 + Math.max(0.2, Math.min(item.weight, 1)) * 0.32,
