@@ -273,6 +273,7 @@ test('session management workbench uses the current quiet workspace layout', asy
   assert.match(featureSource, /bg-\[var\(--gt-surface-canvas\)\]/, 'page shell must use the current canvas token');
   assert.match(featureSource, /data-session-management-workbench="true"/, 'main workbench shell must be addressable for layout checks');
   assert.match(featureSource, /rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]/, 'main workbench must use the quiet rounded border shell');
+  assert.doesNotMatch(featureSource, /\btransition(?![-\[])/, 'feature shell controls must not use broad transition');
   assert.doesNotMatch(featureSource, /titleClassName="text-\[length:var\(--font-size-display-sm\)\]/, 'page title must not keep the old oversized brutalist display scale');
   assert.doesNotMatch(featureSource, /className="btn-swiss/, 'feature header and compact shell actions must not use the old swiss button skin');
   assert.match(viewSource, /data-session-management-search-frame="true"/, 'search frame must be explicitly styled as a quiet utility rail');

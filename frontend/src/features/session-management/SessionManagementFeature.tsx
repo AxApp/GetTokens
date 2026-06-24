@@ -367,7 +367,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                   }}
                   aria-disabled={!projects.length || analysisLoading ? 'true' : undefined}
                   icon={<BarChart3 className="h-5 w-5" strokeWidth={2.4} />}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
                 />
               </Tooltip>
             ) : null}
@@ -377,7 +377,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                 aria-label={copy.refresh}
                 onClick={() => void loadSnapshot('refresh')}
                 icon={<RefreshCw className="h-5 w-5" strokeWidth={2.4} />}
-                className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               />
             </Tooltip>
           </>
@@ -457,7 +457,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                   onClick={() => setCompactSessionsOpen(false)}
                   aria-label={copy.close}
                   icon={<X className="h-4 w-4" strokeWidth={2.4} />}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
                 />
               </Tooltip>
             </div>
