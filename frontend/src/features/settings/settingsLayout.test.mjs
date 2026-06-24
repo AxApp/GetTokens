@@ -47,6 +47,8 @@ test('settings page uses Ant Design adapter and macOS preferences layout', async
   assert.match(source, /data-settings-antd-spike="true"/);
   assert.match(source, /data-settings-redesign="macos-preferences"/);
   assert.match(source, /settings-page/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
 });
 
 test('settings browser preview protects Wails-only local usage and proxy settings', async () => {

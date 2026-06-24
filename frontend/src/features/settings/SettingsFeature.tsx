@@ -439,10 +439,10 @@ export default function SettingsFeature({
     >
       <div className="mx-auto max-w-3xl space-y-8 px-8 py-10">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold">
+          <h1 className="text-[length:var(--gt-font-size-2xl)] font-semibold">
             {t('settings.title')}
           </h1>
-          <p className="text-sm text-[var(--gt-ink-muted)]">
+          <p className="text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]">
             {t('settings.subtitle')}
           </p>
         </header>
@@ -546,7 +546,7 @@ export default function SettingsFeature({
               </div>
             </div>
             {appRuntimeMessage ? (
-              <div className="px-4 py-3 text-sm text-[var(--gt-status-danger)]">
+              <div className="px-4 py-3 text-[length:var(--gt-font-size-sm)] text-[var(--gt-status-danger)]">
                 {appRuntimeMessage}
               </div>
             ) : null}
@@ -577,7 +577,7 @@ export default function SettingsFeature({
               </div>
             </div>
             {localUsageMessage ? (
-              <div className="px-4 py-3 text-sm text-[var(--gt-status-danger)]">
+              <div className="px-4 py-3 text-[length:var(--gt-font-size-sm)] text-[var(--gt-status-danger)]">
                 {localUsageMessage}
               </div>
             ) : null}
@@ -599,7 +599,7 @@ export default function SettingsFeature({
                       : t('settings.system_proxy_hint')}
                 </div>
                 {sidecarProxyConfigPath ? (
-                  <div className="mt-1 break-all font-mono text-xs text-[var(--gt-ink-muted)]">
+                  <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">
                     {sidecarProxyConfigPath}
                   </div>
                 ) : null}
@@ -614,7 +614,7 @@ export default function SettingsFeature({
               </div>
             </div>
             {sidecarProxyMessage ? (
-              <div className="px-4 py-3 text-sm text-[var(--gt-status-danger)]">
+              <div className="px-4 py-3 text-[length:var(--gt-font-size-sm)] text-[var(--gt-status-danger)]">
                 {sidecarProxyMessage}
               </div>
             ) : null}
@@ -669,7 +669,7 @@ export default function SettingsFeature({
         </section>
 
         <footer className="border-t border-[var(--gt-border-subtle)] pt-6 text-center">
-          <div className="font-mono text-xs font-normal text-[var(--gt-ink-muted)]">
+          <div className="font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
             GetTokens {currentVersionLabel} · {releaseLabel || 'DEV'}
           </div>
         </footer>
