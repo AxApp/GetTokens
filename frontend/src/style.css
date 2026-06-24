@@ -2,15 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes account-card-quota-refresh-sweep {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 32px 0;
-  }
-}
-
 @keyframes page-loading-scan {
   0% {
     transform: translateX(-105%);
@@ -448,17 +439,8 @@
   }
 
   .account-card-quota-refresh-skeleton {
-    background-image:
-      repeating-linear-gradient(
-        115deg,
-        color-mix(in srgb, var(--gt-surface-canvas) 0%, transparent) 0 7px,
-        color-mix(in srgb, var(--gt-surface-canvas) 60%, transparent) 7px 12px,
-        color-mix(in srgb, var(--gt-border-strong) 18%, transparent) 12px 15px,
-        color-mix(in srgb, var(--gt-surface-canvas) 0%, transparent) 15px 24px
-      );
-    background-size: 32px 100%;
-    animation: account-card-quota-refresh-sweep 0.85s linear infinite;
-    opacity: 0.72;
+    background-color: color-mix(in srgb, var(--gt-border-strong) 12%, transparent);
+    opacity: 0.36;
   }
 
   @container (min-width: 46rem) {

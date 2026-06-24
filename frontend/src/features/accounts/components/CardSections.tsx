@@ -199,11 +199,6 @@ export function QuotaBars({ quotaDisplay, t, showDivider = true }: QuotaBarsProp
             <div className="grid min-w-0 gap-1">
               <div
                 className="relative h-4 overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]"
-                style={{
-                  backgroundImage: window.remainingPercent === null
-                    ? 'repeating-linear-gradient(to right, color-mix(in srgb, var(--gt-border-subtle) 12%, transparent) 0 8px, transparent 8px 14px)'
-                    : 'none',
-                }}
               >
                 {fillPercent !== null ? (
                   <div

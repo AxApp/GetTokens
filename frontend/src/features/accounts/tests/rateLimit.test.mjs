@@ -210,6 +210,7 @@ test('account quota refresh also refreshes route guard status and marks guard ro
   const cardSource = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
   const attributionSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
   const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
   assert.match(rateLimitHookSource, /const \[rateLimitRefreshingAccountIDSet, setRateLimitRefreshingAccountIDSet\]/);
   assert.match(rateLimitHookSource, /refreshAccountRateLimits/);
@@ -238,6 +239,8 @@ test('account quota refresh also refreshes route guard status and marks guard ro
   assert.match(sectionsSource, /aria-busy=\{refreshing\}/);
   assert.match(sectionsSource, /data-rate-limit-refreshing=\{refreshing \? 'true' : undefined\}/);
   assert.match(sectionsSource, /account-card-quota-refresh-skeleton/);
+  assert.doesNotMatch(sectionsSource, /repeating-linear-gradient/);
+  assert.doesNotMatch(styleSource.match(/\.account-card-quota-refresh-skeleton\s*\{[\s\S]*?\n\s*\}/)?.[0] || '', /repeating-linear-gradient|animation:/);
 });
 
 test('full account cards keep unbounded traffic statistics rows without a heading', async () => {
