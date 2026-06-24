@@ -68,8 +68,8 @@ function ColorSwatch({ label, varName }: { label: string; varName: string }) {
   return (
     <div className="flex items-center gap-3">
       <div
-        className="h-10 w-10 shrink-0 rounded border"
-        style={{ backgroundColor: value, borderColor: 'var(--gt-border-default)' }}
+        className="h-10 w-10 shrink-0 rounded border border-[var(--gt-border-default)]"
+        style={{ backgroundColor: value }}
       />
       <div className="min-w-0">
         <div className="text-xs font-normal text-[var(--gt-ink-primary)]">{label}</div>
@@ -84,8 +84,8 @@ function RadiusSwatch({ label, varName }: { label: string; varName: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <div
-        className="h-12 w-12 border"
-        style={{ borderRadius: value, backgroundColor: 'var(--gt-surface-raised)', borderColor: 'var(--gt-border-default)' }}
+        className="h-12 w-12 border border-[var(--gt-border-default)] bg-[var(--gt-surface-raised)]"
+        style={{ borderRadius: value }}
       />
       <div className="text-center">
         <div className="text-xs font-normal text-[var(--gt-ink-primary)]">{label}</div>
@@ -100,8 +100,8 @@ function ElevationSwatch({ label, varName }: { label: string; varName: string })
   return (
     <div className="flex flex-col items-center gap-2">
       <div
-        className="h-16 w-24 rounded-lg"
-        style={{ boxShadow: value || 'none', backgroundColor: 'var(--gt-surface-raised)', border: '1px solid var(--gt-border-subtle)' }}
+        className="h-16 w-24 rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)]"
+        style={{ boxShadow: value || 'none' }}
       />
       <div className="text-center">
         <div className="text-xs font-normal text-[var(--gt-ink-primary)]">{label}</div>
@@ -115,7 +115,7 @@ function ElevationSwatch({ label, varName }: { label: string; varName: string })
 
 function AnatomySettingsRow() {
   return (
-    <div className="flex items-center justify-between gap-4 rounded border px-4 py-3" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
+    <div className="flex items-center justify-between gap-4 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-4 py-3">
       <div className="min-w-0 flex-1">
         <div className="text-[length:var(--gt-font-size-body)] font-semibold text-[var(--gt-ink-primary)]">Setting Label</div>
         <div className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">Description text for this setting</div>
@@ -137,7 +137,7 @@ function AnatomySectionCard() {
 
 function AnatomyMetricTile() {
   return (
-    <div className="rounded border p-4" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
+    <div className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-4">
       <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">Spend</div>
       <div className="mt-1 text-[length:var(--gt-font-size-number)] font-semibold text-[var(--gt-ink-primary)]">$12.40</div>
       <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-success)]">+2.1%</div>
@@ -159,7 +159,7 @@ function AnatomyStatusPill() {
 
 function AnatomyToolbar() {
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded border px-3 py-2" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
+    <div className="flex flex-wrap items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2">
       <Input size="small" placeholder="Search…" style={{ maxWidth: '12rem' }} />
       <Button size="small" type="primary">New</Button>
       <Button size="small">Export</Button>
@@ -255,8 +255,7 @@ export default function DesignSystemEntryFeature() {
 
   return (
     <div
-      className="h-full overflow-auto text-[var(--gt-ink-primary)]"
-      style={{ backgroundColor: 'var(--gt-surface-canvas)', padding: '1.75rem 2rem' }}
+      className="h-full overflow-auto bg-[var(--gt-surface-canvas)] px-8 py-7 text-[var(--gt-ink-primary)]"
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <WorkspacePageHeader
@@ -336,7 +335,7 @@ export default function DesignSystemEntryFeature() {
           <div className="settings-group" style={{ padding: '1.25rem' }}>
             <div className="grid gap-4">
               {ANATOMY_ITEMS.map((item) => (
-                <div key={item.name} style={{ borderTop: '1px solid var(--gt-border-subtle)', paddingTop: '1rem' }}>
+                <div key={item.name} className="border-t border-[var(--gt-border-subtle)] pt-4">
                   <div className="mb-1 flex items-baseline gap-2">
                     <code className="font-mono text-xs font-semibold text-[var(--gt-accent-primary)]">
                       .{item.name}
@@ -356,7 +355,7 @@ export default function DesignSystemEntryFeature() {
           <div className="settings-group" style={{ overflow: 'hidden' }}>
             <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
+                <tr className="border-b border-[var(--gt-border-subtle)]">
                   <th className="px-4 py-2 text-left font-semibold text-[var(--gt-ink-secondary)]">Component</th>
                   {STATE_COLUMNS.map((col) => (
                     <th key={col} className="px-4 py-2 text-center font-semibold text-[var(--gt-ink-secondary)]">{col}</th>
@@ -365,14 +364,14 @@ export default function DesignSystemEntryFeature() {
               </thead>
               <tbody>
                 {STATE_MATRIX.map((row) => (
-                  <tr key={row.component} style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
+                  <tr key={row.component} className="border-b border-[var(--gt-border-subtle)]">
                     <td className="px-4 py-2 font-mono font-normal text-[var(--gt-ink-primary)]">
                       {row.component}
                     </td>
                     {STATE_COLUMNS.map((col) => (
                       <td key={col} className="px-4 py-2 text-center">
                         {row.states[col] ? (
-                          <span className="inline-block h-4 w-4 rounded-sm" style={{ backgroundColor: 'var(--gt-status-success)', opacity: 0.7 }} />
+                          <span className="inline-block h-4 w-4 rounded-sm bg-[var(--gt-status-success)] opacity-70" />
                         ) : (
                           <span className="text-xs text-[var(--gt-ink-muted)]">—</span>
                         )}
@@ -391,7 +390,7 @@ export default function DesignSystemEntryFeature() {
           <div className="grid gap-4">
             {designSystemStoryGroups.map((group) => (
               <div key={group.id} className="settings-group" style={{ overflow: 'hidden' }}>
-                <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
+                <div className="border-b border-[var(--gt-border-subtle)] px-4 py-3">
                   <div className="flex items-baseline justify-between">
                     <div>
                       <span className="text-sm font-semibold text-[var(--gt-ink-primary)]">{group.title}</span>
@@ -406,8 +405,7 @@ export default function DesignSystemEntryFeature() {
                   {group.stories.map((story) => (
                     <div
                       key={story.id}
-                      className="flex items-baseline justify-between px-4 py-2"
-                      style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}
+                      className="flex items-baseline justify-between border-b border-[var(--gt-border-subtle)] px-4 py-2"
                     >
                       <span className="text-xs font-normal text-[var(--gt-ink-primary)]">{story.title}</span>
                       <span className="max-w-[60%] truncate font-mono text-xs text-[var(--gt-ink-muted)]">
@@ -427,7 +425,7 @@ export default function DesignSystemEntryFeature() {
 
 function MetricTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded border p-4" style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)' }}>
+    <div className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-4">
       <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">{label}</div>
       <div className="mt-1 text-[length:var(--gt-font-size-number)] font-semibold text-[var(--gt-ink-primary)]">{value}</div>
     </div>

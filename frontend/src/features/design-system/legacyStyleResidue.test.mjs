@@ -44,6 +44,7 @@ const inlineStaticSurfaceGateFiles = [
   'features/settings/SettingsFeature.tsx',
   'features/accounts/components/AccountsToolbar.tsx',
   'features/accounts/components/AccountHealthBar.tsx',
+  'features/design-system/DesignSystemEntryFeature.tsx',
 ];
 
 function extensionOf(filePath) {
@@ -132,7 +133,7 @@ test('selected UI sources keep static typography and colors in classes', async (
 
 test('selected UI sources keep static surface and border tokens in classes', async () => {
   const findings = [];
-  const inlineSurfacePattern = /style=\{\{[^\n}]*(backgroundColor|borderColor|border(?:Top|Right|Bottom|Left)?):\s*['"][^'"]*var\(--gt-(surface|border|ink)/;
+  const inlineSurfacePattern = /style=\{\{[^\n}]*(backgroundColor|borderColor|border(?:Top|Right|Bottom|Left)?):\s*['"][^'"]*var\(--gt-(surface|border|ink|status)/;
 
   for (const relativePath of inlineStaticSurfaceGateFiles) {
     const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
