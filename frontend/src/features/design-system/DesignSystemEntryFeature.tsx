@@ -72,8 +72,8 @@ function ColorSwatch({ label, varName }: { label: string; varName: string }) {
         style={{ backgroundColor: value, borderColor: 'var(--gt-border-default)' }}
       />
       <div className="min-w-0">
-        <div className="text-xs font-normal" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
-        <div className="text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>{value}</div>
+        <div className="text-xs font-normal text-[var(--gt-ink-primary)]">{label}</div>
+        <div className="font-mono text-xs text-[var(--gt-ink-muted)]">{value}</div>
       </div>
     </div>
   );
@@ -88,8 +88,8 @@ function RadiusSwatch({ label, varName }: { label: string; varName: string }) {
         style={{ borderRadius: value, backgroundColor: 'var(--gt-surface-raised)', borderColor: 'var(--gt-border-default)' }}
       />
       <div className="text-center">
-        <div className="text-xs font-normal" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
-        <div className="text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>{value}</div>
+        <div className="text-xs font-normal text-[var(--gt-ink-primary)]">{label}</div>
+        <div className="font-mono text-xs text-[var(--gt-ink-muted)]">{value}</div>
       </div>
     </div>
   );
@@ -104,8 +104,8 @@ function ElevationSwatch({ label, varName }: { label: string; varName: string })
         style={{ boxShadow: value || 'none', backgroundColor: 'var(--gt-surface-raised)', border: '1px solid var(--gt-border-subtle)' }}
       />
       <div className="text-center">
-        <div className="text-xs font-normal" style={{ color: 'var(--gt-ink-primary)' }}>{label}</div>
-        <div className="max-w-[10rem] break-all text-center text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>{value || 'none'}</div>
+        <div className="text-xs font-normal text-[var(--gt-ink-primary)]">{label}</div>
+        <div className="max-w-[10rem] break-all text-center font-mono text-xs text-[var(--gt-ink-muted)]">{value || 'none'}</div>
       </div>
     </div>
   );
@@ -128,7 +128,7 @@ function AnatomySettingsRow() {
 function AnatomySectionCard() {
   return (
     <Card size="small" title="Section Title">
-      <div className="text-sm" style={{ color: 'var(--gt-ink-secondary)' }}>
+      <div className="text-sm text-[var(--gt-ink-secondary)]">
         Card body content goes here.
       </div>
     </Card>
@@ -186,10 +186,10 @@ function AnatomyModalShell() {
     <Card
       size="small"
       title="Detail Modal"
-      extra={<span className="text-xs" style={{ color: 'var(--gt-ink-muted)' }}>✕</span>}
+      extra={<span className="text-xs text-[var(--gt-ink-muted)]">✕</span>}
       style={{ width: '100%', position: 'relative' }}
     >
-      <div className="text-xs" style={{ color: 'var(--gt-ink-secondary)' }}>
+      <div className="text-xs text-[var(--gt-ink-secondary)]">
         Modal body content area. Supports 2-column grid layout on wide screens.
       </div>
       <div className="mt-3 flex justify-end gap-2">
@@ -307,21 +307,21 @@ export default function DesignSystemEntryFeature() {
         <section>
           <h2 className="settings-section-title">Token Contract</h2>
           <div className="settings-group" style={{ padding: '1.25rem' }}>
-            <h3 className="mb-3 text-xs font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>Color</h3>
+            <h3 className="mb-3 text-xs font-semibold text-[var(--gt-ink-secondary)]">Color</h3>
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {COLOR_TOKENS.map((token) => (
                 <ColorSwatch key={token.var} label={token.label} varName={token.var} />
               ))}
             </div>
 
-            <h3 className="mb-3 text-xs font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>Radius</h3>
+            <h3 className="mb-3 text-xs font-semibold text-[var(--gt-ink-secondary)]">Radius</h3>
             <div className="mb-6 flex flex-wrap gap-5">
               {RADIUS_TOKENS.map((token) => (
                 <RadiusSwatch key={token.var} label={token.label} varName={token.var} />
               ))}
             </div>
 
-            <h3 className="mb-3 text-xs font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>Elevation</h3>
+            <h3 className="mb-3 text-xs font-semibold text-[var(--gt-ink-secondary)]">Elevation</h3>
             <div className="flex flex-wrap gap-5">
               {ELEVATION_TOKENS.map((token) => (
                 <ElevationSwatch key={token.var} label={token.label} varName={token.var} />
@@ -338,10 +338,10 @@ export default function DesignSystemEntryFeature() {
               {ANATOMY_ITEMS.map((item) => (
                 <div key={item.name} style={{ borderTop: '1px solid var(--gt-border-subtle)', paddingTop: '1rem' }}>
                   <div className="mb-1 flex items-baseline gap-2">
-                    <code className="text-xs font-semibold" style={{ color: 'var(--gt-accent-primary)', fontFamily: 'var(--gt-font-family-mono)' }}>
+                    <code className="font-mono text-xs font-semibold text-[var(--gt-accent-primary)]">
                       .{item.name}
                     </code>
-                    <span className="text-xs" style={{ color: 'var(--gt-ink-muted)' }}>{item.desc}</span>
+                    <span className="text-xs text-[var(--gt-ink-muted)]">{item.desc}</span>
                   </div>
                   <div style={{ paddingTop: '0.5rem' }}>{item.preview}</div>
                 </div>
@@ -357,16 +357,16 @@ export default function DesignSystemEntryFeature() {
             <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
-                  <th className="px-4 py-2 text-left font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>Component</th>
+                  <th className="px-4 py-2 text-left font-semibold text-[var(--gt-ink-secondary)]">Component</th>
                   {STATE_COLUMNS.map((col) => (
-                    <th key={col} className="px-4 py-2 text-center font-semibold" style={{ color: 'var(--gt-ink-secondary)' }}>{col}</th>
+                    <th key={col} className="px-4 py-2 text-center font-semibold text-[var(--gt-ink-secondary)]">{col}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {STATE_MATRIX.map((row) => (
                   <tr key={row.component} style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
-                    <td className="px-4 py-2 font-normal" style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-mono)' }}>
+                    <td className="px-4 py-2 font-mono font-normal text-[var(--gt-ink-primary)]">
                       {row.component}
                     </td>
                     {STATE_COLUMNS.map((col) => (
@@ -374,7 +374,7 @@ export default function DesignSystemEntryFeature() {
                         {row.states[col] ? (
                           <span className="inline-block h-4 w-4 rounded-sm" style={{ backgroundColor: 'var(--gt-status-success)', opacity: 0.7 }} />
                         ) : (
-                          <span className="text-xs" style={{ color: 'var(--gt-ink-muted)' }}>—</span>
+                          <span className="text-xs text-[var(--gt-ink-muted)]">—</span>
                         )}
                       </td>
                     ))}
@@ -394,10 +394,10 @@ export default function DesignSystemEntryFeature() {
                 <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}>
                   <div className="flex items-baseline justify-between">
                     <div>
-                      <span className="text-sm font-semibold" style={{ color: 'var(--gt-ink-primary)' }}>{group.title}</span>
-                      <span className="ml-2 text-xs" style={{ color: 'var(--gt-ink-muted)' }}>{group.description}</span>
+                      <span className="text-sm font-semibold text-[var(--gt-ink-primary)]">{group.title}</span>
+                      <span className="ml-2 text-xs text-[var(--gt-ink-muted)]">{group.description}</span>
                     </div>
-                    <span className="text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)' }}>
+                    <span className="font-mono text-xs text-[var(--gt-ink-muted)]">
                       {group.stories.length}
                     </span>
                   </div>
@@ -409,8 +409,8 @@ export default function DesignSystemEntryFeature() {
                       className="flex items-baseline justify-between px-4 py-2"
                       style={{ borderBottom: '1px solid var(--gt-border-subtle)' }}
                     >
-                      <span className="text-xs font-normal" style={{ color: 'var(--gt-ink-primary)' }}>{story.title}</span>
-                      <span className="truncate text-xs" style={{ color: 'var(--gt-ink-muted)', fontFamily: 'var(--gt-font-family-mono)', maxWidth: '60%' }}>
+                      <span className="text-xs font-normal text-[var(--gt-ink-primary)]">{story.title}</span>
+                      <span className="max-w-[60%] truncate font-mono text-xs text-[var(--gt-ink-muted)]">
                         {story.storybookTitle}
                       </span>
                     </div>

@@ -14,10 +14,11 @@ const ignoredFilePatterns = [
 const legacyRuntimeStylePattern =
   /btn-swiss|input-swiss|select-swiss|card-swiss|shadow-\[|shadow-(?:lg|xl|2xl)|drop-shadow|border-2|bg-\[var\(--bg-(main|surface)\)\]|font-(?:medium|bold|extrabold|black)|\buppercase\b|tracking-\[|backdrop-blur|\btransition(?![-\[])|transition-all|transition-transform|transition-opacity|hover:opacity|active:opacity|group-hover:opacity|active:scale|animate-pulse|animate-spin|grayscale|text-\[(?:9|10|11)px\]|opacity-(?:10|30)(?!\d)|usage-desk-(?:curve|area|point)|rangeAnimationVersion|curveMotion|detailTransitionActive|codex-live-(?:chart-enter|point-pulse)|codex-success-hud/;
 
-const debugInlineTypographyFiles = [
+const inlineTypographyGateFiles = [
   'features/debug/components/DebugEntryCard.tsx',
   'features/debug/components/DebugHeader.tsx',
   'features/debug/components/DebugEmptyState.tsx',
+  'features/design-system/DesignSystemEntryFeature.tsx',
 ];
 
 function extensionOf(filePath) {
@@ -87,11 +88,11 @@ test('storybook examples do not teach legacy heavy workspace styling', async () 
   assert.deepEqual(findings, []);
 });
 
-test('debug components keep static typography and colors in classes', async () => {
+test('selected UI sources keep static typography and colors in classes', async () => {
   const findings = [];
   const inlineTypographyPattern = /style=\{\{[^\n}]*(fontFamily|fontSize|fontWeight|color|lineHeight)/;
 
-  for (const relativePath of debugInlineTypographyFiles) {
+  for (const relativePath of inlineTypographyGateFiles) {
     const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
     const lines = source.split('\n');
     lines.forEach((line, index) => {
