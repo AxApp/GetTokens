@@ -51,7 +51,7 @@ const accountDetailModalHeaderClass =
 const accountDetailModalEyebrowClass =
   'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailModalTitleClass =
-  'max-w-[450px] truncate text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+  'max-w-[450px] truncate text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailModalBodyClass =
   'flex-1 space-y-8 overflow-y-auto p-6 selection:bg-[var(--gt-border-subtle)] selection:text-[var(--gt-ink-primary)]';
 const accountDetailModalInfoGridClass =

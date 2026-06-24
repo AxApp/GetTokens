@@ -16,6 +16,7 @@ test('legacy account detail modal uses the quiet workspace shell', async () => {
   assert.match(source, /const accountDetailModalRawContentClass =/);
   assert.match(source, /data-account-detail-modal="quiet"/);
   assert.match(source, /data-account-detail-modal-raw-content="quiet"/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-sm\)\]/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
@@ -26,6 +27,7 @@ test('legacy account detail modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
+  assert.doesNotMatch(source, /\btext-sm\b/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
   assert.doesNotMatch(source, /shadow-hard/);
