@@ -1,5 +1,5 @@
 import { useMemo, type RefObject } from 'react';
-import { Input } from 'antd';
+import { Button, Checkbox, Input } from 'antd';
 import { useI18n } from '../../../../context/I18nContext';
 import type { main } from '../../../../../wailsjs/go/models';
 
@@ -55,8 +55,8 @@ export function RotationConfigSection({
             {t('status.routing_strategy')}
           </span>
           <div ref={strategyMenuRef} className="relative">
-            <button
-              type="button"
+            <Button
+              size="small"
               onClick={() => setIsStrategyMenuOpen((prev) => !prev)}
               className="flex min-h-10 w-full items-center justify-between gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               aria-haspopup="listbox"
@@ -69,7 +69,7 @@ export function RotationConfigSection({
               <span className="shrink-0 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                 ▼
               </span>
-            </button>
+            </Button>
             {isStrategyMenuOpen ? (
               <div
                 data-account-rotation-strategy-menu="true"
@@ -80,9 +80,9 @@ export function RotationConfigSection({
                   {routingStrategyOptions.map((option) => {
                     const isSelected = routingDraft.strategy === option.value;
                     return (
-                      <button
+                      <Button
                         key={option.value}
-                        type="button"
+                        size="small"
                         onClick={() => {
                           setRoutingDraft((prev) => (prev ? { ...prev, strategy: option.value } : prev));
                           setIsStrategyMenuOpen(false);
@@ -97,7 +97,7 @@ export function RotationConfigSection({
                       >
                         <span>{option.label}</span>
                         {isSelected ? <span className="text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal">ACTIVE</span> : null}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -208,8 +208,7 @@ export function RotationConfigSection({
                 {label}
               </span>
             </div>
-            <input
-              type="checkbox"
+            <Checkbox
               checked={Boolean(routingDraft[field as keyof main.RelayRoutingConfig])}
               onChange={(event) =>
                 setRoutingDraft((prev) =>

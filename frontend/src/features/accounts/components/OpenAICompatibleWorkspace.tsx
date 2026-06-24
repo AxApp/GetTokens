@@ -1,4 +1,5 @@
 import { Plus, RefreshCw } from 'lucide-react';
+import { Button, Tooltip } from 'antd';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
@@ -74,19 +75,25 @@ export default function OpenAICompatibleWorkspace({
         }
         actions={
           <div data-openai-compatible-workspace-actions="quiet" className={openAICompatibleWorkspaceActionsClass}>
-            <button
-              onClick={onRefresh}
-              className={openAICompatibleWorkspaceActionButtonClass}
-              disabled={!ready || loading}
-              title={t('common.refresh')}
-              aria-label={t('common.refresh')}
+            <Tooltip title={t('common.refresh')}>
+              <Button
+                size="small"
+                icon={<RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />}
+                onClick={onRefresh}
+                className={openAICompatibleWorkspaceActionButtonClass}
+                disabled={!ready || loading}
+                aria-label={t('common.refresh')}
+              />
+            </Tooltip>
+            <Button
+              size="small"
+              icon={<Plus className="h-4 w-4" strokeWidth={2.5} />}
+              onClick={onCreate}
+              className={openAICompatibleWorkspacePrimaryButtonClass}
+              disabled={!ready}
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
-            </button>
-            <button onClick={onCreate} className={openAICompatibleWorkspacePrimaryButtonClass} disabled={!ready}>
-              <Plus className="h-4 w-4" strokeWidth={2.5} />
               {t('accounts.openai_provider_add')}
-            </button>
+            </Button>
           </div>
         }
       />

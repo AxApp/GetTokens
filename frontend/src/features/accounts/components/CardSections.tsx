@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
+import { Tag, Tooltip } from 'antd';
 import type { ApiFormat, BillingDisplay } from '../../../types';
 import type { AccountRecord, QuotaDisplay, QuotaWindowDisplay, Translator } from '../model/types';
 import { buildAccountTodayUsageTotals, resolveUnboundedTrafficActivityPercent, type AccountUsageSummary } from '../model/accountUsage';
@@ -23,20 +24,16 @@ function RuntimeWarningBanner({ warning, dataAttribute }: RuntimeWarningBannerPr
   const dataProps = { [dataAttribute]: true };
 
   return (
-    <div
+    <Tag
+      color="warning"
       className="min-w-0 overflow-hidden rounded border px-2 py-1 text-xs font-normal"
-      style={{
-        borderColor: 'var(--gt-status-warning)',
-        backgroundColor: 'color-mix(in srgb, var(--gt-status-warning) 12%, transparent)',
-        color: 'var(--gt-status-warning)',
-        fontFamily: 'var(--gt-font-family-mono)',
-      }}
+      style={{ fontFamily: 'var(--gt-font-family-mono)' }}
       title={display.full}
       {...dataProps}
     >
       <span className="mr-1">STALE</span>
       <span className="normal-case tracking-normal">{display.summary}</span>
-    </div>
+    </Tag>
   );
 }
 
@@ -54,18 +51,14 @@ export function FormatBadges({ account }: FormatBadgesProps) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {formats.map((fmt) => (
-        <span
+        <Tag
           key={fmt}
+          color="default"
           className="rounded border px-2 py-0.5 text-xs font-normal"
-          style={{
-            borderColor: 'var(--gt-border-default)',
-            backgroundColor: 'var(--gt-surface-muted)',
-            color: 'var(--gt-ink-muted)',
-            fontFamily: 'var(--gt-font-family-mono)',
-          }}
+          style={{ fontFamily: 'var(--gt-font-family-mono)' }}
         >
           {formatLabel(fmt)}
-        </span>
+        </Tag>
       ))}
     </div>
   );
@@ -113,14 +106,16 @@ export function AccountMiniMetrics({ usageSummary, quotaDisplay, t }: AccountMin
 
 export function AccountMiniMetric({ label, value, title = '' }: { label: string; value: string; title?: string }) {
   return (
-    <div className="account-card-list-metric-cell min-w-0 border-l border-dashed border-[var(--gt-border-subtle)] px-2 py-1.5 first:border-l-0" title={title}>
-      <div className="truncate font-mono text-[length:var(--gt-font-size-2xs)] font-normal  text-[var(--gt-ink-muted)]">
-        {label}
+    <Tooltip title={title || undefined}>
+      <div className="account-card-list-metric-cell min-w-0 border-l border-dashed border-[var(--gt-border-subtle)] px-2 py-1.5 first:border-l-0">
+        <div className="truncate font-mono text-[length:var(--gt-font-size-2xs)] font-normal  text-[var(--gt-ink-muted)]">
+          {label}
+        </div>
+        <div className="mt-1 truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-primary)]">
+          {value}
+        </div>
       </div>
-      <div className="mt-1 truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-primary)]">
-        {value}
-      </div>
-    </div>
+    </Tooltip>
   );
 }
 

@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, ExternalLink, History, LoaderCircle } from 'lucide-react';
+import { Button } from 'antd';
 import { useEffect, useState } from 'react';
 import { FetchVendorStatusRSS } from '../../../wailsjs/go/main/App';
 import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime';
@@ -192,8 +193,8 @@ function SystemStatusRow({
           </span>
           <h4 className="text-[length:var(--gt-font-size-5xl)] font-semibold text-[var(--gt-ink-primary)] md:text-[length:var(--gt-font-size-2xl)]">{group.name}</h4>
           {canExpand ? (
-            <button
-              type="button"
+            <Button
+              size="small"
               onClick={() => setExpanded((current) => !current)}
               aria-expanded={expanded}
               className="inline-flex items-center gap-1.5 text-[length:var(--gt-font-size-lg)] font-normal text-[var(--gt-ink-muted)] transition-colors hover:text-[var(--gt-ink-primary)] md:text-[length:var(--gt-font-size-lg-compact)]"
@@ -208,7 +209,7 @@ function SystemStatusRow({
               >
                 <path d="M6 9l6 6 6-6" />
               </svg>
-            </button>
+            </Button>
           ) : (
             <span className="text-[length:var(--gt-font-size-lg)] font-normal text-[var(--gt-ink-muted)] md:text-[length:var(--gt-font-size-lg-compact)]">
               {componentCountLabel}
@@ -405,22 +406,22 @@ export default function VendorStatusFeature() {
                 <ExternalLink className="h-3.5 w-3.5" />
                 {t('vendor_status.subscribe')}
               </a>
-              <button
-                type="button"
+              <Button
+                size="small"
                 onClick={() => openExternalURL(data?.publicUrl || 'https://status.openai.com/')}
+                icon={<ExternalLink className="h-3.5 w-3.5" />}
                 className={vendorStatusSecondaryButtonClass}
               >
-                <ExternalLink className="h-3.5 w-3.5" />
                 {t('vendor_status.open_official_status')}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                size="small"
                 onClick={() => openExternalURL(data?.historyUrl || historyURL)}
+                icon={<History className="h-3.5 w-3.5" />}
                 className={vendorStatusSecondaryButtonClass}
               >
-                <History className="h-3.5 w-3.5" />
                 {t('vendor_status.view_history')}
-              </button>
+              </Button>
             </div>
           }
         />

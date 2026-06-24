@@ -89,6 +89,9 @@ export function buildGetTokensAntdTheme(_input?: GetTokensAntdThemeInput): Theme
         colorBorderSecondary: palette.border,
         paddingLG: 24,
       },
+      Descriptions: {
+        colorBgContainer: 'transparent',
+      },
       Menu: {
         itemBg: 'transparent',
         itemActiveBg: palette.primarySelected,

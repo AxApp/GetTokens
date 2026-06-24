@@ -1,4 +1,5 @@
 import { CheckCircle2, Download, ExternalLink, FolderOpen, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
+import { Button } from 'antd';
 import type { ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
@@ -47,28 +48,10 @@ const codexBinaryVersionCellStatusTextClass =
   'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexBinaryVersionCellErrorTextClass =
   'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
-const codexBinaryVersionCellMenuButtonClass =
-  'inline-flex h-9 w-full min-w-0 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-55 sm:w-9';
 const codexBinaryVersionCellMenuClass =
   'absolute right-0 top-[calc(100%+0.35rem)] z-20 w-48 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-1 shadow-lg';
-const codexBinaryVersionCellMenuItemClass =
-  'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-45';
-const codexBinaryVersionCellMenuDangerItemClass =
-  'text-[var(--gt-status-danger)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_7%,var(--gt-surface-canvas))]';
 const codexBinaryVersionCellStaticActionClass =
   'flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-center text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)] sm:min-w-[10.5rem]';
-const codexBinaryVersionCellButtonClass =
-  'inline-flex min-h-9 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--gt-border-subtle)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal transition disabled:cursor-not-allowed disabled:opacity-55 sm:min-w-[10.5rem]';
-const codexBinaryVersionCellButtonToneClass = {
-  primary:
-    'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:opacity-90',
-  secondary:
-    'bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]',
-  warning:
-    'bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)] hover:border-[color-mix(in_srgb,var(--gt-status-warning)_40%,var(--gt-border-subtle))]',
-  danger:
-    'bg-[color-mix(in_srgb,var(--gt-status-danger)_7%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)] hover:border-[color-mix(in_srgb,var(--gt-status-danger)_36%,var(--gt-border-subtle))]',
-} satisfies Record<'primary' | 'secondary' | 'warning' | 'danger', string>;
 
 export interface CodexBinaryVersionCellProps {
   row: CodexBinaryVersionRowView;
@@ -216,19 +199,17 @@ function VersionMoreMenu({
 }) {
   return (
     <div className="relative">
-      <button
-        type="button"
+      <Button
+        size="small"
         onClick={(event) => {
           event.stopPropagation();
           onToggle();
         }}
         disabled={disabled}
-        className={codexBinaryVersionCellMenuButtonClass}
+        icon={<MoreHorizontal className="h-4 w-4" />}
         aria-label={t('codex_binary.more_actions')}
         title={t('codex_binary.more_actions')}
-      >
-        <MoreHorizontal className="h-4 w-4" />
-      </button>
+      />
       {open ? (
         <div
           className={codexBinaryVersionCellMenuClass}
@@ -257,15 +238,15 @@ function MenuAction({
   danger?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
       onClick={onClick}
       disabled={disabled}
-      className={`${codexBinaryVersionCellMenuItemClass} ${danger ? codexBinaryVersionCellMenuDangerItemClass : ''}`}
+      icon={icon}
+      className={`${danger ? 'text-[var(--gt-status-danger)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_7%,var(--gt-surface-canvas))]' : ''}`}
     >
-      {icon}
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -292,17 +273,17 @@ function CellButton({
   tone?: 'primary' | 'secondary' | 'warning' | 'danger';
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      type={tone === 'primary' ? 'primary' : 'default'}
+      size="small"
       onClick={(event) => {
         event.stopPropagation();
         onClick?.();
       }}
       disabled={disabled}
-      className={`${codexBinaryVersionCellButtonClass} ${codexBinaryVersionCellButtonToneClass[tone]}`}
+      icon={icon}
     >
-      {icon}
       {label}
-    </button>
+    </Button>
   );
 }

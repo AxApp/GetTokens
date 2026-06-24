@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState, type DragEvent } from 'react';
-import { ClipboardPaste, FilePlus, Loader2, Upload } from 'lucide-react';
+import { Button, Input, Upload } from 'antd';
+import type { TextAreaRef } from 'antd/lib/input/TextArea';
+import { ClipboardPaste, FilePlus, Loader2, Upload as UploadIcon } from 'lucide-react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import { toErrorMessage } from '../../../utils/error';
 import {
@@ -25,10 +27,6 @@ const accountImportModalErrorClass =
   'border-t border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-6 py-4 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
 const accountImportModalSummaryClass =
   'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
-const accountImportModalButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
-const accountImportModalPrimaryButtonClass =
-  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 const accountImportModalBodyClass =
   'grid gap-5 p-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start';
 const accountImportModalPanelClass =
@@ -49,8 +47,6 @@ const accountImportModalDropzoneTitleClass =
   'text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportModalDropzoneHintClass =
   'max-w-sm text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed tracking-normal text-[var(--gt-ink-muted)]';
-const accountImportModalTextareaClass =
-  'min-h-36 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-xs text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountImportModalQueueHeaderClass =
   'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
 const accountImportModalQueueEmptyClass =
@@ -71,8 +67,7 @@ export default function AccountImportModal({
   onClose,
   onSubmit,
 }: AccountImportModalProps) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const pasteInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const pasteInputRef = useRef<TextAreaRef | null>(null);
   const nextIDRef = useRef(0);
   const [queueItems, setQueueItems] = useState<AccountImportQueueItem[]>(() =>
     initialItems.map((payload) => createQueueItem(nextIDRef, 'paste', payload))
@@ -176,7 +171,7 @@ export default function AccountImportModal({
     try {
       const content = await readAccountClipboardText();
       if (!content.trim()) {
-        pasteInputRef.current?.focus();
+        pasteInputRef.current?.nativeElement?.focus();
         setError(t('accounts.import_account_paste_clipboard_unavailable'));
         return;
       }
@@ -242,14 +237,13 @@ export default function AccountImportModal({
             {formatQueueSummary(t, queueItems.length, queueSummary)}
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={onClose} disabled={submitting} className={accountImportModalButtonClass}>
+            <Button onClick={onClose} disabled={submitting}>
               {t('common.cancel')}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              type="primary"
               onClick={() => void handleSubmit()}
               disabled={submitting || queueItems.length === 0}
-              className={accountImportModalPrimaryButtonClass}
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
@@ -259,7 +253,7 @@ export default function AccountImportModal({
               ) : (
                 t('accounts.import_account_submit')
               )}
-            </button>
+            </Button>
           </div>
         </>
       }
@@ -282,38 +276,37 @@ export default function AccountImportModal({
               </span>
             </div>
 
-            <input
-              ref={fileInputRef}
-              type="file"
+            <Upload
               multiple
               accept=".json,.zip,.tar,.tar.gz,.tgz,.gz,.gzip,application/json,application/zip,application/gzip,application/x-tar"
-              hidden
-              onChange={(event) => {
-                void handleAddFiles(event.target.files);
-                event.target.value = '';
+              showUploadList={false}
+              beforeUpload={(file) => {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                void handleAddFiles(dt.files);
+                return false;
               }}
-            />
-            <button
-              type="button"
-              data-account-import-dropzone
-              onClick={() => fileInputRef.current?.click()}
-              onDragEnter={handleFileDragOver}
-              onDragOver={handleFileDragOver}
-              onDragLeave={handleFileDragLeave}
-              onDrop={handleFileDrop}
-              disabled={readingFiles || submitting}
-              className={accountImportModalDropzoneClass(isFileDragOver)}
             >
-              <span className="grid justify-items-center gap-3">
-                {readingFiles ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" strokeWidth={3} />}
-                <span className={accountImportModalDropzoneTitleClass}>
-                  {t('accounts.import_account_choose_files')}
+              <Button
+                data-account-import-dropzone
+                onDragEnter={handleFileDragOver}
+                onDragOver={handleFileDragOver}
+                onDragLeave={handleFileDragLeave}
+                onDrop={handleFileDrop}
+                disabled={readingFiles || submitting}
+                className={accountImportModalDropzoneClass(isFileDragOver)}
+              >
+                <span className="grid justify-items-center gap-3">
+                  {readingFiles ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadIcon className="h-5 w-5" strokeWidth={3} />}
+                  <span className={accountImportModalDropzoneTitleClass}>
+                    {t('accounts.import_account_choose_files')}
+                  </span>
+                  <span className={accountImportModalDropzoneHintClass}>
+                    {t('accounts.import_account_files_hint')}
+                  </span>
                 </span>
-                <span className={accountImportModalDropzoneHintClass}>
-                  {t('accounts.import_account_files_hint')}
-                </span>
-              </span>
-            </button>
+              </Button>
+            </Upload>
           </div>
 
           <div className="grid gap-3">
@@ -328,29 +321,28 @@ export default function AccountImportModal({
                 JSON
               </span>
             </div>
-            <textarea
+            <Input.TextArea
+              size="small"
               ref={pasteInputRef}
               value={pasteContent}
               onChange={(event: TextInputEvent) => {
                 setPasteContent(event.target.value);
                 setError('');
               }}
-              className={accountImportModalTextareaClass}
+              className="min-h-36 resize-y font-mono text-xs"
               placeholder={t('accounts.import_account_paste_placeholder')}
               spellCheck={false}
             />
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={handleAddPaste} disabled={submitting} className={accountImportModalButtonClass}>
+              <Button onClick={handleAddPaste} disabled={submitting}>
                 {t('accounts.import_account_add_paste')}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={() => void handlePasteFromClipboard()}
                 disabled={submitting}
-                className={accountImportModalButtonClass}
               >
                 {t('accounts.import_account_clear_paste')}
-              </button>
+              </Button>
             </div>
           </div>
         </section>

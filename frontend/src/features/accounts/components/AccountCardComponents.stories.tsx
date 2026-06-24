@@ -627,9 +627,9 @@ function AccountCardTemplateApplySample() {
                   </div>
                   <div className="grid gap-2">
                     {previewFiles.map((file) => (
-                      <button
+                      <Button
                         key={file.id}
-                        type="button"
+                        size="small"
                         onClick={() => setSelectedFileID(file.id)}
                         className={`grid border-2 px-3 py-3 text-left active:scale-[0.99] ${
                           selectedFileID === file.id
@@ -640,7 +640,7 @@ function AccountCardTemplateApplySample() {
                         <span className="break-all font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                           {file.path}
                         </span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -696,13 +696,13 @@ function AccountCardFrameSample({ selected = false }: { selected?: boolean }) {
                 AccountCardFrame
               </h3>
             </div>
-            <button
-              type="button"
+            <Button
+              size="small"
               className="border-2 border-[var(--gt-border-strong)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal"
               onClick={(event) => event.stopPropagation()}
             >
               Nested Action
-            </button>
+            </Button>
           </div>
           <div className="border-t border-dashed border-[var(--gt-border-strong)] pt-3 text-xs font-semibold text-[var(--gt-ink-muted)]">
             Child controls keep their own click boundary while the shell remains keyboard-openable.

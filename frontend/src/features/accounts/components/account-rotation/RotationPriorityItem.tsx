@@ -1,4 +1,5 @@
 import { type DragEvent } from 'react';
+import { Button } from 'antd';
 import { useI18n } from '../../../../context/I18nContext';
 import type { AccountRecord } from '../../../../types';
 import { resolveAccountPrimaryLabel, resolveAccountStatusTone } from '../../model/accountPresentation';
@@ -82,13 +83,14 @@ export function RotationPriorityItem({
         </div>
       </div>
 
-      <button
+      <Button
+        size="small"
         onClick={() => onToggleDisabled(account)}
         disabled={isPending || !ready || !canToggleRotationAccountDisabled(account)}
         className={`${rotationPriorityItemActionButtonClass} ${account.disabled ? rotationPriorityItemActionButtonActiveClass : ''}`}
       >
         {isPending ? '...' : account.disabled ? t('common.enable') : t('common.disable')}
-      </button>
+      </Button>
     </div>
   );
 }

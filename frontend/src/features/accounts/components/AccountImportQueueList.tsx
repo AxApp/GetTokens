@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Tag, Tooltip } from 'antd';
 import { Trash2 } from 'lucide-react';
 import {
   ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT,
@@ -33,12 +34,6 @@ const accountImportQueueIndexClass =
   'grid h-9 w-9 shrink-0 place-items-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]';
 const accountImportQueueTitleClass =
   'truncate text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
-const accountImportQueueBadgeClass =
-  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
-const accountImportQueueKindBadgeClass =
-  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
-const accountImportQueueRemoveButtonClass =
-  'inline-flex h-8 w-8 items-center justify-center justify-self-end rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_24%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_6%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)] transition hover:border-[var(--gt-status-danger)] disabled:cursor-not-allowed disabled:opacity-45';
 const accountImportQueuePreviewClass =
   'min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-words bg-[var(--gt-surface-muted)] px-4 py-3 font-mono text-[length:var(--gt-font-size-2xs)] leading-relaxed text-[var(--gt-ink-secondary)]';
 
@@ -121,25 +116,31 @@ export default function AccountImportQueueList({
                           {resolveQueueItemTitle(item.payload)}
                         </div>
                         <div className="mt-1 flex min-w-0 flex-wrap gap-2">
-                          <span className={accountImportQueueBadgeClass}>
+                          <Tag
+                            color="default"
+                            className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]"
+                          >
                             {item.source === 'file' ? t('accounts.import_account_source_file') : t('accounts.import_account_source_paste')}
-                          </span>
-                          <span className={accountImportQueueKindBadgeClass}>
+                          </Tag>
+                          <Tag
+                            color="blue"
+                            className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]"
+                          >
                             {resolveQueueItemKind(item.payload)}
-                          </span>
+                          </Tag>
                         </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => onRemove(item.id)}
-                      disabled={submitting}
-                      className={accountImportQueueRemoveButtonClass}
-                      aria-label={t('accounts.import_account_remove_item')}
-                      title={t('accounts.import_account_remove_item')}
-                    >
-                      <Trash2 className="h-4 w-4" strokeWidth={2.5} />
-                    </button>
+                    <Tooltip title={t('accounts.import_account_remove_item')}>
+                      <Button
+                        type="text"
+                        size="small"
+                        onClick={() => onRemove(item.id)}
+                        disabled={submitting}
+                        aria-label={t('accounts.import_account_remove_item')}
+                        icon={<Trash2 className="h-4 w-4" strokeWidth={2.5} />}
+                      />
+                    </Tooltip>
                   </div>
                   <pre data-account-import-queue-preview="quiet" className={accountImportQueuePreviewClass}>
                     {resolveAccountImportPayloadPreview(item.payload)}

@@ -1,5 +1,6 @@
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, FileJson, FileWarning, Globe, Lock, ShieldCheck, Wrench } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { Button } from 'antd';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, FileJson, FileWarning, Globe, Lock, ShieldCheck, Wrench } from 'lucide-react';
 import type { main } from '../../../../wailsjs/go/models';
 import AssetWorkbenchShell from '../../../components/ui/AssetWorkbenchShell';
 import SnippetPre from '../../../components/ui/SnippetPre';
@@ -50,8 +51,6 @@ const scopePriorityLabels: Record<string, string> = {
   user: 'Base',
 };
 
-const settingsScopeStackActionButtonClass =
-  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 text-xs font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const settingsScopeStackListClass = 'divide-y divide-[var(--gt-border-subtle)]';
 const settingsScopeStackRowClass =
   'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
@@ -120,10 +119,10 @@ export default function ClaudeCodeSettingsScopeStack({
         <div className={settingsScopeStackListClass} data-claude-settings-scope-stack="quiet">
           {snapshot.layers.map((layer) => (
             <div key={`${layer.scope}`} className="group">
-              <button
-                type="button"
+              <Button
+                type="text"
                 onClick={() => toggleScope(`${layer.scope}`)}
-                className={`${settingsScopeStackRowClass} ${!layer.exists ? 'opacity-50' : ''}`}
+                className={settingsScopeStackRowClass}
                 data-claude-settings-scope-row={`${layer.scope}`}
               >
                 <span className="text-[var(--gt-ink-secondary)]">
@@ -155,7 +154,7 @@ export default function ClaudeCodeSettingsScopeStack({
                     gitignored
                   </span>
                 )}
-              </button>
+              </Button>
 
               {expandedScopes.has(`${layer.scope}`) && layer.exists && (
                 <div className={settingsScopeStackPanelClass}>
@@ -213,29 +212,27 @@ export default function ClaudeCodeSettingsScopeStack({
                         <div className="flex justify-end">
                           {editingScope === `${layer.scope}` ? (
                             <div className="flex gap-2">
-                              <button
-                                type="button"
+                              <Button
+                                size="small"
                                 onClick={onCancelEdit}
-                                className={settingsScopeStackActionButtonClass}
                               >
                                 Cancel
-                              </button>
-                              <button
-                                type="button"
-                                className="rounded bg-[var(--button-primary-bg)] px-3 py-1 text-xs text-[var(--button-primary-text)]"
+                              </Button>
+                              <Button
+                                type="primary"
+                                size="small"
                                 onClick={() => onSavePatch?.(draftPatches ?? buildLayerPatch(layer))}
                               >
                                 Save Changes
-                              </button>
+                              </Button>
                             </div>
                           ) : (
-                            <button
-                              type="button"
-                              className={settingsScopeStackActionButtonClass}
+                            <Button
+                              size="small"
                               onClick={() => onStartEdit?.(`${layer.scope}`)}
                             >
                               Edit
-                            </button>
+                            </Button>
                           )}
                         </div>
                       )}

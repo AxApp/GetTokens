@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Database, Loader2, RefreshCw } from 'lucide-react';
+import { Button } from 'antd';
 import {
   CommitAccountMigration,
   DeleteLegacyAccountSources,
@@ -32,10 +33,6 @@ const accountMigrationGateHeaderClass =
   'flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-4 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-4 lg:px-7';
 const accountMigrationGateBadgeClass =
   'mb-2 inline-flex rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
-const accountMigrationGateButtonClass =
-  'inline-flex min-h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
-const accountMigrationGatePrimaryButtonClass =
-  'inline-flex min-h-14 w-full items-center justify-center gap-2 rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-6 py-4 text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-surface-canvas)] transition-opacity disabled:cursor-not-allowed disabled:opacity-50';
 const accountMigrationGatePanelClass =
   'grid min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const accountMigrationGatePanelHeaderClass =
@@ -224,15 +221,14 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
             sidecar 已切换到 SQLite 账号库。进入工作台前，需要先把旧账号凭证和配置导入新事实源，再清理旧数据来源。
           </p>
         </div>
-        <button
-          type="button"
+        <Button
+          size="small"
           onClick={loadPreview}
           disabled={loading || busyAction !== null}
-          className={accountMigrationGateButtonClass}
+          icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           重新检查
-        </button>
+        </Button>
       </header>
 
       <div className="grid min-h-0 min-w-0 flex-1 content-start gap-5 overflow-y-auto overflow-x-hidden p-5 lg:p-7">
@@ -297,15 +293,16 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
 
       <footer className={accountMigrationGateFooterClass} data-account-migration-footer>
         {primaryAction ? (
-          <button
-            type="button"
+          <Button
+            type="primary"
+            size="small"
             onClick={primaryAction.onClick}
             disabled={primaryAction.disabled}
-            className={accountMigrationGatePrimaryButtonClass}
+            icon={primaryAction.icon}
+            className="w-full min-h-14"
           >
-            {primaryAction.icon}
             {primaryAction.label}
-          </button>
+          </Button>
         ) : null}
       </footer>
       </section>

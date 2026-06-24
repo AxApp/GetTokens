@@ -178,7 +178,7 @@ test('rate limit rules section edits account-card rules without matchKey fallbac
   assert.match(source, /editingRuleIndex/);
   assert.match(source, /openRuleMenuIndex/);
   assert.match(source, /finishEditingRateLimitRule/);
-  assert.match(source, /type="checkbox"/);
+  assert.match(source, /Checkbox/);
   assert.match(source, /aria-haspopup="menu"/);
   assert.match(source, /role="menuitem"/);
   assert.match(source, /rate_limit_rule_edit/);

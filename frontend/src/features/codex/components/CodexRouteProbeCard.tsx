@@ -1,4 +1,5 @@
 import { Play, RotateCcw, Terminal, X } from 'lucide-react';
+import { Button } from 'antd';
 import { useEffect } from 'react';
 import { ModelCombobox } from './ModelCombobox';
 import { buildEndpointLabel, sourceKindLabel } from './codexAccountPresentation';
@@ -10,10 +11,6 @@ import {
 
 const codexRouteProbePanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
-const codexRouteProbeButtonClass =
-  'inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const codexRouteProbePrimaryButtonClass =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 const codexRouteProbeBadgeClass =
   'inline-flex items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
 const codexRouteProbeMetaClass =
@@ -101,15 +98,13 @@ export function RouteProbeCard({
               candidateCount={routePolicyPreviewRows.length}
               statusLabel={statusLabel}
             />
-            <button
-              type="button"
+            <Button
+              icon={<X className="h-4 w-4" strokeWidth={4} />}
+              size="small"
               onClick={onClose}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               aria-label={t('common.close')}
               title={t('common.close')}
-            >
-              <X className="h-4 w-4" strokeWidth={4} />
-            </button>
+            />
           </div>
         </header>
 
@@ -233,33 +228,32 @@ function ProbeControlPanel({
       </label>
 
       <div className="grid gap-2">
-        <button
-          type="button"
+        <Button
+          type="primary"
+          size="small"
+          icon={<Play className="h-3.5 w-3.5" strokeWidth={4} />}
           onClick={onProbeOnce}
           disabled={routingProbeDisabled}
-          className={`${codexRouteProbePrimaryButtonClass} w-full`}
+          className="w-full"
         >
-          <Play className="h-3.5 w-3.5" strokeWidth={4} />
           {routingProbeRunning ? t('codex.account_list_probe_running') : t('codex.account_list_probe_once')}
-        </button>
+        </Button>
         <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
+          <Button
+            size="small"
             onClick={onProbeSeries}
             disabled={routingProbeDisabled}
-            className={codexRouteProbeButtonClass}
           >
             {t('codex.account_list_probe_series')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            size="small"
+            icon={<RotateCcw className="h-3.5 w-3.5" strokeWidth={4} />}
             onClick={onReset}
             disabled={routingProbeRunning}
-            className={codexRouteProbeButtonClass}
           >
-            <RotateCcw className="h-3.5 w-3.5" strokeWidth={4} />
             {t('common.reset')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

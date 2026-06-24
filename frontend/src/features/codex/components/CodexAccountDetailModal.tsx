@@ -1,4 +1,5 @@
 import { Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Button } from 'antd';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import AccountDetailModalFrame from '../../accounts/components/AccountDetailModalFrame';
 import {
@@ -52,12 +53,6 @@ const codexAccountDetailMetaLabelClass =
   'shrink-0 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexAccountDetailMetaValueClass =
   'min-w-0 truncate font-mono text-[length:var(--gt-font-size-xs)] font-semibold leading-snug text-[var(--gt-ink-primary)]';
-const codexAccountDetailButtonClass =
-  'inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50';
-const codexAccountDetailIconButtonClass =
-  'inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-border-subtle)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]';
-const codexAccountDetailPrimaryButtonClass =
-  `${codexAccountDetailButtonClass} border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[color-mix(in_srgb,var(--gt-ink-primary)_88%,transparent)]`;
 const codexAccountDetailFooterClass =
   'flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between';
 const codexAccountDetailFooterStatusClass =
@@ -410,17 +405,17 @@ export function CodexAccountDetailModal({
                 : mappingError || modelMappingError || modelOptionError || (loadingModelOptions ? t('accounts.openai_provider_models_fetch_running') : hasDetailChanges ? t('codex.account_list_unsaved') : modelSectionTitle)}
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                type="primary"
+                size="small"
                 onClick={() => void saveDetail()}
                 disabled={savingMappings || savingDetail || missingFields.length > 0}
-                className={codexAccountDetailPrimaryButtonClass}
               >
                 {savingMappings || savingDetail ? t('codex.account_list_saving') : t('common.save')}
-              </button>
-              <button type="button" onClick={onClose} className={codexAccountDetailButtonClass}>
+              </Button>
+              <Button size="small" onClick={onClose}>
                 {t('common.cancel')}
-              </button>
+              </Button>
             </div>
           </div>
         ) : undefined
@@ -575,24 +570,22 @@ function CodexModelRoutingSection({
       actions={editableModelMappings ? (
         <>
           {onFetchModelOptions ? (
-            <button
-              type="button"
+            <Button
+              size="small"
+              icon={<RefreshCw className={`h-3.5 w-3.5 ${fetchingModels ? 'animate-spin' : ''}`} strokeWidth={2.5} />}
               onClick={onFetchModelOptions}
               disabled={fetchingModels}
-              className={codexAccountDetailButtonClass}
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${fetchingModels ? 'animate-spin' : ''}`} strokeWidth={2.5} />
               {fetchingModels ? t('accounts.openai_provider_models_fetch_running') : t('accounts.openai_provider_models_fetch')}
-            </button>
+            </Button>
           ) : null}
-          <button
-            type="button"
+          <Button
+            size="small"
+            icon={<Plus className="h-3.5 w-3.5" strokeWidth={2.5} />}
             onClick={onAddMapping}
-            className={codexAccountDetailButtonClass}
           >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
             {t('accounts.openai_provider_add_model')}
-          </button>
+          </Button>
         </>
       ) : undefined}
     >
@@ -643,14 +636,12 @@ function CodexModelRoutingSection({
                       </span>
                     )}
                     {editableModelMappings ? (
-                      <button
-                        type="button"
+                      <Button
+                        size="small"
+                        icon={<Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />}
                         onClick={() => onRemoveMapping(index)}
-                        className={codexAccountDetailIconButtonClass}
                         aria-label={t('common.delete')}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
-                      </button>
+                      />
                     ) : (
                       <span />
                     )}

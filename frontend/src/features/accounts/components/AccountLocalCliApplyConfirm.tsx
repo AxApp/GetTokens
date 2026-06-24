@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Input, Select } from 'antd';
+import { Button, Checkbox, Input, Select } from 'antd';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import StatusSnippetPanel from '../../status/components/StatusSnippetPanel';
 import type {
@@ -46,10 +46,6 @@ type CodexBooleanField = 'supportsWebsockets';
 
 const accountLocalCliPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const accountLocalCliMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const accountLocalCliButtonClass =
-  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
-const accountLocalCliPrimaryButtonClass =
-  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
 const accountLocalCliInputClass =
   'min-w-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none placeholder:text-[var(--gt-ink-muted)] transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
 const accountLocalCliMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
@@ -198,28 +194,27 @@ export default function AccountLocalCliApplyConfirm({
               {previewMode ? <SummaryBadge label="运行环境" value="PREVIEW ONLY" tone="warning" /> : null}
             </div>
           </div>
-          <button type="button" onClick={onClose} className={accountLocalCliButtonClass}>
+          <Button size="small" onClick={onClose}>
             关闭
-          </button>
+          </Button>
         </div>
       }
       footer={
         <>
-          <button type="button" onClick={onClose} className={accountLocalCliButtonClass}>
+          <Button onClick={onClose}>
             取消
-          </button>
+          </Button>
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
             <div className="max-w-xl truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-primary)]">
               {resultMessage || (blockingWarnings[0]?.message ?? (previewMode ? 'PREVIEW ONLY / 未写入' : '等待确认 / 未写入'))}
             </div>
-            <button
-              type="button"
+            <Button
+              type="primary"
               disabled={!canApply}
               onClick={() => onApply(draft)}
-              className={accountLocalCliPrimaryButtonClass}
             >
               {applying ? '正在应用' : canApply ? '确认并应用' : '无法应用'}
-            </button>
+            </Button>
           </div>
         </>
       }
@@ -283,8 +278,7 @@ export default function AccountLocalCliApplyConfirm({
               <ReadOnlyCodexSetting label="Wire API" value={draft.codex.wireAPI || 'responses'} />
               <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-primary)]">
                 <span>supports_websockets</span>
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={draft.codex.supportsWebsockets}
                   onChange={(event) => handleCodexBooleanChange('supportsWebsockets', event.target.checked)}
                   className={accountLocalCliToggleClass}
@@ -292,8 +286,7 @@ export default function AccountLocalCliApplyConfirm({
               </label>
               <label className="flex items-center justify-between gap-3 font-mono text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-primary)]">
                 <span>sync_model_catalog</span>
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={draft.codex.modelCatalogProjectionMode === 'gettokens'}
                   onChange={(event) => handleCodexModelCatalogChange(event.target.checked ? 'gettokens' : 'off')}
                   className={accountLocalCliToggleClass}
@@ -379,8 +372,7 @@ export default function AccountLocalCliApplyConfirm({
                 />
               </label>
               <label className="flex items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-primary)]">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={draft.claude.disableNonEssentialTraffic}
                   onChange={(event) => handleClaudeBooleanChange('disableNonEssentialTraffic', event.target.checked)}
                   className={accountLocalCliToggleClass}
@@ -388,8 +380,7 @@ export default function AccountLocalCliApplyConfirm({
                 Disable nonessential traffic
               </label>
               <label className="flex items-center gap-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-primary)]">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={draft.claude.claudeCodeAttributionHeader}
                   onChange={(event) => handleClaudeBooleanChange('claudeCodeAttributionHeader', event.target.checked)}
                   className={accountLocalCliToggleClass}
@@ -403,9 +394,8 @@ export default function AccountLocalCliApplyConfirm({
           </div>
           <div data-account-local-cli-file-list="true" className="grid gap-2">
             {previewFiles.map((file) => (
-              <button
+              <Button
                 key={file.id}
-                type="button"
                 onClick={() => setSelectedFileID(file.id)}
                 className={`grid rounded border px-3 py-3 text-left transition active:scale-[0.99] ${
                   selectedFile?.id === file.id
@@ -416,7 +406,7 @@ export default function AccountLocalCliApplyConfirm({
                 <span className="break-all font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
                   {file.path}
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
         </div>

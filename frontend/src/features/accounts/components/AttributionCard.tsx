@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { Tag } from 'antd';
 import AccountCardFrame from './AccountCardFrame';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import { buildRateLimitGuardRows, type RateLimitState } from '../model/rateLimit';
@@ -12,7 +13,6 @@ import {
   formatTokenMetric,
 } from './CardSections';
 import {
-  ATTRIBUTION_CARD_BADGE_TONE_CLASS,
   ATTRIBUTION_CARD_TONE_FILL_CLASS,
   ATTRIBUTION_CARD_TONE_GLOW_CLASS,
   type AttributionCardTone,
@@ -207,15 +207,19 @@ export default function AttributionCard({
                   {priorityBadges.length > 0 ? (
                     <div className="account-card-meta-badges flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
                       {priorityBadges.map((badge) => (
-                        <span
+                        <Tag
                           key={`${badge.label}-${badge.tone || 'neutral'}`}
                           data-account-card-badge-priority={resolveAttributionCardBadgePriority(badge)}
                           title={badge.label}
-                          style={badge.backgroundColor ? { backgroundColor: badge.backgroundColor } : undefined}
-                          className={`account-card-meta-badge shrink-0 truncate rounded border px-1.5 py-0.5 text-[length:var(--gt-font-size-sm)] font-semibold leading-none ${ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']}`}
+                          color={
+                            badge.tone === 'positive' ? 'success' :
+                            badge.tone === 'warning' ? 'warning' :
+                            badge.tone === 'critical' ? 'error' : 'default'
+                          }
+                          className="m-0 shrink-0 truncate"
                         >
                           {badge.shortLabel || badge.label}
-                        </span>
+                        </Tag>
                       ))}
                     </div>
                   ) : null}

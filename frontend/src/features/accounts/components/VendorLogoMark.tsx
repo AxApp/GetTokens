@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { Tooltip } from 'antd';
 import type { VendorPreset } from '../model/vendorPresets';
 import { resolveVendorLogo } from '../model/vendorIcons';
 
@@ -15,9 +16,9 @@ export default function VendorLogoMark({ preset, size = 'md', className = '' }: 
   const iconClass = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
 
   return (
+    <Tooltip title={preset.name}>
     <span
       aria-hidden="true"
-      title={preset.name}
       data-provider-logo={logo.kind}
       data-provider-logo-slug={logo.slug || 'initials'}
       style={style}
@@ -37,5 +38,6 @@ export default function VendorLogoMark({ preset, size = 'md', className = '' }: 
         </span>
       )}
     </span>
+    </Tooltip>
   );
 }

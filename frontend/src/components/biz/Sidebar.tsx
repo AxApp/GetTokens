@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Menu } from 'antd';
+import { Button, Menu } from 'antd';
 import type { MenuProps } from 'antd';
 import { Download, ExternalLink } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
@@ -240,8 +240,8 @@ export default function Sidebar({
             {t('nav.sidebar_navigation')}
           </div>
         ) : null}
-        <button
-          type="button"
+        <Button
+          size="small"
           onClick={toggleCollapsed}
           aria-label={t(getSidebarToggleTranslationKey(isCollapsed))}
           title={t(getSidebarToggleTranslationKey(isCollapsed))}
@@ -251,7 +251,7 @@ export default function Sidebar({
           <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M2 3h8M2 6h8M2 9h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
           </svg>
-        </button>
+        </Button>
       </div>
 
       <nav
@@ -301,8 +301,8 @@ export default function Sidebar({
                 <div className="mt-1 font-normal" style={{ color: 'var(--gt-status-success)', fontSize: 'var(--gt-font-size-3xs)', lineHeight: 'var(--gt-line-height-tight)' }}>
                   {t('nav.update_available')}
                 </div>
-                <button
-                  type="button"
+                <Button
+                  size="small"
                   className={'mt-1 flex h-5 w-full items-center justify-center gap-1 rounded-md transition duration-75 hover:opacity-90 active:scale-[0.98] disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
                   style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)', fontSize: 'var(--gt-font-size-2xs)', fontWeight: 600, lineHeight: 'var(--gt-line-height-tight)' }}
                   aria-label={updatePromptLabel}
@@ -313,15 +313,15 @@ export default function Sidebar({
                 >
                   <UpdateActionIcon className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
                   <span className="min-w-0 truncate">{updateButtonLabel}</span>
-                </button>
+                </Button>
               </>
             )}
           </div>
         ) : (
           <div className="grid place-items-center">
             {updatePrompt ? (
-              <button
-                type="button"
+              <Button
+                size="small"
                 className={'flex h-6 w-6 items-center justify-center rounded-md transition duration-75 hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
                 style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)' }}
                 aria-label={updatePromptLabel}
@@ -331,7 +331,7 @@ export default function Sidebar({
                 disabled={!onUpdateAction || isUpdateActionPending}
               >
                 <UpdateActionIcon className="h-3 w-3" aria-hidden="true" />
-              </button>
+              </Button>
             ) : (
               <div
                 className="h-1 w-1 rounded-full"

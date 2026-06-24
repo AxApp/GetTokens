@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Input } from 'antd';
+import { Button, Checkbox, Input } from 'antd';
 import { Loader2 } from 'lucide-react';
 import type { ApiKeyFormState, ClickEventLike, TextInputEvent, Translator } from '../model/types';
 
@@ -16,15 +16,10 @@ const apiKeyComposeLabelClass =
   'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const apiKeyComposeInputClass =
   'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-disabled)] focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
-const apiKeyComposeTextareaClass = `${apiKeyComposeInputClass} min-h-28 resize-y font-mono`;
 const apiKeyComposeToggleClass =
   'flex items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
 const apiKeyComposeProbeClass =
   'space-y-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-4';
-const apiKeyComposeButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
-const apiKeyComposePrimaryButtonClass =
-  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:bg-[color-mix(in_srgb,var(--gt-ink-primary)_88%,transparent)] disabled:cursor-not-allowed disabled:opacity-45';
 const apiKeyComposeModelChipClass =
   'rounded border px-2 py-0.5 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal transition-colors';
 const apiKeyComposeModelChipActiveClass =
@@ -174,8 +169,7 @@ export default function ApiKeyComposeModal({
               />
             </label>
             <label className={apiKeyComposeToggleClass}>
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={form.quotaEnabled}
                 onChange={(event) => onChange('quotaEnabled', event.target.checked)}
               />
@@ -187,10 +181,11 @@ export default function ApiKeyComposeModal({
               <span className={apiKeyComposeLabelClass}>
                 {t('accounts.quota_curl')}
               </span>
-              <textarea
+              <Input.TextArea
+                size="small"
                 value={form.quotaCurl}
                 onChange={(event) => onChange('quotaCurl', event.target.value)}
-                className={apiKeyComposeTextareaClass}
+                className="min-h-28 resize-y font-mono"
                 placeholder='curl -sS "https://example.com/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"'
               />
             </label>
@@ -205,11 +200,10 @@ export default function ApiKeyComposeModal({
               {onFetchModels ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <button
-                      type="button"
+                    <Button
+                      size="small"
                       onClick={() => void handleFetchModels()}
                       disabled={!probeEnabled || fetchModelsState.status === 'loading'}
-                      className={apiKeyComposeButtonClass}
                     >
                       {fetchModelsState.status === 'loading' ? (
                         <span className="flex items-center gap-1.5">
@@ -219,7 +213,7 @@ export default function ApiKeyComposeModal({
                       ) : (
                         t('accounts.openai_provider_models_fetch')
                       )}
-                    </button>
+                    </Button>
                     {fetchModelsState.status !== 'idle' ? (
                       <span className={apiKeyComposeStatusClass(fetchModelsState.status)}>
                         {fetchModelsState.status === 'success'
@@ -233,9 +227,9 @@ export default function ApiKeyComposeModal({
                   {fetchModelsState.status === 'success' && fetchModelsState.models.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
                       {fetchModelsState.models.slice(0, 12).map((name) => (
-                        <button
+                        <Button
                           key={name}
-                          type="button"
+                          size="small"
                           onClick={() => setVerifyModel(name)}
                           className={`${apiKeyComposeModelChipClass} ${
                             verifyModel === name
@@ -244,7 +238,7 @@ export default function ApiKeyComposeModal({
                           }`}
                         >
                           {name}
-                        </button>
+                        </Button>
                       ))}
                       {fetchModelsState.models.length > 12 ? (
                         <span className="self-center text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
@@ -271,11 +265,11 @@ export default function ApiKeyComposeModal({
                       className={`${apiKeyComposeInputClass} min-w-0 flex-1`}
                       placeholder={DEFAULT_PROBE_MODEL}
                     />
-                    <button
-                      type="button"
+                    <Button
+                      size="small"
                       onClick={() => void handleVerify()}
                       disabled={!probeEnabled || !verifyModel.trim() || verifyState.status === 'loading'}
-                      className={`${apiKeyComposeButtonClass} whitespace-nowrap`}
+                      className="whitespace-nowrap"
                     >
                       {verifyState.status === 'loading' ? (
                         <span className="flex items-center gap-1.5">
@@ -285,7 +279,7 @@ export default function ApiKeyComposeModal({
                       ) : (
                         t('accounts.api_key_verify')
                       )}
-                    </button>
+                    </Button>
                   </div>
                   {verifyState.status !== 'idle' ? (
                     <div className={apiKeyComposeStatusClass(verifyState.status)}>
@@ -304,12 +298,12 @@ export default function ApiKeyComposeModal({
           ) : null}
         </div>
         <footer className={apiKeyComposeFooterClass} data-api-key-compose-footer>
-          <button onClick={onClose} className={apiKeyComposeButtonClass}>
+          <Button size="small" onClick={onClose}>
             {t('common.cancel')}
-          </button>
-          <button onClick={onSubmit} className={apiKeyComposePrimaryButtonClass}>
+          </Button>
+          <Button type="primary" size="small" onClick={onSubmit}>
             {t('accounts.add_codex_api_key')}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>

@@ -166,7 +166,18 @@ test('modal frame constrains detail dialogs to the viewport width', async () => 
   assert.match(source, /panelMaxHeightClassNames/);
   assert.match(source, /fixed: 'max-h-\[calc\(100vh-2rem\)\]/);
   assert.match(source, /absolute: 'max-h-\[calc\(100%-2rem\)\]/);
+  assert.match(source, /\{footer\}/);
+  assert.match(source, /overflow-auto/);
   assert.doesNotMatch(source, /detail: 'max-w-6xl'/);
+});
+
+test('combobox keeps external value changes authoritative', async () => {
+  const source = await readFile(new URL('../../components/ui/Combobox.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /useEffect\(\(\) => \{\s*setInputValue\(value\);\s*\}, \[value\]\)/);
+  assert.match(source, /seen\.has\(key\)/);
+  assert.match(source, /seen\.add\(key\)/);
+  assert.doesNotMatch(source, /seen\.add\(name\)/);
 });
 
 test('page loading fallback uses the quiet workspace shell', async () => {

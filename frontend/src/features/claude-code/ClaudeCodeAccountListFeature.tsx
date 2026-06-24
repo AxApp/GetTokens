@@ -1,4 +1,5 @@
 import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Button } from 'antd';
 import { Terminal } from 'lucide-react';
 import {
   CreateProjectCandidatePoolRule,
@@ -84,8 +85,6 @@ const CLAUDE_OAUTH_MODEL_ALIAS_CHANNEL = 'claude';
 const PROJECT_CANDIDATE_POOL_PROJECT_SYNC_INTERVAL_MS = 15_000;
 const claudeAccountListPageShellClass =
   'h-full w-full overflow-auto bg-[var(--gt-surface-page)] p-6 lg:p-8';
-const claudeAccountListRouteProbeButtonClass =
-  'inline-flex min-h-10 items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const claudeAccountListSummaryShellClass =
   'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 sm:grid-cols-4';
 const claudeAccountListSummaryCardClass =
@@ -987,14 +986,13 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           subtitle={t('claude_code.account_list_subtitle')}
           align="center"
           actions={
-            <button
-              type="button"
+            <Button
+              size="small"
               onClick={openRouteProbeModal}
-              className={claudeAccountListRouteProbeButtonClass}
+              icon={<Terminal className="h-3.5 w-3.5" strokeWidth={4} />}
             >
-              <Terminal className="h-3.5 w-3.5" strokeWidth={4} />
               {t('claude_code.account_list_probe_open')}
-            </button>
+            </Button>
           }
         />
 

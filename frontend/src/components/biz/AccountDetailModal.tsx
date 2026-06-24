@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Button } from 'antd';
 import { DownloadAuthFile, GetAuthFileModels, NormalizeAuthFileContent } from '../../../wailsjs/go/main/App';
 import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
@@ -51,10 +52,6 @@ const accountDetailModalEyebrowClass =
   'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailModalTitleClass =
   'max-w-[450px] truncate text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
-const accountDetailModalActionButtonClass =
-  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
-const accountDetailModalIconButtonClass =
-  'inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountDetailModalBodyClass =
   'flex-1 space-y-8 overflow-y-auto p-6 selection:bg-[var(--gt-border-subtle)] selection:text-[var(--gt-ink-primary)]';
 const accountDetailModalInfoGridClass =
@@ -284,18 +281,20 @@ export default function AccountDetailModal({
           </div>
           <div className="flex items-center gap-3">
             {canStartReauth ? (
-              <button
+              <Button
+                size="small"
                 onClick={isReauthing ? onCancelReauth : onStartReauth}
-                className={accountDetailModalActionButtonClass}
               >
                 {isReauthing ? t('common.cancel') : t('accounts.reauth')}
-              </button>
+              </Button>
             ) : null}
-            <button onClick={onClose} className={accountDetailModalIconButtonClass}>
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+            <Button
+              size="small"
+              onClick={onClose}
+              icon={<svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                 <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
+              </svg>}
+            />
           </div>
         </header>
 
@@ -376,24 +375,24 @@ export default function AccountDetailModal({
                   <span className={`animate-pulse ${accountDetailModalFeedbackClass}`}>{t('accounts.ui_fetching_fs')}</span>
                 ) : (
                   <>
-                    <button
+                    <Button
+                      size="small"
                       onClick={() => void handleSanitizeContent()}
                       disabled={!canCopyRawContent(rawContent, loadingRaw) || sanitizing}
-                      className={accountDetailModalActionButtonClass}
                     >
                       {sanitizing
                         ? t('accounts.sanitizing_source')
                         : viewMode === 'sanitized'
                           ? t('accounts.show_raw_source')
                           : t('accounts.sanitize_source')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      size="small"
                       onClick={() => void handleCopyDisplayedContent()}
                       disabled={!displayedContentCopyable}
-                      className={accountDetailModalActionButtonClass}
                     >
                       {viewMode === 'sanitized' ? t('accounts.copy_sanitized_source') : t('accounts.copy_raw_source')}
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>
@@ -423,9 +422,9 @@ export default function AccountDetailModal({
         </div>
 
         <footer className={accountDetailModalFooterClass}>
-          <button onClick={onClose} className={accountDetailModalActionButtonClass}>
+          <Button size="small" onClick={onClose}>
             {t('common.close')}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>

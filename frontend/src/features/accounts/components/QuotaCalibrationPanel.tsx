@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Select } from 'antd';
+import { Button, Input, Select, Tooltip } from 'antd';
 import { useDebug } from '../../../context/useDebug';
 import { buildQuotaCalibrationInput, isQuotaCalibrationActive, type QuotaCalibrationMode } from '../model/quotaCalibration';
 import type { QuotaWindowDisplay } from '../model/types';
@@ -16,8 +16,6 @@ interface QuotaCalibrationPanelProps {
 const quotaCalibrationPanelClass = 'grid gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const quotaCalibrationHeaderClass = 'flex min-w-0 items-center justify-between gap-2';
 const quotaCalibrationItemClass = 'flex min-w-0 items-center justify-between gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1.5';
-const quotaCalibrationButtonClass = 'inline-flex min-h-8 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2.5 py-1 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const quotaCalibrationPrimaryButtonClass = `${quotaCalibrationButtonClass} bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-muted)]`;
 const quotaCalibrationInputClass = 'h-8 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:opacity-60';
 const quotaCalibrationMetaClass = 'font-mono text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
 const quotaCalibrationValueClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal tabular-nums text-[var(--gt-ink-primary)]';
@@ -154,14 +152,14 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
                   </div>
                 ) : null}
               </div>
-              <button
-                type="button"
-                onClick={() => cal.id && handleRevoke(cal.id)}
-                className={quotaCalibrationButtonClass}
-                title="撤销校准"
-              >
-                撤销
-              </button>
+              <Tooltip title="撤销校准">
+                <Button
+                  size="small"
+                  onClick={() => cal.id && handleRevoke(cal.id)}
+                >
+                  撤销
+                </Button>
+              </Tooltip>
             </div>
           ))}
         </div>
@@ -214,7 +212,7 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
               <span className={quotaCalibrationMetaClass}>
                 数值
               </span>
-              <input
+              <Input
                 type="number"
                 value={value}
                 onChange={(e) => { setValue(e.target.value); setError(''); }}
@@ -241,32 +239,30 @@ export function QuotaCalibrationPanel({ accountKey, windows }: QuotaCalibrationP
             </div>
           ) : null}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              size="small"
+              type="primary"
               onClick={() => void handleSubmit()}
               disabled={submitting || !value.trim()}
-              className={quotaCalibrationPrimaryButtonClass}
             >
               {submitting ? '提交中...' : '确认添加'}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              size="small"
               onClick={() => { setFormOpen(false); setValue(''); setError(''); }}
               disabled={submitting}
-              className={quotaCalibrationButtonClass}
             >
               取消
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
-        <button
-          type="button"
+        <Button
+          size="small"
           onClick={() => setFormOpen(true)}
-          className={quotaCalibrationButtonClass}
         >
           添加校准
-        </button>
+        </Button>
       )}
     </div>
   );

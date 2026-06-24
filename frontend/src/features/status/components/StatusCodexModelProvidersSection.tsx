@@ -1,3 +1,4 @@
+import { Button } from 'antd';
 import type {
   CodexFeatureConfigSnapshot,
   CodexFeaturePreview,
@@ -22,10 +23,6 @@ const codexConfigSectionGroupHeaderClass =
   'flex flex-wrap items-center justify-between gap-2 border-b border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2';
 const codexConfigSectionChipClass =
   'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]';
-const codexConfigSectionSecondaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const codexConfigSectionPrimaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 
 interface StatusCodexModelProvidersSectionProps {
   t: (key: string) => string;
@@ -87,14 +84,9 @@ export default function StatusCodexModelProvidersSection({
           <div className={codexConfigSectionChipClass}>
             {dirtyCount} {t('status.codex_model_providers_changed')}
           </div>
-          <button
-            type="button"
-            onClick={onReload}
-            disabled={isBusy}
-            className={codexConfigSectionSecondaryButtonClass}
-          >
+          <Button size="small" onClick={onReload} disabled={isBusy}>
             {isLoading ? t('status.codex_model_providers_loading') : t('common.refresh')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -158,30 +150,15 @@ export default function StatusCodexModelProvidersSection({
           {t('status.codex_model_providers_save_hint')}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onReset}
-            disabled={isBusy || !snapshot}
-            className={codexConfigSectionSecondaryButtonClass}
-          >
+          <Button size="small" onClick={onReset} disabled={isBusy || !snapshot}>
             {t('status.codex_model_providers_reset')}
-          </button>
-          <button
-            type="button"
-            onClick={onPreview}
-            disabled={isBusy || dirtyCount === 0}
-            className={codexConfigSectionSecondaryButtonClass}
-          >
+          </Button>
+          <Button size="small" onClick={onPreview} disabled={isBusy || dirtyCount === 0}>
             {t('status.codex_model_providers_preview')}
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={isBusy || dirtyCount === 0}
-            className={codexConfigSectionPrimaryButtonClass}
-          >
+          </Button>
+          <Button type="primary" size="small" onClick={onSave} disabled={isBusy || dirtyCount === 0}>
             {isSaving ? t('status.codex_model_providers_saving') : t('common.save')}
-          </button>
+          </Button>
         </div>
       </div>
     </section>

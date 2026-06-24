@@ -31,11 +31,9 @@ export default function AccountDetailModalFrame({
       onClose={onClose}
       size="detail"
       header={header}
-      footer={footer}
       error={error}
       headerClassName={headerClassName}
       bodyClassName={bodyClassName}
-      footerClassName={footerClassName}
       panelAttributes={panelAttributes}
     >
       {children}

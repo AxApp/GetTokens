@@ -1,5 +1,6 @@
-import { Play, Save, ShieldCheck, SlidersHorizontal, Terminal } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Button } from 'antd';
+import { Play, Save, ShieldCheck, SlidersHorizontal, Terminal } from 'lucide-react';
 
 type ClaudeCodeAccountState = 'ready' | 'source-conflict' | 'disabled-blocked' | 'profile-draft';
 type ClaudeCodeProfileTone = 'default' | 'draft' | 'warning';
@@ -72,8 +73,6 @@ const claudeAccountQueueRowClass =
   'grid gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3 lg:grid-cols-[auto_minmax(0,1fr)_auto]';
 const claudeAccountQueueIndexClass =
   'grid h-10 w-10 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-mono text-xs font-semibold';
-const claudeAccountButtonClass =
-  'grid h-10 w-10 place-items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)]';
 const claudeAccountChipClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const claudeAccountStatusChipBaseClass = 'rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-normal';
@@ -233,14 +232,12 @@ function AccountQueueRow({ account, index }: { account: ClaudeCodeAccountRow; in
         <div className={claudeAccountQueueIndexClass}>
           #{index + 1}
         </div>
-        <button
-          type="button"
-          className={claudeAccountButtonClass}
+        <Button
+          size="small"
           aria-label="Run route probe"
           title="Run route probe"
-        >
-          <Play className="h-4 w-4" />
-        </button>
+          icon={<Play className="h-4 w-4" />}
+        />
       </div>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">

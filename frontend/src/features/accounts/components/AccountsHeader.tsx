@@ -1,5 +1,5 @@
 import type { MutableRefObject } from 'react';
-import { Button } from 'antd';
+import { Button, Tooltip } from 'antd';
 import { Activity, KeyRound, LogIn, Menu, Plus, RefreshCw, RotateCcw, Upload } from 'lucide-react';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { Translator } from '../model/types';
@@ -94,26 +94,28 @@ export default function AccountsHeader({
         }
         actions={
           <>
-            <Button
-              size="large"
-              onClick={onRefreshAccounts}
-              disabled={!ready || loading}
-              title={t('accounts.refresh_accounts')}
-              aria-label={t('accounts.refresh_accounts')}
-              icon={<RefreshCw className={loading ? 'animate-spin' : ''} size={16} strokeWidth={2} />}
-            >
-            </Button>
-            <Button
-              size="large"
-              onClick={onRefreshRuntime}
-              disabled={!ready || loading || runtimeRefreshing}
-              aria-busy={runtimeRefreshing ? 'true' : undefined}
-              data-accounts-runtime-refreshing={runtimeRefreshing ? 'true' : undefined}
-              title={t('accounts.refresh_runtime_hint')}
-              aria-label={t('accounts.refresh_runtime')}
-              icon={<Activity className={['h-4 w-4', runtimeRefreshing ? 'animate-pulse' : ''].filter(Boolean).join(' ')} size={16} strokeWidth={2} />}
-            >
-            </Button>
+            <Tooltip title={t('accounts.refresh_accounts')}>
+              <Button
+                size="large"
+                onClick={onRefreshAccounts}
+                disabled={!ready || loading}
+                aria-label={t('accounts.refresh_accounts')}
+                icon={<RefreshCw className={loading ? 'animate-spin' : ''} size={16} strokeWidth={2} />}
+              >
+              </Button>
+            </Tooltip>
+            <Tooltip title={t('accounts.refresh_runtime_hint')}>
+              <Button
+                size="large"
+                onClick={onRefreshRuntime}
+                disabled={!ready || loading || runtimeRefreshing}
+                aria-busy={runtimeRefreshing ? 'true' : undefined}
+                data-accounts-runtime-refreshing={runtimeRefreshing ? 'true' : undefined}
+                aria-label={t('accounts.refresh_runtime')}
+                icon={<Activity className={['h-4 w-4', runtimeRefreshing ? 'animate-pulse' : ''].filter(Boolean).join(' ')} size={16} strokeWidth={2} />}
+              >
+              </Button>
+            </Tooltip>
             <div ref={headerActionsMenuRef} className="relative">
               <Button
                 size="large"
@@ -130,8 +132,8 @@ export default function AccountsHeader({
                     {headerActionsMenuItems.map((item) => (
                       <div key={item.id} className="grid gap-1">
                         {item.dividerBefore ? <div className={ACCOUNT_HEADER_MENU_SEPARATOR_CLASS} /> : null}
-                        <button
-                          type="button"
+                        <Button
+                          size="small"
                           onClick={() => {
                             if (item.id === 'unified-compose') {
                               handleMenuAction(() => {
@@ -173,7 +175,7 @@ export default function AccountsHeader({
                         >
                           {renderMenuIcon(item.icon)}
                           <span className={ACCOUNT_HEADER_MENU_LABEL_CLASS}>{t(item.labelKey)}</span>
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>

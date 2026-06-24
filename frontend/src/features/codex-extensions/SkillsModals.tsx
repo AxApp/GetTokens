@@ -1,3 +1,4 @@
+import { Button, Input } from 'antd';
 import { AlertTriangle, CheckCircle2, Download, Eye, FolderOpen, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -22,14 +23,6 @@ const codexSkillModalHeaderClass =
   'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexSkillModalFooterClass =
   'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const codexSkillModalButtonClass =
-  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const codexSkillModalPrimaryButtonClass =
-  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
-const codexSkillModalDangerButtonClass =
-  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-status-danger)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)] transition hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,transparent)] disabled:cursor-not-allowed disabled:opacity-50';
-const codexSkillModalFieldClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
 
 export function SuccessHud({ title, detail }: { title: string; detail: string }) {
   return (
@@ -89,9 +82,9 @@ export function GitSkillInstallModal({
               {t('codex_extensions.git_source')}
             </div>
           </div>
-          <button type="button" onClick={onClose} className={codexSkillModalButtonClass}>
+          <Button size="small" onClick={onClose}>
             {t('common.close')}
-          </button>
+          </Button>
         </header>
 
         <main className="scrollbar-stable min-h-0 flex-1 overflow-auto p-5">
@@ -99,7 +92,7 @@ export function GitSkillInstallModal({
             <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
               {t('codex_extensions.git_source')}
             </span>
-            <input value={gitSource} onChange={(event) => onChange(event.target.value)} className={`${codexSkillModalFieldClass} w-full font-mono`} />
+            <Input size="small" value={gitSource} onChange={(event) => onChange(event.target.value)} className="w-full font-mono" />
           </label>
 
           <div className="mt-4 border-t border-[var(--gt-border-subtle)] pt-4">
@@ -121,18 +114,18 @@ export function GitSkillInstallModal({
         </main>
 
         <footer className={`${codexSkillModalFooterClass} flex shrink-0 flex-wrap items-center justify-end gap-2 px-5 py-4`}>
-          <button type="button" onClick={onClose} className={codexSkillModalButtonClass}>
+          <Button size="small" onClick={onClose}>
             {t('common.cancel')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            type="primary"
+            size="small"
             onClick={onInstall}
             disabled={!parsedGitSource}
-            className={codexSkillModalPrimaryButtonClass}
+            icon={<Download className="h-3.5 w-3.5" />}
           >
-            <Download className="h-3.5 w-3.5" />
             {t('codex_extensions.install_update')}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>
@@ -265,9 +258,9 @@ export function SkillPreviewModal({
               disabled={loading}
               onChange={onToggle}
             />
-            <button type="button" onClick={onClose} className={codexSkillModalButtonClass}>
+            <Button size="small" onClick={onClose}>
               {t('common.close')}
-            </button>
+            </Button>
           </header>
 
           <div className="grid min-h-0 flex-1 grid-rows-[minmax(10rem,16rem)_minmax(0,1fr)] overflow-hidden lg:grid-cols-[minmax(14rem,18rem)_minmax(0,1fr)] lg:grid-rows-none">
@@ -293,9 +286,9 @@ export function SkillPreviewModal({
               </div>
               <div className="mt-2 divide-y divide-[var(--gt-border-subtle)] border border-[var(--gt-border-subtle)]">
                 {skill.files.map((file) => (
-                  <button
+                  <Button
                     key={file.path}
-                    type="button"
+                    size="small"
                     onClick={() => setSelectedFilePath(file.path)}
                     className={`block w-full px-2 py-2 text-left transition-colors ${
                       selectedFile?.path === file.path ? 'bg-[var(--gt-border-subtle)] text-[var(--gt-surface-canvas)]' : 'hover:bg-[var(--gt-surface-muted)]'
@@ -307,7 +300,7 @@ export function SkillPreviewModal({
                     <div className={`mt-0.5 text-[length:var(--gt-font-size-2xs)] font-semibold ${selectedFile?.path === file.path ? 'text-[var(--gt-surface-canvas)]' : 'text-[var(--gt-ink-muted)]'}`}>
                       {file.kind} / {file.previewable || file.path === 'SKILL.md' ? t('codex_extensions.file_previewable') : t('codex_extensions.file_not_previewable')}
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </aside>
@@ -355,19 +348,18 @@ export function SkillPreviewModal({
                   : t('codex_extensions.skill_remove_desktop_required')}
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <button type="button" onClick={onOpenFinder} className={codexSkillModalButtonClass}>
-                <FolderOpen className="h-3.5 w-3.5" />
+              <Button size="small" onClick={onOpenFinder} icon={<FolderOpen className="h-3.5 w-3.5" />}>
                 {t('codex_extensions.open_in_finder')}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                danger
+                size="small"
                 disabled={!canRemove || loading}
                 onClick={() => setRemoveAlertOpen(true)}
-                className={codexSkillModalDangerButtonClass}
+                icon={<Trash2 className="h-3.5 w-3.5" />}
               >
-                <Trash2 className="h-3.5 w-3.5" />
                 {t('codex_extensions.remove_skill')}
-              </button>
+              </Button>
             </div>
           </footer>
         </div>
@@ -403,21 +395,21 @@ export function SkillPreviewModal({
               </p>
             </div>
             <footer className={`${codexSkillModalFooterClass} flex flex-wrap justify-end gap-2 p-3`}>
-              <button type="button" onClick={() => setRemoveAlertOpen(false)} className={codexSkillModalButtonClass}>
+              <Button size="small" onClick={() => setRemoveAlertOpen(false)}>
                 {t('common.cancel')}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                danger
+                size="small"
                 disabled={loading}
                 onClick={() => {
                   setRemoveAlertOpen(false);
                   onRemove();
                 }}
-                className={codexSkillModalDangerButtonClass}
+                icon={<Trash2 className="h-3.5 w-3.5" />}
               >
-                <Trash2 className="h-3.5 w-3.5" />
                 {t('common.delete')}
-              </button>
+              </Button>
             </footer>
           </div>
         </div>

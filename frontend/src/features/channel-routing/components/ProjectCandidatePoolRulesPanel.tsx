@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { Button, Checkbox, Select, Tag } from 'antd';
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { main } from '../../../../wailsjs/go/models';
@@ -47,8 +48,6 @@ const projectCandidateRulesPanelClass =
   'flex min-h-0 min-w-0 flex-col rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const projectCandidateRulesPanelBodyClass = 'flex min-h-0 flex-1 flex-col gap-3 p-3';
 const projectCandidateRulesLabelClass = 'mb-1 block text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]';
-const projectCandidateRulesSelectClass =
-  'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition-colors focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const projectCandidateRulesListClass =
   'min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const projectCandidateRulesEmptyClass = 'px-3 py-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
@@ -256,15 +255,16 @@ export default function ProjectCandidatePoolRulesPanel({
     <section className={projectCandidateRulesShellClass} data-project-candidate-pool-rules-panel>
       {primaryActionSlot
         ? createPortal(
-            <button
-              type="button"
+            <Button
+              type="primary"
+              size="small"
               onClick={saveRule}
               disabled={controlsDisabled || draftIssues.length > 0}
               className={projectCandidateRulesPrimaryButtonClass}
+              icon={<Plus className="h-3.5 w-3.5" strokeWidth={3} />}
             >
-              <Plus className="h-3.5 w-3.5" strokeWidth={3} />
               {selectedExistingRule ? '更新规则' : '新建规则'}
-            </button>,
+            </Button>,
             primaryActionSlot,
           )
         : null}
@@ -274,20 +274,20 @@ export default function ProjectCandidatePoolRulesPanel({
           <div className={projectCandidateRulesPanelBodyClass}>
             <label className="block min-w-0">
               <span className={projectCandidateRulesLabelClass}>项目</span>
-              <select
+              <Select
+                size="small"
                 value={String(draft.projectKey || '')}
                 disabled={controlsDisabled || projectOptions.length === 0}
-                onChange={(event) => selectProject(event.currentTarget.value)}
-                className={projectCandidateRulesSelectClass}
-              >
-                <option value="">请选择历史项目</option>
-                {projectOptions.map((option) => (
-                  <option key={option.projectKey} value={option.projectKey}>
-                    {option.projectName || option.projectKey}
-                    {option.configured ? ' · 已配置' : option.sourceLabel ? ` · ${option.sourceLabel}` : ''}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => selectProject(value)}
+                className="w-full"
+                options={[
+                  { value: '', label: '请选择历史项目' },
+                  ...projectOptions.map((option) => ({
+                    value: option.projectKey,
+                    label: `${option.projectName || option.projectKey}${option.configured ? ' · 已配置' : option.sourceLabel ? ` · ${option.sourceLabel}` : ''}`,
+                  })),
+                ]}
+              />
             </label>
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               <div className="mb-1 flex min-w-0 items-center justify-between gap-2">
@@ -312,9 +312,8 @@ export default function ProjectCandidatePoolRulesPanel({
                           enabled ? 'bg-[var(--gt-surface-muted)]' : 'opacity-70',
                         ].join(' ')}
                       >
-                        <input
+                        <Checkbox
                           id={`project-candidate-account-${accountID}`}
-                          type="checkbox"
                           checked={enabled}
                           disabled={controlsDisabled}
                           onChange={() => toggleDraftAccount(accountID)}
@@ -333,26 +332,24 @@ export default function ProjectCandidatePoolRulesPanel({
                           </span>
                         </label>
                         <span className="flex items-center gap-1">
-                          <button
-                            type="button"
+                          <Button
+                            size="small"
                             disabled={controlsDisabled || !canMoveUp}
                             onClick={() => moveDraftAccount(accountID, -1)}
                             className={projectCandidateRulesIconButtonClass}
                             aria-label={`上移 ${account.label || accountID}`}
                             title="上移"
-                          >
-                            <ArrowUp className="h-3.5 w-3.5" strokeWidth={3} />
-                          </button>
-                          <button
-                            type="button"
+                            icon={<ArrowUp className="h-3.5 w-3.5" strokeWidth={3} />}
+                          />
+                          <Button
+                            size="small"
                             disabled={controlsDisabled || !canMoveDown}
                             onClick={() => moveDraftAccount(accountID, 1)}
                             className={projectCandidateRulesIconButtonClass}
                             aria-label={`下移 ${account.label || accountID}`}
                             title="下移"
-                          >
-                            <ArrowDown className="h-3.5 w-3.5" strokeWidth={3} />
-                          </button>
+                            icon={<ArrowDown className="h-3.5 w-3.5" strokeWidth={3} />}
+                          />
                         </span>
                       </div>
                     );
@@ -378,9 +375,9 @@ export default function ProjectCandidatePoolRulesPanel({
                         <h3 className="min-w-0 truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                           {row.projectTitle}
                         </h3>
-                        <span className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
+                        <Tag color="default" className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                           {row.statusLabel}
-                        </span>
+                        </Tag>
                       </div>
                       <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                         {row.projectKey}
@@ -391,33 +388,33 @@ export default function ProjectCandidatePoolRulesPanel({
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {onPreviewRule ? (
-                        <button
-                          type="button"
+                        <Button
+                          size="small"
                           onClick={() => onPreviewRule(row.raw)}
                           disabled={controlsDisabled}
                           className={projectCandidateRulesButtonClass}
                         >
                           预演
-                        </button>
+                        </Button>
                       ) : null}
-                      <button
-                        type="button"
+                      <Button
+                        size="small"
                         onClick={() => void toggleRule(row.raw)}
                         disabled={controlsDisabled}
                         className={projectCandidateRulesButtonClass}
                       >
                         {row.enabled ? '停用' : '启用'}
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        size="small"
                         onClick={() => void deleteRule(row.raw)}
                         disabled={controlsDisabled}
                         aria-label="删除项目候选池规则"
                         className={`${projectCandidateRulesButtonClass} gap-1`}
+                        icon={<Trash2 className="h-3.5 w-3.5" strokeWidth={3} />}
                       >
-                        <Trash2 className="h-3.5 w-3.5" strokeWidth={3} />
                         删除
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   <div className="mt-3 flex min-w-0 flex-wrap gap-2">

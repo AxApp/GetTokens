@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Tooltip } from 'antd';
 import { resolveResponsiveStatusBarData, type AccountUsageSummary } from '../model/accountUsage';
 
 interface AccountHealthBarProps {
@@ -69,12 +70,12 @@ export default function AccountHealthBar({ summary }: AccountHealthBarProps) {
             : `${Math.round(detail.rate * 100)}% · ${detail.success}/${detail.failure}`;
 
         return (
+          <Tooltip key={`${block}-${index}`} title={title}>
           <span
-            key={`${block}-${index}`}
-            title={title}
             className={`h-3 min-w-0 rounded-sm border ${blockClass(block)}`}
             style={{ borderColor: 'var(--gt-surface-raised)' }}
           />
+          </Tooltip>
         );
       })}
     </div>

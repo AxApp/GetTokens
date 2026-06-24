@@ -1,3 +1,4 @@
+import { Button } from 'antd';
 import { Download, FilePenLine } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -65,8 +66,6 @@ const mcpFilterOptions: ReadonlyArray<SegmentedOption<McpFilter>> = [
   { id: 'streamable_http', label: 'HTTP' },
 ];
 
-const codexExtensionsActionButtonClass =
-  'inline-flex h-9 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const codexExtensionsNoticeClass =
   'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
 const codexExtensionsListContentClass =
@@ -331,10 +330,9 @@ Path: ${parsedGitSource.path}`,
         subtitle={skillsHeaderSubtitle}
         actions={
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <button type="button" className={codexExtensionsActionButtonClass} onClick={() => setGitInstallOpen(true)}>
-              <Download className="h-3.5 w-3.5" />
+            <Button size="small" onClick={() => setGitInstallOpen(true)} icon={<Download className="h-3.5 w-3.5" />}>
               {t('codex_extensions.add_skill')}
-            </button>
+            </Button>
             <RefreshActionButton
               onClick={() => void reloadSkills()}
               disabled={loading}
@@ -370,8 +368,8 @@ Path: ${parsedGitSource.path}`,
             className={codexExtensionsListRowClass}
             data-codex-extension-workspace-list="skills"
           >
-            <button
-              type="button"
+            <Button
+              size="small"
               aria-label={`${skill.name} ${t('common.details')}`}
               onClick={() => openSkillDetail(skill)}
               className="absolute inset-0 z-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-border-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gt-surface-canvas)]"
@@ -707,15 +705,14 @@ function CodexMcpServersWorkspace() {
         subtitle={mcpHeaderSubtitle}
         actions={
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              className={codexExtensionsActionButtonClass}
+            <Button
+              size="small"
               onClick={() => void openConfigToml()}
               disabled={configEditor.loading}
+              icon={<FilePenLine className="h-3.5 w-3.5" />}
             >
-              <FilePenLine className="h-3.5 w-3.5" />
               {configEditor.loading ? t('common.loading') : t('codex_extensions.edit_config_toml')}
-            </button>
+            </Button>
             <RefreshActionButton
               onClick={() => void reloadServers()}
               disabled={loading}
@@ -746,9 +743,9 @@ function CodexMcpServersWorkspace() {
         contentClassName={codexExtensionsListContentClass}
       >
         {filteredServers.map((server) => (
-          <button
+          <Button
             key={server.id}
-            type="button"
+            size="small"
             onClick={() => openMcpServerEditor(server)}
             className={`${codexExtensionsListRowClass} w-full text-left text-[var(--gt-ink-primary)]`}
             data-codex-extension-workspace-list="mcp"
@@ -765,7 +762,7 @@ function CodexMcpServersWorkspace() {
                 {server.transport === 'stdio' ? 'stdio' : 'http'}
               </div>
             </div>
-          </button>
+          </Button>
         ))}
         {filteredServers.length === 0 ? (
           <div className={codexExtensionsEmptyClass}>

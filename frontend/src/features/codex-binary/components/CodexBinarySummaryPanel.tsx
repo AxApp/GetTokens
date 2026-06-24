@@ -1,4 +1,5 @@
 import { ShieldCheck } from 'lucide-react';
+import { Button } from 'antd';
 import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import type { CodexBinarySnapshot } from '../model';
 
@@ -6,8 +7,6 @@ const codexBinarySummaryPanelClass =
   'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 shadow-sm sm:p-4';
 const codexBinarySummaryTitleClass =
   'min-w-0 truncate text-xl font-semibold text-[var(--gt-ink-primary)]';
-const codexBinarySummaryActionButtonClass =
-  'inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-surface-canvas)] transition-colors hover:bg-[var(--gt-ink-secondary)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexBinarySummaryMetaClass =
   'mt-2 grid gap-x-5 gap-y-1 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]/55 px-2 py-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)] md:grid-cols-3';
 const codexBinarySummaryMessageClass =
@@ -59,15 +58,15 @@ export default function CodexBinarySummaryPanel({
 
         <div className="flex flex-wrap items-center gap-2 xl:justify-end">
           {snapshot?.managedConfig && !snapshot.managedConfig.isPathConfigured ? (
-            <button
-              type="button"
+            <Button
+              type="primary"
+              size="small"
               onClick={onEnableManagedPath}
               disabled={managedBusy}
-              className={codexBinarySummaryActionButtonClass}
+              icon={<ShieldCheck className="h-3.5 w-3.5" />}
             >
-              <ShieldCheck className="h-3.5 w-3.5" />
               {managedBusy ? t('codex_binary.managing') : t('codex_binary.enable_managed')}
-            </button>
+            </Button>
           ) : null}
           <RefreshActionButton
             onClick={onRefresh}

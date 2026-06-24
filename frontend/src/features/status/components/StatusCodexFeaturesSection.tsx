@@ -1,4 +1,5 @@
 import { Cpu, Info, MessageSquareText, Network, Timer } from 'lucide-react';
+import { Button, Tag } from 'antd';
 import SearchInput from '../../../components/ui/SearchInput';
 import type {
   CodexFeatureConfigSnapshot,
@@ -33,10 +34,6 @@ const codexFeatureTitleClass = 'font-mono text-[length:var(--gt-font-size-md)] f
 const codexFeatureMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const codexFeatureChipClass =
   'inline-flex shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
-const codexFeatureSecondaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const codexFeaturePrimaryButtonClass =
-  'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
 
 function resolveCodexFeatureDescription(t: (key: string) => string, row: CodexFeatureRow) {
   const translationKey = `status.codex_feature_descriptions.${row.key}`;
@@ -197,11 +194,11 @@ export default function StatusCodexFeaturesSection({
             <span className="min-w-0">{resolveCodexFeatureDescription(t, row)}</span>
           </div>
           {row.legacyAliases.length > 0 ? (
-            <div className="mt-2 inline-flex max-w-full rounded border border-dashed border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]">
+            <Tag color="default" className="mt-2 max-w-full border-dashed">
               <span className="truncate">
                 {t('status.codex_features_legacy_alias')}: {row.legacyAliases.join(', ')}
               </span>
-            </div>
+            </Tag>
           ) : null}
           {row.unsupported ? (
             <div className="mt-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
@@ -459,32 +456,23 @@ export default function StatusCodexFeaturesSection({
           <div className={`${codexFeatureChipClass} !px-3 !py-1 !text-[var(--gt-ink-primary)]`}>
             {dirtyCount} {t('status.codex_features_changed')}
           </div>
-          <button
-            type="button"
-            onClick={onReload}
-            disabled={isBusy}
-            className={codexFeatureSecondaryButtonClass}
-          >
+          <Button size="small" onClick={onReload} disabled={isBusy}>
             {isLoading ? t('status.codex_features_loading') : t('common.refresh')}
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="grid gap-3 border-b border-[var(--gt-border-subtle)] p-4">
         <div className="flex flex-wrap gap-2">
           {codexFeatureStageFilters.map((filter) => (
-            <button
+            <Button
               key={filter}
-              type="button"
+              size="small"
+              type={stageFilter === filter ? 'primary' : 'default'}
               onClick={() => onChangeStageFilter(filter)}
-              className={`rounded border px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal transition ${
-                stageFilter === filter
-                  ? 'border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
-                  : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
-              }`}
             >
               {t(`status.codex_features_filter_${filter}`)}
-            </button>
+            </Button>
           ))}
         </div>
         {showSearch ? (
@@ -554,30 +542,15 @@ export default function StatusCodexFeaturesSection({
           {t('status.codex_features_save_hint')}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onReset}
-            disabled={isBusy || !snapshot}
-            className={codexFeatureSecondaryButtonClass}
-          >
+          <Button size="small" onClick={onReset} disabled={isBusy || !snapshot}>
             {t('status.codex_features_reset')}
-          </button>
-          <button
-            type="button"
-            onClick={onPreview}
-            disabled={isBusy || dirtyCount === 0}
-            className={codexFeatureSecondaryButtonClass}
-          >
+          </Button>
+          <Button size="small" onClick={onPreview} disabled={isBusy || dirtyCount === 0}>
             {t('status.codex_features_preview')}
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={isBusy || dirtyCount === 0}
-            className={codexFeaturePrimaryButtonClass}
-          >
+          </Button>
+          <Button type="primary" size="small" onClick={onSave} disabled={isBusy || dirtyCount === 0}>
             {isSaving ? t('status.codex_features_saving') : t('common.save')}
-          </button>
+          </Button>
         </div>
       </div>
     </section>

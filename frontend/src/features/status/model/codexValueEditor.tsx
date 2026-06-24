@@ -1,3 +1,4 @@
+import { Button, Input, Tooltip } from 'antd';
 import { RotateCcw } from 'lucide-react';
 import type { ReactElement } from 'react';
 import SegmentedControl from '../../../components/ui/SegmentedControl';
@@ -41,17 +42,17 @@ export function renderCodexValueEditor(
   const editorKind = selectCodexValueEditorKind(row);
   const canRemove = Boolean(onRemoveSetting && row.hasLocalValue && !row.readOnly);
   const resetButton = canRemove ? (
-    <button
-      type="button"
-      aria-label={`移除 ${row.id} 本地配置`}
-      title="移除本地配置"
-      disabled={disabled}
-      onClick={() => onRemoveSetting?.(row.id)}
-      className={codexValueEditorResetButtonClass}
-      data-codex-value-editor-reset
-    >
-      <RotateCcw className="h-3.5 w-3.5" strokeWidth={3} />
-    </button>
+    <Tooltip title="移除本地配置">
+      <Button
+        size="small"
+        aria-label={`移除 ${row.id} 本地配置`}
+        disabled={disabled}
+        onClick={() => onRemoveSetting?.(row.id)}
+        className={codexValueEditorResetButtonClass}
+        data-codex-value-editor-reset
+        icon={<RotateCcw className="h-3.5 w-3.5" strokeWidth={3} />}
+      />
+    </Tooltip>
   ) : null;
 
   function withReset(control: ReactElement) {
@@ -122,12 +123,13 @@ export function renderCodexValueEditor(
             }}
           />
         ) : null}
-        <input
+        <Input
           type="number"
           value={String(value ?? '')}
           disabled={disabled || !enabled}
           onChange={(event) => onChangeSetting(row.id, event.target.value === '' ? '' : Number(event.target.value))}
           className={codexValueEditorInputClass}
+          size="small"
         />
       </div>
     );
@@ -135,7 +137,7 @@ export function renderCodexValueEditor(
 
   if (editorKind === 'string_array') {
     return withReset(
-      <textarea
+      <Input.TextArea
         value={stringifyCodexValue(value)}
         disabled={disabled}
         rows={4}
@@ -149,29 +151,32 @@ export function renderCodexValueEditor(
           )
         }
         className={codexValueEditorTextareaClass}
+        size="small"
       />
     );
   }
 
   if (editorKind === 'textarea') {
     return withReset(
-      <textarea
+      <Input.TextArea
         value={stringifyCodexValue(value)}
         disabled={disabled}
         rows={row.valueType === 'toml' ? 5 : 3}
         onChange={(event) => onChangeSetting(row.id, event.target.value)}
         className={codexValueEditorTextareaClass}
+        size="small"
       />
     );
   }
 
   return withReset(
-    <input
+    <Input
       type="text"
       value={String(value ?? '')}
       disabled={disabled}
       onChange={(event) => onChangeSetting(row.id, event.target.value)}
       className={codexValueEditorInputClass}
+      size="small"
     />
   );
 }

@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Button, Dropdown, Popconfirm, Popover, Segmented, Space, Tag } from 'antd';
+import { Button, Dropdown, Popconfirm, Popover, Segmented, Space, Tag, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import { Download, MoreVertical, Power, RefreshCw, SlidersHorizontal, Trash2 } from 'lucide-react';
 import SearchInput from '../../../components/ui/SearchInput';
@@ -632,14 +632,15 @@ export function AccountsSelectionActions({
               menu={{ items: bulkMenuItems }}
               trigger={['click']}
             >
-              <Button
-                size="small"
-                htmlType="button"
-                aria-label={t('common.more_actions')}
-                title={t('common.more_actions')}
-                disabled={selectedAccountCount === 0 || bulkActionPending !== null}
-                icon={<MoreVertical size={18} strokeWidth={3} />}
-              />
+              <Tooltip title={t('common.more_actions')}>
+                <Button
+                  size="small"
+                  htmlType="button"
+                  aria-label={t('common.more_actions')}
+                  disabled={selectedAccountCount === 0 || bulkActionPending !== null}
+                  icon={<MoreVertical size={18} strokeWidth={3} />}
+                />
+              </Tooltip>
             </Dropdown>
           </>
         ) : (

@@ -113,6 +113,12 @@ export default function ModalFrame({
     body: {
       minHeight: 0,
     },
+    close: {
+      position: 'absolute',
+      right: 16,
+      top: 16,
+      zIndex: 10,
+    },
   };
   const modalStyle: CSSProperties = {
     margin: 0,

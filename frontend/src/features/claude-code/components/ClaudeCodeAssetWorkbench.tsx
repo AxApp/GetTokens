@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+import { Button, Input, Tag } from 'antd';
 import {
   Boxes,
   Braces,
@@ -11,7 +13,6 @@ import {
   ShieldAlert,
   X,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
 import AssetWorkbenchShell from '../../../components/ui/AssetWorkbenchShell';
 import SearchInput from '../../../components/ui/SearchInput';
 import SegmentedControl from '../../../components/ui/SegmentedControl';
@@ -147,15 +148,7 @@ const toneClass: Record<'ready' | 'warning' | 'danger' | 'neutral', string> = {
 const claudeAssetPanelClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const claudeAssetMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const claudeAssetButtonClass =
-  'inline-flex min-h-8 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const claudeAssetPrimaryButtonClass =
-  'inline-flex min-h-8 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-2.5 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
-const claudeAssetInputClass =
-  'min-h-10 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
 const claudeAssetMetaTextClass = 'font-mono text-[10px] font-normal tracking-normal text-[var(--gt-ink-muted)]';
-const claudeAssetBadgeClass =
-  'inline-flex items-center justify-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-1.5 py-0.5 font-mono text-[10px] font-normal tracking-normal text-[var(--gt-ink-muted)]';
 
 export function ClaudeCodeAssetWorkbench({
   state,
@@ -272,7 +265,7 @@ function Metric({ label, value }: { label: string; value: number }) {
 }
 
 function Badge({ children }: { children: ReactNode }) {
-  return <span className={claudeAssetBadgeClass}>{children}</span>;
+  return <Tag color="default">{children}</Tag>;
 }
 
 function SectionTitle({ icon, title, note }: { icon: ReactNode; title: string; note: string }) {
@@ -320,9 +313,9 @@ function SkillAssetMatrix({ skills }: { skills: readonly ClaudeCodeSkillAsset[] 
               <div className="flex flex-wrap items-center gap-2">
                 <span className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-lg)] font-semibold">{skill.name}</span>
                 <ScopeBadge scope={skill.scope} />
-                <span className={`${claudeAssetBadgeClass} ${frontmatterTone(skill.frontmatterStatus)}`}>
+                <Tag color={skill.frontmatterStatus === 'valid' ? 'success' : skill.frontmatterStatus === 'invalid' ? 'error' : 'warning'}>
                   {skill.frontmatterStatus}
-                </span>
+                </Tag>
                 <Badge>{skill.invocation}</Badge>
               </div>
               <p className="mt-1 line-clamp-2 text-[length:var(--gt-font-size-sm)] font-normal leading-snug text-[var(--gt-ink-muted)]">{skill.description}</p>
@@ -393,19 +386,13 @@ function McpAssetMatrix({
                   <span className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-lg-compact)] font-semibold">{server.label}</span>
                   <ScopeBadge scope={server.scope} />
                   <Badge>{server.transport}</Badge>
-                  <span
-                    className={`${claudeAssetBadgeClass} ${
-                      server.active
-                        ? 'border-[var(--gt-status-success)] text-[var(--gt-status-success)]'
-                        : 'border-[var(--gt-status-warning)] text-[var(--gt-status-warning)]'
-                    }`}
-                  >
+                  <Tag color={server.active ? 'success' : 'warning'}>
                     {server.active ? 'active' : 'shadowed'}
-                  </span>
+                  </Tag>
                   {server.dirty ? (
-                    <span className={`${claudeAssetBadgeClass} border-[var(--gt-status-danger)] text-[var(--gt-status-danger)]`}>
+                    <Tag color="error">
                       dirty
-                    </span>
+                    </Tag>
                   ) : null}
                 </div>
                 <div className="mt-2 grid gap-1 font-mono text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]">
@@ -419,15 +406,14 @@ function McpAssetMatrix({
                   <span>{server.secretState === 'redacted' ? 'secret redacted' : 'no secret'}</span>
                   <span>{server.scope} scope</span>
                 </div>
-                <button
-                  type="button"
-                  className={claudeAssetButtonClass}
+                <Button
+                  size="small"
                   onClick={() => onStartEdit?.(server)}
                   disabled={!onStartEdit}
+                  icon={<FilePenLine className="h-3.5 w-3.5" />}
                 >
-                  <FilePenLine className="h-3.5 w-3.5" />
                   Edit
-                </button>
+                </Button>
               </div>
             </div>
             {editingServerID === mcpServerEditKey(server) ? (
@@ -435,21 +421,19 @@ function McpAssetMatrix({
                 <SegmentedControl options={mcpTransportOptions} value={draftTransport} onChange={onDraftTransportChange ?? (() => undefined)} />
                 <label className="grid gap-1 text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]">
                   Endpoint
-                  <input
-                    className={claudeAssetInputClass}
+                  <Input
+                    size="small"
                     value={draftEndpoint}
                     onChange={(event) => onDraftEndpointChange?.(event.target.value)}
                   />
                 </label>
                 <div className="flex flex-wrap gap-2 md:justify-end">
-                  <button type="button" className={claudeAssetPrimaryButtonClass} onClick={() => onSaveDraft?.(server)} disabled={!onSaveDraft || savingServerID === mcpServerEditKey(server)}>
-                    <Save className="h-3.5 w-3.5" />
+                  <Button type="primary" size="small" onClick={() => onSaveDraft?.(server)} disabled={!onSaveDraft || savingServerID === mcpServerEditKey(server)} icon={<Save className="h-3.5 w-3.5" />}>
                     {savingServerID === mcpServerEditKey(server) ? 'Saving' : 'Save'}
-                  </button>
-                  <button type="button" className={claudeAssetButtonClass} onClick={onCancelEdit}>
-                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="small" onClick={onCancelEdit} icon={<X className="h-3.5 w-3.5" />}>
                     Cancel
-                  </button>
+                  </Button>
                 </div>
                 {saveMessage ? <div className="font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)] md:col-span-3">{saveMessage}</div> : null}
               </div>
@@ -529,10 +513,10 @@ function ScopeBadge({ scope }: { scope: ClaudeCodeAssetScope }) {
     scope === 'project' ? <Layers3 className="h-3 w-3" /> : scope === 'local' ? <KeyRound className="h-3 w-3" /> : <Braces className="h-3 w-3" />;
 
   return (
-    <span className={`${claudeAssetBadgeClass} min-w-[5.5rem]`}>
+    <Tag color="default" className="min-w-[5.5rem]">
       {icon}
       {scope}
-    </span>
+    </Tag>
   );
 }
 

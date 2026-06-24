@@ -1,4 +1,4 @@
-import { Button, Card } from 'antd';
+import { Button, Card, Checkbox } from 'antd';
 import { useI18n } from '../../../context/I18nContext';
 
 interface DebugEntryCardProps {
@@ -44,8 +44,7 @@ export default function DebugEntryCard({
       >
         <div className="flex items-start gap-3">
           <label className="mt-0.5 flex cursor-pointer items-center">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={isSelected}
               onChange={() => onToggleEntry(entry.id)}
               className="h-4 w-4 rounded accent-[var(--gt-accent-primary)]"

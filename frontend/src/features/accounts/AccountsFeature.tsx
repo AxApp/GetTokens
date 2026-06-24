@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "antd";
 import {
   ApplyClaudeCodeAPIKeyConfigToLocal,
   ApplyDeepLinkImport,
@@ -121,17 +122,12 @@ const accountsFeatureNoticeToneClass = {
   neutral:
     "border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]",
 } satisfies Record<"error" | "warning" | "success" | "neutral", string>;
-const accountsFeatureInlineButtonClass =
-  "inline-flex h-7 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]";
 const accountsFeatureEmptyStateClass =
   "grid gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-16 text-center";
 const accountsFeatureEmptyTitleClass =
   "font-mono text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]";
 const accountsFeatureEmptyBodyClass =
   "mx-auto max-w-2xl text-[length:var(--gt-font-size-sm)] font-normal tracking-normal text-[var(--gt-ink-muted)]";
-const accountsFeatureEmptyActionButtonClass =
-  "inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]";
-
 export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const { t } = useI18n();
   const { trackRequest } = useDebug();
@@ -1521,13 +1517,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               className={`${accountsFeatureNoticeClass} ${accountsFeatureNoticeToneClass[accountActionNotice.tone]}`}
             >
               <span>{accountActionNotice.message}</span>
-              <button
-                type="button"
-                onClick={() => setAccountActionNotice(null)}
-                className={accountsFeatureInlineButtonClass}
-              >
+              <Button size="small" onClick={() => setAccountActionNotice(null)}>
                 {t("common.close")}
-              </button>
+              </Button>
             </div>
           ) : null}
 
@@ -1546,13 +1538,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             >
               <span>{oauthBanner.message}</span>
               {!isOAuthPending ? (
-                <button
-                  type="button"
-                  onClick={() => setOAuthBanner(null)}
-                  className={accountsFeatureInlineButtonClass}
-                >
+                <Button size="small" onClick={() => setOAuthBanner(null)}>
                   {t("common.close")}
-                </button>
+                </Button>
               ) : null}
             </div>
           ) : null}
@@ -1574,22 +1562,14 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               {accountsEmptyState.kind === 'filtered' ? (
                 <div className="flex flex-wrap justify-center gap-2">
                   {accountsEmptyState.showClearSearch ? (
-                    <button
-                      type="button"
-                      onClick={() => setSearchTerm('')}
-                      className={accountsFeatureEmptyActionButtonClass}
-                    >
+                    <Button size="small" onClick={() => setSearchTerm('')}>
                       {t('common.clear_search')}
-                    </button>
+                    </Button>
                   ) : null}
                   {accountsEmptyState.showResetFilters ? (
-                    <button
-                      type="button"
-                      onClick={() => setFilters({ ...defaultAccountsFilterState })}
-                      className={accountsFeatureEmptyActionButtonClass}
-                    >
+                    <Button size="small" onClick={() => setFilters({ ...defaultAccountsFilterState })}>
                       {t('accounts.filter_reset')}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               ) : null}

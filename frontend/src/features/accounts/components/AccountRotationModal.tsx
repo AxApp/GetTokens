@@ -1,4 +1,5 @@
 import { type DragEvent } from 'react';
+import { Button } from 'antd';
 import { X } from 'lucide-react';
 import { useI18n } from '../../../context/I18nContext';
 import type { AccountRecord } from '../../../types';
@@ -25,12 +26,6 @@ const accountRotationModalSectionTitleClass =
   'text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)]';
 const accountRotationModalMetaClass =
   'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
-const accountRotationModalCloseButtonClass =
-  '!absolute right-4 top-4 !z-10 !grid !h-8 !w-8 !min-w-8 !place-items-center !rounded-md !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !text-[var(--gt-ink-muted)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] hover:!text-[var(--gt-ink-primary)]';
-const accountRotationModalButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-45';
-const accountRotationModalPrimaryButtonClass =
-  `${accountRotationModalButtonClass} bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-muted)]`;
 const accountRotationModalNoticeClass =
   'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]';
 
@@ -94,9 +89,12 @@ export default function AccountRotationModal({
               <span className={accountRotationModalMetaClass}>{routingMessage}</span>
             </div>
           </div>
-          <button type="button" onClick={onClose} className={accountRotationModalCloseButtonClass} aria-label={t('common.close')}>
-            <X size={14} />
-          </button>
+          <Button
+            onClick={onClose}
+            aria-label={t('common.close')}
+            icon={<X size={14} />}
+            className="!absolute right-4 top-4 !z-10"
+          />
         </header>
 
         <div className={accountRotationModalBodyClass} data-account-rotation-modal-body>
@@ -159,17 +157,16 @@ export default function AccountRotationModal({
         </div>
 
         <footer className={accountRotationModalFooterClass} data-account-rotation-modal-footer>
-          <button type="button" onClick={onClose} className={accountRotationModalButtonClass}>
+          <Button onClick={onClose}>
             {t('common.cancel')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            type="primary"
             onClick={() => void saveChanges()}
             disabled={isSaving || !ready || (!orderChanged && !routingChanged)}
-            className={accountRotationModalPrimaryButtonClass}
           >
             {isSaving ? t('status.routing_saving') : t('accounts.rotation_save')}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>

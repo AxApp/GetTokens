@@ -1,4 +1,5 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
+import { Input, Select } from 'antd';
+import type { ReactNode } from 'react';
 
 export interface FormFieldOption {
   value: string;
@@ -63,14 +64,16 @@ export function FieldLabel({ children }: { children: ReactNode }) {
   );
 }
 
-const quietControlClass =
-  'h-9 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] hover:border-[var(--gt-border-strong)] focus:border-[var(--gt-ink-muted)] disabled:cursor-not-allowed disabled:bg-[var(--gt-surface-muted)] disabled:text-[var(--gt-ink-muted)]';
-
-interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children' | 'onChange'> {
+interface SelectFieldProps {
   title: string;
   options: readonly FormFieldOption[];
   onChange: (value: string) => void;
   fieldClassName?: string;
+  className?: string;
+  value?: string;
+  disabled?: boolean;
+  placeholder?: string;
+  name?: string;
 }
 
 export function SelectField({
@@ -83,37 +86,49 @@ export function SelectField({
 }: SelectFieldProps) {
   return (
     <FormField title={title} className={fieldClassName}>
-      <select
+      <Select
         {...selectProps}
-        onChange={(event) => onChange(event.target.value)}
-        className={`${quietControlClass} w-full ${className}`}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value} disabled={option.disabled}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        onChange={onChange}
+        className={`w-full ${className}`}
+        options={options.map((option) => ({
+          value: option.value,
+          label: option.label,
+          disabled: option.disabled,
+        }))}
+      />
     </FormField>
   );
 }
 
-interface TextInputFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'children'> {
+interface TextInputFieldProps {
   title: string;
   fieldClassName?: string;
+  className?: string;
+  value?: string;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  readOnly?: boolean;
+  name?: string;
+  type?: string;
+  inputMode?: 'email' | 'url' | 'text' | 'search' | 'none' | 'tel' | 'numeric' | 'decimal';
+  'aria-label'?: string;
 }
 
 export function TextInputField({
   title,
   fieldClassName = '',
   className = '',
+  onChange,
   ...inputProps
-}: TextInputFieldProps) {
+}: TextInputFieldProps & Record<string, unknown>) {
   return (
     <FormField title={title} className={fieldClassName}>
-      <input {...inputProps} className={`${quietControlClass} w-full ${className}`} />
+      <Input
+        {...(inputProps as Record<string, unknown>)}
+        onChange={onChange as React.ComponentProps<typeof Input>['onChange']}
+        className={`w-full ${className}`}
+      />
     </FormField>
   );
 }
-
-export { quietControlClass };

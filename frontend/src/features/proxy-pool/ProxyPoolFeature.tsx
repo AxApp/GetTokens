@@ -1,6 +1,6 @@
-import { Download, FileInput, ListChecks, MoreVertical, Pencil, Play, Plus, RefreshCw, Trash2, Upload, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
-import { AutoComplete, Button } from 'antd';
+import { Download, FileInput, ListChecks, MoreVertical, Pencil, Play, Plus, RefreshCw, Trash2, Upload as UploadIcon, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { AutoComplete, Button, Checkbox, Input, Select, Upload } from 'antd';
 import { FetchProxySubscription, ProbeProxyNode } from '../../../wailsjs/go/main/App';
 
 import SearchInput from '../../components/ui/SearchInput';
@@ -55,7 +55,6 @@ import {
 
 export default function ProxyPoolFeature() {
   const { trackRequest } = useDebug();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const headerMenuRef = useRef<HTMLDivElement | null>(null);
   const [nodes, setNodes] = useState<ProxyNodeRecord[]>(() => {
     if (typeof window === 'undefined') {
@@ -377,12 +376,7 @@ export default function ProxyPoolFeature() {
     }
   }
 
-  function handleImportFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
+  function handleImportFileChange(file: File) {
     void file.text().then(
       (content) => {
         setImportText(content);
@@ -392,8 +386,6 @@ export default function ProxyPoolFeature() {
         setImportError('读取本地文件失败。');
       },
     );
-
-    event.target.value = '';
   }
 
   function handleSubscriptionURLChange(value: string) {
@@ -565,36 +557,38 @@ export default function ProxyPoolFeature() {
           actionsClassName="gap-2"
           actions={
             <>
-              <input
-                ref={fileInputRef}
-                type="file"
+              <Upload
                 accept="application/json,.json"
-                className="hidden"
-                onChange={handleImportFileChange}
-              />
-              <button
-                type="button"
+                showUploadList={false}
+                beforeUpload={(file) => {
+                  void handleImportFileChange(file);
+                  return false;
+                }}
+              >
+                <span className="hidden" />
+              </Upload>
+              <Button
+                type="primary"
+                size="small"
                 aria-label="新增代理"
                 title="新增代理"
                 onClick={openCreateModal}
-                className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] shadow-sm transition hover:opacity-90"
-              >
-                <Plus className="h-5 w-5" strokeWidth={2.5} />
-              </button>
+                icon={<Plus className="h-5 w-5" strokeWidth={2.5} />}
+                className="inline-flex h-10 w-10 items-center justify-center rounded"
+              />
               <div ref={headerMenuRef} className="relative">
-                <button
-                  type="button"
+                <Button
+                  size="small"
                   aria-label="更多操作"
                   title="更多操作"
                   onClick={() => setIsHeaderMenuOpen((prev) => !prev)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
-                >
-                  <MoreVertical className="h-5 w-5" strokeWidth={2.5} />
-                </button>
+                  icon={<MoreVertical className="h-5 w-5" strokeWidth={2.5} />}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded"
+                />
                 {isHeaderMenuOpen ? (
                   <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 flex min-w-[240px] flex-col gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-sm">
                     <MenuActionButton
-                      icon={<Upload className="h-4 w-4" strokeWidth={2.3} />}
+                      icon={<UploadIcon className="h-4 w-4" strokeWidth={2.3} />}
                       label="导入列表"
                       description="粘贴文本或导入 JSON"
                       onClick={openImportModal}
@@ -705,35 +699,31 @@ export default function ProxyPoolFeature() {
           {isSelectionMode ? (
             <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--gt-border-subtle)] pt-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               <span className="mr-1">{selectedCount > 0 ? `已选 ${selectedCount}` : '选择模式'}</span>
-              <button type="button" onClick={toggleSelectCurrentPage} className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
+              <Button size="small" onClick={toggleSelectCurrentPage} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
                 {allCurrentPageSelected ? '取消当前页' : '全选当前页'}
-              </button>
-              <button type="button" onClick={toggleSelectAllFiltered} className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
+              </Button>
+              <Button size="small" onClick={toggleSelectAllFiltered} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
                 {allFilteredSelected ? '取消当前筛选' : '全选当前筛选'}
-              </button>
+              </Button>
               {selectedCount > 0 ? (
                 <>
-                  <button type="button" onClick={handleSelectedRetest} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
-                    <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.4} />
+                  <Button size="small" onClick={handleSelectedRetest} icon={<RefreshCw className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
                     测速
-                  </button>
-                  <button type="button" onClick={exportSelectedNodes} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
-                    <Download className="h-3.5 w-3.5" strokeWidth={2.4} />
+                  </Button>
+                  <Button size="small" onClick={exportSelectedNodes} icon={<Download className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
                     导出
-                  </button>
-                  <button type="button" onClick={clearSelection} className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)]">
-                    <X className="h-3.5 w-3.5" strokeWidth={2.4} />
+                  </Button>
+                  <Button size="small" onClick={clearSelection} icon={<X className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
                     清空
-                  </button>
-                  <button type="button" onClick={handleBatchDelete} className="inline-flex h-8 items-center gap-1.5 rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-status-danger)] transition hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_16%,transparent)]">
-                    <Trash2 className="h-3.5 w-3.5" strokeWidth={2.4} />
+                  </Button>
+                  <Button size="small" onClick={handleBatchDelete} icon={<Trash2 className="h-3.5 w-3.5" strokeWidth={2.4} />} className="inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition !border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] !bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] !text-[var(--gt-status-danger)] hover:!bg-[color-mix(in_srgb,var(--gt-status-danger)_16%,transparent)]">
                     删除
-                  </button>
+                  </Button>
                 </>
               ) : null}
-              <button type="button" onClick={disableSelectionMode} className="ml-auto inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-border-strong)] hover:text-[var(--gt-ink-primary)]">
+              <Button size="small" onClick={disableSelectionMode} className="ml-auto inline-flex h-8 items-center rounded px-2.5 text-[length:var(--gt-font-size-xs)] font-normal transition">
                 结束选择
-              </button>
+              </Button>
             </div>
           ) : null}
         </section>
@@ -797,36 +787,32 @@ export default function ProxyPoolFeature() {
               <span>
                 当前页 {pageNodes.length} 条 / 筛选后 {filteredNodes.length} 条
               </span>
-              <select
+              <Select
+                size="small"
                 value={pageSize}
-                onChange={(event) => setPageSize(Number(event.target.value))}
-                className="h-8 min-w-[96px] rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none"
-              >
-                {proxyPoolPageSizeOptions.map((size) => (
-                  <option key={size} value={size}>
-                    {size} / 页
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setPageSize(Number(val))}
+                options={proxyPoolPageSizeOptions.map((size) => ({ value: size, label: `${size} / 页` }))}
+                className="min-w-[96px]"
+              />
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                size="small"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
-                className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-8 items-center rounded px-3 text-[length:var(--gt-font-size-xs)] font-normal transition disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={pagination.page <= 1}
               >
                 上一页
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                size="small"
                 onClick={() => setPage((current) => Math.min(pagination.pageCount, current + 1))}
-                className="inline-flex h-8 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-8 items-center rounded px-3 text-[length:var(--gt-font-size-xs)] font-normal transition disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={pagination.page >= pagination.pageCount}
               >
                 下一页
-              </button>
+              </Button>
             </div>
           </div>
         </section>
@@ -851,7 +837,7 @@ export default function ProxyPoolFeature() {
           onChange={setImportText}
           onChangeOptions={setImportOptions}
           onClose={closeImportModal}
-          onOpenFilePicker={() => fileInputRef.current?.click()}
+          onImportFile={handleImportFileChange}
           onSubmit={submitImport}
         />
       ) : null}
@@ -953,8 +939,7 @@ function ProxyNodeRow({
     <tr className="border-t border-[var(--gt-border-subtle)] first:border-t-0 hover:bg-[var(--gt-surface-muted)]">
       {selectionEnabled ? (
         <td className="w-10 px-2 py-3 align-middle">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={selected}
             onChange={() => onToggleSelect(node.id)}
             className="h-4 w-4 accent-[var(--gt-status-danger)]"
@@ -980,16 +965,15 @@ function ProxyNodeRow({
       </td>
       <td className="w-[112px] px-3 py-3 align-middle">
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
+          <Button
+            size="small"
             aria-label={probing ? '测速中' : '测速'}
             title={probing ? '测速中' : '测速'}
             onClick={() => onRetest(node.id)}
             disabled={probing}
-            className="flex h-8 w-8 items-center justify-center rounded bg-transparent text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${probing ? 'animate-spin' : ''}`} strokeWidth={2.4} />
-          </button>
+            icon={<RefreshCw className={`h-3.5 w-3.5 ${probing ? 'animate-spin' : ''}`} strokeWidth={2.4} />}
+            className="flex h-8 w-8 items-center justify-center rounded disabled:cursor-not-allowed disabled:opacity-50"
+          />
           <ProxyNodeActionsMenu onEdit={onEdit} onDelete={() => onDelete(node.id)} />
         </div>
       </td>
@@ -1026,14 +1010,13 @@ function ProxyNodeActionsMenu({
 
   return (
     <div ref={menuRef} className="relative">
-      <button
-        type="button"
+      <Button
+        size="small"
         aria-label="更多操作"
         onClick={() => setOpen((current) => !current)}
-        className="flex h-8 w-8 items-center justify-center rounded bg-transparent text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] active:scale-95"
-      >
-        <MoreVertical className="h-4 w-4" strokeWidth={2.4} />
-      </button>
+        icon={<MoreVertical className="h-4 w-4" strokeWidth={2.4} />}
+        className="flex h-8 w-8 items-center justify-center rounded active:scale-95"
+      />
       {open ? (
         <div className="absolute right-0 top-[calc(100%+0.5rem)] z-10 flex min-w-[140px] flex-col gap-1 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] p-1.5 shadow-sm">
           <ActionButton
@@ -1065,10 +1048,6 @@ const proxyPoolModalBackdropClass = 'fixed inset-0 z-50 flex items-center justif
 const proxyPoolModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const proxyPoolModalHeaderClass = 'border-b border-[var(--gt-border-subtle)] px-6 py-4';
 const proxyPoolModalFooterClass = 'flex items-center justify-between border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4';
-const proxyPoolInputClass = 'h-10 w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-lg)] font-normal text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
-const proxyPoolTextareaClass = 'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-lg)] font-normal text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-border-strong)]';
-const proxyPoolSecondaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
-const proxyPoolPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90';
 const proxyPoolErrorClass = 'rounded border border-[color-mix(in_srgb,var(--gt-status-danger)_34%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]';
 
 function ProxyNodeComposeModal({
@@ -1100,61 +1079,46 @@ function ProxyNodeComposeModal({
         </header>
         <div className="grid gap-4 p-6 md:grid-cols-2">
           <FormField label="节点名称">
-            <input value={draft.name} onChange={(event) => onChange('name', event.target.value)} className={proxyPoolInputClass} placeholder="例如：首尔 Lambda" />
+            <Input size="small" value={draft.name} onChange={(event) => onChange('name', event.target.value)} placeholder="例如：首尔 Lambda" />
           </FormField>
           <FormField label="分组">
-            <select value={draft.group} onChange={(event) => onChange('group', event.target.value)} className={proxyPoolInputClass}>
-              {proxyNodeGroups.map((group) => (
-                <option key={group} value={group}>
-                  {group}
-                </option>
-              ))}
-            </select>
+            <Select size="small" value={draft.group} onChange={(val) => onChange('group', val)} options={proxyNodeGroups.map((group) => ({ value: group, label: group }))} />
           </FormField>
           <FormField label="协议">
-            <select value={draft.protocol} onChange={(event) => onChange('protocol', event.target.value)} className={proxyPoolInputClass}>
-              {proxyNodeProtocols.map((protocol) => (
-                <option key={protocol} value={protocol}>
-                  {protocol}
-                </option>
-              ))}
-            </select>
+            <Select size="small" value={draft.protocol} onChange={(val) => onChange('protocol', val)} options={proxyNodeProtocols.map((protocol) => ({ value: protocol, label: protocol }))} />
           </FormField>
           <FormField label="来源标签">
-            <input value={draft.sourceLabel} onChange={(event) => onChange('sourceLabel', event.target.value)} className={proxyPoolInputClass} placeholder="例如：hookzof/socks5_list" />
+            <Input size="small" value={draft.sourceLabel} onChange={(event) => onChange('sourceLabel', event.target.value)} placeholder="例如：hookzof/socks5_list" />
           </FormField>
           <FormField label="来源链接">
-            <input value={draft.sourceURL} onChange={(event) => onChange('sourceURL', event.target.value)} className={proxyPoolInputClass} placeholder="例如：https://example.com/proxy.txt" />
+            <Input size="small" value={draft.sourceURL} onChange={(event) => onChange('sourceURL', event.target.value)} placeholder="例如：https://example.com/proxy.txt" />
           </FormField>
           <FormField label="代理地址">
-            <input value={draft.host} onChange={(event) => onChange('host', event.target.value)} className={proxyPoolInputClass} placeholder="例如：127.0.0.1" />
+            <Input size="small" value={draft.host} onChange={(event) => onChange('host', event.target.value)} placeholder="例如：127.0.0.1" />
           </FormField>
           <FormField label="端口">
-            <input value={draft.port} onChange={(event) => onChange('port', event.target.value)} className={proxyPoolInputClass} inputMode="numeric" placeholder="1080" />
+            <Input size="small" value={draft.port} onChange={(event) => onChange('port', event.target.value)} inputMode="numeric" placeholder="1080" />
           </FormField>
           <FormField label="状态">
-            <select value={draft.status} onChange={(event) => onChange('status', event.target.value)} className={proxyPoolInputClass}>
-              <option value="available">可用</option>
-              <option value="review">待复查</option>
-            </select>
+            <Select size="small" value={draft.status} onChange={(val) => onChange('status', val)} options={[{ value: 'available', label: '可用' }, { value: 'review', label: '待复查' }]} />
           </FormField>
           <FormField label="延时（ms）">
-            <input value={draft.latencyMs} onChange={(event) => onChange('latencyMs', event.target.value)} className={proxyPoolInputClass} inputMode="numeric" placeholder="180" />
+            <Input size="small" value={draft.latencyMs} onChange={(event) => onChange('latencyMs', event.target.value)} inputMode="numeric" placeholder="180" />
           </FormField>
           <FormField label="可用率（%）">
-            <input
+            <Input size="small"
               value={draft.availabilityRate}
               onChange={(event) => onChange('availabilityRate', event.target.value)}
-              className={proxyPoolInputClass}
               inputMode="numeric"
               placeholder="95"
             />
           </FormField>
           <FormField label="备注" className="md:col-span-2">
-            <textarea
+            <Input.TextArea
+              size="small"
               value={draft.note}
               onChange={(event) => onChange('note', event.target.value)}
-              className={`${proxyPoolTextareaClass} min-h-28 resize-y leading-6`}
+              className="min-h-28 resize-y"
               placeholder="补充这条本地节点的用途、风险或说明。"
             />
           </FormField>
@@ -1165,12 +1129,12 @@ function ProxyNodeComposeModal({
           ) : null}
         </div>
         <footer className={proxyPoolModalFooterClass}>
-          <button type="button" onClick={onClose} className={proxyPoolSecondaryButtonClass}>
+          <Button size="small" onClick={onClose}>
             取消
-          </button>
-          <button type="button" onClick={onSubmit} className={proxyPoolPrimaryButtonClass}>
+          </Button>
+          <Button type="primary" size="small" onClick={onSubmit}>
             {isEditing ? '保存修改' : '添加节点'}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>
@@ -1184,7 +1148,7 @@ function ProxyPoolImportModal({
   onChange,
   onChangeOptions,
   onClose,
-  onOpenFilePicker,
+  onImportFile,
   onSubmit,
 }: {
   value: string;
@@ -1193,7 +1157,7 @@ function ProxyPoolImportModal({
   onChange: (value: string) => void;
   onChangeOptions: (value: ProxyImportOptions) => void;
   onClose: () => void;
-  onOpenFilePicker: () => void;
+  onImportFile: (file: File) => void;
   onSubmit: () => void;
 }) {
   return (
@@ -1209,46 +1173,56 @@ function ProxyPoolImportModal({
         <div className="space-y-4 p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <FormField label="来源标签">
-              <input
+              <Input
+                size="small"
                 value={options.sourceLabel ?? ''}
                 onChange={(event) => onChangeOptions({ ...options, sourceLabel: event.target.value })}
-                className={proxyPoolInputClass}
                 placeholder="例如：hookzof/socks5_list"
               />
             </FormField>
             <FormField label="来源链接">
-              <input
+              <Input
+                size="small"
                 value={options.sourceURL ?? ''}
                 onChange={(event) => onChangeOptions({ ...options, sourceURL: event.target.value })}
-                className={proxyPoolInputClass}
                 placeholder="例如：https://example.com/proxy.txt"
               />
             </FormField>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" onClick={onOpenFilePicker} className={proxyPoolSecondaryButtonClass}>
-              读取本地 JSON 文件
-            </button>
+            <Upload
+              accept="application/json,.json"
+              showUploadList={false}
+              beforeUpload={(file) => {
+                onImportFile(file);
+                return false;
+              }}
+            >
+              <Button size="small">
+                读取本地 JSON 文件
+              </Button>
+            </Upload>
             <div className="min-w-0 flex-1 text-[length:var(--gt-font-size-sm)] font-normal leading-5 text-[var(--gt-ink-muted)]">
               支持粘贴导出的 JSON 数组，也支持逐行填写 `scheme://host:port` 或 `host:port`。重复 ID 会在导入时自动覆盖。
             </div>
           </div>
-          <textarea
+          <Input.TextArea
+            size="small"
             autoFocus
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            className={`${proxyPoolTextareaClass} h-72 resize-none font-mono text-sm leading-6`}
+            className="h-72 resize-none font-mono text-sm"
             placeholder={'[{"id":"proxy-sha-01","name":"上海 Alpha",...}]\n或\nsocks5://127.0.0.1:1080\n10.0.0.8:8080'}
           />
           {error ? <div className={proxyPoolErrorClass}>{error}</div> : null}
         </div>
         <footer className={proxyPoolModalFooterClass}>
-          <button type="button" onClick={onClose} className={proxyPoolSecondaryButtonClass}>
+          <Button size="small" onClick={onClose}>
             取消
-          </button>
-          <button type="button" onClick={onSubmit} className={proxyPoolPrimaryButtonClass}>
+          </Button>
+          <Button type="primary" size="small" onClick={onSubmit}>
             导入列表
-          </button>
+          </Button>
         </footer>
       </div>
     </div>
@@ -1284,19 +1258,19 @@ function ProxyPoolSubscriptionModal({
         </header>
         <div className="grid gap-4 p-6">
           <FormField label="订阅链接">
-            <input
+            <Input
+              size="small"
               autoFocus
               value={url}
               onChange={(event) => onChangeURL(event.target.value)}
-              className={proxyPoolInputClass}
               placeholder="例如：https://raw.githubusercontent.com/hookzof/socks5_list/master/proxy.txt"
             />
           </FormField>
           <FormField label="来源标签">
-            <input
+            <Input
+              size="small"
               value={sourceLabel}
               onChange={(event) => onChangeSourceLabel(event.target.value)}
-              className={proxyPoolInputClass}
               placeholder="例如：hookzof/socks5_list"
             />
           </FormField>
@@ -1306,12 +1280,12 @@ function ProxyPoolSubscriptionModal({
           {error ? <div className={proxyPoolErrorClass}>{error}</div> : null}
         </div>
         <footer className={proxyPoolModalFooterClass}>
-          <button type="button" onClick={onClose} className={proxyPoolSecondaryButtonClass}>
+          <Button size="small" onClick={onClose}>
             取消
-          </button>
-          <button type="button" onClick={onSubmit} className={proxyPoolPrimaryButtonClass}>
+          </Button>
+          <Button type="primary" size="small" onClick={onSubmit}>
             拉取并导入
-          </button>
+          </Button>
         </footer>
       </div>
     </div>
@@ -1347,9 +1321,9 @@ function ProxyPoolSubscriptionManagerModal({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">{sources.length} 个订阅源</span>
-            <button type="button" onClick={onRefreshAll} className={proxyPoolSecondaryButtonClass}>
+            <Button size="small" onClick={onRefreshAll}>
               刷新全部
-            </button>
+            </Button>
           </div>
         </header>
         <div className="max-h-[70vh] overflow-auto p-4 md:p-6">
@@ -1419,9 +1393,9 @@ function ProxyPoolSubscriptionManagerModal({
           )}
         </div>
         <footer className="flex items-center justify-end border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4">
-          <button type="button" onClick={onClose} className={proxyPoolSecondaryButtonClass}>
+          <Button size="small" onClick={onClose}>
             关闭
-          </button>
+          </Button>
         </footer>
       </div>
     </div>
@@ -1458,14 +1432,14 @@ function SortableTableHead({
 
   return (
     <TableHead className={className}>
-      <button
-        type="button"
+      <Button
+        size="small"
         onClick={() => onSort(sortKey)}
         className="inline-flex items-center gap-1.5 transition-colors hover:text-[var(--gt-ink-primary)]"
       >
         <span>{children}</span>
         <span className={isActive ? 'text-[var(--gt-status-info)]' : 'text-[var(--gt-ink-muted)]'}>{arrow}</span>
-      </button>
+      </Button>
     </TableHead>
   );
 }
@@ -1484,14 +1458,14 @@ function ActionButton({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-8 items-center justify-start gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-left text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''} ${className}`}
+      className={`inline-flex h-8 items-center justify-start gap-1.5 rounded px-2.5 text-left text-[length:var(--gt-font-size-xs)] font-normal transition disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-[var(--gt-status-danger)]' : ''} ${className}`}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -1507,8 +1481,8 @@ function MenuActionButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
       onClick={onClick}
       className="flex w-full items-start gap-2 rounded px-2.5 py-2 text-left transition hover:bg-[var(--gt-surface-muted)]"
     >
@@ -1517,7 +1491,7 @@ function MenuActionButton({
         <span className="block text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">{label}</span>
         <span className="mt-0.5 block text-[length:var(--gt-font-size-xs)] font-normal leading-4 text-[var(--gt-ink-muted)]">{description}</span>
       </span>
-    </button>
+    </Button>
   );
 }
 

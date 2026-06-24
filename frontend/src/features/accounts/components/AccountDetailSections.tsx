@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { Input, Select } from 'antd';
+import { Button, Input, Select, Tooltip } from 'antd';
+import { FileText, Play, Plus, RotateCcw, Search } from 'lucide-react';
 import type { AccountRecord, ApiFormat, BillingDisplay } from '../../../types';
 import type { main } from '../../../../wailsjs/go/models';
 import {
@@ -29,8 +30,8 @@ import {
   type AccountProxyRouteDraft,
 } from '../model/accountProxyRoute.ts';
 import { buildQuotaDisplay, normalizeQuotaTestDisplay, selectQuotaWindows } from '../model/accountQuota';
-import type { AccountRouteResilienceEvidence } from '../model/accountPresentation';
 import type { AccountUsageSummary } from '../model/accountUsage';
+import type { AccountRouteResilienceEvidence } from '../model/accountPresentation';
 import type { CodexQuotaState, QuotaDisplay } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import type { VendorCredentialField } from '../model/vendorPresets';
@@ -163,8 +164,6 @@ const accountDetailHeaderPillClass =
   '!min-h-0 !border !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !py-1 !text-[10px] !font-semibold !text-[var(--gt-ink-primary)]';
 const accountDetailHeaderPrimaryPillClass =
   '!min-h-0 !border !border-[var(--gt-ink-primary)] !bg-[var(--gt-ink-primary)] !py-1 !text-[10px] !font-semibold !text-[var(--gt-surface-canvas)]';
-const accountDetailHeaderDescriptionClass =
-  'flex min-w-0 items-center pl-0.5 font-sans text-xs font-semibold leading-tight text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeMetaLabelClass =
   'font-sans text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailRuntimeMetaSmallClass =
@@ -180,10 +179,9 @@ const accountDetailRuntimeEvidenceClass =
 const accountDetailRuntimeReasonDetailClass =
   'grid gap-1 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1.5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center';
 const accountDetailRuntimeDecisionClass = (unresolved: boolean) =>
-  `border px-3 py-2 ${
-    unresolved
-      ? 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_6%,var(--gt-surface-muted))]'
-      : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
+  `border px-3 py-2 ${unresolved
+    ? 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_6%,var(--gt-surface-muted))]'
+    : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
   }`;
 const accountDetailCredentialPaneDividerClass =
   'grid min-w-0 content-start gap-4 border-t border-[var(--gt-border-subtle)] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0';
@@ -199,12 +197,8 @@ const accountDetailCredentialFieldLabelClass =
   'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailCredentialHelpClass =
   'text-[10px] font-normal leading-relaxed text-[var(--gt-ink-muted)]';
-const accountDetailCredentialInputClass =
-  'min-w-0 rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-canvas)] px-3 py-2 font-mono text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-focus-ring)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1';
 const accountDetailCredentialButtonClass =
   'shrink-0 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[10px] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
-const accountDetailCredentialPrimaryButtonClass =
-  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-xs font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailCredentialMenuClass =
   'absolute left-0 top-full z-20 mt-1 max-h-48 w-full overflow-auto rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const accountDetailCredentialMenuItemClass = (active: boolean) =>
@@ -229,10 +223,6 @@ const accountDetailResourceScriptCardClass =
   'grid h-full min-h-[8.75rem] content-start gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
 const accountDetailResourceCompactCardClass =
   'grid gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
-const accountDetailResourceButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[10px] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
-const accountDetailResourcePrimaryButtonClass =
-  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[10px] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 const accountDetailResourceHeadingClass =
   'font-sans text-[10px] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourcePanelClass =
@@ -265,8 +255,6 @@ const accountDetailQuotaResetHeroClass =
   'relative h-36 overflow-hidden border-b border-[color-mix(in_srgb,var(--gt-surface-canvas)_40%,transparent)]';
 const accountDetailQuotaResetHeroMarkClass =
   'absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded border border-[color-mix(in_srgb,var(--gt-surface-canvas)_40%,transparent)] bg-[linear-gradient(150deg,color-mix(in_srgb,#722ed1_80%,transparent),color-mix(in_srgb,#1677ff_88%,transparent))] font-sans text-3xl font-semibold text-[var(--gt-ink-inverse)] shadow-lg backdrop-blur-md';
-const accountDetailQuotaResetCloseButtonClass =
-  'absolute right-4 top-4 grid h-10 w-10 place-items-center rounded border border-[color-mix(in_srgb,var(--gt-surface-canvas)_55%,transparent)] bg-[color-mix(in_srgb,var(--gt-surface-canvas)_45%,transparent)] text-xl font-semibold text-[var(--gt-ink-primary)] shadow-lg backdrop-blur-xl transition-colors hover:bg-[color-mix(in_srgb,var(--gt-surface-canvas)_65%,transparent)]';
 const accountDetailQuotaResetBodyClass =
   'grid gap-5 bg-[color-mix(in_srgb,var(--gt-surface-canvas)_35%,transparent)] px-8 py-7 text-center backdrop-blur-xl';
 const accountDetailQuotaResetTitleClass =
@@ -277,15 +265,9 @@ const accountDetailQuotaResetResultClass =
   'grid gap-2 border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_78%,transparent)] p-4 text-left font-sans text-xs font-semibold text-[var(--gt-ink-primary)] backdrop-blur-xl';
 const accountDetailQuotaResetErrorClass =
   'border border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] p-4 text-left text-sm font-semibold text-[var(--gt-status-danger)] backdrop-blur-xl';
-const accountDetailQuotaResetPrimaryButtonClass =
-  'h-12 rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-4 text-sm font-semibold text-[var(--gt-surface-canvas)] transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60';
-const accountDetailQuotaResetSecondaryButtonClass =
-  'h-12 rounded border border-[var(--gt-border-subtle)] bg-[color-mix(in_srgb,var(--gt-surface-muted)_72%,transparent)] px-4 text-sm font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountDetailFooterStatusClass =
   'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountDetailFooterActionsClass = 'flex items-center gap-2';
-const accountDetailFooterPrimaryButtonClass =
-  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-xs font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 
 export function AccountDetailHeader({
   account,
@@ -779,6 +761,8 @@ function formatRouteResilienceObservedAt(value: string) {
   return parsed.toISOString().replace('T', ' ').replace('.000Z', 'Z');
 }
 
+
+
 export function AccountCredentialVerifySection({
   draft,
   setDraft,
@@ -1099,7 +1083,7 @@ function CredentialInputField({
           value={value}
           placeholder={placeholder || '请输入...'}
           onChange={(event) => onChange(event.target.value)}
-          className={`${accountDetailCredentialInputClass} w-full`}
+          className="w-full font-mono"
         />
       )}
     </label>
@@ -1156,13 +1140,15 @@ function VerifyConnectionPanel({
           />
         </div>
 
-        <button
+        <Button
+          type="primary"
+          size="small"
           onClick={() => onVerify?.({ apiKey: draft.apiKey, baseUrl: draft.baseUrl, model: verifyModel })}
           disabled={vs.status === 'loading'}
-          className={`${accountDetailCredentialPrimaryButtonClass} whitespace-nowrap`}
+          className="whitespace-nowrap"
         >
           {vs.status === 'loading' ? '发送中...' : '发送验证'}
-        </button>
+        </Button>
       </div>
 
       {vs.status !== 'idle' ? (
@@ -1380,46 +1366,46 @@ export function AccountQuotaSection({
   const quotaActions = (
     isOpenAIAuthFileQuotaReset ? (
       <>
-        <button
-          type="button"
+        <Button
+          type="text"
+          size="small"
           onClick={queryOpenAIQuotaResetCredit}
           disabled={resetQueryStatus === 'loading' || !account.quotaKey}
-          className={accountDetailResourceButtonClass}
-        >
-          {resetQueryStatus === 'loading' ? '查询中...' : '查询重置次数'}
-        </button>
-        <button
-          type="button"
-          onClick={openResetConfirmation}
-          disabled={!account.quotaKey || resetQueryStatus === 'loading' || !resetCreditAvailable}
-          title={resetCreditAvailable ? '消耗 1 次 OpenAI reset credit' : resetCreditKnown ? '无可用重置次数' : '请先查询重置次数'}
-          className={accountDetailResourcePrimaryButtonClass}
-        >
-          重置额度窗口
-        </button>
+          icon={<Search size={14} />}
+          aria-label={resetQueryStatus === 'loading' ? '查询中...' : '查询重置次数'}
+        />
+        <Tooltip title={resetCreditAvailable ? '消耗 1 次 OpenAI reset credit' : resetCreditKnown ? '无可用重置次数' : '请先查询重置次数'}>
+          <Button
+            type="text"
+            size="small"
+            onClick={openResetConfirmation}
+            disabled={!account.quotaKey || resetQueryStatus === 'loading' || !resetCreditAvailable}
+            icon={<RotateCcw size={14} />}
+            aria-label="重置额度窗口"
+          />
+        </Tooltip>
       </>
     ) : readOnlyScripts ? null : <>
       {hasQuotaScript ? (
-        <button type="button" onClick={openEditor} className={accountDetailResourceButtonClass}>
+        <Button size="small" onClick={openEditor}>
           编辑脚本
-        </button>
+        </Button>
       ) : null}
-      <button
-        type="button"
+      <Button
+        size="small"
         onClick={runQuotaTest}
         disabled={testStatus === 'loading' || !hasQuotaScript || !onTestQuotaCurl}
-        className={accountDetailResourceButtonClass}
       >
         {testStatus === 'loading' ? '测试中...' : '测试'}
-      </button>
+      </Button>
       {!hasQuotaScript ? (
-        <button
-          type="button"
+        <Button
+          type="text"
+          size="small"
           onClick={openEditor}
-          className={accountDetailResourceButtonClass}
-        >
-          添加
-        </button>
+          icon={<Plus size={14} />}
+          aria-label="添加"
+        />
       ) : null}
     </>
   );
@@ -1500,13 +1486,14 @@ export function AccountQuotaSection({
           </div>
           {hasQuotaScript ? (
             <div className={quotaScriptCardClassName}>
-              <div
-                data-account-quota-script-preview="two-line"
-                className="line-clamp-2 min-h-[2.75rem] overflow-hidden break-all font-sans text-xs leading-[1.35rem] text-[var(--gt-ink-muted)]"
-                title={draft.quotaCurl || undefined}
-              >
-                {draft.quotaCurl || '未配置额度脚本'}
-              </div>
+              <Tooltip title={draft.quotaCurl || undefined}>
+                <div
+                  data-account-quota-script-preview="two-line"
+                  className="line-clamp-2 min-h-[2.75rem] overflow-hidden break-all font-sans text-xs leading-[1.35rem] text-[var(--gt-ink-muted)]"
+                >
+                  {draft.quotaCurl || '未配置额度脚本'}
+                </div>
+              </Tooltip>
             </div>
           ) : (
             <div className={accountDetailResourceEmptyScriptClass}>
@@ -1604,14 +1591,14 @@ function OpenAIQuotaResetConfirmationModal({
           <div className={accountDetailQuotaResetHeroMarkClass}>
             ›_
           </div>
-          <button
-            type="button"
+          <Button
+            type="text"
+            size="small"
             onClick={onClose}
-            className={accountDetailQuotaResetCloseButtonClass}
             aria-label="关闭重置弹框"
           >
             ×
-          </button>
+          </Button>
         </div>
         <div className={accountDetailQuotaResetBodyClass}>
           <div className="grid gap-3">
@@ -1634,25 +1621,25 @@ function OpenAIQuotaResetConfirmationModal({
           ) : null}
           <div className="grid gap-3">
             {resetStatus === 'confirm' ? (
-              <button type="button" onClick={onConfirm} className={accountDetailQuotaResetPrimaryButtonClass}>
+              <Button type="primary" size="small" onClick={onConfirm}>
                 确认重置使用次数
-              </button>
+              </Button>
             ) : resetStatus === 'loading' ? (
-              <button type="button" disabled className={accountDetailQuotaResetPrimaryButtonClass}>
+              <Button type="primary" size="small" disabled>
                 重置中...
-              </button>
+              </Button>
             ) : resetStatus === 'success' ? (
-              <button type="button" onClick={onClose} className={accountDetailQuotaResetPrimaryButtonClass}>
+              <Button type="primary" size="small" onClick={onClose}>
                 完成
-              </button>
+              </Button>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={onClose} className={accountDetailQuotaResetSecondaryButtonClass}>
+                <Button size="small" onClick={onClose}>
                   关闭
-                </button>
-                <button type="button" onClick={onRetry} className={accountDetailQuotaResetPrimaryButtonClass}>
+                </Button>
+                <Button type="primary" size="small" onClick={onRetry}>
                   重试
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -1776,26 +1763,30 @@ export function AccountBillingSection({
   const billingActions = (
     readOnlyScripts ? null : <>
       {hasBillingScript ? (
-        <button type="button" onClick={openEditor} className={accountDetailResourceButtonClass}>
-          编辑脚本
-        </button>
+        <Button
+          type="text"
+          size="small"
+          onClick={openEditor}
+          icon={<FileText size={14} />}
+          aria-label="编辑脚本"
+        />
       ) : null}
-      <button
-        type="button"
+      <Button
+        type="text"
+        size="small"
         onClick={runBillingTest}
         disabled={testStatus === 'loading' || !hasBillingScript || !onTestBillingCurl}
-        className={accountDetailResourceButtonClass}
-      >
-        {testStatus === 'loading' ? '测试中...' : '测试余额'}
-      </button>
+        icon={<Play size={14} />}
+        aria-label={testStatus === 'loading' ? '测试中...' : '测试余额'}
+      />
       {!hasBillingScript ? (
-        <button
-          type="button"
+        <Button
+          type="text"
+          size="small"
           onClick={openEditor}
-          className={accountDetailResourceButtonClass}
-        >
-          添加
-        </button>
+          icon={<Plus size={14} />}
+          aria-label="添加"
+        />
       ) : null}
     </>
   );
@@ -1834,9 +1825,11 @@ export function AccountBillingSection({
 
       {hasBillingScript ? (
         <div className={accountDetailResourceCompactCardClass}>
-          <div className="truncate font-sans text-xs text-[var(--gt-ink-muted)]" title={draft.billingCurl || undefined}>
-            {draft.billingCurl || '未配置余额脚本'}
-          </div>
+          <Tooltip title={draft.billingCurl || undefined}>
+            <div className="truncate font-sans text-xs text-[var(--gt-ink-muted)]">
+              {draft.billingCurl || '未配置余额脚本'}
+            </div>
+          </Tooltip>
         </div>
       ) : null}
 
@@ -1923,13 +1916,14 @@ export function AccountDetailFooter({
       </div>
       <div data-account-detail-footer-actions className={accountDetailFooterActionsClass}>
         {isApiKey || rateLimitDirty ? (
-          <button
+          <Button
+            type="primary"
+            size="small"
             onClick={onSaveConfig}
             disabled={!hasDirtyChanges || missingFields.length > 0 || savingConfig}
-            className={accountDetailFooterPrimaryButtonClass}
           >
             {savingConfig ? '保存中...' : '保存改动'}
-          </button>
+          </Button>
         ) : null}
       </div>
     </>

@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Select } from 'antd';
+import { Button, Checkbox, Input, Select, Tooltip } from 'antd';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { toErrorMessage } from '../../../utils/error';
 import {
@@ -56,11 +56,6 @@ const rateLimitRulesPanelClass = 'rounded-md border border-[var(--gt-border-subt
 const rateLimitRulesListClass = 'grid min-w-0 gap-2';
 const rateLimitRulesMetaClass = 'min-w-0 font-mono text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
 const rateLimitRulesTitleClass = 'truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
-const rateLimitRulesButtonClass = 'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] px-3 text-xs font-normal text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const rateLimitRulesPrimaryButtonClass = `${rateLimitRulesButtonClass} bg-[var(--gt-accent-primary)] text-[var(--gt-ink-inverse)] hover:bg-[var(--gt-accent-hover)]`;
-const rateLimitRulesIconButtonClass = 'inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] text-[var(--gt-ink-muted)] transition hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
-const rateLimitRulesMenuItemClass = 'flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]';
-const rateLimitRulesDangerMenuItemClass = `${rateLimitRulesMenuItemClass} text-[var(--gt-status-danger)]`;
 const rateLimitRulesInputClass = 'h-9 w-full rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-sm text-[var(--gt-ink-primary)] outline-none transition focus:border-[var(--gt-focus-ring)] disabled:cursor-not-allowed disabled:opacity-60';
 const rateLimitRulesInlineInputClass = 'min-w-0 flex-1 bg-transparent px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none';
 const rateLimitRulesNoticeClass = 'rounded-md border px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal';
@@ -306,14 +301,14 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       density="dense"
       span="wide"
       actions={
-        <button
-          type="button"
+        <Button
+          type="primary"
+          size="small"
           onClick={addRateLimitRule}
-          className={rateLimitRulesPrimaryButtonClass}
           disabled={savingRules}
         >
           {t('accounts.rate_limit_add_rule')}
-        </button>
+        </Button>
       }
     >
       <div className={rateLimitRulesShellClass} data-rate-limit-rules-section>
@@ -346,14 +341,14 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
             data-rate-limit-view-mode="config"
           >
             <AccountDetailEmptyState>
-              <button
-                type="button"
+              <Button
+                size="small"
                 onClick={addRateLimitRule}
                 className="font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] underline decoration-dotted underline-offset-4"
                 disabled={savingRules}
               >
                 {t('accounts.rate_limit_no_local_rule')}
-              </button>
+              </Button>
             </AccountDetailEmptyState>
           </div>
         ) : (
@@ -377,70 +372,76 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                     data-rate-limit-rule-card
                     role="listitem"
                   >
-                    <label className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center" title={t('accounts.rate_limit_enabled')}>
-                      <input
-                        type="checkbox"
-                        checked={draft.enabled}
-                        onChange={(event) => updateRateLimitDraft(index, { enabled: event.target.checked })}
-                        disabled={savingRules}
-                        className="h-4 w-4 accent-[var(--gt-ink-primary)]"
-                        aria-label={t('accounts.rate_limit_enabled')}
-                      />
-                    </label>
+                    <Tooltip title={t('accounts.rate_limit_enabled')}>
+                      <label className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center">
+                        <Checkbox
+                          checked={draft.enabled}
+                          onChange={(event) => updateRateLimitDraft(index, { enabled: event.target.checked })}
+                          disabled={savingRules}
+                          className="h-4 w-4 accent-[var(--gt-ink-primary)]"
+                          aria-label={t('accounts.rate_limit_enabled')}
+                        />
+                      </label>
+                    </Tooltip>
                     <div className="min-w-0">
-                      <div
-                        className={rateLimitRulesTitleClass}
-                        title={buildRateLimitRuleRowSummary(draft, strategy, t)}
-                      >
-                        {buildRateLimitRuleRowSummary(draft, strategy, t)}
-                      </div>
-                      {ruleState ? (
+                      <Tooltip title={buildRateLimitRuleRowSummary(draft, strategy, t)}>
                         <div
-                          className={`mt-1 truncate ${rateLimitRulesMetaClass} ${
-                            ruleState.exceeded ? 'text-[var(--gt-status-danger)]' : ''
-                          }`}
-                          title={`${Math.round(ruleState.usagePct)}% ${formatRateLimitMetric(ruleState.currentUsage)}/${formatRateLimitMetric(ruleState.rule.limitValue)}`}
+                          className={rateLimitRulesTitleClass}
                         >
-                          {Math.round(ruleState.usagePct)}% {formatRateLimitMetric(ruleState.currentUsage)}/{formatRateLimitMetric(ruleState.rule.limitValue)}
+                          {buildRateLimitRuleRowSummary(draft, strategy, t)}
                         </div>
+                      </Tooltip>
+                      {ruleState ? (
+                        <Tooltip title={`${Math.round(ruleState.usagePct)}% ${formatRateLimitMetric(ruleState.currentUsage)}/${formatRateLimitMetric(ruleState.rule.limitValue)}`}>
+                          <div
+                            className={`mt-1 truncate ${rateLimitRulesMetaClass} ${
+                              ruleState.exceeded ? 'text-[var(--gt-status-danger)]' : ''
+                            }`}
+                          >
+                            {Math.round(ruleState.usagePct)}% {formatRateLimitMetric(ruleState.currentUsage)}/{formatRateLimitMetric(ruleState.rule.limitValue)}
+                          </div>
+                        </Tooltip>
                       ) : null}
                     </div>
                     <div ref={openRuleMenuIndex === index ? ruleMenuRef : undefined} className="relative">
-                      <button
-                        type="button"
-                        aria-label={t('accounts.rate_limit_rule_actions')}
-                        aria-haspopup="menu"
-                        aria-expanded={openRuleMenuIndex === index}
-                        onClick={() => setOpenRuleMenuIndex((current) => (current === index ? null : index))}
-                        className={rateLimitRulesIconButtonClass}
-                        disabled={savingRules}
-                        title={t('accounts.rate_limit_rule_actions')}
-                      >
-                        <MoreVertical size={15} strokeWidth={3} />
-                      </button>
+                      <Tooltip title={t('accounts.rate_limit_rule_actions')}>
+                        <Button
+                          size="small"
+                          icon={<MoreVertical size={15} strokeWidth={3} />}
+                          aria-label={t('accounts.rate_limit_rule_actions')}
+                          aria-haspopup="menu"
+                          aria-expanded={openRuleMenuIndex === index}
+                          onClick={() => setOpenRuleMenuIndex((current) => (current === index ? null : index))}
+                          disabled={savingRules}
+                        />
+                      </Tooltip>
                       {openRuleMenuIndex === index ? (
                         <div
                           role="menu"
                           className="absolute right-0 top-full z-30 mt-2 w-40 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-1 shadow-lg"
                         >
-                          <button
-                            type="button"
+                          <Button
+                            type="text"
+                            size="small"
                             role="menuitem"
                             onClick={() => startEditingRateLimitRule(index)}
-                            className={rateLimitRulesMenuItemClass}
+                            icon={<Pencil size={14} />}
+                            block
                           >
-                            <Pencil size={14} strokeWidth={3} />
                             {t('accounts.rate_limit_rule_edit')}
-                          </button>
-                          <button
-                            type="button"
+                          </Button>
+                          <Button
+                            type="text"
+                            size="small"
                             role="menuitem"
                             onClick={() => deleteRateLimitRule(index)}
-                            className={rateLimitRulesDangerMenuItemClass}
+                            danger
+                            icon={<Trash2 size={14} />}
+                            block
                           >
                             <Trash2 size={14} strokeWidth={3} />
                             {t('common.delete')}
-                          </button>
+                          </Button>
                         </div>
                       ) : null}
                     </div>
@@ -483,7 +484,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                   </RuleField>
                   <RuleField label={t('accounts.rate_limit_limit')} htmlFor={`${ruleDomID}-limit`}>
                     <div className="flex h-9 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]">
-                      <input
+                      <Input
                         id={`${ruleDomID}-limit`}
                         type="number"
                         min={draft.strategy === 'token-window' ? 0.000001 : 1}
@@ -495,6 +496,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                           })
                         }
                         className={rateLimitRulesInlineInputClass}
+                        size="small"
                       />
                       <span className="flex w-10 items-center justify-center border-l border-[var(--gt-border-subtle)] text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]">
                         {draft.strategy === 'token-window' ? 'M' : t('accounts.rate_limit_count_unit')}
@@ -514,14 +516,14 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                     />
                   </RuleField>
                   <div className="flex min-w-0 items-end justify-end self-end md:col-span-4 xl:col-span-1 xl:self-end">
-                    <button
-                      type="button"
+                    <Button
+                      type="primary"
+                      size="small"
                       onClick={() => finishEditingRateLimitRule(index)}
-                      className={rateLimitRulesPrimaryButtonClass}
                       disabled={savingRules}
                     >
                       {t('accounts.rate_limit_rule_save')}
-                    </button>
+                    </Button>
                   </div>
                 </fieldset>
               );

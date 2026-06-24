@@ -1,3 +1,4 @@
+import { Button, Input, Select } from 'antd';
 import { Activity, GitBranch, Save, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
@@ -29,15 +30,7 @@ const codexExtensionModalHeaderClass =
   'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexExtensionModalFooterClass =
   'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const codexExtensionModalButtonClass =
-  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const codexExtensionModalPrimaryButtonClass =
-  'inline-flex min-h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
-const codexExtensionModalIconButtonClass =
-  'inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const codexExtensionModalFieldClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
-const codexExtensionModalSelectClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none';
 
 export function McpServerEditorModal({
@@ -127,9 +120,9 @@ export function McpServerEditorModal({
             checked={draft.enabled}
             onChange={(checked) => onPatch({ enabled: checked, status: checked ? draft.status : 'disabled' })}
           />
-          <button type="button" onClick={onClose} className={codexExtensionModalButtonClass}>
+          <Button size="small" onClick={onClose}>
             {t('common.close')}
-          </button>
+          </Button>
         </header>
 
         <div className="grid xl:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
@@ -144,17 +137,16 @@ export function McpServerEditorModal({
                   <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
                     {t('common.type')}
                   </span>
-                  <select
+                  <Select
+                    size="small"
                     value={draft.transport}
-                    className={codexExtensionModalSelectClass}
-                    onChange={(event) => patchTransport(event.target.value as McpTransport)}
-                  >
-                    {transportNeedsResolution ? (
-                      <option value={draft.transport} disabled>{draft.transport}</option>
-                    ) : null}
-                    <option value="stdio">stdio</option>
-                    <option value="streamable_http">streamable_http</option>
-                  </select>
+                    onChange={(value) => patchTransport(value as McpTransport)}
+                    options={
+                      transportNeedsResolution
+                        ? [{ value: draft.transport, label: draft.transport, disabled: true }, { value: 'stdio', label: 'stdio' }, { value: 'streamable_http', label: 'streamable_http' }]
+                        : [{ value: 'stdio', label: 'stdio' }, { value: 'streamable_http', label: 'streamable_http' }]
+                    }
+                  />
                 </label>
               </div>
             </McpEditorSection>
@@ -220,16 +212,17 @@ export function McpServerEditorModal({
                   <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
                     {t('codex_extensions.default_tools_approval_mode')}
                   </span>
-                  <select
+                  <Select
+                    size="small"
                     value={draft.defaultToolsApprovalMode || ''}
-                    className={codexExtensionModalSelectClass}
-                    onChange={(event) => onPatch({ defaultToolsApprovalMode: event.target.value })}
-                  >
-                    <option value="">-</option>
-                    <option value="auto">auto</option>
-                    <option value="prompt">prompt</option>
-                    <option value="approve">approve</option>
-                  </select>
+                    onChange={(value) => onPatch({ defaultToolsApprovalMode: value })}
+                    options={[
+                      { value: '', label: '-' },
+                      { value: 'auto', label: 'auto' },
+                      { value: 'prompt', label: 'prompt' },
+                      { value: 'approve', label: 'approve' },
+                    ]}
+                  />
                 </label>
               </div>
             </McpEditorSection>
@@ -257,27 +250,26 @@ export function McpServerEditorModal({
                   {t('codex_extensions.mcp_tool_validation_error')}: {formatMcpToolValidationIssues(toolValidationIssues, t)}
                 </div>
               ) : null}
-              <button
-                type="button"
+              <Button
+                size="small"
                 onClick={onPreflight}
                 disabled={loading || preflightLoading || transportNeedsResolution}
-                className={codexExtensionModalButtonClass}
+                icon={<Activity className="h-3.5 w-3.5" />}
               >
-                <Activity className="h-3.5 w-3.5" />
                 {preflightLoading ? t('codex_extensions.mcp_preflight_running') : t('codex_extensions.mcp_preflight')}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                type="primary"
+                size="small"
                 onClick={onSave}
                 disabled={preview.length === 0 || loading || transportNeedsResolution || envValidationIssues.length > 0 || toolValidationIssues.length > 0}
-                className={codexExtensionModalPrimaryButtonClass}
+                icon={<Save className="h-3.5 w-3.5" />}
               >
-                <Save className="h-3.5 w-3.5" />
                 {t('common.save')}
-              </button>
-              <button type="button" onClick={onReset} className={codexExtensionModalButtonClass}>
+              </Button>
+              <Button size="small" onClick={onReset}>
                 {t('common.cancel')}
-              </button>
+              </Button>
               {preflight ? <McpPreflightPanel result={preflight} t={t} /> : null}
             </div>
           </main>
@@ -420,14 +412,12 @@ export function ConfigTomlEditorModal({
               {configPath}
             </div>
           </div>
-          <button
-            type="button"
+          <Button
+            size="small"
             onClick={onClose}
-            className={codexExtensionModalIconButtonClass}
             aria-label={t('common.close')}
-          >
-            <X className="h-4 w-4" strokeWidth={4} />
-          </button>
+            icon={<X className="h-4 w-4" strokeWidth={4} />}
+          />
         </header>
 
         <div className="min-h-0 flex-1 p-4">
@@ -436,11 +426,12 @@ export function ConfigTomlEditorModal({
               {t('common.loading')}
             </div>
           ) : (
-            <textarea
+            <Input.TextArea
+              size="small"
               value={content}
               onChange={(event) => onChange(event.target.value)}
               spellCheck={false}
-              className={`${codexExtensionModalFieldClass} scrollbar-stable min-h-[24rem] w-full resize-none overflow-auto font-mono text-[length:var(--gt-font-size-md)] leading-relaxed`}
+              className="scrollbar-stable min-h-[24rem] w-full resize-none overflow-auto font-mono text-[length:var(--gt-font-size-md)] leading-relaxed"
               placeholder={t('codex_extensions.config_editor_placeholder')}
             />
           )}
@@ -451,18 +442,18 @@ export function ConfigTomlEditorModal({
             {dirty ? t('codex_extensions.config_dirty') : t('codex_extensions.config_clean')}
           </div>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={onClose} className={codexExtensionModalButtonClass}>
+            <Button size="small" onClick={onClose}>
               {t('common.cancel')}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              type="primary"
+              size="small"
               onClick={onSave}
               disabled={!dirty || loading || saving}
-              className={codexExtensionModalPrimaryButtonClass}
+              icon={<Save className="h-3.5 w-3.5" />}
             >
-              <Save className="h-3.5 w-3.5" />
               {saving ? t('common.loading') : t('common.save')}
-            </button>
+            </Button>
           </div>
         </footer>
       </div>
@@ -512,7 +503,7 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
       <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
         {label}
       </span>
-      <input value={value} onChange={(event) => onChange(event.target.value)} className={`${codexExtensionModalFieldClass} w-full font-mono`} />
+      <Input size="small" value={value} onChange={(event) => onChange(event.target.value)} className="w-full font-mono" />
     </label>
   );
 }
@@ -544,10 +535,11 @@ function TextareaField({ label, value, onChange }: { label: string; value: strin
       <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
         {label}
       </span>
-      <textarea
+      <Input.TextArea
+        size="small"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`${codexExtensionModalFieldClass} min-h-28 w-full resize-y font-mono`}
+        className="min-h-28 w-full resize-y font-mono"
       />
     </label>
   );

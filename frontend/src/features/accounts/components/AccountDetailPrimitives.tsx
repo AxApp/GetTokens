@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import { Alert, Descriptions, Empty, Tag, Typography } from 'antd';
 
 export type AccountDetailSectionSpan = 'auto' | 'wide';
 
@@ -37,16 +38,16 @@ export function AccountDetailSection({
       className={`space-y-3 ${className}`}
     >
       {(title || actions) && (
-        <div className="space-y-2" style={{ userSelect: 'text' }}>
+        <div className="flex items-center justify-between gap-4" style={{ userSelect: 'text' }}>
           {title && (
-            <h3 className="font-semibold text-[var(--gt-ink-secondary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>
+            <Typography.Title level={5} className="!m-0 !font-semibold">
               {title}
-            </h3>
+            </Typography.Title>
           )}
-          {actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}
+          {actions && <div className="flex shrink-0 items-center gap-1">{actions}</div>}
         </div>
       )}
-      <div style={{ userSelect: 'text' }}>{children}</div>
+      {children}
     </section>
   );
 }
@@ -63,9 +64,13 @@ export function AccountDetailStatGrid({
   className?: string;
 }) {
   return (
-    <div className={`grid overflow-hidden rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] ${columns === 6 ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6' : columns === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'} ${className}`}>
+    <Descriptions
+      column={columns === 6 ? 6 : columns}
+      size="small"
+      className={className}
+    >
       {children}
-    </div>
+    </Descriptions>
   );
 }
 
@@ -81,11 +86,10 @@ export function AccountDetailStatCell({
   className?: string;
 }) {
   return (
-    <div className={`min-w-0 border-b border-r border-[var(--gt-border-subtle)] px-4 py-3 last:border-r-0 ${className}`}>
-      <div className="truncate text-xs font-normal tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
-      <div className="mt-1 truncate font-semibold tabular-nums text-[var(--gt-ink-primary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
-      {meta && <div className="mt-1 truncate text-xs text-[var(--gt-ink-muted)]">{meta}</div>}
-    </div>
+    <Descriptions.Item label={label} className={className}>
+      <div className="font-semibold tabular-nums" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
+      {meta && <div className="mt-1 text-xs text-[var(--gt-ink-muted)]">{meta}</div>}
+    </Descriptions.Item>
   );
 }
 
@@ -107,9 +111,16 @@ export function AccountDetailPill({
     danger: 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
   };
   return (
-    <span className={`inline-flex min-h-7 items-center rounded-full border px-2 py-1 text-xs font-normal ${toneStyles[tone]} ${className}`}>
+    <Tag
+      color={
+        tone === 'success' ? 'success' :
+        tone === 'warning' ? 'warning' :
+        tone === 'danger' ? 'error' : 'default'
+      }
+      className={`m-0 ${className}`}
+    >
       {children}
-    </span>
+    </Tag>
   );
 }
 
@@ -124,16 +135,17 @@ export function AccountDetailNotice({
   children: ReactNode;
   className?: string;
 }) {
-  const toneStyles: Record<string, string> = {
-    neutral: 'border-[var(--gt-border-default)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
-    success: 'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
-    warning: 'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_12%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)]',
-    danger: 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
-  };
   return (
-    <div className={`rounded-lg border px-4 py-3 font-normal leading-relaxed ${toneStyles[tone]} ${className}`}>
-      {children}
-    </div>
+    <Alert
+      type={
+        tone === 'success' ? 'success' :
+        tone === 'warning' ? 'warning' :
+        tone === 'danger' ? 'error' : 'info'
+      }
+      message={children}
+      className={className}
+      showIcon={false}
+    />
   );
 }
 
@@ -147,9 +159,11 @@ export function AccountDetailEmptyState({
   className?: string;
 }) {
   return (
-    <div className={`rounded-lg border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-6 text-center font-normal text-[var(--gt-ink-muted)] ${className}`}>
-      {children}
-    </div>
+    <Empty
+      description={children}
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      className={className}
+    />
   );
 }
 
@@ -163,9 +177,13 @@ export function AccountDetailEvidenceGrid({
   className?: string;
 }) {
   return (
-    <div className={`grid overflow-hidden rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] ${className}`}>
+    <Descriptions
+      column={2}
+      size="small"
+      className={className}
+    >
       {children}
-    </div>
+    </Descriptions>
   );
 }
 
@@ -179,10 +197,9 @@ export function AccountDetailEvidenceRow({
   className?: string;
 }) {
   return (
-    <div className={`grid gap-2 border-b border-[var(--gt-border-subtle)] px-4 py-3 last:border-b-0 md:grid-cols-[10rem_minmax(0,1fr)] md:items-start ${className}`}>
-      <div className="truncate text-xs font-normal tracking-normal text-[var(--gt-ink-muted)]">{label}</div>
-      <div className="min-w-0 break-all text-[var(--gt-ink-primary)]" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
-    </div>
+    <Descriptions.Item label={label} className={className}>
+      <div className="break-all" style={{ fontFamily: 'var(--gt-font-family-sans)' }}>{value}</div>
+    </Descriptions.Item>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Input, Select } from 'antd';
+import { Button, Checkbox, Input, Select } from 'antd';
 import { useDebug } from '../../../context/useDebug';
 import type { QuotaThresholdRule, RouteGuardReasonTraceStep, RouteGuardSimulationResult } from '../../../types';
 import useQuotaThresholdRules from '../hooks/useQuotaThresholdRules';
@@ -27,8 +27,6 @@ interface QuotaThresholdRulePanelProps {
 
 const quotaThresholdPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const quotaThresholdMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const quotaThresholdButtonClass =
-  'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const quotaThresholdInputClass =
   'min-h-8 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 py-1 font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] outline-none transition focus-visible:border-[var(--gt-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--gt-border-subtle)]';
 const quotaThresholdMetaClass = 'font-mono text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
@@ -354,28 +352,28 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
+                <Button
+                  size="small"
                   onClick={() => void handleSimulate(rule)}
                   disabled={simulating}
-                  className={`${quotaThresholdButtonClass} !min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]`}
+                  className="!min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]"
                 >
                   模拟
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="small"
                   onClick={() => void handleToggle(rule)}
-                  className={`${quotaThresholdButtonClass} !min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]`}
+                  className="!min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]"
                 >
                   {rule.enabled === false ? '启用' : '停用'}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="small"
                   onClick={() => void handleDelete(rule)}
-                  className={`${quotaThresholdButtonClass} !min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]`}
+                  className="!min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]"
                 >
                   删除
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -420,12 +418,12 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <button type="button" onClick={() => void handlePreviewBudgetFacts()} disabled={previewing} className={`${quotaThresholdButtonClass} !min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]`}>
+            <Button size="small" onClick={() => void handlePreviewBudgetFacts()} disabled={previewing} className="!min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]">
               {previewing ? '预览中...' : '刷新 preview'}
-            </button>
-            <button type="button" onClick={() => setDefinitionFormOpen((value) => !value)} className={`${quotaThresholdButtonClass} !min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]`}>
+            </Button>
+            <Button size="small" onClick={() => setDefinitionFormOpen((value) => !value)} className="!min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]">
               {definitionFormOpen ? '收起' : '创建窗口'}
-            </button>
+            </Button>
           </div>
         </div>
         {enabledDefinitions.length > 0 ? (
@@ -435,9 +433,9 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
                 <span className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-primary)]">
                   {budgetWindowDefinitionLabel(definition)}
                 </span>
-                <button type="button" onClick={() => void handleDisableBudgetWindowDefinition(definition.id || '')} className={`${quotaThresholdButtonClass} !min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]`}>
+                <Button size="small" onClick={() => void handleDisableBudgetWindowDefinition(definition.id || '')} className="!min-h-0 !px-1.5 !py-0.5 !text-[length:var(--gt-font-size-2xs)]">
                   停用
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -504,7 +502,7 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
               </label>
               <label className="grid gap-1">
                 <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">Limit</span>
-                <input type="number" min={1} value={definitionLimit} onChange={(event) => setDefinitionLimit(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
+                <Input size="small" type="number" min={1} value={definitionLimit} onChange={(event) => setDefinitionLimit(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
               </label>
               {definitionKind !== 'bounded' ? (
                 <label className="grid gap-1">
@@ -515,25 +513,25 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
               {definitionKind === 'multi-day' ? (
                 <label className="grid gap-1">
                   <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">Days</span>
-                  <input type="number" min={1} value={definitionDays} onChange={(event) => setDefinitionDays(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
+                  <Input size="small" type="number" min={1} value={definitionDays} onChange={(event) => setDefinitionDays(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
                 </label>
               ) : null}
               {definitionKind === 'bounded' ? (
                 <>
                   <label className="grid gap-1">
                     <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">StartsAt</span>
-                    <input type="datetime-local" value={definitionStartsAt} onChange={(event) => setDefinitionStartsAt(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
+                    <Input size="small" type="datetime-local" value={definitionStartsAt} onChange={(event) => setDefinitionStartsAt(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
                   </label>
                   <label className="grid gap-1">
                     <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">EndsAt</span>
-                    <input type="datetime-local" value={definitionEndsAt} onChange={(event) => setDefinitionEndsAt(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
+                    <Input size="small" type="datetime-local" value={definitionEndsAt} onChange={(event) => setDefinitionEndsAt(event.target.value)} className={`${quotaThresholdInputClass} font-mono !py-1 !text-[length:var(--gt-font-size-xs)]`} />
                   </label>
                 </>
               ) : null}
             </div>
-            <button type="button" onClick={() => void handleCreateBudgetWindowDefinition()} disabled={definitionSubmitting} className={`${quotaThresholdButtonClass} !text-[length:var(--gt-font-size-2xs)]`}>
+            <Button size="small" onClick={() => void handleCreateBudgetWindowDefinition()} disabled={definitionSubmitting} className="!text-[length:var(--gt-font-size-2xs)]">
               {definitionSubmitting ? '保存中...' : '保存并预览'}
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>
@@ -557,7 +555,8 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
               <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                 停止阈值 %
               </span>
-              <input
+              <Input
+                size="small"
                 type="number"
                 min={0}
                 max={100}
@@ -568,8 +567,7 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
             </label>
           </div>
           <label className="flex items-center gap-2 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={advancedOpen}
               onChange={(event) => {
                 const checked = event.target.checked;
@@ -592,7 +590,8 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
               <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]">
                 Condition AST
               </span>
-              <textarea
+              <Input.TextArea
+                size="small"
                 value={conditionJson}
                 onChange={(event) => { setConditionJson(event.target.value); setError(''); }}
                 rows={7}
@@ -610,35 +609,35 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
             </div>
           ) : null}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              size="small"
               onClick={() => void handleSubmit()}
               disabled={submitting || !windowKey.trim()}
-              className={`${quotaThresholdButtonClass} !text-[length:var(--gt-font-size-2xs)]`}
+              className="!text-[length:var(--gt-font-size-2xs)]"
             >
               {submitting ? '提交中...' : '添加停止规则'}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              size="small"
               onClick={() => void handleSimulate()}
               disabled={simulating}
-              className={`${quotaThresholdButtonClass} !text-[length:var(--gt-font-size-2xs)]`}
+              className="!text-[length:var(--gt-font-size-2xs)]"
             >
               {simulating ? '模拟中...' : '模拟当前规则'}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              size="small"
               onClick={() => { setFormOpen(false); setError(''); }}
               disabled={submitting}
-              className={`${quotaThresholdButtonClass} !text-[length:var(--gt-font-size-2xs)]`}
+              className="!text-[length:var(--gt-font-size-2xs)]"
             >
               取消
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
-        <button
-          type="button"
+        <Button
+          size="small"
           onClick={() => {
             setFormOpen(true);
             setError('');
@@ -651,10 +650,10 @@ export function QuotaThresholdRulePanel({ accountKey, windows }: QuotaThresholdR
               }), null, 2));
             }
           }}
-          className={`${quotaThresholdButtonClass} !text-[length:var(--gt-font-size-2xs)]`}
+          className="!text-[length:var(--gt-font-size-2xs)]"
         >
           添加停止规则
-        </button>
+        </Button>
       )}
     </div>
   );

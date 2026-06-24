@@ -88,7 +88,6 @@ function ModalFrameSample({
           size={isConfirm ? 'sm' : isDetail ? 'detail' : 'md'}
           position="absolute"
           header={<ModalHeader eyebrow={zh ? '弹窗窗口' : 'Modal Frame'} title={title} />}
-          footer={<ModalFooter confirmLabel={zh ? '保存变更' : 'Save Changes'} cancelLabel={zh ? '取消' : 'Cancel'} />}
           error={variant === 'error' ? <ErrorBanner message={zh ? '保存失败：凭据格式无效' : 'Save failed: invalid credential format'} /> : undefined}
           ariaLabel={title}
         >

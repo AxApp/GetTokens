@@ -1,4 +1,5 @@
 import { BarChart3 } from 'lucide-react';
+import { Button, Tag } from 'antd';
 
 export type SessionPluginConsoleMode = 'ready' | 'running' | 'done';
 
@@ -88,8 +89,6 @@ export interface SessionPluginConsolePanelProps {
   topics: SessionPluginConsoleTopic[];
 }
 
-const sessionPluginConsoleButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
-const sessionPluginConsolePrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90';
 const sessionPluginConsolePanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const sessionPluginConsoleMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 
@@ -154,23 +153,23 @@ export default function SessionPluginConsolePanel({
               { id: 'running', label: '运行中' },
               { id: 'done', label: '完成' },
             ].map((item) => (
-              <button
+              <Button
                 key={item.id}
-                type="button"
+                size="small"
                 className={`min-h-8 border-r border-[var(--gt-border-subtle)] px-3 text-[length:var(--gt-font-size-xs)] font-normal last:border-r-0 ${
                   mode === item.id ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]' : 'text-[var(--gt-ink-muted)]'
                 }`}
               >
                 {item.label}
-              </button>
+              </Button>
             ))}
           </div>
-          <button type="button" className={sessionPluginConsoleButtonClass}>
+          <Button size="small">
             {refreshLabel}
-          </button>
-          <button type="button" className={sessionPluginConsolePrimaryButtonClass}>
+          </Button>
+          <Button type="primary" size="small">
             {runLabel}
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -419,9 +418,9 @@ function PanelHead({ title, count }: { title: string; count: string }) {
       <div className="truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
         {title}
       </div>
-      <span className="inline-flex min-w-7 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]">
+      <Tag color="default" className="min-w-7 text-center text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]">
         {count}
-      </span>
+      </Tag>
     </div>
   );
 }

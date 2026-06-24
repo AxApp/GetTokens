@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { Button, Checkbox } from 'antd';
 import { type DragEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import SearchInput from '../../../components/ui/SearchInput';
@@ -37,8 +38,6 @@ const CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS =
   'min-w-0';
 const CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS =
   'pt-4';
-const CODEX_ACCOUNT_ORDER_FILTER_BUTTON_CLASS =
-  'h-10 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const CODEX_ACCOUNT_ORDER_FILTER_MENU_CLASS =
   'absolute left-0 top-full z-20 mt-2 flex min-w-[460px] max-w-[min(680px,calc(100vw-3rem))] flex-col gap-3.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 shadow-sm';
 const CODEX_ACCOUNT_ORDER_FILTER_TITLE_CLASS =
@@ -49,25 +48,14 @@ const CODEX_ACCOUNT_ORDER_FILTER_SECTION_DIVIDER_CLASS =
   'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2';
 const CODEX_ACCOUNT_ORDER_FILTER_FOOTER_CLASS =
   'flex justify-end border-t border-[var(--gt-border-subtle)] pt-2';
-const CODEX_ACCOUNT_ORDER_FILTER_CHIP_CLASS =
-  'inline-flex h-8 max-w-[180px] items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
-const CODEX_ACCOUNT_ORDER_FILTER_ACTIVE_CHIP_CLASS =
-  'inline-flex h-8 max-w-[220px] items-center gap-1.5 rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-2 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-surface-canvas)]';
 const CODEX_ACCOUNT_ORDER_FILTER_OPTION_CLASS =
   'flex min-h-9 cursor-pointer items-center gap-2.5 rounded px-2.5 text-[length:var(--gt-font-size-md-compact)] font-semibold leading-none tracking-normal transition-colors';
-const CODEX_ACCOUNT_ORDER_FILTER_PILL_CLASS =
-  'h-8 min-w-16 rounded border border-[var(--gt-border-subtle)] px-2 text-[length:var(--gt-font-size-2xs)] font-semibold leading-none tracking-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50';
-const CODEX_ACCOUNT_ORDER_FILTER_RESET_BUTTON_CLASS =
-  'h-9 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1 text-[length:var(--gt-font-size-md-compact)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const CODEX_ACCOUNT_ORDER_STATUS_TEXT_CLASS = (saving: boolean) =>
   `shrink-0 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal ${
     saving ? 'text-[var(--gt-ink-muted)]' : 'text-[var(--gt-status-danger)]'
   }`;
 const CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS =
   'grid h-10 shrink-0 grid-cols-2 overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const CODEX_ACCOUNT_ORDER_DISPLAY_BUTTON_CLASS =
-  'h-full min-w-12 border-r border-[var(--gt-border-subtle)] px-2 text-center text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal last:border-r-0 transition-colors';
-
 export function CodexAccountOrderSection({
   ready,
   loading,
@@ -359,15 +347,14 @@ function InlineActionControls({
     <div className={CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS}>
       <div className="flex w-full flex-wrap items-center gap-2">
         <div ref={filterMenuRef} className="relative shrink-0">
-          <button
-            type="button"
+          <Button
+            size="small"
             onClick={() => setIsFilterMenuOpen((prev) => !prev)}
             disabled={disabled}
-            className={CODEX_ACCOUNT_ORDER_FILTER_BUTTON_CLASS}
             aria-expanded={isFilterMenuOpen}
           >
             {buildToolbarFilterLabel(t, filterSummaryParts)}
-          </button>
+          </Button>
           {isFilterMenuOpen ? (
             <div className={CODEX_ACCOUNT_ORDER_FILTER_MENU_CLASS}>
               <div className="grid gap-2">
@@ -402,16 +389,15 @@ function InlineActionControls({
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {filterSummaryParts.map((part, index) => (
-                      <button
+                      <Button
                         key={`${part.kind}-${part.id}-${index}`}
-                        type="button"
+                        size="small"
+                        icon={<X className="h-3.5 w-3.5 shrink-0" strokeWidth={3} />}
                         onClick={() => removeFilterPart(index)}
-                        className={CODEX_ACCOUNT_ORDER_FILTER_ACTIVE_CHIP_CLASS}
                         title={t('accounts.filter_remove_condition')}
                       >
                         <span className="truncate">{part.label}</span>
-                        <X className="h-3.5 w-3.5 shrink-0" strokeWidth={3} />
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -490,13 +476,12 @@ function InlineActionControls({
                 />
               </div>
               <div className={CODEX_ACCOUNT_ORDER_FILTER_FOOTER_CLASS}>
-                <button
-                  type="button"
+                <Button
+                  size="small"
                   onClick={() => onAccountFilterChange({ ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER })}
-                  className={CODEX_ACCOUNT_ORDER_FILTER_RESET_BUTTON_CLASS}
                 >
                   {t('accounts.filter_reset')}
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}
@@ -517,16 +502,15 @@ function InlineActionControls({
         {filterSummaryParts.length > 0 ? (
           <div className="flex min-w-0 flex-wrap gap-1.5">
             {filterSummaryParts.map((part, index) => (
-              <button
+              <Button
                 key={`${part.kind}-${part.id}-${index}`}
-                type="button"
+                size="small"
+                icon={<X className="h-3.5 w-3.5 shrink-0" strokeWidth={3} />}
                 onClick={() => removeFilterPart(index)}
-                className={CODEX_ACCOUNT_ORDER_FILTER_CHIP_CLASS}
                 title={t('accounts.filter_remove_condition')}
               >
                 <span className="truncate">{part.label}</span>
-                <X className="h-3.5 w-3.5 shrink-0" strokeWidth={3} />
-              </button>
+              </Button>
             ))}
           </div>
         ) : null}
@@ -575,8 +559,7 @@ function FilterCheckOption({
             : 'bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
       }`}
     >
-      <input
-        type="checkbox"
+      <Checkbox
         checked={active}
         disabled={disabled}
         onChange={onClick}
@@ -599,19 +582,18 @@ function FilterPillOption({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
       aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
-      className={`${CODEX_ACCOUNT_ORDER_FILTER_PILL_CLASS} ${
-        active
-          ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
-          : 'bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
+      className={`${active
+        ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+        : 'bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)] hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)]'
       }`}
     >
       <span className="block truncate">{children}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -657,17 +639,16 @@ function DisplayModeButton({
   onClick: (id: CodexAccountOrderDisplayMode) => void;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
       onClick={() => onClick(id)}
-      className={`${CODEX_ACCOUNT_ORDER_DISPLAY_BUTTON_CLASS} ${
-        active
-          ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
-          : 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--gt-ink-primary)]'
+      className={`${active
+        ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
+        : 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--gt-ink-primary)]'
       }`}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

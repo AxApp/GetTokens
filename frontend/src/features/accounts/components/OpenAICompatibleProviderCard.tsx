@@ -1,3 +1,4 @@
+import { Button } from 'antd';
 import AttributionCard from './AttributionCard';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import { rateLimitStateTone, type RateLimitState } from '../model/rateLimit';
@@ -32,10 +33,6 @@ const openAICompatibleProviderCardMetaClass =
 const openAICompatibleProviderCardEmptyClass =
   'font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const openAICompatibleProviderCardFooterClass = 'grid grid-cols-3 gap-2 border-t border-[var(--gt-border-subtle)] pt-3';
-const openAICompatibleProviderCardButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
-const openAICompatibleProviderCardDangerButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-danger)] transition-colors hover:border-[var(--gt-status-danger)] hover:bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-muted))] disabled:cursor-not-allowed disabled:opacity-45';
 const openAICompatibleProviderCardStatusClass = (status: ProviderVerifyState['status']) =>
   `mt-2 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal ${
     status === 'success'
@@ -171,25 +168,24 @@ export default function OpenAICompatibleProviderCard({
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <button type="button" onClick={() => onOpenDetail(provider)} className={openAICompatibleProviderCardButtonClass}>
+          <Button size="small" onClick={() => onOpenDetail(provider)}>
             {t('accounts.openai_provider_manage')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            size="small"
             onClick={() => onToggleDisabled(provider)}
-            className={openAICompatibleProviderCardButtonClass}
             disabled={pendingStatus}
           >
             {pendingStatus ? t('common.loading') : provider.disabled ? t('common.enable') : t('common.disable')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            size="small"
+            danger
             onClick={() => onDelete(openAICompatibleProviderIdentity(provider))}
-            className={openAICompatibleProviderCardDangerButtonClass}
             disabled={pendingDelete}
           >
             {pendingDelete ? t('common.loading') : t('common.delete')}
-          </button>
+          </Button>
         </div>
       }
       interactive

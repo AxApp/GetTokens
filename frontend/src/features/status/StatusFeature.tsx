@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Card, Space, Tag, Typography } from 'antd';
+import { Alert, Badge, Card, Space, Tag, Tooltip, Typography } from 'antd';
 import {
   ApplyClaudeCodeAPIKeyConfigToLocal,
   ApplyRelayServiceConfigToLocal,
@@ -91,8 +91,6 @@ const statusDiagnosticsHeadlineClass =
   'mt-1 truncate text-[length:var(--gt-font-size-md)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const statusDiagnosticsToneClass =
   'shrink-0 rounded border px-3 py-1 text-right text-[length:var(--gt-font-size-xs)] font-normal tracking-normal';
-const statusDiagnosticsErrorClass =
-  'min-w-0 overflow-hidden rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-status-warning)]';
 const statusPageShellClass =
   'h-full w-full overflow-auto bg-[var(--gt-surface-panel)] px-6 py-6 lg:px-8 lg:py-8';
 const statusPageContentClass = 'mx-auto flex w-full max-w-[1180px] flex-col gap-6';
@@ -144,13 +142,11 @@ function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildA
         </Tag>
       </div>
       {view.errorSummary ? (
-        <div
-          className={statusDiagnosticsErrorClass}
-          title={view.fullError}
-          data-account-store-diagnostics-error
-        >
-          {view.errorSummary}
-        </div>
+        <Tooltip title={view.fullError}>
+          <div data-account-store-diagnostics-error>
+            <Alert type="warning" message={view.errorSummary} />
+          </div>
+        </Tooltip>
       ) : null}
     </Card>
   );

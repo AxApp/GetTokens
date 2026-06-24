@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button } from 'antd';
+import { Button, Checkbox, Dropdown, Tooltip } from 'antd';
+import type { MenuProps } from 'antd';
 import { FileText, MoreVertical, Power, RefreshCw, RotateCw, Terminal, Trash2 } from 'lucide-react';
 import { buildQuotaBlockBadgeLabel, buildQuotaDisplay, extractBilling, hasQuotaEmptyBlock } from '../model/accountQuota';
 import { buildAccountCardContentText } from '../model/accountCardActions';
@@ -101,7 +102,6 @@ export default function AccountCard({
 }: AccountCardProps) {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(defaultActionMenuOpen);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
-  const actionMenuRef = useRef<HTMLDivElement | null>(null);
   const copyResetTimerRef = useRef<number | null>(null);
   const quotaDisplay = buildQuotaDisplay(account, quotaState);
   const billing = quotaState?.quota ? extractBilling(quotaState.quota) : undefined;
@@ -152,27 +152,6 @@ export default function AccountCard({
     }
     onOpenDetails(account);
   }
-
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!actionMenuRef.current?.contains(event.target as Node)) {
-        setIsActionMenuOpen(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        setIsActionMenuOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -254,8 +233,7 @@ export default function AccountCard({
       leadingAction={
         isSelectionMode ? (
           <label className="flex cursor-pointer items-center" data-account-card-ignore-click="true">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={isSelected}
               onChange={() => onToggleSelection(account.id)}
               className="h-4 w-4 rounded accent-[var(--gt-accent-primary)]"
@@ -265,139 +243,85 @@ export default function AccountCard({
       }
       topActions={
         !isSelectionMode && !isPendingDelete ? (
-          <div className="flex shrink-0 items-center" data-account-card-ignore-click="true">
+          <div className="flex shrink-0 items-center gap-1" data-account-card-ignore-click="true">
             {refreshAction.visible ? (
-              <button
-                type="button"
-                aria-label={t(refreshAction.labelKey)}
-                title={t(refreshAction.labelKey)}
-                onClick={() => onRefreshQuota(account)}
-                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-muted)]"
-                style={{ color: 'var(--gt-ink-secondary)' }}
-                disabled={!ready || refreshAction.disabled}
-              >
-                <RefreshCw
-                  size={16}
-                  strokeWidth={2}
-                  className={refreshAction.disabled ? 'animate-spin' : undefined}
+              <Tooltip title={t(refreshAction.labelKey)}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<RefreshCw
+                    size={16}
+                    strokeWidth={2}
+                    className={refreshAction.disabled ? 'animate-spin' : undefined}
+                  />}
+                  aria-label={t(refreshAction.labelKey)}
+                  onClick={() => onRefreshQuota(account)}
+                  disabled={!ready || refreshAction.disabled}
                 />
-              </button>
+              </Tooltip>
             ) : null}
-            <div ref={actionMenuRef} className="relative">
-              <button
-                type="button"
-                aria-label={t('accounts.card_actions')}
-                aria-haspopup="menu"
-                aria-expanded={isActionMenuOpen}
-                onClick={() => setIsActionMenuOpen((prev) => !prev)}
-                className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-muted)]"
-                style={{ color: 'var(--gt-ink-secondary)' }}
-                title={t('accounts.card_actions')}
-              >
-                <MoreVertical size={16} strokeWidth={2} />
-              </button>
-              {isActionMenuOpen ? (
-                <div
-                  role="menu"
-                  className="absolute right-0 top-full z-30 mt-2 w-44 rounded-lg border p-1"
-                  style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-raised)', boxShadow: 'var(--gt-elevation-raised-2)' }}
-                >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => void copyAccountContent()}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]"
-                  >
-                    <FileText size={14} strokeWidth={2} />
-                    {t('accounts.copy_account_config')}
-                  </button>
-                  {canMenuReauth ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        if (isOAuthPending) {
-                          return;
-                        }
-                        setIsActionMenuOpen(false);
-                        onStartReauth(account);
-                      }}
-                      disabled={isOAuthPending}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50"
-                    >
-                      <RotateCw size={14} strokeWidth={2} />
-                      {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
-                    </button>
-                  ) : null}
-                  {localCliActions.length > 0 ? (
-                    <>
-                      <div className="my-1 border-t border-dashed" style={{ borderColor: 'var(--gt-border-subtle)' }} />
-                      {localCliActions.map((action) => (
-                        <button
-                          key={action.id}
-                          type="button"
-                          role="menuitem"
-                          disabled={action.disabled}
-                          onClick={() => {
-                            if (action.disabled) {
-                              return;
-                            }
-                            setIsActionMenuOpen(false);
-                            action.onSelect(account);
-                          }}
-                          title={action.disabledReason || action.detail || action.label}
-                          className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Terminal size={14} strokeWidth={2} className="shrink-0" />
-                          <span>{action.label}</span>
-                        </button>
-                      ))}
-                    </>
-                  ) : null}
-                  {canToggleDisabled ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setIsActionMenuOpen(false);
-                        onToggleDisabled(account);
-                      }}
-                      disabled={!ready || isStatusPending}
-                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal hover:bg-[var(--gt-surface-muted)] disabled:cursor-wait disabled:opacity-50 ${
-                        account.disabled ? 'text-[var(--gt-ink-primary)]' : 'text-[var(--gt-status-danger)]'
-                      }`}
-                    >
-                      <Power size={14} strokeWidth={2} />
-                      {isStatusPending ? t('common.loading') : account.disabled ? t('common.enable') : t('common.disable')}
-                    </button>
-                  ) : null}
-                  {showDeleteAction ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setIsActionMenuOpen(false);
-                        onRequestDelete(account.id);
-                      }}
-                      className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-normal text-[var(--gt-status-danger)] hover:bg-[var(--gt-surface-muted)]"
-                    >
-                      <Trash2 size={14} strokeWidth={2} />
-                      {t('accounts.card_delete')}
-                    </button>
-                  ) : null}
-                  {copyState !== 'idle' ? (
-                    <div
-                      className={`border-t border-dashed px-3 py-2 text-xs font-normal ${
-                        copyState === 'success' ? 'text-[var(--gt-status-success)]' : 'text-[var(--gt-status-danger)]'
-                      }`}
-                      style={{ borderColor: 'var(--gt-border-subtle)' }}
-                    >
-                      {copyState === 'success' ? t('accounts.copy_done') : t('accounts.copy_failed')}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: 'copy',
+                    icon: <FileText size={14} />,
+                    label: t('accounts.copy_account_config'),
+                    onClick: () => void copyAccountContent(),
+                  },
+                  ...(canMenuReauth ? [{
+                    key: 'reauth',
+                    icon: <RotateCw size={14} />,
+                    label: isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth'),
+                    disabled: isOAuthPending,
+                    onClick: () => {
+                      if (!isOAuthPending) onStartReauth(account);
+                    },
+                  }] : []),
+                  ...(localCliActions.length > 0 ? [
+                    { type: 'divider' as const },
+                    ...localCliActions.map((action) => ({
+                      key: action.id,
+                      icon: <Terminal size={14} />,
+                      label: action.label,
+                      disabled: action.disabled,
+                      title: action.disabledReason || action.detail || action.label,
+                      onClick: () => {
+                        if (!action.disabled) action.onSelect(account);
+                      },
+                    })),
+                  ] : []),
+                  ...(canToggleDisabled ? [{
+                    key: 'toggle',
+                    icon: <Power size={14} />,
+                    label: isStatusPending ? t('common.loading') : account.disabled ? t('common.enable') : t('common.disable'),
+                    disabled: !ready || isStatusPending,
+                    danger: !account.disabled,
+                    onClick: () => onToggleDisabled(account),
+                  }] : []),
+                  ...(showDeleteAction ? [{
+                    key: 'delete',
+                    icon: <Trash2 size={14} />,
+                    label: t('accounts.card_delete'),
+                    danger: true,
+                    onClick: () => onRequestDelete(account.id),
+                  }] : []),
+                ],
+                onClick: () => setIsActionMenuOpen(false),
+              }}
+              trigger={['click']}
+              open={isActionMenuOpen}
+              onOpenChange={setIsActionMenuOpen}
+            >
+              <Tooltip title={t('accounts.card_actions')}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<MoreVertical size={16} strokeWidth={2} />}
+                  aria-label={t('accounts.card_actions')}
+                />
+              </Tooltip>
+            </Dropdown>
           </div>
         ) : null
       }
@@ -410,8 +334,8 @@ export default function AccountCard({
             onKeyDown={(event) => event.stopPropagation()}
           >
             <Button
+              type="text"
               size="small"
-              htmlType="button"
               onClick={() => onStartReauth(account)}
               disabled={isOAuthPending}
             >

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Button, Checkbox } from 'antd';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
 import type { VendorCredentialField } from '../model/vendorPresets';
@@ -18,8 +19,6 @@ const accountCurlEditorTitleClass =
   'text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountCurlEditorFooterNoteClass =
   'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
-const accountCurlEditorButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]';
 const accountCurlEditorBodyClass =
   'grid min-h-[28rem] gap-0 bg-[var(--gt-surface-canvas)] lg:grid-cols-[minmax(0,1fr)_22rem]';
 const accountCurlEditorPanelClass =
@@ -160,9 +159,9 @@ export function AccountCurlEditorModal({
           <div className={accountCurlEditorFooterNoteClass}>
             内容已写入详情页草稿，返回后由底部保存改动统一提交。
           </div>
-          <button onClick={onClose} className={accountCurlEditorButtonClass}>
+          <Button size="small" onClick={onClose}>
             关闭
-          </button>
+          </Button>
         </>
       }
     >
@@ -170,8 +169,7 @@ export function AccountCurlEditorModal({
         <div data-account-curl-editor-script-panel className={accountCurlEditorPanelClass}>
           <div className={accountCurlEditorToolbarClass}>
             <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={enabled}
                 onChange={(event) => onEnabledChange(event.target.checked)}
               />
@@ -204,9 +202,9 @@ export function AccountCurlEditorModal({
               {variables.map((variable) => {
                 const token = `{{${variable.label}}}`;
                 return (
-                  <button
+                  <Button
                     key={variable.label}
-                    type="button"
+                    size="small"
                     onMouseDown={(event) => {
                       if (hasCursor) {
                         event.preventDefault();
@@ -224,7 +222,7 @@ export function AccountCurlEditorModal({
                     <div className={`mt-2 ${accountCurlEditorMetaClass}`}>
                       {hasCursor ? '插入' : copiedToken === token ? '已复制' : '复制'}
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -249,9 +247,9 @@ export function AccountCurlEditorModal({
             </div>
             <div className="grid gap-2">
               {templates.map((template) => (
-                <button
+                <Button
                   key={template.id}
-                  type="button"
+                  size="small"
                   onClick={() => onApplyTemplate(template.body)}
                   className={accountCurlEditorTemplateButtonClass}
                 >
@@ -261,7 +259,7 @@ export function AccountCurlEditorModal({
                   <div className={`mt-1 ${accountCurlEditorMetaClass}`}>
                     {template.description}
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
           </section>

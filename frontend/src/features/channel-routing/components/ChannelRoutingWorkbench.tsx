@@ -9,6 +9,7 @@ import {
   Split,
   X,
 } from 'lucide-react';
+import { Button, Select } from 'antd';
 import { useEffect, useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import { RunRouteResilienceAction } from '../../../../wailsjs/go/main/App';
@@ -76,8 +77,6 @@ const channelRoutingPrimaryButtonClass =
   'inline-flex min-h-11 w-full items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-md)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60';
 const channelRoutingFieldClass =
   'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
-const channelRoutingSelectClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition focus:border-[var(--gt-border-strong)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60';
 const channelRoutingMetaTextClass =
   'font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 
@@ -197,33 +196,32 @@ export default function ChannelRoutingWorkbench({
               <h2 className="min-w-0 text-[length:var(--gt-font-size-lg)] font-semibold leading-5 text-[var(--gt-ink-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
                 请求模式
               </h2>
-              <button
-                type="button"
+              <Button
+                size="small"
                 onClick={() => setHelpOpen(true)}
                 aria-label="查看请求模式说明"
                 title="查看请求模式说明"
                 aria-pressed={helpOpen}
+                icon={<CircleHelp className="h-4 w-4" strokeWidth={4} />}
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded border transition-colors active:scale-95 ${
                   helpOpen
                     ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                     : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] [@media(hover:hover)]:hover:border-[var(--gt-ink-primary)]'
                 }`}
-              >
-                <CircleHelp className="h-4 w-4" strokeWidth={4} />
-              </button>
+              />
             </div>
           </div>
           <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-none">
             {onOpenProjectConfig ? (
-              <button
-                type="button"
+              <Button
+                size="small"
                 onClick={onOpenProjectConfig}
                 disabled={disabled || saving}
                 className={channelRoutingSecondaryButtonClass}
+                icon={<Settings2 className="h-3.5 w-3.5" strokeWidth={4} />}
               >
-                <Settings2 className="h-3.5 w-3.5" strokeWidth={4} />
                 项目配置
-              </button>
+              </Button>
             ) : null}
             <div className="grid min-w-0 flex-1 gap-2 sm:max-w-[28rem] sm:flex-none sm:grid-cols-2">
               {routeModes.map((item) => (
@@ -270,18 +268,19 @@ export default function ChannelRoutingWorkbench({
                 </span>
               </div>
               <div className="grid gap-3">
-                <button
-                  type="button"
+                <Button
+                  type="primary"
+                  size="small"
                   onClick={onExplain}
                   disabled={disabled}
                   className={channelRoutingPrimaryButtonClass}
+                  icon={<Play className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />}
                 >
-                  <Play className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
                   <span className="min-w-0 flex-1 truncate text-left font-semibold">运行预演</span>
                   <span className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold opacity-70">
                     RUN
                   </span>
-                </button>
+                </Button>
                 {onModelChange && normalizedModelOptions.length > 0 ? (
                   <DiagnosticSelect
                     label="请求模型"
@@ -325,18 +324,14 @@ export default function ChannelRoutingWorkbench({
               <div className="min-w-0 border-l border-[var(--gt-border-subtle)] py-1 pl-4">
                 <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
                   <span className="text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]">对比模式</span>
-                  <select
+                  <Select
+                    size="small"
                     value={config.shadowRouteMode}
                     disabled={disabled}
-                    onChange={(event) => onShadowModeChange(event.currentTarget.value as ChannelRouteMode)}
-                    className={`${channelRoutingSelectClass} h-[1.625rem] w-[4.25rem] px-2 py-1 text-center font-mono text-[length:var(--gt-font-size-sm)] [text-align-last:center]`}
-                  >
-                    {routeModes.map((item) => (
-                      <option key={item.mode} value={item.mode}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => onShadowModeChange(value as ChannelRouteMode)}
+                    className="w-[4.25rem] text-center font-mono"
+                    options={routeModes.map((item) => ({ value: item.mode, label: item.label }))}
+                  />
                 </div>
                 <DiagnosticRouteColumn
                   title=""
@@ -413,9 +408,9 @@ export default function ChannelRoutingWorkbench({
                     {routeActionTargets.map((target) => {
                       const active = target.id === routeActionTarget.id;
                       return (
-                        <button
+                        <Button
                           key={target.id}
-                          type="button"
+                          size="small"
                           onClick={() => setSelectedRouteActionTargetID(target.id)}
                           className={`w-full rounded border px-3 py-2 text-left transition-colors active:scale-[0.99] ${
                             active
@@ -451,7 +446,7 @@ export default function ChannelRoutingWorkbench({
                               {target.detail}
                             </div>
                           ) : null}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -482,15 +477,15 @@ export default function ChannelRoutingWorkbench({
 
                     <div className="grid gap-2 xl:grid-cols-3">
                       {routeActionButtons.map((item) => (
-                        <button
+                        <Button
                           key={item.action}
-                          type="button"
+                          size="small"
                           onClick={() => void runRouteResilienceAction(item.action)}
                           disabled={!item.enabled || Boolean(routeActionPending) || disabled}
                           className={`${channelRoutingSecondaryButtonClass} min-w-0 justify-start text-left`}
                           title={item.disabledReason || item.helper}
+                          icon={<RefreshCcw className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />}
                         >
-                          <RefreshCcw className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                               {item.title}
@@ -499,7 +494,7 @@ export default function ChannelRoutingWorkbench({
                               {item.enabled ? item.helper : item.disabledReason || item.helper}
                             </span>
                           </span>
-                        </button>
+                        </Button>
                       ))}
                     </div>
 
@@ -685,15 +680,15 @@ function RouteModeHelpModal({ onClose }: { onClose: () => void }) {
       header={
         <div className="flex min-w-0 items-center justify-between gap-3">
           <SectionHeading icon={BookOpenText} label="请求模式说明" />
-          <button
-            type="button"
+          <Button
+            size="small"
             onClick={onClose}
             aria-label="关闭请求模式说明"
             className={channelRoutingSecondaryButtonClass}
+            icon={<X className="h-3.5 w-3.5" strokeWidth={4} />}
           >
-            <X className="h-3.5 w-3.5" strokeWidth={4} />
             关闭
-          </button>
+          </Button>
         </div>
       }
       bodyClassName="p-4 sm:p-5"
@@ -749,20 +744,20 @@ function StrategyButton({
   onModeChange: (mode: ChannelRouteMode) => void;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
       onClick={() => onModeChange(mode)}
       disabled={disabled}
       aria-pressed={active}
+      icon={<Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />}
       className={`grid min-h-10 grid-cols-[1.5rem_minmax(0,1fr)] items-center gap-2 rounded border px-3 py-2 text-left transition-colors active:scale-[0.98] ${
         active
           ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
           : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] [@media(hover:hover)]:hover:border-[var(--gt-ink-primary)]'
       }`}
     >
-      <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
       <span className="min-w-0 truncate text-[length:var(--gt-font-size-sm)] font-semibold">{label}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -784,18 +779,14 @@ function DiagnosticSelect({
       <span className="font-mono text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]">
         {label}
       </span>
-      <select
+      <Select
+        size="small"
         value={value}
         disabled={disabled}
-        onChange={(event) => onChange(event.currentTarget.value)}
-        className={`${channelRoutingSelectClass} h-11 min-w-0 px-3 py-2 pr-8 font-mono text-[length:var(--gt-font-size-md)]`}
-      >
-        {options.map((option) => (
-          <option key={`${option.value}-${option.label}`} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        onChange={(val) => onChange(val)}
+        className="min-w-0 font-mono"
+        options={options.map((option) => ({ value: option.value, label: option.label }))}
+      />
     </label>
   );
 }

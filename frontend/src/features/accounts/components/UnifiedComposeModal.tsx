@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button, Checkbox, Tooltip } from "antd";
 import { TextInputField } from "../../../components/ui/FormField";
 import SearchInput from "../../../components/ui/SearchInput";
 import {
@@ -219,8 +220,9 @@ export default function UnifiedComposeModal({
                   >
                     <div className={unifiedComposeProviderGridClass} data-unified-compose-provider-grid>
                       {items.map((preset) => (
-                        <button
+                        <Button
                           key={preset.id}
+                          size="small"
                           onClick={() => handleSelectPreset(preset)}
                           title={preset.name}
                           aria-label={buildUnifiedComposeProviderAriaLabel(
@@ -260,7 +262,7 @@ export default function UnifiedComposeModal({
                               </AccountDetailPill>
                             ))}
                           </div>
-                        </button>
+                        </Button>
                       ))}
                     </div>
                   </AccountDetailSection>
@@ -609,13 +611,13 @@ function UnifiedComposeCurlConfigSection({
       eyebrow={eyebrow}
       title={title}
       actions={
-        <button
-          type="button"
+        <Button
+          size="small"
           onClick={() => setEditorOpen(true)}
           className={unifiedComposeCurlButtonClass}
         >
           {hasScript ? editLabel : addLabel}
-        </button>
+        </Button>
       }
       muted={!hasScript}
     >
@@ -626,8 +628,7 @@ function UnifiedComposeCurlConfigSection({
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={enabled}
                 onChange={(event) => onEnabledChange(event.target.checked)}
               />
@@ -639,12 +640,13 @@ function UnifiedComposeCurlConfigSection({
               {configuredLabel}
             </span>
           </div>
-          <div
-            className="truncate font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]"
-            title={value || undefined}
-          >
-            {value}
-          </div>
+          <Tooltip title={value || undefined}>
+            <div
+              className="truncate font-mono text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]"
+            >
+              {value}
+            </div>
+          </Tooltip>
         </div>
       ) : (
         <AccountDetailEmptyState className={unifiedComposeCurlEmptyClass}>
@@ -741,13 +743,13 @@ function UnifiedComposeHeader({
           </div>
         </div>
         {selectedPreset && !showPresets ? (
-          <button
-            type="button"
+          <Button
+            size="small"
             onClick={onBackToPresets}
             className={unifiedComposeHeaderButtonClass}
           >
             {copy.changeLabel}
-          </button>
+          </Button>
         ) : null}
       </div>
       {selectedPreset && !showPresets ? (
@@ -778,26 +780,28 @@ function UnifiedComposeFooter({
 }) {
   return (
     <div className="contents" data-unified-compose-footer>
-      <button type="button" onClick={onClose} className={unifiedComposeFooterButtonClass}>
+      <Button size="small" onClick={onClose} className={unifiedComposeFooterButtonClass}>
         {t("common.cancel")}
-      </button>
+      </Button>
       {showPresets ? (
-        <button
-          type="button"
+        <Button
+          type="primary"
+          size="small"
           onClick={onCustomEntry}
           className={unifiedComposeFooterPrimaryButtonClass}
         >
           {copy.customEntryLabel}
-        </button>
+        </Button>
       ) : (
-        <button
-          type="button"
+        <Button
+          type="primary"
+          size="small"
           onClick={onSubmit}
           disabled={!canSubmit}
           className={unifiedComposeFooterPrimaryButtonClass}
         >
           {copy.submitLabel}
-        </button>
+        </Button>
       )}
     </div>
   );

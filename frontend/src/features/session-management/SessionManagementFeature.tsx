@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BarChart3, RefreshCw, X } from 'lucide-react';
+import { Button, Tooltip } from 'antd';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
 import { analyzeCodexSessions } from './api.ts';
@@ -353,34 +354,32 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
               </div>
             ) : null}
             {workspace === 'codex' ? (
-              <button
-                type="button"
-                ref={analysisButtonRef}
-                aria-label={copy.analysisOpen}
-                title={copy.analysisOpen}
-                onClick={() => {
-                  if (!projects.length || analysisLoading) {
-                    return;
-                  }
-                  setAnalysisSelectorOpen(true);
-                }}
-                aria-disabled={!projects.length || analysisLoading ? 'true' : undefined}
-                className={`inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] ${
-                  !projects.length || analysisLoading ? 'cursor-not-allowed opacity-50' : ''
-                }`}
-              >
-                <BarChart3 className="h-5 w-5" strokeWidth={2.4} />
-              </button>
+              <Tooltip title={copy.analysisOpen}>
+                <Button
+                  size="small"
+                  ref={analysisButtonRef}
+                  aria-label={copy.analysisOpen}
+                  onClick={() => {
+                    if (!projects.length || analysisLoading) {
+                      return;
+                    }
+                    setAnalysisSelectorOpen(true);
+                  }}
+                  disabled={!projects.length || analysisLoading}
+                  icon={<BarChart3 className="h-5 w-5" strokeWidth={2.4} />}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                />
+              </Tooltip>
             ) : null}
-            <button
-              type="button"
-              aria-label={copy.refresh}
-              title={copy.refresh}
-              onClick={() => void loadSnapshot('refresh')}
-              className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
-            >
-              <RefreshCw className={`h-5 w-5 ${snapshotRefreshing ? 'animate-spin' : ''}`} strokeWidth={2.4} />
-            </button>
+            <Tooltip title={copy.refresh}>
+              <Button
+                size="small"
+                aria-label={copy.refresh}
+                onClick={() => void loadSnapshot('refresh')}
+                icon={<RefreshCw className={`h-5 w-5 ${snapshotRefreshing ? 'animate-spin' : ''}`} strokeWidth={2.4} />}
+                className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+              />
+            </Tooltip>
           </>
         }
       />
@@ -452,15 +451,15 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-3 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setCompactSessionsOpen(false)}
-                aria-label={copy.close}
-                title={copy.close}
-                className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
-              >
-                <X className="h-4 w-4" strokeWidth={2.4} />
-              </button>
+              <Tooltip title={copy.close}>
+                <Button
+                  size="small"
+                  onClick={() => setCompactSessionsOpen(false)}
+                  aria-label={copy.close}
+                  icon={<X className="h-4 w-4" strokeWidth={2.4} />}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+                />
+              </Tooltip>
             </div>
             <SessionsPanel
               copy={copy}

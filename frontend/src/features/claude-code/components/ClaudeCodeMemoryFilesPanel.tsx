@@ -1,5 +1,6 @@
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Edit3, FileText, FileWarning, GitBranch, Globe, Home, Import, Save } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { Button, Input } from 'antd';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Edit3, FileText, FileWarning, GitBranch, Globe, Home, Import, Save } from 'lucide-react';
 import type { main } from '../../../../wailsjs/go/models';
 import AssetWorkbenchShell from '../../../components/ui/AssetWorkbenchShell';
 import SnippetPre from '../../../components/ui/SnippetPre';
@@ -42,15 +43,11 @@ const scopeLabels: Record<string, string> = {
   local: 'Local (CLAUDE.local.md)',
 };
 
-const memoryFilesPanelActionButtonClass =
-  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 text-xs font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
 const memoryFilesPanelListClass = 'divide-y divide-[var(--gt-border-subtle)]';
 const memoryFilesPanelRowClass =
   'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
 const memoryFilesPanelPanelClass =
   'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
-const memoryFilesPanelTextareaClass =
-  'w-full min-h-[12rem] rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 font-mono text-xs text-[var(--gt-ink-primary)] transition-colors focus:border-[var(--gt-border-strong)] focus:outline-none';
 
 export default function ClaudeCodeMemoryFilesPanel({
   snapshot,
@@ -114,10 +111,10 @@ export default function ClaudeCodeMemoryFilesPanel({
         <div className={memoryFilesPanelListClass} data-claude-memory-files-panel="quiet">
           {snapshot.files.map((file) => (
             <div key={file.path}>
-              <button
-                type="button"
+              <Button
+                type="text"
                 onClick={() => toggleFile(file.path)}
-                className={`${memoryFilesPanelRowClass} ${!file.exists ? 'opacity-50' : ''}`}
+                className={memoryFilesPanelRowClass}
                 data-claude-memory-file-row={file.path}
               >
                 <span className="text-[var(--gt-ink-secondary)]">
@@ -146,7 +143,7 @@ export default function ClaudeCodeMemoryFilesPanel({
                     <AlertTriangle className="h-3 w-3" /> not gitignored
                   </span>
                 )}
-              </button>
+              </Button>
 
               {expandedFiles.has(file.path) && file.exists && (
                 <div className={memoryFilesPanelPanelClass}>
@@ -199,21 +196,21 @@ export default function ClaudeCodeMemoryFilesPanel({
                   <div className="flex justify-end">
                     {editingPath === file.path ? (
                       <div className="flex gap-2">
-                        <button type="button" onClick={onCancelEdit} className={memoryFilesPanelActionButtonClass}>
+                        <Button size="small" onClick={onCancelEdit}>
                           Cancel
-                        </button>
-                        <button type="button" onClick={onSaveEdit} className="flex items-center gap-1 rounded bg-[var(--button-primary-bg)] px-3 py-1 text-xs text-[var(--button-primary-text)]">
-                          <Save className="h-3 w-3" /> Save
-                        </button>
+                        </Button>
+                        <Button type="primary" size="small" onClick={onSaveEdit} icon={<Save className="h-3 w-3" />}>
+                          Save
+                        </Button>
                       </div>
                     ) : (
-                      <button
-                        type="button"
+                      <Button
+                        size="small"
                         onClick={() => onStartEdit?.(file.path, file.content || '')}
-                        className={memoryFilesPanelActionButtonClass}
+                        icon={<Edit3 className="h-3 w-3" />}
                       >
-                        <Edit3 className="h-3 w-3" /> Edit
-                      </button>
+                        Edit
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -228,8 +225,8 @@ export default function ClaudeCodeMemoryFilesPanel({
           <h3 className="mb-2 flex items-center gap-2 text-sm font-normal">
             <Edit3 className="h-4 w-4" /> Editing: <span className="font-mono text-xs text-[var(--gt-ink-muted)]">{editingPath}</span>
           </h3>
-          <textarea
-            className={memoryFilesPanelTextareaClass}
+          <Input.TextArea
+            size="small"
             value={editContent ?? ''}
             onChange={(e) => onChangeEditContent?.(e.target.value)}
           />

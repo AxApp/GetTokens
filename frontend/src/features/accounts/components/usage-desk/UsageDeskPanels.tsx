@@ -1,4 +1,5 @@
-import { type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { Tooltip } from 'antd';
 import {
   formatUsageDeskChartValue,
   usageDeskProjectDrilldownColumnLabels,
@@ -11,10 +12,6 @@ const usageDeskPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-
 const usageDeskMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const usageDeskMetaClass = 'text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
 const usageDeskStrongMetaClass = 'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
-const usageDeskBadgeClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-1 text-[length:var(--gt-font-size-2xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
-const usageDeskCountBadgeClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1 text-[length:var(--gt-font-size-md-compact)] font-normal text-[var(--gt-ink-primary)]';
 const usageDeskTableHeaderClass =
   'sticky top-0 z-10 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-1.5 text-left text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-primary)]';
 const usageDeskTableCellClass = 'px-3 py-1.5 text-[length:var(--gt-font-size-md-compact)] font-normal leading-4 text-[var(--gt-ink-primary)]';
@@ -55,17 +52,7 @@ export function UsageSessionDrilldownPanel({
   embedded?: boolean;
 }) {
   return (
-    <section data-usage-desk-session-drilldown="true" className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden bg-[var(--gt-surface-canvas)]' : usageDeskPanelClass}`}>
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] px-4 py-3">
-        <div>
-          <div className={usageDeskMetaClass}>LOCAL SESSIONS</div>
-          <h3 className="mt-1 text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">{title}</h3>
-        </div>
-        <div className={usageDeskCountBadgeClass}>
-          {new Intl.NumberFormat('zh-CN').format(rows.length)} 个会话
-        </div>
-      </div>
-
+    <section data-usage-desk-session-drilldown="true" className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden bg-[var(--gt-surface-canvas)]' : usageDeskPanelClass} relative z-10`}>
       {rows.length > 0 ? (
         <div className={`${embedded ? 'flex-1 overflow-auto' : 'overflow-x-auto'}`}>
           <table className="w-full min-w-[920px] border-collapse">
@@ -86,8 +73,10 @@ export function UsageSessionDrilldownPanel({
                 const sourceLabel = buildSessionSourceLabel(row.projectName);
                 return (
                   <tr key={row.sessionID} className="border-t border-dashed border-[var(--gt-border-strong)] first:border-t-0">
-                    <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--gt-font-size-md-compact)] leading-4 text-[var(--gt-ink-primary)]" title={row.sessionID}>
-                      <div className="truncate font-normal">{sourceLabel}</div>
+                    <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--gt-font-size-md-compact)] leading-4 text-[var(--gt-ink-primary)]">
+                      <Tooltip title={row.sessionID}>
+                        <div className="truncate font-normal">{sourceLabel}</div>
+                      </Tooltip>
                     </td>
                     <SessionUsageCell value={row.model || '--'} />
                     <SessionUsageCell value={formatUsageDeskChartValue(row.requests, 'count')} />
@@ -110,6 +99,10 @@ export function UsageSessionDrilldownPanel({
   );
 }
 
+type ProjectSortKey = 'projectName' | 'sessions' | 'model' | 'requests' | 'totalTokens' | 'inputTokens' | 'cachedInputTokens' | 'outputTokens';
+
+const projectSortKeys: ProjectSortKey[] = ['projectName', 'sessions', 'model', 'requests', 'totalTokens', 'inputTokens', 'cachedInputTokens', 'outputTokens'];
+
 export function UsageProjectDrilldownPanel({
   title,
   rows,
@@ -119,27 +112,63 @@ export function UsageProjectDrilldownPanel({
   rows: UsageDeskProjectedProjectUsage[];
   embedded?: boolean;
 }) {
+  const [sortKey, setSortKey] = useState<ProjectSortKey>('totalTokens');
+  const [sortAsc, setSortAsc] = useState(false);
+
+  const sortedRows = useMemo(() => {
+    const sorted = [...rows].sort((a, b) => {
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return sortAsc ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
+    });
+    return sorted;
+  }, [rows, sortKey, sortAsc]);
+
+  function handleSort(key: ProjectSortKey) {
+    if (sortKey === key) {
+      setSortAsc((prev) => !prev);
+    } else {
+      setSortKey(key);
+      setSortAsc(false);
+    }
+  }
+
   return (
-    <section data-usage-desk-project-drilldown="true" className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden bg-[var(--gt-surface-canvas)]' : usageDeskPanelClass}`}>
+    <section data-usage-desk-project-drilldown="true" className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden bg-[var(--gt-surface-canvas)]' : usageDeskPanelClass} relative z-10`}>
       {rows.length > 0 ? (
         <div className={`${embedded ? 'flex-1 overflow-auto' : 'overflow-x-auto'}`}>
-          <table className="w-full min-w-[920px] border-collapse">
+          <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
             <thead>
               <tr className="bg-[var(--gt-surface-muted)]">
-                {usageDeskProjectDrilldownColumnLabels.map((label) => (
-                  <th
-                    key={label}
-                    className={usageDeskTableHeaderClass}
-                  >
-                    {label}
-                  </th>
-                ))}
+                {usageDeskProjectDrilldownColumnLabels.map((label, index) => {
+                  const key = projectSortKeys[index];
+                  const isActive = sortKey === key;
+                  return (
+                    <th
+                      key={label}
+                      className={`${usageDeskTableHeaderClass} cursor-pointer select-none hover:bg-[var(--gt-surface-canvas)]`}
+                      onClick={() => key && handleSort(key)}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {label}
+                        {isActive && (
+                          <span className="text-[var(--gt-ink-muted)]">
+                            {sortAsc ? '↑' : '↓'}
+                          </span>
+                        )}
+                      </span>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
-              {rows.map((project) => (
+              {sortedRows.map((project) => (
                 <tr key={project.projectName} className="border-t border-dashed border-[var(--gt-border-strong)] first:border-t-0">
-                  <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--gt-font-size-md-compact)] font-normal leading-4 text-[var(--gt-ink-primary)]">
+                  <td className="max-w-none px-3 py-1.5 text-[length:var(--gt-font-size-md-compact)] font-normal leading-4 text-[var(--gt-ink-primary)]">
                     <div className="truncate">{project.projectName}</div>
                   </td>
                   <ProjectUsageCell value={formatUsageDeskChartValue(project.sessions, 'count').replace('次', '个')} />

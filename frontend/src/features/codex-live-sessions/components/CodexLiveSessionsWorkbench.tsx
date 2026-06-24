@@ -1,4 +1,5 @@
 import { Copy, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Button } from 'antd';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import SearchInput from '../../../components/ui/SearchInput';
@@ -56,22 +57,14 @@ const codexLiveWorkbenchShellClass =
   'h-full min-h-0 min-w-0 overflow-auto bg-[var(--gt-surface-canvas)] p-5 lg:p-8';
 const codexLiveWorkbenchTitleClass =
   'text-2xl font-semibold tracking-normal text-[var(--gt-ink-primary)] [word-break:keep-all] sm:text-3xl';
-const codexLiveWorkbenchActionButtonClass =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexLiveWorkbenchSegmentClass =
   'grid grid-cols-2 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const codexLiveWorkbenchSegmentButtonClass =
-  'h-9 min-w-16 px-3 text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal transition-colors';
-const codexLiveWorkbenchFilterButtonClass =
-  'inline-flex h-10 w-full min-w-0 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)] lg:w-auto';
 const codexLiveWorkbenchFilterMenuClass =
   'absolute left-1/2 top-[calc(100%+0.75rem)] z-30 grid min-w-[min(22rem,calc(100vw-2.5rem))] -translate-x-1/2 gap-4 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 [box-shadow:var(--gt-elevation-card)] lg:left-auto lg:right-0 lg:translate-x-0';
 const codexLiveWorkbenchFilterGroupLabelClass =
   'text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveWorkbenchFilterOptionGridClass =
   'grid overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
-const codexLiveWorkbenchFilterOptionClass =
-  'min-h-9 min-w-0 px-2 text-[length:var(--gt-font-size-2xs)] font-semibold leading-none tracking-normal transition-colors';
 const codexLiveWorkbenchFilterResetRowClass =
   'flex justify-end border-t border-[var(--gt-border-subtle)] pt-3';
 
@@ -235,23 +228,23 @@ export default function CodexLiveSessionsWorkbench({
                 aria-label={t('codex_live_sessions.view_switch_label')}
               >
                 {(['session', 'project'] as const).map((item) => (
-                  <button
+                  <Button
                     key={item}
-                    type="button"
+                    size="small"
                     aria-pressed={view === item}
                     onClick={() => {
                       setSelectedSessionID(undefined);
                       setSelectedProjectID(undefined);
                       onViewChange?.(item);
                     }}
-                    className={`${codexLiveWorkbenchSegmentButtonClass} ${
+                    className={`${
                       view === item
                         ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
                         : 'text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--gt-ink-primary)]'
                     } ${item === 'session' ? 'border-r border-[var(--gt-border-subtle)]' : ''}`}
                   >
                     {t(`codex_live_sessions.view_${item}`)}
-                  </button>
+                  </Button>
                 ))}
               </div>
               <SourceBadge snapshot={snapshot} />
@@ -262,26 +255,24 @@ export default function CodexLiveSessionsWorkbench({
                 iconStrokeWidth={2.5}
                 className="text-[length:var(--gt-font-size-xs)]"
               />
-              <button
-                type="button"
-                className={codexLiveWorkbenchActionButtonClass}
+              <Button
+                size="small"
                 onClick={confirmClearSessions}
                 disabled={!onClearSessions || snapshot.sessions.length === 0}
                 title={t('codex_live_sessions.clear_sessions_title')}
+                icon={<Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />}
               >
-                <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
                 {t('codex_live_sessions.clear_sessions')}
-              </button>
-              <button
-                type="button"
-                className={codexLiveWorkbenchActionButtonClass}
+              </Button>
+              <Button
+                size="small"
                 onClick={copyDiagnostic}
                 disabled={!selectedSession}
                 title={t('codex_live_sessions.copy_diagnostic')}
+                icon={<Copy className="h-3.5 w-3.5" strokeWidth={2.5} />}
               >
-                <Copy className="h-3.5 w-3.5" strokeWidth={2.5} />
                 {copied ? t('codex_live_sessions.copied') : t('common.copy')}
-              </button>
+              </Button>
             </div>
           }
         />
@@ -294,15 +285,14 @@ export default function CodexLiveSessionsWorkbench({
             clearLabel={t('codex_live_sessions.clear_search')}
           />
           <div ref={filterMenuRef} className="relative min-w-0">
-            <button
-              type="button"
-              className={codexLiveWorkbenchFilterButtonClass}
+            <Button
+              size="small"
               onClick={() => setIsFilterMenuOpen((prev) => !prev)}
               aria-expanded={isFilterMenuOpen}
+              icon={<SlidersHorizontal className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
               <span className="min-w-0 truncate">{filterLabel}</span>
-            </button>
+            </Button>
             {isFilterMenuOpen ? (
               <div data-codex-live-sessions-filter-menu="quiet" className={codexLiveWorkbenchFilterMenuClass}>
                 <div className="grid gap-2">
@@ -341,16 +331,16 @@ export default function CodexLiveSessionsWorkbench({
                   </div>
                 </div>
                 <div className={codexLiveWorkbenchFilterResetRowClass}>
-                  <button
-                    type="button"
-                    className={`${codexLiveWorkbenchActionButtonClass} h-8 px-2 text-[length:var(--gt-font-size-2xs)]`}
+                  <Button
+                    size="small"
+                    className="h-8 px-2 text-[length:var(--gt-font-size-2xs)]"
                     onClick={() => {
                       setStatusFilter('all');
                       setTransportFilter('all');
                     }}
                   >
                     {t('codex_live_sessions.filter_reset')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : null}
@@ -419,10 +409,10 @@ function FilterMenuOptionButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
       onClick={onClick}
-      className={`${codexLiveWorkbenchFilterOptionClass} ${
+      className={`${
         bordered ? 'border-r border-[var(--gt-border-subtle)]' : ''
       } ${topBorder ? 'border-t border-[var(--gt-border-subtle)]' : ''} ${
         active
@@ -431,7 +421,7 @@ function FilterMenuOptionButton({
       }`}
     >
       <span className="block truncate">{children}</span>
-    </button>
+    </Button>
   );
 }
 

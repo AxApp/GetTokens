@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Button, Tag } from 'antd';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
@@ -45,8 +46,6 @@ const codexLiveMutedPanelClass =
 const codexLiveHeaderClass = 'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveChipClass =
   'inline-flex h-6 items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)]';
-const codexLiveSecondaryButtonClass =
-  'inline-flex h-8 w-fit items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 const codexLiveMetaTextClass = 'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const codexLiveKickerTextClass = 'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveSectionLabelClass = 'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
@@ -275,9 +274,9 @@ function HistoryWindowControl({
     <div className={`${codexLiveMetaPanelClass} flex-wrap`} data-codex-history-window-control="true">
       <span className="text-[var(--gt-ink-muted)]">{label || t('codex_live_sessions.history_recent_window')}</span>
       {canLoadMore ? (
-        <button type="button" className={codexLiveSecondaryButtonClass} onClick={onLoadMore} disabled={loading}>
+        <Button size="small" onClick={onLoadMore} disabled={loading}>
           {loading ? t('common.loading') : t('codex_live_sessions.history_load_more')}
-        </button>
+        </Button>
       ) : null}
     </div>
   );
@@ -435,9 +434,9 @@ function TimingMetricSelector({
       {timingTrendSeries.slice(0, 4).map((series) => {
         const active = selectedMetric === series.id;
         return (
-          <button
+          <Button
             key={series.id}
-            type="button"
+            size="small"
             className={`h-7 border px-2 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold transition-colors ${
               active
                 ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
@@ -446,7 +445,7 @@ function TimingMetricSelector({
             onClick={() => onSelectMetric(series.id)}
           >
             {t(series.labelKey)}
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -972,16 +971,16 @@ function TimingMetrics({
           }
 
           return (
-            <button
+            <Button
               key={metric.key}
-              type="button"
+              size="small"
               className={`${rowClassName} text-left active:scale-95`}
               aria-pressed={selected}
               onClick={() => onSelectMetric(trendMetric)}
             >
               <span className="min-w-0 truncate font-semibold">{metric.label}</span>
               <span className="font-semibold tabular-nums text-[var(--gt-ink-primary)]">{metric.value}</span>
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -1302,8 +1301,8 @@ function TimelineSummaryRow({
   const requestIDLabel = formatTimelineRequestID(summary.requestID);
 
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
       onClick={onOpen}
       className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--gt-border-subtle)_20%,transparent)] px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-[0.995] last:border-b-0 ${fallback ? 'bg-[color:color-mix(in_srgb,var(--gt-surface-muted)_54%,transparent)]' : ''}`}
       title={t('codex_live_sessions.detail')}
@@ -1328,7 +1327,7 @@ function TimelineSummaryRow({
           <TimelineMetricPill key={item.label} label={item.label} value={item.value} priority={index} />
         ))}
       </div>
-    </button>
+    </Button>
   );
 }
 
@@ -1423,9 +1422,9 @@ function RequestTimelineDetailModal({
       }
       footer={
         <div className="ml-auto">
-          <button type="button" onClick={onClose} className={codexLiveSecondaryButtonClass}>
+          <Button size="small" onClick={onClose}>
             {t('common.close')}
-          </button>
+          </Button>
         </div>
       }
     >
@@ -1483,9 +1482,9 @@ function FallbackTimelineDetailModal({
       }
       footer={
         <div className="ml-auto">
-          <button type="button" onClick={onClose} className={codexLiveSecondaryButtonClass}>
+          <Button size="small" onClick={onClose}>
             {t('common.close')}
-          </button>
+          </Button>
         </div>
       }
     >
@@ -1554,17 +1553,17 @@ function EventDetailLine({ event }: { event: CodexLiveTimelineEvent }) {
 }
 
 function StatusBadge({ status, t }: { status: CodexLiveSessionStatus; t: Translate }) {
-  const tone =
+  const tagColor =
     status === 'failed' || status === 'cancelled'
-      ? 'bg-[color-mix(in_srgb,var(--gt-status-danger)_14%,var(--gt-surface-canvas))]'
+      ? 'error'
       : status === 'degraded_http' || status === 'reconnecting' || status === 'upstream_disconnected'
-        ? 'bg-[color-mix(in_srgb,var(--gt-status-warning)_14%,var(--gt-surface-canvas))]'
+        ? 'warning'
         : status === 'active' || status === 'streaming'
-          ? 'bg-[color-mix(in_srgb,var(--gt-status-success)_12%,var(--gt-surface-canvas))]'
-          : 'bg-[var(--gt-surface-muted)]';
+          ? 'success'
+          : 'default';
   return (
-    <span className={`shrink-0 rounded border border-[var(--gt-border-subtle)] px-2 py-1 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] ${tone}`}>
+    <Tag color={tagColor} className="shrink-0 text-[length:var(--gt-font-size-sm)] font-normal">
       {t(statusLabelKeys[status])}
-    </span>
+    </Tag>
   );
 }

@@ -1,4 +1,5 @@
 import { ActivitySquare, AlertTriangle, ArrowUpRight, CheckCircle2, Clock3, Gauge, Puzzle, Route, ShieldAlert } from 'lucide-react';
+import { Button, Tag } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import RefreshActionButton from '../../components/ui/RefreshActionButton';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
@@ -257,9 +258,9 @@ export default function DoctorWorkbenchFeature() {
           align="center"
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <span className="rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
+              <Tag color="default" className="px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
                 Sidecar {view.sidecarReady ? 'ready in snapshot' : 'not ready'}
-              </span>
+              </Tag>
               <RefreshActionButton
                 label="Doctor snapshot"
                 disabled
@@ -516,20 +517,16 @@ export default function DoctorWorkbenchFeature() {
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {checkFilterOptions.map((option) => (
-              <button
+              <Button
                 key={option.id}
-                type="button"
+                type={option.id === checkFilter ? 'primary' : 'default'}
+                size="small"
                 data-omniroute-workbench-check-filter={option.id}
                 data-omniroute-workbench-check-filter-selected={option.id === checkFilter}
                 onClick={() => setCheckFilter(option.id)}
-                className={`rounded border px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal transition-colors ${
-                  option.id === checkFilter
-                    ? 'border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
-                    : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)]'
-                }`}
               >
                 {option.label} · {option.count}
-              </button>
+              </Button>
             ))}
           </div>
         </section>

@@ -1,5 +1,6 @@
-import { AlertTriangle, Bot, CheckCircle2, ChevronDown, ChevronRight, Edit3, EyeOff, FileCode, FolderGit2, Home, Plus, Save, Trash2, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { Button, Input } from 'antd';
+import { AlertTriangle, Bot, CheckCircle2, ChevronDown, ChevronRight, Edit3, EyeOff, FileCode, FolderGit2, Home, Plus, Save, Trash2, X } from 'lucide-react';
 import type { main } from '../../../../wailsjs/go/models';
 import AssetWorkbenchShell from '../../../components/ui/AssetWorkbenchShell';
 import SnippetPre from '../../../components/ui/SnippetPre';
@@ -41,19 +42,11 @@ const scopeIcons: Record<string, ReactNode> = {
   project: <FolderGit2 className="h-3.5 w-3.5" />,
 };
 
-const subagentCatalogActionButtonClass =
-  'inline-flex items-center gap-1 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-xs font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-60';
-const subagentCatalogDangerButtonClass =
-  'inline-flex items-center gap-1 rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] px-3 py-1 text-xs font-normal text-[var(--gt-status-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--gt-status-warning)_16%,transparent)]';
 const subagentCatalogListClass = 'divide-y divide-[var(--gt-border-subtle)]';
 const subagentCatalogRowClass =
   'flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-[var(--gt-surface-muted)]';
 const subagentCatalogPanelClass =
   'border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-4';
-const subagentCatalogInputClass =
-  'w-full rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-xs text-[var(--gt-ink-primary)] transition-colors focus:border-[var(--gt-border-strong)] focus:outline-none';
-const subagentCatalogTextareaClass =
-  'w-full min-h-[10rem] rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-3 font-mono text-xs text-[var(--gt-ink-primary)] transition-colors focus:border-[var(--gt-border-strong)] focus:outline-none';
 const subagentCatalogWarningPanelClass =
   'mb-3 rounded border border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,transparent)] p-3 text-sm text-[var(--gt-status-warning)]';
 const subagentCatalogEditorClass =
@@ -113,13 +106,13 @@ export default function ClaudeCodeSubagentCatalog({
       }
       actions={
         !isEditing ? (
-          <button
-            type="button"
+          <Button
+            size="small"
             onClick={onStartCreate}
-            className={subagentCatalogActionButtonClass}
+            icon={<Plus className="h-3.5 w-3.5" />}
           >
-            <Plus className="h-3.5 w-3.5" /> New Agent
-          </button>
+            New Agent
+          </Button>
         ) : undefined
       }
       notice={
@@ -143,8 +136,8 @@ export default function ClaudeCodeSubagentCatalog({
         <div className={subagentCatalogListClass} data-claude-subagent-catalog="quiet">
           {snapshot.agents.map((agent) => (
             <div key={agent.path}>
-              <button
-                type="button"
+              <Button
+                type="text"
                 onClick={() => toggleAgent(agent.path)}
                 className={subagentCatalogRowClass}
                 data-claude-subagent-row={agent.path}
@@ -173,7 +166,7 @@ export default function ClaudeCodeSubagentCatalog({
                     <EyeOff className="h-3 w-3" /> Plugin
                   </span>
                 )}
-              </button>
+              </Button>
 
               {expandedAgents.has(agent.path) && (
                 <div className={subagentCatalogPanelClass}>
@@ -224,20 +217,21 @@ export default function ClaudeCodeSubagentCatalog({
                   )}
 
                   <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      size="small"
                       onClick={() => onStartEdit?.(agent)}
-                      className={subagentCatalogActionButtonClass}
+                      icon={<Edit3 className="h-3 w-3" />}
                     >
-                      <Edit3 className="h-3 w-3" /> Edit
-                    </button>
-                    <button
-                      type="button"
+                      Edit
+                    </Button>
+                    <Button
+                      size="small"
+                      danger
                       onClick={() => onDeleteAgent?.(agent)}
-                      className={subagentCatalogDangerButtonClass}
+                      icon={<Trash2 className="h-3 w-3" />}
                     >
-                      <Trash2 className="h-3 w-3" /> Delete
-                    </button>
+                      Delete
+                    </Button>
                   </div>
                 </div>
               )}
@@ -256,9 +250,9 @@ export default function ClaudeCodeSubagentCatalog({
           <div className="space-y-3">
             <div>
               <label className="mb-1 block text-xs font-normal text-[var(--gt-ink-secondary)]">Name *</label>
-              <input
-                type="text"
-                className={`${subagentCatalogInputClass} font-mono`}
+              <Input
+                size="small"
+                className="font-mono"
                 value={draftName ?? ''}
                 onChange={(e) => onChangeDraftName?.(e.target.value)}
                 placeholder="code-reviewer"
@@ -266,9 +260,8 @@ export default function ClaudeCodeSubagentCatalog({
             </div>
             <div>
               <label className="mb-1 block text-xs font-normal text-[var(--gt-ink-secondary)]">Description *</label>
-              <input
-                type="text"
-                className={subagentCatalogInputClass}
+              <Input
+                size="small"
                 value={draftDescription ?? ''}
                 onChange={(e) => onChangeDraftDescription?.(e.target.value)}
                 placeholder="Reviews code changes with project context"
@@ -276,20 +269,20 @@ export default function ClaudeCodeSubagentCatalog({
             </div>
             <div>
               <label className="mb-1 block text-xs font-normal text-[var(--gt-ink-secondary)]">Body (Markdown)</label>
-              <textarea
-                className={subagentCatalogTextareaClass}
+              <Input.TextArea
+                size="small"
                 value={draftBody ?? ''}
                 onChange={(e) => onChangeDraftBody?.(e.target.value)}
                 placeholder="# Agent instructions..."
               />
             </div>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={onCancelEdit ?? onCancelCreate} className={subagentCatalogActionButtonClass}>
+              <Button size="small" onClick={onCancelEdit ?? onCancelCreate}>
                 Cancel
-              </button>
-              <button type="button" onClick={onSaveAgent} className="flex items-center gap-1 rounded bg-[var(--button-primary-bg)] px-3 py-1 text-xs text-[var(--button-primary-text)]">
-                <Save className="h-3 w-3" /> Save
-              </button>
+              </Button>
+              <Button type="primary" size="small" onClick={onSaveAgent} icon={<Save className="h-3 w-3" />}>
+                Save
+              </Button>
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 import { RefreshCw, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import { Button, Tooltip } from 'antd';
 import { GetAuthFileModels } from '../../../../wailsjs/go/main/App';
 import { useDebug } from '../../../context/useDebug';
 import type { AccountRecord } from '../../../types';
@@ -20,10 +21,6 @@ import {
 } from './AccountDetailPrimitives';
 import { getAccountsPreviewAuthFileModels } from '../previewData';
 
-const iconButtonClass =
-  'inline-flex h-8 w-8 items-center justify-center rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] text-[var(--gt-ink-muted)] transition hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50';
-const buttonClass =
-  'inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-panel)] px-3 text-xs font-normal text-[var(--gt-ink-primary)] transition hover:bg-[var(--gt-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-focus-ring)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50';
 const modelCardClass =
   'flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-[var(--gt-surface-muted)] transition-colors';
 const modelArrowClass =
@@ -192,22 +189,22 @@ export function CompatibleModelsSection({
       bandActionDivider={false}
       actions={editable ? (
         <>
-          <button
-            type="button"
-            onClick={() => void fetchRemoteModelMappings()}
-            disabled={remoteModelStatus === 'loading' || !onFetchModels}
-            className={iconButtonClass}
-            aria-label="拉取模型"
-            title="拉取模型"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${remoteModelStatus === 'loading' ? 'animate-spin' : ''}`} strokeWidth={2} />
-          </button>
-          <button type="button" onClick={applyDefaultModelMappings} className={buttonClass}>
+          <Tooltip title="拉取模型">
+            <Button
+              type="text"
+              size="small"
+              icon={<RefreshCw className={remoteModelStatus === 'loading' ? 'animate-spin' : ''} />}
+              onClick={() => void fetchRemoteModelMappings()}
+              disabled={remoteModelStatus === 'loading' || !onFetchModels}
+              aria-label="拉取模型"
+            />
+          </Tooltip>
+          <Button size="small" onClick={applyDefaultModelMappings}>
             填入支持模型
-          </button>
-          <button type="button" onClick={onAddModelMapping} className={buttonClass}>
+          </Button>
+          <Button size="small" onClick={onAddModelMapping}>
             添加映射
-          </button>
+          </Button>
         </>
       ) : undefined}
     >
@@ -264,15 +261,15 @@ export function CompatibleModelsSection({
                   )}
                 </div>
                 {editable ? (
-                  <button
-                    type="button"
-                    onClick={() => removeModelMapping(index)}
-                    className={iconButtonClass}
-                    aria-label="删除映射"
-                    title="删除映射"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
-                  </button>
+                  <Tooltip title="删除映射">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<Trash2 />}
+                      onClick={() => removeModelMapping(index)}
+                      aria-label="删除映射"
+                    />
+                  </Tooltip>
                 ) : (
                   <AccountDetailPill className="!min-h-0 !py-0.5 text-[10px]">只读</AccountDetailPill>
                 )}

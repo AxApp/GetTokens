@@ -1,4 +1,5 @@
 import { AlertTriangle, FileDiff, FolderTree, Layers3, Power, ShieldCheck } from 'lucide-react';
+import { Button } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { main } from '../../../wailsjs/go/models';
 import AssetWorkbenchShell from '../../components/ui/AssetWorkbenchShell';
@@ -37,7 +38,6 @@ const stagedApplyConfigText = [
   '',
 ].join('\n');
 
-const extensionRegistryButtonClass = 'inline-flex h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:border-dashed disabled:text-[var(--gt-ink-muted)] disabled:opacity-60';
 const extensionRegistryPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const extensionRegistryMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const extensionRegistrySectionTitleClass = 'flex items-center gap-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
@@ -277,9 +277,9 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
             view.extensions.map((extension) => {
               const selected = extension.id === view.selectedExtension?.id;
               return (
-                <button
+                <Button
                   key={extension.id || extension.manifestPath}
-                  type="button"
+                  size="small"
                   data-gettokens-extension-registry-entry={extension.id || extension.manifestPath}
                   data-gettokens-extension-registry-state={extension.state}
                   onClick={() => setSelectedExtensionID(extension.id)}
@@ -335,7 +335,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
                   <div className="self-start text-right text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                     {extension.diagnosticCount}
                   </div>
-                </button>
+                </Button>
               );
             })
           )}
@@ -495,24 +495,22 @@ function GetTokensExtensionRegistryAside({
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
+                <Button
+                  size="small"
                   disabled={!stagedApplyView.enabledPrepare}
                   data-gettokens-extension-codex-config-staged-apply-action="prepare"
                   onClick={() => void onPrepareStagedApply()}
-                  className={extensionRegistryButtonClass}
                 >
                   Prepare Test Plan
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="small"
                   disabled={!stagedApplyView.enabledApply}
                   data-gettokens-extension-codex-config-staged-apply-action="apply"
                   onClick={() => void onApplyStagedTransaction()}
-                  className={extensionRegistryButtonClass}
                 >
                   Apply Test Transaction
-                </button>
+                </Button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-[length:var(--gt-font-size-xs)]">
@@ -708,34 +706,34 @@ function ExtensionEnableActionButton({
   const action = extension.actionAvailability.action;
   if (!action) {
     return (
-      <button
-        type="button"
+      <Button
+        size="small"
         disabled
         data-gettokens-extension-enable-action="disabled"
+        icon={<Power className="h-3.5 w-3.5" strokeWidth={2.5} />}
         className="inline-flex h-8 items-center justify-center gap-2 rounded border border-dashed border-[var(--gt-border-subtle)] px-2.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]"
       >
-        <Power className="h-3.5 w-3.5" strokeWidth={2.5} />
         Disabled
-      </button>
+      </Button>
     );
   }
 
   const enabled = action === 'enable';
   return (
-    <button
-      type="button"
+    <Button
+      size="small"
       disabled={busy}
       data-gettokens-extension-enable-action={action}
       onClick={(event) => {
         event.stopPropagation();
         void onSetEnabled(extension.id, enabled);
       }}
-      className={`${extensionRegistryButtonClass} gap-2 disabled:cursor-wait`}
+      icon={<Power className="h-3.5 w-3.5" strokeWidth={2.5} />}
+      className="gap-2 disabled:cursor-wait"
       title="Only writes the GetTokens app-local enable-state file. Codex config and capabilities are untouched."
     >
-      <Power className="h-3.5 w-3.5" strokeWidth={2.5} />
       {busy ? 'Updating' : extension.actionAvailability.label}
-    </button>
+    </Button>
   );
 }
 

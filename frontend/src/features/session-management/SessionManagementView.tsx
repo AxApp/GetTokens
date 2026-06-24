@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowRight, BarChart3, Check, MoreVertical, Pencil, RefreshCw, X } from 'lucide-react';
+import { Alert, Button, Tag, Tooltip } from 'antd';
 import { Combobox } from '../../components/ui/Combobox.tsx';
 import SearchInput from '../../components/ui/SearchInput';
 import type {
@@ -204,13 +205,13 @@ export function StatePanel({
         <div className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">{description}</div>
       ) : null}
       {actionLabel && onAction ? (
-        <button
-          type="button"
+        <Button
+          size="small"
           onClick={onAction}
-          className="mt-1 inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
+          className="mt-1"
         >
           {actionLabel}
-        </button>
+        </Button>
       ) : null}
     </div>
   );
@@ -224,11 +225,7 @@ const sessionManagementModalBackdropClass = 'fixed inset-0 z-50 flex items-cente
 const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm';
 const sessionManagementModalHeaderClass = 'flex items-start justify-between gap-4 border-b border-[var(--gt-border-subtle)] px-5 py-4';
 const sessionManagementModalFooterClass = 'flex items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-5 py-3';
-const sessionManagementModalButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const sessionManagementModalPrimaryButtonClass = 'inline-flex h-9 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50';
-const sessionManagementModalIconButtonClass = 'flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90';
 const sessionManagementModalLabelClass = 'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
-const sessionManagementModalErrorClass = 'border-b border-[var(--gt-border-subtle)] px-5 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]';
 const sessionManagementAnalysisSectionClass = 'border-b border-[var(--gt-border-subtle)] px-4 py-3';
 const sessionManagementAnalysisColumnClass = 'border-b border-[var(--gt-border-subtle)] px-4 py-3 lg:border-b-0 lg:border-r lg:border-[var(--gt-border-subtle)]';
 const sessionManagementAnalysisTitleClass = 'mb-2 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
@@ -365,8 +362,8 @@ export function ProjectListPanel({
                   isActive ? 'bg-[var(--gt-ink-primary)]' : 'bg-transparent group-hover:bg-[var(--gt-ink-muted)]/35'
                 }`} />
 
-                <button
-                  type="button"
+                <Button
+                  size="small"
                   onClick={() => onSelectProject(project.id, compactLayout)}
                   className="flex min-w-0 flex-1 flex-col gap-2.5 py-4 pl-4 pr-3 text-left active:opacity-70"
                 >
@@ -381,16 +378,13 @@ export function ProjectListPanel({
                       copy.projectActiveTag(project),
                       copy.projectArchivedTag(project),
                     ].map((tag) => (
-                      <span
+                      <Tag
                         key={tag}
-                        className={`rounded border px-1.5 py-0.5 text-[length:var(--gt-font-size-2xs)] font-normal leading-none ${
-                          isActive
-                            ? 'border-[var(--gt-border-strong)] text-[var(--gt-ink-primary)]'
-                            : 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)]'
-                        }`}
+                        color={isActive ? undefined : 'default'}
+                        className="text-[length:var(--gt-font-size-2xs)] font-normal leading-none"
                       >
                         {tag}
-                      </span>
+                      </Tag>
                     ))}
                     <span className={`truncate text-[length:var(--gt-font-size-2xs)] font-normal leading-none ${
                       isActive ? 'text-[var(--gt-ink-muted)]' : 'text-[var(--gt-ink-muted)]/70'
@@ -398,22 +392,22 @@ export function ProjectListPanel({
                       {getProviderDisplayLabel(project.providerSummary, copy.unknownProvider)}
                     </span>
                   </div>
-                </button>
+                </Button>
 
                 {onOpenProviderEditor ? (
                   <div className="flex shrink-0 items-center px-3">
-                  <button
-                    type="button"
+                  <Button
+                    size="small"
+                    type="text"
                     onClick={() => onOpenProviderEditor(project.id)}
                     aria-label="Edit provider mapping"
+                    icon={<Pencil className="h-3 w-3" strokeWidth={2.5} />}
                     className={`flex h-7 w-7 items-center justify-center rounded border transition-all active:scale-90 ${
                       isActive
                         ? 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
                         : 'border-transparent text-[var(--gt-ink-muted)]/45 hover:border-[var(--gt-border-subtle)] hover:text-[var(--gt-ink-primary)]'
                     }`}
-                  >
-                    <Pencil className="h-3 w-3" strokeWidth={2.5} />
-                  </button>
+                  />
                   </div>
                 ) : null}
               </div>
@@ -489,15 +483,15 @@ export function SessionAnalysisScopeModal({
               {copy.analysisSelectorHint}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={copy.close}
-            title={copy.close}
-            className={sessionManagementModalIconButtonClass}
-          >
-            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </button>
+          <Tooltip title={copy.close}>
+            <Button
+              size="small"
+              type="text"
+              onClick={onClose}
+              aria-label={copy.close}
+              icon={<X className="h-3.5 w-3.5" strokeWidth={2.5} />}
+            />
+          </Tooltip>
         </div>
 
         <div className="grid min-h-0 gap-0 overflow-y-auto lg:grid-cols-[18rem_minmax(0,1fr)_minmax(0,1fr)]">
@@ -506,23 +500,25 @@ export function SessionAnalysisScopeModal({
               {copy.pluginHostTitle}
             </div>
             <div className="mt-3 grid gap-2">
-              <button
-                type="button"
+              <Button
+                size="small"
                 ref={initialFocusRef}
                 onClick={onAnalyzeAll}
                 disabled={!projects.length}
-                className={`${sessionManagementModalButtonClass} w-full justify-center`}
+                block
+                className="justify-center"
               >
                 {copy.analysisAll}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                size="small"
                 onClick={onAnalyzeRecent}
                 disabled={!recentSessions.length}
-                className={`${sessionManagementModalButtonClass} w-full justify-center`}
+                block
+                className="justify-center"
               >
                 {copy.analysisRecent(recentLimit)}
-              </button>
+              </Button>
             </div>
             <div className="mt-4 border-t border-[var(--gt-border-subtle)] pt-4 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">
               {copy.analysisPluginName} / {activeProjectName}
@@ -539,10 +535,12 @@ export function SessionAnalysisScopeModal({
               {projects.map((project) => {
                 const active = project.id === activeProjectId;
                 return (
-                  <button
+                  <Button
                     key={project.id}
-                    type="button"
+                    size="small"
+                    type="text"
                     onClick={() => onAnalyzeProject(project)}
+                    block
                     className={`block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors active:opacity-70 ${
                       active ? 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]' : 'hover:bg-[var(--gt-surface-muted)]'
                     }`}
@@ -555,7 +553,7 @@ export function SessionAnalysisScopeModal({
                     }`}>
                       {copy.projectStatusLine(project)}
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
               {!projects.length ? (
@@ -572,10 +570,12 @@ export function SessionAnalysisScopeModal({
             </div>
             <div className="max-h-[56vh] overflow-y-auto">
               {visibleSessions.map((session) => (
-                <button
+                <Button
                   key={session.id}
-                  type="button"
+                  size="small"
+                  type="text"
                   onClick={() => onAnalyzeSession(session)}
+                  block
                   className="block w-full border-b border-[var(--gt-border-subtle)] px-4 py-3 text-left transition-colors hover:bg-[var(--gt-surface-muted)] active:opacity-70"
                 >
                   <div className="truncate text-[length:var(--gt-font-size-md)] font-semibold">
@@ -586,7 +586,7 @@ export function SessionAnalysisScopeModal({
                     <span>·</span>
                     <span className="truncate">{formatSessionMetadataDate(session.updatedAt)}</span>
                   </div>
-                </button>
+                </Button>
               ))}
               {!visibleSessions.length ? (
                 <StatePanel title={copy.noSessions} description={activeProjectName} />
@@ -654,34 +654,29 @@ export function SessionAnalysisDetailModal({
                 {copy.analysisRunning}
               </span>
             ) : null}
-            <button
-              type="button"
+            <Button
+              size="small"
               ref={initialFocusRef}
               onClick={loading ? undefined : onBackToSelection}
-              aria-disabled={loading ? 'true' : undefined}
-              className={`${sessionManagementModalButtonClass} ${
-                loading ? 'cursor-not-allowed opacity-50' : ''
-              }`}
+              disabled={loading}
             >
               {copy.analysisBackToSelection}
-            </button>
-            <button
-              type="button"
-            onClick={onClose}
-            aria-label={copy.close}
-            title={copy.close}
-            className={sessionManagementModalIconButtonClass}
-          >
-            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </button>
+            </Button>
+            <Tooltip title={copy.close}>
+              <Button
+                size="small"
+                type="text"
+                onClick={onClose}
+                aria-label={copy.close}
+                icon={<X className="h-3.5 w-3.5" strokeWidth={2.5} />}
+              />
+            </Tooltip>
           </div>
         </div>
 
         <div className="min-h-0 overflow-y-auto">
           {error ? (
-            <div className={sessionManagementModalErrorClass}>
-              {copy.loadFailed} / {error}
-            </div>
+            <Alert type="error" message={`${copy.loadFailed} / ${error}`} />
           ) : null}
           {loading && !result ? (
             <StatePanel title={copy.analysisRunning} description={scopeLabel} />
@@ -704,17 +699,17 @@ function SessionAnalysisResultGrid({ copy, result }: { copy: SessionManagementCo
         <AnalysisSectionTitle>{copy.analysisWordCloud}</AnalysisSectionTitle>
         <div className="flex min-h-24 flex-wrap items-center gap-x-4 gap-y-2 overflow-hidden">
           {wordCloud.slice(0, 28).map((item) => (
-            <span
-              key={item.term}
-              className={sessionManagementAnalysisCloudItemClass}
-              style={{
-                fontSize: `${12 + Math.max(0.2, Math.min(item.weight, 1)) * 18}px`,
-                opacity: 0.68 + Math.max(0.2, Math.min(item.weight, 1)) * 0.32,
-              }}
-              title={`${item.term} / ${item.count}`}
-            >
-              {item.term}
-            </span>
+            <Tooltip key={item.term} title={`${item.term} / ${item.count}`}>
+              <span
+                className={sessionManagementAnalysisCloudItemClass}
+                style={{
+                  fontSize: `${12 + Math.max(0.2, Math.min(item.weight, 1)) * 18}px`,
+                  opacity: 0.68 + Math.max(0.2, Math.min(item.weight, 1)) * 0.32,
+                }}
+              >
+                {item.term}
+              </span>
+            </Tooltip>
           ))}
         </div>
       </div>
@@ -926,17 +921,18 @@ export function SessionsPanel({
         <div className="flex items-center gap-1.5 rounded bg-[var(--gt-surface-canvas)] p-1">
           {useActionMenu ? (
             <div ref={actionMenuRef} className="relative">
-              <button
-                type="button"
-                aria-label={copy.sessionActions}
-                aria-haspopup="menu"
-                aria-expanded={actionMenuOpen}
-                title={copy.sessionActions}
-                onClick={() => setActionMenuOpen((prev) => !prev)}
-                className="flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90"
-              >
-                <MoreVertical className="h-3.5 w-3.5" strokeWidth={2.5} />
-              </button>
+              <Tooltip title={copy.sessionActions}>
+                <Button
+                  size="small"
+                  type="text"
+                  aria-label={copy.sessionActions}
+                  aria-haspopup="menu"
+                  aria-expanded={actionMenuOpen}
+                  onClick={() => setActionMenuOpen((prev) => !prev)}
+                  icon={<MoreVertical className="h-3.5 w-3.5" strokeWidth={2.5} />}
+                  className="flex h-8 w-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90"
+                />
+              </Tooltip>
               {actionMenuOpen ? (
                 <div
                   role="menu"
@@ -945,39 +941,43 @@ export function SessionsPanel({
                   {filters.map((filter) => {
                     const isActive = activeFilter === filter.id;
                     return (
-                      <button
+                      <Button
                         key={filter.id}
-                        type="button"
+                        size="small"
+                        type="text"
                         role="menuitemradio"
                         aria-checked={isActive}
                         onClick={() => {
                           onSelectFilter(filter.id);
                           setActionMenuOpen(false);
                         }}
+                        icon={<Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'opacity-100' : 'opacity-0'}`} strokeWidth={3} />}
+                        block
                         className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal transition-colors active:scale-95 ${
                           isActive
                             ? 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-primary)]'
                             : 'text-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]'
                         }`}
                       >
-                        <Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'opacity-100' : 'opacity-0'}`} strokeWidth={3} />
                         <span>{filter.label}</span>
-                      </button>
+                      </Button>
                     );
                   })}
                   <div className="my-1 border-t border-[var(--gt-border-subtle)]" />
-                  <button
-                    type="button"
+                  <Button
+                    size="small"
+                    type="text"
                     role="menuitem"
                     onClick={() => {
                       setActionMenuOpen(false);
                       onRefresh();
                     }}
+                    icon={<RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />}
+                    block
                     className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] transition-colors hover:bg-[var(--gt-surface-muted)] active:scale-95"
                   >
-                    <RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
                     <span>{copy.refresh}</span>
-                  </button>
+                  </Button>
                 </div>
               ) : null}
             </div>
@@ -986,9 +986,10 @@ export function SessionsPanel({
               {filters.map((filter) => {
                 const isActive = activeFilter === filter.id;
                 return (
-                  <button
+                  <Button
                     key={filter.id}
-                    type="button"
+                    size="small"
+                    type={isActive ? 'primary' : 'text'}
                     onClick={() => onSelectFilter(filter.id)}
                     className={`rounded px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-normal transition-colors active:scale-95 ${
                       isActive
@@ -997,18 +998,19 @@ export function SessionsPanel({
                     }`}
                   >
                     {filter.label}
-                  </button>
+                  </Button>
                 );
               })}
-              <button
-                type="button"
-                onClick={onRefresh}
-                aria-label={copy.refresh}
-                title={copy.refresh}
+              <Tooltip title={copy.refresh}>
+                <Button
+                  size="small"
+                  type="text"
+                  onClick={onRefresh}
+                  aria-label={copy.refresh}
+                  icon={<RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />}
                   className="flex h-8 w-8 items-center justify-center rounded border border-transparent text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-border-subtle)] hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] active:scale-90"
-              >
-                <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
-              </button>
+                />
+              </Tooltip>
             </>
           )}
         </div>
@@ -1025,10 +1027,12 @@ export function SessionsPanel({
           <div className="min-h-0 overflow-y-auto overflow-x-hidden">
             {visibleSessions.length ? (
               visibleSessions.map((session) => (
-                <button
+                <Button
                   key={session.id}
-                  type="button"
+                  size="small"
+                  type="text"
                   onClick={() => onSelectSession(session.id)}
+                  block
                   className="group block w-full rounded-sm border-l-2 border-l-transparent border-b border-b-[var(--gt-border-subtle)] px-6 py-4 text-left transition-colors hover:border-l-[var(--gt-ink-muted)]/45 hover:bg-[var(--gt-surface-muted)] active:bg-[var(--gt-surface-muted)]"
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -1065,7 +1069,7 @@ export function SessionsPanel({
                       </>
                     )}
                   </div>
-                </button>
+                </Button>
               ))
             ) : (
               <StatePanel
@@ -1133,15 +1137,15 @@ export function ProviderMergeModal({
               将来源 Provider 统一映射到目标标签，不同来源可归并到同一个目标
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={copy.close}
-            title={copy.close}
-            className={sessionManagementModalIconButtonClass}
-          >
-            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </button>
+          <Tooltip title={copy.close}>
+            <Button
+              size="small"
+              type="text"
+              onClick={onClose}
+              aria-label={copy.close}
+              icon={<X className="h-3.5 w-3.5" strokeWidth={2.5} />}
+            />
+          </Tooltip>
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto divide-y divide-[var(--gt-border-subtle)]">
@@ -1184,33 +1188,31 @@ export function ProviderMergeModal({
         ) : null}
 
         <div className={sessionManagementModalFooterClass}>
-          <button
-            type="button"
+          <Button
+            size="small"
             onClick={onReset}
             disabled={saving}
-            className={sessionManagementModalButtonClass}
           >
             重置
-          </button>
+          </Button>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              size="small"
               onClick={onClose}
               disabled={saving}
-              className={sessionManagementModalButtonClass}
             >
               {copy.close}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              size="small"
+              type="primary"
               onClick={onSave}
               disabled={saving}
               aria-busy={saving}
-              className={`${sessionManagementModalPrimaryButtonClass} gap-1.5`}
+              icon={saving ? <RefreshCw className="h-3 w-3 animate-spin" strokeWidth={2.5} aria-hidden="true" /> : undefined}
             >
-              {saving ? <RefreshCw className="h-3 w-3 animate-spin" strokeWidth={2.5} aria-hidden="true" /> : null}
               <span>{saving ? '保存中…' : '保存'}</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -1335,30 +1337,28 @@ export function SessionDetailModal({
                 {copy.refreshing}
               </span>
             ) : null}
-            <button
-              type="button"
-              onClick={onRefresh}
-              aria-label={copy.refresh}
-              title={copy.refresh}
-              className={sessionManagementModalIconButtonClass}
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${detailState.refreshing ? 'animate-spin' : ''}`} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={copy.close}
-              title={copy.close}
-              className={sessionManagementModalIconButtonClass}
-            >
-              <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-            </button>
+            <Tooltip title={copy.refresh}>
+              <Button
+                size="small"
+                type="text"
+                onClick={onRefresh}
+                aria-label={copy.refresh}
+                icon={<RefreshCw className={`h-3.5 w-3.5 ${detailState.refreshing ? 'animate-spin' : ''}`} strokeWidth={2.5} />}
+              />
+            </Tooltip>
+            <Tooltip title={copy.close}>
+              <Button
+                size="small"
+                type="text"
+                onClick={onClose}
+                aria-label={copy.close}
+                icon={<X className="h-3.5 w-3.5" strokeWidth={2.5} />}
+              />
+            </Tooltip>
           </div>
         </div>
         {detailState.error ? (
-          <div className={sessionManagementModalErrorClass}>
-            {copy.loadFailed} / {detailState.error}
-          </div>
+          <Alert type="error" message={`${copy.loadFailed} / ${detailState.error}`} />
         ) : null}
         <div ref={messagesScrollRef} className="min-h-0 overflow-y-auto">
           {detailState.loading && !selectedSessionDetail ? (
@@ -1430,14 +1430,13 @@ export function SessionDetailModal({
                   </div>
                 ) : null}
                 {detailState.hasMoreMessages ? (
-                  <button
-                    type="button"
+                  <Button
+                    size="small"
                     onClick={onLoadMoreMessages}
                     disabled={detailState.messagePageLoading}
-                    className={sessionManagementModalButtonClass}
                   >
                     {detailState.messagePageLoading ? copy.messagePageLoading : copy.loadMoreMessages}
-                  </button>
+                  </Button>
                 ) : null}
               </div>
             </>

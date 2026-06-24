@@ -1,3 +1,4 @@
+import { Button } from 'antd';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import { main } from '../../../../wailsjs/go/models';
 
@@ -16,10 +17,6 @@ const deepLinkImportTitleClass =
   'text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const deepLinkImportMetaClass =
   'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
-const deepLinkImportButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-45';
-const deepLinkImportPrimaryButtonClass =
-  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 const deepLinkImportBodyClass =
   'grid gap-5 p-0 text-[length:var(--gt-font-size-sm)]';
 const deepLinkImportSummaryGridClass = 'grid gap-3 md:grid-cols-4';
@@ -77,17 +74,17 @@ export default function DeepLinkAccountImportConfirm({
       )}
       footer={(
         <>
-          <button type="button" className={deepLinkImportButtonClass} onClick={onClose}>
+          <Button size="small" onClick={onClose}>
             关闭
-          </button>
-          <button
-            type="button"
-            className={deepLinkImportPrimaryButtonClass}
+          </Button>
+          <Button
+            type="primary"
+            size="small"
             disabled={!canApply}
             onClick={onApply}
           >
             {applying ? '导入中...' : `导入 ${accountCount} 个账号`}
-          </button>
+          </Button>
         </>
       )}
     >

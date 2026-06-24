@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type DragEvent } from 'react';
-import { ArrowLeft, ClipboardPaste, FilePlus, Loader2, Upload } from 'lucide-react';
+import { Button, Input, type InputRef, Upload } from 'antd';
+import { ArrowLeft, ClipboardPaste, FilePlus, Loader2, Upload as UploadIcon } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
 import { useAccountsPageStateContext } from '../features/accounts/AccountsPageStateContext';
 import AccountImportQueueList, { type AccountImportQueueItem } from '../features/accounts/components/AccountImportQueueList';
@@ -9,7 +10,6 @@ import {
   readUploadFiles,
   type AccountImportPayloadItem,
 } from '../features/accounts/model/accountTransfer';
-import type { TextInputEvent } from '../features/accounts/model/types';
 import { toErrorMessage } from '../utils/error';
 
 interface AccountImportPageProps {
@@ -22,8 +22,6 @@ const accountImportPageShellClass =
   'flex h-full flex-col overflow-hidden bg-[var(--gt-surface-muted)]';
 const accountImportHeaderClass =
   'flex shrink-0 items-center justify-between border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-6 py-4';
-const accountImportBackButtonClass =
-  'inline-flex min-h-10 items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
 const accountImportEyebrowClass =
   'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportTitleClass =
@@ -54,12 +52,6 @@ const accountImportDropzoneTitleClass =
   'text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportDropzoneHintClass =
   'max-w-sm text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed tracking-normal text-[var(--gt-ink-muted)]';
-const accountImportTextareaClass =
-  'min-h-36 w-full resize-y rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 font-mono text-xs text-[var(--gt-ink-primary)] outline-none transition-colors placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
-const accountImportButtonClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50';
-const accountImportPrimaryButtonClass =
-  'rounded border border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-surface-canvas)] transition-colors disabled:cursor-not-allowed disabled:opacity-45';
 const accountImportQueueHeaderClass =
   'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
 const accountImportQueueEmptyClass =
@@ -72,8 +64,7 @@ const accountImportSummaryClass =
 export default function AccountImportPage({ onDone }: AccountImportPageProps) {
   const { t } = useI18n();
   const { submitAccountImport } = useAccountsPageStateContext();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const pasteInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const pasteInputRef = useRef<InputRef | null>(null);
   const nextIDRef = useRef(0);
   const [queueItems, setQueueItems] = useState<AccountImportQueueItem[]>([]);
   const [pasteContent, setPasteContent] = useState('');
@@ -121,7 +112,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
     }
   }
 
-  function handleFileDragOver(event: DragEvent<HTMLButtonElement>) {
+  function handleFileDragOver(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     event.dataTransfer.dropEffect = readingFiles || submitting ? 'none' : 'copy';
     if (!readingFiles && !submitting) {
@@ -133,7 +124,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
     setIsFileDragOver(false);
   }
 
-  function handleFileDrop(event: DragEvent<HTMLButtonElement>) {
+  function handleFileDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setIsFileDragOver(false);
     if (readingFiles || submitting) {
@@ -202,16 +193,16 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
       {/* Page header */}
       <div data-account-import-header className={accountImportHeaderClass}>
         <div className="flex items-center gap-4">
-          <button
-            type="button"
+          <Button
+            size="small"
             onClick={onDone}
             disabled={submitting}
-            className={accountImportBackButtonClass}
+            className="inline-flex min-h-10 items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-canvas)] disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Back to accounts"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={3} />
             {t('common.back')}
-          </button>
+          </Button>
           <div>
             <div className={accountImportEyebrowClass}>
               {t('accounts.import_account_eyebrow')}
@@ -258,38 +249,38 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                   MULTI
                 </span>
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
+              <Upload
                 multiple
                 accept=".json,.zip,.tar,.tar.gz,.tgz,.gz,.gzip,application/json,application/zip,application/gzip,application/x-tar"
-                hidden
-                onChange={(event) => {
-                  void handleAddFiles(event.target.files);
-                  event.target.value = '';
+                showUploadList={false}
+                beforeUpload={(file) => {
+                  const dt = new DataTransfer();
+                  dt.items.add(file);
+                  void handleAddFiles(dt.files);
+                  return false;
                 }}
-              />
-              <button
-                type="button"
-                data-account-import-dropzone
-                onClick={() => fileInputRef.current?.click()}
-                onDragEnter={handleFileDragOver}
-                onDragOver={handleFileDragOver}
-                onDragLeave={handleFileDragLeave}
-                onDrop={handleFileDrop}
-                disabled={readingFiles || submitting}
-                className={accountImportDropzoneClass(isFileDragOver)}
               >
-                <span className="grid justify-items-center gap-3">
-                  {readingFiles ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" strokeWidth={3} />}
-                  <span className={accountImportDropzoneTitleClass}>
-                    {t('accounts.import_account_choose_files')}
+                <Button
+                  size="small"
+                  data-account-import-dropzone
+                  onDragEnter={handleFileDragOver}
+                  onDragOver={handleFileDragOver}
+                  onDragLeave={handleFileDragLeave}
+                  onDrop={handleFileDrop}
+                  disabled={readingFiles || submitting}
+                  className={accountImportDropzoneClass(isFileDragOver)}
+                >
+                  <span className="grid justify-items-center gap-3">
+                    {readingFiles ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadIcon className="h-5 w-5" strokeWidth={3} />}
+                    <span className={accountImportDropzoneTitleClass}>
+                      {t('accounts.import_account_choose_files')}
+                    </span>
+                    <span className={accountImportDropzoneHintClass}>
+                      {t('accounts.import_account_files_hint')}
+                    </span>
                   </span>
-                  <span className={accountImportDropzoneHintClass}>
-                    {t('accounts.import_account_files_hint')}
-                  </span>
-                </span>
-              </button>
+                </Button>
+              </Upload>
             </div>
 
             <div className="grid gap-3">
@@ -304,29 +295,29 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                   JSON
                 </span>
               </div>
-              <textarea
+              <Input.TextArea
                 ref={pasteInputRef}
                 value={pasteContent}
-                onChange={(event: TextInputEvent) => {
+                onChange={(event) => {
                   setPasteContent(event.target.value);
                   setError('');
                 }}
-                className={accountImportTextareaClass}
+                size="small"
+                className="min-h-36 w-full resize-y font-mono text-xs"
                 placeholder={t('accounts.import_account_paste_placeholder')}
                 spellCheck={false}
               />
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={handleAddPaste} disabled={submitting} className={accountImportButtonClass}>
+                <Button size="small" onClick={handleAddPaste} disabled={submitting}>
                   {t('accounts.import_account_add_paste')}
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="small"
                   onClick={() => void handlePasteFromClipboard()}
                   disabled={submitting}
-                  className={accountImportButtonClass}
                 >
                   {t('accounts.import_account_clear_paste')}
-                </button>
+                </Button>
               </div>
             </div>
           </section>
@@ -363,14 +354,14 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
           {formatQueueSummary(t, queueItems.length, queueSummary)}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={onDone} disabled={submitting} className={accountImportButtonClass}>
+          <Button size="small" onClick={onDone} disabled={submitting}>
             {t('common.cancel')}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            type="primary"
+            size="small"
             onClick={() => void handleSubmit()}
             disabled={submitting || queueItems.length === 0}
-            className={accountImportPrimaryButtonClass}
           >
             {submitting ? (
               <span className="flex items-center gap-2">
@@ -380,7 +371,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
             ) : (
               t('accounts.import_account_submit')
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

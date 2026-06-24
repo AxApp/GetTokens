@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Button } from 'antd';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import { buildCodexOAuthDialogHint, buildCodexOAuthDialogTitle } from '../model/accountOAuth';
 import type { Translator } from '../model/types';
@@ -23,10 +24,6 @@ const codexOAuthModalHintClass =
   'text-[length:var(--gt-font-size-md-compact)] font-normal leading-relaxed text-[var(--gt-ink-secondary)]';
 const codexOAuthModalFooterClass =
   'flex flex-wrap items-center justify-end gap-2';
-const codexOAuthModalButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-primary)] hover:bg-[var(--gt-surface-muted)]';
-const codexOAuthModalPrimaryButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-surface-canvas)] transition hover:opacity-90';
 const codexOAuthModalLabelClass =
   'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexOAuthModalUrlClass =
@@ -85,15 +82,15 @@ export default function CodexOAuthModal({
       footerClassName="sm:!justify-end"
       footer={
         <div className={codexOAuthModalFooterClass}>
-          <button onClick={onClose} className={codexOAuthModalButtonClass}>
+          <Button onClick={onClose}>
             {t('common.close')}
-          </button>
-          <button onClick={() => void handleCopy()} className={codexOAuthModalButtonClass}>
+          </Button>
+          <Button onClick={() => void handleCopy()}>
             {t('accounts.oauth_dialog_copy_url')}
-          </button>
-          <button onClick={onOpenInBrowser} className={codexOAuthModalPrimaryButtonClass}>
+          </Button>
+          <Button type="primary" onClick={onOpenInBrowser}>
             {t('accounts.oauth_dialog_open_url')}
-          </button>
+          </Button>
         </div>
       }
     >

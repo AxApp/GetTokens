@@ -141,7 +141,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
   function renderActiveSection(moduleID: string) {
     switch (moduleID) {
       case 'runtime':
-        return <AccountRuntimeRouteSection account={account} routeDecisions={runtimeRouteDecisions} />;
+        return <AccountRuntimeRouteSection account={account} routeDecisions={runtimeRouteDecisions} span="wide" />;
       case 'credentials':
         return (
           <AccountCredentialVerifySection
@@ -248,13 +248,13 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     }
   }
 
-  const error = saveErrorMessage ? (
-    <AccountDetailNotice tone="danger" className="mx-6 mb-2 shrink-0">
+  const notice = saveErrorMessage ? (
+    <AccountDetailNotice tone="danger" className="mb-4">
       <div className="font-semibold">{saveErrorMessage.title}</div>
       <div className="mt-1 text-xs">{saveErrorMessage.body}</div>
     </AccountDetailNotice>
   ) : statusMessage ? (
-    <AccountDetailNotice tone={statusMessage.tone} className="mx-6 mb-2 shrink-0">
+    <AccountDetailNotice tone={statusMessage.tone} className="mb-4">
       <div className="font-semibold">{statusMessage.title}</div>
       <div className="mt-1 text-xs">{statusMessage.body}</div>
     </AccountDetailNotice>
@@ -266,7 +266,6 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
       size="detail"
       panelAttributes={{ 'data-account-detail-modal': 'unified' }}
       headerClassName="hidden"
-      error={error}
       footer={
         <AccountDetailFooter
           isApiKey={isApiKey}
@@ -280,8 +279,8 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     >
       <AccountDetailLayout
         sectionNavItems={sectionNavItems}
-        header={<AccountDetailHeader {...props} />}
         localCliActions={props.localCliActions}
+        notice={notice}
       >
         {modulePlan.map((moduleID) => (
           <div key={moduleID} data-account-detail-section={moduleID}>

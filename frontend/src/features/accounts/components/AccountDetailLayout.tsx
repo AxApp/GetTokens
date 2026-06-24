@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Button, Menu } from 'antd';
+import { Button, Menu, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import type { AccountDetailLocalCliAction } from './AccountDetailSections';
 
@@ -19,13 +19,11 @@ function SectionNav({
   items,
   activeId,
   onSelect,
-  header,
   localCliActions = [],
 }: {
   items: AccountDetailSectionNavItem[];
   activeId: string;
   onSelect: (id: string) => void;
-  header?: ReactNode;
   localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
 }) {
   const menuItems = useMemo<MenuProps['items']>(
@@ -42,11 +40,6 @@ function SectionNav({
       className="flex w-[200px] shrink-0 flex-col border-r border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]"
       aria-label="Account detail sections"
     >
-      {header && (
-        <div className="border-b border-[var(--gt-border-subtle)] px-4 py-3" style={{ userSelect: 'text' }}>
-          {header}
-        </div>
-      )}
       <div className="flex-1 overflow-y-auto py-1">
         <Menu
           mode="inline"
@@ -67,26 +60,27 @@ function SectionNav({
       {localCliActions.length > 0 ? (
         <div data-account-detail-nav-local-cli-actions className={accountDetailNavLocalActionsClass} style={{ userSelect: 'text' }}>
           {localCliActions.map((action) => (
-            <Button
-              key={action.id}
-              data-account-detail-nav-local-cli-action={action.id}
-              htmlType="button"
-              type="default"
-              size="small"
-              block
-              disabled={action.disabled}
-              title={action.disabledReason || action.detail || action.label}
-              aria-label={action.label}
-              onClick={() => {
-                if (action.disabled) {
-                  return;
-                }
-                action.onSelect();
-              }}
-              className={accountDetailNavLocalActionButtonClass}
-            >
-              {action.label}
-            </Button>
+            <Tooltip title={action.disabledReason || action.detail || action.label}>
+              <Button
+                key={action.id}
+                data-account-detail-nav-local-cli-action={action.id}
+                htmlType="button"
+                type="default"
+                size="small"
+                block
+                disabled={action.disabled}
+                aria-label={action.label}
+                onClick={() => {
+                  if (action.disabled) {
+                    return;
+                  }
+                  action.onSelect();
+                }}
+                className={accountDetailNavLocalActionButtonClass}
+              >
+                {action.label}
+              </Button>
+            </Tooltip>
           ))}
         </div>
       ) : null}
@@ -98,13 +92,13 @@ function SectionNav({
 
 export function AccountDetailLayout({
   sectionNavItems,
-  header,
   localCliActions,
+  notice,
   children,
 }: {
   sectionNavItems: AccountDetailSectionNavItem[];
-  header?: ReactNode;
   localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
+  notice?: ReactNode;
   children: ReactNode;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -160,7 +154,6 @@ export function AccountDetailLayout({
         items={sectionNavItems}
         activeId={activeSection}
         onSelect={handleSelect}
-        header={header}
         localCliActions={localCliActions}
       />
       <div
@@ -169,7 +162,7 @@ export function AccountDetailLayout({
         style={{ userSelect: 'text' }}
       >
         <div
-          className="mx-auto max-w-[42rem] space-y-6 px-8 py-6"
+          className="mx-auto max-w-[42rem] space-y-6 px-8 pt-14 pb-6"
           style={{
             fontFamily: 'var(--gt-font-family-sans)',
             fontSize: 'var(--gt-font-size-lg)',
@@ -178,6 +171,7 @@ export function AccountDetailLayout({
             userSelect: 'text',
           }}
         >
+          {notice}
           {children}
         </div>
       </div>

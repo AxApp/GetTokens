@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Alert, Button } from 'antd';
 import { Combobox } from '../../../components/ui/Combobox.tsx';
 import { normalizeAPIKeyModelNames } from '../model/apiKeyModelCatalog';
 import {
@@ -9,19 +10,6 @@ import {
 
 const oauthModelProbeFieldLabelClass =
   'text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
-const oauthModelProbeButtonClass =
-  'inline-flex min-h-10 items-center justify-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
-const oauthModelProbeStatusBaseClass =
-  'rounded border px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal leading-5 tracking-normal';
-const oauthModelProbeStatusToneClassNames = {
-  idle: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
-  loading:
-    'border-[var(--gt-status-warning)] bg-[color-mix(in_srgb,var(--gt-status-warning)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-warning)]',
-  success:
-    'border-[var(--gt-status-success)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
-  error:
-    'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
-} satisfies Record<OAuthModelProbeState['status'], string>;
 
 export type OAuthModelProbeState = {
   model: string;
@@ -106,23 +94,26 @@ export function OAuthModelProbeSection({
               onChange={setModel}
             />
           </label>
-          <button
-            type="button"
+          <Button
+            size="small"
             onClick={() => onProbe?.(selectedModel)}
             disabled={!canProbe}
-            className={oauthModelProbeButtonClass}
             data-oauth-model-probe-button="run"
           >
             {running ? '测试中...' : '测试'}
-          </button>
+          </Button>
         </div>
         {message ? (
-          <div
+          <Alert
+            type={
+              currentStatus === 'success' ? 'success' :
+              currentStatus === 'error' ? 'error' :
+              currentStatus === 'loading' ? 'warning' : 'info'
+            }
+            message={message}
+            showIcon={false}
             data-oauth-model-probe-status={currentStatus}
-            className={`${oauthModelProbeStatusBaseClass} ${oauthModelProbeStatusToneClassNames[currentStatus]}`}
-          >
-            {message}
-          </div>
+          />
         ) : (
           <AccountDetailEmptyState>暂无测试结果</AccountDetailEmptyState>
         )}

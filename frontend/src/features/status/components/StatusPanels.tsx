@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
-import { Button, Card, Input, Segmented, Select, Space, Switch } from 'antd';
+import { Alert, Button, Card, Input, Segmented, Select, Space, Switch, Tooltip } from 'antd';
 import type { main } from '../../../../wailsjs/go/models';
 import FormField, { FieldLabel } from '../../../components/ui/FormField';
 import ModalFrame from '../../../components/ui/ModalFrame';
@@ -33,8 +33,6 @@ const statusEyebrowClass = 'text-[length:var(--gt-font-size-xs)] font-semibold t
 const statusTitleClass = 'text-[length:var(--gt-font-size-md)] font-semibold text-[var(--gt-ink-primary)]';
 const statusMetaClass = 'font-mono text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const statusValueClass = 'font-mono text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
-const statusNoticeClass =
-  'rounded border border-dashed border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
 const statusToggleRowClass =
   'flex items-center justify-between gap-3 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 md:min-h-[2.875rem]';
 const statusLocalCliSummaryItemClass =
@@ -96,38 +94,41 @@ function StatusActionSelect({
           className="min-w-0 flex-1"
         />
         {onCopy ? (
-          <Button
-            type="default"
-            size="middle"
-            onClick={onCopy}
-            disabled={copyDisabled}
-            aria-label={copyTitle}
-            title={copyTitle}
-          >
-            {copyLabel}
-          </Button>
+          <Tooltip title={copyTitle}>
+            <Button
+              type="default"
+              size="middle"
+              onClick={onCopy}
+              disabled={copyDisabled}
+              aria-label={copyTitle}
+            >
+              {copyLabel}
+            </Button>
+          </Tooltip>
         ) : null}
-        <Button
-          type="default"
-          size="middle"
-          onClick={onCreate}
-          disabled={createDisabled}
-          aria-label={`Create ${title}`}
-          title={`Create ${title}`}
-        >
-          +
-        </Button>
-        {onDelete ? (
+        <Tooltip title={`Create ${title}`}>
           <Button
             type="default"
             size="middle"
-            onClick={onDelete}
-            disabled={deleteDisabled}
-            aria-label={`Delete ${title}`}
-            title={`Delete ${title}`}
+            onClick={onCreate}
+            disabled={createDisabled}
+            aria-label={`Create ${title}`}
           >
-            ×
+            +
           </Button>
+        </Tooltip>
+        {onDelete ? (
+          <Tooltip title={`Delete ${title}`}>
+            <Button
+              type="default"
+              size="middle"
+              onClick={onDelete}
+              disabled={deleteDisabled}
+              aria-label={`Delete ${title}`}
+            >
+              ×
+            </Button>
+          </Tooltip>
         ) : null}
       </Space.Compact>
     </FormField>
@@ -975,16 +976,16 @@ export function StatusApplyLocalSection({
                 </div>
 
                 {codexLocalAuthStrategy === 'preserve_chatgpt_auth' && codexLocalCanApply ? (
-                  <div className={statusNoticeClass}>
-                    {t('status.codex_local_preserve_hint')}
-                    {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
-                  </div>
+                  <Alert type="info" message={
+                    <>
+                      {t('status.codex_local_preserve_hint')}
+                      {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
+                    </>
+                  } />
                 ) : null}
 
                 {localApplyMessage ? (
-                  <div className={statusNoticeClass}>
-                    {localApplyMessage}
-                  </div>
+                  <Alert type="info" message={localApplyMessage} />
                 ) : null}
               </StatusLocalCliCard>
             </div>
@@ -1202,9 +1203,7 @@ export function StatusApplyLocalSection({
                 </div>
 
                 {claudeApplyMessage ? (
-                  <div className={statusNoticeClass}>
-                    {claudeApplyMessage}
-                  </div>
+                  <Alert type="info" message={claudeApplyMessage} />
                 ) : null}
               </StatusLocalCliCard>
             </div>

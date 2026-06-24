@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Button } from 'antd';
 import { ClipboardSetText } from '../../../../wailsjs/runtime/runtime';
 import type {
   CodexLiveProjectSummary,
@@ -39,10 +40,6 @@ const codexLiveFeedMetaTextClass =
   'col-start-1 row-start-2 min-w-0 self-center truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal leading-snug tracking-normal text-[var(--gt-ink-muted)]';
 const codexLiveFeedRightMetaTextClass =
   'col-start-2 row-start-2 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
-const codexLiveFeedCopyButtonClass =
-  'inline-flex h-6 shrink-0 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-1.5 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold leading-none tracking-normal text-[var(--gt-ink-muted)] transition-colors hover:border-[var(--gt-ink-primary)] hover:text-[var(--gt-ink-primary)] active:scale-[0.98]';
-const codexLiveFeedCopyButtonCopiedClass =
-  'border-[color-mix(in_srgb,var(--gt-status-success)_36%,var(--gt-border-subtle))] bg-[color-mix(in_srgb,var(--gt-status-success)_7%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]';
 
 export function SessionFeed({
   sessions,
@@ -349,8 +346,8 @@ function SessionRow({
         {summary.accountLabel}
       </span>
       <div className="col-start-2 row-start-2 flex min-w-0 items-center justify-end justify-self-end text-right">
-        <button
-          type="button"
+        <Button
+          size="small"
           onClick={(event) => {
             event.stopPropagation();
             onCopySessionID(session.sessionID);
@@ -358,10 +355,9 @@ function SessionRow({
           aria-label={`${t('codex_live_sessions.copy_session_id')} ${summary.sessionIDLabel}`}
           title={copied ? t('codex_live_sessions.copied') : `${t('codex_live_sessions.copy_session_id')} ${summary.sessionIDLabel}`}
           aria-live="polite"
-          className={`${codexLiveFeedCopyButtonClass} ${copied ? codexLiveFeedCopyButtonCopiedClass : ''}`}
         >
           {copied ? t('codex_live_sessions.copied') : t('codex_live_sessions.session_button')}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { Input, Select } from 'antd';
+import { Button, Input, Select } from 'antd';
 import type { Translator } from '../model/types';
 import {
   getOpenAICompatibleProviderPreset,
@@ -26,8 +26,6 @@ const openAICompatibleComposeLabelClass = 'text-[length:var(--gt-font-size-xs)] 
 const openAICompatibleComposeTitleClass = 'mt-1 text-sm font-semibold text-[var(--gt-ink-primary)]';
 const openAICompatibleComposeHintClass = 'text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
 const openAICompatibleComposeInputClass = 'h-9 w-full rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1.5 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)] outline-none transition placeholder:text-[var(--gt-ink-muted)] focus:border-[var(--gt-ink-muted)]';
-const openAICompatibleComposeButtonClass = 'inline-flex h-9 items-center justify-center rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-muted)]';
-const openAICompatibleComposePrimaryButtonClass = `${openAICompatibleComposeButtonClass} bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)] hover:bg-[var(--gt-ink-muted)]`;
 const openAICompatibleComposeErrorClass = 'rounded-md border border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] px-4 py-3 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-status-danger)]';
 
 export default function OpenAICompatibleComposeModal({
@@ -129,12 +127,12 @@ export default function OpenAICompatibleComposeModal({
         </div>
 
         <footer className={openAICompatibleComposeFooterClass} data-openai-compatible-compose-footer>
-          <button type="button" onClick={onClose} className={openAICompatibleComposeButtonClass}>
+          <Button size="small" onClick={onClose}>
             {t('common.cancel')}
-          </button>
-          <button type="button" onClick={onSubmit} className={openAICompatibleComposePrimaryButtonClass}>
+          </Button>
+          <Button type="primary" size="small" onClick={onSubmit}>
             {t('common.save')}
-          </button>
+          </Button>
         </footer>
       </div>
     </div>
