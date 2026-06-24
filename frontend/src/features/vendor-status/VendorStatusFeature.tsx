@@ -39,7 +39,7 @@ const vendorStatusMutedPanelClass =
 const vendorStatusChipClass =
   'inline-flex rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-1 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
 const vendorStatusSecondaryButtonClass =
-  'inline-flex h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+  'inline-flex h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const vendorStatusPrimaryButtonClass =
   'inline-flex h-9 w-fit items-center gap-2 rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] px-3 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-surface-canvas)]';
 const vendorStatusMetaClass = 'text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]';
