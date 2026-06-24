@@ -37,7 +37,7 @@ export default function ActionSelect({
   copyTitle,
 }: ActionSelectProps) {
   const actionButtonClass =
-    'inline-flex h-6 w-6 items-center justify-center !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-raised)] !text-[length:var(--gt-font-size-xs)] !font-normal !text-[var(--gt-ink-primary)] transition hover:!border-[var(--gt-border-strong)] hover:!bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
+    'inline-flex h-6 w-6 items-center justify-center !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-raised)] !text-[length:var(--gt-font-size-xs)] !font-normal !text-[var(--gt-ink-primary)] transition-colors hover:!border-[var(--gt-border-strong)] hover:!bg-[var(--gt-surface-muted)] disabled:cursor-not-allowed disabled:opacity-50';
 
   return (
     <label

@@ -487,6 +487,7 @@ test('status Relay key picker wires a copy action to the selected key', async ()
   assert.match(actionSelectSource, /onCopy\?: \(\) => void/);
   assert.match(actionSelectSource, /copyDisabled\?: boolean/);
   assert.match(actionSelectSource, /<Copy className=/);
+  assert.doesNotMatch(actionSelectSource, /\btransition(?![-\[])/);
 
   const statusPanelsSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
   assert.match(statusPanelsSource, /selectedRelayKey=\{selectedRelayKey\}/);

@@ -245,7 +245,7 @@ export default function Sidebar({
           onClick={toggleCollapsed}
           aria-label={t(getSidebarToggleTranslationKey(isCollapsed))}
           title={t(getSidebarToggleTranslationKey(isCollapsed))}
-          className={'flex h-7 w-7 items-center justify-center rounded-md transition duration-75 hover:bg-[var(--gt-surface-muted)] ' + FOCUS_RING}
+          className={'flex h-7 w-7 items-center justify-center rounded-md transition-colors duration-75 hover:bg-[var(--gt-surface-muted)] ' + FOCUS_RING}
           style={{ color: 'var(--gt-ink-muted)' }}
         >
           <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden="true">
