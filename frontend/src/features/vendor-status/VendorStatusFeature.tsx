@@ -201,7 +201,7 @@ function SystemStatusRow({
             >
               <span>{componentCountLabel}</span>
               <svg
-                className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : 'rotate-0'}`}
+                className={`h-3.5 w-3.5 ${expanded ? 'rotate-180' : 'rotate-0'}`}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"

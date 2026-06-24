@@ -254,7 +254,7 @@ export default function ChannelRoutingWorkbench({
             <span className="font-mono text-[length:var(--gt-font-size-2xs)] font-semibold text-[var(--gt-ink-muted)]">
               {hasExplain ? '有结果' : '可选'}
             </span>
-            <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" strokeWidth={4} />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 group-open:rotate-180" strokeWidth={4} />
           </span>
         </summary>
 
