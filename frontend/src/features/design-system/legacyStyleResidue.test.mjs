@@ -12,7 +12,7 @@ const ignoredFilePatterns = [
 ];
 
 const legacyRuntimeStylePattern =
-  /btn-swiss|input-swiss|select-swiss|card-swiss|shadow-\[|shadow-(?:lg|xl|2xl)|drop-shadow|border-2|bg-\[var\(--bg-(main|surface)\)\]|font-(?:medium|bold|extrabold|black)|\buppercase\b|tracking-\[|backdrop-blur|\btransition(?![-\[])|transition-all|transition-transform|transition-opacity|hover:opacity|active:opacity|group-hover:opacity|active:scale|animate-pulse|animate-spin|grayscale|text-\[(?:9|10|11)px\]|opacity-(?:10|30)(?!\d)|usage-desk-(?:curve|area|point)|rangeAnimationVersion|curveMotion|detailTransitionActive|codex-live-(?:chart-enter|point-pulse)|codex-success-hud/;
+  /btn-swiss|input-swiss|select-swiss|card-swiss|shadow-\[|shadow-(?:lg|xl|2xl)|drop-shadow|border-2|bg-\[var\(--bg-(main|surface)\)\]|--color-chart-|font-(?:medium|bold|extrabold|black)|\buppercase\b|tracking-\[|backdrop-blur|\btransition(?![-\[])|transition-all|transition-transform|transition-opacity|hover:opacity|active:opacity|group-hover:opacity|active:scale|animate-pulse|animate-spin|grayscale|text-\[(?:9|10|11)px\]|opacity-(?:10|30)(?!\d)|usage-desk-(?:curve|area|point)|rangeAnimationVersion|curveMotion|detailTransitionActive|codex-live-(?:chart-enter|point-pulse)|codex-success-hud/;
 
 const inlineTypographyGateFiles = [
   'features/debug/components/DebugEntryCard.tsx',
@@ -90,7 +90,7 @@ test('runtime UI sources do not reintroduce legacy heavy workspace styling', asy
 
 test('storybook examples do not teach legacy heavy workspace styling', async () => {
   const findings = [];
-  const legacyStoryStylePattern = /border-2|shadow-\[|gt-surface-panel|gt-shadow-panel|border-muted|SwissPrimitives/;
+  const legacyStoryStylePattern = /border-2|shadow-\[|gt-surface-panel|gt-shadow-panel|border-muted|--color-chart-|SwissPrimitives/;
 
   for await (const filePath of walk(srcRoot.pathname)) {
     const relativePath = relative(srcRoot.pathname, filePath);

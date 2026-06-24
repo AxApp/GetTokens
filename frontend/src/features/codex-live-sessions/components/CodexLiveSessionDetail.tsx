@@ -453,12 +453,12 @@ function TimingMetricSelector({
 }
 
 const timingTrendSeries: Array<{ id: CodexLiveTimingTrendMetric; labelKey: string; color: string; dotClass: string }> = [
-  { id: 'firstEventMs', labelKey: 'codex_live_sessions.timing_ttft', color: 'var(--color-chart-blue)', dotClass: 'bg-[var(--color-chart-blue)]' },
-  { id: 'firstTokenMs', labelKey: 'codex_live_sessions.timing_first_token', color: 'var(--color-chart-peak)', dotClass: 'bg-[var(--color-chart-peak)]' },
+  { id: 'firstEventMs', labelKey: 'codex_live_sessions.timing_ttft', color: 'var(--gt-chart-blue)', dotClass: 'bg-[var(--gt-chart-blue)]' },
+  { id: 'firstTokenMs', labelKey: 'codex_live_sessions.timing_first_token', color: 'var(--gt-chart-peak)', dotClass: 'bg-[var(--gt-chart-peak)]' },
   { id: 'streamDurationMs', labelKey: 'codex_live_sessions.timing_stream', color: 'var(--gt-status-success)', dotClass: 'bg-[var(--gt-status-success)]' },
   { id: 'queueWaitMs', labelKey: 'codex_live_sessions.timing_queue', color: 'var(--gt-status-warning)', dotClass: 'bg-[var(--gt-status-warning)]' },
-  { id: 'authSelectMs', labelKey: 'codex_live_sessions.timing_auth', color: 'var(--color-chart-attribution)', dotClass: 'bg-[var(--color-chart-attribution)]' },
-  { id: 'upstreamConnectMs', labelKey: 'codex_live_sessions.timing_connect', color: 'var(--color-chart-secondary)', dotClass: 'bg-[var(--color-chart-secondary)]' },
+  { id: 'authSelectMs', labelKey: 'codex_live_sessions.timing_auth', color: 'var(--gt-chart-attribution)', dotClass: 'bg-[var(--gt-chart-attribution)]' },
+  { id: 'upstreamConnectMs', labelKey: 'codex_live_sessions.timing_connect', color: 'var(--gt-chart-secondary)', dotClass: 'bg-[var(--gt-chart-secondary)]' },
   { id: 'averageEventGapMs', labelKey: 'codex_live_sessions.timing_avg_gap', color: 'var(--gt-status-warning)', dotClass: 'bg-[var(--gt-status-warning)]' },
   { id: 'longestEventGapMs', labelKey: 'codex_live_sessions.timing_max_gap', color: 'var(--gt-status-danger)', dotClass: 'bg-[var(--gt-status-danger)]' },
 ];

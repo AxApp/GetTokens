@@ -45,6 +45,19 @@ const accentStatusTokens = [
   '--gt-status-info',
 ];
 
+const chartTokens = [
+  '--gt-chart-primary',
+  '--gt-chart-primary-area',
+  '--gt-chart-secondary',
+  '--gt-chart-secondary-area',
+  '--gt-chart-blue',
+  '--gt-chart-peak',
+  '--gt-chart-attribution',
+  '--gt-chart-grid',
+  '--gt-chart-grid-subtle',
+  '--gt-chart-grid-strong',
+];
+
 const radiusTokens = [
   '--gt-radius-xs',
   '--gt-radius-sm',
@@ -146,6 +159,13 @@ test(':root contains all accent/status tokens', () => {
   for (const token of accentStatusTokens) {
     assertTokenExists(token, rootBlock, `:root should define ${token}`);
   }
+});
+
+test(':root contains all chart tokens without retired aliases', () => {
+  for (const token of chartTokens) {
+    assertTokenExists(token, rootBlock, `:root should define ${token}`);
+  }
+  assert.doesNotMatch(rootBlock, /--color-chart-/);
 });
 
 test(':root contains all radius tokens', () => {

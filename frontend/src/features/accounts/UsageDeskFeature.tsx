@@ -172,19 +172,19 @@ export default function UsageDeskFeature({
                                 ? observedSnapshot.minutePoints.map((point) => ({
                                     label: point.label,
                                     value: point.requests,
-                                    color: 'var(--color-chart-primary)',
+                                    color: 'var(--gt-chart-primary)',
                                   }))
                                 : observedSnapshot.dailyPoints.map((point) => ({
                                     label: point.label,
                                     value: point.requests,
-                                    color: 'var(--color-chart-primary)',
+                                    color: 'var(--gt-chart-primary)',
                                     drilldownDayKey: point.dayKey,
                                   }))
                             }
                             secondary={
                               observedDrilldownDayKey
                                 ? undefined
-                                : observedSnapshot.dailyPoints.map((point) => ({ label: point.label, value: point.failure, color: 'var(--color-chart-secondary)' }))
+                                : observedSnapshot.dailyPoints.map((point) => ({ label: point.label, value: point.failure, color: 'var(--gt-chart-secondary)' }))
                             }
                           />
                         </div>

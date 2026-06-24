@@ -519,12 +519,12 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     ? projectedSnapshot.minutePoints.map((point) => ({
         label: point.label,
         value: projectedChartMetric === 'requests' ? point.requests : point.totalTokens,
-        color: 'var(--color-chart-blue)',
+        color: 'var(--gt-chart-blue)',
       }))
     : visibleProjectedDailyPoints.map((point) => ({
         label: point.label,
         value: projectedChartMetric === 'requests' ? point.requests : point.totalTokens,
-        color: 'var(--color-chart-blue)',
+        color: 'var(--gt-chart-blue)',
         drilldownDayKey: point.dayKey,
       }));
 

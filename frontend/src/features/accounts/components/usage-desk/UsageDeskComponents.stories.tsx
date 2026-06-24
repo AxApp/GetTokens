@@ -30,23 +30,23 @@ export default meta;
 type Story = StoryObj;
 
 const dailyTokenPoints = [
-  { label: '05-13', value: 184000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-13' },
-  { label: '05-14', value: 226000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-14' },
-  { label: '05-15', value: 198000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-15' },
-  { label: '05-16', value: 314000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-16' },
-  { label: '05-17', value: 286000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-17' },
-  { label: '05-18', value: 418000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-18' },
-  { label: '05-19', value: 352000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-19' },
+  { label: '05-13', value: 184000, color: 'var(--gt-chart-primary)', drilldownDayKey: '2026-05-13' },
+  { label: '05-14', value: 226000, color: 'var(--gt-chart-primary)', drilldownDayKey: '2026-05-14' },
+  { label: '05-15', value: 198000, color: 'var(--gt-chart-primary)', drilldownDayKey: '2026-05-15' },
+  { label: '05-16', value: 314000, color: 'var(--gt-chart-primary)', drilldownDayKey: '2026-05-16' },
+  { label: '05-17', value: 286000, color: 'var(--gt-chart-primary)', drilldownDayKey: '2026-05-17' },
+  { label: '05-18', value: 418000, color: 'var(--gt-chart-primary)', drilldownDayKey: '2026-05-18' },
+  { label: '05-19', value: 352000, color: 'var(--gt-chart-primary)', drilldownDayKey: '2026-05-19' },
 ];
 
 const projectedTokenPoints = [
-  { label: '05-13', value: 132000, color: 'var(--color-chart-secondary)' },
-  { label: '05-14', value: 188000, color: 'var(--color-chart-secondary)' },
-  { label: '05-15', value: 176000, color: 'var(--color-chart-secondary)' },
-  { label: '05-16', value: 274000, color: 'var(--color-chart-secondary)' },
-  { label: '05-17', value: 242000, color: 'var(--color-chart-secondary)' },
-  { label: '05-18', value: 365000, color: 'var(--color-chart-secondary)' },
-  { label: '05-19', value: 318000, color: 'var(--color-chart-secondary)' },
+  { label: '05-13', value: 132000, color: 'var(--gt-chart-secondary)' },
+  { label: '05-14', value: 188000, color: 'var(--gt-chart-secondary)' },
+  { label: '05-15', value: 176000, color: 'var(--gt-chart-secondary)' },
+  { label: '05-16', value: 274000, color: 'var(--gt-chart-secondary)' },
+  { label: '05-17', value: 242000, color: 'var(--gt-chart-secondary)' },
+  { label: '05-18', value: 365000, color: 'var(--gt-chart-secondary)' },
+  { label: '05-19', value: 318000, color: 'var(--gt-chart-secondary)' },
 ];
 
 const minuteRows: UsageDetailTableRow[] = [

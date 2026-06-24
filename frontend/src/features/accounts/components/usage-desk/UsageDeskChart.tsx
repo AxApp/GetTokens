@@ -126,10 +126,10 @@ function ChartSurface({
   const chartWidth = Math.max(420, chartPlotWidth + chartSideInset * 2);
   const allValues = [...primary, ...(secondary ?? [])].map((point) => point.value);
   const valueScale = buildUsageDeskChartValueScale(allValues);
-  const primaryTone = 'var(--color-chart-primary)';
-  const primaryAreaTone = 'var(--color-chart-primary-area)';
-  const secondaryTone = 'var(--color-chart-secondary)';
-  const secondaryAreaTone = 'var(--color-chart-secondary-area)';
+  const primaryTone = 'var(--gt-chart-primary)';
+  const primaryAreaTone = 'var(--gt-chart-primary-area)';
+  const secondaryTone = 'var(--gt-chart-secondary)';
+  const secondaryAreaTone = 'var(--gt-chart-secondary-area)';
   const horizontalGridLines = [0.25, 0.5, 0.75].map((ratio) => chartHeight * ratio);
   const verticalGridLines = Array.from(
     { length: Math.floor(chartWidth / 55) },
@@ -228,10 +228,10 @@ function ChartSurface({
           </defs>
           <g strokeWidth="1" vectorEffect="non-scaling-stroke">
             {horizontalGridLines.map((y) => (
-              <line key={`h-${y}`} x1={0} x2={chartWidth} y1={y} y2={y} stroke="var(--color-chart-grid)" />
+              <line key={`h-${y}`} x1={0} x2={chartWidth} y1={y} y2={y} stroke="var(--gt-chart-grid)" />
             ))}
             {verticalGridLines.map((x) => (
-              <line key={`v-${x}`} x1={x} x2={x} y1={0} y2={chartHeight} stroke="var(--color-chart-grid-subtle)" />
+              <line key={`v-${x}`} x1={x} x2={x} y1={0} y2={chartHeight} stroke="var(--gt-chart-grid-subtle)" />
             ))}
           </g>
           <path
@@ -250,7 +250,7 @@ function ChartSurface({
               y1={12}
               x2={selectedPrimaryX}
               y2={chartHeight - 8}
-              stroke="var(--color-chart-primary)"
+              stroke="var(--gt-chart-primary)"
               strokeOpacity="0.35"
               strokeWidth="1.5"
               strokeDasharray="6 6"

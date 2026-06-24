@@ -44,13 +44,13 @@ const semanticColors: FixedColor[] = [
 ];
 
 const analyticsColors: FixedColor[] = [
-  { name: '--color-chart-primary', value: 'var(--color-chart-primary)', usage: 'Usage Desk 主曲线、主柱状图', source: 'style.css token' },
-  { name: '--color-chart-primary-area', value: 'var(--color-chart-primary-area)', usage: 'Usage Desk 主面积填充', source: 'style.css token' },
-  { name: '--color-chart-secondary', value: 'var(--color-chart-secondary)', usage: 'Usage Desk 对比曲线、失败柱', source: 'style.css token' },
-  { name: '--color-chart-secondary-area', value: 'var(--color-chart-secondary-area)', usage: 'Usage Desk 对比面积填充', source: 'style.css token' },
-  { name: '--color-chart-blue', value: 'var(--color-chart-blue)', usage: '用量投影图表色', source: 'style.css token' },
-  { name: '--color-chart-peak', value: 'var(--color-chart-peak)', usage: '归因卡峰值点', source: 'style.css token' },
-  { name: '--color-chart-attribution', value: 'var(--color-chart-attribution)', usage: '归因卡流量曲线', source: 'style.css token' },
+  { name: '--gt-chart-primary', value: 'var(--gt-chart-primary)', usage: 'Usage Desk 主曲线、主柱状图', source: 'style.css token' },
+  { name: '--gt-chart-primary-area', value: 'var(--gt-chart-primary-area)', usage: 'Usage Desk 主面积填充', source: 'style.css token' },
+  { name: '--gt-chart-secondary', value: 'var(--gt-chart-secondary)', usage: 'Usage Desk 对比曲线、失败柱', source: 'style.css token' },
+  { name: '--gt-chart-secondary-area', value: 'var(--gt-chart-secondary-area)', usage: 'Usage Desk 对比面积填充', source: 'style.css token' },
+  { name: '--gt-chart-blue', value: 'var(--gt-chart-blue)', usage: '用量投影图表色', source: 'style.css token' },
+  { name: '--gt-chart-peak', value: 'var(--gt-chart-peak)', usage: '归因卡峰值点', source: 'style.css token' },
+  { name: '--gt-chart-attribution', value: 'var(--gt-chart-attribution)', usage: '归因卡流量曲线', source: 'style.css token' },
 ];
 
 const vendorIconColors = Array.from(
