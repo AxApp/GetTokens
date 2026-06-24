@@ -155,6 +155,14 @@ test('selected UI sources keep static typography and colors in classes', async (
   assert.deepEqual(findings, []);
 });
 
+test('workspace page header uses gt typography tokens', async () => {
+  const source = await readFile(join(srcRoot.pathname, 'components/ui/WorkspacePageHeader.tsx'), 'utf8');
+
+  assert.doesNotMatch(source, /\btext-(?:sm|base|lg|xl|2xl|3xl|4xl)\b/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-page-title\)\]/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-sm\)\]/);
+});
+
 test('selected UI sources keep static surface and border tokens in classes', async () => {
   const findings = [];
   const inlineSurfacePattern = /style=\{\{[^\n}]*(backgroundColor|borderColor|border(?:Top|Right|Bottom|Left)?):\s*['"][^'"]*var\(--gt-(surface|border|ink|status)/;

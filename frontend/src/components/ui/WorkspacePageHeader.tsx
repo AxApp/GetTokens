@@ -35,13 +35,13 @@ export default function WorkspacePageHeader({
     >
       <div className="min-w-0 flex-1">
         <h2
-          className={`font-sans text-2xl font-semibold text-[var(--gt-ink-primary)] ${titleClassName}`}
+          className={`font-sans text-[length:var(--gt-font-size-page-title)] font-semibold text-[var(--gt-ink-primary)] ${titleClassName}`}
         >
           {title}
         </h2>
         {subtitle ? (
           <div
-            className={`mt-1 max-w-[min(42rem,70vw)] truncate whitespace-nowrap font-sans text-sm text-[var(--gt-ink-muted)] ${subtitleClassName}`}
+            className={`mt-1 max-w-[min(42rem,70vw)] truncate whitespace-nowrap font-sans text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)] ${subtitleClassName}`}
           >
             {subtitle}
           </div>
