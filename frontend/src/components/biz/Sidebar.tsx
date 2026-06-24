@@ -285,26 +285,17 @@ export default function Sidebar({
       >
         {isExpanded ? (
           <div className="flex flex-col items-center">
-            <div
-              style={{
-                color: 'var(--gt-ink-muted)',
-                fontFamily: 'var(--gt-font-family-mono)',
-                fontSize: 'var(--gt-font-size-2xs)',
-                lineHeight: 'var(--gt-line-height-tight)',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
+            <div className="font-mono text-[length:var(--gt-font-size-2xs)] leading-[var(--gt-line-height-tight)] text-[var(--gt-ink-muted)] tabular-nums">
               v{sidebarVersion}
             </div>
             {updatePrompt && (
               <>
-                <div className="mt-1 font-normal" style={{ color: 'var(--gt-status-success)', fontSize: 'var(--gt-font-size-3xs)', lineHeight: 'var(--gt-line-height-tight)' }}>
+                <div className="mt-1 text-[length:var(--gt-font-size-3xs)] font-normal leading-[var(--gt-line-height-tight)] text-[var(--gt-status-success)]">
                   {t('nav.update_available')}
                 </div>
                 <Button
                   size="small"
-                  className={'mt-1 flex h-5 w-full items-center justify-center gap-1 rounded-md disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
-                  style={{ backgroundColor: 'var(--gt-status-success)', color: 'var(--gt-ink-inverse)', fontSize: 'var(--gt-font-size-2xs)', fontWeight: 600, lineHeight: 'var(--gt-line-height-tight)' }}
+                  className={'mt-1 flex h-5 w-full items-center justify-center gap-1 rounded-md !bg-[var(--gt-status-success)] text-[length:var(--gt-font-size-2xs)] font-semibold leading-[var(--gt-line-height-tight)] !text-[var(--gt-ink-inverse)] disabled:cursor-wait disabled:opacity-60 ' + FOCUS_RING}
                   aria-label={updatePromptLabel}
                   title={updatePromptTitle}
                   aria-live="polite"

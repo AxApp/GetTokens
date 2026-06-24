@@ -33,6 +33,7 @@ test('sidebar typography keeps nav labels readable in the compact workspace shel
   assert.match(source, /mode="inline"/);
   assert.match(source, /--gt-font-family-sans/);
   assert.doesNotMatch(source, /fontWeight: .*500/);
+  assert.doesNotMatch(source, /fontSize:/);
   assert.doesNotMatch(source, /createPortal/);
   assert.doesNotMatch(source, /function Submenu/);
   assert.doesNotMatch(stateSource, /resolveHoveredSidebarSection|getSidebarSubmenuPlacement|getSidebarSubmenuMotionState|getOpenSidebarSection/);
