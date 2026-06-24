@@ -187,6 +187,13 @@ test('debug components use gt typography tokens and class-based card styling', a
   assert.match(combined, /text-\[length:var\(--gt-font-size-xs\)\]/);
 });
 
+test('status feature cards keep static body padding in classes', async () => {
+  const source = await readFile(join(srcRoot.pathname, 'features/status/StatusFeature.tsx'), 'utf8');
+
+  assert.doesNotMatch(source, /styles=\{\{\s*body:\s*\{\s*padding:\s*16\s*\}\s*\}\}/);
+  assert.match(source, /classNames=\{\{ body: '!p-4' \}\}/);
+});
+
 test('selected UI sources keep static surface and border tokens in classes', async () => {
   const findings = [];
   const inlineSurfacePattern = /style=\{\{[^\n}]*(backgroundColor|borderColor|border(?:Top|Right|Bottom|Left)?):\s*['"][^'"]*var\(--gt-(surface|border|ink|status)/;

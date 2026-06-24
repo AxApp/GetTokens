@@ -125,7 +125,7 @@ function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildA
       size="small"
       variant="outlined"
       className={statusDiagnosticsPanelClass}
-      styles={{ body: { padding: 16 } }}
+      classNames={{ body: '!p-4' }}
       data-account-store-diagnostics-panel="quiet"
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -1146,7 +1146,7 @@ export default function StatusFeature({
         <Card
           variant="outlined"
           className={statusSummaryCardClass}
-          styles={{ body: { padding: 16 } }}
+          classNames={{ body: '!p-4' }}
           data-status-summary="true"
         >
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
