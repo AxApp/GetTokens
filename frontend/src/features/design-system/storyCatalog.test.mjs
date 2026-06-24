@@ -169,7 +169,7 @@ test('modal frame constrains detail dialogs to the viewport width', async () => 
   assert.match(source, /\{footer\}/);
   assert.match(source, /overflow-auto/);
   assert.doesNotMatch(source, /backgroundColor: 'var\(--gt-surface-panel\)'/);
-  assert.match(source, /backgroundColor: 'var\(--gt-surface-muted\)'/);
+  assert.match(source, /bg-\[var\(--gt-surface-muted\)\]/);
   assert.doesNotMatch(source, /detail: 'max-w-6xl'/);
 });
 

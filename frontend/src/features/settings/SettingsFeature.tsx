@@ -668,7 +668,7 @@ export default function SettingsFeature({
           </div>
         </section>
 
-        <footer className="border-t pt-6 text-center" style={{ borderColor: 'var(--gt-border-subtle)' }}>
+        <footer className="border-t border-[var(--gt-border-subtle)] pt-6 text-center">
           <div className="font-mono text-xs font-normal text-[var(--gt-ink-muted)]">
             GetTokens {currentVersionLabel} · {releaseLabel || 'DEV'}
           </div>

@@ -29,10 +29,9 @@ export default function WorkspacePageHeader({
     <header
       data-design-system-component="true"
       data-design-system-component-name="WorkspacePageHeader"
-      className={`flex flex-wrap justify-between gap-4 border-b pb-4 ${
+      className={`flex flex-wrap justify-between gap-4 border-b border-[var(--gt-border-subtle)] pb-4 ${
         align === 'center' ? 'items-center' : 'items-end'
       } ${className}`.trim()}
-      style={{ borderColor: 'var(--gt-border-subtle)' }}
     >
       <div className="min-w-0 flex-1">
         <h2

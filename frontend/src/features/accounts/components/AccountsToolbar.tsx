@@ -410,8 +410,7 @@ export default function AccountsToolbar({
                 { label: t('accounts.display_mode_full'), value: 'full' },
                 { label: t('accounts.display_mode_list'), value: 'list' },
               ]}
-              className="!h-8"
-              style={{ backgroundColor: 'var(--gt-surface-canvas)' }}
+              className="!h-8 !bg-[var(--gt-surface-canvas)]"
               data-account-card-ignore-click="true"
             />
             <Button

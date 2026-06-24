@@ -21,8 +21,7 @@ export default function DebugFeature() {
 
   return (
     <div
-      className="h-full w-full overflow-auto"
-      style={{ backgroundColor: 'var(--gt-surface-canvas)', padding: '2.5rem' }}
+      className="h-full w-full overflow-auto bg-[var(--gt-surface-canvas)] p-10"
       data-collaboration-id="PAGE_DEBUG"
     >
       <div className="mx-auto max-w-6xl space-y-6 pb-24">

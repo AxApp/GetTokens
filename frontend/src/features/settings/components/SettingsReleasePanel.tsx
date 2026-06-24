@@ -137,7 +137,7 @@ export default function SettingsReleasePanel({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: '1px solid var(--gt-border-subtle)' }}>
+      <div className="flex items-center gap-3 border-t border-[var(--gt-border-subtle)] px-4 py-3">
         <Button
           size="small"
           onClick={onCheckUpdate}

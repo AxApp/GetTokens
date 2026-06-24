@@ -37,6 +37,13 @@ const inlineStaticSurfaceGateFiles = [
   'features/accounts/components/AccountCardSkeleton.tsx',
   'components/biz/Sidebar.tsx',
   'features/accounts/components/AttributionCard.tsx',
+  'features/debug/DebugFeature.tsx',
+  'components/ui/ModalFrame.tsx',
+  'components/ui/WorkspacePageHeader.tsx',
+  'features/settings/components/SettingsReleasePanel.tsx',
+  'features/settings/SettingsFeature.tsx',
+  'features/accounts/components/AccountsToolbar.tsx',
+  'features/accounts/components/AccountHealthBar.tsx',
 ];
 
 function extensionOf(filePath) {

@@ -128,13 +128,12 @@ export default function ModalFrame({
   };
   const panelContent = hasSlots ? (
     <>
-      {header ? <header className={`shrink-0 border-b ${headerClassName}`} style={{ borderColor: 'var(--gt-border-subtle)' }}>{header}</header> : null}
+      {header ? <header className={`shrink-0 border-b border-[var(--gt-border-subtle)] ${headerClassName}`}>{header}</header> : null}
       <div className={`min-h-0 flex-1 overflow-auto ${bodyClassName}`}>{children}</div>
       {error}
       {footer ? (
         <footer
-          className={`flex shrink-0 flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between ${footerClassName}`}
-          style={{ borderColor: 'var(--gt-border-subtle)', backgroundColor: 'var(--gt-surface-muted)' }}
+          className={`flex shrink-0 flex-col gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between ${footerClassName}`}
         >
           {footer}
         </footer>

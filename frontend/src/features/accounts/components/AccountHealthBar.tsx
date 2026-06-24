@@ -72,8 +72,7 @@ export default function AccountHealthBar({ summary }: AccountHealthBarProps) {
         return (
           <Tooltip key={`${block}-${index}`} title={title}>
           <span
-            className={`h-3 min-w-0 rounded-sm border ${blockClass(block)}`}
-            style={{ borderColor: 'var(--gt-surface-raised)' }}
+            className={`h-3 min-w-0 rounded-sm border border-[var(--gt-surface-raised)] ${blockClass(block)}`}
           />
           </Tooltip>
         );
