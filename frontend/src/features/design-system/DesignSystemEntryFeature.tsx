@@ -160,7 +160,7 @@ function AnatomyStatusPill() {
 function AnatomyToolbar() {
   return (
     <div className="flex flex-wrap items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] px-3 py-2">
-      <Input size="small" placeholder="Search…" style={{ maxWidth: '12rem' }} />
+      <Input size="small" placeholder="Search…" className="max-w-[12rem]" />
       <Button size="small" type="primary">New</Button>
       <Button size="small">Export</Button>
     </div>
@@ -187,7 +187,7 @@ function AnatomyModalShell() {
       size="small"
       title="Detail Modal"
       extra={<span className="text-xs text-[var(--gt-ink-muted)]">✕</span>}
-      style={{ width: '100%', position: 'relative' }}
+      className="relative w-full"
     >
       <div className="text-xs text-[var(--gt-ink-secondary)]">
         Modal body content area. Supports 2-column grid layout on wide screens.
@@ -305,7 +305,7 @@ export default function DesignSystemEntryFeature() {
         {/* ── Token Swatches ── */}
         <section>
           <h2 className="settings-section-title">Token Contract</h2>
-          <div className="settings-group" style={{ padding: '1.25rem' }}>
+          <div className="settings-group p-5">
             <h3 className="mb-3 text-xs font-semibold text-[var(--gt-ink-secondary)]">Color</h3>
             <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
               {COLOR_TOKENS.map((token) => (
@@ -332,7 +332,7 @@ export default function DesignSystemEntryFeature() {
         {/* ── Component Anatomy ── */}
         <section>
           <h2 className="settings-section-title">Component Anatomy</h2>
-          <div className="settings-group" style={{ padding: '1.25rem' }}>
+          <div className="settings-group p-5">
             <div className="grid gap-4">
               {ANATOMY_ITEMS.map((item) => (
                 <div key={item.name} className="border-t border-[var(--gt-border-subtle)] pt-4">
@@ -342,7 +342,7 @@ export default function DesignSystemEntryFeature() {
                     </code>
                     <span className="text-xs text-[var(--gt-ink-muted)]">{item.desc}</span>
                   </div>
-                  <div style={{ paddingTop: '0.5rem' }}>{item.preview}</div>
+                  <div className="pt-2">{item.preview}</div>
                 </div>
               ))}
             </div>
@@ -352,8 +352,8 @@ export default function DesignSystemEntryFeature() {
         {/* ── State Matrix ── */}
         <section>
           <h2 className="settings-section-title">State Matrix</h2>
-          <div className="settings-group" style={{ overflow: 'hidden' }}>
-            <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
+          <div className="settings-group overflow-hidden">
+            <table className="w-full border-collapse text-xs">
               <thead>
                 <tr className="border-b border-[var(--gt-border-subtle)]">
                   <th className="px-4 py-2 text-left font-semibold text-[var(--gt-ink-secondary)]">Component</th>
@@ -389,7 +389,7 @@ export default function DesignSystemEntryFeature() {
           <h2 className="settings-section-title">Story Catalog</h2>
           <div className="grid gap-4">
             {designSystemStoryGroups.map((group) => (
-              <div key={group.id} className="settings-group" style={{ overflow: 'hidden' }}>
+              <div key={group.id} className="settings-group overflow-hidden">
                 <div className="border-b border-[var(--gt-border-subtle)] px-4 py-3">
                   <div className="flex items-baseline justify-between">
                     <div>

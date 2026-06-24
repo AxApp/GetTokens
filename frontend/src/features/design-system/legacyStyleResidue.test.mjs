@@ -147,3 +147,27 @@ test('selected UI sources keep static surface and border tokens in classes', asy
 
   assert.deepEqual(findings, []);
 });
+
+test('DesignSystemEntryFeature keeps inline styles limited to dynamic token demos', async () => {
+  const relativePath = 'features/design-system/DesignSystemEntryFeature.tsx';
+  const allowedInlineStylePatterns = [
+    /style=\{\{ backgroundColor: value \}\}/,
+    /style=\{\{ borderRadius: value \}\}/,
+    /style=\{\{ boxShadow: value \|\| 'none' \}\}/,
+  ];
+  const findings = [];
+  const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
+  const lines = source.split('\n');
+
+  lines.forEach((line, index) => {
+    if (!line.includes('style={{')) {
+      return;
+    }
+    if (allowedInlineStylePatterns.some((pattern) => pattern.test(line))) {
+      return;
+    }
+    findings.push(`${relativePath}:${index + 1}:${line.trim()}`);
+  });
+
+  assert.deepEqual(findings, []);
+});
