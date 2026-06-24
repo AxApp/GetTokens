@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { Card, Divider, Empty, Space, Typography } from 'antd';
 import {
   buildUsageDeskChartPointStyle,
@@ -353,16 +353,20 @@ function ChartPoint({
   selected?: boolean;
   onSelect?: () => void;
 }) {
+  const pointStyle = buildUsageDeskChartPointStyle(x, y) as CSSProperties & Record<string, string | number>;
+  pointStyle['--usage-chart-paint'] = color;
+  pointStyle['--usage-chart-axis-paint'] = selected ? 'var(--gt-ink-primary)' : 'var(--gt-ink-muted)';
+  pointStyle['--usage-chart-axis-opacity'] = selected ? 1 : 0.6;
+
   return (
     <div
-      style={buildUsageDeskChartPointStyle(x, y)}
+      style={pointStyle}
       className={`absolute flex items-center justify-center ${onSelect ? 'cursor-pointer' : ''}`}
       onClick={onSelect}
     >
       {/* 1. 数值标签 (不占用空间) */}
       <div
-        className={`pointer-events-none absolute whitespace-nowrap text-center font-semibold ${selected ? 'text-[length:var(--gt-font-size-md)]' : 'text-[length:var(--gt-font-size-md-compact)]'} ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
-        style={{ color }}
+        className={`pointer-events-none absolute whitespace-nowrap text-center font-semibold text-[var(--usage-chart-paint)] ${selected ? 'text-[length:var(--gt-font-size-md)]' : 'text-[length:var(--gt-font-size-md-compact)]'} ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
       >
         {label}
       </div>
@@ -370,18 +374,16 @@ function ChartPoint({
       {/* 2. 中心圆点 */}
       <div className="relative flex items-center justify-center">
         <div
-          className={`${usageDeskChartPointRingClass} ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}
-          style={{ backgroundColor: color }}
+          className={`${usageDeskChartPointRingClass} bg-[var(--usage-chart-paint)] ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}
         />
       </div>
 
       {/* 3. 辅助轴向标签 (日期/时间) - 绝对定位到 chart 底部 */}
       <div
-        className={usageDeskChartAxisLabelClass}
+        className={`${usageDeskChartAxisLabelClass} text-[var(--usage-chart-axis-paint)]`}
         style={{
           top: `${helperY - y}px`,
-          color: selected ? 'var(--gt-ink-primary)' : 'var(--gt-ink-muted)',
-          opacity: selected ? 1 : 0.6
+          opacity: 'var(--usage-chart-axis-opacity)',
         }}
       >
         {helper}
