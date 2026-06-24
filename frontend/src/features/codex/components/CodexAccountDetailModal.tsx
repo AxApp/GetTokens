@@ -572,7 +572,7 @@ function CodexModelRoutingSection({
           {onFetchModelOptions ? (
             <Button
               size="small"
-              icon={<RefreshCw className={`h-3.5 w-3.5 ${fetchingModels ? 'animate-spin' : ''}`} strokeWidth={2.5} />}
+              icon={<RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />}
               onClick={onFetchModelOptions}
               disabled={fetchingModels}
             >

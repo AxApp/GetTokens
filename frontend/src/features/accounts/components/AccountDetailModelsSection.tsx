@@ -193,7 +193,7 @@ export function CompatibleModelsSection({
             <Button
               type="text"
               size="small"
-              icon={<RefreshCw className={remoteModelStatus === 'loading' ? 'animate-spin' : ''} />}
+              icon={<RefreshCw />}
               onClick={() => void fetchRemoteModelMappings()}
               disabled={remoteModelStatus === 'loading' || !onFetchModels}
               aria-label="拉取模型"

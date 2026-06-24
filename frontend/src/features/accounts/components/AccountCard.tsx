@@ -252,7 +252,6 @@ export default function AccountCard({
                   icon={<RefreshCw
                     size={16}
                     strokeWidth={2}
-                    className={refreshAction.disabled ? 'animate-spin' : undefined}
                   />}
                   aria-label={t(refreshAction.labelKey)}
                   onClick={() => onRefreshQuota(account)}

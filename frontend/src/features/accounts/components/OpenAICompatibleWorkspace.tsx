@@ -78,7 +78,7 @@ export default function OpenAICompatibleWorkspace({
             <Tooltip title={t('common.refresh')}>
               <Button
                 size="small"
-                icon={<RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />}
+                icon={<RefreshCw className="h-4 w-4" strokeWidth={2.5} />}
                 onClick={onRefresh}
                 className={openAICompatibleWorkspaceActionButtonClass}
                 disabled={!ready || loading}

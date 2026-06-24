@@ -376,7 +376,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                 size="small"
                 aria-label={copy.refresh}
                 onClick={() => void loadSnapshot('refresh')}
-                icon={<RefreshCw className={`h-5 w-5 ${snapshotRefreshing ? 'animate-spin' : ''}`} strokeWidth={2.4} />}
+                icon={<RefreshCw className="h-5 w-5" strokeWidth={2.4} />}
                 className="inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]"
               />
             </Tooltip>

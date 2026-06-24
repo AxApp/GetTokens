@@ -428,7 +428,7 @@ export default function VendorStatusFeature() {
 
         {state.status === 'loading' && !data ? (
           <section className={`${vendorStatusPanelClass} flex min-h-[16rem] items-center justify-center gap-3 text-[var(--gt-ink-muted)]`}>
-            <LoaderCircle className="h-5 w-5 animate-spin" />
+            <LoaderCircle className="h-5 w-5" />
             <span className="text-sm font-normal">{t('vendor_status.loading')}</span>
           </section>
         ) : null}

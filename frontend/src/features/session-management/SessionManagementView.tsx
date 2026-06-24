@@ -1209,7 +1209,7 @@ export function ProviderMergeModal({
               onClick={onSave}
               disabled={saving}
               aria-busy={saving}
-              icon={saving ? <RefreshCw className="h-3 w-3 animate-spin" strokeWidth={2.5} aria-hidden="true" /> : undefined}
+              icon={saving ? <RefreshCw className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" /> : undefined}
             >
               <span>{saving ? '保存中…' : '保存'}</span>
             </Button>
@@ -1343,7 +1343,7 @@ export function SessionDetailModal({
                 type="text"
                 onClick={onRefresh}
                 aria-label={copy.refresh}
-                icon={<RefreshCw className={`h-3.5 w-3.5 ${detailState.refreshing ? 'animate-spin' : ''}`} strokeWidth={2.5} />}
+                icon={<RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />}
               />
             </Tooltip>
             <Tooltip title={copy.close}>

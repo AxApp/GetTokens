@@ -184,14 +184,14 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
     preview?.status === 'needs-migration'
       ? {
           label: busyAction ? '处理中' : '确认迁移',
-          icon: busyAction === 'commit' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />,
+          icon: busyAction === 'commit' ? <Loader2 className="h-4 w-4" /> : <Database className="h-4 w-4" />,
           onClick: handleConfirmMigration,
           disabled: !canCommitAccountMigration(preview, busyAction !== null),
         }
       : preview?.status === 'ready-to-delete-legacy'
         ? {
             label: busyAction ? '处理中' : '确认迁移并清理旧源',
-            icon: busyAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />,
+            icon: busyAction ? <Loader2 className="h-4 w-4" /> : <Database className="h-4 w-4" />,
             onClick: handleConfirmMigration,
             disabled: !canCommitAccountMigration(preview, busyAction !== null),
           }
@@ -225,7 +225,7 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
           size="small"
           onClick={loadPreview}
           disabled={loading || busyAction !== null}
-          icon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          icon={loading ? <Loader2 className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
         >
           重新检查
         </Button>

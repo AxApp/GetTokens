@@ -971,7 +971,7 @@ function ProxyNodeRow({
             title={probing ? '测速中' : '测速'}
             onClick={() => onRetest(node.id)}
             disabled={probing}
-            icon={<RefreshCw className={`h-3.5 w-3.5 ${probing ? 'animate-spin' : ''}`} strokeWidth={2.4} />}
+            icon={<RefreshCw className="h-3.5 w-3.5" strokeWidth={2.4} />}
             className="flex h-8 w-8 items-center justify-center rounded disabled:cursor-not-allowed disabled:opacity-50"
           />
           <ProxyNodeActionsMenu onEdit={onEdit} onDelete={() => onDelete(node.id)} />

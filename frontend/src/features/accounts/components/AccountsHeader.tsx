@@ -100,7 +100,7 @@ export default function AccountsHeader({
                 onClick={onRefreshAccounts}
                 disabled={!ready || loading}
                 aria-label={t('accounts.refresh_accounts')}
-                icon={<RefreshCw className={loading ? 'animate-spin' : ''} size={16} strokeWidth={2} />}
+                icon={<RefreshCw size={16} strokeWidth={2} />}
               >
               </Button>
             </Tooltip>

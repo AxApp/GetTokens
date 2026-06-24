@@ -207,7 +207,7 @@ export default function ApiKeyComposeModal({
                     >
                       {fetchModelsState.status === 'loading' ? (
                         <span className="flex items-center gap-1.5">
-                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <Loader2 className="h-3 w-3" />
                           {t('accounts.openai_provider_models_fetch_running')}
                         </span>
                       ) : (
@@ -273,7 +273,7 @@ export default function ApiKeyComposeModal({
                     >
                       {verifyState.status === 'loading' ? (
                         <span className="flex items-center gap-1.5">
-                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <Loader2 className="h-3 w-3" />
                           {t('accounts.api_key_verify_running')}
                         </span>
                       ) : (

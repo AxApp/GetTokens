@@ -247,7 +247,7 @@ export default function AccountImportModal({
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4" />
                   {t('accounts.import_account_importing')}
                 </span>
               ) : (
@@ -297,7 +297,7 @@ export default function AccountImportModal({
                 className={accountImportModalDropzoneClass(isFileDragOver)}
               >
                 <span className="grid justify-items-center gap-3">
-                  {readingFiles ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadIcon className="h-5 w-5" strokeWidth={3} />}
+                  {readingFiles ? <Loader2 className="h-5 w-5" /> : <UploadIcon className="h-5 w-5" strokeWidth={3} />}
                   <span className={accountImportModalDropzoneTitleClass}>
                     {t('accounts.import_account_choose_files')}
                   </span>

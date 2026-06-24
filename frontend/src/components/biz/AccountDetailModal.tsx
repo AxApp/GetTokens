@@ -339,7 +339,7 @@ export default function AccountDetailModal({
                 <span className="h-2 w-2 bg-[var(--gt-border-subtle)]"></span>
                 {t('accounts.ui_compatible_models')}
               </div>
-              {loadingModels ? <span className={`${accountDetailModalFeedbackClass}`}>{t('accounts.ui_loading_short')}</span> : null}
+              {loadingModels ? <span className={accountDetailModalFeedbackClass}>{t('accounts.ui_loading_short')}</span> : null}
             </div>
             <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto pr-2">
               {models.length > 0 ? (
@@ -372,7 +372,7 @@ export default function AccountDetailModal({
                   </span>
                 ) : null}
                 {loadingRaw ? (
-                  <span className={`${accountDetailModalFeedbackClass}`}>{t('accounts.ui_fetching_fs')}</span>
+                  <span className={accountDetailModalFeedbackClass}>{t('accounts.ui_fetching_fs')}</span>
                 ) : (
                   <>
                     <Button
