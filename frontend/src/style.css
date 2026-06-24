@@ -375,28 +375,26 @@
     container-type: inline-size;
   }
 
-  [data-account-card].account-card-status-glow {
-    --account-card-status-glow-accent: var(--gt-ink-muted);
-    background-color: var(--gt-surface-canvas);
-    background-image:
-      radial-gradient(circle at calc(100% - 1.5rem) 1.25rem, color-mix(in srgb, var(--account-card-status-glow-accent) 12%, transparent) 0%, transparent 4.5rem),
-      radial-gradient(ellipse at 18% 92%, color-mix(in srgb, var(--account-card-status-glow-accent) 5%, transparent) 0%, transparent 58%);
+  [data-account-card].account-card-status-tint {
+    --account-card-status-accent: var(--gt-ink-muted);
+    background-color: color-mix(in srgb, var(--account-card-status-accent) 3%, var(--gt-surface-canvas));
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--account-card-status-accent) 72%, var(--gt-border-subtle));
   }
 
-  [data-account-card].account-card-status-glow-neutral {
-    --account-card-status-glow-accent: var(--gt-ink-muted);
+  [data-account-card].account-card-status-tint-neutral {
+    --account-card-status-accent: var(--gt-ink-muted);
   }
 
-  [data-account-card].account-card-status-glow-positive {
-    --account-card-status-glow-accent: var(--gt-status-success);
+  [data-account-card].account-card-status-tint-positive {
+    --account-card-status-accent: var(--gt-status-success);
   }
 
-  [data-account-card].account-card-status-glow-warning {
-    --account-card-status-glow-accent: var(--gt-status-warning);
+  [data-account-card].account-card-status-tint-warning {
+    --account-card-status-accent: var(--gt-status-warning);
   }
 
-  [data-account-card].account-card-status-glow-critical {
-    --account-card-status-glow-accent: var(--gt-status-danger);
+  [data-account-card].account-card-status-tint-critical {
+    --account-card-status-accent: var(--gt-status-danger);
   }
 
   [data-account-card] * {

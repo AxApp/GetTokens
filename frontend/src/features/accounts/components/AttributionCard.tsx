@@ -14,7 +14,7 @@ import {
 } from './CardSections';
 import {
   ATTRIBUTION_CARD_TONE_FILL_CLASS,
-  ATTRIBUTION_CARD_TONE_GLOW_CLASS,
+  ATTRIBUTION_CARD_TONE_TINT_CLASS,
   type AttributionCardTone,
 } from './attributionCardTone';
 
@@ -102,7 +102,7 @@ export default function AttributionCard({
   onOpen,
 }: AttributionCardProps) {
   const accentFillClass = ATTRIBUTION_CARD_TONE_FILL_CLASS[tone];
-  const glowClass = ATTRIBUTION_CARD_TONE_GLOW_CLASS[tone];
+  const tintClass = ATTRIBUTION_CARD_TONE_TINT_CLASS[tone];
   const resolvedQuotaDisplay = quotaDisplay ?? { status: 'unsupported', planType: '', windows: [] };
   const priorityBadges = [...badges].sort(compareAttributionCardBadges);
   const overlayFrameClass =
@@ -132,7 +132,7 @@ export default function AttributionCard({
 
     return (
       <AccountCardFrame
-        className={`min-h-[4.5rem] p-0 ${glowClass} ${className}`}
+        className={`min-h-[4.5rem] p-0 ${tintClass} ${className}`}
         cardID={cardID}
         style={style}
         interactive={interactive}
@@ -181,7 +181,7 @@ export default function AttributionCard({
   // ── Full density ──
   return (
     <AccountCardFrame
-      className={`p-0 ${glowClass} ${className}`}
+      className={`p-0 ${tintClass} ${className}`}
       cardID={cardID}
       style={style}
       interactive={interactive}

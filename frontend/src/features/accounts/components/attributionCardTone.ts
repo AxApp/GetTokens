@@ -7,11 +7,11 @@ export const ATTRIBUTION_CARD_TONE_FILL_CLASS: Record<AttributionCardTone, strin
   critical: 'bg-[var(--gt-status-danger)]',
 };
 
-export const ATTRIBUTION_CARD_TONE_GLOW_CLASS: Record<AttributionCardTone, string> = {
-  neutral: 'account-card-status-glow account-card-status-glow-neutral',
-  positive: 'account-card-status-glow account-card-status-glow-positive',
-  warning: 'account-card-status-glow account-card-status-glow-warning',
-  critical: 'account-card-status-glow account-card-status-glow-critical',
+export const ATTRIBUTION_CARD_TONE_TINT_CLASS: Record<AttributionCardTone, string> = {
+  neutral: 'account-card-status-tint account-card-status-tint-neutral',
+  positive: 'account-card-status-tint account-card-status-tint-positive',
+  warning: 'account-card-status-tint account-card-status-tint-warning',
+  critical: 'account-card-status-tint account-card-status-tint-critical',
 };
 
 export const ATTRIBUTION_CARD_BADGE_TONE_CLASS: Record<AttributionCardTone, string> = {

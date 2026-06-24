@@ -66,27 +66,28 @@ test('account card frame does not render a tone-colored side border', async () =
   assert.doesNotMatch(source, /border-l-\[\d+px\]/);
   assert.doesNotMatch(toneSource, /border-l-\[var\(--gt-status-/);
   assert.doesNotMatch(toneSource, /border-l-\[var\(--gt-border-default\)\]/);
-  assert.match(source, /const glowClass = ATTRIBUTION_CARD_TONE_GLOW_CLASS\[tone\];/);
-  assert.match(source, /className=\{`min-h-\[4\.5rem\] p-0 \$\{glowClass\} \$\{className\}`\}/);
-  assert.match(source, /className=\{`p-0 \$\{glowClass\} \$\{className\}`\}/);
+  assert.match(source, /const tintClass = ATTRIBUTION_CARD_TONE_TINT_CLASS\[tone\];/);
+  assert.match(source, /className=\{`min-h-\[4\.5rem\] p-0 \$\{tintClass\} \$\{className\}`\}/);
+  assert.match(source, /className=\{`p-0 \$\{tintClass\} \$\{className\}`\}/);
 });
 
-test('account cards render a subtle status glow and diffuse wash', async () => {
+test('account cards render a subtle status edge tint', async () => {
   const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
   const toneSource = await readFile(new URL('../components/attributionCardTone.ts', import.meta.url), 'utf8');
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
-  assert.match(source, /ATTRIBUTION_CARD_TONE_GLOW_CLASS/);
-  assert.match(toneSource, /positive: 'account-card-status-glow account-card-status-glow-positive'/);
-  assert.match(toneSource, /warning: 'account-card-status-glow account-card-status-glow-warning'/);
-  assert.match(toneSource, /critical: 'account-card-status-glow account-card-status-glow-critical'/);
-  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow\s*\{[\s\S]*radial-gradient\(circle at calc\(100% - 1\.5rem\) 1\.25rem, color-mix\(in srgb, var\(--account-card-status-glow-accent\) 12%, transparent\)/);
-  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow\s*\{[\s\S]*radial-gradient\(ellipse at 18% 92%, color-mix\(in srgb, var\(--account-card-status-glow-accent\) 5%, transparent\)/);
-  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow\s*\{[\s\S]*var\(--gt-surface-canvas\)/);
-  assert.doesNotMatch(styleSource, /account-card-status-glow[\s\S]*ellipse at 12% 0%/);
-  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow-positive\s*\{[^}]*--account-card-status-glow-accent:\s*var\(--gt-status-success\)/s);
-  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow-warning\s*\{[^}]*--account-card-status-glow-accent:\s*var\(--gt-status-warning\)/s);
-  assert.match(styleSource, /\[data-account-card\]\.account-card-status-glow-critical\s*\{[^}]*--account-card-status-glow-accent:\s*var\(--gt-status-danger\)/s);
+  assert.match(source, /ATTRIBUTION_CARD_TONE_TINT_CLASS/);
+  assert.match(toneSource, /positive: 'account-card-status-tint account-card-status-tint-positive'/);
+  assert.match(toneSource, /warning: 'account-card-status-tint account-card-status-tint-warning'/);
+  assert.match(toneSource, /critical: 'account-card-status-tint account-card-status-tint-critical'/);
+  const tintBlock = styleSource.match(/\[data-account-card\]\.account-card-status-tint\s*\{[\s\S]*?\n\s*\}/)?.[0] || '';
+  assert.match(tintBlock, /box-shadow:\s*inset 3px 0 0/);
+  assert.match(tintBlock, /background-color:\s*color-mix\(in srgb, var\(--account-card-status-accent\) 3%, var\(--gt-surface-canvas\)\)/);
+  assert.doesNotMatch(tintBlock, /radial-gradient|linear-gradient/);
+  assert.doesNotMatch(styleSource, /account-card-status-glow/);
+  assert.match(styleSource, /\[data-account-card\]\.account-card-status-tint-positive\s*\{[^}]*--account-card-status-accent:\s*var\(--gt-status-success\)/s);
+  assert.match(styleSource, /\[data-account-card\]\.account-card-status-tint-warning\s*\{[^}]*--account-card-status-accent:\s*var\(--gt-status-warning\)/s);
+  assert.match(styleSource, /\[data-account-card\]\.account-card-status-tint-critical\s*\{[^}]*--account-card-status-accent:\s*var\(--gt-status-danger\)/s);
 });
 
 test('full account card subtitle renders as its own header row', async () => {
