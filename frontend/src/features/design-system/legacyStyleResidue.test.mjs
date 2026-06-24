@@ -222,6 +222,9 @@ test('DesignSystemEntryFeature keeps inline styles limited to dynamic token demo
   const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
   const lines = source.split('\n');
 
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
+
   lines.forEach((line, index) => {
     if (!line.includes('style={{')) {
       return;
