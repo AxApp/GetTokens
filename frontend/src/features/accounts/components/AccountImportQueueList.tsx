@@ -99,7 +99,7 @@ export default function AccountImportQueueList({
           {renderedItems.map((item, offset) => {
             const index = renderWindow.startIndex + offset;
             return (
-              <div key={item.id} style={{ height: ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT - 12 }}>
+              <div key={item.id} className="h-[212px]">
                 <div
                   data-account-card
                   data-account-import-queue-rendered-item

@@ -233,6 +233,20 @@ test('selected UI sources keep small static layout styles in classes', async () 
   assert.deepEqual(findings, []);
 });
 
+test('account import queue keeps fixed card item height in classes', async () => {
+  const relativePath = 'features/accounts/components/AccountImportQueueList.tsx';
+  const source = await readFile(join(srcRoot.pathname, relativePath), 'utf8');
+  const findings = [];
+
+  source.split('\n').forEach((line, index) => {
+    if (/height:\s*ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT - 12/.test(line)) {
+      findings.push(`${relativePath}:${index + 1}:${line.trim()}`);
+    }
+  });
+
+  assert.deepEqual(findings, []);
+});
+
 test('selected UI sources keep discrete conditional styles in classes', async () => {
   const relativePaths = [
     'components/ui/Combobox.tsx',
