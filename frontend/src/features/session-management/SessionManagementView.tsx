@@ -402,7 +402,7 @@ export function ProjectListPanel({
                     onClick={() => onOpenProviderEditor(project.id)}
                     aria-label="Edit provider mapping"
                     icon={<Pencil className="h-3 w-3" strokeWidth={2.5} />}
-                    className={`flex h-7 w-7 items-center justify-center rounded border transition-all active:scale-90 ${
+                    className={`flex h-7 w-7 items-center justify-center rounded border transition-colors active:scale-90 ${
                       isActive
                         ? 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
                         : 'border-transparent text-[var(--gt-ink-muted)]/45 hover:border-[var(--gt-border-subtle)] hover:text-[var(--gt-ink-primary)]'

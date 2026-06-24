@@ -7,7 +7,7 @@ import type { CodexQuotaState } from '../../model/types';
 import { buildRotationParticipationSummary, canToggleRotationAccountDisabled } from '../../model/accountRotation';
 
 const rotationPriorityItemShellClass =
-  'group relative flex items-center justify-between border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 transition-all hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
+  'group relative flex items-center justify-between border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)]';
 const rotationPriorityItemDraggedClass = 'opacity-40 grayscale';
 const rotationPriorityItemActionButtonClass =
   'inline-flex min-h-8 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-1 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-muted)] hover:text-[var(--gt-ink-primary)] disabled:cursor-not-allowed disabled:opacity-50';
