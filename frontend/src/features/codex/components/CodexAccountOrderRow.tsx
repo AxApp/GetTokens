@@ -105,8 +105,8 @@ export function AccountOrderRow({
       onDrop={onDrop}
       title={t('accounts.rotation_drag_badge')}
       className={`relative cursor-grab active:cursor-grabbing ${
-        dragged ? 'opacity-40 grayscale' : probeHit ? 'outline outline-2 outline-offset-2 outline-[var(--gt-ink-primary)]' : ''
-      } ${policyMuted && !probeHit ? 'opacity-75 grayscale' : ''}`.trim()}
+        dragged ? 'opacity-40' : probeHit ? 'outline outline-2 outline-offset-2 outline-[var(--gt-ink-primary)]' : ''
+      } ${policyMuted && !probeHit ? 'opacity-75' : ''}`.trim()}
     >
       <AccountCard
         t={t}
