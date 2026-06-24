@@ -193,8 +193,7 @@ export default function AccountGroupSectionView({
                 aria-controls={groupBodyID}
                 aria-expanded={!isCollapsed}
                 onClick={() => onToggleCollapsed(group.id)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-[var(--gt-surface-canvas)]"
-                style={{ color: 'var(--gt-ink-secondary)' }}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-canvas)]"
                 icon={isCollapsed ? (
                   <ChevronRight size={16} strokeWidth={2} />
                 ) : (
@@ -204,16 +203,14 @@ export default function AccountGroupSectionView({
             </Tooltip>
           ) : null}
           <h3
-            className="min-w-0 truncate text-sm font-semibold leading-tight"
-            style={{ color: 'var(--gt-ink-primary)', fontFamily: 'var(--gt-font-family-sans)' }}
+            className="min-w-0 truncate font-sans text-sm font-semibold leading-tight text-[var(--gt-ink-primary)]"
           >
             {group.label}
           </h3>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           <p
-            className="font-mono text-[length:var(--gt-font-size-xs)] font-normal leading-none"
-            style={{ color: 'var(--gt-ink-muted)' }}
+            className="font-mono text-[length:var(--gt-font-size-xs)] font-normal leading-none text-[var(--gt-ink-muted)]"
           >
             {group.accounts.length} {t('accounts.plan_group_meta')}
           </p>
