@@ -301,6 +301,7 @@ test('Codex binary summary and list use the quiet workspace shell', () => {
   assert.match(listSource, /const codexBinaryVersionListEmptyClass =/);
   assert.match(listSource, /data-codex-binary-version-list="quiet"/);
   assert.match(listSource, /data-codex-binary-version-empty="quiet"/);
+  assert.match(listSource, /text-\[length:var\(--gt-font-size-sm\)\]/);
 
   assert.doesNotMatch(combined, /btn-swiss/);
   assert.doesNotMatch(combined, /border-2 border-\[var\(--gt-border-strong\)\]/);
@@ -308,6 +309,7 @@ test('Codex binary summary and list use the quiet workspace shell', () => {
   assert.doesNotMatch(combined, /bg-\[var\(--bg-(main|surface)\)\]/);
   assert.doesNotMatch(combined, /shadow-\[5px_5px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(combined, /font-(?:medium|bold|extrabold|black)/);
+  assert.doesNotMatch(combined, /\btext-sm\b/);
   assert.doesNotMatch(combined, /\buppercase\b/);
   assert.doesNotMatch(combined, /tracking-\[/);
 });
