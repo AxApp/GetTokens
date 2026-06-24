@@ -163,6 +163,13 @@ test('workspace page header uses gt typography tokens', async () => {
   assert.match(source, /text-\[length:var\(--gt-font-size-sm\)\]/);
 });
 
+test('snippet pre uses gt typography tokens', async () => {
+  const source = await readFile(join(srcRoot.pathname, 'components/ui/SnippetPre.tsx'), 'utf8');
+
+  assert.doesNotMatch(source, /\btext-xs\b/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xs\)\]/);
+});
+
 test('selected UI sources keep static surface and border tokens in classes', async () => {
   const findings = [];
   const inlineSurfacePattern = /style=\{\{[^\n}]*(backgroundColor|borderColor|border(?:Top|Right|Bottom|Left)?):\s*['"][^'"]*var\(--gt-(surface|border|ink|status)/;
