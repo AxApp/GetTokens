@@ -13,7 +13,7 @@ export default function SegmentedControl<T extends string>({
   options,
   value,
   disabled = false,
-  fitContent = false,
+  fitContent = true,
   onChange,
 }: SegmentedControlProps<T>) {
   const antdOptions = options.map((option) => ({
@@ -25,6 +25,7 @@ export default function SegmentedControl<T extends string>({
     <Segmented
       data-design-system-component="true"
       data-design-system-component-name="SegmentedControl"
+      className="border border-[var(--gt-border-subtle)]"
       options={antdOptions}
       value={value || undefined}
       disabled={disabled}

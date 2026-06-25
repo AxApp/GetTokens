@@ -50,8 +50,6 @@ const codexBinaryVersionCellErrorTextClass =
   'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
 const codexBinaryVersionCellMenuClass =
   'absolute right-0 top-[calc(100%+0.35rem)] z-20 w-48 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-1 shadow-sm';
-const codexBinaryVersionCellStaticActionClass =
-  'flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-center text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)] sm:min-w-[10.5rem]';
 
 export interface CodexBinaryVersionCellProps {
   row: CodexBinaryVersionRowView;
@@ -127,8 +125,6 @@ export default function CodexBinaryVersionCell({
           {actions.primary === 'download' ? <CellButton tone="primary" icon={<Download className="h-4 w-4" />} disabled={busy} label={busy ? t('codex_binary.downloading') : t('codex_binary.download')} onClick={onDownload} /> : null}
           {actions.primary === 'activate' ? <CellButton tone="primary" icon={<CheckCircle2 className="h-4 w-4" />} disabled={busy} label={busy ? t('codex_binary.activating') : t('codex_binary.activate')} onClick={onActivate} /> : null}
           {actions.primary === 'rollback' ? <CellButton tone="primary" icon={<RotateCcw className="h-4 w-4" />} disabled={busy} label={busy ? t('codex_binary.activating') : t('codex_binary.rollback')} onClick={onActivate} /> : null}
-          {actions.primary === 'none' && row.isSelected ? <StaticActionState icon={<CheckCircle2 className="h-4 w-4" />} label={t('codex_binary.active')} /> : null}
-          {actions.primary === 'none' && row.task ? <StaticActionState label={`${progress}%`} /> : null}
           {row.isInstalled || getVersionBrowserURL(row) ? (
             <VersionMoreMenu
               open={menuOpen}
@@ -247,15 +243,6 @@ function MenuAction({
     >
       {label}
     </Button>
-  );
-}
-
-function StaticActionState({ icon, label }: { icon?: ReactNode; label: string }) {
-  return (
-    <div className={codexBinaryVersionCellStaticActionClass}>
-      {icon}
-      {label}
-    </div>
   );
 }
 

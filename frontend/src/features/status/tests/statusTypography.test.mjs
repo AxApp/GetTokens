@@ -296,7 +296,11 @@ test('codex root settings value editors keep a responsive control column', async
   assert.match(modelProvidersSource, /<StatusCodexConfigRows/);
   assert.doesNotMatch(modelProvidersSource, /md:justify-center/);
   assert.doesNotMatch(valueEditorSource, /className="mx-auto h-9 w-16"/);
-  assert.match(valueEditorSource, /className="ml-auto h-9 w-16"/);
+  assert.match(valueEditorSource, /className="ml-auto"/);
+  assert.match(valueEditorSource, /className="shrink-0"/);
+  for (const match of valueEditorSource.matchAll(/<ToggleSwitch\b[\s\S]*?\/>/g)) {
+    assert.doesNotMatch(match[0], /className="[^"]*\b[hw]-\d/);
+  }
 });
 
 test('codex value editors use the quiet workspace input shell', async () => {

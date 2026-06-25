@@ -263,6 +263,7 @@ test('CodexBinaryVersionCell uses the quiet workspace shell', () => {
   assert.match(source, /data-codex-binary-version-cell="quiet"/);
   assert.match(source, /data-codex-binary-version-progress/);
   assert.match(source, /data-codex-binary-version-notes/);
+  assert.doesNotMatch(source, /StaticActionState|codexBinaryVersionCellStaticActionClass/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
@@ -281,6 +282,7 @@ test('CodexBinaryVersionCell uses the quiet workspace shell', () => {
 });
 
 test('Codex binary summary and list use the quiet workspace shell', () => {
+  const featureSource = readFileSync(new URL('./CodexBinaryFeature.tsx', import.meta.url), 'utf8');
   const summarySource = readFileSync(new URL('./components/CodexBinarySummaryPanel.tsx', import.meta.url), 'utf8');
   const listSource = readFileSync(new URL('./components/CodexBinaryVersionList.tsx', import.meta.url), 'utf8');
   const combined = `${summarySource}\n${listSource}`;
@@ -291,6 +293,7 @@ test('Codex binary summary and list use the quiet workspace shell', () => {
   assert.match(summarySource, /const codexBinarySummaryStatusClass =/);
   assert.match(summarySource, /data-codex-binary-summary-panel="quiet"/);
   assert.match(summarySource, /text-\[length:var\(--gt-font-size-xl\)\]/);
+  assert.match(summarySource, /const codexBinarySummaryMetaClass =[\s\S]*text-\[length:var\(--gt-font-size-sm\)\]/);
   assert.match(summarySource, /text-\[length:var\(--gt-font-size-xs\)\]/);
   assert.match(summarySource, /--gt-surface-canvas/);
   assert.match(summarySource, /--gt-surface-muted/);
@@ -304,6 +307,7 @@ test('Codex binary summary and list use the quiet workspace shell', () => {
   assert.match(listSource, /data-codex-binary-version-list="quiet"/);
   assert.match(listSource, /data-codex-binary-version-empty="quiet"/);
   assert.match(listSource, /text-\[length:var\(--gt-font-size-sm\)\]/);
+  assert.match(featureSource, /<div className="space-y-4">\s*<CodexBinarySummaryPanel/);
 
   assert.doesNotMatch(combined, /btn-swiss/);
   assert.doesNotMatch(combined, /border-2 border-\[var\(--gt-border-strong\)\]/);

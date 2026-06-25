@@ -229,37 +229,39 @@ export default function CodexBinaryFeature() {
           align="center"
         />
 
-        <CodexBinarySummaryPanel
-          snapshot={snapshot}
-          message={message}
-          loading={loading}
-          managedBusy={managedBusy}
-          onEnableManagedPath={() => void enableManagedPath()}
-          onRefresh={() => void reload(t('codex_binary.refreshed'), true)}
-          t={t}
-        />
+        <div className="space-y-4">
+          <CodexBinarySummaryPanel
+            snapshot={snapshot}
+            message={message}
+            loading={loading}
+            managedBusy={managedBusy}
+            onEnableManagedPath={() => void enableManagedPath()}
+            onRefresh={() => void reload(t('codex_binary.refreshed'), true)}
+            t={t}
+          />
 
-        <CodexBinaryVersionList
-          rows={rows}
-          visibleRows={visibleRows}
-          loading={loading}
-          releaseFilter={releaseFilter}
-          releaseFilterOptions={releaseFilterOptions}
-          expandedRows={expandedRows}
-          notesByRow={notesByRow}
-          busyVersionID={busyVersionID}
-          busyRowID={busyRowID}
-          menuRowID={menuRowID}
-          onReleaseFilterChange={setReleaseFilter}
-          onToggleNotes={(row) => void toggleNotes(row)}
-          onActivate={(row) => void activate(row)}
-          onDownload={(row) => void downloadVersion(row)}
-          onToggleMenu={(rowID) => setMenuRowID((current) => (current === rowID ? '' : rowID))}
-          onOpenBrowser={openVersionInBrowser}
-          onReveal={(row) => void revealVersion(row)}
-          onDelete={(row) => void deleteVersion(row)}
-          t={t}
-        />
+          <CodexBinaryVersionList
+            rows={rows}
+            visibleRows={visibleRows}
+            loading={loading}
+            releaseFilter={releaseFilter}
+            releaseFilterOptions={releaseFilterOptions}
+            expandedRows={expandedRows}
+            notesByRow={notesByRow}
+            busyVersionID={busyVersionID}
+            busyRowID={busyRowID}
+            menuRowID={menuRowID}
+            onReleaseFilterChange={setReleaseFilter}
+            onToggleNotes={(row) => void toggleNotes(row)}
+            onActivate={(row) => void activate(row)}
+            onDownload={(row) => void downloadVersion(row)}
+            onToggleMenu={(rowID) => setMenuRowID((current) => (current === rowID ? '' : rowID))}
+            onOpenBrowser={openVersionInBrowser}
+            onReveal={(row) => void revealVersion(row)}
+            onDelete={(row) => void deleteVersion(row)}
+            t={t}
+          />
+        </div>
       </div>
     </div>
   );

@@ -86,7 +86,7 @@ export function renderCodexValueEditor(
         label={row.id}
         checked={coerceCodexBooleanEditorValue(value)}
         disabled={disabled}
-        className="ml-auto h-9 w-16"
+        className="ml-auto"
         onChange={(checked) => onChangeSetting(row.id, checked)}
       />
     );
@@ -113,7 +113,7 @@ export function renderCodexValueEditor(
             label={`${row.id} 本地配置`}
             checked={enabled}
             disabled={disabled || row.readOnly}
-            className="h-10 w-16 shrink-0"
+            className="shrink-0"
             onChange={(checked) => {
               if (checked) {
                 onChangeSetting(row.id, resolveNumberEnableValue());

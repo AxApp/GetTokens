@@ -23,6 +23,7 @@ export default function ToggleSwitch({
     }
     onChange(checked);
   }
+  const switchClassName = ['gt-toggle-switch', className].filter(Boolean).join(' ');
 
   return (
     <Switch
@@ -33,7 +34,7 @@ export default function ToggleSwitch({
       title={label}
       data-design-system-component="true"
       data-design-system-component-name="ToggleSwitch"
-      className={className}
+      className={switchClassName}
     />
   );
 }
