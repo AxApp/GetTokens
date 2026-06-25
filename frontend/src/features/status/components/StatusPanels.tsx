@@ -1265,7 +1265,7 @@ export function StatusApplyLocalSection({
                 <div className={statusEyebrowClass}>
                   CODEX MODEL CATALOG
                 </div>
-                <h3 className="mt-1 text-sm font-semibold text-[var(--gt-ink-primary)]">
+                <h3 className="mt-1 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]">
                   Codex /model 模型目录预览
                 </h3>
               </div>

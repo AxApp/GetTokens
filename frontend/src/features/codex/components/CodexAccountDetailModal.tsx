@@ -46,7 +46,7 @@ const codexAccountDetailHeaderClass = 'flex items-start justify-between gap-4';
 const codexAccountDetailIdentityClass =
   'flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-2xs)] font-mono font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexAccountDetailTitleClass =
-  'truncate text-lg font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+  'truncate text-[length:var(--gt-font-size-lg)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const codexAccountDetailMetaClass =
   'inline-flex max-w-full items-center gap-2 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1.5';
 const codexAccountDetailMetaLabelClass =

@@ -290,6 +290,8 @@ test('account import page uses the quiet workspace shell', async () => {
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-status-danger/);
+  assert.match(source, /text-\[length:var\(--gt-font-size-xl\)\]/);
+  assert.doesNotMatch(source, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.doesNotMatch(targetSource, /btn-swiss/);
   assert.doesNotMatch(targetSource, /border-2|border-b-4|border-t-4|border-t-2|border-b-2/);
   assert.doesNotMatch(targetSource, /border-dashed/);

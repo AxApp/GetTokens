@@ -251,12 +251,12 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
   const notice = saveErrorMessage ? (
     <AccountDetailNotice tone="danger" className="mb-4">
       <div className="font-semibold">{saveErrorMessage.title}</div>
-      <div className="mt-1 text-xs">{saveErrorMessage.body}</div>
+      <div className="mt-1 text-[length:var(--gt-font-size-xs)]">{saveErrorMessage.body}</div>
     </AccountDetailNotice>
   ) : statusMessage ? (
     <AccountDetailNotice tone={statusMessage.tone} className="mb-4">
       <div className="font-semibold">{statusMessage.title}</div>
-      <div className="mt-1 text-xs">{statusMessage.body}</div>
+      <div className="mt-1 text-[length:var(--gt-font-size-xs)]">{statusMessage.body}</div>
     </AccountDetailNotice>
   ) : undefined;
 

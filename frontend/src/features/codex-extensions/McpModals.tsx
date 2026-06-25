@@ -108,7 +108,7 @@ export function McpServerEditorModal({
       >
         <header className={`${codexExtensionModalHeaderClass} grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center`}>
           <div className="min-w-0">
-            <div className="font-mono text-xl font-semibold text-[var(--gt-ink-primary)]">
+            <div className="font-mono text-[length:var(--gt-font-size-xl)] font-semibold text-[var(--gt-ink-primary)]">
               {draft.label}
             </div>
             <div className="mt-1 break-all text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-muted)]">

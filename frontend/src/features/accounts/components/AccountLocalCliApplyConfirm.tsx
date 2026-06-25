@@ -183,7 +183,7 @@ export default function AccountLocalCliApplyConfirm({
             <div className={accountLocalCliMetaClass}>
               FILE PREVIEW CONFIRM
             </div>
-            <h2 className="mt-1 text-xl font-semibold tracking-normal text-[var(--gt-ink-primary)]">
+            <h2 className="mt-1 text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
               {title}
             </h2>
             <div className="mt-3 flex max-w-full flex-wrap gap-2">

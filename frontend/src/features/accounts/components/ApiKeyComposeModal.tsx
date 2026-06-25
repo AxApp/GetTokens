@@ -129,7 +129,7 @@ export default function ApiKeyComposeModal({
           <div className={apiKeyComposeLabelClass}>
             {t('accounts.source_api_key')}
           </div>
-          <h3 className="mt-1 text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]">
+          <h3 className="mt-1 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
             {t('accounts.add_codex_api_key')}
           </h3>
         </header>

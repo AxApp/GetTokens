@@ -209,7 +209,7 @@ function SessionPluginConsolePreview() {
 function AccountDetailPrimitivesPreview() {
   return (
     <div className="space-y-6">
-      <AccountDetailSection eyebrow="Runtime" title="运行态路由" actions={<span className="text-xs text-[var(--gt-ink-muted)]">只读</span>}>
+      <AccountDetailSection eyebrow="Runtime" title="运行态路由" actions={<span className="text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">只读</span>}>
         <AccountDetailStatGrid columns={3}>
           <AccountDetailStatCell label="Routeable" value="YES" />
           <AccountDetailStatCell label="Models" value="12" meta="synced" />

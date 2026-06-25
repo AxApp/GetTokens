@@ -49,7 +49,7 @@ const accountImportDropzoneClass = (active: boolean) =>
       : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
   }`;
 const accountImportDropzoneTitleClass =
-  'text-sm font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+  'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportDropzoneHintClass =
   'max-w-sm text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportQueueHeaderClass =
@@ -303,7 +303,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                   setError('');
                 }}
                 size="small"
-                className="min-h-36 w-full resize-y font-mono text-xs"
+                className="min-h-36 w-full resize-y font-mono text-[length:var(--gt-font-size-xs)]"
                 placeholder={t('accounts.import_account_paste_placeholder')}
                 spellCheck={false}
               />

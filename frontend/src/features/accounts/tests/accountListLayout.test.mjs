@@ -90,7 +90,7 @@ test('account plan groups can collapse without changing group actions scope', as
   assert.match(viewSource, /backgroundColor: 'color-mix\(in srgb, var\(--gt-surface-muted\) 54%, transparent\)'/);
   assert.match(viewSource, /className="flex min-w-0 items-center gap-2"/);
   assert.match(viewSource, /className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-\[var\(--gt-ink-secondary\)\] transition-colors hover:bg-\[var\(--gt-surface-canvas\)\]"/);
-  assert.match(viewSource, /className="min-w-0 truncate font-sans text-sm font-semibold leading-tight text-\[var\(--gt-ink-primary\)\]"/);
+  assert.match(viewSource, /className="min-w-0 truncate font-sans text-\[length:var\(--gt-font-size-sm\)\] font-semibold leading-tight text-\[var\(--gt-ink-primary\)\]"/);
   assert.match(viewSource, /className="font-mono text-\[length:var\(--gt-font-size-xs\)\] font-normal leading-none text-\[var\(--gt-ink-muted\)\]"/);
   assert.match(viewSource, /<Button[\s\S]*aria-pressed=\{allGroupSelected\}[\s\S]*icon=\{<SquareCheckBig size=\{13\} strokeWidth=\{2\} \/>}/);
   assert.match(viewSource, /<Tooltip title=\{t\('accounts\.refresh_group'\)\}>[\s\S]*aria-label=\{t\('accounts\.refresh_group'\)\}[\s\S]*icon=\{<RefreshCw size=\{13\} strokeWidth=\{2\} \/>}/);

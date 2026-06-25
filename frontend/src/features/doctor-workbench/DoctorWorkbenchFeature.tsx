@@ -487,7 +487,7 @@ export default function DoctorWorkbenchFeature() {
                   className={`min-w-20 rounded border px-3 py-2 text-center ${statusTone[status as DoctorCheckStatus]}`}
                   data-testid={`doctor-count-${status}`}
                 >
-                  <div className="text-lg font-semibold leading-none">{count}</div>
+                  <div className="text-[length:var(--gt-font-size-lg)] font-semibold leading-none">{count}</div>
                   <div className="mt-1 text-[length:var(--gt-font-size-2xs)] font-normal">{statusLabel[status as DoctorCheckStatus]}</div>
                 </div>
               ))}

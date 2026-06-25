@@ -56,7 +56,7 @@ const transportOptions: ReadonlyArray<SegmentedOption<CodexLiveTransportFilter>>
 const codexLiveWorkbenchShellClass =
   'h-full min-h-0 min-w-0 overflow-auto bg-[var(--gt-surface-canvas)] p-5 lg:p-8';
 const codexLiveWorkbenchTitleClass =
-  'text-2xl font-semibold tracking-normal text-[var(--gt-ink-primary)] [word-break:keep-all] sm:text-3xl';
+  'text-[length:var(--gt-font-size-2xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)] [word-break:keep-all] sm:text-[length:var(--gt-font-size-3xl)]';
 const codexLiveWorkbenchSegmentClass =
   'grid grid-cols-2 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const codexLiveWorkbenchFilterMenuClass =

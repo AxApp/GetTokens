@@ -16,7 +16,7 @@ const rotationPriorityItemActionButtonActiveClass =
 const rotationPriorityItemStatusClass =
   'text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
 const rotationPriorityItemTitleClass =
-  'text-sm font-semibold text-[var(--gt-ink-primary)]';
+  'text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
 const rotationPriorityItemMetaClass =
   'text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]';
 

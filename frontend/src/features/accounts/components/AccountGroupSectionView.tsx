@@ -203,7 +203,7 @@ export default function AccountGroupSectionView({
             </Tooltip>
           ) : null}
           <h3
-            className="min-w-0 truncate font-sans text-sm font-semibold leading-tight text-[var(--gt-ink-primary)]"
+            className="min-w-0 truncate font-sans text-[length:var(--gt-font-size-sm)] font-semibold leading-tight text-[var(--gt-ink-primary)]"
           >
             {group.label}
           </h3>
