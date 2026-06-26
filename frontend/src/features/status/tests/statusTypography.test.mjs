@@ -326,6 +326,8 @@ test('codex feature config page keeps readable text selectable for copy', async 
   );
 
   assert.match(codexFeatureSource, /data-collaboration-id="PAGE_CODEX"[\s\S]{0,120}select-text/);
+  assert.match(codexFeatureSource, /resolveAutoWidthInputCh\(value\)/);
+  assert.doesNotMatch(codexFeatureSource, /className="w-32 font-mono"/);
   assert.match(configRowsSource, /min-w-0 select-text/);
 });
 

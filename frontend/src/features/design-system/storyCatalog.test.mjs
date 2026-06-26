@@ -190,14 +190,14 @@ test('segmented control defaults to content width instead of compressed block it
   assert.match(source, /border-\[var\(--gt-border-subtle\)\]/);
 });
 
-test('toggle switch keeps the shared quiet border while preserving caller classes', async () => {
+test('toggle switch delegates sizing to AntD while preserving caller classes', async () => {
   const source = await readFile(new URL('../../components/ui/ToggleSwitch.tsx', import.meta.url), 'utf8');
   const styleSource = await readFile(new URL('../../style.css', import.meta.url), 'utf8');
 
-  assert.match(source, /gt-toggle-switch/);
-  assert.match(source, /className=\{switchClassName\}/);
-  assert.match(styleSource, /\.gt-toggle-switch\.ant-switch \{[\s\S]*border: 1px solid var\(--gt-border-subtle\);/);
-  assert.match(styleSource, /\.gt-toggle-switch\.ant-switch \.ant-switch-handle::before \{[\s\S]*background: var\(--gt-surface-canvas\) !important;/);
+  assert.match(source, /size="small"/);
+  assert.match(source, /className=\{className \|\| undefined\}/);
+  assert.doesNotMatch(source, /gt-toggle-switch/);
+  assert.doesNotMatch(styleSource, /\.gt-toggle-switch\.ant-switch/);
 });
 
 test('page loading fallback uses the quiet workspace shell', async () => {

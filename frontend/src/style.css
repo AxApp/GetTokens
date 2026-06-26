@@ -164,20 +164,6 @@
 }
 
 @layer components {
-  .gt-toggle-switch.ant-switch {
-    border: 1px solid var(--gt-border-subtle);
-    background: var(--gt-surface-muted);
-  }
-
-  .gt-toggle-switch.ant-switch.ant-switch-checked {
-    background: var(--gt-status-success);
-  }
-
-  .gt-toggle-switch.ant-switch .ant-switch-handle::before {
-    background: var(--gt-surface-canvas) !important;
-    box-shadow: 0 1px 2px color-mix(in srgb, #000000 18%, transparent) !important;
-  }
-
   .proxy-pool-probe-target-autocomplete.ant-select {
     min-height: 2.75rem;
     height: 2.75rem;

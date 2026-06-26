@@ -5,6 +5,7 @@ import {
   buildCodexFeatureChangeInput,
   buildCodexFeatureDraft,
   groupCodexFeatureRows,
+  markCodexFeatureDraftPresent,
   normalizeCodexFeatureConfigSnapshot,
   normalizeCodexFeaturePreview,
   removeCodexFeatureDraftValue,
@@ -754,6 +755,104 @@ test('multi_agent_v2 nested boolean changes do not fall back to simple feature v
       },
     ],
   });
+});
+
+test('local record presence can be added even when value matches effective value', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'root',
+        key: 'model',
+        valueType: 'string',
+        stage: 'stable',
+        defaultValue: 'gpt-5',
+        path: ['model'],
+      },
+    ],
+  });
+  const draft = markCodexFeatureDraftPresent(
+    buildCodexFeatureDraft(backendSnapshot),
+    'root.model',
+    'gpt-5',
+    false
+  );
+  const rows = selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'root' });
+
+  assert.deepEqual(
+    rows.map((row) => [row.id, row.localRecordPresent, row.localRecordAdded, row.dirty, row.changeKind]),
+    [['root.model', true, true, true, 'added']]
+  );
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'root' }), {
+    values: {},
+    changes: [
+      {
+        id: 'root.model',
+        section: 'root',
+        key: 'model',
+        path: ['model'],
+        valueType: 'string',
+        value: 'gpt-5',
+      },
+    ],
+  });
+});
+
+test('removing a newly added local record clears the pending add without emitting a remove', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'features',
+        key: 'tool_search',
+        valueType: 'boolean',
+        stage: 'stable',
+        defaultValue: true,
+      },
+    ],
+  });
+  const addedDraft = markCodexFeatureDraftPresent(
+    buildCodexFeatureDraft(backendSnapshot),
+    'features.tool_search',
+    true,
+    false
+  );
+  const removedDraft = removeCodexFeatureDraftValue(addedDraft, 'features.tool_search', false);
+  const rows = selectCodexFeatureRows(backendSnapshot, removedDraft, { sectionFilter: 'features' });
+
+  assert.deepEqual(
+    rows.map((row) => [row.localRecordPresent, row.localRecordAdded, row.removed, row.dirty]),
+    [[false, false, false, false]]
+  );
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, removedDraft, { sectionFilter: 'features' }), {
+    values: {},
+    changes: [],
+  });
+});
+
+test('boolean false local records keep presence separate from value', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'features',
+        key: 'goals',
+        valueType: 'boolean',
+        stage: 'experimental',
+        defaultValue: true,
+      },
+    ],
+    typedValues: {
+      goals: false,
+    },
+    rawValues: {
+      goals: 'false',
+    },
+  });
+  const draft = buildCodexFeatureDraft(backendSnapshot);
+  const rows = selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'features' });
+
+  assert.deepEqual(
+    rows.map((row) => [row.localRecordPresent, row.draftValue, row.dirty]),
+    [[true, false, false]]
+  );
 });
 
 test('expands simple root TOML tables into leaf setting rows', () => {

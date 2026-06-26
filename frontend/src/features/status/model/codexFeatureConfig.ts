@@ -44,6 +44,7 @@ export interface CodexFeatureConfigSnapshot {
 export interface CodexFeatureDraft {
   values: Record<string, unknown>;
   removed?: Record<string, true>;
+  added?: Record<string, true>;
 }
 
 export interface CodexFeatureRow extends CodexFeatureConfigItem {
@@ -51,6 +52,8 @@ export interface CodexFeatureRow extends CodexFeatureConfigItem {
   dirty: boolean;
   changeKind: 'none' | 'added' | 'modified';
   removed: boolean;
+  localRecordPresent?: boolean;
+  localRecordAdded?: boolean;
 }
 
 export interface CodexFeatureRowGroup {
@@ -542,24 +545,60 @@ export function setCodexFeatureDraftValue(
 ): CodexFeatureDraft {
   const removed = { ...(draft.removed || {}) };
   delete removed[key];
+  const added = { ...(draft.added || {}) };
   return {
     values: {
       ...draft.values,
       [key]: value,
     },
     ...(Object.keys(removed).length > 0 ? { removed } : {}),
+    ...(Object.keys(added).length > 0 ? { added } : {}),
   };
 }
 
-export function removeCodexFeatureDraftValue(draft: CodexFeatureDraft, key: string): CodexFeatureDraft {
+export function markCodexFeatureDraftPresent(
+  draft: CodexFeatureDraft,
+  key: string,
+  value: unknown,
+  hadLocalValue = false
+): CodexFeatureDraft {
+  const removed = { ...(draft.removed || {}) };
+  delete removed[key];
+  const added = { ...(draft.added || {}) };
+  if (hadLocalValue) {
+    delete added[key];
+  } else {
+    added[key] = true;
+  }
+  return {
+    values: {
+      ...draft.values,
+      [key]: value,
+    },
+    ...(Object.keys(removed).length > 0 ? { removed } : {}),
+    ...(Object.keys(added).length > 0 ? { added } : {}),
+  };
+}
+
+export function removeCodexFeatureDraftValue(
+  draft: CodexFeatureDraft,
+  key: string,
+  hadLocalValue = true
+): CodexFeatureDraft {
   const values = { ...draft.values };
   delete values[key];
+  const added = { ...(draft.added || {}) };
+  delete added[key];
+  const removed = { ...(draft.removed || {}) };
+  if (hadLocalValue) {
+    removed[key] = true;
+  } else {
+    delete removed[key];
+  }
   return {
     values,
-    removed: {
-      ...(draft.removed || {}),
-      [key]: true,
-    },
+    ...(Object.keys(removed).length > 0 ? { removed } : {}),
+    ...(Object.keys(added).length > 0 ? { added } : {}),
   };
 }
 
@@ -649,9 +688,11 @@ export function selectCodexFeatureRows(
     .map((item) => {
       const draftValue = resolveDraftValue(item, draft);
       const removed = Boolean(draft.removed?.[item.id] || draft.removed?.[item.key]);
-      const dirty = !item.readOnly && !areCodexValuesEqual(draftValue, item.effectiveValue);
+      const localRecordAdded = Boolean(draft.added?.[item.id] || draft.added?.[item.key]);
+      const localRecordPresent = !removed && (item.hasLocalValue || localRecordAdded);
+      const dirty = !item.readOnly && (removed || localRecordAdded || !areCodexValuesEqual(draftValue, item.effectiveValue));
       const changeKind: CodexFeatureRow['changeKind'] = dirty
-        ? item.hasLocalValue
+        ? item.hasLocalValue && !localRecordAdded
           ? 'modified'
           : 'added'
         : 'none';
@@ -661,6 +702,8 @@ export function selectCodexFeatureRows(
         dirty,
         changeKind,
         removed,
+        localRecordPresent,
+        localRecordAdded,
       };
     });
 }

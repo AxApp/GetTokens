@@ -70,7 +70,7 @@ export default function StatusCodexNoticeSection({
 
   return (
     <section className={`${codexConfigSectionPanelClass} relative overflow-hidden`}>
-      <div className={`${codexConfigSectionHeaderClass} grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start`}>
+      <div className={`${codexConfigSectionHeaderClass} grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start`}>
         <div className="min-w-0">
           <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">
             {t('status.codex_notices_title')}

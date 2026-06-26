@@ -40,7 +40,7 @@ export function renderCodexValueEditor(
 ) {
   const value = row.draftValue;
   const editorKind = selectCodexValueEditorKind(row);
-  const canRemove = Boolean(onRemoveSetting && row.hasLocalValue && !row.readOnly);
+  const canRemove = Boolean(onRemoveSetting && row.localRecordPresent && !row.readOnly);
   const resetButton = canRemove ? (
     <Tooltip title="移除本地配置">
       <Button

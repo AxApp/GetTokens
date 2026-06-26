@@ -274,7 +274,7 @@ export default function StatusCodexFeaturesSection({
       >
         <div
           data-codex-feature-primary-heading={pathGroup.primaryLabel}
-          className={`${codexFeatureHeaderClass} grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center`}
+          className={`${codexFeatureHeaderClass} grid gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center`}
         >
           <div className="flex min-w-0 items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]">
@@ -291,13 +291,10 @@ export default function StatusCodexFeaturesSection({
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 max-w-2xl text-[length:var(--gt-font-size-sm)] font-normal leading-relaxed text-[var(--gt-ink-primary)]">
-                {t('status.codex_features_multi_agent_v2_description')}
-              </p>
             </div>
           </div>
           {enabledRow ? (
-            <div className="flex items-center justify-start gap-3 lg:justify-end">
+            <div className="flex items-center justify-start gap-3 md:justify-end">
               <span className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]">
                 {t('status.codex_features_multi_agent_v2_active')}
               </span>
@@ -348,7 +345,7 @@ export default function StatusCodexFeaturesSection({
           <div
             key={groupedRow.row.id}
             data-codex-feature-object-card={pathGroup.primaryLabel}
-            className="relative grid min-w-0 max-w-full gap-3 bg-[var(--gt-surface-canvas)] px-4 py-3 lg:grid-cols-[minmax(0,1fr)_minmax(13rem,18rem)] lg:items-center"
+            className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] md:items-center"
           >
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
@@ -357,19 +354,8 @@ export default function StatusCodexFeaturesSection({
                   {pathGroup.primaryLabel}
                 </div>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-normal leading-relaxed text-[var(--gt-ink-muted)]">
-                <span>{resolveCodexFeatureDescription(t, groupedRow.row)}</span>
-                <span className={codexFeatureChipClass}>
-                  {t(`status.codex_features_stage_${groupedRow.row.stage}`)}
-                </span>
-                {groupedRow.row.dirty ? (
-                  <span className={`${codexFeatureChipClass} !text-[var(--gt-ink-primary)]`}>
-                    {t('status.codex_features_changed')}
-                  </span>
-                ) : null}
-              </div>
             </div>
-            <div className="min-w-0 lg:justify-self-end">
+            <div className="min-w-0 md:justify-self-end">
               {renderCodexValueEditor(groupedRow.row, groupedRow.row.readOnly || isBusy, onChangeFeature, onRemoveFeature)}
               {groupedRow.row.legacyAliases.length > 0 || groupedRow.row.unsupported ? (
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -440,30 +426,38 @@ export default function StatusCodexFeaturesSection({
 
   return (
     <section data-codex-feature-config-panel="true" className={`${codexFeaturePanelClass} relative overflow-hidden`}>
-      <div className={`${codexFeatureHeaderClass} grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start`}>
-        <div className="min-w-0">
-          <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">
-            {t('status.codex_features_title')}
+      <div className={`${codexFeatureHeaderClass} px-4 py-3`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]">
+              {t('status.codex_features_title')}
+            </div>
+            <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
+              {snapshot?.configPath || t('status.codex_features_unavailable')}
+            </div>
           </div>
-          <div className="mt-1 break-all font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
-            {snapshot?.configPath || t('status.codex_features_unavailable')}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className={`${codexFeatureChipClass} !px-3 !py-1 !text-[var(--gt-ink-primary)]`}>
+              {visibleCount}/{totalCount} {t('status.codex_features_visible')}
+            </div>
+            <div className={`${codexFeatureChipClass} !px-3 !py-1 !text-[var(--gt-ink-primary)]`}>
+              {dirtyCount} {t('status.codex_features_changed')}
+            </div>
+            <Button size="small" onClick={onReload} disabled={isBusy}>
+              {isLoading ? t('status.codex_features_loading') : t('common.refresh')}
+            </Button>
+            <Button size="small" onClick={onReset} disabled={isBusy || !snapshot}>
+              {t('status.codex_features_reset')}
+            </Button>
+            <Button size="small" onClick={onPreview} disabled={isBusy || dirtyCount === 0}>
+              {t('status.codex_features_preview')}
+            </Button>
+            <Button type="primary" size="small" onClick={onSave} disabled={isBusy || dirtyCount === 0}>
+              {isSaving ? t('status.codex_features_saving') : t('common.save')}
+            </Button>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <div className={`${codexFeatureChipClass} !px-3 !py-1 !text-[var(--gt-ink-primary)]`}>
-            {visibleCount}/{totalCount} {t('status.codex_features_visible')}
-          </div>
-          <div className={`${codexFeatureChipClass} !px-3 !py-1 !text-[var(--gt-ink-primary)]`}>
-            {dirtyCount} {t('status.codex_features_changed')}
-          </div>
-          <Button size="small" onClick={onReload} disabled={isBusy}>
-            {isLoading ? t('status.codex_features_loading') : t('common.refresh')}
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid gap-3 border-b border-[var(--gt-border-subtle)] p-4">
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           {codexFeatureStageFilters.map((filter) => (
             <Button
               key={filter}
@@ -536,23 +530,6 @@ export default function StatusCodexFeaturesSection({
           </div>
         </div>
       ) : null}
-
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3">
-        <div className="text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
-          {t('status.codex_features_save_hint')}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="small" onClick={onReset} disabled={isBusy || !snapshot}>
-            {t('status.codex_features_reset')}
-          </Button>
-          <Button size="small" onClick={onPreview} disabled={isBusy || dirtyCount === 0}>
-            {t('status.codex_features_preview')}
-          </Button>
-          <Button type="primary" size="small" onClick={onSave} disabled={isBusy || dirtyCount === 0}>
-            {isSaving ? t('status.codex_features_saving') : t('common.save')}
-          </Button>
-        </div>
-      </div>
     </section>
   );
 }

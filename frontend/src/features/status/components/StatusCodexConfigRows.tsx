@@ -84,12 +84,6 @@ export default function StatusCodexConfigRows({
               </span>
             ))}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]">
-            <span className={codexConfigRowsChipClass}>
-              {badgeLabel}
-            </span>
-            <span className="min-w-0">{resolveDescription(row)}</span>
-          </div>
         </div>
         <div className="flex min-w-0 w-full justify-start md:justify-end">
           <div className="w-full">
