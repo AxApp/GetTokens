@@ -24,7 +24,7 @@
     "rehype-sanitize": "^6.0.0"
   },
   "devDependencies": {
-    "@linhey/react-debug-inspector": "^1.2.4",
+    "@linhey/react-debug-inspector": "^1.2.5",
     "@storybook/addon-docs": "^10.4.0",
     "@storybook/addon-themes": "^10.4.0",
     "@storybook/react-vite": "^10.4.0",
