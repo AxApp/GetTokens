@@ -69,9 +69,9 @@ const mcpFilterOptions: ReadonlyArray<SegmentedOption<McpFilter>> = [
 const codexExtensionsNoticeClass =
   'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
 const codexExtensionsListContentClass =
-  'scrollbar-stable min-h-0 flex-1 overflow-auto divide-y divide-[var(--gt-border-subtle)]';
+  'scrollbar-stable min-h-0 flex-1 overflow-auto';
 const codexExtensionsListRowClass =
-  'group relative grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--gt-surface-muted)] focus-within:bg-[var(--gt-surface-muted)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center';
+  'group relative grid gap-3 !border-b !border-[var(--gt-border-subtle)] px-4 py-3 transition-colors hover:bg-[var(--gt-surface-muted)] focus-within:bg-[var(--gt-surface-muted)] last:!border-b-0 md:grid-cols-[minmax(0,1fr)_auto] md:items-center';
 const codexExtensionsListTitleClass =
   'min-w-0 truncate text-[length:var(--gt-font-size-lg)] font-semibold text-[var(--gt-ink-primary)]';
 const codexExtensionsListSubtitleClass =
@@ -370,9 +370,10 @@ Path: ${parsedGitSource.path}`,
           >
             <Button
               size="small"
-              aria-label={`${skill.name} ${t('common.details')}`}
+              type="text"
+             aria-label={`${skill.name} ${t('common.details')}`}
               onClick={() => openSkillDetail(skill)}
-              className="absolute inset-0 z-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--gt-border-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gt-surface-canvas)]"
+              className="absolute inset-0 z-0 !h-auto !border-0 !bg-transparent !p-0 cursor-pointer outline-none hover:!bg-transparent focus:!bg-transparent focus-visible:ring-2 focus-visible:ring-[var(--gt-border-strong)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--gt-surface-canvas)]"
             />
             <div className="pointer-events-none relative z-[1] min-w-0 text-left">
               <div className={codexExtensionsListTitleClass}>
@@ -746,8 +747,9 @@ function CodexMcpServersWorkspace() {
           <Button
             key={server.id}
             size="small"
+            type="text"
             onClick={() => openMcpServerEditor(server)}
-            className={`${codexExtensionsListRowClass} w-full text-left text-[var(--gt-ink-primary)]`}
+            className={`${codexExtensionsListRowClass} !h-auto w-full !border-0 !px-4 !py-3 text-left text-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-muted)]`}
             data-codex-extension-workspace-list="mcp"
           >
             <div className="min-w-0">

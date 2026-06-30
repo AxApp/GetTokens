@@ -245,14 +245,16 @@ test('asset workbench shell is shared by Codex and Claude extension surfaces', a
   assert.match(claudeSource, /AssetWorkbenchShell/, 'Claude Code assets must use the shared asset workbench shell');
 });
 
-test('asset workbench shell uses the quiet workspace shell tokens', async () => {
+test('asset workbench shell uses AntD card layout for the quiet workspace shell', async () => {
   const source = await readFile(new URL('../../components/ui/AssetWorkbenchShell.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /data-design-system-component-name="AssetWorkbenchShell"/);
-  assert.match(source, /--gt-surface-canvas/);
+  assert.match(source, /import \{ Card, Flex \} from 'antd'/);
+  assert.match(source, /<Card[\s\S]*variant="outlined"/);
+  assert.match(source, /styles=\{\{ body: \{ display: 'flex'/);
   assert.match(source, /--gt-border-subtle/);
   assert.match(source, /--gt-ink-primary/);
-  assert.match(source, /shadow-sm/);
+  assert.doesNotMatch(source, /shadow-sm/);
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /border-b-2/);
   assert.doesNotMatch(source, /border-t-2/);

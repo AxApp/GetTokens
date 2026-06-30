@@ -117,7 +117,9 @@ test('rate limit guard rows use the same stacked progress layout as quota rows',
   const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
-  assert.match(source, /account-card-rate-limit-heading flex min-w-0 items-baseline justify-between gap-2/);
+  assert.match(source, /import \{ Flex, Progress, Tag, Tooltip \} from 'antd'/);
+  assert.match(source, /<Flex className="account-card-rate-limit-heading min-w-0" align="baseline" justify="space-between" gap="small">/);
+  assert.match(source, /<Progress[\s\S]*size=\{\{ height: 16 \}\}[\s\S]*strokeLinecap="square"/);
   assert.match(source, /className="account-card-rate-limit-row grid min-w-0 gap-1\.5"/);
   assert.match(styleSource, /\.account-card-rate-limit-row\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
   assert.doesNotMatch(styleSource, /\.account-card-rate-limit-row\s*\{[^}]*grid-template-columns:\s*(?:4|5)rem\s+minmax\(0,\s*1fr\)/s);
@@ -269,11 +271,11 @@ test('full account cards keep unbounded traffic statistics rows without a headin
   assert.doesNotMatch(sectionsSource, /value === 0\) return '—'/);
   assert.match(sectionsSource, /\{value\} \/ ∞/);
   const trafficRowSource = sectionsSource.slice(sectionsSource.indexOf('function TrafficStatisticsRow'));
-  assert.match(trafficRowSource, /relative h-4 overflow-hidden border border-\[var\(--gt-border-subtle\)\]/);
+  assert.match(trafficRowSource, /<Progress[\s\S]*percent=\{activityPercent\}[\s\S]*railColor="var\(--gt-surface-muted\)"/);
   assert.match(trafficRowSource, /data-account-card-traffic-activity-fill/);
-  assert.match(trafficRowSource, /bg-\[color-mix\(in_srgb,var\(--gt-ink-primary\)_16%,transparent\)\]/);
+  assert.match(trafficRowSource, /strokeColor="color-mix\(in srgb, var\(--gt-ink-primary\) 16%, transparent\)"/);
   assert.doesNotMatch(trafficRowSource, /color-chart-blue/);
-  assert.match(trafficRowSource, /width: `\$\{activityPercent\}%`/);
+  assert.doesNotMatch(trafficRowSource, /width: `\$\{activityPercent\}%`/);
   assert.doesNotMatch(trafficRowSource, /<span className="shrink-0">0<\/span>/);
   assert.doesNotMatch(trafficRowSource, /<span className="min-w-0 truncate text-right text-\[var\(--gt-ink-primary\)\]">∞<\/span>/);
   assert.match(zhSource, /"today_requests": "今日请求"/);

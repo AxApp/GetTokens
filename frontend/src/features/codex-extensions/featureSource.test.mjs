@@ -80,8 +80,13 @@ test('Codex extension workspaces use the quiet list shell', async () => {
   assert.match(source, /const codexExtensionsNoticeClass =/);
   assert.match(source, /const codexExtensionsListContentClass =/);
   assert.match(source, /const codexExtensionsListRowClass =/);
+  assert.match(source, /!border-b !border-\[var\(--gt-border-subtle\)\]/);
+  assert.match(source, /last:!border-b-0/);
   assert.match(source, /data-codex-extension-workspace-list="skills"/);
   assert.match(source, /data-codex-extension-workspace-list="mcp"/);
+  assert.match(source, /type="text"[\s\S]{0,220}aria-label=\{`\$\{skill\.name\}/);
+  assert.match(source, /type="text"[\s\S]{0,360}data-codex-extension-workspace-list="mcp"/);
+  assert.match(source, /!px-4 !py-3[\s\S]{0,180}data-codex-extension-workspace-list="mcp"/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);

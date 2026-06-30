@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { Tag, Tooltip } from 'antd';
+import { Flex, Progress, Tag, Tooltip } from 'antd';
 import type { ApiFormat, BillingDisplay } from '../../../types';
 import type { AccountRecord, QuotaDisplay, QuotaWindowDisplay, Translator } from '../model/types';
 import { buildAccountTodayUsageTotals, resolveUnboundedTrafficActivityPercent, type AccountUsageSummary } from '../model/accountUsage';
@@ -331,16 +331,17 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
         <RuntimeWarningBanner warning={runtimeWarning} dataAttribute="data-account-route-guard-runtime-warning" />
       ) : null}
       {hasRows ? (
-        <div className="flex items-center justify-between gap-3">
+        <Flex align="center" justify="space-between" gap="small">
           <div className="font-mono text-[length:var(--gt-font-size-xs)] font-normal  text-[var(--gt-ink-muted)]">
             ROUTE GUARD
           </div>
-          <div className={`font-mono text-[length:var(--gt-font-size-xs)] font-normal  ${
-            rateLimitStatus?.blocked ? 'text-[var(--gt-status-danger)]' : 'text-[var(--gt-ink-muted)]'
-          }`}>
+          <Tag
+            color={rateLimitStatus?.blocked ? 'error' : 'default'}
+            className="rounded border px-2 py-0.5 font-mono text-[length:var(--gt-font-size-xs)] font-normal"
+          >
             {statusLabel}
-          </div>
-        </div>
+          </Tag>
+        </Flex>
       ) : null}
       {!hasRows ? (
         <div data-account-card-traffic-statistics="unbounded" className="grid gap-2">
@@ -359,20 +360,28 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = fal
         </div>
       ) : null}
       {rows.map((row) => {
-        const fillClass = row.tone === 'critical' ? 'bg-[var(--gt-status-danger)]' : 'bg-[var(--gt-status-warning)]';
+        const strokeColor = row.tone === 'critical' ? 'var(--gt-status-danger)' : 'var(--gt-status-warning)';
         return (
           <div key={row.id} className="account-card-rate-limit-row grid min-w-0 gap-1.5">
-            <div className="account-card-rate-limit-heading flex min-w-0 items-baseline justify-between gap-2">
+            <Flex className="account-card-rate-limit-heading min-w-0" align="baseline" justify="space-between" gap="small">
               <div className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal  text-[var(--gt-ink-muted)]">
                 {row.label}
               </div>
               <div className="shrink-0 text-right font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
                 {row.valueLabel}
               </div>
-            </div>
+            </Flex>
             <div className="grid min-w-0 gap-1">
-              <div className="relative h-4 overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]">
-                <div className={`absolute inset-y-0 left-0 ${fillClass}`} style={{ width: `${row.fillPercent}%` }} />
+              <div className="relative">
+                <Progress
+                  percent={row.fillPercent}
+                  showInfo={false}
+                  size={{ height: 16 }}
+                  strokeLinecap="square"
+                  strokeColor={strokeColor}
+                  railColor="var(--gt-surface-muted)"
+                  style={{ marginBottom: 0 }}
+                />
                 {refreshing ? (
                   <div
                     className="account-card-quota-refresh-skeleton absolute inset-0 pointer-events-none"
@@ -405,20 +414,23 @@ function TrafficStatisticsRow({
 }) {
   return (
     <div className="account-card-traffic-statistics-row grid min-w-0 gap-1.5">
-      <div className="flex min-w-0 items-baseline justify-between gap-2">
+      <Flex className="min-w-0" align="baseline" justify="space-between" gap="small">
         <div className="min-w-0 truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal  text-[var(--gt-ink-muted)]">
           {label}
         </div>
         <div className="shrink-0 text-right font-mono text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]">
           {value} / ∞
         </div>
-      </div>
-      <div className="relative h-4 overflow-hidden border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]">
-        <div
-          aria-hidden="true"
-          data-account-card-traffic-activity-fill
-          className="absolute inset-y-0 left-0 bg-[color-mix(in_srgb,var(--gt-ink-primary)_16%,transparent)]"
-          style={{ width: `${activityPercent}%` }}
+      </Flex>
+      <div className="relative" data-account-card-traffic-activity-fill>
+        <Progress
+          percent={activityPercent}
+          showInfo={false}
+          size={{ height: 16 }}
+          strokeLinecap="square"
+          strokeColor="color-mix(in srgb, var(--gt-ink-primary) 16%, transparent)"
+          railColor="var(--gt-surface-muted)"
+          style={{ marginBottom: 0 }}
         />
         {refreshing ? (
           <div

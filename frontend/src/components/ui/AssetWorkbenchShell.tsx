@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Card, Flex } from 'antd';
 import WorkspacePageHeader from './WorkspacePageHeader';
 
 interface AssetWorkbenchShellProps {
@@ -43,7 +44,7 @@ export default function AssetWorkbenchShell({
       data-design-system-component-name="AssetWorkbenchShell"
       className={`scrollbar-stable h-full w-full overflow-auto p-6 text-[var(--gt-ink-primary)] lg:p-8 ${className}`.trim()}
     >
-      <div className="w-full space-y-6">
+      <Flex vertical gap="large" className="w-full">
         <WorkspacePageHeader
           title={title}
           subtitle={subtitle}
@@ -52,13 +53,20 @@ export default function AssetWorkbenchShell({
           actionsClassName={actionsClassName}
         />
 
-        <section
-          className={`flex ${minHeightClassName} flex-col border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm ${panelClassName}`.trim()}
+        <Card
+          size="small"
+          variant="outlined"
+          className={`flex ${minHeightClassName} flex-col overflow-hidden ${panelClassName}`.trim()}
+          styles={{ body: { display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0, padding: 0 } }}
         >
           {toolbar ? (
-            <div className={`grid gap-3 border-b border-[var(--gt-border-subtle)] p-3 lg:grid-cols-[minmax(0,24rem)_minmax(16rem,1fr)] ${toolbarClassName}`.trim()}>
+            <Flex
+              wrap
+              gap="small"
+              className={`border-b border-[var(--gt-border-subtle)] p-3 ${toolbarClassName}`.trim()}
+            >
               {toolbar}
-            </div>
+            </Flex>
           ) : null}
           {notice}
           {aside ? (
@@ -71,8 +79,8 @@ export default function AssetWorkbenchShell({
           ) : (
             <div className={contentClassName}>{children}</div>
           )}
-        </section>
-      </div>
+        </Card>
+      </Flex>
     </div>
   );
 }
