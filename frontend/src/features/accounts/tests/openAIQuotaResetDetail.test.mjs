@@ -49,7 +49,7 @@ test('quota reset modal uses AntD dialog controls', () => {
   );
 
   assert.match(sectionSource, /const accountDetailQuotaResetModalPanelClass =/);
-  assert.match(sectionSource, /import \{ Button, Input, Select, Tooltip \} from 'antd';/);
+  assert.match(sectionSource, /import \{ .*Button, Input, Select, Tooltip.*\} from 'antd';/);
   assert.match(modalSource, /className=\{accountDetailQuotaResetModalPanelClass\}/);
   assert.match(modalSource, /<Button[\s\S]*type="primary"/);
   assert.match(sectionSource, /--gt-surface-canvas/);

@@ -35,10 +35,10 @@ export function AccountDetailSection({
     <section
       data-design-system-component="true"
       data-design-system-component-name={componentName}
-      className={`space-y-3 ${className}`}
+      className={`flex flex-col w-full min-w-0 space-y-3 py-6 ${className}`}
     >
       {(title || actions) && (
-        <div className="flex select-text items-center justify-between gap-4">
+        <div className="flex flex-col select-text gap-2">
           {title && (
             <Typography.Title level={5} className="!m-0 !font-semibold">
               {title}

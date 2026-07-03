@@ -78,7 +78,7 @@ export default function ModalFrame({
     ? 'var(--app-sidebar-width, 0px)'
     : 0;
   const overlayLayoutClassName = detailFullscreen
-    ? 'items-start justify-items-center overflow-hidden px-4 pb-4 pt-8 sm:px-6 sm:pb-6 sm:pt-10'
+    ? 'items-start justify-items-center overflow-hidden px-6 py-6 sm:px-8 sm:py-8'
     : 'place-items-center overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6';
   const panelViewportClassName = detailFullscreen
     ? 'h-[calc(100vh-3rem)] max-h-[calc(100vh-3rem)] sm:h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-4rem)]'

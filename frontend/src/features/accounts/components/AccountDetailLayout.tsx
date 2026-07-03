@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import React, { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button, Menu, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import type { AccountDetailLocalCliAction } from './AccountDetailSections';
@@ -144,8 +144,17 @@ export function AccountDetailLayout({
     }
   }
 
+  const childrenArray = React.Children.toArray(children);
+  const activeChild = childrenArray.find((child) => {
+    if (React.isValidElement(child)) {
+      const childProps = child.props as Record<string, any>;
+      return childProps['data-account-detail-section'] === activeSection;
+    }
+    return false;
+  });
+
   return (
-    <div className="flex h-full min-h-0">
+    <div className="flex h-full w-full min-w-0 min-h-0">
       <SectionNav
         items={sectionNavItems}
         activeId={activeSection}
@@ -157,11 +166,11 @@ export function AccountDetailLayout({
         className="min-w-0 flex-1 select-text overflow-y-auto"
       >
         <div
-          className="mx-auto max-w-[42rem] select-text space-y-6 px-8 pt-14 pb-6 font-sans text-[length:var(--gt-font-size-lg)] leading-[1.6] text-[var(--gt-ink-primary)]"
+          className="mx-auto max-w-[44rem] select-text space-y-6 px-6 sm:px-8 md:px-10 pt-8 pb-8 font-sans text-[length:var(--gt-font-size-lg)] leading-[1.6] text-[var(--gt-ink-primary)]"
         >
           {header}
           {notice}
-          {children}
+          {activeChild || children}
         </div>
       </div>
     </div>

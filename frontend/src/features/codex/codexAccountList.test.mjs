@@ -182,7 +182,7 @@ test('buildCodexAccountDetailModulePlan merges account detail modules with model
 });
 
 test('codex oauth detail exposes single-account model probe with fallback disabled', async () => {
-  const modalSource = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const featureSource = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(modalSource, /<OAuthModelProbeSection/);
@@ -195,9 +195,9 @@ test('codex oauth detail exposes single-account model probe with fallback disabl
 });
 
 test('codex account detail header keeps labeled identity and metadata blocks', async () => {
-  const source = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const summaryBlock = source.match(/<dl[\s\S]*?data-codex-account-detail-header="summary"[\s\S]*?<\/dl>/)?.[0] ?? '';
-  const metaBlock = source.match(/function AccountDetailHeaderMeta[\s\S]*?\n}\n\nexport function CodexAccountDetailModal/)?.[0] ?? '';
+  const metaBlock = source.match(/function AccountDetailHeaderMeta[\s\S]*?\n}\n\nexport function CodexAccountDetailHeader/)?.[0] ?? '';
 
   assert.match(source, /export function CodexAccountDetailHeader/);
   assert.match(source, /sourceKindLabel\(t, row\.sourceKind\)/);
@@ -218,7 +218,7 @@ test('codex account detail header keeps labeled identity and metadata blocks', a
 });
 
 test('CodexAccountDetailModal uses the quiet workspace shell', async () => {
-  const source = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /const codexAccountDetailHeaderClass =/);
   assert.match(source, /const codexAccountDetailMetaClass =/);
@@ -248,7 +248,7 @@ test('CodexAccountDetailModal uses the quiet workspace shell', async () => {
 });
 
 test('codex account detail folds proxy route into credential section', async () => {
-  const modalSource = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(modalSource, /import AccountProxyRouteSection/);
   assert.doesNotMatch(modalSource, /case 'proxy-route':/);
@@ -256,7 +256,7 @@ test('codex account detail folds proxy route into credential section', async () 
 });
 
 test('codex oauth detail renders quota and billing as read-only resource modules', async () => {
-  const modalSource = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const detailSectionsSource = await readFile(new URL('../accounts/components/AccountDetailSections.tsx', import.meta.url), 'utf8');
 
   assert.match(modalSource, /const readOnlyQuotaScripts = row\.sourceKind === 'codex-auth-file'/);
@@ -268,7 +268,7 @@ test('codex oauth detail renders quota and billing as read-only resource modules
 });
 
 test('codex model routing detail exposes fetch-model action from the account list', async () => {
-  const modalSource = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const featureSource = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
   const routingBlock = modalSource.match(/function CodexModelRoutingSection[\s\S]*?\nfunction buildEditableModelMappings/)?.[0] ?? '';
 

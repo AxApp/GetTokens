@@ -35,7 +35,7 @@ test('account detail frame uses the fullscreen detail modal shell', async () => 
   assert.match(modalFrameSource, /import \{ Modal \} from 'antd'/);
   assert.match(modalFrameSource, /const detailFullscreen = size === 'detail'/);
   assert.match(modalFrameSource, /position === 'fixed' && !detailFullscreen/);
-  assert.match(modalFrameSource, /detailFullscreen[\s\S]*\? 'items-start justify-items-center overflow-hidden px-4 pb-4 pt-8 sm:px-6 sm:pb-6 sm:pt-10'/);
+  assert.match(modalFrameSource, /detailFullscreen[\s\S]*\? 'items-start justify-items-center overflow-hidden px-6 py-6 sm:px-8 sm:py-8'/);
   assert.match(modalFrameSource, /detailFullscreen[\s\S]*h-\[calc\(100vh-3rem\)\]/);
   assert.match(modalFrameSource, /sm:h-\[calc\(100vh-4rem\)\]/);
   assert.match(modalFrameSource, /const shouldUseBodyContainer = detailFullscreen \|\| portal/);
@@ -180,15 +180,15 @@ test('quota curl test result normalizes returned windows for detail quota bars',
   assert.equal(display?.windows[0].resetAtUnix, 1800000000);
 });
 
-test('api key credential module uses left-right credential and connection layout', async () => {
+test('api key credential module uses vertical credential and connection layout', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const targetSource = sourceBlock(source, 'export function AccountCredentialVerifySection', 'function CapabilityEndpointsPanel');
 
   assert.match(source, /export function AccountCredentialVerifySection/);
-  assert.match(source, /data-account-credential-verify-layout="quiet-split"/);
-  assert.match(targetSource, /lg:grid-cols-\[minmax\(20rem,7fr\)_minmax\(16rem,5fr\)\]/);
-  assert.doesNotMatch(targetSource, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
+  assert.match(source, /data-account-credential-verify-layout="card-vertical"/);
+  assert.match(targetSource, /flex flex-col/);
+  assert.doesNotMatch(targetSource, /lg:grid-cols-/);
   assert.match(source, /data-account-credential-left-pane="credential-connection"/);
   assert.match(source, /data-account-credential-right-pane="route"/);
   assert.match(source, /accountDetailCredentialPaneDividerClass/);
@@ -241,7 +241,7 @@ test('api key credential module keeps fields and verify row from clipping in the
 
   assert.doesNotMatch(inputSource, /max-w-sm/);
   assert.match(inputSource, /<Input[\s\S]*className="w-full font-mono"/);
-  assert.match(verifySource, /grid gap-2 sm:grid-cols-\[minmax\(0,1fr\)_auto\] sm:items-center/);
+  assert.match(verifySource, /grid gap-3 sm:grid-cols-\[minmax\(0,1fr\)_auto\] sm:items-center/);
   assert.match(verifySource, /<Select[\s\S]*className="w-full"/);
   assert.match(verifySource, /<Button[\s\S]*className="whitespace-nowrap"/);
 });
@@ -262,7 +262,7 @@ test('credential endpoint copy explains default base url versus protocol overrid
   assert.match(endpointsBlock, /协议端点/);
   assert.match(endpointsBlock, /留空使用默认基础 URL/);
   assert.match(endpointsBlock, /\{CAPABILITY_ENDPOINTS\.length\} 端/);
-  assert.match(endpointsBlock, /data-account-credential-list-item="capability-endpoints" className="grid gap-3"/);
+  assert.match(endpointsBlock, /data-account-credential-list-item="capability-endpoints" className="rounded-lg border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] p-5 shadow-sm grid gap-4"/);
   assert.doesNotMatch(endpointsBlock, /data-account-credential-list-item="capability-endpoints" className="[^"]*border-t-2/);
   assert.doesNotMatch(endpointsBlock, /分别覆盖 OpenAI-compatible、Codex Responses 和 Anthropic 请求/);
 });
@@ -825,7 +825,7 @@ test('account detail footer uses the quiet workspace action shell', async () => 
 
   assert.match(source, /const accountDetailFooterStatusClass =/);
   assert.match(source, /const accountDetailFooterActionsClass =/);
-  assert.match(source, /import \{ Button, Input, Select, Tooltip \} from 'antd'/);
+  assert.match(source, /import \{ .*Button, Input, Select, Tooltip.*\} from 'antd'/);
   assert.match(layoutSource, /const accountDetailNavLocalActionButtonClass =/);
   assert.match(sectionNavSource, /data-account-detail-nav-local-cli-actions/);
   assert.match(targetSource, /data-account-detail-footer-status="single-line"/);

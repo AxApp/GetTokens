@@ -566,7 +566,7 @@ test('account detail modules expose design-system anatomy and runtime states', a
     'utf8',
   );
   const codexDetailSource = await readFile(
-    new URL('../../features/codex/components/CodexAccountDetailModal.tsx', import.meta.url),
+    new URL('../../features/accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url),
     'utf8',
   );
   const sectionsSource = await readFile(

@@ -95,28 +95,29 @@ export function AuthFileSummarySection({ account }: { account: AccountRecord }) 
         </>
       }
     >
-      <div data-auth-file-config-management="quiet" className="grid gap-3">
-        <div className="space-y-2">
-          <label className="grid gap-1.5">
-            <span className={labelClass}>账号名称</span>
-            <Input className={inputClass} value={account.displayName} readOnly />
-          </label>
+      <div className="grid gap-4 rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 shadow-sm">
+        <div data-auth-file-config-management="quiet" className="grid gap-3">
+          <div className="space-y-2">
+            <label className="grid gap-1.5">
+              <span className={labelClass}>账号名称</span>
+              <Input className={inputClass} value={account.displayName} readOnly />
+            </label>
+          </div>
         </div>
+        {loading ? (
+          <div className="space-y-2">
+            <div className="h-4 w-3/4 bg-[var(--gt-border-strong)]" />
+            <div className="h-4 w-1/2 bg-[var(--gt-border-strong)]" />
+          </div>
+        ) : (
+          <Alert
+            data-auth-file-config-notice
+            type="info"
+            message="配置预览基于账号数据库生成；可预览配置、下载配置，并在确认后应用到运行时。待接入 account-store management API。"
+            showIcon={false}
+          />
+        )}
       </div>
-      {loading ? (
-        <div className="mt-4 space-y-2">
-          <div className="h-4 w-3/4 bg-[var(--gt-border-strong)]" />
-          <div className="h-4 w-1/2 bg-[var(--gt-border-strong)]" />
-        </div>
-      ) : (
-        <Alert
-          data-auth-file-config-notice
-          type="info"
-          message="配置预览基于账号数据库生成；可预览配置、下载配置，并在确认后应用到运行时。待接入 account-store management API。"
-          className="mt-4"
-          showIcon={false}
-        />
-      )}
     </AccountDetailSection>
   );
 }

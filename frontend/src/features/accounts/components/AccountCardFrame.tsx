@@ -56,7 +56,14 @@ export default function AccountCardFrame({
       aria-label={interactive ? openDetailsLabel : undefined}
       tabIndex={interactive ? 0 : -1}
     >
-      {children}
+      <div className="account-card-frame-inner relative flex h-full flex-1 flex-col min-w-0">
+        {interactive ? (
+          <span className="sr-only">
+            Interactive account card. Press Enter or Space to open details.
+          </span>
+        ) : null}
+        {children}
+      </div>
     </Card>
   );
 

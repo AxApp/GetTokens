@@ -51,8 +51,8 @@ export interface RateLimitRulesAPI {
   delete: (input: { id: string }) => Promise<unknown>;
 }
 
-const rateLimitRulesShellClass = 'grid min-w-0 gap-3 rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
-const rateLimitRulesPanelClass = 'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-3 py-3';
+const rateLimitRulesShellClass = 'grid min-w-0 gap-3 rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 shadow-sm';
+const rateLimitRulesPanelClass = 'rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-4 py-3 shadow-sm';
 const rateLimitRulesListClass = 'grid min-w-0 gap-2';
 const rateLimitRulesMetaClass = 'min-w-0 font-mono text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
 const rateLimitRulesTitleClass = 'truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
@@ -61,7 +61,7 @@ const rateLimitRulesInlineInputClass = 'min-w-0 flex-1 bg-transparent px-2 py-1 
 const rateLimitRulesNoticeClass = 'rounded-md border px-3 py-2 font-mono text-[length:var(--gt-font-size-xs)] font-normal';
 const rateLimitRulesNoticeToneClass = {
   danger: 'border-[color-mix(in_srgb,var(--gt-status-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-danger)_8%,var(--gt-surface-canvas))] text-[var(--gt-status-danger)]',
-  neutral: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-muted)]',
+  neutral: 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]',
   success: 'border-[color-mix(in_srgb,var(--gt-status-success)_28%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_8%,var(--gt-surface-canvas))] text-[var(--gt-status-success)]',
 } satisfies Record<'danger' | 'neutral' | 'success', string>;
 

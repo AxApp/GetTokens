@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { Button, Input, Select, Tooltip } from 'antd';
+import { Alert, Button, Input, Select, Tooltip } from 'antd';
 import { FileText, Play, Plus, RotateCcw, Search } from 'lucide-react';
 import type { AccountRecord, ApiFormat, BillingDisplay } from '../../../types';
 import type { main } from '../../../../wailsjs/go/models';
@@ -175,13 +175,13 @@ const accountDetailRuntimeDecisionMetaClass =
 const accountDetailRuntimeDecisionDetailClass =
   'mt-1 text-[length:var(--gt-font-size-xs)] font-normal leading-5 text-[var(--gt-ink-secondary)]';
 const accountDetailRuntimeEvidenceClass =
-  'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2';
+  'grid gap-3';
 const accountDetailRuntimeReasonDetailClass =
-  'grid gap-1 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1.5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center';
+  'grid gap-2 border-b border-[var(--gt-border-subtle)] py-2 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center';
 const accountDetailRuntimeDecisionClass = (unresolved: boolean) =>
-  `border px-3 py-2 ${unresolved
-    ? 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_6%,var(--gt-surface-muted))]'
-    : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
+  `border-b py-4 ${unresolved
+    ? 'border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_6%,transparent)]'
+    : 'border-[var(--gt-border-subtle)]'
   }`;
 const accountDetailCredentialPaneDividerClass =
   'grid min-w-0 content-start gap-4 border-t border-[var(--gt-border-subtle)] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0';
@@ -220,19 +220,19 @@ const accountDetailResourcePaneDividerClass =
 const accountDetailResourcePaneCompactClass =
   'grid min-w-0 content-start gap-3 border-t border-[var(--gt-border-subtle)] pt-3';
 const accountDetailResourceScriptCardClass =
-  'grid h-full min-h-[8.75rem] content-start gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+  'grid h-full min-h-[8.75rem] content-start gap-3';
 const accountDetailResourceCompactCardClass =
-  'grid gap-3 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+  'grid gap-3';
 const accountDetailResourceHeadingClass =
-  'font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
+  'font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountDetailResourcePanelClass =
-  'grid gap-2 border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] p-3';
+  'grid gap-3';
 const accountDetailResourcePanelValueClass =
   'mt-1 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
 const accountDetailResourceHelpClass =
   'text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed text-[var(--gt-ink-muted)]';
 const accountDetailResourceEmptyScriptClass =
-  'border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-4 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
+  'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const accountDetailResourceDataRowClass =
   'grid gap-2 border-y border-[var(--gt-border-subtle)] py-2 md:grid-cols-3';
 const accountDetailResourceMessageClass = (tone: 'neutral' | 'success' | 'danger') =>
@@ -784,23 +784,27 @@ export function AccountCredentialVerifySection({
       title="凭据与验证"
       span={span}
     >
-      <div data-account-credential-verify-layout="quiet-split" className="grid min-w-0 gap-4 lg:grid-cols-[minmax(20rem,7fr)_minmax(16rem,5fr)]">
-        <div data-account-credential-left-pane="credential-connection" className="grid content-start gap-4 lg:pr-4">
-          <section data-account-credential-list-item="credential" className="grid content-start gap-3">
-            <div className={accountDetailCredentialSectionTitleClass}>
+      <div data-account-credential-verify-layout="card-vertical" className="flex flex-col min-w-0 gap-6">
+        {/* Left Pane: Credentials & Verify */}
+        <div data-account-credential-left-pane="credential-connection" className="grid content-start gap-6">
+          <section
+            data-account-credential-list-item="credential"
+            className="grid gap-4"
+          >
+            <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
               账号凭据
             </div>
-            <div data-account-credential-fields="balanced-grid" className="grid gap-3">
+            <div data-account-credential-fields="balanced-grid" className="grid gap-4">
               <CredentialInputField
                 label="账号名称"
                 value={draft.label}
                 onChange={(value) => setDraft((prev) => ({ ...prev, label: value }))}
               />
               <CredentialInputField
-                label="API 密钥"
-                value={draft.apiKey}
-                onChange={(value) => setDraft((prev) => ({ ...prev, apiKey: value }))}
-                onCopy={() => void navigator.clipboard.writeText(draft.apiKey)}
+                label="前缀"
+                value={draft.prefix}
+                placeholder="/v1"
+                onChange={(value) => setDraft((prev) => ({ ...prev, prefix: value }))}
               />
               <CredentialInputField
                 label="默认基础 URL"
@@ -809,10 +813,10 @@ export function AccountCredentialVerifySection({
                 onCopy={() => void navigator.clipboard.writeText(draft.baseUrl)}
               />
               <CredentialInputField
-                label="前缀"
-                value={draft.prefix}
-                placeholder="/v1"
-                onChange={(value) => setDraft((prev) => ({ ...prev, prefix: value }))}
+                label="API 密钥"
+                value={draft.apiKey}
+                onChange={(value) => setDraft((prev) => ({ ...prev, apiKey: value }))}
+                onCopy={() => void navigator.clipboard.writeText(draft.apiKey)}
               />
               {credentialFields.map((field) => (
                 <VendorCredentialInputField
@@ -833,7 +837,8 @@ export function AccountCredentialVerifySection({
           />
         </div>
 
-        <div data-account-credential-right-pane="route" className={accountDetailCredentialPaneDividerClass}>
+        {/* Right Pane: Route & Capability */}
+        <div data-account-credential-right-pane="route" className="grid content-start gap-6">
           <CapabilityEndpointsPanel draft={draft} setDraft={setDraft} />
 
           <CredentialProxyRoutePanel
@@ -855,10 +860,10 @@ function CapabilityEndpointsPanel({
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
 }) {
   return (
-    <section data-account-credential-list-item="capability-endpoints" className="grid gap-3">
+    <section data-account-credential-list-item="capability-endpoints" className="rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-5 shadow-sm grid gap-4">
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
-          <span className="text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]">协议端点</span>
+          <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">协议端点</span>
           <p className="mt-1 text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed text-[var(--gt-ink-muted)]">留空使用默认基础 URL。</p>
         </div>
         <AccountDetailPill className={accountDetailCredentialPillClass}>
@@ -866,7 +871,7 @@ function CapabilityEndpointsPanel({
         </AccountDetailPill>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-4">
         {CAPABILITY_ENDPOINTS.map((endpoint) => (
           <CredentialInputField
             key={endpoint.format}
@@ -976,7 +981,7 @@ function CredentialProxyRoutePanel({
   const proxyUrlOptions = ['', ...proxyOptions.map((item) => item.proxyUrl)];
 
   return (
-    <section data-account-credential-list-item="proxy-route" className="grid gap-3 pt-4">
+    <section data-account-credential-list-item="proxy-route" className="grid gap-4">
       <CredentialInputField
         label={t('accounts.proxy_route_title')}
         value={draft.proxyUrl}
@@ -986,7 +991,21 @@ function CredentialProxyRoutePanel({
           setDraft((prev) => ({ ...prev, proxyUrl: value, mode: 'custom' }));
           onProxyUrlChange?.(value);
         }}
+        help={summary.label}
       />
+      {hasDetachedCurrentURL && (
+        <Alert
+          type="warning"
+          showIcon
+          message="当前 Proxy 未在节点列表中"
+          description="该代理未配置到 Settings 的代理池中，可能无法通过连通性检测或自动切换。"
+        />
+      )}
+      {customMissing && (
+        <div className="text-[length:var(--gt-font-size-xs)] text-[var(--gt-color-danger)]">
+          {t('accounts.proxy_route_invalid')}
+        </div>
+      )}
     </section>
   );
 }
@@ -1002,13 +1021,16 @@ function VendorCredentialInputField({
   field,
   draft,
   onChange,
+  className,
 }: {
   field: VendorCredentialField;
   draft: ApiKeyConfigDraft;
   onChange: (value: string) => void;
+  className?: string;
 }) {
   return (
     <CredentialInputField
+      className={className}
       label={field.label}
       value={readDraftCredentialField(draft, field.id)}
       placeholder={field.placeholder}
@@ -1057,21 +1079,22 @@ function CredentialInputField({
 }) {
   return (
     <label data-account-credential-field="plaintext" className={`grid min-w-0 gap-1.5 ${className}`}>
-      <div className="flex items-baseline gap-2">
+      <div className="flex items-baseline justify-between gap-2">
         <span
           data-account-credential-field-label="above"
-          className={accountDetailCredentialFieldLabelClass}
+          className="font-sans text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]"
         >
           {label}
         </span>
         {help && (
-          <span className={accountDetailCredentialHelpClass}>
+          <span className="text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed text-[var(--gt-ink-muted)]">
             {help}
           </span>
         )}
       </div>
       {options && options.length > 0 ? (
         <Select
+          size="small"
           value={value || undefined}
           onChange={(val: string) => onChange(val)}
           placeholder={placeholder || '请选择...'}
@@ -1080,6 +1103,7 @@ function CredentialInputField({
         />
       ) : (
         <Input
+          size="small"
           value={value}
           placeholder={placeholder || '请输入...'}
           onChange={(event) => onChange(event.target.value)}
@@ -1117,17 +1141,19 @@ function VerifyConnectionPanel({
   }));
 
   return (
-    <section data-account-credential-list-item="connection" className="grid gap-3 border-t border-[var(--gt-border-subtle)] pt-4">
-      <div className={accountDetailCredentialSectionTitleClass}>
-        连通验证
-      </div>
-      {vs.lastVerifiedAt ? (
-        <div className="text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]">
-          上次发送：{new Date(vs.lastVerifiedAt).toLocaleString()}
+    <section data-account-credential-list-item="connection" className="grid gap-4">
+      <div className="flex items-center justify-between">
+        <div className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">
+          连通验证
         </div>
-      ) : null}
+        {vs.lastVerifiedAt ? (
+          <div className="text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]">
+            上次发送：{new Date(vs.lastVerifiedAt).toLocaleString()}
+          </div>
+        ) : null}
+      </div>
 
-      <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <div className="min-w-0">
           <Select
             showSearch

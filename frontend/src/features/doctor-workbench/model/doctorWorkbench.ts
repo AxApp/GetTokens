@@ -223,12 +223,17 @@ export function deriveDoctorWorkbenchView(snapshot: DoctorSnapshot): DoctorWorkb
 
   const checks = snapshot.checks
     .map((check) => {
-      const evidence = deriveDoctorEvidenceViews(check);
-      return {
+      const normalizedCheck = {
         ...check,
+        evidence: check.evidence || [],
+        navigation: check.navigation || [],
+      };
+      const evidence = deriveDoctorEvidenceViews(normalizedCheck);
+      return {
+        ...normalizedCheck,
         evidence,
         evidenceCount: evidence.length,
-        primaryNavigation: check.navigation[0] ?? null,
+        primaryNavigation: normalizedCheck.navigation[0] ?? null,
       };
     })
     .sort((left, right) => {
@@ -890,7 +895,7 @@ function isRouteEvidenceCheck(check: DoctorCheck) {
   return (
     check.id === 'route_guard_dropped_reasons' ||
     check.kind === 'route-guard-stale-block' ||
-    check.evidence.some((item) => {
+    (check.evidence || []).some((item) => {
       const kind = String(item.kind || '').trim().toLowerCase();
       return kind === 'route_decision' || kind === 'route_dropped_reason';
     })

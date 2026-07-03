@@ -223,7 +223,7 @@ export function CompatibleModelsSection({
           {editable ? '暂无模型映射；可拉取模型后添加映射，或直接手动添加。' : '暂无模型数据'}
         </AccountDetailEmptyState>
       ) : (
-        <div data-account-model-mapping-grid="source-route" className="grid gap-1.5 sm:grid-cols-2">
+        <div data-account-model-mapping-grid="source-route" className="flex flex-col gap-1.5">
           {displayedModels.map((model, index) => {
             const modelName = String(model.name ?? model.id ?? model.display_name ?? `MODEL ${index + 1}`);
             const routeLabel = String(model.alias ?? (isAuthFile ? 'oauth available' : modelName));

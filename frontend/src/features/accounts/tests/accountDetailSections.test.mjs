@@ -55,11 +55,13 @@ test('account credential detail editor uses the quiet workspace shell', async ()
 
   assert.match(source, /const accountDetailCredentialPaneDividerClass =/);
   assert.match(source, /const accountDetailCredentialSectionTitleClass =/);
-  assert.match(source, /import \{ Button, Input, Select, Tooltip \} from 'antd';/);
+  assert.match(source, /import \{ .*Button, Input, Select, Tooltip.*\} from 'antd';/);
   assert.match(targetSource, /<Input/);
   assert.match(targetSource, /<Select/);
   assert.match(targetSource, /<Button/);
-  assert.match(targetSource, /data-account-credential-verify-layout="quiet-split"/);
+  assert.match(targetSource, /data-account-credential-verify-layout="card-vertical"/);
+  assert.match(targetSource, /flex flex-col/);
+  assert.doesNotMatch(targetSource, /lg:grid-cols-/);
   assert.match(targetSource, /data-account-credential-list-item="capability-endpoints"/);
   assert.match(targetSource, /data-account-credential-list-item="connection"/);
   assert.match(source, /--gt-surface-canvas/);
@@ -90,7 +92,7 @@ test('account quota and billing editors use the quiet workspace shell', async ()
 
   assert.match(source, /const accountDetailResourcePaneDividerClass =/);
   assert.match(source, /const accountDetailResourceScriptCardClass =/);
-  assert.match(source, /import \{ Button, Input, Select, Tooltip \} from 'antd';/);
+  assert.match(source, /import \{ .*Button, Input, Select, Tooltip.*\} from 'antd';/);
   assert.match(targetSource, /<Button/);
   assert.match(source, /const accountDetailResourceHeadingClass =/);
   assert.match(source, /const accountDetailResourceMessageClass =/);

@@ -231,6 +231,14 @@
   }
   [data-account-card] {
     container-type: inline-size;
+    outline: none !important;
+    transition: border-color var(--gt-transition-speed-fast, 0.15s) ease;
+  }
+
+  [data-account-card]:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--gettokens-color-primary, #1677ff) 20%, transparent) !important;
+    outline-offset: 1px;
+    border-color: var(--gettokens-color-primary, #1677ff) !important;
   }
 
   [data-account-card].account-card-status-tint {
@@ -461,4 +469,16 @@
 ::-webkit-scrollbar-thumb {
   background-color: var(--gt-border-strong);
   border: 2px solid var(--gt-surface-canvas);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

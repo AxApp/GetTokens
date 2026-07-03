@@ -880,3 +880,32 @@ test('doctor route evidence keeps partial typed identity as fallback only', () =
   assert.equal(routeCheck?.evidence[0]?.routeFallbackState, 'partial-identity');
   assert.equal(routeCheck?.evidence[0]?.summaryLabel, 'partial typed route identity should not become truth');
 });
+
+test('doctor workbench view handles null or missing evidence safely', () => {
+  const view = deriveDoctorWorkbenchView({
+    generatedAtUnixMs: 1781596800000,
+    source: 'sidecar-diagnostics',
+    sidecarReady: true,
+    status: 'warning',
+    checks: [
+      {
+        id: 'route_guard_dropped_reasons',
+        kind: 'route-guard-stale-block',
+        title: 'Route guard dropped reasons present',
+        status: 'warning',
+        reason: 'Sidecar reported route-blocking dropped reasons.',
+        repairability: 'read_only',
+        authority: 'sidecar',
+        confidence: 'medium',
+        lastCheckedAtUnixMs: 1781596799000,
+        evidence: null,
+        navigation: [{ kind: 'route_decisions', label: 'Open route decisions', hash: '#frame=codex&workspace=account-list' }],
+      },
+    ],
+  });
+
+  const check = view.checks.find((item) => item.id === 'route_guard_dropped_reasons');
+  assert.ok(check);
+  assert.equal(check.evidenceCount, 0);
+  assert.deepEqual(check.evidence, []);
+});

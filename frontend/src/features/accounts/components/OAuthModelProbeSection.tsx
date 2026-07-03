@@ -80,7 +80,7 @@ export function OAuthModelProbeSection({
       bandActionDivider={false}
       actions={<AccountDetailPill tone={statusTone}>{statusLabel}</AccountDetailPill>}
     >
-      <div data-oauth-model-probe-shell="quiet" data-oauth-model-probe-account={accountID} className="grid gap-3">
+      <div data-oauth-model-probe-shell="quiet" data-oauth-model-probe-account={accountID} className="grid gap-3 rounded-lg border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4 shadow-sm">
         <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <label className="grid min-w-0 gap-1.5">
             <span className={oauthModelProbeFieldLabelClass}>

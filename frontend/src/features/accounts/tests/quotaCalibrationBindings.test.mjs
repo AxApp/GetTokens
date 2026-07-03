@@ -125,7 +125,7 @@ test('quota calibration panel uses the quiet workspace shell', () => {
 
   assert.match(panel, /const quotaCalibrationPanelClass =/);
   assert.match(panel, /const quotaCalibrationItemClass =/);
-  assert.match(panel, /import \{ Button, Input, Select, Tooltip \} from 'antd';/);
+  assert.match(panel, /import \{ .*Button, Input, Select, Tooltip.*\} from 'antd';/);
   assert.match(panel, /<Button/);
   assert.match(panel, /const quotaCalibrationInputClass =/);
   assert.match(panel, /const quotaCalibrationMetaClass =/);
