@@ -33,6 +33,7 @@ func TestBuildLocalMacOSPackageScriptPlan(t *testing.T) {
 		"arch=arm64",
 		"version=v1.2.3",
 		"platform=darwin/arm64",
+		"wails_project_dir=" + repoPath(t, "cmd", "gettokens"),
 		"asset=GetTokens_local_macOS_AppleSilicon.dmg",
 		"notarize=0",
 		outputDir,

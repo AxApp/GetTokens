@@ -35,6 +35,19 @@ submit_for_notarization() {
     --wait
 }
 
+codesign_app_bundle() {
+  local sign_identity="$1"
+  local app_path="$2"
+
+  if [[ -f "${app_path}/Contents/MacOS/cli-proxy-api" ]]; then
+    codesign --force --options runtime --timestamp --sign "$sign_identity" "${app_path}/Contents/MacOS/cli-proxy-api"
+  fi
+  if [[ -f "${app_path}/Contents/Frameworks/libGetTokensMenuBarSwiftUI.dylib" ]]; then
+    codesign --force --options runtime --timestamp --sign "$sign_identity" "${app_path}/Contents/Frameworks/libGetTokensMenuBarSwiftUI.dylib"
+  fi
+  codesign --deep --force --options runtime --timestamp --sign "$sign_identity" "$app_path"
+}
+
 MODE="${1:-}"
 TARGET_PATH="${2:-}"
 
@@ -54,7 +67,7 @@ case "$MODE" in
     ZIP_PATH="$(mktemp -t gettokens-notary-app).zip"
     trap 'rm -f "$ZIP_PATH"' EXIT
 
-    codesign --deep --force --options runtime --timestamp --sign "$MACOS_SIGNING_IDENTITY" "$TARGET_PATH"
+    codesign_app_bundle "$MACOS_SIGNING_IDENTITY" "$TARGET_PATH"
     codesign --verify --deep --strict --verbose=2 "$TARGET_PATH"
 
     ditto -c -k --keepParent "$TARGET_PATH" "$ZIP_PATH"

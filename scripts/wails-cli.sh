@@ -107,7 +107,8 @@ install_sidecar_into_app_bundle() {
   fi
 
   cp "${sidecar_path}" "${app_macos_dir}/cli-proxy-api"
-  cp "${sidecar_meta_path}" "${app_macos_dir}/cli-proxy-api.meta.json"
+  rm -f "${app_macos_dir}/cli-proxy-api.meta.json"
+  rm -f "${app_path}/Contents/Resources/cli-proxy-api.meta.json"
   chmod +x "${app_macos_dir}/cli-proxy-api"
 }
 

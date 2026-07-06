@@ -117,6 +117,7 @@ if [[ "${OUTPUT_DIR}" != /* ]]; then
 fi
 
 PLATFORM="darwin/${ARCH}"
+WAILS_PROJECT_DIR="${ROOT_DIR}/cmd/gettokens"
 APP_PATH="${ROOT_DIR}/build/bin/GetTokens.app"
 DMG_PATH="${OUTPUT_DIR}/${ASSET_NAME}"
 RELEASE_LABEL="${LOCAL_RELEASE_LABEL:-$(TZ=Asia/Shanghai date +'%Y.%m.%d.%H')}"
@@ -128,6 +129,7 @@ if [[ "${LOCAL_MACOS_PACKAGE_PRINT_PLAN:-0}" == "1" ]]; then
 root=${ROOT_DIR}
 arch=${ARCH}
 platform=${PLATFORM}
+wails_project_dir=${WAILS_PROJECT_DIR}
 version=${VERSION}
 release_label=${RELEASE_LABEL}
 git_hash=${GIT_HASH}
@@ -205,10 +207,25 @@ verify_dmg() {
     test -d "${mount_dir}/GetTokens.app"
     test -x "${mount_dir}/GetTokens.app/Contents/MacOS/GetTokens"
     test -x "${mount_dir}/GetTokens.app/Contents/MacOS/cli-proxy-api"
+    test ! -f "${mount_dir}/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json"
+    test ! -f "${mount_dir}/GetTokens.app/Contents/Resources/cli-proxy-api.meta.json"
     file "${mount_dir}/GetTokens.app/Contents/MacOS/GetTokens"
     /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "${mount_dir}/GetTokens.app/Contents/Info.plist"
     codesign --verify --deep --strict --verbose=2 "${mount_dir}/GetTokens.app"
   )
+}
+
+codesign_app_bundle() {
+  local sign_identity="$1"
+  local app_path="$2"
+
+  if [[ -f "${app_path}/Contents/MacOS/cli-proxy-api" ]]; then
+    codesign --force --sign "${sign_identity}" "${app_path}/Contents/MacOS/cli-proxy-api"
+  fi
+  if [[ -f "${app_path}/Contents/Frameworks/libGetTokensMenuBarSwiftUI.dylib" ]]; then
+    codesign --force --sign "${sign_identity}" "${app_path}/Contents/Frameworks/libGetTokensMenuBarSwiftUI.dylib"
+  fi
+  codesign --deep --force --options runtime --sign "${sign_identity}" "${app_path}"
 }
 
 cd "${ROOT_DIR}"
@@ -234,23 +251,27 @@ export VITE_VERSION="${VERSION}"
 export VITE_GIT_HASH="${GIT_HASH}"
 export GETTOKENS_APP_PROFILE=prod
 
-"${WAILS_CMD[@]}" build \
-  -platform "${PLATFORM}" \
-  -ldflags "-X main.Version=${VERSION} -X main.ReleaseLabel=${RELEASE_LABEL}"
+(
+  cd "${WAILS_PROJECT_DIR}"
+  "${WAILS_CMD[@]}" build \
+    -platform "${PLATFORM}" \
+    -ldflags "-X main.Version=${VERSION} -X main.ReleaseLabel=${RELEASE_LABEL}"
+)
 
 bash "${SCRIPT_DIR}/install-menubar-swiftui.sh" "${APP_PATH}"
 bash "${SCRIPT_DIR}/sync-macos-bundle-version.sh" "${APP_PATH}" "${VERSION}"
 
-cp "${ROOT_DIR}/build/bin/cli-proxy-api" "${APP_PATH}/Contents/MacOS/cli-proxy-api"
-if [[ -f "${ROOT_DIR}/build/bin/cli-proxy-api.meta.json" ]]; then
-  cp "${ROOT_DIR}/build/bin/cli-proxy-api.meta.json" "${APP_PATH}/Contents/MacOS/cli-proxy-api.meta.json"
-fi
-chmod +x "${APP_PATH}/Contents/MacOS/cli-proxy-api"
+APP_MACOS_DIR="${APP_PATH}/Contents/MacOS"
+
+cp "${ROOT_DIR}/build/bin/cli-proxy-api" "${APP_MACOS_DIR}/cli-proxy-api"
+rm -f "${APP_MACOS_DIR}/cli-proxy-api.meta.json"
+rm -f "${APP_PATH}/Contents/Resources/cli-proxy-api.meta.json"
+chmod +x "${APP_MACOS_DIR}/cli-proxy-api"
 
 if [[ "${NOTARIZE}" == "1" ]]; then
   bash "${SCRIPT_DIR}/sign-notarize-macos-release.sh" app "${APP_PATH}"
 else
-  codesign --deep --force --options runtime --sign - "${APP_PATH}"
+  codesign_app_bundle - "${APP_PATH}"
   codesign --verify --deep --strict --verbose=2 "${APP_PATH}"
 fi
 

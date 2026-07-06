@@ -253,7 +253,8 @@ jobs:
         shell: bash
         run: |
           cp build/sidecar/cli-proxy-api build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
-          cp build/sidecar/cli-proxy-api.meta.json build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json
+          rm -f build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json
+          rm -f build/bin/GetTokens.app/Contents/Resources/cli-proxy-api.meta.json
           chmod +x build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
           file build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
 
@@ -267,7 +268,7 @@ jobs:
           from pathlib import Path
 
           expected = os.environ["CLI_PROXY_COMMIT"].strip()
-          meta_path = Path("build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json")
+          meta_path = Path("build/sidecar/cli-proxy-api.meta.json")
           meta = json.loads(meta_path.read_text())
           actual = str(meta.get("commit", "")).strip()
           if not actual:

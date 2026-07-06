@@ -58,8 +58,25 @@ func TestReleaseWorkflowBuildJobConsumesSidecarArtifact(t *testing.T) {
 		t.Fatal("build job missing app bundle sidecar reinstall step")
 	}
 	run := scalarValue(t, requiredValue(t, reinstall, "run"))
-	if !strings.Contains(run, "build/sidecar/cli-proxy-api") || !strings.Contains(run, "build/sidecar/cli-proxy-api.meta.json") {
+	if !strings.Contains(run, "build/sidecar/cli-proxy-api") {
 		t.Fatalf("reinstall sidecar step should copy from downloaded artifact, got:\n%s", run)
+	}
+	for _, unwanted := range []string{
+		"Contents/MacOS/cli-proxy-api.meta.json",
+		"Contents/Resources/cli-proxy-api.meta.json",
+	} {
+		if !strings.Contains(run, "rm -f build/bin/GetTokens.app/"+unwanted) {
+			t.Fatalf("reinstall sidecar step should remove bundled metadata %s, got:\n%s", unwanted, run)
+		}
+	}
+
+	verifyMetadata := findStepByName(t, steps, "Verify CLIProxyAPI metadata")
+	if verifyMetadata == nil {
+		t.Fatal("build job missing CLIProxyAPI metadata verification step")
+	}
+	verifyRun := scalarValue(t, requiredValue(t, verifyMetadata, "run"))
+	if !strings.Contains(verifyRun, `Path("build/sidecar/cli-proxy-api.meta.json")`) {
+		t.Fatalf("metadata verification should read sidecar artifact metadata, got:\n%s", verifyRun)
 	}
 }
 
