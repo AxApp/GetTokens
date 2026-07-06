@@ -43,7 +43,7 @@
 - 实际结果：待确认
 - 验收标准：确认根因并修复图标资源或配置；必要时验证构建产物图标
 - 测试计划：资源校验、配置校验；如涉及打包脚本则运行相关测试
-- 验证结果：已确认 `build/appicon.png` 在提交 `0821d19` 被替换成 Wails 风格 W 图标；已恢复为 `logo-brutalist-key.png` 同款品牌图，两个文件 SHA-256 一致。
+- 验证结果：已确认 `build/appicon.png` 在提交 `0821d19` 被替换成 Wails 风格 W 图标；已恢复为 `resources/branding/logo-brutalist-key.png` 同款品牌图，两个文件 SHA-256 一致。
 - 截图：
 - 备注：
 
