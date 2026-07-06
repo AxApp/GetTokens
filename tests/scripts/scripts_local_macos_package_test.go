@@ -20,6 +20,7 @@ func TestBuildLocalMacOSPackageScriptPlan(t *testing.T) {
 		"--output-dir", outputDir,
 		"--skip-tests",
 	)
+	cmd.Dir = repoRoot(t)
 	cmd.Env = append(os.Environ(), "LOCAL_MACOS_PACKAGE_PRINT_PLAN=1")
 
 	output, err := cmd.CombinedOutput()

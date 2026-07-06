@@ -8,7 +8,7 @@ import (
 )
 
 func TestWailsDevFrontendBindsToLAN(t *testing.T) {
-	data, err := os.ReadFile("frontend/package.json")
+	data, err := os.ReadFile(repoPath(t, "frontend", "package.json"))
 	if err != nil {
 		t.Fatalf("read frontend/package.json: %v", err)
 	}

@@ -18,6 +18,7 @@ func TestPackageMacOSDMGScript(t *testing.T) {
 
 	dmgPath := filepath.Join(t.TempDir(), "GetTokens.dmg")
 	cmd := exec.Command("bash", "scripts/package-macos-dmg.sh", dmgPath, appPath)
+	cmd.Dir = repoRoot(t)
 	cmd.Env = append(os.Environ(), "PRINT_CREATE_DMG_COMMAND=1")
 
 	output, err := cmd.CombinedOutput()

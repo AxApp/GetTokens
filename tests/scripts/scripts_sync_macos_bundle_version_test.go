@@ -42,6 +42,7 @@ func TestSyncMacOSBundleVersionScriptUpdatesBinaryPlist(t *testing.T) {
 	}
 
 	cmd := exec.Command("bash", "scripts/sync-macos-bundle-version.sh", appPath, "v1.2.3")
+	cmd.Dir = repoRoot(t)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("sync-macos-bundle-version.sh error = %v, output = %s", err, output)
 	}

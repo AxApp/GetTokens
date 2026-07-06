@@ -16,6 +16,7 @@ func TestSyncMacOSBundleVersionScript(t *testing.T) {
 		appPath := createTempAppBundle(t)
 
 		cmd := exec.Command("bash", "scripts/sync-macos-bundle-version.sh", appPath, "v0.1.10")
+		cmd.Dir = repoRoot(t)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			t.Fatalf("sync-macos-bundle-version.sh error = %v, output = %s", err, output)
@@ -34,6 +35,7 @@ func TestSyncMacOSBundleVersionScript(t *testing.T) {
 		appPath := createTempAppBundle(t)
 
 		cmd := exec.Command("bash", "scripts/sync-macos-bundle-version.sh", appPath, "dev")
+		cmd.Dir = repoRoot(t)
 		output, err := cmd.CombinedOutput()
 		if err == nil {
 			t.Fatalf("sync-macos-bundle-version.sh expected error, output = %s", output)

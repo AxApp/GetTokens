@@ -104,7 +104,7 @@ func TestReleaseWorkflowKeepsMacOSReleaseAssets(t *testing.T) {
 
 func readReleaseWorkflow(t *testing.T) *yaml.Node {
 	t.Helper()
-	content, err := os.ReadFile(".github/workflows/release.yml")
+	content, err := os.ReadFile(repoPath(t, ".github", "workflows", "release.yml"))
 	if err != nil {
 		t.Fatalf("read release workflow: %v", err)
 	}
