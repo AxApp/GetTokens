@@ -8,9 +8,9 @@ import (
 
 func TestWailsAppIconUsesBrandingLogo(t *testing.T) {
 	appIcon := readFileSHA256(t, repoPath(t, "build", "appicon.png"))
-	brandLogo := readFileSHA256(t, repoPath(t, "resources", "branding", "logo-brutalist-key.png"))
+	brandLogo := readFileSHA256(t, repoPath(t, "resources", "branding", "logo-gettokens-appicon.png"))
 	if appIcon != brandLogo {
-		t.Fatalf("build/appicon.png must match resources/branding/logo-brutalist-key.png")
+		t.Fatalf("build/appicon.png must match resources/branding/logo-gettokens-appicon.png")
 	}
 }
 
