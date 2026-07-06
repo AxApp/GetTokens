@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BarChart3, RefreshCw, X } from 'lucide-react';
+import { BarChart3, RefreshCw, Search, X } from 'lucide-react';
 import { Button, Tooltip } from 'antd';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
@@ -56,6 +56,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   const [activeProjectId, setActiveProjectId] = useState('');
   const [activeFilter, setActiveFilter] = useState<SessionFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
   const [compactLayout, setCompactLayout] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= COMPACT_LAYOUT_MAX_WIDTH : false,
   );
@@ -353,6 +354,18 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                 {copy.refreshing}
               </div>
             ) : null}
+            <Tooltip title={copy.searchPlaceholder}>
+              <Button
+                size="small"
+                aria-label={copy.searchPlaceholder}
+                aria-pressed={searchOpen || Boolean(searchQuery.trim())}
+                onClick={() => setSearchOpen((value) => !value)}
+                icon={<Search className="h-5 w-5" strokeWidth={2.4} />}
+                className={`inline-flex h-10 w-10 items-center justify-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-raised)] text-[var(--gt-ink-primary)] transition-colors hover:border-[var(--gt-border-strong)] hover:bg-[var(--gt-surface-muted)] ${
+                  searchOpen || searchQuery.trim() ? 'border-[var(--gt-border-strong)] bg-[var(--gt-surface-muted)]' : ''
+                }`}
+              />
+            </Tooltip>
             {workspace === 'codex' ? (
               <Tooltip title={copy.analysisOpen}>
                 <Button
@@ -388,11 +401,13 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
         data-session-management-workbench="true"
         className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm"
       >
-        <SessionManagementSearchBar
-          copy={copy}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
+        {searchOpen || searchQuery.trim() ? (
+          <SessionManagementSearchBar
+            copy={copy}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+        ) : null}
         <div className={`flex min-h-0 flex-1 ${compactLayout ? 'flex-col' : 'flex-row'}`}>
           <div className={`flex min-h-0 flex-col border-[var(--gt-border-subtle)] ${compactLayout ? 'w-full border-b' : 'w-[20rem] shrink-0 border-r'}`}>
             <ProjectListPanel

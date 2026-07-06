@@ -28,7 +28,6 @@ const productionAppPages: ReadonlySet<AppPage> = new Set([
   'account-import',
   'session-management',
   'vendor-status',
-  'proxy-pool',
   'codex',
   'claude',
   'usage-desk',

@@ -4557,36 +4557,6 @@ export namespace main {
 		    return a;
 		}
 	}
-	export class FetchProxySubscriptionInput {
-	    url: string;
-	    sourceLabel?: string;
-
-	    static createFrom(source: any = {}) {
-	        return new FetchProxySubscriptionInput(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	        this.sourceLabel = source["sourceLabel"];
-	    }
-	}
-	export class FetchProxySubscriptionResult {
-	    url: string;
-	    sourceLabel: string;
-	    content: string;
-
-	    static createFrom(source: any = {}) {
-	        return new FetchProxySubscriptionResult(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.url = source["url"];
-	        this.sourceLabel = source["sourceLabel"];
-	        this.content = source["content"];
-	    }
-	}
 	export class GetCodexSkillFilePreviewInput {
 	    skillPath: string;
 	    filePath: string;
@@ -5776,44 +5746,6 @@ export namespace main {
 	        this.denyAccountIDs = source["denyAccountIDs"];
 	        this.orderAccountIDs = source["orderAccountIDs"];
 	        this.allowFallback = source["allowFallback"];
-	    }
-	}
-	export class ProbeProxyNodeInput {
-	    proxyUrl: string;
-	    targetUrl?: string;
-
-	    static createFrom(source: any = {}) {
-	        return new ProbeProxyNodeInput(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.proxyUrl = source["proxyUrl"];
-	        this.targetUrl = source["targetUrl"];
-	    }
-	}
-	export class ProbeProxyNodeResult {
-	    proxyUrl: string;
-	    targetUrl: string;
-	    success: boolean;
-	    statusCode?: number;
-	    latencyMs: number;
-	    checkedAt: string;
-	    message: string;
-
-	    static createFrom(source: any = {}) {
-	        return new ProbeProxyNodeResult(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.proxyUrl = source["proxyUrl"];
-	        this.targetUrl = source["targetUrl"];
-	        this.success = source["success"];
-	        this.statusCode = source["statusCode"];
-	        this.latencyMs = source["latencyMs"];
-	        this.checkedAt = source["checkedAt"];
-	        this.message = source["message"];
 	    }
 	}
 	export class ProjectCandidatePoolRule {

@@ -34,12 +34,17 @@ test('account detail frame uses the fullscreen detail modal shell', async () => 
   assert.match(frameSource, /size="detail"/);
   assert.match(modalFrameSource, /import \{ Modal \} from 'antd'/);
   assert.match(modalFrameSource, /const detailFullscreen = size === 'detail'/);
-  assert.match(modalFrameSource, /position === 'fixed' && !detailFullscreen/);
+  assert.match(modalFrameSource, /const insetForSidebar = position === 'fixed' && !detailFullscreen && !coverViewport/);
+  assert.match(modalFrameSource, /const modalWidth = insetForSidebar \? sidebarInsetModalWidths\[size\] : modalWidths\[size\]/);
+  assert.match(modalFrameSource, /100vw - var\(--app-sidebar-width, 0px\) - 3rem/);
   assert.match(modalFrameSource, /detailFullscreen[\s\S]*\? 'items-start justify-items-center overflow-hidden px-6 py-6 sm:px-8 sm:py-8'/);
-  assert.match(modalFrameSource, /detailFullscreen[\s\S]*h-\[calc\(100vh-3rem\)\]/);
-  assert.match(modalFrameSource, /sm:h-\[calc\(100vh-4rem\)\]/);
+  assert.match(modalFrameSource, /detailFullscreen[\s\S]*h-\[calc\(100vh_-_3rem\)\]/);
+  assert.match(modalFrameSource, /sm:h-\[calc\(100vh_-_4rem\)\]/);
+  assert.doesNotMatch(modalFrameSource, /calc\([^)]*[a-z%]\-[0-9.]/);
+  assert.doesNotMatch(modalFrameSource, /max-[hw]-\[calc\([^'"]* - /);
   assert.match(modalFrameSource, /const shouldUseBodyContainer = detailFullscreen \|\| portal/);
   assert.match(modalFrameSource, /getContainer=\{getModalContainer\}/);
+  assert.match(modalFrameSource, /width=\{modalWidth\}/);
   assert.doesNotMatch(modalFrameSource, /createPortal\(/);
 });
 
@@ -856,37 +861,17 @@ test('codex auth-file detail is database config management, not raw file summary
   assert.doesNotMatch(source, /脱敏/);
   assert.doesNotMatch(source, /复制原文/);
 });
-test('account detail proxy route only selects saved proxy nodes', async () => {
-  const source = await readFile(new URL('../components/AccountProxyRouteSection.tsx', import.meta.url), 'utf8');
+test('account detail proxy route edits the account proxy url without proxy pool dependencies', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const targetSource = sourceBlock(source, 'function CredentialProxyRoutePanel', 'function VendorCredentialInputField');
 
-  assert.match(source, /data-account-proxy-route-editor="saved-node-only"/);
-  assert.doesNotMatch(source, /\(\['inherit', 'direct', 'custom'\] as const\)\.map/);
-  assert.doesNotMatch(source, /onModeChange: \(mode: AccountProxyMode\) => void/);
-  assert.match(source, /账号详情只选择已保存的代理池节点/);
-});
-
-test('account detail proxy route uses the quiet workspace control shell', async () => {
-  const source = await readFile(new URL('../components/AccountProxyRouteSection.tsx', import.meta.url), 'utf8');
-
-  assert.match(source, /const accountProxyRouteSummaryPillClass =/);
-  assert.match(source, /const accountProxyRouteEditorClass =/);
-  assert.match(source, /const accountProxyRouteHintClass =/);
-  assert.match(source, /const accountProxyRouteSelectClass =/);
-  assert.match(source, /const accountProxyRouteEmptyClass =/);
-  assert.match(source, /data-account-proxy-route-summary="quiet"/);
-  assert.match(source, /data-account-proxy-route-select="saved-node"/);
-  assert.match(source, /data-account-proxy-route-empty="quiet"/);
-  assert.match(source, /--gt-surface-canvas/);
-  assert.match(source, /--gt-surface-muted/);
-  assert.match(source, /--gt-border-subtle/);
-  assert.match(source, /--gt-ink-primary/);
-  assert.doesNotMatch(source, /input-swiss/);
-  assert.doesNotMatch(source, /!border-2/);
-  assert.doesNotMatch(source, /border-2/);
-  assert.doesNotMatch(source, /bg-\[var\(--bg-surface\)\]/);
-  assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
-  assert.doesNotMatch(source, /uppercase/);
-  assert.doesNotMatch(source, /tracking-\[/);
+  assert.match(targetSource, /data-account-credential-list-item="proxy-route"/);
+  assert.match(targetSource, /direct 表示直连/);
+  assert.match(targetSource, /onProxyUrlChange\?\.\(nextDraft\.proxyUrl\)/);
+  assert.doesNotMatch(source, /AccountProxyRouteSection/);
+  assert.doesNotMatch(source, /proxy-pool/);
+  assert.doesNotMatch(source, /readStoredProxyNodes/);
+  assert.doesNotMatch(source, /代理池/);
 });
 
 test('auth-file compatible model catalog renders source-to-route mapping cards', async () => {

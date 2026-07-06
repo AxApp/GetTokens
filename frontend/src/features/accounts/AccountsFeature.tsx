@@ -187,6 +187,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     testSelectedApiKeyBillingCurl,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
+    refreshAccountQuotasBatch,
     setSearchTerm,
     setGroupMode,
     setSortMode,
@@ -301,14 +302,14 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     setRuntimeRefreshing(true);
     try {
       await Promise.allSettled([
-        ...accounts.map((account) => refreshCodexQuota(account)),
+        refreshAccountQuotasBatch(accounts),
         refreshAccountUsage(accounts),
         refreshAccountRateLimits(accounts),
       ]);
     } finally {
       setRuntimeRefreshing(false);
     }
-  }, [accounts, refreshAccountRateLimits, refreshAccountUsage, refreshCodexQuota, runtimeRefreshing]);
+  }, [accounts, refreshAccountQuotasBatch, refreshAccountRateLimits, refreshAccountUsage, runtimeRefreshing]);
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const [accountModelNamesByID, setAccountModelNamesByID] = useState<Record<string, string[]>>({});
@@ -675,13 +676,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const refreshGroupQuota = useCallback(
     (groupAccounts: AccountRecord[]) => {
-      groupAccounts.forEach((account) => {
-        void refreshCodexQuota(account);
-      });
+      void refreshAccountQuotasBatch(groupAccounts);
       void refreshAccountUsage(groupAccounts);
       void refreshAccountRateLimits(groupAccounts);
     },
-    [refreshAccountRateLimits, refreshAccountUsage, refreshCodexQuota],
+    [refreshAccountQuotasBatch, refreshAccountRateLimits, refreshAccountUsage],
   );
 
   const setGroupDisabled = useCallback(

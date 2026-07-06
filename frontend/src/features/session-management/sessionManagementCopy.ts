@@ -32,12 +32,6 @@ export function createSessionManagementCopy(
       isEnglish
         ? `Active ${project.activeSessionCount} / Archived ${project.archivedSessionCount}`
         : `活跃 ${project.activeSessionCount} / 归档 ${project.archivedSessionCount}`,
-    projectSessionTag: (project: ProjectSummary) =>
-      isEnglish ? `S ${project.sessionCount}` : `会 ${project.sessionCount}`,
-    projectActiveTag: (project: ProjectSummary) =>
-      isEnglish ? `A ${project.activeSessionCount}` : `活 ${project.activeSessionCount}`,
-    projectArchivedTag: (project: ProjectSummary) =>
-      isEnglish ? `R ${project.archivedSessionCount}` : `归 ${project.archivedSessionCount}`,
     sessionSubtitleLine: (session: {
       summary: string;
       messageCount: number;

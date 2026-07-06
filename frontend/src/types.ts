@@ -6,7 +6,6 @@ export type AppPage =
   | "account-import"
   | "session-management"
   | "vendor-status"
-  | "proxy-pool"
   | "codex"
   | "claude"
   | "usage-desk"

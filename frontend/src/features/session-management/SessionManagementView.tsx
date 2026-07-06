@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowRight, BarChart3, Check, MoreVertical, Pencil, RefreshCw, X } from 'lucide-react';
-import { Alert, Button, Tag, Tooltip } from 'antd';
+import { Alert, Button, Tooltip } from 'antd';
 import { Combobox } from '../../components/ui/Combobox.tsx';
 import SearchInput from '../../components/ui/SearchInput';
 import type {
@@ -15,7 +15,6 @@ import type {
 } from './model.ts';
 import {
   formatSessionMetadataDate,
-  shouldUseCompactSessionMetadata,
   shouldUseSessionsPanelActionMenu,
 } from './sessionManagementUtils.ts';
 
@@ -32,9 +31,6 @@ export interface SessionManagementCopy {
   noSessions: string;
   noMessages: string;
   projectStatusLine: (project: ProjectSummary) => string;
-  projectSessionTag: (project: ProjectSummary) => string;
-  projectActiveTag: (project: ProjectSummary) => string;
-  projectArchivedTag: (project: ProjectSummary) => string;
   sessionSubtitleLine: (session: {
     summary: string;
     messageCount: number;
@@ -362,37 +358,23 @@ export function ProjectListPanel({
                   isActive ? 'bg-[var(--gt-ink-primary)]' : 'bg-transparent group-hover:bg-[var(--gt-ink-muted)]/35'
                 }`} />
 
-                <Button
-                  size="small"
+                <button
+                  type="button"
+                  data-session-management-project-row="gmail-sidebar"
                   onClick={() => onSelectProject(project.id, compactLayout)}
-                  className="flex min-w-0 flex-1 flex-col gap-2.5 py-4 pl-4 pr-3 text-left"
+                  className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2 text-left transition-colors"
+                  aria-label={`${project.name} · ${copy.projectStatusLine(project)}`}
+                  title={`${project.name} · ${copy.projectStatusLine(project)}`}
                 >
-                  <div className={`truncate text-[length:var(--gt-font-size-lg)] font-semibold leading-none ${
-                    isActive ? 'text-[var(--gt-ink-primary)]' : 'text-[var(--gt-ink-primary)]'
-                  }`}>
+                  <span className="min-w-0 truncate text-[length:var(--gt-font-size-sm)] font-semibold leading-5 text-[var(--gt-ink-primary)]">
                     {project.name}
-                  </div>
-                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    {[
-                      copy.projectSessionTag(project),
-                      copy.projectActiveTag(project),
-                      copy.projectArchivedTag(project),
-                    ].map((tag) => (
-                      <Tag
-                        key={tag}
-                        color={isActive ? undefined : 'default'}
-                        className="text-[length:var(--gt-font-size-2xs)] font-normal leading-none"
-                      >
-                        {tag}
-                      </Tag>
-                    ))}
-                    <span className={`truncate text-[length:var(--gt-font-size-2xs)] font-normal leading-none ${
-                      isActive ? 'text-[var(--gt-ink-muted)]' : 'text-[var(--gt-ink-muted)]/70'
-                    }`}>
-                      {getProviderDisplayLabel(project.providerSummary, copy.unknownProvider)}
-                    </span>
-                  </div>
-                </Button>
+                  </span>
+                  <span className={`rounded-full px-2 py-0.5 text-[length:var(--gt-font-size-2xs)] font-semibold leading-none tabular-nums ${
+                    isActive ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]' : 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)]'
+                  }`}>
+                    {project.sessionCount}
+                  </span>
+                </button>
 
                 {onOpenProviderEditor ? (
                   <div className="flex shrink-0 items-center px-3">
@@ -402,11 +384,7 @@ export function ProjectListPanel({
                     onClick={() => onOpenProviderEditor(project.id)}
                     aria-label="Edit provider mapping"
                     icon={<Pencil className="h-3 w-3" strokeWidth={2.5} />}
-                    className={`flex h-7 w-7 items-center justify-center rounded border transition-colors ${
-                      isActive
-                        ? 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-primary)] hover:border-[var(--gt-border-strong)]'
-                        : 'border-transparent text-[var(--gt-ink-muted)]/45 hover:border-[var(--gt-border-subtle)] hover:text-[var(--gt-ink-primary)]'
-                    }`}
+                    className="flex h-7 w-7 items-center justify-center rounded border border-transparent bg-transparent text-[var(--gt-ink-muted)]/55 transition-colors hover:bg-transparent hover:text-[var(--gt-ink-primary)]"
                   />
                   </div>
                 ) : null}
@@ -858,7 +836,6 @@ export function SessionsPanel({
   const [panelWidth, setPanelWidth] = useState(0);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const useActionMenu = shouldUseSessionsPanelActionMenu(panelWidth);
-  const useCompactSessionMetadata = shouldUseCompactSessionMetadata(panelWidth);
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -1034,18 +1011,18 @@ export function SessionsPanel({
           <div className="min-h-0 overflow-y-auto overflow-x-hidden">
             {visibleSessions.length ? (
               visibleSessions.map((session) => (
-                <Button
+                <button
                   key={session.id}
-                  size="small"
-                  type="text"
+                  type="button"
+                  data-session-management-session-row="gmail-list"
                   onClick={() => onSelectSession(session.id)}
-                  block
-                  className="group block w-full rounded-sm border-l-2 border-l-transparent border-b border-b-[var(--gt-border-subtle)] px-6 py-4 text-left transition-colors hover:border-l-[var(--gt-ink-muted)]/45 hover:bg-[var(--gt-surface-muted)] active:bg-[var(--gt-surface-muted)]"
+                  className="group block w-full rounded-sm border-l-2 border-l-transparent border-b border-b-[var(--gt-border-subtle)] px-6 py-2.5 text-left transition-colors hover:border-l-[var(--gt-ink-muted)]/45 hover:bg-[var(--gt-surface-muted)] active:bg-[var(--gt-surface-muted)]"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="line-clamp-2 min-w-0 flex-1 break-words text-[length:var(--gt-font-size-lg)] font-semibold leading-tight text-[var(--gt-ink-primary)]">
-                      {session.displayTitle || session.title || 'UNTITLED SESSION'}
-                    </div>
+                  <span className="line-clamp-2 min-w-0 break-words text-[length:var(--gt-font-size-md)] font-semibold leading-5 text-[var(--gt-ink-primary)]">
+                    {session.displayTitle || session.title || 'UNTITLED SESSION'}
+                  </span>
+
+                  <span className="mt-1.5 flex min-w-0 items-center gap-2 text-[length:var(--gt-font-size-2xs)] font-normal leading-none text-[var(--gt-ink-muted)]">
                     <span className={`shrink-0 rounded border px-2 py-0.5 text-[length:var(--gt-font-size-2xs)] font-normal leading-none ${
                       session.status === 'active'
                         ? 'border-[color-mix(in_srgb,var(--gt-status-success)_35%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-ink-primary)]'
@@ -1053,30 +1030,14 @@ export function SessionsPanel({
                     }`}>
                       {session.status}
                     </span>
-                  </div>
-
-                  <div
-                    className={`mt-3 flex items-center border-t border-[var(--gt-border-subtle)] pt-2 text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)] ${
-                      useCompactSessionMetadata ? 'justify-between gap-x-6' : 'gap-x-2'
-                    }`}
-                  >
-                    {useCompactSessionMetadata ? (
-                      <>
-                        <span>{session.messageCount}</span>
-                        <span className="ml-auto shrink-0">{formatSessionMetadataDate(session.updatedAt)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>{getProviderDisplayLabel(session.provider, copy.unknownProvider)}</span>
-                        <span>·</span>
-                        <span>{session.messageCount} msgs</span>
-                        <span>·</span>
-                        <span className="max-w-[8rem] truncate">{getFileName(session.fileLabel, session.id)}</span>
-                        <span className="ml-auto shrink-0">{session.updatedAt}</span>
-                      </>
-                    )}
-                  </div>
-                </Button>
+                    <span className="tabular-nums">
+                      {session.messageCount}
+                    </span>
+                    <span className="tabular-nums">
+                      {formatSessionMetadataDate(session.updatedAt)}
+                    </span>
+                  </span>
+                </button>
               ))
             ) : (
               <StatePanel

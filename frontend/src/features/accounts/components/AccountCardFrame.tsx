@@ -8,6 +8,7 @@ interface AccountCardFrameProps {
   cardID?: string;
   style?: CSSProperties;
   interactive?: boolean;
+  refreshing?: boolean;
   openDetailsLabel?: string;
   debugLabel?: string;
   onOpen: () => void;
@@ -19,6 +20,7 @@ export default function AccountCardFrame({
   cardID,
   style,
   interactive = true,
+  refreshing = false,
   openDetailsLabel = 'Open account details',
   debugLabel,
   onOpen,
@@ -46,6 +48,8 @@ export default function AccountCardFrame({
       data-account-card="true"
       data-account-card-id={cardID}
       data-account-card-open-details={interactive ? 'true' : undefined}
+      data-account-card-refreshing={refreshing ? 'true' : undefined}
+      aria-busy={refreshing || undefined}
       hoverable={interactive}
       className={`h-full ${interactive ? 'cursor-pointer' : ''} ${className}`}
       classNames={{ body: 'flex h-full flex-col !p-0' }}

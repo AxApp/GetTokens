@@ -56,6 +56,7 @@ test('AccountsHeader menu row styles stay flat instead of card-like', () => {
   const source = readFileSync(new URL('../components/AccountsHeader.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /ACCOUNT_HEADER_MENU_ITEM_CLASS/);
+  assert.match(source, /style=\{ACCOUNT_HEADER_MENU_PANEL_STYLE\}/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /text-\[length:var\(--gt-font-size-md\)\]/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /min-h-11/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /leading-snug/);

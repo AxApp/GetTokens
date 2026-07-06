@@ -27,26 +27,24 @@ const accountImportEyebrowClass =
   'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportTitleClass =
   'text-[length:var(--gt-font-size-xl)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
-const accountImportMetaChipClass =
-  'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2.5 py-1 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportErrorClass =
   'shrink-0 border-t border-[var(--gt-status-danger)] bg-[color-mix(in_srgb,var(--gt-status-danger)_10%,transparent)] px-6 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-status-danger)]';
 const accountImportMainClass =
   'min-h-0 flex-1 overflow-auto';
 const accountImportGridClass =
-  'grid gap-5 p-6 lg:grid-cols-[380px_1fr] lg:items-start';
+  'grid gap-5 p-6 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.95fr)] lg:items-start';
 const accountImportPanelClass =
   'grid min-w-0 gap-4 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4';
 const accountImportDropzoneClass = (active: boolean) =>
-  `w-full grid min-h-40 place-items-center rounded border px-5 py-6 text-center transition-[background-color,border-color] disabled:opacity-45 ${
+  `!h-auto !min-w-0 w-full max-w-full overflow-hidden whitespace-normal grid min-h-40 place-items-center rounded border px-5 py-6 text-center transition-[background-color,border-color] disabled:opacity-45 ${
     active
       ? 'border-[var(--gt-ink-primary)] bg-[color-mix(in_srgb,var(--gt-ink-primary)_8%,var(--gt-surface-muted))]'
       : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
   }`;
 const accountImportDropzoneTitleClass =
-  'text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
+  'max-w-full text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
 const accountImportDropzoneHintClass =
-  'max-w-sm text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed tracking-normal text-[var(--gt-ink-muted)]';
+  'max-w-full whitespace-normal break-words text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportQueueHeaderClass =
   'flex items-center justify-between border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3 shrink-0';
 const accountImportQueueEmptyClass =
@@ -293,7 +291,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
     // Double check validity before final submission
     const invalidItems = selectedItems.filter((item) => !validateAccountImportPayloadItem(item.payload).valid);
     if (invalidItems.length > 0) {
-      setError(t('import_account_invalid_item').replace('{reason}', 'Please fix fields in editing cards first'));
+      setError(t('accounts.import_account_invalid_item').replace('{reason}', 'Please fix fields in editing cards first'));
       return;
     }
 
@@ -333,10 +331,6 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
             </h2>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <span className={accountImportMetaChipClass}>AUTO DETECT</span>
-          <span className={accountImportMetaChipClass}>JSON ARRAY</span>
-        </div>
       </div>
 
       {/* Smart Clipboard Notification */}
@@ -348,7 +342,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
             message={
               <div className="flex items-center justify-between gap-4">
                 <span className="text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-primary)]">
-                  {t('import_account_clipboard_banner')}
+                  {t('accounts.import_account_clipboard_banner')}
                 </span>
                 <Button
                   type="primary"
@@ -356,7 +350,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                   onClick={handleImportFromClipboard}
                   icon={<ClipboardPaste className="h-3.5 w-3.5" />}
                 >
-                  {t('import_account_clipboard_action')}
+                  {t('accounts.import_account_clipboard_action')}
                 </Button>
               </div>
             }
@@ -402,6 +396,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                         }}
                       >
                         <Button
+                          block
                           size="small"
                           data-account-import-dropzone
                           onDragEnter={handleFileDragOver}
@@ -411,7 +406,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                           disabled={readingFiles || submitting}
                           className={accountImportDropzoneClass(isFileDragOver)}
                         >
-                          <span className="grid justify-items-center gap-3">
+                          <span className="grid min-w-0 max-w-full justify-items-center gap-3 whitespace-normal">
                             {readingFiles ? (
                               <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
@@ -487,7 +482,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                   onChange={(e: any) => handleToggleSelectAll(e.target.checked)}
                 >
                   <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-secondary)]">
-                    {t('import_account_select_all')} ({selectedIds.size}/{queueItems.length})
+                    {t('accounts.import_account_select_all')} ({selectedIds.size}/{queueItems.length})
                   </span>
                 </Checkbox>
               </div>
@@ -500,7 +495,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
                   onClick={handleClearAll}
                   disabled={submitting}
                 >
-                  {t('import_account_clear_all')}
+                  {t('accounts.import_account_clear_all')}
                 </Button>
               )}
             </header>
@@ -531,7 +526,7 @@ export default function AccountImportPage({ onDone }: AccountImportPageProps) {
         <div className={accountImportSummaryClass}>
           {selectedIds.size === 0
             ? t('accounts.import_account_queue_empty')
-            : t('import_account_selected_summary')
+            : t('accounts.import_account_selected_summary')
                 .replace('{selected}', String(selectedIds.size))
                 .replace('{total}', String(queueItems.length))
                 .replace('{authFiles}', String(selectedSummary.authFiles))

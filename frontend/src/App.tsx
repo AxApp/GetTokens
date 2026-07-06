@@ -46,7 +46,6 @@ const AccountsPage = lazyPage(() => import('./pages/AccountsPage'), '/src/pages/
 const ClaudePage = lazyPage(() => import('./pages/ClaudePage'), '/src/pages/ClaudePage.tsx');
 const CodexPage = lazyPage(() => import('./pages/CodexPage'), '/src/pages/CodexPage.tsx');
 const DebugPage = lazyPage(() => import('./pages/DebugPage'), '/src/pages/DebugPage.tsx');
-const ProxyPoolPage = lazyPage(() => import('./pages/ProxyPoolPage'), '/src/pages/ProxyPoolPage.tsx');
 const SettingsPage = lazyPage(() => import('./pages/SettingsPage'), '/src/pages/SettingsPage.tsx');
 const StatusPage = lazyPage(() => import('./pages/StatusPage'), '/src/pages/StatusPage.tsx');
 
@@ -162,9 +161,6 @@ function AppShell() {
     }
     if (activePage === 'account-import') {
       return <AccountImportPage onDone={() => setActivePage('accounts')} />;
-    }
-    if (activePage === 'proxy-pool') {
-      return <ProxyPoolPage />;
     }
     if (activePage === 'codex') {
       return <CodexPage workspace={activeCodexWorkspace} sidecarStatus={sidecarStatus} liveSessionsView={activeCodexLiveSessionsView} onLiveSessionsViewChange={setActiveCodexLiveSessionsView} />;

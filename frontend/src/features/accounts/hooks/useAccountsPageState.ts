@@ -910,6 +910,7 @@ export default function useAccountsPageState({
     testSelectedApiKeyBillingCurl,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
+    refreshAccountQuotasBatch: refreshCodexQuotasBatch,
     setSearchTerm,
     setGroupMode,
     setSortMode,

@@ -24,7 +24,6 @@ func TestRootGoFilesLiveUnderWailsCommand(t *testing.T) {
 		"app_types.go",
 		"app_mappers.go",
 		"main.go",
-		"proxy_pool.go",
 		"wails.json",
 	} {
 		if _, err := os.Stat(repoPath(t, "cmd", "gettokens", name)); err != nil {

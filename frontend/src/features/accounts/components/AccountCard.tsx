@@ -102,7 +102,9 @@ export default function AccountCard({
 }: AccountCardProps) {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(defaultActionMenuOpen);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
+  const [refreshFeedback, setRefreshFeedback] = useState(false);
   const copyResetTimerRef = useRef<number | null>(null);
+  const refreshFeedbackTimerRef = useRef<number | null>(null);
   const quotaDisplay = buildQuotaDisplay(account, quotaState);
   const billing = quotaState?.quota ? extractBilling(quotaState.quota) : undefined;
   const refreshAction = buildAccountCardRefreshAction({
@@ -158,8 +160,22 @@ export default function AccountCard({
       if (copyResetTimerRef.current !== null) {
         window.clearTimeout(copyResetTimerRef.current);
       }
+      if (refreshFeedbackTimerRef.current !== null) {
+        window.clearTimeout(refreshFeedbackTimerRef.current);
+      }
     };
   }, []);
+
+  function showRefreshFeedback() {
+    setRefreshFeedback(true);
+    if (refreshFeedbackTimerRef.current !== null) {
+      window.clearTimeout(refreshFeedbackTimerRef.current);
+    }
+    refreshFeedbackTimerRef.current = window.setTimeout(() => {
+      setRefreshFeedback(false);
+      refreshFeedbackTimerRef.current = null;
+    }, 900);
+  }
 
   async function copyText(value: string) {
     try {
@@ -219,6 +235,7 @@ export default function AccountCard({
       failureReason={failureReason}
       badges={badges}
       usageSummary={usageSummary}
+      refreshFeedback={refreshFeedback}
       usageRefreshing={usageRefreshing}
       quotaDisplay={quotaDisplay}
       billing={billing}
@@ -254,7 +271,10 @@ export default function AccountCard({
                     strokeWidth={2}
                   />}
                   aria-label={t(refreshAction.labelKey)}
-                  onClick={() => onRefreshQuota(account)}
+                  onClick={() => {
+                    showRefreshFeedback();
+                    onRefreshQuota(account);
+                  }}
                   disabled={!ready || refreshAction.disabled}
                 />
               </Tooltip>

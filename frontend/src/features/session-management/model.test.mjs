@@ -256,7 +256,7 @@ test('session analysis opens from header through scope selector and detail modal
   assert.match(viewSource, /data-session-management-modal="provider-merge"/, 'provider merge must use the current modal shell contract');
   assert.match(viewSource, /data-session-management-modal="session-detail"/, 'session detail must use the current modal shell contract');
   assert.match(viewSource, /const sessionManagementModalPanelClass = 'flex w-full flex-col overflow-hidden rounded-md border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\] shadow-sm'/);
-  assert.match(viewSource, /import \{ Alert, Button, Tag, Tooltip \} from 'antd';/);
+  assert.match(viewSource, /import \{ Alert, Button, Tooltip \} from 'antd';/);
   assert.match(viewSource, /<Button[\s\S]*type="primary"[\s\S]*aria-busy=\{saving\}/);
   assert.doesNotMatch(viewSource, /className="btn-swiss/, 'session-management modals must not use the old swiss button skin');
   assert.doesNotMatch(viewSource, /flex max-h-\[90vh\] w-full max-w-[^"]+ border-4 border-\[var\(--gt-border-strong\)\]/, 'modals must not keep the old thick border shell');
@@ -276,14 +276,22 @@ test('session management workbench uses the current quiet workspace layout', asy
   assert.doesNotMatch(featureSource, /\btransition(?![-\[])/, 'feature shell controls must not use broad transition');
   assert.doesNotMatch(featureSource, /titleClassName="text-\[length:var\(--font-size-display-sm\)\]/, 'page title must not keep the old oversized brutalist display scale');
   assert.doesNotMatch(featureSource, /className="btn-swiss/, 'feature header and compact shell actions must not use the old swiss button skin');
+  assert.match(featureSource, /aria-pressed=\{searchOpen \|\| Boolean\(searchQuery\.trim\(\)\)\}/, 'search must collapse into a header icon button by default');
+  assert.match(featureSource, /searchOpen \|\| searchQuery\.trim\(\) \? \(/, 'search rail must render only after the header search action is active');
   assert.match(viewSource, /data-session-management-search-frame="true"/, 'search frame must be explicitly styled as a quiet utility rail');
   assert.match(viewSource, /data-session-management-project-panel="true"/, 'project list panel must expose the current column shell');
   assert.match(viewSource, /data-session-management-session-panel="true"/, 'session list panel must expose the current column shell');
+  assert.match(viewSource, /data-session-management-project-row="gmail-sidebar"/, 'project rows must use the Gmail-style sidebar row contract');
+  assert.match(viewSource, /grid-cols-\[minmax\(0,1fr\)_auto\]/, 'project rows must keep a left label and right count rail');
+  assert.doesNotMatch(viewSource, /<Tag[\s\S]*copy\.projectSessionTag/, 'project rows must not use compressed tag stacks');
   assert.match(viewSource, /bg-\[var\(--gt-surface-canvas\)\] shadow-sm/, 'initial loading workbench must use the same quiet shadow scale as the loaded shell');
   assert.doesNotMatch(viewSource, /data-session-management-search-frame="true" className="[^"]*bg-\[var\(--bg-surface\)\]/, 'search rail must not keep the old surface block');
+  assert.match(viewSource, /data-session-management-session-row="gmail-list"/, 'session rows must expose the Gmail-style two-column contract');
   assert.match(viewSource, /rounded-sm border-l-2 border-l-transparent/, 'session rows must keep a subtle two-pixel active affordance');
-  assert.match(viewSource, /border-t border-\[var\(--gt-border-subtle\)\]/, 'session metadata must sit in a quiet footer rail');
-  assert.match(viewSource, /line-clamp-2 min-w-0 flex-1 break-words/, 'session titles must allow two readable lines before truncating');
+  assert.match(viewSource, /line-clamp-2 min-w-0 break-words/, 'session titles must allow two readable lines before truncating');
+  assert.match(viewSource, /mt-1\.5 flex min-w-0 items-center gap-2/, 'session metadata must sit on a third horizontal row');
+  assert.doesNotMatch(viewSource, /grid-cols-\[minmax\(0,1fr\)_5\.5rem\]/, 'session rows must not keep the right-side stacked metadata rail');
+  assert.match(viewSource, /hover:bg-transparent hover:text-\[var\(--gt-ink-primary\)\]/, 'provider edit buttons must stay background-free');
   assert.doesNotMatch(viewSource, /session\.summary \? \(/, 'session list rows must not repeat the derived title again as a summary line');
 });
 

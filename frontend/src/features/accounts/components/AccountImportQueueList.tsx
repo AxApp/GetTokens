@@ -146,7 +146,7 @@ export default function AccountImportQueueList({
                               ? t('accounts.import_account_source_file')
                               : item.source === 'paste'
                               ? t('accounts.import_account_source_paste')
-                              : t('import_account_source_clipboard')}
+                              : t('accounts.import_account_source_clipboard')}
                           </Tag>
                           <Tag
                             color="blue"
@@ -160,12 +160,12 @@ export default function AccountImportQueueList({
 
                     <div className="flex items-center gap-1.5">
                       {hasError && !isEditing && (
-                        <Tooltip title={t('import_account_invalid_item').replace('{reason}', validation.error || '')}>
+                        <Tooltip title={t('accounts.import_account_invalid_item').replace('{reason}', validation.error || '')}>
                           <AlertCircle className="h-4 w-4 text-[var(--gt-status-danger)]" />
                         </Tooltip>
                       )}
                       {!isEditing && (
-                        <Tooltip title={t('import_account_edit_btn')}>
+                        <Tooltip title={t('accounts.import_account_edit_btn')}>
                           <Button
                             type="text"
                             size="small"
@@ -208,7 +208,7 @@ export default function AccountImportQueueList({
                     <>
                       {hasError && (
                         <div className="bg-[var(--gt-status-danger-bg)] px-3 py-1.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-status-danger)] border-b border-[var(--gt-status-danger-border)]">
-                          {t('import_account_invalid_item').replace('{reason}', validation.error || '')}
+                          {t('accounts.import_account_invalid_item').replace('{reason}', validation.error || '')}
                         </div>
                       )}
                       <pre data-account-import-queue-preview="quiet" className={accountImportQueuePreviewClass}>
@@ -369,10 +369,10 @@ function InlineEditForm({ item, onSave, onCancel, t }: InlineEditFormProps) {
 
       <div className="mt-2 flex justify-end gap-1.5 border-t border-[var(--gt-border-subtle)] pt-2 shrink-0">
         <Button size="small" onClick={onCancel} icon={<X className="h-3 w-3" />}>
-          {t('import_account_edit_cancel')}
+          {t('accounts.import_account_edit_cancel')}
         </Button>
         <Button type="primary" size="small" onClick={handleSave} icon={<Check className="h-3 w-3" />}>
-          {t('import_account_edit_save')}
+          {t('accounts.import_account_edit_save')}
         </Button>
       </div>
     </div>

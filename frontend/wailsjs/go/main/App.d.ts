@@ -83,8 +83,6 @@ export function ExplainChannelRouting(arg1:main.ChannelRoutingExplainInput):Prom
 
 export function FetchOpenAICompatibleProviderModels(arg1:main.FetchOpenAICompatibleProviderModelsInput):Promise<main.FetchOpenAICompatibleProviderModelsResult>;
 
-export function FetchProxySubscription(arg1:main.FetchProxySubscriptionInput):Promise<main.FetchProxySubscriptionResult>;
-
 export function FetchVendorStatusRSS(arg1:string):Promise<string>;
 
 export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<void>;
@@ -256,8 +254,6 @@ export function PreviewGetTokensExtensionCodexConfigDryRun(arg1:main.PreviewGetT
 export function ProbeClaudeCodeAccountRouting(arg1:main.ProbeClaudeCodeAccountRoutingInput):Promise<main.ClaudeCodeAccountRoutingProbeResult>;
 
 export function ProbeCodexAccountRouting(arg1:main.ProbeCodexAccountRoutingInput):Promise<main.CodexAccountRoutingProbeResult>;
-
-export function ProbeProxyNode(arg1:main.ProbeProxyNodeInput):Promise<main.ProbeProxyNodeResult>;
 
 export function RebuildClaudeLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 

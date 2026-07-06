@@ -158,10 +158,6 @@ export function FetchOpenAICompatibleProviderModels(arg1) {
   return window['go']['main']['App']['FetchOpenAICompatibleProviderModels'](arg1);
 }
 
-export function FetchProxySubscription(arg1) {
-  return window['go']['main']['App']['FetchProxySubscription'](arg1);
-}
-
 export function FetchVendorStatusRSS(arg1) {
   return window['go']['main']['App']['FetchVendorStatusRSS'](arg1);
 }
@@ -504,10 +500,6 @@ export function ProbeClaudeCodeAccountRouting(arg1) {
 
 export function ProbeCodexAccountRouting(arg1) {
   return window['go']['main']['App']['ProbeCodexAccountRouting'](arg1);
-}
-
-export function ProbeProxyNode(arg1) {
-  return window['go']['main']['App']['ProbeProxyNode'](arg1);
 }
 
 export function RebuildClaudeLocalUsage() {

@@ -184,6 +184,25 @@ test('selected bulk quota refresh uses the sidecar batch job endpoint with sync 
   assert.match(quotaHookSource, /status === 'canceled'/);
 });
 
+test('visible account refresh entrypoints use batch quota refresh for large account sets', async () => {
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const runtimeRefreshStart = featureSource.indexOf('const refreshAccountsRuntime = useCallback');
+  assert.notEqual(runtimeRefreshStart, -1);
+  const runtimeRefreshEnd = featureSource.indexOf('const [relayModelNames', runtimeRefreshStart);
+  assert.notEqual(runtimeRefreshEnd, -1);
+  const runtimeRefreshSource = featureSource.slice(runtimeRefreshStart, runtimeRefreshEnd);
+  const groupRefreshStart = featureSource.indexOf('const refreshGroupQuota = useCallback');
+  assert.notEqual(groupRefreshStart, -1);
+  const groupRefreshEnd = featureSource.indexOf('const setGroupDisabled = useCallback', groupRefreshStart);
+  assert.notEqual(groupRefreshEnd, -1);
+  const groupRefreshSource = featureSource.slice(groupRefreshStart, groupRefreshEnd);
+
+  assert.match(runtimeRefreshSource, /refreshAccountQuotasBatch\(accounts\)/);
+  assert.doesNotMatch(runtimeRefreshSource, /accounts\.map\(\(account\) => refreshCodexQuota\(account\)\)/);
+  assert.match(groupRefreshSource, /refreshAccountQuotasBatch\(groupAccounts\)/);
+  assert.doesNotMatch(groupRefreshSource, /groupAccounts\.forEach\(\(account\) => \{\s*void refreshCodexQuota\(account\);/);
+});
+
 test('selected bulk delete uses the sidecar batch endpoint', async () => {
   const actionsSource = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
   const bulkDeleteStart = actionsSource.indexOf('const runSelectedBulkDelete = useCallback');

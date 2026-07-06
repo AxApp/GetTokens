@@ -55,6 +55,7 @@ interface AttributionCardProps {
   failureReason?: string;
   badges?: AttributionCardBadge[];
   usageSummary?: AccountUsageSummary;
+  refreshFeedback?: boolean;
   usageRefreshing?: boolean;
   quotaDisplay?: QuotaDisplay;
   billing?: BillingDisplay;
@@ -83,6 +84,7 @@ export default function AttributionCard({
   failureReason = '',
   badges = [],
   usageSummary,
+  refreshFeedback = false,
   usageRefreshing = false,
   quotaDisplay,
   billing,
@@ -110,6 +112,7 @@ export default function AttributionCard({
       ? 'absolute -inset-y-0.5 -left-2 -right-0.5 z-20'
       : 'absolute -inset-y-0.5 -left-1.5 -right-0.5 z-20';
   const routeGuardFrameDebugLabel = buildRouteGuardFrameDebugLabel(rateLimitStatus);
+  const refreshing = refreshFeedback || resolvedQuotaDisplay.refreshing === true || rateLimitRefreshing || usageRefreshing;
 
   // ── List density ──
   if (density === 'list') {
@@ -136,6 +139,7 @@ export default function AttributionCard({
         cardID={cardID}
         style={style}
         interactive={interactive}
+        refreshing={refreshing}
         openDetailsLabel={`${t('common.details')}: ${title}`}
         debugLabel={routeGuardFrameDebugLabel}
         onOpen={onOpen}
@@ -173,6 +177,7 @@ export default function AttributionCard({
       cardID={cardID}
       style={style}
       interactive={interactive}
+      refreshing={refreshing}
       openDetailsLabel={`${t('common.details')}: ${title}`}
       debugLabel={routeGuardFrameDebugLabel}
       onOpen={onOpen}

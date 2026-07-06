@@ -74,7 +74,7 @@ test('isAppPage only accepts known sidebar pages', () => {
   assert.equal(isAppPage('request-orchestration'), false);
   assert.equal(isAppPage('session-management'), true);
   assert.equal(isAppPage('vendor-status'), true);
-  assert.equal(isAppPage('proxy-pool'), true);
+  assert.equal(isAppPage('proxy-pool'), false);
   assert.equal(isAppPage('codex'), true);
   assert.equal(isAppPage('claude'), true);
   assert.equal(isAppPage('usage-desk'), true);
@@ -100,7 +100,7 @@ test('resolveInitialActivePage falls back to accounts for invalid values', () =>
   assert.equal(resolveInitialActivePage('design-system'), 'accounts');
   assert.equal(resolveInitialActivePage('session-management'), 'codex');
   assert.equal(resolveInitialActivePage('vendor-status'), 'codex');
-  assert.equal(resolveInitialActivePage('proxy-pool'), 'proxy-pool');
+  assert.equal(resolveInitialActivePage('proxy-pool'), 'accounts');
   assert.equal(resolveInitialActivePage('request-orchestration'), 'accounts');
   assert.equal(resolveInitialActivePage('codex'), 'codex');
   assert.equal(resolveInitialActivePage('claude'), 'claude');
@@ -554,9 +554,9 @@ test('readFrameHashState parses top-level frame pages', () => {
   assert.deepEqual(readFrameHashState('#frame=status'), { page: 'status' });
   assert.deepEqual(readFrameHashState('#frame=session-management'), { page: 'codex', codexWorkspace: 'session-management' });
   assert.deepEqual(readFrameHashState('#frame=vendor-status'), { page: 'codex', codexWorkspace: 'vendor-status' });
-  assert.deepEqual(readFrameHashState('#frame=proxy-pool'), { page: 'proxy-pool' });
+  assert.deepEqual(readFrameHashState('#frame=proxy-pool'), null);
   assert.deepEqual(readFrameHashState('#frame=request-orchestration'), null);
-  assert.deepEqual(readFrameHashState('#frame=proxy-pool&workspace=codex'), { page: 'proxy-pool' });
+  assert.deepEqual(readFrameHashState('#frame=proxy-pool&workspace=codex'), null);
   assert.deepEqual(readFrameHashState('#frame=codex'), { page: 'codex', codexWorkspace: 'feature-config' });
   assert.deepEqual(readFrameHashState('#frame=claude'), { page: 'claude', claudeWorkspace: 'account-list' });
   assert.deepEqual(readFrameHashState('#frame=usage-desk'), { page: 'codex', codexWorkspace: 'usage-codex' });
@@ -850,7 +850,6 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
     '#frame=codex&workspace=vendor-status',
   );
   assert.equal(buildFrameHash('vendor-status', 'all', 'feature-config', 'codex', 'codex'), '#frame=vendor-status');
-  assert.equal(buildFrameHash('proxy-pool', 'all', 'feature-config', 'codex', 'codex'), '#frame=proxy-pool');
   assert.equal(buildFrameHash('codex', 'all', 'feature-config', 'codex', 'codex'), '#frame=codex');
   assert.equal(buildFrameHash('claude', 'all', 'feature-config', 'codex', 'codex'), '#frame=claude&workspace=account-list');
   assert.equal(

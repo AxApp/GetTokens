@@ -47,7 +47,7 @@ test('account credential detail editor uses the quiet workspace shell', async ()
   const targetSource = [
     sourceBlock(source, 'export function AccountCredentialVerifySection', 'function CapabilityEndpointsPanel'),
     sourceBlock(source, 'function CapabilityEndpointsPanel', 'function CredentialProxyRoutePanel'),
-    sourceBlock(source, 'function CredentialProxyRoutePanel', 'function readCredentialProxyNodes'),
+    sourceBlock(source, 'function CredentialProxyRoutePanel', 'function VendorCredentialInputField'),
     sourceBlock(source, 'function VendorCredentialInputField', 'function readDraftCredentialField'),
     sourceBlock(source, 'function CredentialInputField', 'function VerifyConnectionPanel'),
     sourceBlock(source, 'function VerifyConnectionPanel', 'export function AccountQuotaSection'),
@@ -55,6 +55,8 @@ test('account credential detail editor uses the quiet workspace shell', async ()
 
   assert.match(source, /const accountDetailCredentialPaneDividerClass =/);
   assert.match(source, /const accountDetailCredentialSectionTitleClass =/);
+  assert.doesNotMatch(source, /proxy-pool/);
+  assert.doesNotMatch(source, /readStoredProxyNodes/);
   assert.match(source, /import \{ .*Button, Input, Select, Tooltip.*\} from 'antd';/);
   assert.match(targetSource, /<Input/);
   assert.match(targetSource, /<Select/);

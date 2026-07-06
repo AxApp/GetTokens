@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { Alert, Button, Input, Select, Tooltip } from 'antd';
+import { Button, Input, Select, Tooltip } from 'antd';
 import { FileText, Play, Plus, RotateCcw, Search } from 'lucide-react';
 import type { AccountRecord, ApiFormat, BillingDisplay } from '../../../types';
 import type { main } from '../../../../wailsjs/go/models';
@@ -19,11 +19,6 @@ import {
   resolveManagementBaseUrl,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
-import {
-  buildProxyURLFromNode,
-  readStoredProxyNodes,
-  type ProxyNodeRecord,
-} from '../../proxy-pool/model.ts';
 import {
   buildAccountProxyRouteDraft,
   formatAccountProxySummary,
@@ -48,7 +43,6 @@ import {
   AccountDetailSection,
   type AccountDetailSectionSpan,
 } from './AccountDetailPrimitives';
-import { AccountProxyRouteEditor } from './AccountProxyRouteSection';
 import {
   AccountCurlEditorModal,
   buildBillingCurlTemplates,
@@ -906,97 +900,40 @@ function CredentialProxyRoutePanel({
   onValidityChange?: (message: string) => void;
 }) {
   const { t } = useI18n();
-  const [storedProxyNodes, setStoredProxyNodes] = useState<ProxyNodeRecord[]>(() => readCredentialProxyNodes());
   const [draft, setDraft] = useState<AccountProxyRouteDraft>(() =>
-    buildAccountProxyRouteDraft({ id: 'account-credential-proxy-route', proxyUrl }, storedProxyNodes),
+    buildAccountProxyRouteDraft({ id: 'account-credential-proxy-route', proxyUrl }),
   );
 
   useEffect(() => {
-    setDraft(buildAccountProxyRouteDraft({ id: 'account-credential-proxy-route', proxyUrl }, storedProxyNodes));
-  }, [storedProxyNodes, proxyUrl]);
+    setDraft(buildAccountProxyRouteDraft({ id: 'account-credential-proxy-route', proxyUrl }));
+  }, [proxyUrl]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    function refreshProxyNodes() {
-      setStoredProxyNodes(readCredentialProxyNodes());
-    }
-    window.addEventListener('storage', refreshProxyNodes);
-    window.addEventListener('focus', refreshProxyNodes);
-    return () => {
-      window.removeEventListener('storage', refreshProxyNodes);
-      window.removeEventListener('focus', refreshProxyNodes);
-    };
-  }, []);
-
-  const proxyOptions = useMemo(
-    () =>
-      storedProxyNodes
-        .map((node) => ({
-          node,
-          proxyUrl: buildProxyURLFromNode(node),
-        }))
-        .sort((a, b) => {
-          if (a.node.status !== b.node.status) {
-            return a.node.status === 'available' ? -1 : 1;
-          }
-          return a.node.latencyMs - b.node.latencyMs;
-        }),
-    [storedProxyNodes],
-  );
-  const summary = useMemo(() => formatAccountProxySummary(draft.proxyUrl, storedProxyNodes), [draft.proxyUrl, storedProxyNodes]);
+  const summary = useMemo(() => formatAccountProxySummary(draft.proxyUrl), [draft.proxyUrl]);
   const customMissing = draft.mode === 'custom' && !draft.proxyUrl.trim();
-  const hasDetachedCurrentURL = Boolean(
-    draft.proxyUrl && !proxyOptions.some((item) => item.proxyUrl === draft.proxyUrl),
-  );
 
   useEffect(() => {
     onValidityChange?.(customMissing ? t('accounts.proxy_route_invalid') : '');
   }, [customMissing, onValidityChange, t]);
 
-  function commitDraft(nextDraft: AccountProxyRouteDraft, shouldCommitURL: boolean) {
+  function commitDraft(nextDraft: AccountProxyRouteDraft) {
     setDraft(nextDraft);
-    if (shouldCommitURL) {
-      onProxyUrlChange?.(nextDraft.proxyUrl);
-    }
+    onProxyUrlChange?.(nextDraft.proxyUrl);
   }
 
-  function selectProxy(nextProxyURL: string) {
-    const selected = proxyOptions.find((item) => item.proxyUrl === nextProxyURL);
-    commitDraft(
-      {
-        mode: 'custom',
-        proxyNodeID: selected?.node.id || '',
-        proxyUrl: nextProxyURL,
-      },
-      true,
-    );
-  }
-
-  const proxyUrlOptions = ['', ...proxyOptions.map((item) => item.proxyUrl)];
+  const proxyUrlOptions = ['', 'direct'];
 
   return (
     <section data-account-credential-list-item="proxy-route" className="grid gap-4">
       <CredentialInputField
         label={t('accounts.proxy_route_title')}
         value={draft.proxyUrl}
-        placeholder="留空使用直连"
+        placeholder="留空继承全局，direct 表示直连，或输入 http/socks5 代理 URL"
         options={proxyUrlOptions}
         onChange={(value) => {
-          setDraft((prev) => ({ ...prev, proxyUrl: value, mode: 'custom' }));
-          onProxyUrlChange?.(value);
+          commitDraft(buildAccountProxyRouteDraft({ id: 'account-credential-proxy-route', proxyUrl: value }));
         }}
         help={summary.label}
       />
-      {hasDetachedCurrentURL && (
-        <Alert
-          type="warning"
-          showIcon
-          message="当前 Proxy 未在节点列表中"
-          description="该代理未配置到 Settings 的代理池中，可能无法通过连通性检测或自动切换。"
-        />
-      )}
       {customMissing && (
         <div className="text-[length:var(--gt-font-size-xs)] text-[var(--gt-color-danger)]">
           {t('accounts.proxy_route_invalid')}
@@ -1004,13 +941,6 @@ function CredentialProxyRoutePanel({
       )}
     </section>
   );
-}
-
-function readCredentialProxyNodes(): ProxyNodeRecord[] {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-  return readStoredProxyNodes(window.localStorage);
 }
 
 function VendorCredentialInputField({

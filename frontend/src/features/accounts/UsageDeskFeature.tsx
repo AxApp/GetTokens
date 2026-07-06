@@ -127,8 +127,8 @@ export default function UsageDeskFeature({
               value={source}
               onChange={(value) => setSource(value as 'observed' | 'projected')}
               options={[
-                { label: t('usage.observed_source'), value: 'observed' },
-                ...(supportsProjectedUsage ? [{ label: t('usage.projected_source'), value: 'projected' }] : []),
+                { label: t('accounts.observed_source'), value: 'observed' },
+                ...(supportsProjectedUsage ? [{ label: t('accounts.projected_source'), value: 'projected' }] : []),
               ]}
               data-usage-desk-source-toggle="true"
             />

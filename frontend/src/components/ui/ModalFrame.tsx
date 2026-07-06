@@ -30,24 +30,32 @@ interface ModalFrameProps {
 }
 
 const sizeClassNames: Record<ModalFrameSize, string> = {
-  sm: 'max-w-[min(36rem,calc(100vw-1.5rem))]',
-  md: 'max-w-[min(42rem,calc(100vw-1.5rem))]',
-  lg: 'max-w-[min(56rem,calc(100vw-1.5rem))]',
-  xl: 'max-w-[min(64rem,calc(100vw-1.5rem))]',
-  detail: 'max-w-[min(64rem,calc(100vw-3rem))]',
+  sm: 'max-w-[min(36rem,calc(100vw_-_3rem))]',
+  md: 'max-w-[min(42rem,calc(100vw_-_3rem))]',
+  lg: 'max-w-[min(56rem,calc(100vw_-_3rem))]',
+  xl: 'max-w-[min(64rem,calc(100vw_-_3rem))]',
+  detail: 'max-w-[min(64rem,calc(100vw_-_3rem))]',
 };
 
 const modalWidths: Record<ModalFrameSize, string> = {
-  sm: 'min(36rem,calc(100vw-1.5rem))',
-  md: 'min(42rem,calc(100vw-1.5rem))',
-  lg: 'min(56rem,calc(100vw-1.5rem))',
-  xl: 'min(64rem,calc(100vw-1.5rem))',
-  detail: 'min(64rem,calc(100vw-3rem))',
+  sm: 'min(36rem,calc(100vw - 3rem))',
+  md: 'min(42rem,calc(100vw - 3rem))',
+  lg: 'min(56rem,calc(100vw - 3rem))',
+  xl: 'min(64rem,calc(100vw - 3rem))',
+  detail: 'min(64rem,calc(100vw - 3rem))',
+};
+
+const sidebarInsetModalWidths: Record<ModalFrameSize, string> = {
+  sm: 'min(36rem,calc(100vw - var(--app-sidebar-width, 0px) - 3rem))',
+  md: 'min(42rem,calc(100vw - var(--app-sidebar-width, 0px) - 3rem))',
+  lg: 'min(56rem,calc(100vw - var(--app-sidebar-width, 0px) - 3rem))',
+  xl: 'min(64rem,calc(100vw - var(--app-sidebar-width, 0px) - 3rem))',
+  detail: 'min(64rem,calc(100vw - 3rem))',
 };
 
 const panelMaxHeightClassNames: Record<ModalFramePosition, string> = {
-  fixed: 'max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)]',
-  absolute: 'max-h-[calc(100%-2rem)] sm:max-h-[calc(100%-3rem)]',
+  fixed: 'max-h-[calc(100vh_-_2rem)] sm:max-h-[calc(100vh_-_3rem)]',
+  absolute: 'max-h-[calc(100%_-_2rem)] sm:max-h-[calc(100%_-_3rem)]',
 };
 
 export default function ModalFrame({
@@ -74,14 +82,16 @@ export default function ModalFrame({
   const hasSlots = Boolean(header || footer || error);
   const detailFullscreen = size === 'detail';
   const shouldUseBodyContainer = detailFullscreen || portal;
-  const overlayLeft = position === 'fixed' && !detailFullscreen && !coverViewport
+  const insetForSidebar = position === 'fixed' && !detailFullscreen && !coverViewport;
+  const overlayLeft = insetForSidebar
     ? 'var(--app-sidebar-width, 0px)'
     : 0;
+  const modalWidth = insetForSidebar ? sidebarInsetModalWidths[size] : modalWidths[size];
   const overlayLayoutClassName = detailFullscreen
     ? 'items-start justify-items-center overflow-hidden px-6 py-6 sm:px-8 sm:py-8'
     : 'place-items-center overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6';
   const panelViewportClassName = detailFullscreen
-    ? 'h-[calc(100vh-3rem)] max-h-[calc(100vh-3rem)] sm:h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-4rem)]'
+    ? 'h-[calc(100vh_-_3rem)] max-h-[calc(100vh_-_3rem)] sm:h-[calc(100vh_-_4rem)] sm:max-h-[calc(100vh_-_4rem)]'
     : panelMaxHeightClassNames[position];
   const zIndex = resolveZIndex(zIndexClassName);
   const modalClassNames: ModalProps['classNames'] = {
@@ -152,7 +162,7 @@ export default function ModalFrame({
       closable={{ closeIcon: <X size={14} /> }}
       footer={null}
       title={null}
-      width={modalWidths[size]}
+      width={modalWidth}
       centered={false}
       maskClosable={closeOnBackdrop}
       keyboard

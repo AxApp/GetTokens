@@ -164,7 +164,10 @@ test('account card exposes refresh as a top icon action only', async () => {
   assert.match(source, /RefreshCw/);
   assert.match(source, /aria-label=\{t\(refreshAction\.labelKey\)\}/);
   assert.match(source, /title=\{t\(refreshAction\.labelKey\)\}/);
-  assert.match(source, /onClick=\{\(\) => onRefreshQuota\(account\)\}/);
+  assert.match(source, /const \[refreshFeedback, setRefreshFeedback\] = useState\(false\)/);
+  assert.match(source, /function showRefreshFeedback\(\)/);
+  assert.match(source, /refreshFeedback=\{refreshFeedback\}/);
+  assert.match(source, /onClick=\{\(\) => \{\s*showRefreshFeedback\(\);\s*onRefreshQuota\(account\);\s*\}\}/);
   assert.match(source, /<MoreVertical size=\{16\} strokeWidth=\{2\} \/>/);
   assert.match(source, /className="flex shrink-0 items-center gap-1"/);
   assert.doesNotMatch(source, /className="-mr-4 flex shrink-0 items-center gap-1"/);
@@ -249,7 +252,8 @@ test('account import modal uses merged input panel beside account preview', asyn
   const pageSource = await readFile(new URL('../../../pages/AccountImportPage.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /data-account-import-input-panel/);
-  assert.match(source, /lg:grid-cols-\[380px_1fr\]/);
+  assert.match(source, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(22rem,0\.95fr\)\]/);
+  assert.match(pageSource, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(22rem,0\.95fr\)\]/);
   assert.equal((source.match(/data-account-import-input-panel/g) || []).length, 1);
 
   const inputPanelIndex = source.indexOf('data-account-import-input-panel');
@@ -280,12 +284,14 @@ test('account import page uses the quiet workspace shell', async () => {
   assert.match(source, /const accountImportPanelClass =/);
   assert.match(source, /import \{ Button, Input, type InputRef, Upload, Tabs, Alert, Checkbox \} from 'antd'/);
   assert.match(source, /const accountImportDropzoneClass =/);
-  assert.match(source, /const accountImportMetaChipClass =/);
+  assert.match(source, /max-w-full whitespace-normal break-words/);
   assert.match(targetSource, /data-account-import-page/);
   assert.match(targetSource, /data-account-import-header/);
   assert.match(targetSource, /data-account-import-input-panel/);
   assert.match(targetSource, /data-account-import-dropzone/);
   assert.match(targetSource, /data-account-import-queue-panel/);
+  assert.match(targetSource, /accounts\.import_account_select_all/);
+  assert.doesNotMatch(targetSource, /AUTO DETECT|JSON ARRAY/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
@@ -312,12 +318,14 @@ test('account import modal uses the quiet workspace shell', async () => {
   assert.match(source, /const accountImportModalPanelClass =/);
   assert.match(source, /import \{ Button, Input, Upload, Tabs, Alert, Checkbox \} from 'antd'/);
   assert.match(source, /const accountImportModalDropzoneClass =/);
-  assert.match(source, /const accountImportModalMetaChipClass =/);
+  assert.match(source, /max-w-full whitespace-normal break-words/);
   assert.match(targetSource, /data-account-import-modal-header/);
   assert.match(targetSource, /data-account-import-modal-body/);
   assert.match(targetSource, /data-account-import-input-panel/);
   assert.match(targetSource, /data-account-import-dropzone/);
   assert.match(targetSource, /data-account-import-queue-panel/);
+  assert.match(targetSource, /accounts\.import_account_select_all/);
+  assert.doesNotMatch(targetSource, /AUTO DETECT|JSON ARRAY/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);

@@ -164,64 +164,6 @@
 }
 
 @layer components {
-  .proxy-pool-probe-target-autocomplete.ant-select {
-    min-height: 2.75rem;
-    height: 2.75rem;
-    width: 100%;
-    border-radius: 0.375rem;
-    color: var(--gt-ink-primary);
-    font-size: var(--gt-font-size-lg);
-  }
-
-  .proxy-pool-probe-target-autocomplete .ant-select-selector {
-    min-height: 2.75rem !important;
-    height: 2.75rem !important;
-    border-color: color-mix(in srgb, var(--gt-border-default) 55%, transparent) !important;
-    border-radius: 0.375rem !important;
-    background: var(--gt-surface-canvas) !important;
-    box-shadow: none !important;
-  }
-
-  .proxy-pool-probe-target-autocomplete.ant-select-focused .ant-select-selector {
-    border-color: var(--gt-border-default) !important;
-    box-shadow: none !important;
-  }
-
-  .proxy-pool-probe-target-autocomplete .ant-select-selection-search-input,
-  .proxy-pool-probe-target-autocomplete .ant-select-selection-item,
-  .proxy-pool-probe-target-autocomplete .ant-select-selection-placeholder {
-    font-family: var(--gt-font-family-sans) !important;
-    font-size: var(--gt-font-size-lg) !important;
-    line-height: 1.25rem !important;
-  }
-
-  .proxy-pool-probe-target-button.ant-btn {
-    height: 2.75rem;
-    width: 2.75rem;
-    padding: 0;
-    border-color: var(--gt-border-strong);
-    border-radius: 0.375rem;
-    background: var(--gt-ink-primary);
-    box-shadow: none;
-    color: var(--gt-surface-canvas);
-    font-family: var(--gt-font-family-sans);
-    font-size: var(--gt-font-size-lg);
-    font-weight: 400;
-  }
-
-  .proxy-pool-probe-target-button.ant-btn:not(:disabled):not(.ant-btn-disabled):hover,
-  .proxy-pool-probe-target-button.ant-btn:not(:disabled):not(.ant-btn-disabled):focus-visible {
-    border-color: var(--gt-border-strong);
-    background: color-mix(in srgb, var(--gt-ink-primary) 88%, var(--gt-surface-canvas));
-    color: var(--gt-surface-canvas);
-  }
-
-  .proxy-pool-probe-target-button.ant-btn:disabled,
-  .proxy-pool-probe-target-button.ant-btn.ant-btn-disabled {
-    border-color: color-mix(in srgb, var(--gt-border-default) 45%, transparent);
-    background: var(--gt-surface-muted);
-    color: var(--gt-ink-muted);
-  }
   .codex-live-session-list-item-idle:hover {
     background-color: color-mix(in srgb, var(--gt-border-strong) 5%, var(--gt-surface-canvas));
   }
@@ -316,6 +258,32 @@
   .account-card-quota-refresh-skeleton {
     background-color: color-mix(in srgb, var(--gt-border-strong) 12%, transparent);
     opacity: 0.36;
+  }
+
+  [data-account-card-refreshing='true'] {
+    animation: account-card-refresh-pulse 900ms ease-in-out infinite;
+  }
+
+  [data-account-card-refreshing='true'] .account-card-frame-inner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--gt-ink-primary) 8%, transparent), transparent);
+    transform: translateX(-100%);
+    animation: account-card-refresh-sweep 1100ms ease-in-out infinite;
+  }
+
+  @keyframes account-card-refresh-pulse {
+    50% {
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--gt-ink-primary) 18%, transparent);
+    }
+  }
+
+  @keyframes account-card-refresh-sweep {
+    to {
+      transform: translateX(100%);
+    }
   }
 
   @container (min-width: 46rem) {

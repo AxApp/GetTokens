@@ -8,6 +8,7 @@ import {
   ACCOUNT_HEADER_MENU_ITEM_CLASS,
   ACCOUNT_HEADER_MENU_LABEL_CLASS,
   ACCOUNT_HEADER_MENU_PANEL_CLASS,
+  ACCOUNT_HEADER_MENU_PANEL_STYLE,
   ACCOUNT_HEADER_MENU_SEPARATOR_CLASS,
   buildAccountsHeaderMenuItems,
   type AccountHeaderMenuIcon,
@@ -127,7 +128,7 @@ export default function AccountsHeader({
               >
               </Button>
               {isHeaderActionsMenuOpen ? (
-                <div className={ACCOUNT_HEADER_MENU_PANEL_CLASS}>
+                <div className={ACCOUNT_HEADER_MENU_PANEL_CLASS} style={ACCOUNT_HEADER_MENU_PANEL_STYLE}>
                   <div className="grid gap-1">
                     {headerActionsMenuItems.map((item) => (
                       <div key={item.id} className="grid gap-1">
