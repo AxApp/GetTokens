@@ -677,3 +677,7 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
 1. `StatusCodexConfigRows` 从 `candidate` 升级为 `admitted`，新增 `Design System/业务组件/状态页 Codex 配置行` story。
 2. Story 覆盖分组行、嵌套路径、忙碌禁用态，以及 enum / boolean / integer / textarea / string_array 等 value editor。
 3. `componentManifest` 与 `storyCatalog` 已对齐，后续父级 Codex settings section 不再作为该行组件的唯一间接覆盖。
+
+## 2026-07-06 Vendor Logo Mark 收编
+1. `VendorLogoMark` 从 `deferred` 升级为 `admitted`，不新增独立 story，复用 `Design System/业务组件/账号弹窗` 中已有 Unified Compose preset list/form step。
+2. 补充静态测试确认 Account Modals story 覆盖 `VendorLogoMark` 的 preset 与 selected preset 两个入口。

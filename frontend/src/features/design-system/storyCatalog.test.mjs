@@ -651,3 +651,23 @@ test('account detail modules expose design-system anatomy and runtime states', a
   assert.ok(sectionsEntry.requiredStates?.includes('standard-module-header'));
 }
 );
+
+test('vendor logo mark is covered through unified compose modal stories', async () => {
+  const storySource = await readFile(
+    new URL('../../features/accounts/components/AccountModalComponents.stories.tsx', import.meta.url),
+    'utf8',
+  );
+  const composeSource = await readFile(
+    new URL('../../features/accounts/components/UnifiedComposeModal.tsx', import.meta.url),
+    'utf8',
+  );
+  const logoEntry = designSystemComponentManifest.find((entry) => entry.id === 'accounts-vendor-logo-mark');
+
+  assert.ok(logoEntry, 'vendor logo mark must remain in the design system manifest');
+  assert.equal(logoEntry.status, 'admitted');
+  assert.equal(logoEntry.storyPath, 'frontend/src/features/accounts/components/AccountModalComponents.stories.tsx');
+  assert.match(storySource, /<UnifiedComposeSample/);
+  assert.match(storySource, /selectedPresetID="deepseek"/);
+  assert.match(composeSource, /<VendorLogoMark preset=\{preset\}/);
+  assert.match(composeSource, /<VendorLogoMark preset=\{selectedPreset\}/);
+});
