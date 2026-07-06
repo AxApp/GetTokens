@@ -2,7 +2,6 @@
 export default {
   content: [
     "./index.html",
-    "./.storybook/**/*.{js,ts,jsx,tsx}",
     "./src/**/*.{svelte,js,ts,jsx,tsx}",
   ],
   theme: {
