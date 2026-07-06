@@ -52,6 +52,32 @@ test('deriveGetTokensExtensionRegistryView resolves source roots and falls back 
   assert.equal(view.selectedExtension?.id, 'com.example.openai-metadata');
 });
 
+test('deriveGetTokensExtensionRegistryView selects missing-id extensions by manifest path', () => {
+  const baseSnapshot = getGetTokensExtensionRegistryPreviewSnapshot();
+  const manifestPath = '/tmp/gettokens/missing-id/gettokens.extension.json';
+  const view = deriveGetTokensExtensionRegistryView(
+    {
+      ...baseSnapshot,
+      extensions: [
+        {
+          ...baseSnapshot.extensions[0],
+          id: '',
+          name: 'Missing ID Extension',
+          source: {
+            ...baseSnapshot.extensions[0].source,
+            manifestPath,
+          },
+        },
+        baseSnapshot.extensions[1],
+      ],
+    },
+    { selectedExtensionID: manifestPath },
+  );
+
+  assert.equal(view.selectedExtension?.name, 'Missing ID Extension');
+  assert.equal(view.selectedExtension?.manifestPath, manifestPath);
+});
+
 test('deriveGetTokensExtensionRegistryView maps disabled pending and fallback enable states without mutation support', () => {
   const baseSnapshot = getGetTokensExtensionRegistryPreviewSnapshot();
   const view = deriveGetTokensExtensionRegistryView({

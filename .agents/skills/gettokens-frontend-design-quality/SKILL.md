@@ -177,6 +177,7 @@ Score: <0-20> / 20
 - 浏览器截图只能证明布局/密度；Wails binding、sidecar readiness、系统菜单、进程生命周期必须用桌面实体验证。
 - 修改 Go/Wails binding 后，检查 root `app.go` / `app_types.go` / mapper / `frontend/wailsjs` 是否同步。
 - 收尾运行 `docs-linhay/scripts/check-docs.sh`；若未跑自动化测试，交付说明写明原因和风险。
+- Wails/Vite dev 页面若报 `Failed to fetch dynamically imported module`、`ERR_CONNECTION_REFUSED` 或 Vite connection lost，先区分服务真退出与 transient module fetch failure。懒加载页面必须有可恢复 error boundary；dev 模式下若浏览器缓存同一 dynamic import 的失败，需要用带 query 的源文件路径短重试。验收至少用无头浏览器拦截一次目标 page module 请求并确认第二次 retry 能恢复页面。
 
 ## 6. 继续沉淀规则
 

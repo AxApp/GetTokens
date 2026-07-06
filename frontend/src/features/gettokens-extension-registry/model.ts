@@ -770,7 +770,7 @@ function resolveSelectedExtension(
   selectedExtensionID: string | undefined,
 ): GetTokensExtensionRegistryExtensionView | null {
   if (selectedExtensionID) {
-    const selected = extensions.find((extension) => extension.id === selectedExtensionID);
+    const selected = extensions.find((extension) => extension.id === selectedExtensionID || extension.manifestPath === selectedExtensionID);
     if (selected) {
       return selected;
     }

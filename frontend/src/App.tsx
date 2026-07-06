@@ -1,7 +1,8 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState, type ComponentType } from 'react';
 import { ApplyUpdate, CheckUpdate } from '../wailsjs/go/main/App';
 import { BrowserOpenURL, EventsOn, Quit } from '../wailsjs/runtime/runtime';
 import Sidebar from './components/biz/Sidebar';
+import PageErrorBoundary from './components/ui/PageErrorBoundary';
 import PageLoadingFallback from './components/ui/PageLoadingFallback';
 import { DebugProvider } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
@@ -18,15 +19,37 @@ import { readFrameHashState, resolveMenuBarNavigationHash, type MenuBarNavigatio
 import { toErrorMessage } from './utils/error';
 import { hasWailsRuntime } from './utils/previewMode';
 
-const AccountImportPage = lazy(() => import('./pages/AccountImportPage'));
-const AccountsPage = lazy(() => import('./pages/AccountsPage'));
-const ClaudePage = lazy(() => import('./pages/ClaudePage'));
-const CodexPage = lazy(() => import('./pages/CodexPage'));
-const DebugPage = lazy(() => import('./pages/DebugPage'));
-const DesignSystemPage = lazy(() => import('./pages/DesignSystemPage'));
-const ProxyPoolPage = lazy(() => import('./pages/ProxyPoolPage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-const StatusPage = lazy(() => import('./pages/StatusPage'));
+type LazyPageModule<TProps> = { default: ComponentType<TProps> };
+
+function lazyPage<TProps>(importer: () => Promise<LazyPageModule<TProps>>, devPath: string) {
+  return lazy(() => retryLazyPageImport(importer, devPath));
+}
+
+async function retryLazyPageImport<TProps>(importer: () => Promise<LazyPageModule<TProps>>, devPath: string) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      if (attempt === 0 || !import.meta.env.DEV) {
+        return await importer();
+      }
+      return await import(/* @vite-ignore */ `${devPath}?retry=${Date.now()}-${attempt}`) as LazyPageModule<TProps>;
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => window.setTimeout(resolve, 250 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
+const AccountImportPage = lazyPage(() => import('./pages/AccountImportPage'), '/src/pages/AccountImportPage.tsx');
+const AccountsPage = lazyPage(() => import('./pages/AccountsPage'), '/src/pages/AccountsPage.tsx');
+const ClaudePage = lazyPage(() => import('./pages/ClaudePage'), '/src/pages/ClaudePage.tsx');
+const CodexPage = lazyPage(() => import('./pages/CodexPage'), '/src/pages/CodexPage.tsx');
+const DebugPage = lazyPage(() => import('./pages/DebugPage'), '/src/pages/DebugPage.tsx');
+const DesignSystemPage = lazyPage(() => import('./pages/DesignSystemPage'), '/src/pages/DesignSystemPage.tsx');
+const ProxyPoolPage = lazyPage(() => import('./pages/ProxyPoolPage'), '/src/pages/ProxyPoolPage.tsx');
+const SettingsPage = lazyPage(() => import('./pages/SettingsPage'), '/src/pages/SettingsPage.tsx');
+const StatusPage = lazyPage(() => import('./pages/StatusPage'), '/src/pages/StatusPage.tsx');
 
 function AppShell() {
   const { textScale } = useTextScale();
@@ -240,7 +263,9 @@ function AppShell() {
             onCollapsedChange={setIsSidebarCollapsed}
           />
           <main className="flex-1 overflow-hidden bg-[var(--gt-surface-muted)]">
-            <Suspense fallback={<PageLoadingFallback />}>{page}</Suspense>
+            <PageErrorBoundary resetKey={activePage}>
+              <Suspense fallback={<PageLoadingFallback />}>{page}</Suspense>
+            </PageErrorBoundary>
           </main>
         </div>
       </AccountMigrationGate>

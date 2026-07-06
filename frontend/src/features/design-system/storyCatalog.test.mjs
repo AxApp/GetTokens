@@ -228,6 +228,31 @@ test('page loading fallback uses the quiet workspace shell', async () => {
   assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--gt-shadow-panel\)\]/);
 });
 
+test('lazy pages are guarded by a reloadable page error boundary', async () => {
+  const appSource = await readFile(new URL('../../App.tsx', import.meta.url), 'utf8');
+  const boundarySource = await readFile(new URL('../../components/ui/PageErrorBoundary.tsx', import.meta.url), 'utf8');
+
+  assert.match(appSource, /import PageErrorBoundary from '\.\/components\/ui\/PageErrorBoundary'/);
+  assert.match(appSource, /function lazyPage/);
+  assert.match(appSource, /retryLazyPageImport/);
+  assert.match(appSource, /@vite-ignore/);
+  assert.ok(appSource.includes('`${devPath}?retry=${Date.now()}-${attempt}`'));
+  assert.doesNotMatch(appSource, /const StatusPage = lazy\(/);
+  assert.match(appSource, /const StatusPage = lazyPage\(\(\) => import\('\.\/pages\/StatusPage'\), '\/src\/pages\/StatusPage\.tsx'\)/);
+  assert.match(appSource, /<PageErrorBoundary resetKey=\{activePage\}>[\s\S]*<Suspense fallback=\{<PageLoadingFallback \/>\}>\{page\}<\/Suspense>[\s\S]*<\/PageErrorBoundary>/);
+  assert.match(boundarySource, /data-page-error-boundary="lazy-page"/);
+  assert.match(boundarySource, /window\.location\.reload\(\)/);
+  assert.match(boundarySource, /componentDidUpdate/);
+});
+
+test('vite index declares a project favicon instead of falling back to favicon ico', async () => {
+  const indexSource = await readFile(new URL('../../../index.html', import.meta.url), 'utf8');
+  const faviconSource = await readFile(new URL('../../../public/favicon.svg', import.meta.url), 'utf8');
+
+  assert.match(indexSource, /<link rel="icon" type="image\/svg\+xml" href="\/favicon\.svg" \/>/);
+  assert.match(faviconSource, /<svg viewBox="0 0 100 100"/);
+});
+
 test('asset workbench shell is shared by Codex and Claude extension surfaces', async () => {
   const componentsGroup = getCatalogGroup('components');
   assert.ok(componentsGroup);
