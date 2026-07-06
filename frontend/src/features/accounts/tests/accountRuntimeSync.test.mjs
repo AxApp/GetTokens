@@ -159,7 +159,6 @@ test('accounts feature owns the unified account runtime sync loop', async () => 
   assert.doesNotMatch(source, /ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY/);
   assert.doesNotMatch(source, /Promise\.all\(runtimeSyncAccounts\.map\(\(account\) => refreshCodexQuota\(account\)\)\)/);
   assert.match(source, /resolveAccountKeys: false/);
-  assert.match(source, /fallbackUsageStatistics: false/);
   assert.match(source, /loadAccountRateLimits\(runtimeSyncAccounts\)/);
   assert.match(source, /visibilitychange/);
   assert.doesNotMatch(hookSource, /setInterval/);
@@ -206,7 +205,6 @@ test('background usage sync skips backend account resolution', async () => {
   const source = await readFile(new URL('../hooks/useAccountsUsageState.ts', import.meta.url), 'utf8');
 
   assert.match(source, /resolveAccountKeys\?: boolean/);
-  assert.match(source, /fallbackUsageStatistics\?: boolean/);
   assert.match(source, /resolveAccountKeys: options\.resolveAccountKeys !== false/);
-  assert.match(source, /options\.fallbackUsageStatistics === false/);
+  assert.doesNotMatch(source, /GetUsageStatistics/);
 });

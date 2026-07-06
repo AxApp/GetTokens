@@ -481,7 +481,6 @@ export default function useAccountsPageState({
     void loadAccountUsage(runtimeSyncAccounts, {
       merge: true,
       resolveAccountKeys: false,
-      fallbackUsageStatistics: false,
     });
     void loadAccountRateLimits(runtimeSyncAccounts);
   }, [

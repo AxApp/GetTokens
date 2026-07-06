@@ -11,8 +11,11 @@ type UsageStatisticsResponse struct {
 }
 
 func (a *App) GetUsageStatistics() (*UsageStatisticsResponse, error) {
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/usage", nil, nil, "")
+	body, statusCode, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/usage", nil, nil, "")
 	if err != nil {
+		if statusCode == http.StatusNotFound {
+			return &UsageStatisticsResponse{Usage: map[string]interface{}{}}, nil
+		}
 		return nil, err
 	}
 

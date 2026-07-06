@@ -1,7 +1,9 @@
 package wailsapp
 
 import (
+	"errors"
 	"io"
+	"net/http"
 	"net/url"
 	"testing"
 )
@@ -40,5 +42,21 @@ func TestGetUsageStatistics(t *testing.T) {
 	}
 	if _, ok := result.Usage["apis"]; !ok {
 		t.Fatal("expected apis map in usage payload")
+	}
+}
+
+func TestGetUsageStatisticsTreatsMissingLegacyEndpointAsEmpty(t *testing.T) {
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			return nil, http.StatusNotFound, errors.New("sidecar 请求失败 (404): 404 Not Found")
+		},
+	}
+
+	result, err := app.GetUsageStatistics()
+	if err != nil {
+		t.Fatalf("GetUsageStatistics returned error: %v", err)
+	}
+	if result.FailedRequests != 0 || len(result.Usage) != 0 {
+		t.Fatalf("result = %#v, want empty usage statistics", result)
 	}
 }

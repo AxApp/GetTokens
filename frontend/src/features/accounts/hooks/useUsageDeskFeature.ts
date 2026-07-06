@@ -3,7 +3,6 @@ import {
   GetClaudeLocalUsage,
   GetCodexLocalUsage,
   GetSidecarUsageAttribution,
-  GetUsageStatistics,
   RebuildClaudeLocalUsage,
   RebuildClaudeLocalUsageDay,
   RebuildCodexLocalUsage,
@@ -265,10 +264,7 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
           setObservedUsageData(attribution);
           return;
         }
-
-        const response = await trackRequest<any>('GetUsageStatistics', { args: [] }, () => GetUsageStatistics());
-        if (!mounted) return;
-        setObservedUsageData(response?.usage ?? response ?? null);
+        setObservedUsageData(attribution);
       } catch (error) {
         console.error(error);
         if (!mounted) return;

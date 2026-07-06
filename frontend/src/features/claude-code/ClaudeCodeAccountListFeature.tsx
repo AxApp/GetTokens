@@ -1215,7 +1215,3 @@ function resolveDetailModelOptions(
   }
   return remoteModelOptions[row.id] || buildOfficialProfileModelOptions(row.provider, row.modelMappings);
 }
-
-export function getClaudeCodeAccountListSmokePreviewRows(): ClaudeCodeAccountRow[] {
-  return buildClaudeCodeAccountRows(getClaudeCodeAccountListPreviewAccounts());
-}

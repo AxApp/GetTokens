@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { GetSidecarUsageAttribution, GetUsageStatistics } from '../../../../wailsjs/go/main/App';
+import { GetSidecarUsageAttribution } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import { buildAccountUsageSummaryMap, buildFailedAccountUsageSummaryMap, type AccountUsageSummary } from '../model/accountUsage';
@@ -17,7 +17,6 @@ export default function useAccountsUsageState(trackRequest: TrackRequest) {
         showRefreshing?: boolean;
         merge?: boolean;
         resolveAccountKeys?: boolean;
-        fallbackUsageStatistics?: boolean;
       } = {},
     ) => {
       if (accounts.length === 0) {
@@ -58,14 +57,7 @@ export default function useAccountsUsageState(trackRequest: TrackRequest) {
           setAccountUsageByID((prev) => (mergeUsage ? { ...prev, ...usageMap } : usageMap));
           return;
         }
-        if (options.fallbackUsageStatistics === false) {
-          const usageMap = buildAccountUsageSummaryMap(accounts, attribution);
-          setAccountUsageByID((prev) => (mergeUsage ? { ...prev, ...usageMap } : usageMap));
-          return;
-        }
-
-        const response = await trackRequest<any>('GetUsageStatistics', { args: [] }, () => GetUsageStatistics());
-        const usageMap = buildAccountUsageSummaryMap(accounts, response?.usage ?? response);
+        const usageMap = buildAccountUsageSummaryMap(accounts, attribution);
         setAccountUsageByID((prev) => (mergeUsage ? { ...prev, ...usageMap } : usageMap));
       } catch (error) {
         console.error(error);
