@@ -21,8 +21,8 @@ gt-dev://app/v1/import?payload=<base64url-json>
 Wails/macOS deep link 改造必须按四层闭环处理：
 
 1. 后端 parser 支持生产 scheme 与 dev scheme，并保留实际 `Protocol`。
-2. root 启动参数和 `SingleInstanceLock` 二次启动参数都过滤所有支持的 scheme，避免 Wails flag parser 误读。
-3. `wails.json` 注册所有可由系统打开的 scheme，并用 root 测试读取配置防回归。
+2. `cmd/gettokens` 启动参数和 `SingleInstanceLock` 二次启动参数都过滤所有支持的 scheme，避免 Wails flag parser 误读。
+3. `cmd/gettokens/wails.json` 注册所有可由系统打开的 scheme，并用 Wails command 测试读取配置防回归。
 4. `./scripts/wails-cli.sh build` 后检查 built app 的 `Info.plist`，确认 `CFBundleURLTypes` 包含目标 scheme。
 
 只有 parser 测试通过不能说明系统 deep link 可用；只有 `Info.plist` 正确也不能说明当前 build 收到了 URL。

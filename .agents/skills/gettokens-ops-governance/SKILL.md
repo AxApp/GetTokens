@@ -23,7 +23,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Verification**: Match validation to the risk surface. Native macOS/Wails runtime changes need real dev App validation; ordinary frontend/backend/sidecar fixes may use automated tests, Wails build, browser/DOM checks, dev bridge, or API state evidence.
 - **Evidence gate before fixes**: Do not enter implementation from an unverified backlog item or intuition. Before a repair round starts, write an evidence matrix in the matching `space` or plan: issue source, current code/UI location, observed symptom or missing-state proof, expected acceptance path, and what evidence would disprove the candidate. Items without this evidence stay in research/planning and are not patched.
 - **Real dev App hand-click acceptance**: Do not make real desktop hand-click a blanket requirement. Use it only for macOS menu bar, window lifecycle, status item, LaunchServices, native runtime, Wails binding visibility, or when the user explicitly requests it in the current round. Avoid low-signal coordinate clicking and desktop focus churn for ordinary repair rounds.
-- **Binding Boundary**: Wails binds the root `main.App`, not `internal/wailsapp.App`. Any new Wails-facing method or DTO added under `internal/wailsapp` must also be exposed through root-level `app.go`, `app_types.go`, and mappers as needed before regenerating bindings; otherwise `wails dev` will remove the frontend export.
+- **Binding Boundary**: Wails binds `main.App` from `cmd/gettokens`, not `internal/wailsapp.App`. Any new Wails-facing method or DTO added under `internal/wailsapp` must also be exposed through `cmd/gettokens/app.go`, `cmd/gettokens/app_types.go`, and `cmd/gettokens/app_mappers.go` as needed before regenerating bindings; otherwise `wails dev` will remove the frontend export.
 - **Generated Binding Hygiene**: Run Wails through `scripts/wails-cli.sh`, not raw `wails`, for local dev/build. The wrapper normalizes `frontend/wailsjs` trailing whitespace after generation so `frontend/wailsjs/go/models.ts` does not stay dirty from generator-only formatting drift.
 - **Wails v2.12 Generator Boundary**: The current project Wails CLI v2.12.0 does not expose a standalone `wails generate bindings` command; `generate` only lists `module` and `template`. Treat `docs-linhay/scripts/check-wails-generated-drift.mjs` default output `standalone-generator-unavailable-surface-pass` as the terminal classifier when the generated surface gate passes and no `frontend/wailsjs` side effects are detected. For minimum build readiness, run the same checker with `--build-readiness`; it uses `scripts/wails-cli.sh build`, records `build/bin/GetTokens.app`, and restores generated binding snapshots. Do not keep opening new rounds trying to make a nonexistent standalone generator command pass.
 - **Startup Config Apply**: If a setting writes sidecar `config.yaml` while the sidecar is not yet `ready`, persist the local config first and mark the change as pending. The next `ready` callback must apply the latest config through the management API and clear the pending marker only after a successful response; failures should keep the marker for the next ready retry.
@@ -66,7 +66,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - The status item must expose at least service status, reopen window, check update when applicable, and quit. A background service without visible recovery or quit control is not an acceptable end state.
   - The quit action must be explicit and must not be confused with closing the main window.
 - **Wails binding contract**:
-  - Any new runtime settings DTO or method implemented under `internal/wailsapp` must be mirrored through root `app.go` / `app_types.go` before regenerating `frontend/wailsjs`.
+  - Any new runtime settings DTO or method implemented under `internal/wailsapp` must be mirrored through `cmd/gettokens/app.go` / `cmd/gettokens/app_types.go` before regenerating `frontend/wailsjs`.
   - After binding generation, confirm the frontend imports are real generated exports, not preview-only shims.
 - **Preview contract**:
   - Browser preview may be used for settings layout, copy, density, and screenshot review.
@@ -105,8 +105,8 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Parser behavior changes for desktop deep links, including dev-only aliases such as `gt-dev://`.
   - The feature depends on macOS LaunchServices handing a URL to GetTokens.
 - **Scheme contract**:
-  - Parser support is not enough. The scheme must also be registered in `wails.json`, then verified in the built `.app` `Info.plist`.
-  - Add or update a root-level test that reads `wails.json` and asserts every supported production and dev scheme is registered.
+  - Parser support is not enough. The scheme must also be registered in `cmd/gettokens/wails.json`, then verified in the built `.app` `Info.plist`.
+  - Add or update a Wails command test that reads `cmd/gettokens/wails.json` and asserts every supported production and dev scheme is registered.
   - Keep production and dev schemes semantically identical unless the feature explicitly requires a different payload contract.
   - Dev-only schemes are for local isolation and smoke testing. Product docs and external links should continue to use the production scheme.
 - **Entry contract**:
@@ -120,7 +120,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Acceptance checklist**:
   - Focused parser tests for every supported scheme.
   - Startup/single-instance argument filtering tests.
-  - `wails.json` registration test.
+  - `cmd/gettokens/wails.json` registration test.
   - `./scripts/wails-cli.sh build` and built `Info.plist` inspection.
   - Real desktop URL handoff only counts as complete when the intended build receives the URL.
 

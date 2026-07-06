@@ -47,7 +47,7 @@
 
 | Canonical term | 中文语义 | 权威边界 | 验收证据 |
 | --- | --- | --- | --- |
-| root App binding | Wails 实际绑定的根 `main.App` 方法与 DTO | `app.go` / `app_types.go` / `app_mappers.go` | generated `frontend/wailsjs` exports |
+| Wails App binding | Wails 实际绑定的 `main.App` 方法与 DTO | `cmd/gettokens/app.go` / `cmd/gettokens/app_types.go` / `cmd/gettokens/app_mappers.go` | generated `frontend/wailsjs` exports |
 | Wails core app | `internal/wailsapp.App` 内部实现层 | Go internal package | root mapper tests、core tests |
 | generated bindings | Wails 生成的 frontend 调用层 | `frontend/wailsjs` | `scripts/wails-cli.sh`、typecheck |
 | dev bridge | 浏览器 preview 或 dev server 访问本地 runtime 数据的显式桥 | `vite.config.js` / docs scripts | DOM assertions、source label、no hidden Wails shim |

@@ -42,7 +42,7 @@
 ## 契约变更要求
 会话插件结果字段变更必须成组落地，不能只改 Go 或只改前端：
 1. `internal/wailsapp/` 插件 DTO、聚合逻辑和 Go 测试。
-2. 根 Wails 暴露层 `app_types.go` 与 `app_mappers.go`。
+2. Wails 暴露层 `cmd/gettokens/app_types.go` 与 `cmd/gettokens/app_mappers.go`。
 3. `frontend/wailsjs/go/models.ts` 生成类型。
 4. `frontend/dev/sessionManagementDevData.js` 本地 dev bridge。
 5. `frontend/src/features/session-management/model.ts` 前端接口与 mapper。

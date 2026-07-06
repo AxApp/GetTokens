@@ -67,14 +67,14 @@ function assertAppBinding(appJS, appTypes, methodName, inputType, outputType) {
 }
 
 export function runBindingSurfaceCheck() {
-  const rootTypes = read('app_types.go');
+  const rootTypes = read('cmd/gettokens/app_types.go');
   const internalTypes = read('internal/wailsapp/types.go');
   const internalDoctor = read('internal/wailsapp/doctor.go');
   const internalExtensions = read('internal/wailsapp/gettokens_extensions.go');
   const internalRouting = read('internal/wailsapp/channel_routing.go');
   const extensionPlanner = read('internal/gettokensextensions/config_preview.go');
-  const rootApp = read('app.go');
-  const rootMappers = read('app_mappers.go');
+  const rootApp = read('cmd/gettokens/app.go');
+  const rootMappers = read('cmd/gettokens/app_mappers.go');
   const appJS = read('frontend/wailsjs/go/main/App.js');
   const appTypes = read('frontend/wailsjs/go/main/App.d.ts');
   const models = read('frontend/wailsjs/go/models.ts');

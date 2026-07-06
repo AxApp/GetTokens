@@ -85,7 +85,7 @@ description: GetTokens Codex 二进制管理：Codex CLI 版本源、下载、�
 
 ## 7. 后端 / Wails 边界
 - 领域逻辑放在 `internal/codexbinary`。
-- Wails-facing 方法放在 `internal/wailsapp`，随后必须通过 root `app.go`、必要的 root DTO/mapper 和前端 generated bindings 暴露。
+- Wails-facing 方法放在 `internal/wailsapp`，随后必须通过 `cmd/gettokens/app.go`、必要的 `cmd/gettokens` DTO/mapper 和前端 generated bindings 暴露。
 - Wails 生成的 `frontend/wailsjs/go/models.ts` 可能带尾随空白；交付前运行：
   - `perl -i -pe 's/[ \t]+$//' frontend/wailsjs/go/models.ts`
   - `perl -0pi -e 's/\n[ \t]*\n\z/\n/' frontend/wailsjs/go/models.ts`

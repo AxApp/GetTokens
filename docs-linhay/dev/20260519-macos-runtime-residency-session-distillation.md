@@ -31,14 +31,14 @@
 
 否则用户会进入“服务仍运行但无法感知、无法恢复、无法退出”的状态。
 
-### 3. Wails root binding 是交付边界
+### 3. Wails App binding 是交付边界
 
-GetTokens 的 Wails 绑定根对象是 `main.App`，不是 `internal/wailsapp.App`。后续新增运行时 API 时必须同步：
+GetTokens 的 Wails 绑定对象是 `cmd/gettokens` 包里的 `main.App`，不是 `internal/wailsapp.App`。后续新增运行时 API 时必须同步：
 
 1. `internal/wailsapp` 实现真实行为和测试。
-2. `app.go` 暴露 root method。
-3. `app_types.go` 暴露前端需要的 DTO。
-4. 必要 mapper 保持 root/internal 类型一致。
+2. `cmd/gettokens/app.go` 暴露 Wails method。
+3. `cmd/gettokens/app_types.go` 暴露前端需要的 DTO。
+4. 必要 mapper 保持 `cmd/gettokens` / internal 类型一致。
 5. 重新生成并检查 `frontend/wailsjs` 导出。
 
 只在 `internal/wailsapp` 增加方法会导致前端导出缺失，甚至被下一次 binding 生成移除。

@@ -2,10 +2,14 @@
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "GetTokens",
   "outputfilename": "GetTokens",
+  "build:dir": "../../build",
+  "frontend:dir": "../../frontend",
   "frontend:install": "npm install",
-  "frontend:build": "npm run build",
+  "frontend:build": "npm run build:wails",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "wailsjsdir": "../../frontend",
+  "reloaddirs": "../../cmd/gettokens,../../internal,../../resources",
   "author": {
     "name": "linhey",
     "email": "is.linhey@outlook.com"

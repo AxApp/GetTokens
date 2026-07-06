@@ -154,8 +154,8 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - openai-compatible 应作为 `accountKind=openai-compatible` 的统一账号记录进入 Codex inventory；页面模型层只做 presentation row 转换，不拥有“哪些账号属于 Codex 路由链路”的最终判定。
 - 新增 Wails-facing 方法时必须同时检查：
   - `internal/wailsapp`
-  - root `app.go`
-  - root DTO / mapper
+  - `cmd/gettokens/app.go`
+  - `cmd/gettokens` DTO / mapper
   - `frontend/wailsjs`
 - 账号 row id 到 sidecar auth id 的转换必须覆盖：
   - `auth-file:<name>`

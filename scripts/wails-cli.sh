@@ -3,6 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+WAILS_PROJECT_DIR="${ROOT_DIR}/cmd/gettokens"
 cd "$ROOT_DIR"
 
 WAILS_VERSION="v2.12.0"
@@ -110,6 +111,13 @@ install_sidecar_into_app_bundle() {
   chmod +x "${app_macos_dir}/cli-proxy-api"
 }
 
+codesign_file_if_present() {
+  local target_path="$1"
+  if [[ -f "${target_path}" ]]; then
+    codesign --force --sign - "${target_path}"
+  fi
+}
+
 run_wails() {
   local -a wails_cmd=("$@")
   if [[ "${COMMAND}" == "dev" ]]; then
@@ -125,7 +133,7 @@ run_wails() {
     local normalizer_pid="$!"
     trap 'kill "$normalizer_pid" >/dev/null 2>&1 || true' EXIT INT TERM
     set +e +u
-    "${wails_cmd[@]}" "$COMMAND" "${COMMAND_ARGS[@]}"
+    (cd "$WAILS_PROJECT_DIR" && "${wails_cmd[@]}" "$COMMAND" "${COMMAND_ARGS[@]}")
     local status="$?"
     set -euo pipefail
     kill "$normalizer_pid" >/dev/null 2>&1 || true
@@ -134,7 +142,7 @@ run_wails() {
   fi
 
   set +e +u
-  "${wails_cmd[@]}" "$COMMAND" "${COMMAND_ARGS[@]}"
+  (cd "$WAILS_PROJECT_DIR" && "${wails_cmd[@]}" "$COMMAND" "${COMMAND_ARGS[@]}")
   local status="$?"
   set -euo pipefail
   if [[ "${status}" -ne 0 ]]; then
@@ -147,6 +155,8 @@ run_wails() {
       "${ROOT_DIR}/scripts/install-menubar-swiftui.sh" "${ROOT_DIR}/build/bin/GetTokens.app"
     fi
     if command -v codesign >/dev/null 2>&1; then
+      codesign_file_if_present "${ROOT_DIR}/build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api"
+      codesign_file_if_present "${ROOT_DIR}/build/bin/GetTokens.app/Contents/Frameworks/libGetTokensMenuBarSwiftUI.dylib"
       codesign --deep --force --sign - "${ROOT_DIR}/build/bin/GetTokens.app"
     fi
   fi

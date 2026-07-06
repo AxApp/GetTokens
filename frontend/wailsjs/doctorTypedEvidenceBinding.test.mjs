@@ -19,8 +19,8 @@ function extractClass(source, className) {
 
 test('doctor typed evidence binding keeps droppedReason across Wails root and generated models', () => {
   const internalTypes = read('internal/wailsapp/types.go');
-  const rootTypes = read('app_types.go');
-  const rootMappers = read('app_mappers.go');
+  const rootTypes = read('cmd/gettokens/app_types.go');
+  const rootMappers = read('cmd/gettokens/app_mappers.go');
   const appJS = read('frontend/wailsjs/go/main/App.js');
   const appTypes = read('frontend/wailsjs/go/main/App.d.ts');
   const models = read('frontend/wailsjs/go/models.ts');

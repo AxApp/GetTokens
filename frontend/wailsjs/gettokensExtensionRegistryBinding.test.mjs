@@ -17,7 +17,7 @@ test('GetTokens extension registry Wails binding declares snapshot and local ena
   const appJS = fs.readFileSync(path.join(repoRoot, 'frontend/wailsjs/go/main/App.js'), 'utf8');
   const appTypes = fs.readFileSync(path.join(repoRoot, 'frontend/wailsjs/go/main/App.d.ts'), 'utf8');
   const models = fs.readFileSync(path.join(repoRoot, 'frontend/wailsjs/go/models.ts'), 'utf8');
-  const rootTypes = fs.readFileSync(path.join(repoRoot, 'app_types.go'), 'utf8');
+  const rootTypes = fs.readFileSync(path.join(repoRoot, 'cmd/gettokens/app_types.go'), 'utf8');
 
   assert.match(appJS, /export function GetGetTokensExtensionRegistrySnapshot\(arg1\)/);
   assert.match(appJS, /window\['go'\]\['main'\]\['App'\]\['GetGetTokensExtensionRegistrySnapshot'\]\(arg1\)/);
@@ -55,8 +55,8 @@ test('GetTokens extension registry Wails binding declares snapshot and local ena
 test('GetTokens extension dry-run binding preserves readonly input and typed patch plans', () => {
   const appTypes = fs.readFileSync(path.join(repoRoot, 'frontend/wailsjs/go/main/App.d.ts'), 'utf8');
   const models = fs.readFileSync(path.join(repoRoot, 'frontend/wailsjs/go/models.ts'), 'utf8');
-  const rootTypes = fs.readFileSync(path.join(repoRoot, 'app_types.go'), 'utf8');
-  const rootMappers = fs.readFileSync(path.join(repoRoot, 'app_mappers.go'), 'utf8');
+  const rootTypes = fs.readFileSync(path.join(repoRoot, 'cmd/gettokens/app_types.go'), 'utf8');
+  const rootMappers = fs.readFileSync(path.join(repoRoot, 'cmd/gettokens/app_mappers.go'), 'utf8');
 
   assert.match(appTypes, /PreviewGetTokensExtensionCodexConfigDryRun\(arg1:main\.PreviewGetTokensExtensionCodexConfigDryRunInput\):Promise<main\.GetTokensExtensionCodexConfigDryRunPreview>/);
   assert.match(rootTypes, /ConfigText\s+string\s+`json:"configText,omitempty"`/);

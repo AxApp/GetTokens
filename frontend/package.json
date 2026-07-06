@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
+    "build:wails": "npm run build && npm run sync:wails-embed",
+    "sync:wails-embed": "node scripts/sync-wails-embed.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "storybook": "storybook dev -p 6006",

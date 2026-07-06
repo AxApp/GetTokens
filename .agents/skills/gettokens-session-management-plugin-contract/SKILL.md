@@ -9,7 +9,7 @@ Use this skill when changing `session-management` plugin inputs, outputs, runtim
 
 ## Contract Change Checklist
 1. Update Go plugin logic under `internal/wailsapp/`, including DTO structs and focused tests.
-2. Mirror Wails-facing DTO changes in root `app_types.go` and mappers in `app_mappers.go`.
+2. Mirror Wails-facing DTO changes in `cmd/gettokens/app_types.go` and mappers in `cmd/gettokens/app_mappers.go`.
 3. Keep generated frontend bindings aligned in `frontend/wailsjs/go/models.ts`.
 4. Update the browser dev bridge in `frontend/dev/sessionManagementDevData.js` so localhost preview returns the same fields as Wails runtime.
 5. Update frontend model interfaces and response mappers in `frontend/src/features/session-management/model.ts`.

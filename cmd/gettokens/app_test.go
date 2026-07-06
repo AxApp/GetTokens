@@ -20,6 +20,24 @@ func boolPtr(value bool) *bool {
 	return &value
 }
 
+func repoPath(t *testing.T, elems ...string) string {
+	t.Helper()
+	parts := append([]string{"..", ".."}, elems...)
+	return filepath.Clean(filepath.Join(parts...))
+}
+
+func extensionFixtureManifestPath(t *testing.T) string {
+	t.Helper()
+	return repoPath(
+		t,
+		"docs-linhay",
+		"spaces",
+		"20260616-extension-contract-v0",
+		"examples",
+		"provider-metadata-model-catalog.valid.json",
+	)
+}
+
 func TestGitHubRepoUsesPublishedReleaseRepository(t *testing.T) {
 	if GitHubRepo != "AxApp/GetTokens" {
 		t.Fatalf("GitHubRepo = %q, want %q", GitHubRepo, "AxApp/GetTokens")
@@ -552,11 +570,11 @@ func TestConsumeDeepLinkArgsRemovesGetTokensURLsBeforeWailsParsesFlags(t *testin
 }
 
 func TestWailsConfigRegistersProdAndDevDeepLinkSchemes(t *testing.T) {
-	prodPList, err := os.ReadFile("build/darwin/Info.plist")
+	prodPList, err := os.ReadFile(repoPath(t, "build", "darwin", "Info.plist"))
 	if err != nil {
 		t.Fatalf("read build/darwin/Info.plist: %v", err)
 	}
-	devPList, err := os.ReadFile("build/darwin/Info.dev.plist")
+	devPList, err := os.ReadFile(repoPath(t, "build", "darwin", "Info.dev.plist"))
 	if err != nil {
 		t.Fatalf("read build/darwin/Info.dev.plist: %v", err)
 	}
@@ -1260,7 +1278,7 @@ func TestMapGetTokensExtensionRegistrySnapshotPreservesReadOnlyContract(t *testi
 
 func TestGetTokensExtensionRegistryRootBindingReturnsFixtureSnapshot(t *testing.T) {
 	app := NewApp()
-	manifest := filepath.Join("docs-linhay", "spaces", "20260616-extension-contract-v0", "examples", "provider-metadata-model-catalog.valid.json")
+	manifest := extensionFixtureManifestPath(t)
 
 	snapshot, err := app.GetGetTokensExtensionRegistrySnapshot(GetTokensExtensionRegistrySnapshotInput{
 		ManifestPaths: []string{manifest},
@@ -1298,7 +1316,7 @@ func TestSetGetTokensExtensionEnabledRootBindingPersistsLocalState(t *testing.T)
 		t.Fatalf("state entry mismatch: %#v", state.Extensions[0])
 	}
 
-	manifest := filepath.Join("docs-linhay", "spaces", "20260616-extension-contract-v0", "examples", "provider-metadata-model-catalog.valid.json")
+	manifest := extensionFixtureManifestPath(t)
 	snapshot, err := app.GetGetTokensExtensionRegistrySnapshot(GetTokensExtensionRegistrySnapshotInput{
 		ManifestPaths: []string{manifest},
 		StatePath:     statePath,
@@ -1314,7 +1332,7 @@ func TestSetGetTokensExtensionEnabledRootBindingPersistsLocalState(t *testing.T)
 func TestPreviewGetTokensExtensionCodexConfigDryRunRootBinding(t *testing.T) {
 	app := NewApp()
 	statePath := filepath.Join(t.TempDir(), "extension-enable-state.json")
-	manifest := filepath.Join("docs-linhay", "spaces", "20260616-extension-contract-v0", "examples", "provider-metadata-model-catalog.valid.json")
+	manifest := extensionFixtureManifestPath(t)
 
 	if _, err := app.SetGetTokensExtensionEnabled(SetGetTokensExtensionEnabledInput{
 		ExtensionID: "com.example.openai-metadata",
@@ -1370,7 +1388,7 @@ bearer_token = "literal-token-root-do-not-keep"
 
 func TestGetTokensExtensionCodexConfigTransactionRootBinding(t *testing.T) {
 	app := NewApp()
-	manifest := filepath.Join("docs-linhay", "spaces", "20260616-extension-contract-v0", "examples", "provider-metadata-model-catalog.valid.json")
+	manifest := extensionFixtureManifestPath(t)
 	targetPath := filepath.Join(t.TempDir(), "config.toml")
 	configText := `# root caller supplied text
 model = "gpt-5"

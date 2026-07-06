@@ -245,7 +245,7 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
           <div>
             <Tag
               data-gettokens-extension-enable-state={record.enableState.state}
-              className="m-0 border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-semibold text-[var(--gt-ink-primary)] text-[length:var(--gt-font-size-2xs)] uppercase"
+              className="m-0 border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] font-semibold text-[var(--gt-ink-primary)] text-[length:var(--gt-font-size-2xs)]"
             >
               {record.enableState.label}
             </Tag>

@@ -7,9 +7,9 @@ const repoRoot = path.resolve(import.meta.dirname, '../../..');
 const scanRoots = [
   path.join(repoRoot, 'frontend/src'),
   path.join(repoRoot, 'internal'),
-  path.join(repoRoot, 'app.go'),
-  path.join(repoRoot, 'app_types.go'),
-  path.join(repoRoot, 'app_codex_live_sessions.go'),
+  path.join(repoRoot, 'cmd/gettokens/app.go'),
+  path.join(repoRoot, 'cmd/gettokens/app_types.go'),
+  path.join(repoRoot, 'cmd/gettokens/app_codex_live_sessions.go'),
 ];
 const forbiddenPatterns = [
   /requestableOnly/,
