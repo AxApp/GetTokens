@@ -1,9 +1,4 @@
-import { gunzipSync, unzipSync } from 'fflate';
-
-export interface UploadFilePayload {
-  name: string;
-  contentBase64: string;
-}
+import { gunzipSync, unzip } from 'fflate';
 
 export const ACCOUNT_CARD_IMPORT_SCHEMA = 'gettokens.account-card.v1';
 export const ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT = 224;
@@ -457,20 +452,15 @@ export async function readUploadFiles(files: FileList | File[]) {
   return payloads.flat();
 }
 
-async function readUploadFile(file: File): Promise<UploadFilePayload[]> {
+async function readUploadFile(file: File): Promise<AccountImportPayloadItem[]> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (isArchiveUploadFile(file, bytes)) {
     return readArchiveJSONFiles(bytes, file.name);
   }
-  return [
-    {
-      name: file.name,
-      contentBase64: bytesToBase64(bytes),
-    },
-  ];
+  return createImportPayloadsFromBytes(file.name, bytes);
 }
 
-export async function readArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
+export async function readArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<AccountImportPayloadItem[]> {
   const normalizedName = archiveName.toLowerCase();
   if (isZipArchiveBytes(bytes) || normalizedName.endsWith('.zip')) {
     return readZipArchiveJSONFiles(bytes, archiveName);
@@ -484,14 +474,14 @@ export async function readArchiveJSONFiles(bytes: Uint8Array, archiveName: strin
   return [];
 }
 
-export async function readZipArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
-  const entries = Object.entries(unzipSync(bytes))
+export async function readZipArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<AccountImportPayloadItem[]> {
+  const entries = Object.entries(await unzipArchive(bytes))
     .filter(([name]) => isImportableArchiveJSONEntry(name))
     .slice(0, ARCHIVE_JSON_ENTRY_LIMIT);
-  return entries.map(([name, content]) => createArchiveEntryUploadPayload(archiveName, name, content));
+  return createArchiveEntryImportPayloads(archiveName, entries);
 }
 
-export async function readGzipArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
+export async function readGzipArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<AccountImportPayloadItem[]> {
   const content = gunzipSync(bytes);
   const entryName = resolveGzipEntryName(archiveName);
   if (isTarArchiveName(entryName.toLowerCase()) || isTarArchiveBytes(content)) {
@@ -500,11 +490,14 @@ export async function readGzipArchiveJSONFiles(bytes: Uint8Array, archiveName: s
   if (!isImportableArchiveJSONEntry(entryName) && !looksLikeJSONBytes(content)) {
     return [];
   }
-  return [createArchiveEntryUploadPayload(archiveName, entryName.endsWith('.json') ? entryName : `${entryName}.json`, content)];
+  return createImportPayloadsFromBytes(
+    resolveArchiveEntryUploadName(archiveName, entryName.endsWith('.json') ? entryName : `${entryName}.json`),
+    content,
+  );
 }
 
-export async function readTarArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<UploadFilePayload[]> {
-  const entries: UploadFilePayload[] = [];
+export async function readTarArchiveJSONFiles(bytes: Uint8Array, archiveName: string): Promise<AccountImportPayloadItem[]> {
+  const entries: AccountImportPayloadItem[] = [];
   let offset = 0;
   let pendingLongName = '';
 
@@ -534,7 +527,7 @@ export async function readTarArchiveJSONFiles(bytes: Uint8Array, archiveName: st
     if (!isImportableArchiveJSONEntry(rawName)) {
       continue;
     }
-    entries.push(createArchiveEntryUploadPayload(archiveName, rawName, content));
+    entries.push(...createImportPayloadsFromBytes(resolveArchiveEntryUploadName(archiveName, rawName), content));
   }
 
   return entries;
@@ -550,13 +543,6 @@ function isArchiveUploadFile(file: File, bytes: Uint8Array) {
     || isGzipArchiveName(name)
     || isTarArchiveName(name)
   );
-}
-
-function createArchiveEntryUploadPayload(archiveName: string, entryName: string, content: Uint8Array): UploadFilePayload {
-  return {
-    name: resolveArchiveEntryUploadName(archiveName, entryName),
-    contentBase64: bytesToBase64(content),
-  };
 }
 
 function isZipArchiveBytes(bytes: Uint8Array) {
@@ -642,4 +628,99 @@ function bytesToBase64(bytes: Uint8Array) {
     binary += String.fromCharCode(...chunk);
   }
   return btoa(binary);
+}
+
+async function createArchiveEntryImportPayloads(
+  archiveName: string,
+  entries: Array<[string, Uint8Array]>,
+): Promise<AccountImportPayloadItem[]> {
+  const payloads: AccountImportPayloadItem[] = [];
+  for (const [name, content] of entries) {
+    if (payloads.length > 0 && payloads.length % 50 === 0) {
+      await yieldToEventLoop();
+    }
+    payloads.push(...createImportPayloadsFromBytes(resolveArchiveEntryUploadName(archiveName, name), content));
+  }
+  return payloads;
+}
+
+function createImportPayloadsFromBytes(name: string, bytes: Uint8Array): AccountImportPayloadItem[] {
+  const text = new TextDecoder().decode(bytes);
+  try {
+    const parsed = JSON.parse(text);
+    const items = parseAccountImportPayloads(parsed);
+    if (items?.length) {
+      return items;
+    }
+  } catch {
+    // Fall through to raw upload fallback.
+  }
+  return [{ type: 'upload-file', name, contentBase64: bytesToBase64(bytes) }];
+}
+
+function unzipArchive(bytes: Uint8Array): Promise<Record<string, Uint8Array>> {
+  return new Promise((resolve, reject) => {
+    unzip(bytes, (error, data) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(data);
+    });
+  });
+}
+
+function yieldToEventLoop() {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+export function validateAccountImportPayloadItem(item: AccountImportPayloadItem): { valid: boolean; error?: string } {
+  if (!item) {
+    return { valid: false, error: 'Empty item' };
+  }
+  if (item.type === 'upload-file') {
+    if (!item.name.trim()) {
+      return { valid: false, error: 'Name is required' };
+    }
+    if (!item.contentBase64) {
+      return { valid: false, error: 'File content is empty' };
+    }
+    return { valid: true };
+  }
+  if (item.type === 'auth-file') {
+    if (!item.name.trim()) {
+      return { valid: false, error: 'Name is required' };
+    }
+    if (!item.content.trim()) {
+      return { valid: false, error: 'Content is required' };
+    }
+    try {
+      JSON.parse(item.content);
+    } catch {
+      return { valid: false, error: 'Invalid JSON format' };
+    }
+    return { valid: true };
+  }
+  if (item.type === 'codex-api-key') {
+    if (!item.apiKey.trim()) {
+      return { valid: false, error: 'API Key is required' };
+    }
+    if (!item.baseUrl.trim()) {
+      return { valid: false, error: 'Base URL is required' };
+    }
+    return { valid: true };
+  }
+  if (item.type === 'openai-compatible') {
+    if (!item.name.trim()) {
+      return { valid: false, error: 'Provider Name is required' };
+    }
+    if (!item.apiKey.trim()) {
+      return { valid: false, error: 'API Key is required' };
+    }
+    if (!item.baseUrl.trim()) {
+      return { valid: false, error: 'Base URL is required' };
+    }
+    return { valid: true };
+  }
+  return { valid: false, error: 'Unknown type' };
 }

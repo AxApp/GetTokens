@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetTokens - 账号导入工作台设计稿</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      /* AntD v6 & GetTokens Classic Light 语义 Token */
+      --gt-primary: #1677ff;
+      --gt-primary-hover: #4096ff;
+      --gt-primary-active: #0958d9;
+      --gt-primary-bg: #e6f4ff;
+      
+      --gt-surface-canvas: #ffffff;
+      --gt-surface-muted: #f5f5f5;
+      --gt-surface-card: #fafafa;
+      --gt-surface-overlay: #ffffff;
+      
+      --gt-border-primary: #d9d9d9;
+      --gt-border-subtle: #f0f0f0;
+      --gt-border-focus: #1677ff;
+      
+      --gt-ink-primary: rgba(0, 0, 0, 0.88);
+      --gt-ink-secondary: rgba(0, 0, 0, 0.65);
+      --gt-ink-muted: rgba(0, 0, 0, 0.45);
+      --gt-ink-disabled: rgba(0, 0, 0, 0.25);
+      
+      --gt-status-success: #52c41a;
+      --gt-status-success-bg: #f6ffed;
+      --gt-status-success-border: #b7eb8f;
+      
+      --gt-status-danger: #ff4d4f;
+      --gt-status-danger-bg: #fff2f0;
+      --gt-status-danger-border: #ffccc7;
+      
+      --gt-status-warning: #faad14;
+      --gt-status-warning-bg: #fffbe6;
+      --gt-status-warning-border: #ffe58f;
+      
+      --gt-shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+      --gt-shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02);
+      --gt-shadow-overlay: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+
+      --gt-font-size-2xs: 10px;
+      --gt-font-size-xs: 12px;
+      --gt-font-size-sm: 14px;
+      --gt-font-size-base: 15px;
+      --gt-font-size-lg: 16px;
+      --gt-font-size-xl: 20px;
+      
+      --gt-radius-small: 4px;
+      --gt-radius-medium: 6px;
+      --gt-radius-large: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: var(--gt-font-size-sm);
+      color: var(--gt-ink-primary);
+      background-color: var(--gt-surface-muted);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding: 24px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Container */
+    .app-container {
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      background-color: var(--gt-surface-canvas);
+      border: 1px solid var(--gt-border-primary);
+      border-radius: var(--gt-radius-large);
+      box-shadow: var(--gt-shadow-overlay);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-b: 1px solid var(--gt-border-subtle);
+      background-color: var(--gt-surface-canvas);
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gt-surface-canvas);
+      border: 1px solid var(--gt-border-primary);
+      color: var(--gt-ink-primary);
+      padding: 6px 12px;
+      border-radius: var(--gt-radius-medium);
+      font-size: var(--gt-font-size-xs);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+      border-color: var(--gt-ink-primary);
+      background: var(--gt-surface-muted);
+    }
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--gt-font-size-2xs);
+      color: var(--gt-ink-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .title {
+      font-family: 'Outfit', sans-serif;
+      font-size: var(--gt-font-size-xl);
+      font-weight: 600;
+      color: var(--gt-ink-primary);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .meta-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--gt-font-size-2xs);
+      color: var(--gt-ink-secondary);
+      background: var(--gt-surface-muted);
+      border: 1px solid var(--gt-border-primary);
+      padding: 4px 8px;
+      border-radius: var(--gt-radius-small);
+      font-weight: 600;
+    }
+
+    /* Clipboard toast */
+    .clipboard-smart-bar {
+      background-color: var(--gt-primary-bg);
+      border-bottom: 1px solid var(--gt-border-focus);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: var(--gt-font-size-xs);
+      color: var(--gt-ink-primary);
+      animation: slideDown 0.3s ease-out;
+      flex-shrink: 0;
+    }
+
+    .clipboard-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .clipboard-icon {
+      color: var(--gt-primary);
+    }
+
+    .btn-clipboard-action {
+      background: var(--gt-primary);
+      color: #fff;
+      border: none;
+      padding: 4px 12px;
+      border-radius: var(--gt-radius-small);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: var(--gt-font-size-xs);
+      transition: background 0.2s;
+    }
+
+    .btn-clipboard-action:hover {
+      background: var(--gt-primary-hover);
+    }
+
+    /* Main Content Layout */
+    .main-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      flex: 1;
+      min-height: 0;
+      background-color: var(--gt-surface-muted);
+    }
+
+    /* Left Panel: Input Workspace */
+    .left-panel {
+      background-color: var(--gt-surface-canvas);
+      border-right: 1px solid var(--gt-border-primary);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .tabs-header {
+      display: flex;
+      border-bottom: 1px solid var(--gt-border-subtle);
+      background-color: var(--gt-surface-card);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      background: none;
+      border: none;
+      font-size: var(--gt-font-size-xs);
+      font-weight: 600;
+      color: var(--gt-ink-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--gt-ink-primary);
+    }
+
+    .tab-btn.active {
+      color: var(--gt-primary);
+      border-bottom-color: var(--gt-primary);
+      background-color: var(--gt-surface-canvas);
+    }
+
+    .tab-content {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* File Dropzone */
+    .dropzone {
+      border: 1.5px dashed var(--gt-border-primary);
+      border-radius: var(--gt-radius-medium);
+      padding: 32px 16px;
+      text-align: center;
+      background: var(--gt-surface-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dropzone:hover {
+      border-color: var(--gt-primary);
+      background-color: var(--gt-primary-bg);
+    }
+
+    .dropzone-icon {
+      font-size: 28px;
+      color: var(--gt-ink-muted);
+    }
+
+    .dropzone-title {
+      font-size: var(--gt-font-size-sm);
+      font-weight: 600;
+      color: var(--gt-ink-primary);
+    }
+
+    .dropzone-hint {
+      font-size: var(--gt-font-size-xs);
+      color: var(--gt-ink-muted);
+      line-height: 1.4;
+    }
+
+    /* Text Area Paste */
+    .paste-area-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .paste-area-label {
+      font-size: var(--gt-font-size-xs);
+      font-weight: 600;
+      color: var(--gt-ink-secondary);
+    }
+
+    .paste-textarea {
+      width: 100%;
+      flex: 1;
+      min-height: 200px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--gt-font-size-xs);
+      border: 1px solid var(--gt-border-primary);
+      border-radius: var(--gt-radius-medium);
+      padding: 10px;
+      outline: none;
+      resize: none;
+      transition: all 0.2s;
+    }
+
+    .paste-textarea:focus {
+      border-color: var(--gt-primary);
+      box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+    }
+
+    .btn-paste-add {
+      background: var(--gt-primary);
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: var(--gt-radius-medium);
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s;
+    }
+
+    .btn-paste-add:hover {
+      background: var(--gt-primary-hover);
+    }
+
+    /* Right Panel: Pre-Import Workbench */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .workbench-header {
+      background-color: var(--gt-surface-canvas);
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--gt-border-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .selection-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: var(--gt-font-size-xs);
+      color: var(--gt-ink-secondary);
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .checkbox-custom {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--gt-border-primary);
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+
+    .checkbox-container input {
+      display: none;
+    }
+
+    .checkbox-container input:checked + .checkbox-custom {
+      background: var(--gt-primary);
+      border-color: var(--gt-primary);
+    }
+
+    .checkbox-container input:checked + .checkbox-custom::after {
+      content: '✓';
+      color: #fff;
+      font-size: 10px;
+      font-weight: bold;
+    }
+
+    .batch-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-ghost-danger {
+      background: transparent;
+      color: var(--gt-status-danger);
+      border: 1px solid transparent;
+      padding: 4px 8px;
+      border-radius: var(--gt-radius-medium);
+      font-size: var(--gt-font-size-xs);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-ghost-danger:hover {
+      background: var(--gt-status-danger-bg);
+      border-color: var(--gt-status-danger-border);
+    }
+
+    /* Workbench Queue List */
+    .queue-list {
+      flex: 1;
+      padding: 16px 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .empty-state {
+      margin: auto;
+      text-align: center;
+      color: var(--gt-ink-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .empty-icon {
+      font-size: 32px;
+      color: var(--gt-ink-disabled);
+    }
+
+    /* Queue Card */
+    .queue-card {
+      border: 1px solid var(--gt-border-primary);
+      border-radius: var(--gt-radius-medium);
+      background-color: var(--gt-surface-canvas);
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-shadow: var(--gt-shadow-card);
+    }
+
+    .queue-card:hover {
+      border-color: var(--gt-primary-hover);
+    }
+
+    .queue-card.has-error {
+      border-color: var(--gt-status-danger);
+    }
+
+    .card-header-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .card-title-col {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .card-name {
+      font-weight: 600;
+      font-size: var(--gt-font-size-sm);
+      color: var(--gt-ink-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: var(--gt-radius-small);
+      border: 1px solid transparent;
+    }
+
+    .tag-file {
+      color: var(--gt-ink-secondary);
+      background-color: var(--gt-surface-muted);
+      border-color: var(--gt-border-primary);
+    }
+
+    .tag-paste {
+      color: #722ed1;
+      background-color: #f9f0ff;
+      border-color: #d3adf7;
+    }
+
+    .tag-kind {
+      color: var(--gt-primary);
+      background-color: var(--gt-primary-bg);
+      border-color: #91ca9c;
+      border: 1px solid rgba(22, 119, 255, 0.2);
+    }
+
+    .card-meta-desc {
+      font-size: var(--gt-font-size-xs);
+      color: var(--gt-ink-muted);
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--gt-radius-small);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gt-ink-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+      background: var(--gt-surface-muted);
+      color: var(--gt-ink-primary);
+    }
+
+    .btn-icon-danger:hover {
+      background: var(--gt-status-danger-bg);
+      color: var(--gt-status-danger);
+    }
+
+    /* Error Message Panel */
+    .card-error-bar {
+      background-color: var(--gt-status-danger-bg);
+      border-top: 1px solid var(--gt-status-danger-border);
+      border-bottom: 1px solid var(--gt-status-danger-border);
+      padding: 8px 16px;
+      font-size: var(--gt-font-size-xs);
+      font-weight: 500;
+      color: var(--gt-status-danger);
+    }
+
+    /* Card Details Form (Inline Edit) */
+    .card-edit-form {
+      border-top: 1px solid var(--gt-border-subtle);
+      background-color: var(--gt-surface-card);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: slideDown 0.2s ease-out;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-item.full-width {
+      grid-column: span 2;
+    }
+
+    .form-label {
+      font-size: var(--gt-font-size-xs);
+      font-weight: 600;
+      color: var(--gt-ink-secondary);
+    }
+
+    .form-input {
+      border: 1px solid var(--gt-border-primary);
+      border-radius: var(--gt-radius-medium);
+      padding: 6px 10px;
+      font-size: var(--gt-font-size-xs);
+      outline: none;
+      transition: all 0.2s;
+      background: #fff;
+    }
+
+    .form-input:focus {
+      border-color: var(--gt-primary);
+    }
+
+    .form-input.has-error {
+      border-color: var(--gt-status-danger);
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-sm-primary {
+      background: var(--gt-primary);
+      color: #fff;
+      border: none;
+      padding: 5px 12px;
+      border-radius: var(--gt-radius-medium);
+      font-size: var(--gt-font-size-xs);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-sm-primary:hover {
+      background: var(--gt-primary-hover);
+    }
+
+    .btn-sm-secondary {
+      background: #fff;
+      color: var(--gt-ink-primary);
+      border: 1px solid var(--gt-border-primary);
+      padding: 5px 12px;
+      border-radius: var(--gt-radius-medium);
+      font-size: var(--gt-font-size-xs);
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-sm-secondary:hover {
+      background: var(--gt-surface-muted);
+    }
+
+    /* Footer */
+    .footer {
+      background-color: var(--gt-surface-canvas);
+      border-top: 1px solid var(--gt-border-primary);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .summary-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: var(--gt-font-size-xs);
+      color: var(--gt-ink-secondary);
+      font-weight: 500;
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-cancel {
+      background: #fff;
+      color: var(--gt-ink-primary);
+      border: 1px solid var(--gt-border-primary);
+      padding: 8px 16px;
+      border-radius: var(--gt-radius-medium);
+      font-size: var(--gt-font-size-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-cancel:hover {
+      background: var(--gt-surface-muted);
+    }
+
+    .btn-submit {
+      background: var(--gt-primary);
+      color: #fff;
+      border: none;
+      padding: 8px 20px;
+      border-radius: var(--gt-radius-medium);
+      font-size: var(--gt-font-size-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-submit:hover {
+      background: var(--gt-primary-hover);
+    }
+
+    .btn-submit:disabled {
+      background: var(--gt-ink-disabled);
+      cursor: not-allowed;
+    }
+
+    /* Animations */
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <button class="btn-back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          返回账号列表
+        </button>
+        <div class="title-group">
+          <span class="eyebrow">Import Workbench</span>
+          <h2 class="title">导入账号内容</h2>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="meta-chip">自动检测</span>
+        <span class="meta-chip">JSON / 压缩包</span>
+      </div>
+    </header>
+
+    <!-- Clipboard Banner (Smart Alert) -->
+    <div class="clipboard-smart-bar" id="clipboardSmartBar">
+      <div class="clipboard-info">
+        <svg class="clipboard-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        <span>检测到系统剪贴板中存在合法的账号 JSON 内容。是否直接将其导入到下方队列？</span>
+      </div>
+      <button class="btn-clipboard-action" onclick="importFromClipboard()">一键粘贴并解析</button>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="main-layout">
+      <!-- Left Panel: Actions -->
+      <section class="left-panel">
+        <div class="tabs-header">
+          <button class="tab-btn active" onclick="switchTab('file')">文件导入</button>
+          <button class="tab-btn" onclick="switchTab('paste')">手动粘贴文本</button>
+        </div>
+        
+        <!-- File Input Tab -->
+        <div class="tab-content active" id="tab-file">
+          <div class="dropzone" onclick="triggerFileSelect()">
+            <svg class="dropzone-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            <span class="dropzone-title">拖拽文件到此处，或点击上传</span>
+            <span class="dropzone-hint">支持单个/多个 .json、.zip、.tar.gz 压缩文件包，会自动检测解析其中的多份凭据</span>
+          </div>
+          <input type="file" id="fileInput" style="display:none" multiple accept=".json,.zip,.tgz,.tar.gz" onchange="handleFileSelect(event)">
+        </div>
+
+        <!-- Text Paste Tab -->
+        <div class="tab-content" id="tab-paste">
+          <div class="paste-area-wrapper">
+            <span class="paste-area-label">粘贴 JSON 字符串</span>
+            <textarea class="paste-textarea" id="pasteArea" placeholder='例：
+[
+  {
+    "type": "codex-api-key",
+    "label": "My Primary Key",
+    "apiKey": "sk-...",
+    "baseUrl": "https://api.openai.com/v1"
+  }
+]'></textarea>
+            <button class="btn-paste-add" onclick="handleAddPaste()">解析并添加至队列</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Panel: Pre-Import Workbench (List and Edit) -->
+      <section class="right-panel">
+        <div class="workbench-header">
+          <div class="selection-controls">
+            <label class="checkbox-container">
+              <input type="checkbox" id="selectAllCheckbox" checked onchange="toggleSelectAll(this.checked)">
+              <span class="checkbox-custom"></span>
+              全选 (<span id="selectedCount">2</span>/<span id="totalCount">2</span>)
+            </label>
+          </div>
+          <div class="batch-actions">
+            <button class="btn-ghost-danger" onclick="clearAllQueue()">一键清空</button>
+          </div>
+        </div>
+
+        <div class="queue-list" id="queueList">
+          <!-- Item 1 (Valid) -->
+          <div class="queue-card" id="card-1">
+            <div class="card-header-row" onclick="toggleCardEdit('1')">
+              <label class="checkbox-container" onclick="event.stopPropagation()">
+                <input type="checkbox" checked onchange="updateSelectedCount()">
+                <span class="checkbox-custom"></span>
+              </label>
+              <div class="card-title-col">
+                <div class="card-name-row">
+                  <span class="card-name" id="card-name-1">deepseek</span>
+                  <span class="tag tag-paste">剪贴板粘贴</span>
+                  <span class="tag tag-kind">PROVIDER</span>
+                </div>
+                <div class="card-meta-desc" id="card-desc-1">Endpoint: https://api.deepseek.com/v1 | Key: sk-test-dee...</div>
+              </div>
+              <div class="card-actions" onclick="event.stopPropagation()">
+                <button class="btn-icon" title="就地修改" onclick="toggleCardEdit('1')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </button>
+                <button class="btn-icon btn-icon-danger" title="移出队列" onclick="removeQueueItem('1')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Inline Edit Form (Hidden by default) -->
+            <div class="card-edit-form" id="form-1" style="display: none;">
+              <div class="form-grid">
+                <div class="form-item">
+                  <span class="form-label">供应商/账号名称</span>
+                  <input type="text" class="form-input" id="input-name-1" value="deepseek">
+                </div>
+                <div class="form-item">
+                  <span class="form-label">前缀</span>
+                  <input type="text" class="form-input" id="input-prefix-1" value="ds">
+                </div>
+                <div class="form-item full-width">
+                  <span class="form-label">Base URL</span>
+                  <input type="text" class="form-input" id="input-url-1" value="https://api.deepseek.com/v1">
+                </div>
+                <div class="form-item full-width">
+                  <span class="form-label">API Key</span>
+                  <input type="password" class="form-input" id="input-key-1" value="sk-test-deepseek">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn-sm-secondary" onclick="toggleCardEdit('1')">取消</button>
+                <button class="btn-sm-primary" onclick="saveCardEdit('1')">保存修改</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 2 (Has Error) -->
+          <div class="queue-card has-error" id="card-2">
+            <div class="card-header-row" onclick="toggleCardEdit('2')">
+              <label class="checkbox-container" onclick="event.stopPropagation()">
+                <input type="checkbox" checked onchange="updateSelectedCount()">
+                <span class="checkbox-custom"></span>
+              </label>
+              <div class="card-title-col">
+                <div class="card-name-row">
+                  <span class="card-name" id="card-name-2">codex-auth</span>
+                  <span class="tag tag-file">文件导入</span>
+                  <span class="tag tag-kind" style="color:#d46b08; background:#fff7e6; border-color:#ffd591;">AUTH FILE</span>
+                </div>
+                <div class="card-meta-desc" id="card-desc-2">文件名: accounts.zip:auth/codex-auth.json | 格式错误，缺少 type</div>
+              </div>
+              <div class="card-actions" onclick="event.stopPropagation()">
+                <button class="btn-icon" title="就地修改" onclick="toggleCardEdit('2')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </button>
+                <button class="btn-icon btn-icon-danger" title="移出队列" onclick="removeQueueItem('2')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Error message banner -->
+            <div class="card-error-bar">
+              数据校验失败: 属性 "type" 是必填项，但当前为 undefined。请在下方编辑框中补全。
+            </div>
+
+            <!-- Inline Edit Form (Displayed directly if error or on click) -->
+            <div class="card-edit-form" id="form-2">
+              <div class="form-grid">
+                <div class="form-item">
+                  <span class="form-label">文件名/标识</span>
+                  <input type="text" class="form-input" id="input-name-2" value="codex-auth.json">
+                </div>
+                <div class="form-item">
+                  <span class="form-label">类型(type) *</span>
+                  <input type="text" class="form-input has-error" id="input-type-2" placeholder="例如: codex">
+                </div>
+                <div class="form-item full-width">
+                  <span class="form-label">文件内容 (JSON 字符串)</span>
+                  <textarea class="form-input" id="input-content-2" style="font-family:'JetBrains Mono'; min-height:80px;">{
+  "access_token": "tar-token"
+}</textarea>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button class="btn-sm-secondary" onclick="toggleCardEdit('2')">关闭</button>
+                <button class="btn-sm-primary" onclick="saveCardEdit('2')">验证并保存</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="summary-text" id="summaryText">
+        已选择 2/2 个账号 (包含 1 个 Auth File, 1 个 OpenAI Compatible Provider)
+      </div>
+      <div class="footer-actions">
+        <button class="btn-cancel">取消</button>
+        <button class="btn-submit" id="submitBtn">开始导入</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.textContent.includes(tabId === 'file' ? '文件' : '粘贴'));
+      if (activeBtn) activeBtn.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    function triggerFileSelect() {
+      document.getElementById('fileInput').click();
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files.length > 0) {
+        alert('成功读取到 ' + e.target.files.length + ' 个文件！已将其添加到解析列表（此为演示）。');
+      }
+    }
+
+    function importFromClipboard() {
+      document.getElementById('clipboardSmartBar').style.display = 'none';
+      alert('已自动从剪贴板读取 JSON 并加入导入队列。');
+    }
+
+    function handleAddPaste() {
+      const val = document.getElementById('pasteArea').value.trim();
+      if (!val) {
+        alert('请输入粘贴的 JSON 字符串');
+        return;
+      }
+      alert('已成功解析粘贴的 JSON，并加入导入工作台列表。');
+      document.getElementById('pasteArea').value = '';
+    }
+
+    function toggleCardEdit(id) {
+      const form = document.getElementById('form-' + id);
+      if (form.style.display === 'none') {
+        form.style.display = 'flex';
+      } else {
+        form.style.display = 'none';
+      }
+    }
+
+    function saveCardEdit(id) {
+      const name = document.getElementById('input-name-' + id).value;
+      document.getElementById('card-name-' + id).textContent = name;
+      
+      if (id === '2') {
+        const typeInput = document.getElementById('input-type-2');
+        if (!typeInput.value.trim()) {
+          alert('属性 "type" 是必填项，无法保存！');
+          return;
+        }
+        // Mock successful validation
+        const card = document.getElementById('card-' + id);
+        card.classList.remove('has-error');
+        const errorBar = card.querySelector('.card-error-bar');
+        if (errorBar) errorBar.remove();
+        typeInput.classList.remove('has-error');
+      }
+      
+      toggleCardEdit(id);
+      updateSelectedCount();
+    }
+
+    function removeQueueItem(id) {
+      document.getElementById('card-' + id).remove();
+      updateSelectedCount();
+    }
+
+    function clearAllQueue() {
+      document.getElementById('queueList').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📂</div>
+          <div>导入队列为空。请在左侧上传文件或粘贴文本。</div>
+        </div>
+      `;
+      updateSelectedCount();
+    }
+
+    function toggleSelectAll(checked) {
+      document.querySelectorAll('.queue-list input[type="checkbox"]').forEach(cb => {
+        cb.checked = checked;
+      });
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const cbs = document.querySelectorAll('.queue-list .queue-card input[type="checkbox"]');
+      const total = cbs.length;
+      let selected = 0;
+      cbs.forEach(cb => {
+        if (cb.checked) selected++;
+      });
+      
+      document.getElementById('selectedCount').textContent = selected;
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('selectAllCheckbox').checked = total > 0 && selected === total;
+      
+      if (total === 0) {
+        document.getElementById('summaryText').textContent = '导入队列为空';
+        document.getElementById('submitBtn').disabled = true;
+      } else {
+        document.getElementById('summaryText').textContent = `已选择 ${selected}/${total} 个账号`;
+        document.getElementById('submitBtn').disabled = selected === 0;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,19 +1,20 @@
-import { useMemo, useRef, useState, type DragEvent } from 'react';
-import { Button, Input, Upload } from 'antd';
+import { useMemo, useRef, useState, useEffect, type DragEvent } from 'react';
+import { Button, Input, Upload, Tabs, Alert, Checkbox } from 'antd';
 import type { TextAreaRef } from 'antd/lib/input/TextArea';
-import { ClipboardPaste, FilePlus, Loader2, Upload as UploadIcon } from 'lucide-react';
+import { ClipboardPaste, FilePlus, Loader2, Upload as UploadIcon, Trash2 } from 'lucide-react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import { toErrorMessage } from '../../../utils/error';
 import {
   parseAccountImportPayloads,
   readUploadFiles,
+  validateAccountImportPayloadItem,
   type AccountImportPayloadItem,
 } from '../model/accountTransfer';
 import { readAccountClipboardText } from '../model/accountClipboard';
 import type { TextInputEvent, Translator } from '../model/types';
 import AccountImportQueueList, { type AccountImportQueueItem } from './AccountImportQueueList';
 
-type AccountImportSource = 'file' | 'paste';
+type AccountImportSource = 'file' | 'paste' | 'clipboard';
 
 const accountImportModalHeaderClass =
   'flex flex-wrap items-start justify-between gap-4';
@@ -28,17 +29,11 @@ const accountImportModalErrorClass =
 const accountImportModalSummaryClass =
   'font-mono text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportModalBodyClass =
-  'grid gap-5 p-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start';
+  'grid gap-5 p-6 lg:grid-cols-[380px_1fr] lg:items-start';
 const accountImportModalPanelClass =
   'grid min-w-0 gap-4 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4';
-const accountImportModalPanelSectionClass =
-  'grid gap-3 border-b border-[var(--gt-border-subtle)] pb-4';
-const accountImportModalPanelTitleClass =
-  'truncate text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-primary)]';
-const accountImportModalPanelMetaClass =
-  'font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportModalDropzoneClass = (active: boolean) =>
-  `grid min-h-36 place-items-center rounded border px-5 py-6 text-center transition-[background-color,border-color] disabled:opacity-45 ${
+  `w-full grid min-h-40 place-items-center rounded border px-5 py-6 text-center transition-[background-color,border-color] disabled:opacity-45 ${
     active
       ? 'border-[var(--gt-ink-primary)] bg-[color-mix(in_srgb,var(--gt-ink-primary)_8%,var(--gt-surface-muted))]'
       : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]'
@@ -48,7 +43,7 @@ const accountImportModalDropzoneTitleClass =
 const accountImportModalDropzoneHintClass =
   'max-w-sm text-[length:var(--gt-font-size-xs)] font-normal leading-relaxed tracking-normal text-[var(--gt-ink-muted)]';
 const accountImportModalQueueHeaderClass =
-  'border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-3';
+  'flex items-center justify-between border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-4 py-2 shrink-0';
 const accountImportModalQueueEmptyClass =
   'px-4 py-8 text-center text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 
@@ -69,17 +64,53 @@ export default function AccountImportModal({
 }: AccountImportModalProps) {
   const pasteInputRef = useRef<TextAreaRef | null>(null);
   const nextIDRef = useRef(0);
+
   const [queueItems, setQueueItems] = useState<AccountImportQueueItem[]>(() =>
     initialItems.map((payload) => createQueueItem(nextIDRef, 'paste', payload))
   );
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() =>
+    new Set(initialItems.map((_, i) => `paste-${i + 1}`))
+  );
+
+  // Sync selectedIds if queueItems changes and initially populated
+  useEffect(() => {
+    if (initialItems.length > 0 && selectedIds.size === 0) {
+      setSelectedIds(new Set(queueItems.map((item) => item.id)));
+    }
+  }, [queueItems, initialItems, selectedIds]);
+
   const [pasteContent, setPasteContent] = useState(initialPasteContent);
   const [error, setError] = useState('');
   const [readingFiles, setReadingFiles] = useState(false);
   const [isFileDragOver, setIsFileDragOver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const queueSummary = useMemo(() => {
-    return queueItems.reduce(
+  // Smart Clipboard detector
+  const [clipboardContent, setClipboardContent] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function checkClipboard() {
+      try {
+        const text = await readAccountClipboardText();
+        const trimmed = text.trim();
+        if (trimmed && trimmed !== initialPasteContent.trim()) {
+          const parsed = JSON.parse(trimmed);
+          const validated = parseAccountImportPayloads(parsed);
+          if (validated && validated.length > 0) {
+            setClipboardContent(trimmed);
+          }
+        }
+      } catch {
+        // Safe to ignore clipboard access errors
+      }
+    }
+    void checkClipboard();
+  }, [initialPasteContent]);
+
+  // Selected Count Statistics
+  const selectedSummary = useMemo(() => {
+    const selectedItems = queueItems.filter((item) => selectedIds.has(item.id));
+    return selectedItems.reduce(
       (summary, item) => {
         if (item.payload.type === 'upload-file' || item.payload.type === 'auth-file') {
           summary.authFiles += 1;
@@ -92,7 +123,13 @@ export default function AccountImportModal({
       },
       { authFiles: 0, apiKeys: 0, providers: 0 },
     );
-  }, [queueItems]);
+  }, [queueItems, selectedIds]);
+
+  const allValid = useMemo(() => {
+    const selectedItems = queueItems.filter((item) => selectedIds.has(item.id));
+    if (selectedItems.length === 0) return false;
+    return selectedItems.every((item) => validateAccountImportPayloadItem(item.payload).valid);
+  }, [queueItems, selectedIds]);
 
   async function handleAddFiles(files: FileList | null) {
     if (!files?.length) {
@@ -102,16 +139,24 @@ export default function AccountImportModal({
     setError('');
     try {
       const payload = await readUploadFiles(files);
-      setQueueItems((prev) => [
-        ...prev,
-        ...payload.map((item) =>
-          createQueueItem(nextIDRef, 'file', {
-            type: 'upload-file',
-            name: item.name,
-            contentBase64: item.contentBase64,
-          }),
-        ),
-      ]);
+      const nextItems: AccountImportQueueItem[] = [];
+
+      for (let index = 0; index < payload.length; index += 1) {
+        if (index > 0 && index % 50 === 0) {
+          await yieldAccountImportWork();
+        }
+        nextItems.push(createQueueItem(nextIDRef, 'file', payload[index]));
+      }
+
+      setQueueItems((prev) => {
+        const updated = [...prev, ...nextItems];
+        setSelectedIds((prevSelected) => {
+          const nextSelected = new Set(prevSelected);
+          nextItems.forEach((item) => nextSelected.add(item.id));
+          return nextSelected;
+        });
+        return updated;
+      });
     } catch (err) {
       setError(toErrorMessage(err));
     } finally {
@@ -161,7 +206,16 @@ export default function AccountImportModal({
       return;
     }
 
-    setQueueItems((prev) => [...prev, ...items.map((item) => createQueueItem(nextIDRef, 'paste', item))]);
+    const nextItems = items.map((item) => createQueueItem(nextIDRef, 'paste', item));
+    setQueueItems((prev) => {
+      const updated = [...prev, ...nextItems];
+      setSelectedIds((prevSelected) => {
+        const nextSelected = new Set(prevSelected);
+        nextItems.forEach((item) => nextSelected.add(item.id));
+        return nextSelected;
+      });
+      return updated;
+    });
     setPasteContent('');
     setError('');
   }
@@ -181,16 +235,88 @@ export default function AccountImportModal({
     }
   }
 
+  function handleImportFromClipboard() {
+    if (!clipboardContent) return;
+    try {
+      const parsed = JSON.parse(clipboardContent);
+      const items = parseAccountImportPayloads(parsed);
+      if (items && items.length > 0) {
+        const nextItems = items.map((item) => createQueueItem(nextIDRef, 'clipboard', item));
+        setQueueItems((prev) => {
+          const updated = [...prev, ...nextItems];
+          setSelectedIds((prevSelected) => {
+            const nextSelected = new Set(prevSelected);
+            nextItems.forEach((item) => nextSelected.add(item.id));
+            return nextSelected;
+          });
+          return updated;
+        });
+        setClipboardContent(null);
+        setError('');
+      }
+    } catch (err) {
+      setError(toErrorMessage(err));
+    }
+  }
+
+  function handleToggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  function handleToggleSelectAll(checked: boolean) {
+    if (checked) {
+      setSelectedIds(new Set(queueItems.map((item) => item.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  }
+
+  function handleRemoveItem(id: string) {
+    setQueueItems((prev) => prev.filter((item) => item.id !== id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  function handleClearAll() {
+    setQueueItems([]);
+    setSelectedIds(new Set());
+    setError('');
+  }
+
+  function handleUpdatePayload(id: string, newPayload: AccountImportPayloadItem) {
+    setQueueItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, payload: newPayload } : item))
+    );
+  }
+
   async function handleSubmit() {
-    if (queueItems.length === 0) {
+    const selectedItems = queueItems.filter((item) => selectedIds.has(item.id));
+    if (selectedItems.length === 0) {
       setError(t('accounts.import_account_queue_required'));
+      return;
+    }
+
+    const invalidItems = selectedItems.filter((item) => !validateAccountImportPayloadItem(item.payload).valid);
+    if (invalidItems.length > 0) {
+      setError(t('import_account_invalid_item').replace('{reason}', 'Please fix fields in editing cards first'));
       return;
     }
 
     setSubmitting(true);
     setError('');
     try {
-      await onSubmit(queueItems.map((item) => item.payload));
+      await onSubmit(selectedItems.map((item) => item.payload));
       onClose();
     } catch (err) {
       setError(toErrorMessage(err));
@@ -215,12 +341,8 @@ export default function AccountImportModal({
             </h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            <span className={accountImportModalMetaChipClass}>
-              AUTO DETECT
-            </span>
-            <span className={accountImportModalMetaChipClass}>
-              JSON ARRAY
-            </span>
+            <span className={accountImportModalMetaChipClass}>AUTO DETECT</span>
+            <span className={accountImportModalMetaChipClass}>JSON ARRAY</span>
           </div>
         </div>
       }
@@ -234,7 +356,14 @@ export default function AccountImportModal({
       footer={
         <>
           <div className={accountImportModalSummaryClass}>
-            {formatQueueSummary(t, queueItems.length, queueSummary)}
+            {selectedIds.size === 0
+              ? t('accounts.import_account_queue_empty')
+              : t('import_account_selected_summary')
+                  .replace('{selected}', String(selectedIds.size))
+                  .replace('{total}', String(queueItems.length))
+                  .replace('{authFiles}', String(selectedSummary.authFiles))
+                  .replace('{apiKeys}', String(selectedSummary.apiKeys))
+                  .replace('{providers}', String(selectedSummary.providers))}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={onClose} disabled={submitting}>
@@ -243,11 +372,11 @@ export default function AccountImportModal({
             <Button
               type="primary"
               onClick={() => void handleSubmit()}
-              disabled={submitting || queueItems.length === 0}
+              disabled={submitting || selectedIds.size === 0 || !allValid}
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   {t('accounts.import_account_importing')}
                 </span>
               ) : (
@@ -258,120 +387,192 @@ export default function AccountImportModal({
         </>
       }
     >
+      {/* Smart Clipboard Notification */}
+      {clipboardContent && (
+        <div className="shrink-0 px-6 pt-4">
+          <Alert
+            type="info"
+            showIcon
+            message={
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-primary)]">
+                  {t('import_account_clipboard_banner')}
+                </span>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={handleImportFromClipboard}
+                  icon={<ClipboardPaste className="h-3.5 w-3.5" />}
+                >
+                  {t('import_account_clipboard_action')}
+                </Button>
+              </div>
+            }
+            closable
+            onClose={() => setClipboardContent(null)}
+            className="rounded border-[var(--gt-border-focus)] bg-[var(--gt-primary-bg)] px-4"
+          />
+        </div>
+      )}
+
       <div data-account-import-modal-body className={accountImportModalBodyClass}>
+        {/* Left Workspace Panel: Tabs */}
         <section
           data-account-import-input-panel
           className={accountImportModalPanelClass}
         >
-          <div className={accountImportModalPanelSectionClass}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <FilePlus className="h-4 w-4 shrink-0 text-[var(--gt-ink-muted)]" strokeWidth={3} />
-                <h4 className={accountImportModalPanelTitleClass}>
-                  {t('accounts.import_account_files')}
-                </h4>
-              </div>
-              <span className={accountImportModalPanelMetaClass}>
-                MULTI
-              </span>
-            </div>
-
-            <Upload
-              multiple
-              accept=".json,.zip,.tar,.tar.gz,.tgz,.gz,.gzip,application/json,application/zip,application/gzip,application/x-tar"
-              showUploadList={false}
-              beforeUpload={(file) => {
-                const dt = new DataTransfer();
-                dt.items.add(file);
-                void handleAddFiles(dt.files);
-                return false;
-              }}
-            >
-              <Button
-                data-account-import-dropzone
-                onDragEnter={handleFileDragOver}
-                onDragOver={handleFileDragOver}
-                onDragLeave={handleFileDragLeave}
-                onDrop={handleFileDrop}
-                disabled={readingFiles || submitting}
-                className={accountImportModalDropzoneClass(isFileDragOver)}
-              >
-                <span className="grid justify-items-center gap-3">
-                  {readingFiles ? <Loader2 className="h-5 w-5" /> : <UploadIcon className="h-5 w-5" strokeWidth={3} />}
-                  <span className={accountImportModalDropzoneTitleClass}>
-                    {t('accounts.import_account_choose_files')}
+          <Tabs
+            defaultActiveKey="file"
+            size="small"
+            items={[
+              {
+                key: 'file',
+                label: (
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    <FilePlus className="h-3.5 w-3.5" />
+                    {t('accounts.import_account_files')}
                   </span>
-                  <span className={accountImportModalDropzoneHintClass}>
-                    {t('accounts.import_account_files_hint')}
+                ),
+                children: (
+                  <div className="grid gap-3 pt-2">
+                    <Upload
+                      className="w-full [&_.ant-upload]:w-full [&_.ant-upload-select]:w-full [&_.ant-upload-select]:block"
+                      multiple
+                      accept=".json,.zip,.tar,.tar.gz,.tgz,.gz,.gzip,application/json,application/zip,application/gzip,application/x-tar"
+                      showUploadList={false}
+                      beforeUpload={(file) => {
+                        const dt = new DataTransfer();
+                        dt.items.add(file);
+                        void handleAddFiles(dt.files);
+                        return false;
+                      }}
+                    >
+                      <Button
+                        data-account-import-dropzone
+                        onDragEnter={handleFileDragOver}
+                        onDragOver={handleFileDragOver}
+                        onDragLeave={handleFileDragLeave}
+                        onDrop={handleFileDrop}
+                        disabled={readingFiles || submitting}
+                        className={accountImportModalDropzoneClass(isFileDragOver)}
+                      >
+                        <span className="grid justify-items-center gap-3">
+                          {readingFiles ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <UploadIcon className="h-5 w-5" strokeWidth={3} />
+                          )}
+                          <span className={accountImportModalDropzoneTitleClass}>
+                            {t('accounts.import_account_choose_files')}
+                          </span>
+                          <span className={accountImportModalDropzoneHintClass}>
+                            {t('accounts.import_account_files_hint')}
+                          </span>
+                        </span>
+                      </Button>
+                    </Upload>
+                  </div>
+                ),
+              },
+              {
+                key: 'paste',
+                label: (
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    <ClipboardPaste className="h-3.5 w-3.5" />
+                    {t('accounts.import_account_paste')}
                   </span>
-                </span>
-              </Button>
-            </Upload>
-          </div>
-
-          <div className="grid gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <ClipboardPaste className="h-4 w-4 shrink-0 text-[var(--gt-ink-muted)]" strokeWidth={3} />
-                <h4 className={accountImportModalPanelTitleClass}>
-                  {t('accounts.import_account_paste')}
-                </h4>
-              </div>
-              <span className={accountImportModalPanelMetaClass}>
-                JSON
-              </span>
-            </div>
-            <Input.TextArea
-              size="small"
-              ref={pasteInputRef}
-              value={pasteContent}
-              onChange={(event: TextInputEvent) => {
-                setPasteContent(event.target.value);
-                setError('');
-              }}
-              className="min-h-36 resize-y font-mono text-[length:var(--gt-font-size-xs)]"
-              placeholder={t('accounts.import_account_paste_placeholder')}
-              spellCheck={false}
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleAddPaste} disabled={submitting}>
-                {t('accounts.import_account_add_paste')}
-              </Button>
-              <Button
-                onClick={() => void handlePasteFromClipboard()}
-                disabled={submitting}
-              >
-                {t('accounts.import_account_clear_paste')}
-              </Button>
-            </div>
-          </div>
+                ),
+                children: (
+                  <div className="grid gap-3 pt-2">
+                    <Input.TextArea
+                      size="small"
+                      ref={pasteInputRef}
+                      value={pasteContent}
+                      onChange={(event: TextInputEvent) => {
+                        setPasteContent(event.target.value);
+                        setError('');
+                      }}
+                      rows={6}
+                      className="w-full resize-none font-mono text-[length:var(--gt-font-size-xs)]"
+                      placeholder={t('accounts.import_account_paste_placeholder')}
+                      spellCheck={false}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="primary"
+                        onClick={handleAddPaste}
+                        disabled={submitting || !pasteContent.trim()}
+                      >
+                        {t('accounts.import_account_add_paste')}
+                      </Button>
+                      <Button
+                        onClick={() => void handlePasteFromClipboard()}
+                        disabled={submitting}
+                      >
+                        {t('accounts.import_account_clear_paste')}
+                      </Button>
+                    </div>
+                  </div>
+                ),
+              },
+            ]}
+          />
         </section>
 
-        <section data-account-import-queue-panel className={accountImportModalPanelClass}>
+        {/* Right Workbench Queue Panel */}
+        <section data-account-import-queue-panel className={accountImportModalPanelClass + ' p-0 flex flex-col'} aria-label={t('accounts.import_account_queue')}>
           <header className={accountImportModalQueueHeaderClass}>
-            <div className={accountImportModalPanelTitleClass}>
-              {t('accounts.import_account_queue')}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={queueItems.length > 0 && selectedIds.size === queueItems.length}
+                indeterminate={selectedIds.size > 0 && selectedIds.size < queueItems.length}
+                disabled={submitting || queueItems.length === 0}
+                onChange={(e: any) => handleToggleSelectAll(e.target.checked)}
+              >
+                <span className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-secondary)]">
+                  {t('import_account_select_all')} ({selectedIds.size}/{queueItems.length})
+                </span>
+              </Checkbox>
             </div>
-            <div className={`mt-1 ${accountImportModalPanelMetaClass}`}>
-              {t('accounts.import_account_queue_hint')}
-            </div>
+            {queueItems.length > 0 && (
+              <Button
+                size="small"
+                type="text"
+                danger
+                icon={<Trash2 className="h-3.5 w-3.5" />}
+                onClick={handleClearAll}
+                disabled={submitting}
+              >
+                {t('import_account_clear_all')}
+              </Button>
+            )}
           </header>
-          {queueItems.length === 0 ? (
-            <div className={accountImportModalQueueEmptyClass}>
-              {t('accounts.import_account_queue_empty')}
-            </div>
-          ) : (
-            <AccountImportQueueList
-              items={queueItems}
-              submitting={submitting}
-              t={t}
-              onRemove={(id) => setQueueItems((prev) => prev.filter((candidate) => candidate.id !== id))}
-            />
-          )}
+
+          <div className="flex-1 min-h-[30rem] flex flex-col justify-between">
+            {queueItems.length === 0 ? (
+              <div className={accountImportModalQueueEmptyClass}>
+                {t('accounts.import_account_queue_empty')}
+              </div>
+            ) : (
+              <AccountImportQueueList
+                items={queueItems}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onRemove={handleRemoveItem}
+                onUpdatePayload={handleUpdatePayload}
+                submitting={submitting}
+                t={t}
+              />
+            )}
+          </div>
         </section>
       </div>
     </ModalFrame>
   );
+}
+
+function yieldAccountImportWork() {
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 function createQueueItem(
@@ -385,19 +586,4 @@ function createQueueItem(
     source,
     payload,
   };
-}
-
-function formatQueueSummary(
-  t: Translator,
-  total: number,
-  summary: { authFiles: number; apiKeys: number; providers: number },
-) {
-  if (total === 0) {
-    return t('accounts.import_account_queue_empty');
-  }
-  return t('accounts.import_account_queue_summary')
-    .replace('{total}', String(total))
-    .replace('{authFiles}', String(summary.authFiles))
-    .replace('{apiKeys}', String(summary.apiKeys))
-    .replace('{providers}', String(summary.providers));
 }

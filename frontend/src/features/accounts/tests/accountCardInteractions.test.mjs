@@ -217,7 +217,7 @@ test('account import queue candidates render with account card styling', async (
   const queueSource = await readFile(new URL('../components/AccountImportQueueList.tsx', import.meta.url), 'utf8');
 
   assert.match(modalSource, /<AccountImportQueueList/);
-  assert.match(queueSource, /import \{ Button, Tag, Tooltip \} from 'antd'/);
+  assert.match(queueSource, /import \{ Button, Tag, Tooltip, Input, Checkbox \} from 'antd'/);
   assert.match(queueSource, /const accountImportQueueViewportClass =/);
   assert.match(queueSource, /const accountImportQueueCardClass =/);
   assert.match(queueSource, /<Tag/);
@@ -249,7 +249,7 @@ test('account import modal uses merged input panel beside account preview', asyn
   const pageSource = await readFile(new URL('../../../pages/AccountImportPage.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /data-account-import-input-panel/);
-  assert.match(source, /lg:grid-cols-\[minmax\(0,0\.92fr\)_minmax\(0,1\.08fr\)\]/);
+  assert.match(source, /lg:grid-cols-\[380px_1fr\]/);
   assert.equal((source.match(/data-account-import-input-panel/g) || []).length, 1);
 
   const inputPanelIndex = source.indexOf('data-account-import-input-panel');
@@ -278,7 +278,7 @@ test('account import page uses the quiet workspace shell', async () => {
   assert.match(source, /const accountImportPageShellClass =/);
   assert.match(source, /const accountImportHeaderClass =/);
   assert.match(source, /const accountImportPanelClass =/);
-  assert.match(source, /import \{ Button, Input, type InputRef, Upload \} from 'antd'/);
+  assert.match(source, /import \{ Button, Input, type InputRef, Upload, Tabs, Alert, Checkbox \} from 'antd'/);
   assert.match(source, /const accountImportDropzoneClass =/);
   assert.match(source, /const accountImportMetaChipClass =/);
   assert.match(targetSource, /data-account-import-page/);
@@ -310,7 +310,7 @@ test('account import modal uses the quiet workspace shell', async () => {
 
   assert.match(source, /const accountImportModalHeaderClass =/);
   assert.match(source, /const accountImportModalPanelClass =/);
-  assert.match(source, /import \{ Button, Input, Upload \} from 'antd'/);
+  assert.match(source, /import \{ Button, Input, Upload, Tabs, Alert, Checkbox \} from 'antd'/);
   assert.match(source, /const accountImportModalDropzoneClass =/);
   assert.match(source, /const accountImportModalMetaChipClass =/);
   assert.match(targetSource, /data-account-import-modal-header/);

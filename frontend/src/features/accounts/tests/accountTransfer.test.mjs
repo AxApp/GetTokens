@@ -16,6 +16,7 @@ import {
   resolveCopiedOpenAICompatibleProviderName,
   resolveNumberedDuplicateTitle,
   resolvePastedAuthFileName,
+  validateAccountImportPayloadItem,
 } from '../model/accountTransfer.ts';
 import { buildAccountCardContentText } from '../model/accountCardActions.ts';
 
@@ -282,7 +283,7 @@ test('resolveAccountImportPayloadPreview shows parsed card payload content', () 
   assert.doesNotMatch(preview, /sk-preview-deepseek/);
 });
 
-test('readArchiveJSONFiles scans json files inside zip archives', async () => {
+test('readArchiveJSONFiles parses json files inside zip archives', async () => {
   const archive = zipSync({
     'auth/codex-auth.json': strToU8('{ "type": "codex", "access_token": "zip-token" }'),
     'notes/readme.txt': strToU8('not imported'),
@@ -291,14 +292,21 @@ test('readArchiveJSONFiles scans json files inside zip archives', async () => {
 
   const payloads = await readArchiveJSONFiles(archive, 'accounts.zip');
 
-  assert.deepEqual(payloads.map((payload) => payload.name), [
-    'accounts.zip:auth/codex-auth.json',
-    'accounts.zip:nested/provider.JSON',
+  assert.deepEqual(payloads, [
+    {
+      type: 'auth-file',
+      name: 'pasted-auth.json',
+      content: '{\n  "type": "codex",\n  "access_token": "zip-token"\n}',
+    },
+    {
+      type: 'upload-file',
+      name: 'accounts.zip:nested/provider.JSON',
+      contentBase64: Buffer.from('{ "schema": "gettokens.account-card.v1" }', 'utf8').toString('base64'),
+    },
   ]);
-  assert.equal(Buffer.from(payloads[0].contentBase64, 'base64').toString('utf8'), '{ "type": "codex", "access_token": "zip-token" }');
 });
 
-test('readArchiveJSONFiles scans json files inside tar archives', async () => {
+test('readArchiveJSONFiles parses json files inside tar archives', async () => {
   const archive = buildTarArchive([
     ['auth/codex-auth.json', '{ "type": "codex", "access_token": "tar-token" }'],
     ['notes/readme.txt', 'not imported'],
@@ -307,14 +315,21 @@ test('readArchiveJSONFiles scans json files inside tar archives', async () => {
 
   const payloads = await readArchiveJSONFiles(archive, 'accounts.tar');
 
-  assert.deepEqual(payloads.map((payload) => payload.name), [
-    'accounts.tar:auth/codex-auth.json',
-    'accounts.tar:nested/provider.json',
+  assert.deepEqual(payloads, [
+    {
+      type: 'auth-file',
+      name: 'pasted-auth.json',
+      content: '{\n  "type": "codex",\n  "access_token": "tar-token"\n}',
+    },
+    {
+      type: 'upload-file',
+      name: 'accounts.tar:nested/provider.json',
+      contentBase64: Buffer.from('{ "schema": "gettokens.account-card.v1" }', 'utf8').toString('base64'),
+    },
   ]);
-  assert.equal(Buffer.from(payloads[0].contentBase64, 'base64').toString('utf8'), '{ "type": "codex", "access_token": "tar-token" }');
 });
 
-test('readArchiveJSONFiles scans json files inside compressed tar archives', async () => {
+test('readArchiveJSONFiles parses json files inside compressed tar archives', async () => {
   const archive = gzipSync(buildTarArchive([
     ['auth/codex-auth.json', '{ "type": "codex", "access_token": "tgz-token" }'],
     ['notes/readme.txt', 'not imported'],
@@ -322,10 +337,13 @@ test('readArchiveJSONFiles scans json files inside compressed tar archives', asy
 
   const payloads = await readArchiveJSONFiles(archive, 'accounts.tgz');
 
-  assert.deepEqual(payloads.map((payload) => payload.name), [
-    'accounts.tgz:auth/codex-auth.json',
+  assert.deepEqual(payloads, [
+    {
+      type: 'auth-file',
+      name: 'pasted-auth.json',
+      content: '{\n  "type": "codex",\n  "access_token": "tgz-token"\n}',
+    },
   ]);
-  assert.equal(Buffer.from(payloads[0].contentBase64, 'base64').toString('utf8'), '{ "type": "codex", "access_token": "tgz-token" }');
 });
 
 test('readArchiveJSONFiles expands single json gzip uploads', async () => {
@@ -333,13 +351,16 @@ test('readArchiveJSONFiles expands single json gzip uploads', async () => {
 
   const payloads = await readArchiveJSONFiles(archive, 'codex-auth.json.gz');
 
-  assert.deepEqual(payloads.map((payload) => payload.name), [
-    'codex-auth.json.gz:codex-auth.json',
+  assert.deepEqual(payloads, [
+    {
+      type: 'auth-file',
+      name: 'pasted-auth.json',
+      content: '{\n  "type": "codex",\n  "access_token": "gzip-token"\n}',
+    },
   ]);
-  assert.equal(Buffer.from(payloads[0].contentBase64, 'base64').toString('utf8'), '{ "type": "codex", "access_token": "gzip-token" }');
 });
 
-test('readUploadFiles expands zip archives into json upload candidates', async () => {
+test('readUploadFiles expands zip archives into parsed import candidates', async () => {
   const archive = zipSync({
     'auth/codex-auth.json': strToU8('{ "type": "codex", "access_token": "zip-token" }'),
     'nested/provider.json': strToU8('{ "schema": "gettokens.account-card.v1" }'),
@@ -349,14 +370,43 @@ test('readUploadFiles expands zip archives into json upload candidates', async (
     new File([archive], 'accounts.zip', { type: 'application/zip' }),
   ]);
 
-  assert.deepEqual(payloads.map((payload) => payload.name), [
-    'accounts.zip:auth/codex-auth.json',
-    'accounts.zip:nested/provider.json',
+  assert.deepEqual(payloads, [
+    {
+      type: 'auth-file',
+      name: 'pasted-auth.json',
+      content: '{\n  "type": "codex",\n  "access_token": "zip-token"\n}',
+    },
+    {
+      type: 'upload-file',
+      name: 'accounts.zip:nested/provider.json',
+      contentBase64: Buffer.from('{ "schema": "gettokens.account-card.v1" }', 'utf8').toString('base64'),
+    },
   ]);
-  assert.equal(Buffer.from(payloads[0].contentBase64, 'base64').toString('utf8'), '{ "type": "codex", "access_token": "zip-token" }');
 });
 
-test('readUploadFiles expands tgz archives into json upload candidates', async () => {
+test('readUploadFiles parses large json entries without base64 fallback', async () => {
+  const content = JSON.stringify({
+    type: 'codex',
+    access_token: `zip-token-${'x'.repeat(8_000)}`,
+    refresh_token: `zip-refresh-${'y'.repeat(8_000)}`,
+  });
+  const archive = zipSync({
+    'auth/codex-auth.json': strToU8(content),
+  });
+  const payloads = await readUploadFiles([
+    new File([archive], 'accounts.zip', { type: 'application/zip' }),
+  ]);
+
+  assert.deepEqual(payloads, [
+    {
+      type: 'auth-file',
+      name: 'pasted-auth.json',
+      content: JSON.stringify(JSON.parse(content), null, 2),
+    },
+  ]);
+});
+
+test('readUploadFiles expands tgz archives into parsed import candidates', async () => {
   const archive = gzipSync(buildTarArchive([
     ['auth/codex-auth.json', '{ "type": "codex", "access_token": "tgz-token" }'],
     ['notes/readme.txt', 'not imported'],
@@ -365,10 +415,13 @@ test('readUploadFiles expands tgz archives into json upload candidates', async (
     new File([archive], 'accounts.tar.gz', { type: 'application/gzip' }),
   ]);
 
-  assert.deepEqual(payloads.map((payload) => payload.name), [
-    'accounts.tar.gz:auth/codex-auth.json',
+  assert.deepEqual(payloads, [
+    {
+      type: 'auth-file',
+      name: 'pasted-auth.json',
+      content: '{\n  "type": "codex",\n  "access_token": "tgz-token"\n}',
+    },
   ]);
-  assert.equal(Buffer.from(payloads[0].contentBase64, 'base64').toString('utf8'), '{ "type": "codex", "access_token": "tgz-token" }');
 });
 
 test('resolveAccountImportQueueRenderWindow keeps large import queues virtualized by scroll viewport', () => {
@@ -408,6 +461,65 @@ test('resolveNumberedDuplicateTitle starts from #2 and keeps incrementing from t
   assert.equal(resolveNumberedDuplicateTitle('deepseek', ['deepseek', 'deepseek #2']), 'deepseek #3');
   assert.equal(resolveNumberedDuplicateTitle('deepseek #2', ['deepseek', 'deepseek #2']), 'deepseek #3');
 });
+
+test('validateAccountImportPayloadItem validates different account types correctly', () => {
+  // 1. openai-compatible valid
+  const okProvider = {
+    type: 'openai-compatible',
+    name: 'deepseek',
+    apiKey: 'sk-1111',
+    apiKeys: ['sk-1111'],
+    baseUrl: 'https://api.deepseek.com/v1',
+    prefix: 'ds',
+    proxyUrl: '',
+    headers: {},
+    models: []
+  };
+  assert.deepEqual(validateAccountImportPayloadItem(okProvider), { valid: true });
+
+  // 2. openai-compatible invalid (missing name)
+  const badProvider1 = { ...okProvider, name: '' };
+  assert.equal(validateAccountImportPayloadItem(badProvider1).valid, false);
+
+  // 3. openai-compatible invalid (missing apiKey)
+  const badProvider2 = { ...okProvider, apiKey: '' };
+  assert.equal(validateAccountImportPayloadItem(badProvider2).valid, false);
+
+  // 4. openai-compatible invalid (missing baseUrl)
+  const badProvider3 = { ...okProvider, baseUrl: '' };
+  assert.equal(validateAccountImportPayloadItem(badProvider3).valid, false);
+
+  // 5. codex-api-key valid
+  const okCodexKey = {
+    type: 'codex-api-key',
+    label: 'my-key',
+    apiKey: 'sk-2222',
+    baseUrl: 'https://api.openai.com/v1',
+    prefix: 'cdx'
+  };
+  assert.deepEqual(validateAccountImportPayloadItem(okCodexKey), { valid: true });
+
+  // 6. codex-api-key invalid (missing apiKey)
+  const badCodexKey = { ...okCodexKey, apiKey: '' };
+  assert.equal(validateAccountImportPayloadItem(badCodexKey).valid, false);
+
+  // 7. auth-file valid
+  const okAuthFile = {
+    type: 'auth-file',
+    name: 'some-auth.json',
+    content: JSON.stringify({ type: 'codex', access_token: 'tok' })
+  };
+  assert.deepEqual(validateAccountImportPayloadItem(okAuthFile), { valid: true });
+
+  // 8. auth-file invalid (missing name)
+  const badAuthFile1 = { ...okAuthFile, name: '' };
+  assert.equal(validateAccountImportPayloadItem(badAuthFile1).valid, false);
+
+  // 9. auth-file invalid (malformed JSON content)
+  const badAuthFile2 = { ...okAuthFile, content: '{invalid-json' };
+  assert.equal(validateAccountImportPayloadItem(badAuthFile2).valid, false);
+});
+
 
 function buildTarArchive(entries) {
   const encoder = new TextEncoder();
