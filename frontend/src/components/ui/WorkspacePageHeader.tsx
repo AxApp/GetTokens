@@ -27,8 +27,6 @@ export default function WorkspacePageHeader({
 }: WorkspacePageHeaderProps) {
   return (
     <header
-      data-design-system-component="true"
-      data-design-system-component-name="WorkspacePageHeader"
       className={`flex flex-wrap justify-between gap-4 border-b border-[var(--gt-border-subtle)] pb-4 ${
         align === 'center' ? 'items-center' : 'items-end'
       } ${className}`.trim()}

@@ -42,7 +42,7 @@ description: Use when wiring Open Design into this project or agent workflow, in
    ```bash
    od skills list --json
    ```
-3. 需要设计系统时再检查：
+3. 需要外部设计系统资料时再检查 Open Design registry：
    ```bash
    od design-systems list --json
    ```
@@ -58,7 +58,7 @@ description: Use when wiring Open Design into this project or agent workflow, in
 6. 截图归档到对应 space，路径遵循 `docs-linhay/scripts/check-docs.sh`：`screenshots/YYYYMMDD/<topic>/YYYYMMDD-<topic>-<target>-(before|after|baseline|failed)-vNN.png`。
 7. 修正后重新截图，并在 space README 记录修改前后证据、验收标准和仍保留的调试态边界。
 
-注意：GetTokens DEV 下的红色 design-system component highlight 是全局调试策略。除非当前需求明确修改设计系统 inspect mode，否则不要为了单页视觉评价移除 `data-design-system-highlight` 或对应测试。
+注意：GetTokens 内置 Storybook / `design-system` route / component highlight 已退役。Open Design 只能作为外部评价和素材输入，不要恢复 `data-design-system-*` 标记或 inspect mode。
 
 ## 入口选择
 - 静态读取、列表、健康检查：优先 HTTP API `od://app/api/*`。

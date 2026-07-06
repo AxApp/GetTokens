@@ -58,7 +58,6 @@
     "accounts_codex": "codex",
     "accounts_openai_compatible": "openai-compatible",
     "settings": "应用设置",
-    "design_system": "设计系统",
     "debug": "调试面板",
     "collapse_sidebar": "收起侧边栏",
     "expand_sidebar": "展开侧边栏",
@@ -68,22 +67,6 @@
     "update_failed": "更新失败",
     "codex_live_sessions_view_session": "会话",
     "codex_live_sessions_view_project": "项目"
-  },
-  "design_system": {
-    "title": "设计系统",
-    "subtitle": "Storybook 组件工作台 / Token / 状态回归",
-    "open_storybook": "打开 Storybook",
-    "open_web": "打开 Web",
-    "open_5173_web": "打开 5173 Web",
-    "inspect_elements": "定位元素",
-    "primary_entry": "主工作台",
-    "command": "启动命令",
-    "url": "默认地址",
-    "screenshot_path": "截图路径",
-    "coverage": "覆盖矩阵",
-    "groups": "分组",
-    "stories": "Stories",
-    "items": "项"
   },
   "codex": {
     "title": "Codex",

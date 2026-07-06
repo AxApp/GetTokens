@@ -391,57 +391,6 @@
     scrollbar-gutter: stable both-edges;
   }
 
-  [data-design-system-inspect-mode='active'] [data-design-system-highlight='project'] [data-design-system-component='true'] {
-    position: relative;
-    outline: 2px solid var(--gt-status-danger);
-    outline-offset: 2px;
-  }
-
-  [data-design-system-inspect-mode='active'] [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-name]::before {
-    content: attr(data-design-system-component-name);
-    position: absolute;
-    left: -2px;
-    top: -1.45rem;
-    z-index: 40;
-    max-width: min(13rem, calc(100vw - 2rem));
-    overflow: hidden;
-    border: 2px solid var(--gt-status-danger);
-    background: var(--gt-status-danger);
-    color: var(--gt-surface-canvas);
-    cursor: copy;
-    font-family: var(--gt-font-family-mono);
-    font-size: var(--gt-font-size-xs);
-    font-weight: 600;
-    letter-spacing: 0;
-    line-height: 1;
-    padding: 0.25rem 0.35rem;
-    pointer-events: auto;
-    text-overflow: ellipsis;
-    text-transform:;
-    white-space: nowrap;
-  }
-
-  [data-design-system-inspect-mode='active'] [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-copied='true']::before {
-    content: attr(data-design-system-component-name) ' / COPIED';
-    background: var(--gt-status-success);
-    border-color: var(--gt-status-success);
-  }
-
-  [data-design-system-inspect-mode='active'] [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-copied='error']::before {
-    content: attr(data-design-system-component-name) ' / COPY FAILED';
-    background: var(--gt-status-danger);
-    border-color: var(--gt-status-danger);
-  }
-
-  [data-design-system-inspect-mode='active'] [data-design-system-highlight='project'] [data-codex-feature-config-panel='true'] [data-design-system-component='true'] {
-    outline: none;
-  }
-
-  [data-design-system-inspect-mode='active'] [data-design-system-highlight='project'] [data-codex-feature-config-panel='true'] [data-design-system-component='true'][data-design-system-component-name]::before {
-    content: none;
-    display: none;
-  }
-
   /* --- Settings Page (macOS Preferences style) --- */
   .settings-page {
     background-color: var(--gt-surface-canvas);

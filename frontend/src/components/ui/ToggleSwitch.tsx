@@ -31,8 +31,6 @@ export default function ToggleSwitch({
       aria-label={label}
       title={label}
       size="small"
-      data-design-system-component="true"
-      data-design-system-component-name="ToggleSwitch"
       className={className || undefined}
     />
   );

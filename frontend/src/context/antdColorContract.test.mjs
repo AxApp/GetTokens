@@ -66,7 +66,7 @@ function listRuntimeSourceFiles(root) {
       files.push(...listRuntimeSourceFiles(path));
       continue;
     }
-    if (entry.includes('.test.') || entry.includes('.stories.')) {
+    if (entry.includes('.test.')) {
       continue;
     }
     const ext = entry.slice(entry.lastIndexOf('.'));

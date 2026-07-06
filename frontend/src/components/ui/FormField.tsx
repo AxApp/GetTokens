@@ -32,8 +32,6 @@ export default function FormField({
   if (as === 'div') {
     return (
       <div
-        data-design-system-component="true"
-        data-design-system-component-name="FormField"
         className={fieldClassName}
       >
         {content}
@@ -43,8 +41,6 @@ export default function FormField({
 
   return (
     <label
-      data-design-system-component="true"
-      data-design-system-component-name="FormField"
       className={fieldClassName}
     >
       {content}
@@ -55,8 +51,6 @@ export default function FormField({
 export function FieldLabel({ children }: { children: ReactNode }) {
   return (
     <span
-      data-design-system-component="true"
-      data-design-system-component-name="FieldLabel"
       className="text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-muted)]"
     >
       {children}

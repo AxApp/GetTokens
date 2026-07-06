@@ -41,8 +41,6 @@ export default function ActionSelect({
 
   return (
     <label
-      data-design-system-component="true"
-      data-design-system-component-name="ActionSelect"
       className="grid gap-2"
     >
       <FieldLabel>{title}</FieldLabel>

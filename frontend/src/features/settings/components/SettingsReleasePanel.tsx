@@ -96,9 +96,6 @@ export default function SettingsReleasePanel({
 }: SettingsReleasePanelProps) {
   return (
     <div
-      data-design-system-component="true"
-      data-design-system-component-name="SettingsReleasePanel"
-      data-design-system-git-hash={gitHashLabel}
     >
       <ReleaseRow
         label={currentVersionTitle}

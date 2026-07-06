@@ -440,13 +440,6 @@ test('AccountsToolbar filter controls use the quiet workspace shell', async () =
   }
 });
 
-test('AccountsToolbar design-system default story starts with all filters selected', async () => {
-  const source = await readFile(new URL('../components/AccountsToolbarComponents.stories.tsx', import.meta.url), 'utf8');
-
-  assert.equal(source.includes('initialFilters = defaultAccountsFilterState'), true);
-  assert.equal(source.includes('initialFilters = emptyFilters'), false);
-});
-
 test('AccountsHeader splits account list refresh from runtime refresh', async () => {
   const headerSource = await readFile(new URL('../components/AccountsHeader.tsx', import.meta.url), 'utf8');
   const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');

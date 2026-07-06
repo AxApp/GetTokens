@@ -14,8 +14,6 @@ const pageLoadingTrackStrongClass =
 export default function PageLoadingFallback() {
   return (
     <div
-      data-design-system-component="true"
-      data-design-system-component-name="PageLoadingFallback"
       data-page-loading-fallback="quiet"
       className={pageLoadingRootClass}
       role="status"

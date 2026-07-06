@@ -11,7 +11,7 @@ test('sidebar hides developer-only entries outside dev tools mode', () => {
 
   assert.equal(productionIDs.includes('design-system'), false);
   assert.equal(productionIDs.includes('debug'), false);
-  assert.equal(developmentIDs.includes('design-system'), true);
+  assert.equal(developmentIDs.includes('design-system'), false);
   assert.equal(developmentIDs.includes('debug'), true);
 });
 

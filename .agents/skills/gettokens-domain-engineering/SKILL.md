@@ -401,23 +401,8 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Themes**: Support `system`, `light`, and `dark`. Ensure `--bg-main` and `--bg-surface` are distinct in dark mode.
 - **l10n**: Add new copy to both `zh.json` and `en.json`. Default is Chinese.
 - **Controls**: Use segmented controls for discrete settings.
-- **Professional Tooling Bias**: When a mature, domain-standard frontend tool directly solves a design-system, component-workbench, accessibility, visual-regression, or interaction-preview problem, recommend it explicitly even if it is outside the user's stated vocabulary. Do not default to self-building a weaker internal version just because it avoids a new tool.
-- **Storybook Baseline**: For GetTokens design-system work, Storybook is the default primary component workbench. Use `@storybook/react-vite` for the current React + Vite stack. Keep any in-app `design-system` route as a discovery/entry page unless a later requirement explicitly needs production-embedded component previews.
-- **Storybook Scope**:
-  - Treat `http://127.0.0.1:6006/` as the public foundation Storybook, not the full business design-system surface. Its `frontend/.storybook/main.ts` story globs should stay limited to tokens, primitives, and `frontend/src/components/ui`; do not reintroduce `../src/**/*.stories` or `features/**` there.
-  - Business design-system work belongs to the Vite app entry `http://127.0.0.1:5173/#frame=design-system`. Keep `storyCatalog.ts` / `componentManifest.ts` able to list `feature-components` for 5173 even when those stories are excluded from 6006.
-  - When verifying this boundary, check both sides: `6006/index.json` must not contain `Design System/业务组件`, `feature-components`, or `frontend/src/features`; the 5173 design-system catalog must still retain `feature-components`.
-  - Stories must render real components, not copied static HTML.
-  - Stories must use mock data and must not call Wails bindings or sidecar APIs.
-  - Load `frontend/src/style.css` and the relevant providers in Storybook preview so CSS variables, theme behavior, text scale, and localization are visible.
-  - Start with `frontend/src/components/ui` and token stories before pulling in business-heavy account/Codex components.
-  - Component stories must include an `Overview` story that shows key states in one page for design review and screenshot regression; keep single-state stories for isolated interaction debugging.
-  - Component examples that are officially admitted into the design system must be wrapped with `DesignSystemStoryFrame`; this keeps the `data-design-system-component="true"` automation marker without drawing an admission border or corner label inside Storybook. Visible component framing belongs to project/product-page identification flows, not to the design system preview itself.
-  - Project/runtime pages must mark admitted design-system component roots with `data-design-system-component="true"` and `data-design-system-component-name="<ComponentName>"`. In dev, App owns the `data-design-system-highlight="project"` scope and CSS draws the visible red outline there only; Storybook must not receive that project highlight scope.
-  - Feature component收编必须循环执行：发现未纳入组件 -> 匹配现有设计系统组件/模式 -> 匹配不到则抽象或新建设计组件 -> 写 mock story + `Overview` + `DesignSystemStoryFrame` -> 运行 catalog/typecheck/Storybook 验收。
-  - 每个 `frontend/src/features/*/components/**/*.tsx` 文件必须在 `componentManifest.ts` 中有收编决策：`admitted`、`candidate`、`deferred` 或 `excluded`。不得让新组件“沉默缺席”。
-  - `admitted` feature component 必须同步进入 `storyCatalog.ts` 的 `feature-components` 分组，并记录 story path、Storybook title、mock data source 和 required states。
-  - Keep Storybook dependency and generated config isolated to the frontend dev toolchain; it must not affect Wails runtime behavior.
+- **Retired design-system boundary**: Storybook and the in-app `design-system` route are retired. Do not add `.stories.*`, `.storybook/`, `storyCatalog.ts`, `componentManifest.ts`, `DesignSystemStoryFrame`, or `data-design-system-*` runtime markers. New UI work should be verified with focused unit/source tests, preview data, headless browser/DOM checks, screenshots when useful, and Wails/dev evidence only when the risk surface requires it.
+- **Professional Tooling Bias**: Mature frontend tooling can still be proposed for a new, explicitly scoped problem, but it must not revive the retired GetTokens Storybook/design-system stack without a new space, tests, and user approval.
 - **Complex Workflow Screens**: When a flow/configuration page starts feeling complex, reduce the information architecture before adding more components:
   - put the final route/result summary first
   - keep the expanded editor to the fewest decision zones users must act on

@@ -121,8 +121,6 @@ export default function SessionPluginConsolePanel({
 }: SessionPluginConsolePanelProps) {
   return (
     <main
-      data-design-system-component="true"
-      data-design-system-component-name="SessionPluginConsolePanel"
       data-session-plugin-console-panel="true"
       className="min-w-0 overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] shadow-sm"
     >

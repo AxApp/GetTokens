@@ -131,8 +131,6 @@ export function ClaudeCodeAccountListWorkbench({
 
   return (
     <section
-      data-design-system-component="true"
-      data-design-system-component-name="ClaudeCodeAccountListWorkbench"
       data-claude-account-workbench-shell
       className={claudeAccountWorkbenchShellClass}
     >

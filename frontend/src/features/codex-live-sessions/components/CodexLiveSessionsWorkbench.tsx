@@ -208,8 +208,6 @@ export default function CodexLiveSessionsWorkbench({
 
   return (
     <section
-      data-design-system-component="true"
-      data-design-system-component-name="CodexLiveSessionsWorkbench"
       data-codex-live-sessions-workbench-shell="quiet"
       className={codexLiveWorkbenchShellClass}
     >

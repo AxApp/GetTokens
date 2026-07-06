@@ -46,7 +46,6 @@ const AccountsPage = lazyPage(() => import('./pages/AccountsPage'), '/src/pages/
 const ClaudePage = lazyPage(() => import('./pages/ClaudePage'), '/src/pages/ClaudePage.tsx');
 const CodexPage = lazyPage(() => import('./pages/CodexPage'), '/src/pages/CodexPage.tsx');
 const DebugPage = lazyPage(() => import('./pages/DebugPage'), '/src/pages/DebugPage.tsx');
-const DesignSystemPage = lazyPage(() => import('./pages/DesignSystemPage'), '/src/pages/DesignSystemPage.tsx');
 const ProxyPoolPage = lazyPage(() => import('./pages/ProxyPoolPage'), '/src/pages/ProxyPoolPage.tsx');
 const SettingsPage = lazyPage(() => import('./pages/SettingsPage'), '/src/pages/SettingsPage.tsx');
 const StatusPage = lazyPage(() => import('./pages/StatusPage'), '/src/pages/StatusPage.tsx');
@@ -125,35 +124,6 @@ function AppShell() {
     document.documentElement.dataset.textScale = getTextScaleAttributeValue(textScale);
     applyTextScaleVariables(document.documentElement.style, textScale);
   }, [textScale]);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) {
-      return;
-    }
-
-    function handleDesignSystemComponentLabelClick(event: MouseEvent) {
-      const target = event.target instanceof Element ? event.target : null;
-      const component = target?.closest<HTMLElement>("[data-design-system-component='true']");
-      if (!component) {
-        return;
-      }
-
-      const componentName = component.dataset.designSystemComponentName?.trim();
-      if (!componentName || !isDesignSystemComponentLabelHit(event, component)) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      void copyDesignSystemComponentName(component, componentName);
-    }
-
-    document.addEventListener('click', handleDesignSystemComponentLabelClick, true);
-    return () => {
-      document.removeEventListener('click', handleDesignSystemComponentLabelClick, true);
-    };
-  }, []);
-
   useEffect(() => {
     if (!hasWailsRuntime()) {
       return;
@@ -181,7 +151,7 @@ function AppShell() {
   }, [setActiveCodexLiveSessionsView, setActiveCodexWorkspace, setActivePage]);
 
   const page = useMemo(() => {
-    if (!showDeveloperTools && (activePage === 'debug' || activePage === 'design-system')) {
+    if (!showDeveloperTools && activePage === 'debug') {
       return <AccountsPage workspace="all" />;
     }
     if (activePage === 'status') {
@@ -189,9 +159,6 @@ function AppShell() {
     }
     if (activePage === 'debug') {
       return <DebugPage />;
-    }
-    if (activePage === 'design-system') {
-      return <DesignSystemPage />;
     }
     if (activePage === 'account-import') {
       return <AccountImportPage onDone={() => setActivePage('accounts')} />;
@@ -242,7 +209,6 @@ function AppShell() {
             isSidebarCollapsed ? '[--app-sidebar-width:4.75rem]' : '[--app-sidebar-width:15rem]',
           ].join(' ')}
           data-collaboration-id="MAIN_FRAME"
-          data-design-system-highlight={import.meta.env.DEV ? 'project' : undefined}
           data-text-scale={getTextScaleAttributeValue(textScale)}
         >
           <Sidebar
@@ -271,36 +237,6 @@ function AppShell() {
       </AccountMigrationGate>
     </AccountsPageStateProvider>
   );
-}
-
-function isDesignSystemComponentLabelHit(event: MouseEvent, component: HTMLElement) {
-  const rect = component.getBoundingClientRect();
-  const labelTop = rect.top - 24;
-  const labelBottom = rect.top + 2;
-  const labelLeft = rect.left - 4;
-  const labelRight = Math.min(rect.right + 4, rect.left + 220);
-
-  return (
-    event.clientX >= labelLeft &&
-    event.clientX <= labelRight &&
-    event.clientY >= labelTop &&
-    event.clientY <= labelBottom
-  );
-}
-
-async function copyDesignSystemComponentName(component: HTMLElement, componentName: string) {
-  try {
-    await navigator.clipboard.writeText(componentName);
-    component.dataset.designSystemComponentCopied = 'true';
-    window.setTimeout(() => {
-      delete component.dataset.designSystemComponentCopied;
-    }, 1100);
-  } catch {
-    component.dataset.designSystemComponentCopied = 'error';
-    window.setTimeout(() => {
-      delete component.dataset.designSystemComponentCopied;
-    }, 1400);
-  }
 }
 
 export default function App() {

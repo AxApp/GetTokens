@@ -183,8 +183,6 @@ export function ClaudeCodeAssetWorkbench({
 
   return (
     <div
-      data-design-system-component="true"
-      data-design-system-component-name="ClaudeCodeAssetWorkbench"
       data-claude-asset-workbench-shell="true"
       className="h-full w-full"
     >

@@ -559,7 +559,6 @@ test('quota split layout removes quota window divider and stretches script card'
 test('runtime evidence section is removed from account detail surfaces', async () => {
   const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
-  const storySource = await readFile(new URL('../components/AccountModalComponents.stories.tsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(sectionSource, /export function AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(sectionSource, /componentName="AccountRuntimeEvidenceSection"/);
@@ -572,10 +571,6 @@ test('runtime evidence section is removed from account detail surfaces', async (
   assert.doesNotMatch(unifiedSource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(unifiedSource, /AccountDetailOverviewGrid/);
   assert.doesNotMatch(unifiedSource, /AccountEvidenceSection/);
-
-  assert.doesNotMatch(storySource, /AccountRuntimeEvidenceSection/);
-  assert.doesNotMatch(storySource, /AccountRuntimeSnapshotSection/);
-  assert.doesNotMatch(storySource, /AccountEvidenceSection/);
 });
 
 test('quota and billing curl editors are driven by account detail script hash routes', async () => {
@@ -1028,8 +1023,7 @@ test('real account detail header uses compact account type summary', async () =>
 test('account detail primitives use the current quiet token shell', async () => {
   const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
 
-  assert.match(primitiveSource, /data-design-system-component="true"/);
-  assert.match(primitiveSource, /data-design-system-component-name=\{componentName\}/);
+  assert.doesNotMatch(primitiveSource, /data-design-system-/);
   assert.match(primitiveSource, /bg-\[var\(--gt-surface-canvas\)\]/);
   assert.match(primitiveSource, /bg-\[var\(--gt-surface-muted\)\]/);
   assert.match(primitiveSource, /border-\[var\(--gt-border-subtle\)\]/);

@@ -444,7 +444,6 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     >
       {props.isCodex ? (
         <div data-codex-account-detail-body="true" className="h-full w-full min-w-0 min-h-0 flex flex-col">
-          {/* Keep this comment for design-system story catalog matching: layout="cards" */}
           <AccountDetailLayout
             sectionNavItems={sectionNavItems}
             localCliActions={props.localCliActions}

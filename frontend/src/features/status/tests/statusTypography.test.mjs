@@ -11,7 +11,7 @@ test('local CLI apply controls preserve the source casing of displayed values', 
   const selectSwissRule = styleSource.match(/\.select-swiss\s*\{[\s\S]*?\n\s*\}/)?.[0] || '';
   assert.doesNotMatch(btnSwissRule, /text-transform:\s*uppercase/);
   assert.doesNotMatch(selectSwissRule, /text-transform:\s*uppercase/);
-  assert.doesNotMatch(formFieldSource, /data-design-system-component-name="FieldLabel"[\s\S]{0,220}uppercase/);
+  assert.doesNotMatch(formFieldSource, /uppercase/);
 
   assert.doesNotMatch(
     statusPanelSource,
@@ -39,10 +39,8 @@ test('status local CLI Chinese copy keeps product and field casing explicit', as
 
 test('status provider picker labels show only the model_provider id', async () => {
   const statusPanelSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
-  const storySource = await readFile(new URL('../components/StatusLocalCliApplyPanel.stories.tsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(statusPanelSource, /\$\{provider\.name\}\s*\/\s*\$\{provider\.id\}/);
-  assert.doesNotMatch(storySource, /\{provider\.name\}\s*\/\s*\{provider\.id\}/);
   const labelFormatterSource = statusPanelSource.match(/export function formatRelayProviderSelectLabel[\s\S]*?\n}/)?.[0] || '';
   assert.match(labelFormatterSource, /return providerID;/);
   assert.doesNotMatch(labelFormatterSource, /ID:/);
@@ -446,15 +444,6 @@ test('codex feature rows render a settings table and a grouped multi_agent_v2 co
   assert.match(featureSectionSource, /resolveFeatureRowPathLabels\(pathDisplay, nested\)/);
   assert.match(featureSectionSource, /pathDisplay\.childLabels/);
   assert.doesNotMatch(featureSectionSource, /<div className="divide-y-2 divide-\[var\(--gt-border-strong\)\]">\s*\{groupFeatureRowsByPrimaryPath/);
-});
-
-test('codex feature panel suppresses project design-system highlight overlays', async () => {
-  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
-
-  assert.match(styleSource, /\[data-design-system-inspect-mode='active'\] \[data-design-system-highlight='project'\] \[data-codex-feature-config-panel='true'\] \[data-design-system-component='true'\]/);
-  assert.match(styleSource, /outline:\s*none/);
-  assert.match(styleSource, /\[data-codex-feature-config-panel='true'\] \[data-design-system-component='true'\]\[data-design-system-component-name\]::before/);
-  assert.match(styleSource, /content:\s*none/);
 });
 
 test('status page exposes account-store diagnostics panel with summarized errors', async () => {

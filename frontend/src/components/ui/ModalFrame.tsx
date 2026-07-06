@@ -164,8 +164,6 @@ export default function ModalFrame({
       style={modalStyle}
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
-      data-design-system-component="true"
-      data-design-system-component-name="ModalFrame"
       {...panelAttributes}
     >
       {panelContent}

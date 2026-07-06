@@ -33,8 +33,6 @@ export default function CodexBinarySummaryPanel({
 }) {
   return (
     <section
-      data-design-system-component="true"
-      data-design-system-component-name="CodexBinarySummaryPanel"
       data-codex-binary-summary-panel="quiet"
       className={codexBinarySummaryPanelClass}
     >

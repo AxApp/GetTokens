@@ -35,7 +35,6 @@ const productionAppPages: ReadonlySet<AppPage> = new Set([
   'settings',
 ]);
 const developerAppPages: ReadonlySet<AppPage> = new Set([
-  'design-system',
   'debug',
 ]);
 const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['all']);

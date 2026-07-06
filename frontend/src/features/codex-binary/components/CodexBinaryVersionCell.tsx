@@ -90,8 +90,6 @@ export default function CodexBinaryVersionCell({
 
   return (
     <article
-      data-design-system-component="true"
-      data-design-system-component-name="CodexBinaryVersionCell"
       data-codex-binary-version-cell="quiet"
       className={`${codexBinaryVersionCellShellClass} ${row.isSelected ? codexBinaryVersionCellSelectedClass : ''} cursor-pointer`}
       onClick={onToggleNotes}

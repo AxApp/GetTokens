@@ -23,8 +23,6 @@ export default function SegmentedControl<T extends string>({
 
   return (
     <Segmented
-      data-design-system-component="true"
-      data-design-system-component-name="SegmentedControl"
       className="border border-[var(--gt-border-subtle)]"
       options={antdOptions}
       value={value || undefined}

@@ -33,8 +33,6 @@ export default function SearchInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className={`!h-10 ${className}`}
-      data-design-system-component="true"
-      data-design-system-component-name="SearchInput"
     />
   );
 }

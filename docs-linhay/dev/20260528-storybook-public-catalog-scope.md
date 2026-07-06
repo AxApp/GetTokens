@@ -1,5 +1,7 @@
 # Storybook 公开目录范围
 
+> 2026-07-06 状态：本文记录历史 Storybook/catalog 分工，当前实现已整体移除 Storybook、应用内 `design-system` route、`componentManifest`、`storyCatalog`、`DesignSystemStoryFrame` 与 `data-design-system-*` 运行时标记。后续 UI 验收改走 focused 测试、preview 数据、无头浏览器/DOM/截图和必要 Wails dev 证据；不得按本文恢复双入口设计系统。
+
 ## 背景
 `http://127.0.0.1:6006/` 是设计系统公开工作台入口，不再承担全量业务组件验收。此前 Storybook 通过 `../src/**/*.stories.@(ts|tsx|mdx)` 加载所有 story，导致 `frontend/src/features/**` 下的业务组件全部进入 6006 侧栏。
 

@@ -53,8 +53,6 @@ export function Combobox({
 
   return (
     <div
-      data-design-system-component="true"
-      data-design-system-component-name="Combobox"
       className={className}
     >
       <AutoComplete

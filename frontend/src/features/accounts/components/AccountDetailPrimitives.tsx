@@ -11,7 +11,6 @@ export function AccountDetailSection({
   meta,
   actions,
   children,
-  componentName = 'AccountDetailSection',
   className = '',
 }: {
   eyebrow?: ReactNode;
@@ -31,8 +30,6 @@ export function AccountDetailSection({
 }) {
   return (
     <section
-      data-design-system-component="true"
-      data-design-system-component-name={componentName}
       className={`flex flex-col w-full min-w-0 space-y-3 py-6 ${className}`}
     >
       {(title || actions) && (

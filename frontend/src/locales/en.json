@@ -58,7 +58,6 @@
     "accounts_codex": "CODEX",
     "accounts_openai_compatible": "OPENAI-COMPATIBLE",
     "settings": "SETTINGS",
-    "design_system": "DESIGN SYSTEM",
     "debug": "DEBUG",
     "collapse_sidebar": "Collapse Sidebar",
     "expand_sidebar": "Expand Sidebar",
@@ -68,22 +67,6 @@
     "update_failed": "Update Failed",
     "codex_live_sessions_view_session": "Sessions",
     "codex_live_sessions_view_project": "Projects"
-  },
-  "design_system": {
-    "title": "Design System",
-    "subtitle": "Storybook component workbench / tokens / state regression",
-    "open_storybook": "Open Storybook",
-    "open_web": "Open Web",
-    "open_5173_web": "Open 5173 Web",
-    "inspect_elements": "Inspect Elements",
-    "primary_entry": "Primary Workbench",
-    "command": "Command",
-    "url": "Default URL",
-    "screenshot_path": "Screenshot Path",
-    "coverage": "Coverage",
-    "groups": "Groups",
-    "stories": "Stories",
-    "items": "items"
   },
   "codex": {
     "title": "Codex",

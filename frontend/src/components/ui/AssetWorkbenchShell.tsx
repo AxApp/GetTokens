@@ -40,8 +40,6 @@ export default function AssetWorkbenchShell({
   return (
     <div
       data-collaboration-id={dataCollaborationId}
-      data-design-system-component="true"
-      data-design-system-component-name="AssetWorkbenchShell"
       className={`scrollbar-stable h-full w-full overflow-auto p-6 text-[var(--gt-ink-primary)] lg:p-8 ${className}`.trim()}
     >
       <Flex vertical gap="large" className="w-full">

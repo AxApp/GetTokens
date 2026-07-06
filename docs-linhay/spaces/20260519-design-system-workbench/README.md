@@ -1,5 +1,11 @@
 # Design System Workbench
 
+## 2026-07-06 退役状态
+
+本 space 保留为历史记录。当前代码已整体移除 Storybook、应用内 `design-system` route、`frontend/src/features/design-system/`、`frontend/.storybook/`、`*.stories.tsx`、`componentManifest` / `storyCatalog` 门禁和运行时 `data-design-system-*` 标记。
+
+后续 UI 验收不再通过本 space 描述的设计系统工作台推进，改用 focused 单测/源码约束、preview 数据、无头浏览器 DOM/截图和必要的 Wails dev 证据。除非重新开 space 并获得用户明确授权，不得恢复本文的 Storybook/design-system 架构。
+
 ## 背景
 换肤 / 主题能力已经进入排期，但如果只在真实业务页面里调样式，修改成本会很高：每次要跳转到账号池、Codex、代理池、设置页等不同页面，才能确认按钮、表单、弹窗、卡片、状态徽标在各主题下是否一致。
 

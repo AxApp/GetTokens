@@ -61,7 +61,6 @@ And 只有在明确验证模型路由时才临时指定模型。
 | `gettokens_observability_analyst` | `workspace-write` | usage attribution、live sessions、本地 usage 投影、运行时 telemetry、bounded snapshot 和隐私边界 |
 | `gettokens_codex_extensions_maintainer` | `workspace-write` | Codex Skills、MCP Servers、`config.toml` raw/structured editor、Git skill source |
 | `gettokens_config_apply_guardian` | `workspace-write` | Codex/Claude local apply、deep link 导入、auth/config/settings 保守 patch 和 diff 确认 |
-| `gettokens_design_system_curator` | `workspace-write` | Storybook、component admission、设计 token、inspect mode、桌面 UI 一致性 |
 | `gettokens_macos_runtime_operator` | `workspace-write` | Wails root binding、macOS lifecycle、sidecar 进程归属、status item、App menu、native 验证 |
 | `gettokens_upstream_fork_curator` | `workspace-write` | CLIProxyAPI fork、上游源码校准、gitlink、sidecar rebuild、双仓提交边界 |
 
@@ -82,7 +81,7 @@ And 只有在明确验证模型路由时才临时指定模型。
 4. 账号迁移：`gettokens_account_store_migrator` 负责 sidecar SQLite 和迁移门禁，`gettokens_verifier` 补真实备份或隔离目录验证，主控 agent 审核旧事实源是否仍被读取。
 5. 路由问题：`gettokens_routing_engineer` 负责 route policy 和热路径测试，`gettokens_observability_analyst` 可并行检查 usage/live sessions 归因是否受影响。
 6. Codex/Claude 本地配置：`gettokens_config_apply_guardian` 负责 patch 语义和 diff，`gettokens_codex_extensions_maintainer` 只在 Skills/MCP/config workspace 涉及时介入。
-7. 设计系统与桌面 UI：`gettokens_design_system_curator` 负责 Storybook/manifest/视觉一致性，`gettokens_ui_integrator` 负责具体页面接线。
+7. 桌面 UI：`gettokens_ui_integrator` 负责页面接线、状态派生和 AntD/GetTokens token 对齐，`gettokens_verifier` 负责无头浏览器或必要桌面证据；已退役的 Storybook/design-system curator 不再作为分工入口。
 8. macOS runtime：`gettokens_macos_runtime_operator` 负责 Wails binding、native menu/status item 和 sidecar 进程生命周期，`gettokens_verifier` 记录桌面验收缺口或截图。
 9. 发布：`gettokens_release_operator` 负责 release 证据链，主控 agent 避免把 CI 发布和可分发 DMG 验收混为一谈。
 10. subagent 治理：`gettokens_subagent_architect` 负责 agent 设计、裁剪、合并与配置校验；具体业务实现继续交给对应专题 agent。

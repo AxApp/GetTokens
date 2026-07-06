@@ -11,7 +11,6 @@ export type AppPage =
   | "claude"
   | "usage-desk"
   | "settings"
-  | "design-system"
   | "debug";
 export type AccountWorkspace = "all";
 export type CodexLiveSessionsView = "session" | "project";
