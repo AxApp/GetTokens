@@ -179,16 +179,19 @@ package_dmg() {
   local app_path="$2"
 
   rm -f "${dmg_path}"
+  local stage_dir
+  stage_dir="$(mktemp -d)"
+  trap 'rm -rf "${stage_dir}"' RETURN
+  cp -R "${app_path}" "${stage_dir}/GetTokens.app"
+  rm -f "${stage_dir}/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json"
+  rm -f "${stage_dir}/GetTokens.app/Contents/Resources/cli-proxy-api.meta.json"
+
   if command -v create-dmg >/dev/null 2>&1; then
-    DMG_VOLNAME="${DMG_VOLNAME}" bash "${SCRIPT_DIR}/package-macos-dmg.sh" "${dmg_path}" "${app_path}"
+    DMG_VOLNAME="${DMG_VOLNAME}" bash "${SCRIPT_DIR}/package-macos-dmg.sh" "${dmg_path}" "${stage_dir}/GetTokens.app"
     return
   fi
 
-  local stage_dir
-  stage_dir="$(mktemp -d)"
   (
-    trap 'rm -rf "${stage_dir}"' EXIT
-    cp -R "${app_path}" "${stage_dir}/GetTokens.app"
     ln -s /Applications "${stage_dir}/Applications"
     hdiutil create -volname "${DMG_VOLNAME}" -srcfolder "${stage_dir}" -ov -format UDZO "${dmg_path}"
   )
