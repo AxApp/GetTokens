@@ -17,6 +17,7 @@
 | `CLIProxyAPI` | `docs-linhay/references/CLIProxyAPI/` | GetTokens sidecar fork，relay、Anthropic/OpenAI 协议转换、账号路由参考。 |
 | `Cli-Proxy-API-Management-Center` | `docs-linhay/references/Cli-Proxy-API-Management-Center/` | Web 管理中心，Claude provider、模型映射、usage UI 参考。 |
 | `cherry-studio` | `docs-linhay/references/cherry-studio/` | Skills 同步、MCP server、agent/skill 资产组织参考。 |
+| `cockpit-tools` | `docs-linhay/references/cockpit-tools/` | AI IDE 账号管理、多平台账号切换、配额监控、多实例与 Codex/CLIProxyAPI sidecar 集成参考；本地浅克隆更新到 2026-07-01 `origin/main` HEAD `746b7c4e0dae83bd34b4401f6c2350404e305f74`。 |
 | `codex` | `docs-linhay/references/codex/` | Codex CLI 官方源码镜像，已更新到 2026-05-22 `origin/main` HEAD `162a6e746b7b4ef6024ccc819bf8ceaaa5f802f6`，用于行为校准参考。 |
 | `OmniRoute` | `docs-linhay/references/OmniRoute/` | 多 provider AI gateway / OpenAI-compatible endpoint 参考；本地浅克隆更新到 2026-06-15 `origin/main` HEAD `4066a2ca3122f4c81ec17eb2b7b8b3fa0c9c52fc`，可用于路由、fallback、provider 聚合与 CLI 兼容能力调研。 |
 | `agent-as-a-router` | `docs-linhay/references/agent-as-a-router/` | 多 LLM agentic coding 路由参考；本地缓存论文、主页、GitHub tree 与关键源码/benchmark/demo/test 文件，摘要见 `20260625-agent-as-a-router-research.md`；后期需求落位 `docs-linhay/spaces/20260625-auto-model-routing/`。 |
