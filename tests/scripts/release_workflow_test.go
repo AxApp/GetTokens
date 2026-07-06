@@ -63,6 +63,24 @@ func TestReleaseWorkflowBuildJobConsumesSidecarArtifact(t *testing.T) {
 	}
 }
 
+func TestReleaseWorkflowRunsWailsFromCommandProject(t *testing.T) {
+	workflow := readReleaseWorkflow(t)
+	build := requiredMapping(t, requiredMapping(t, workflow, "jobs"), "build")
+	steps := requiredSequence(t, build, "steps")
+	wailsBuild := findStepByName(t, steps, "Wails build")
+	if wailsBuild == nil {
+		t.Fatal("build job missing Wails build step")
+	}
+
+	run := scalarValue(t, requiredValue(t, wailsBuild, "run"))
+	if !strings.Contains(run, "pushd cmd/gettokens") {
+		t.Fatalf("Wails build should run from cmd/gettokens where wails.json lives, got:\n%s", run)
+	}
+	if !strings.Contains(run, "popd") {
+		t.Fatalf("Wails build should return to repo root after build, got:\n%s", run)
+	}
+}
+
 func TestReleaseWorkflowPublishesReleaseInParallelWithSparkle(t *testing.T) {
 	workflow := readReleaseWorkflow(t)
 	release := requiredMapping(t, requiredMapping(t, workflow, "jobs"), "release")

@@ -230,10 +230,12 @@ jobs:
             chmod +x scripts/build-menubar-swiftui.sh
             scripts/build-menubar-swiftui.sh "${{ matrix.goarch }}"
           fi
+          pushd cmd/gettokens >/dev/null
           wails build \
             -platform ${{ matrix.wails-platform }} \
             ${{ matrix.wails-extra || '' }} \
             -ldflags "-X main.Version=${{ github.ref_name }} -X main.ReleaseLabel=${RELEASE_LABEL}"
+          popd >/dev/null
           if [[ "$RUNNER_OS" == "macOS" ]]; then
             chmod +x scripts/install-menubar-swiftui.sh
             scripts/install-menubar-swiftui.sh "build/bin/GetTokens.app"
