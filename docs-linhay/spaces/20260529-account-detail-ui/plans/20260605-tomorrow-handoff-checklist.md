@@ -30,8 +30,8 @@
 5. **Auth-file/OAuth 配置管理语义**
    - 从“文件摘要 / 脱敏 / 复制原文”改为“配置管理”。
    - UI 覆盖账号名称、配置预览、下载配置、应用配置、SQLite account store。
-   - 配置管理区明确标记为 `data-auth-file-config-management="ui-placeholder"`。
-   - 明确“待接入 account-store management API”，未接伪 API。
+   - 2026-06-05 当时配置管理区明确标记为 `data-auth-file-config-management="ui-placeholder"`，并明确“待接入 account-store management API”，未接伪 API。
+   - 2026-07-06 已 superseded：`应用配置` 接入 `ApplyAuthFileConfig(name, content)`，写回账号数据库并刷新 auth-file metadata，不再是 UI placeholder。
 
 6. **代理路线与模型目录**
    - 账号详情代理配置改为只选择已保存代理池节点。
@@ -68,7 +68,7 @@
 
 1. 跟用户确认上面的 API / DTO 边界。
 2. 若确认短消息验证入参，先补 model/test，再扩展 `onVerify` 合约。
-3. 若确认 Auth-file 配置 API，接入 Wails/sidecar binding，并把 `ui-placeholder` 改成真实状态标记。
+3. Auth-file 配置 API 已于 2026-07-06 接入 Wails binding，并把 `ui-placeholder` 改成真实状态标记；后续只需继续确认短消息验证与模型映射编辑保存。
 4. 做浏览器预览截图：
    - `#frame=accounts&detail=codex-api-key%3Astable-001`
    - `#frame=accounts&detail=auth-file%3Acodex-pro.json`

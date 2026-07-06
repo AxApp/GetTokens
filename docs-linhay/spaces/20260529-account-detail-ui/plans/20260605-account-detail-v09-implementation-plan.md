@@ -79,7 +79,8 @@
 - 已落地最小实现：
   - `AccountCredentialVerifySection`：凭据字段容器改为 balanced grid；API Key/Base URL/Prefix 设置桌面列宽；`CredentialInputField` 固定明文 text。
   - `AuthFileSummarySection`：标题改为“配置管理”；主要内容改为账号名称和配置预览语义；操作改为预览配置、下载配置、应用配置。
-- 暂未接真实“应用配置”后端接口；当前仍沿用已有内容读取/normalize/copy 能力作为 UI 占位，接口边界继续保留为待确认事项。
+- 2026-06-05 当时暂未接真实“应用配置”后端接口，沿用已有内容读取/normalize/copy 能力作为 UI 占位。
+- 2026-07-06 已 superseded：`应用配置` 接入 `ApplyAuthFileConfig(name, content)`，后端归一化 auth JSON 后 PATCH 账号数据库并刷新 metadata。
 
 ## 2026-06-05 追加进度：Slice 3A 启动
 
@@ -95,14 +96,14 @@
 ## 2026-06-05 追加进度：Auth-file 配置 API 边界固化
 
 - 已补并通过 source-level 回归测试：
-  - `AuthFileSummarySection` 配置管理区域必须显式带 `data-auth-file-config-management="ui-placeholder"`。
+  - 2026-06-05 当时要求 `AuthFileSummarySection` 配置管理区域必须显式带 `data-auth-file-config-management="ui-placeholder"`。
   - 配置管理动作必须分别标记为 `preview`、`download`、`apply`。
-  - UI 文案必须明确“待接入 account-store management API”。
-  - 禁止在未确认接口前引入 `ApplyAuthFileConfig` / `SaveAuthFileConfig` 这类伪 API。
+  - 2026-06-05 当时 UI 文案必须明确“待接入 account-store management API”。
+  - 2026-06-05 当时禁止在未确认接口前引入 `ApplyAuthFileConfig` / `SaveAuthFileConfig` 这类伪 API。
 - 实现调整：
   - 为配置管理区域和三个按钮补充 data hooks。
-  - 在配置预览说明中明确 account-store management API 待接入边界。
-- 目的：后续继续实现时，不能把当前 Normalize/clipboard 占位误认为真实应用配置能力。
+  - 2026-06-05 当时在配置预览说明中明确 account-store management API 待接入边界。
+- 2026-07-06 已 superseded：真实接口已确认并实现为 `ApplyAuthFileConfig`，该段只保留为历史边界记录。
 
 ## 2026-06-05 追加验证：全量前端单元测试门禁
 
