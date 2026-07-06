@@ -985,8 +985,10 @@ test('auth-file config management keeps apply API boundary explicit', async () =
   assert.match(source, /data-auth-file-config-action="apply"/);
   assert.match(authFileBlock, /data-auth-file-config-action="preview"[\s\S]*data-auth-file-config-action="download"[\s\S]*data-auth-file-config-action="apply"/);
   assert.doesNotMatch(authFileBlock, /md:grid-cols-\[minmax\(0,1fr\)_auto\]/);
-  assert.match(source, /待接入 account-store management API/);
-  assert.doesNotMatch(source, /ApplyAuthFileConfig/);
+  assert.match(source, /ApplyAuthFileConfig/);
+  assert.match(source, /trackRequest\('ApplyAuthFileConfig'/);
+  assert.match(source, /写回账号数据库并刷新运行时配置/);
+  assert.doesNotMatch(source, /待接入 account-store management API/);
   assert.doesNotMatch(source, /SaveAuthFileConfig/);
 });
 test('real account detail modal uses section-nav layout instead of legacy band grid', async () => {
@@ -996,6 +998,8 @@ test('real account detail modal uses section-nav layout instead of legacy band g
   assert.match(layoutSource, /function SectionNav/);
   assert.match(layoutSource, /aria-label="Account detail sections"/);
   assert.match(layoutSource, /data-account-detail-section/);
+  assert.match(layoutSource, /accountDetailSection/);
+  assert.match(layoutSource, /new URLSearchParams\(window\.location\.search\)/);
   assert.match(layoutSource, /IntersectionObserver/);
   assert.match(layoutSource, /!text-\[length:var\(--gt-font-size-xs\)\]/);
   assert.doesNotMatch(layoutSource, /!text-xs/);
@@ -1115,10 +1119,13 @@ test('section-nav detail sections keep quota actions in the section header', asy
 
 test('section-nav detail primitives do not carry legacy band divider controls', async () => {
   const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
-  assert.match(primitiveSource, /topBorder\?: boolean/);
-  assert.match(primitiveSource, /headerDivider\?: boolean/);
+  assert.doesNotMatch(primitiveSource, /topBorder\?: boolean/);
+  assert.doesNotMatch(primitiveSource, /headerDivider\?: boolean/);
+  assert.doesNotMatch(sectionsSource, /topBorder\?: boolean/);
+  assert.doesNotMatch(sectionsSource, /headerDivider\?: boolean/);
   assert.doesNotMatch(primitiveSource, /dividerClassName = divider/);
   assert.equal((modalSource.match(/topBorder=\{false\}/g) || []).length, 0);
   assert.equal((modalSource.match(/headerDivider=\{false\}/g) || []).length, 0);

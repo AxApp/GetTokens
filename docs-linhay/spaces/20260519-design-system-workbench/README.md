@@ -672,3 +672,8 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
 1. 后续收编组件时，状态矩阵默认只保留能代表视觉或交互分支的最小集合。
 2. 对已经在同类组件中验证过的 loading、disabled、empty、error 行为，不重复为每个组件铺满；仅在该组件有独特布局或行为差异时新增状态。
 3. 若多个业务动作共用同一视觉模式，优先归并到一个设计系统场景，再用文档说明适用范围。
+
+## 2026-07-06 Status Codex Config Rows 收编
+1. `StatusCodexConfigRows` 从 `candidate` 升级为 `admitted`，新增 `Design System/业务组件/状态页 Codex 配置行` story。
+2. Story 覆盖分组行、嵌套路径、忙碌禁用态，以及 enum / boolean / integer / textarea / string_array 等 value editor。
+3. `componentManifest` 与 `storyCatalog` 已对齐，后续父级 Codex settings section 不再作为该行组件的唯一间接覆盖。

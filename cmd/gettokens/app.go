@@ -550,6 +550,10 @@ func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
 	}, nil
 }
 
+func (a *App) ApplyAuthFileConfig(name string, content string) error {
+	return a.core.ApplyAuthFileConfig(name, content)
+}
+
 func (a *App) GetUsageStatistics() (*UsageStatisticsResponse, error) {
 	result, err := a.core.GetUsageStatistics()
 	if err != nil {

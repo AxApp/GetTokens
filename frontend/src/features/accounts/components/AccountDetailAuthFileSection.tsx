@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button, Input } from 'antd';
 import {
+  ApplyAuthFileConfig,
   DownloadAuthFile,
   NormalizeAuthFileContent,
 } from '../../../../wailsjs/go/main/App';
@@ -24,7 +25,9 @@ export function AuthFileSummarySection({ account }: { account: AccountRecord }) 
   const [sanitizedContent, setSanitizedContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [sanitizing, setSanitizing] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
+  const [applyState, setApplyState] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     if (!account.name) return;
@@ -73,6 +76,24 @@ export function AuthFileSummarySection({ account }: { account: AccountRecord }) 
     }
   }
 
+  async function handleApply() {
+    if (!account.name || !displayed || applying) return;
+    setApplying(true);
+    setApplyState('idle');
+    try {
+      if (hasWailsAppBindings()) {
+        await trackRequest('ApplyAuthFileConfig', { name: account.name }, () => ApplyAuthFileConfig(account.name!, displayed));
+      }
+      setRawContent(displayed);
+      setSanitizedContent('');
+      setApplyState('success');
+      setTimeout(() => setApplyState('idle'), 2000);
+    } catch {
+      setApplyState('error');
+    }
+    setApplying(false);
+  }
+
   const displayed = sanitizedContent || rawContent;
 
   return (
@@ -89,8 +110,8 @@ export function AuthFileSummarySection({ account }: { account: AccountRecord }) 
           <Button data-auth-file-config-action="download" onClick={handleCopy} disabled={!displayed}>
             {copyState === 'success' ? '已下载' : copyState === 'error' ? '失败' : '下载配置'}
           </Button>
-          <Button data-auth-file-config-action="apply" onClick={handleCopy} disabled={!displayed}>
-            应用配置
+          <Button data-auth-file-config-action="apply" onClick={handleApply} loading={applying} disabled={!displayed || applying}>
+            {applyState === 'success' ? '已应用' : applyState === 'error' ? '失败' : '应用配置'}
           </Button>
         </>
       }
@@ -113,7 +134,7 @@ export function AuthFileSummarySection({ account }: { account: AccountRecord }) 
           <Alert
             data-auth-file-config-notice
             type="info"
-            message="配置预览基于账号数据库生成；可预览配置、下载配置，并在确认后应用到运行时。待接入 account-store management API。"
+            message="配置预览基于账号数据库生成；确认后会写回账号数据库并刷新运行时配置。"
             showIcon={false}
           />
         )}

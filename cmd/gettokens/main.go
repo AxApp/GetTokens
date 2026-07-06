@@ -34,6 +34,7 @@ func main() {
 		MinHeight:        600,
 		StartHidden:      loginItemLaunch && wailsapp.LoginItemLaunchStartHidden(),
 		BackgroundColour: &options.RGBA{R: 255, G: 255, B: 255, A: 1},
+		Logger:           newWailsAppLogger(os.Getenv("GETTOKENS_APP_PROFILE"), executablePath()),
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

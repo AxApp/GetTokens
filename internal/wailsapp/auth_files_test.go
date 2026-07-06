@@ -495,3 +495,72 @@ func TestUpdateAuthFilePriorityPreservesDisabledStatus(t *testing.T) {
 		t.Fatal("disabled status should remain true after priority update")
 	}
 }
+
+func TestApplyAuthFileConfigPatchesAccountStoreAuthJSON(t *testing.T) {
+	const fileName = "codex-team.json"
+	const originalBody = `{"type":"codex","email":"old@example.com","plan_type":"plus","refresh_token":"old"}`
+	const nextBody = `{"type":"codex","email":"new@example.com","plan_type":"pro","refresh_token":"new"}`
+
+	patched := false
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				payload, _ := json.Marshal(map[string]any{"accounts": []map[string]any{{
+					"account_key": "acct_auth",
+					"kind":        "auth-file",
+					"title":       fileName,
+					"provider":    "codex",
+					"priority":    1,
+					"auth_file": map[string]any{
+						"source_file_name": fileName,
+						"auth_json":        originalBody,
+						"auth_type":        "codex",
+						"email":            "old@example.com",
+						"plan_type":        "plus",
+						"size_bytes":       len(originalBody),
+					},
+				}}})
+				return payload, http.StatusOK, nil
+			case method == http.MethodPatch && path == ManagementAPIPrefix+"/accounts/acct_auth":
+				raw, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("ReadAll patch body: %v", err)
+				}
+				var payload struct {
+					AuthFile struct {
+						AuthJSON string `json:"auth_json"`
+						Email    string `json:"email"`
+						PlanType string `json:"plan_type"`
+						Size     int64  `json:"size_bytes"`
+					} `json:"auth_file"`
+				}
+				if err := json.Unmarshal(raw, &payload); err != nil {
+					t.Fatalf("Unmarshal patch body: %v", err)
+				}
+				var authJSON map[string]any
+				if err := json.Unmarshal([]byte(payload.AuthFile.AuthJSON), &authJSON); err != nil {
+					t.Fatalf("Unmarshal patched auth_json: %v", err)
+				}
+				if authJSON["refresh_token"] != "new" {
+					t.Fatalf("auth_json refresh_token = %#v, want new", authJSON["refresh_token"])
+				}
+				if payload.AuthFile.Email != "new@example.com" || payload.AuthFile.PlanType != "pro" || payload.AuthFile.Size != int64(len(payload.AuthFile.AuthJSON)) {
+					t.Fatalf("auth metadata not refreshed: %#v", payload.AuthFile)
+				}
+				patched = true
+				return raw, http.StatusOK, nil
+			default:
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	if err := app.ApplyAuthFileConfig(fileName, nextBody); err != nil {
+		t.Fatalf("ApplyAuthFileConfig: %v", err)
+	}
+	if !patched {
+		t.Fatal("expected account store patch")
+	}
+}

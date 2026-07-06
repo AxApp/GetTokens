@@ -263,6 +263,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/status/components/StatusCodexFeaturesSection.stories.tsx',
       },
       {
+        id: 'status-codex-config-rows',
+        title: '状态页 Codex 配置行',
+        storybookTitle: 'Design System/业务组件/状态页 Codex 配置行',
+        path: 'frontend/src/features/status/components/StatusCodexConfigRows.stories.tsx',
+      },
+      {
         id: 'status-codex-root-settings',
         title: '状态页 Codex Root Settings',
         storybookTitle: 'Design System/业务组件/状态页 Codex Root Settings',

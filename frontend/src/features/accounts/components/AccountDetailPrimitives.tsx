@@ -26,8 +26,6 @@ export function AccountDetailSection({
   span?: string;
   inset?: boolean;
   muted?: boolean;
-  topBorder?: boolean;
-  headerDivider?: boolean;
   bandActionDivider?: boolean;
   railControls?: ReactNode;
 }) {

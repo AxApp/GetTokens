@@ -98,7 +98,10 @@ export function AccountDetailLayout({
   children: ReactNode;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState(sectionNavItems[0]?.id ?? '');
+  const [activeSection, setActiveSection] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('accountDetailSection') || '';
+    return sectionNavItems.some((item) => item.id === requested) ? requested : (sectionNavItems[0]?.id ?? '');
+  });
 
   // Scroll-spy: observe section elements and update active section
   useEffect(() => {

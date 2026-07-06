@@ -10,6 +10,10 @@ export function AnalyzeCodexSessions(arg1) {
   return window['go']['main']['App']['AnalyzeCodexSessions'](arg1);
 }
 
+export function ApplyAuthFileConfig(arg1, arg2) {
+  return window['go']['main']['App']['ApplyAuthFileConfig'](arg1, arg2);
+}
+
 export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1, arg2, arg3) {
   return window['go']['main']['App']['ApplyClaudeCodeAPIKeyConfigToLocal'](arg1, arg2, arg3);
 }

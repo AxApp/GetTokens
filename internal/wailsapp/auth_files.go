@@ -245,6 +245,21 @@ func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
 	}, nil
 }
 
+func (a *App) ApplyAuthFileConfig(name string, content string) error {
+	if strings.TrimSpace(content) == "" {
+		return errors.New("auth file content 不能为空")
+	}
+	normalized, _, err := accountsdomain.NormalizeAuthFileForSidecar([]byte(content))
+	if err != nil {
+		return err
+	}
+	if err := a.replaceAuthFile(name, normalized); err != nil {
+		return err
+	}
+	a.invalidateAuthFileMetadataCache(name)
+	return nil
+}
+
 func (a *App) findAuthFileAccount(name string) (*cliproxyapi.UnifiedAccount, error) {
 	trimmed := strings.TrimSpace(name)
 	if trimmed == "" {

@@ -9,6 +9,8 @@ export function AddQuotaCalibration(arg1:main.QuotaUsageCalibrationInput):Promis
 
 export function AnalyzeCodexSessions(arg1:main.AnalyzeCodexSessionsInput):Promise<main.SessionAnalysisResult>;
 
+export function ApplyAuthFileConfig(arg1:string,arg2:string):Promise<void>;
+
 export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:main.ClaudeCodeLocalApplyOptions):Promise<main.ClaudeCodeLocalApplyResult>;
 
 export function ApplyDeepLinkImport(arg1:string):Promise<main.DeepLinkApplyResult>;

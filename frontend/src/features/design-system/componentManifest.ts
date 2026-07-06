@@ -49,6 +49,8 @@ const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/Sta
 const statusRelayEditorsStorybookTitle = 'Design System/业务组件/状态页 Relay 编辑器';
 const statusCodexFeaturesStoryPath = 'frontend/src/features/status/components/StatusCodexFeaturesSection.stories.tsx';
 const statusCodexFeaturesStorybookTitle = 'Design System/业务组件/状态页 Codex 功能';
+const statusCodexConfigRowsStoryPath = 'frontend/src/features/status/components/StatusCodexConfigRows.stories.tsx';
+const statusCodexConfigRowsStorybookTitle = 'Design System/业务组件/状态页 Codex 配置行';
 const statusCodexRootSettingsStoryPath = 'frontend/src/features/status/components/StatusCodexRootSettingsSection.stories.tsx';
 const statusCodexRootSettingsStorybookTitle = 'Design System/业务组件/状态页 Codex Root Settings';
 const statusCodexModelProvidersStoryPath = 'frontend/src/features/status/components/StatusCodexModelProvidersSection.stories.tsx';
@@ -1043,13 +1045,15 @@ export const designSystemComponentManifest = [
     componentName: 'StatusCodexConfigRows',
     sourcePath: 'frontend/src/features/status/components/StatusCodexConfigRows.tsx',
     ownerFeature: 'status',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: 'Codex root settings 与 model providers 共用的配置行渲染器，已抽出复用但当前由父级 section stories 间接覆盖，后续若暴露独立编辑状态再单独收编。',
+    decisionReason: 'Codex root settings 与 model providers 共用的配置行渲染器已通过独立 Status Codex Config Rows story 收编，覆盖分组、嵌套路径、忙碌禁用和多类 value editor。',
     matchedPatterns: ['ToggleSwitch', 'Form field row', 'Grouped settings list'],
-    suggestedDesignComponent: 'SettingsConfigRows',
+    storyPath: statusCodexConfigRowsStoryPath,
+    storybookTitle: statusCodexConfigRowsStorybookTitle,
+    catalogGroupId: 'feature-components',
     requiredStates: ['grouped-rows', 'nested-path', 'busy', 'value-editor'],
-    mockDataSources: ['codex feature row config mock'],
+    mockDataSources: ['storybook codex feature row config mock'],
   },
   {
     id: 'status-codex-features-section',

@@ -103,8 +103,6 @@ export interface AccountQuotaSectionProps {
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
   onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
-  topBorder?: boolean;
-  headerDivider?: boolean;
   layoutMode?: AccountQuotaLayoutMode;
 }
 
@@ -125,8 +123,6 @@ export interface AccountBillingSectionProps {
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
-  topBorder?: boolean;
-  headerDivider?: boolean;
 }
 
 export interface AccountDetailFooterProps {
@@ -1197,8 +1193,6 @@ export function AccountQuotaSection({
   onOpenEditor,
   onCloseEditor,
   onTestQuotaCurl,
-  topBorder = true,
-  headerDivider = true,
   layoutMode = 'split',
 }: AccountQuotaSectionProps) {
   const { t } = useI18n();
@@ -1443,8 +1437,6 @@ export function AccountQuotaSection({
       title="额度追踪"
       meta={visibleQuotaSource === 'runtime' ? `实时 ${visibleQuotaWindows.length || liveWindows.length} 个窗口` : testQuotaDisplay ? `测试 ${testQuotaDisplay.windows.length} 个窗口` : undefined}
       actions={quotaActions}
-      topBorder={topBorder}
-      headerDivider={headerDivider}
     >
 
       <div data-account-quota-layout={layoutMode} className={quotaLayoutClassName}>
@@ -1681,8 +1673,6 @@ export function AccountBillingSection({
   onOpenEditor,
   onCloseEditor,
   onTestBillingCurl,
-  topBorder = true,
-  headerDivider = true,
 }: AccountBillingSectionProps) {
   const [localEditorOpen, setLocalEditorOpen] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -1809,8 +1799,6 @@ export function AccountBillingSection({
       title="余额"
       meta={liveBilling ? '实时余额已就绪' : undefined}
       actions={billingActions}
-      topBorder={topBorder}
-      headerDivider={headerDivider}
     >
 
       {liveBalances.length > 0 ? (

@@ -477,3 +477,10 @@
   - `billing-only`：取消额度但保留余额时只显示 Billing 单模块，不再渲染 Quota section。
 - 已修正：嵌套子模块 header 改为 compact title/action row，左侧标题组紧凑排列，右侧操作组统一右对齐，避免标题、meta、按钮分散成杂乱三行。
 - 验证：`node --test src/features/accounts/tests/accountDetailLayout.test.mjs src/features/design-system/storyCatalog.test.mjs`、`npm run typecheck`、`npm run build`、`./docs-linhay/scripts/check-docs.sh` 通过。
+
+## 2026-07-06 前端重构剩余项收口
+
+- Auth-file 配置应用从占位 copy 改为真实 Wails 契约：新增 `ApplyAuthFileConfig(name, content)`，前端通过 `trackRequest('ApplyAuthFileConfig')` 写回账号数据库并刷新 auth-file metadata；配置区文案改为“写回账号数据库并刷新运行时配置”。
+- Quota / Billing / Verify 区继续收窄内部嵌套：移除已失效的 `topBorder` / `headerDivider` 旧 props，避免后续误以为模块内部还保留 legacy band divider 控制。
+- 新增浏览器巡检脚本 `docs-linhay/scripts/check-account-detail-preview.mjs`，覆盖 API key 凭据、API key 模型、auth-file 配置、auth-file 模型四条预览路径；截图落位 `screenshots/20260706/accounts/`。
+- 验证：`go test ./internal/wailsapp -run 'TestApplyAuthFileConfig|TestUpdateAuthFilePriority'`、`node --test src/features/accounts/tests/accountDetailLayout.test.mjs`、`node docs-linhay/scripts/check-account-detail-preview.mjs`、`npm --prefix frontend run typecheck` 通过。
