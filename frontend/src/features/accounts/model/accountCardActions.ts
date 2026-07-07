@@ -1,6 +1,18 @@
 import type { AccountRecord } from './types';
 import { ACCOUNT_CARD_IMPORT_SCHEMA } from './accountTransfer.ts';
 
+export function buildCPAAuthFileContentText(normalizedContent: string): string {
+  const parsed = JSON.parse(String(normalizedContent || '').trim());
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Expected CPA auth JSON object.');
+  }
+  const payload = parsed as Record<string, unknown>;
+  if (String(payload.type || '').toLowerCase() !== 'codex') {
+    throw new Error('Expected CPA auth JSON with type "codex".');
+  }
+  return `${JSON.stringify(payload, null, 2)}\n`;
+}
+
 export function buildAccountCardContentText(account: AccountRecord, authFileContent?: unknown): string {
   const isOpenAICompatible = account.accountKind === 'openai-compatible';
   const isCodexAPIKey = account.accountKind === 'codex-api-key';

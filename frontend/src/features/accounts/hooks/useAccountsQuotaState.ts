@@ -12,6 +12,7 @@ import type { AccountRecord } from '../../../types';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import { beginQuotaRefreshState, failQuotaRefreshState, supportsQuota } from '../model/accountQuota';
 import { persistAccountQuotaStates, readStoredAccountQuotaStates } from '../model/accountQuotaCache';
+import { chunkRuntimeSyncAccountKeys } from '../model/accountRuntimeSync';
 import { getAccountsPreviewQuotaStateByKey } from '../previewData';
 import type { CodexQuotaState, TrackRequest } from '../model/types';
 
@@ -44,9 +45,16 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
 
       let quotaStatuses: any[] = [];
       try {
-        quotaStatuses = await trackRequest('GetQuotaStatuses', { accountKeys: quotaKeys }, () =>
-          GetQuotaStatuses(quotaKeys),
-        );
+        const quotaStatusChunks = chunkRuntimeSyncAccountKeys(quotaKeys);
+        for (let chunkIndex = 0; chunkIndex < quotaStatusChunks.length; chunkIndex += 1) {
+          const quotaStatusChunk = quotaStatusChunks[chunkIndex];
+          const chunkStatuses = await trackRequest(
+            'GetQuotaStatuses',
+            { accountKeys: quotaStatusChunk, chunkIndex: chunkIndex + 1, chunkCount: quotaStatusChunks.length },
+            () => GetQuotaStatuses(quotaStatusChunk),
+          );
+          quotaStatuses.push(...(chunkStatuses || []));
+        }
       } catch (error) {
         console.error(error);
         try {

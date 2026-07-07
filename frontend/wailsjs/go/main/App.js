@@ -598,6 +598,10 @@ export function SetAccountDisabled(arg1, arg2) {
   return window['go']['main']['App']['SetAccountDisabled'](arg1, arg2);
 }
 
+export function SetAccountsDisabledBatch(arg1) {
+  return window['go']['main']['App']['SetAccountsDisabledBatch'](arg1);
+}
+
 export function SetAuthFileStatus(arg1, arg2) {
   return window['go']['main']['App']['SetAuthFileStatus'](arg1, arg2);
 }

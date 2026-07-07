@@ -1,23 +1,34 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getSessionManagementSnapshot,
   refreshSessionManagementSnapshot,
 } from './api.ts';
 import {
+  cleanupSessionManagementSnapshotStorage,
   persistSessionManagementSnapshot,
   readStoredSessionManagementSnapshot,
 } from './cache.ts';
 import type { SessionManagementSnapshot } from './model.ts';
 import { EMPTY_SNAPSHOT, toErrorMessage } from './sessionManagementUtils.ts';
 import type { SessionManagementWorkspace } from '../../types';
+import { hasWailsAppBindings } from '../../utils/previewMode';
 
 export function useSessionManagementSnapshot(workspace: SessionManagementWorkspace, loadFailedMessage: string) {
-  const cachedSnapshotRef = useRef<SessionManagementSnapshot | null>(readStoredSessionManagementSnapshot(workspace));
+  const browserSnapshotCacheEnabled = !hasWailsAppBindings();
+  const cachedSnapshotRef = useRef<SessionManagementSnapshot | null>(
+    readStoredSessionManagementSnapshot(workspace, { enabled: browserSnapshotCacheEnabled }),
+  );
   const [snapshot, setSnapshot] = useState<SessionManagementSnapshot>(cachedSnapshotRef.current ?? EMPTY_SNAPSHOT);
   const [snapshotLoading, setSnapshotLoading] = useState(cachedSnapshotRef.current === null);
   const [snapshotRefreshing, setSnapshotRefreshing] = useState(false);
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
   const snapshotRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (!browserSnapshotCacheEnabled) {
+      cleanupSessionManagementSnapshotStorage();
+    }
+  }, [browserSnapshotCacheEnabled]);
 
   const loadSnapshot = useCallback(
     async (mode: 'initial' | 'refresh' = 'initial') => {
@@ -40,7 +51,7 @@ export function useSessionManagementSnapshot(workspace: SessionManagementWorkspa
           return;
         }
         setSnapshot(nextSnapshot);
-        persistSessionManagementSnapshot(workspace, nextSnapshot);
+        persistSessionManagementSnapshot(workspace, nextSnapshot, { enabled: browserSnapshotCacheEnabled });
       } catch (error) {
         if (snapshotRequestRef.current !== requestID) {
           return;
@@ -54,13 +65,13 @@ export function useSessionManagementSnapshot(workspace: SessionManagementWorkspa
         setSnapshotRefreshing(false);
       }
     },
-    [loadFailedMessage, workspace],
+    [browserSnapshotCacheEnabled, loadFailedMessage, workspace],
   );
 
   const updateSnapshot = useCallback((nextSnapshot: SessionManagementSnapshot) => {
     setSnapshot(nextSnapshot);
-    persistSessionManagementSnapshot(workspace, nextSnapshot);
-  }, [workspace]);
+    persistSessionManagementSnapshot(workspace, nextSnapshot, { enabled: browserSnapshotCacheEnabled });
+  }, [browserSnapshotCacheEnabled, workspace]);
 
   return {
     snapshot,

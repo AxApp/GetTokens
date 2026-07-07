@@ -305,6 +305,23 @@ type DeleteAccountsBatchResult struct {
 	Failed            int                        `json:"failed"`
 }
 
+type SetAccountsDisabledBatchInput struct {
+	AccountIDs []string `json:"accountIDs"`
+	Disabled   bool     `json:"disabled"`
+}
+
+type SetAccountsDisabledBatchError struct {
+	AccountID string `json:"accountID"`
+	Error     string `json:"error"`
+}
+
+type SetAccountsDisabledBatchResult struct {
+	UpdatedAccountIDs []string                        `json:"updatedAccountIDs"`
+	Errors            []SetAccountsDisabledBatchError `json:"errors"`
+	Succeeded         int                             `json:"succeeded"`
+	Failed            int                             `json:"failed"`
+}
+
 type CodexQuotaSourceState struct {
 	Source    string `json:"source"`
 	Reason    string `json:"reason,omitempty"`

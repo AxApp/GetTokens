@@ -2,6 +2,7 @@ import type { AccountRecord } from '../../../types';
 
 export const ACCOUNT_RUNTIME_SYNC_INTERVAL_MS = 30000;
 export const ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY = 6;
+export const ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE = 200;
 
 export interface AccountRuntimeSyncScheduleState {
   ready: boolean;
@@ -45,6 +46,18 @@ export function buildRuntimeSyncAccountKeys(accounts: Array<Pick<AccountRecord, 
   return keys;
 }
 
+export function chunkRuntimeSyncAccountKeys(
+  accountKeys: string[],
+  options: { chunkSize?: number } = {},
+) {
+  const chunkSize = resolveAccountRuntimeQuotaStatusChunkSize(options.chunkSize);
+  const chunks: string[][] = [];
+  for (let index = 0; index < accountKeys.length; index += chunkSize) {
+    chunks.push(accountKeys.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
 export async function runAccountRuntimeRequestPool<T>(
   items: T[],
   worker: (item: T, index: number) => Promise<void> | void,
@@ -79,6 +92,13 @@ export async function runAccountRuntimeRequestPool<T>(
 function resolveAccountRuntimeRequestPoolConcurrency(value?: number) {
   if (value === undefined || !Number.isFinite(value)) {
     return ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY;
+  }
+  return Math.max(1, Math.floor(value));
+}
+
+function resolveAccountRuntimeQuotaStatusChunkSize(value?: number) {
+  if (value === undefined || !Number.isFinite(value)) {
+    return ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE;
   }
   return Math.max(1, Math.floor(value));
 }

@@ -1241,6 +1241,8 @@
     "unified_compose_format_title_gemini_native": "Gemini Native Format",
     "card_actions": "Account Actions",
     "copy_account_config": "Copy Account Config",
+    "copy_cpa_file": "Copy As CPA File",
+    "copy_failure_reason": "Copy Error Message",
     "card_delete": "Delete",
     "login_chatgpt": "ChatGPT Login",
     "login_chatgpt_pending": "ChatGPT login is in progress. Finish authorization in the browser, then return here and wait for sync.",

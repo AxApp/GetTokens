@@ -303,6 +303,8 @@ export function SaveCodexSkillEnabled(arg1:main.SaveCodexSkillEnabledInput):Prom
 
 export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<void>;
 
+export function SetAccountsDisabledBatch(arg1:main.SetAccountsDisabledBatchInput):Promise<main.SetAccountsDisabledBatchResult>;
+
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 
 export function SetCodexModelCatalogSyncEnabled(arg1:boolean):Promise<main.AppRuntimeSettings>;

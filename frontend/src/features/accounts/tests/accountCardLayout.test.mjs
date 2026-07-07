@@ -108,10 +108,10 @@ test('full account card subtitle renders as its own header row', async () => {
   const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
   const fullSource = source.split('// ── Full density ──')[1] || '';
 
-  assert.match(fullSource, /<div className="account-card-meta-action-row -mr-4 grid min-w-0 grid-cols-\[minmax\(0,1fr\)_auto\] items-center gap-2">[\s\S]*\{topActions \? <div className="col-start-2 shrink-0 justify-self-end">\{topActions\}<\/div> : null\}\s*<\/div>\s*\) : null\}\s*<div className="flex items-center gap-2">/);
+  assert.match(fullSource, /<div className="account-card-meta-action-row grid min-w-0 grid-cols-\[minmax\(0,1fr\)_auto\] items-center gap-2">[\s\S]*\{topActions \? <div className="col-start-2 shrink-0 justify-self-end">\{topActions\}<\/div> : null\}\s*<\/div>\s*\) : null\}\s*<div className="flex items-center gap-2">/);
   assert.match(fullSource, /<div className="flex items-center gap-2">[\s\S]*<h3[\s\S]*\{title\}[\s\S]*<\/div>\s*<\/div>\s*\{subtitle \? \(/);
   assert.match(source, /className="mt-1\.5 break-all font-mono text-\[length:var\(--gt-font-size-xs\)\] text-\[var\(--gt-ink-muted\)\]"/);
-  assert.match(source, /className="mt-1\.5 text-\[length:var\(--gt-font-size-xs\)\] font-normal text-\[var\(--gt-status-danger\)\]"/);
+  assert.match(fullSource, /\{subtitle \? \([\s\S]*\{priorityBadges\.length > 0 \? \([\s\S]*\{failureReason \? \(/);
 });
 
 test('full account card tone dot starts the metadata row', async () => {
@@ -123,18 +123,32 @@ test('full account card tone dot starts the metadata row', async () => {
   assert.doesNotMatch(fullSource, /<div className="flex items-center gap-2">\s*<span className=\{`h-2 w-2 shrink-0 rounded-full \$\{accentFillClass\}`\} \/>/);
 });
 
-test('full account card badges share the eyebrow metadata row', async () => {
+test('full account card badges render below the subtitle instead of sharing the eyebrow row', async () => {
   const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
   const fullSource = source.split('// ── Full density ──')[1] || '';
 
   assert.match(fullSource, /eyebrow \|\| eyebrowPrefix \|\| priorityBadges\.length > 0/);
   assert.match(fullSource, /className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1\.5 overflow-hidden font-mono text-\[length:var\(--gt-font-size-sm-plus\)\] font-semibold leading-none text-\[var\(--gt-ink-muted\)\]"/);
-  assert.match(fullSource, /\{eyebrow \? <span className="min-w-0 truncate">\{eyebrow\}<\/span> : null\}\s*\{priorityBadges\.length > 0 \? \(\s*<div className="account-card-meta-badges flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">/s);
+  assert.match(fullSource, /\{eyebrow \? <span className="min-w-0 truncate">\{eyebrow\}<\/span> : null\}\s*<\/div>/s);
+  assert.match(fullSource, /\{subtitle \? \([\s\S]*\{priorityBadges\.length > 0 \? \(\s*<div className="account-card-meta-badges mt-2 flex min-w-0 flex-wrap items-center gap-1">/s);
   assert.match(source, /import \{ Tag \} from 'antd'/);
   assert.match(fullSource, /<Tag[\s\S]*data-account-card-badge-priority=\{resolveAttributionCardBadgePriority\(badge\)\}/);
-  assert.match(fullSource, /className="m-0 shrink-0 truncate"/);
-  assert.doesNotMatch(fullSource, /<div className="mt-2 flex flex-wrap gap-1">/);
+  assert.match(fullSource, /className="account-card-meta-badge m-0 max-w-full shrink-0 truncate"/);
+  assert.doesNotMatch(fullSource, /account-card-meta-badges flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden/);
   assert.doesNotMatch(fullSource, /\{topActions \? <div className="-mr-4 shrink-0 pl-4">\{topActions\}<\/div> : null\}/);
+});
+
+test('full account card failure reason is clamped to two lines with a copy action slot', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const fullSource = source.split('// ── Full density ──')[1] || '';
+
+  assert.match(source, /failureReasonAction\?: ReactNode;/);
+  assert.match(fullSource, /data-account-card-failure-reason="true"/);
+  assert.match(fullSource, /className="mt-1\.5 grid min-w-0 grid-cols-\[minmax\(0,1fr\)_auto\] items-start gap-1\.5"/);
+  assert.match(fullSource, /className="line-clamp-2 min-w-0 break-words font-mono text-\[length:var\(--gt-font-size-xs\)\] font-normal leading-snug text-\[var\(--gt-status-danger\)\]"/);
+  assert.match(fullSource, /title=\{failureReason\}/);
+  assert.match(fullSource, /failureReasonAction \? <div className="shrink-0" data-account-card-ignore-click="true">\{failureReasonAction\}<\/div> : null/);
+  assert.doesNotMatch(fullSource, /<div className="mt-1\.5 text-\[length:var\(--gt-font-size-xs\)\] font-normal text-\[var\(--gt-status-danger\)\]">\{failureReason\}<\/div>/);
 });
 
 test('full account card metadata tags use priority order and hide low priority tags first', async () => {
@@ -148,10 +162,12 @@ test('full account card metadata tags use priority order and hide low priority t
   assert.match(source, /return 3;/);
   assert.match(source, /const priorityBadges = \[\.\.\.badges\]\.sort\(compareAttributionCardBadges\);/);
   assert.match(source, /data-account-card-badge-priority=\{resolveAttributionCardBadgePriority\(badge\)\}/);
-  assert.match(styleSource, /\.account-card-meta-row\s*\{[^}]*container-type:\s*inline-size/s);
-  assert.match(styleSource, /@container \(max-width: 176px\)\s*\{[\s\S]*\.account-card-meta-badge\[data-account-card-badge-priority="3"\]\s*\{[^}]*display:\s*none/s);
-  assert.match(styleSource, /@container \(max-width: 128px\)\s*\{[\s\S]*\.account-card-meta-badge\[data-account-card-badge-priority="2"\]\s*\{[^}]*display:\s*none/s);
-  assert.match(styleSource, /@container \(max-width: 96px\)\s*\{[\s\S]*\.account-card-meta-badge\[data-account-card-badge-priority="1"\]\s*\{[^}]*display:\s*none/s);
+  assert.match(source, /account-card-meta-badges mt-2 flex min-w-0 flex-wrap items-center gap-1/);
+  assert.match(source, /account-card-meta-badge m-0 max-w-full shrink-0 truncate/);
+  assert.doesNotMatch(styleSource, /\.account-card-meta-row\s*\{[^}]*container-type:\s*inline-size/s);
+  assert.doesNotMatch(styleSource, /\.account-card-meta-badge\[data-account-card-badge-priority="3"\]\s*\{[^}]*display:\s*none/s);
+  assert.doesNotMatch(styleSource, /\.account-card-meta-badge\[data-account-card-badge-priority="2"\]\s*\{[^}]*display:\s*none/s);
+  assert.doesNotMatch(styleSource, /\.account-card-meta-badge\[data-account-card-badge-priority="1"\]\s*\{[^}]*display:\s*none/s);
 });
 
 test('list density keeps only the plan badge before metrics and actions', async () => {

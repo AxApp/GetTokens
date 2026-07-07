@@ -9,6 +9,7 @@ import {
   DownloadAuthFile,
   PreviewAuthFileUploads,
   SetAccountDisabled,
+  SetAccountsDisabledBatch,
   UpdateCodexAPIKeyConfig,
   UpdateCodexAPIKeyLabel,
   UpdateCodexAPIKeyPriority,
@@ -779,7 +780,7 @@ export default function useAccountsActions({
   ]);
 
   const runAccountsBulkSetDisabled = useCallback(
-    async (targetAccounts: AccountRecord[], nextDisabled: boolean) => {
+    async (targetAccounts: AccountRecord[], nextDisabled: boolean, labelOverride?: string) => {
       if (targetAccounts.length === 0) {
         setAccountActionNotice({
           tone: 'warning',
@@ -789,7 +790,7 @@ export default function useAccountsActions({
       }
 
       const resolution = resolveBulkSetDisabledTargets(targetAccounts, nextDisabled);
-      const label = nextDisabled ? t('accounts.bulk_disable_selected') : t('accounts.bulk_enable_selected');
+      const label = labelOverride || (nextDisabled ? t('accounts.bulk_disable_selected') : t('accounts.bulk_enable_selected'));
       if (resolution.targets.length === 0) {
         setAccountActionNotice({
           tone: 'warning',
@@ -805,14 +806,27 @@ export default function useAccountsActions({
       let succeeded = 0;
       let failed = 0;
       try {
-        for (const account of resolution.targets) {
-          try {
-            await setAccountDisabled(account, nextDisabled, { reload: false });
-            succeeded += 1;
-          } catch (error) {
-            console.error(error);
-            failed += 1;
-          }
+        if (hasWailsAppBindings()) {
+          const accountIDs = resolution.targets.map((account) => account.id);
+          const result = await trackRequest('SetAccountsDisabledBatch', { accountIDs, disabled: nextDisabled }, () =>
+            SetAccountsDisabledBatch(main.SetAccountsDisabledBatchInput.createFrom({ accountIDs, disabled: nextDisabled }))
+          );
+          succeeded = Number(result?.succeeded || 0);
+          failed = Number(result?.failed || 0);
+
+          const updatedAccountIDs = new Set(result?.updatedAccountIDs || []);
+          resolution.targets.forEach((account) => {
+            if (updatedAccountIDs.has(account.id)) {
+              patchAccountDisabledLocally(account, nextDisabled);
+              publishAccountDisabledChange({ id: account.id, disabled: nextDisabled }, 'accounts');
+            }
+          });
+        } else {
+          resolution.targets.forEach((account) => {
+            patchAccountDisabledLocally(account, nextDisabled);
+            publishAccountDisabledChange({ id: account.id, disabled: nextDisabled }, 'accounts');
+          });
+          succeeded = resolution.targets.length;
         }
 
         if (hasWailsAppBindings()) {
@@ -840,10 +854,11 @@ export default function useAccountsActions({
     [
       formatBulkActionMessage,
       loadAccounts,
+      patchAccountDisabledLocally,
       setAccountActionNotice,
-      setAccountDisabled,
       setDeleteError,
       t,
+      trackRequest,
     ],
   );
 

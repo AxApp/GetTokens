@@ -53,6 +53,7 @@ interface AttributionCardProps {
   eyebrow?: string;
   eyebrowPrefix?: string;
   failureReason?: string;
+  failureReasonAction?: ReactNode;
   badges?: AttributionCardBadge[];
   usageSummary?: AccountUsageSummary;
   refreshFeedback?: boolean;
@@ -82,6 +83,7 @@ export default function AttributionCard({
   eyebrow = '',
   eyebrowPrefix = '',
   failureReason = '',
+  failureReasonAction,
   badges = [],
   usageSummary,
   refreshFeedback = false,
@@ -186,7 +188,7 @@ export default function AttributionCard({
       <div className="border-b border-[var(--gt-border-subtle)] px-4 py-3">
         <div className="min-w-0 space-y-1.5">
           {eyebrow || eyebrowPrefix || priorityBadges.length > 0 || topActions ? (
-            <div className="account-card-meta-action-row -mr-4 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+            <div className="account-card-meta-action-row grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
               {eyebrow || eyebrowPrefix || priorityBadges.length > 0 ? (
                 <div className="account-card-meta-row col-start-1 flex min-w-0 flex-nowrap items-center gap-x-1.5 overflow-hidden font-mono text-[length:var(--gt-font-size-sm-plus)] font-semibold leading-none text-[var(--gt-ink-muted)]">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${accentFillClass}`} />
@@ -194,25 +196,6 @@ export default function AttributionCard({
                     <span className="shrink-0 text-[var(--gt-ink-primary)]">{eyebrowPrefix}</span>
                   ) : null}
                   {eyebrow ? <span className="min-w-0 truncate">{eyebrow}</span> : null}
-                  {priorityBadges.length > 0 ? (
-                    <div className="account-card-meta-badges flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden">
-                      {priorityBadges.map((badge) => (
-                        <Tag
-                          key={`${badge.label}-${badge.tone || 'neutral'}`}
-                          data-account-card-badge-priority={resolveAttributionCardBadgePriority(badge)}
-                          title={badge.label}
-                          color={
-                            badge.tone === 'positive' ? 'success' :
-                            badge.tone === 'warning' ? 'warning' :
-                            badge.tone === 'critical' ? 'error' : 'default'
-                          }
-                          className="m-0 shrink-0 truncate"
-                        >
-                          {badge.shortLabel || badge.label}
-                        </Tag>
-                      ))}
-                    </div>
-                  ) : null}
                 </div>
               ) : null}
               {topActions ? <div className="col-start-2 shrink-0 justify-self-end">{topActions}</div> : null}
@@ -229,8 +212,38 @@ export default function AttributionCard({
             {subtitle}
           </div>
         ) : null}
+        {priorityBadges.length > 0 ? (
+          <div className="account-card-meta-badges mt-2 flex min-w-0 flex-wrap items-center gap-1">
+            {priorityBadges.map((badge) => (
+              <Tag
+                key={`${badge.label}-${badge.tone || 'neutral'}`}
+                data-account-card-badge-priority={resolveAttributionCardBadgePriority(badge)}
+                title={badge.label}
+                color={
+                  badge.tone === 'positive' ? 'success' :
+                  badge.tone === 'warning' ? 'warning' :
+                  badge.tone === 'critical' ? 'error' : 'default'
+                }
+                className="account-card-meta-badge m-0 max-w-full shrink-0 truncate"
+              >
+                {badge.shortLabel || badge.label}
+              </Tag>
+            ))}
+          </div>
+        ) : null}
         {failureReason ? (
-          <div className="mt-1.5 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-status-danger)]">{failureReason}</div>
+          <div
+            className="mt-1.5 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5"
+            data-account-card-failure-reason="true"
+          >
+            <div
+              className="line-clamp-2 min-w-0 break-words font-mono text-[length:var(--gt-font-size-xs)] font-normal leading-snug text-[var(--gt-status-danger)]"
+              title={failureReason}
+            >
+              {failureReason}
+            </div>
+            {failureReasonAction ? <div className="shrink-0" data-account-card-ignore-click="true">{failureReasonAction}</div> : null}
+          </div>
         ) : null}
       </div>
 

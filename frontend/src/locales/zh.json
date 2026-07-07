@@ -1241,6 +1241,8 @@
     "unified_compose_format_title_gemini_native": "Gemini Native 格式",
     "card_actions": "账号操作",
     "copy_account_config": "复制账号配置",
+    "copy_cpa_file": "复制为 CPA 文件",
+    "copy_failure_reason": "复制错误信息",
     "card_delete": "删除",
     "login_chatgpt": "ChatGPT 登录",
     "login_chatgpt_pending": "CHATGPT 登录流程进行中，请在浏览器完成授权后返回此页面等待同步。",

@@ -648,6 +648,82 @@ func TestDeleteAccountsBatchFallsBackToSingleDeleteWhenBatchRouteMissing(t *test
 	}
 }
 
+func TestSetAccountsDisabledBatchUsesBatchManagementAPI(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "PATCH" && strings.Contains(path, "/status") {
+					t.Fatalf("batch status must not call single account status: %s", path)
+				}
+				if method != "POST" || path != "/v0/management/accounts/batch-status" {
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read body: %v", err)
+				}
+				if !strings.Contains(string(payload), `"account_keys":["acct_a","acct_b"]`) || !strings.Contains(string(payload), `"disabled":true`) {
+					t.Fatalf("unexpected payload: %s", payload)
+				}
+				return []byte(`{"updated_account_keys":["acct_a"],"errors":[{"account_key":"acct_b","error":"account not found"}],"succeeded":1,"failed":1}`), 200, nil
+			})
+		},
+	}
+
+	result, err := app.SetAccountsDisabledBatch(SetAccountsDisabledBatchInput{
+		AccountIDs: []string{"acct_a", "acct_a", "acct_b"},
+		Disabled:   true,
+	})
+	if err != nil || result == nil {
+		t.Fatalf("SetAccountsDisabledBatch = %#v, err = %v", result, err)
+	}
+	if result.Succeeded != 1 || result.Failed != 1 || strings.Join(result.UpdatedAccountIDs, ",") != "acct_a" {
+		t.Fatalf("result = %#v", result)
+	}
+	if len(result.Errors) != 1 || result.Errors[0].AccountID != "acct_b" {
+		t.Fatalf("errors = %#v", result.Errors)
+	}
+}
+
+func TestSetAccountsDisabledBatchFallsBackToSingleStatusWhenBatchRouteMissing(t *testing.T) {
+	var requests []string
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				requests = append(requests, method+" "+path)
+				if method == "POST" && path == "/v0/management/accounts/batch-status" {
+					return nil, http.StatusNotFound, errors.New("sidecar 请求失败 (404): 404 NOT FOUND")
+				}
+				if method == "PATCH" && path == "/v0/management/accounts/acct_a/status" {
+					return []byte(`{"account_key":"acct_a","disabled":false}`), 200, nil
+				}
+				if method == "PATCH" && path == "/v0/management/accounts/acct_b/status" {
+					return nil, http.StatusNotFound, errors.New("sidecar 请求失败 (404): account not found")
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	result, err := app.SetAccountsDisabledBatch(SetAccountsDisabledBatchInput{AccountIDs: []string{"acct_a", "acct_b"}})
+	if err != nil || result == nil {
+		t.Fatalf("SetAccountsDisabledBatch fallback = %#v, err = %v", result, err)
+	}
+	if got := strings.Join(requests, " | "); got != "POST /v0/management/accounts/batch-status | PATCH /v0/management/accounts/acct_a/status | PATCH /v0/management/accounts/acct_b/status" {
+		t.Fatalf("unexpected request sequence: %s", got)
+	}
+	if result.Succeeded != 1 || result.Failed != 1 {
+		t.Fatalf("result counts = %#v", result)
+	}
+	if strings.Join(result.UpdatedAccountIDs, ",") != "acct_a" {
+		t.Fatalf("updated ids = %#v", result.UpdatedAccountIDs)
+	}
+	if len(result.Errors) != 1 || result.Errors[0].AccountID != "acct_b" {
+		t.Fatalf("errors = %#v", result.Errors)
+	}
+}
+
 func TestLegacyCodexAPIKeyIDsRejectedOutsideMigration(t *testing.T) {
 	app := &App{}
 	legacyID := "codex-api-key:stable-001"

@@ -125,6 +125,60 @@
    - 追加修正分组头左侧标题组垂直居中：折叠按钮与 `KEY` 等短标题中心线对齐，不再用 `mb-1` 偏移补偿。
    - 无头浏览器验收截图：`screenshots/20260609/accounts/20260609-accounts-group-collapse-after-v01.png`。
 
+### 2026-07-07 账号卡标签行下移证据
+
+1. 问题来源：用户在 `http://localhost:5173/#frame=accounts` 浏览器评论中框选 `1h requests 已满 KEY ANTH OAI RESP`，反馈卡片头部挤不下，要求“标签放副标题下方”。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/components/AttributionCard.tsx`
+   - `frontend/src/style.css`
+   - `frontend/src/features/accounts/tests/accountCardLayout.test.mjs`
+3. 当前现象：full density 账号卡把 `priorityBadges` 放在 `account-card-meta-row` 内，同一行还需要容纳状态点、可用状态和右上刷新/菜单操作；窄卡片下 badge 只能被 `overflow-hidden` 挤压。
+4. 预期改动：
+   - full density 账号卡顶部元信息行只保留状态点、状态文案和右侧操作。
+   - `KEY / ANTH / OAI RESP / 1h requests 已满` 等标签移动到副标题 URL 下方的独立行。
+   - 标签行允许换行，不再用窄容器隐藏低优先级标签。
+5. 验收方式：
+   - 源码测试固定 badge 不再共享 eyebrow 元信息行，并要求 badge 容器位于 subtitle 后方。
+   - 无头浏览器打开 `#frame=accounts`，对 `Gray Canary` 卡片读取 bounding rect：badge 行在 subtitle 和 metadata 行下方，`flex-wrap=wrap`，不与右上操作按钮重叠。
+   - 验收截图：`screenshots/20260707/accounts/20260707-account-card-badges-under-subtitle-after-v01.png`。
+
+### 2026-07-07 账号卡错误信息两行与复制证据
+
+1. 问题来源：用户在 `http://localhost:5173/#frame=accounts` 浏览器评论中框选 `异常 FREE ANTH legacy-expired@example.com HTTP 401 unauthorized / refresh token ex`，要求“错误信息需要限制为 2 行，支持复制”。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/components/AccountCard.tsx`
+   - `frontend/src/features/accounts/components/AttributionCard.tsx`
+   - `frontend/src/features/accounts/tests/accountCardLayout.test.mjs`
+   - `frontend/src/features/accounts/tests/accountCardInteractions.test.mjs`
+3. 当前现象：full density 账号卡直接渲染完整 `failureReason` 文本，没有两行高度上限，也没有独立复制入口；长错误会挤压卡片头部。
+4. 预期改动：
+   - full density 账号卡错误信息使用两行 clamp，完整内容保留在 `title`。
+   - 错误信息右侧提供图标复制按钮，复用账号卡现有 `writeAccountClipboardText` 管道。
+   - 点击复制按钮只复制完整错误文本，不触发账号详情打开。
+5. 验收方式：
+   - 源码测试固定 `failureReasonAction` 插槽、两行 clamp class、复制按钮和本地化文案。
+   - 无头浏览器打开 `#frame=accounts`，确认 `legacy-expired@example.com` 卡片错误文本 `-webkit-line-clamp=2`、高度等于两行、按钮 aria 为 `复制错误信息`，点击后复制完整错误文本且不打开详情弹窗。
+   - 验收截图：`screenshots/20260707/accounts/20260707-account-card-failure-copy-after-v01.png`。
+
+### 2026-07-07 账号卡复制 CPA 文件格式证据
+
+1. 问题来源：用户在 `http://localhost:5173/#frame=accounts` 浏览器评论中框选账号卡更多菜单 `复制账号配置 / 重新登录 / 应用到 Codex / 禁用账户 / 删除`，要求“需要支持复制为 cpa 文件格式”。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/components/AccountCard.tsx`
+   - `frontend/src/features/accounts/AccountsFeature.tsx`
+   - `frontend/src/features/accounts/model/accountCardActions.ts`
+   - `frontend/src/features/accounts/tests/accountCardInteractions.test.mjs`
+3. 当前现象：菜单只有 `复制账号配置`，复制内容是 `gettokens.account-card.v1` wrapper，适合 GetTokens 内部导入，但不是 CPA / CLIProxyAPI 可直接作为 auth-file 使用的 `type: "codex"` JSON。
+4. 预期改动：
+   - auth-file 账号菜单新增 `复制为 CPA 文件`。
+   - 真实 Wails 环境下载 auth-file 后调用后端 `NormalizeAuthFileContent`，复用既有 CPA 自动转换入口。
+   - 浏览器 preview 使用 preview auth-file 内容做最小适配，保证 localhost 批注页也能验证菜单与复制结果。
+   - 复制结果必须是裸 CPA auth JSON，不包含 `gettokens.account-card.v1` schema wrapper。
+5. 验收方式：
+   - 源码测试固定菜单项、`DownloadAuthFile -> NormalizeAuthFileContent -> buildCPAAuthFileContentText -> copyText` 链路和中英文文案。
+   - 无头浏览器打开 `#frame=accounts`，确认菜单包含 `复制为 CPA 文件`，点击后复制内容 `type=codex`、无 `schema` 字段、保留 JSON 结尾换行。
+   - 验收截图：`screenshots/20260707/accounts/20260707-account-card-copy-cpa-menu-after-v01.png`。
+
 ### 分组模式规划
 
 1. 账号池主列表需要支持可切换分组模式和排序模式，二者只改变列表组织方式，不改变筛选、选择、路由、轮动、禁用或导出语义。
@@ -486,3 +540,20 @@
 - 最近更新：2026-06-09
 - 最近变更：账号池筛选面板收敛为 `套餐与来源 / 状态 / 其他` 三组；`其他` 仅保留额度+余额、无额度但有余额、无额度且无余额、今日已使用、今日未使用五个条件，并接入 usage summary 参与真实过滤。
 - 判定：`account-pool` 是长期 umbrella space，不按单个未收口需求管理；具体新需求应进入独立 space，当前近期主线为 `20260515-rate-limit-middleware`，短线收尾为 `20260511-codex-binary-management`。
+
+## 2026-07-07 账号卡激活菜单不打开详情证据
+
+- 问题来源：用户在 `http://localhost:5173/#frame=accounts` 标注账号卡更多菜单的 `激活账户`，指出当前点击激活会打开账号详情，预期为正常激活账号。
+- 代码事实位置：`frontend/src/features/accounts/components/AccountCard.tsx` 的 AntD `Dropdown menu.onClick`、`toggle` 菜单项与 `AttributionCard -> AccountCardFrame` 的卡片级 `onOpen`。
+- 当前现象：AntD 菜单渲染在 portal 中，菜单项点击执行 `onToggleDisabled(account)` 后，点击事件仍可能继续冒泡到 React 卡片树，触发卡片详情打开。
+- 验收方式：补 `accountCardInteractions.test.mjs` 源码守护，要求 `menu.onClick` 对 `domEvent.stopPropagation()` 后再关闭菜单；无头 Chrome 在账号池页面点击 `OPENAI-COMPATIBLE · OPENROUTER` 的 `激活账户`，确认 hash 保持 `#frame=accounts`、无详情 dialog、卡片状态变为可用。
+- 验收截图：`docs-linhay/spaces/account-pool/screenshots/20260707/accounts/20260707-account-card-activate-no-detail-after-v01.png`。
+
+## 2026-07-07 分组启停必须走批量操作证据
+
+- 问题来源：用户在 `http://localhost:5173/#frame=accounts` 标注分组菜单 `激活本组 / 禁用本组 / 移除本组`，询问“激活本组/禁用本组为什么不是批量操作？”
+- 代码事实位置：`frontend/src/features/accounts/components/AccountGroupSectionView.tsx` 的分组菜单调用 `onSetGroupDisabled(group.accounts, nextDisabled)`；`AccountsFeature.tsx` 转发到 `runAccountsBulkSetDisabled(groupAccounts, nextDisabled)`；旧 `useAccountsActions.ts` 的 `runAccountsBulkSetDisabled` 内部仍用 `for ... of` 循环调用单账号 `setAccountDisabled` / `SetAccountDisabled`。
+- 当前现象：UI 文案是“本组”，也复用了 bulk hook，但 Wails 边界实际收到 N 次单账号启停调用；删除本组已经走 `DeleteAccountsBatch`，启停语义不一致。
+- 预期改动：新增 `SetAccountsDisabledBatch` Wails 批量桥；前端分组启停和已选批量启停都只发一次批量调用；分组入口反馈使用 `激活本组 / 禁用本组` 标签，已选入口继续使用 `激活已选 / 禁用已选`；Wails 优先调用 sidecar `POST /v0/management/accounts/batch-status`，旧 sidecar 404 时才在 Wails/root 边界内兼容回退到单账号 PATCH。
+- 验收方式：前端源码测试禁止 `runAccountsBulkSetDisabled` 中出现 `for (const account of resolution.targets)` 与 `SetAccountDisabled(account.id, nextDisabled)`；cliproxyapi/Wails Go 测试固定批量 status payload、去重、部分失败摘要和 404 回退路径；浏览器预览点击 `Pro` 分组 `激活本组` 后，提示为 `激活本组：成功 1 / 跳过 2`，`disabled-route@example.com` 从已禁用变为可用，且不打开详情。
+- 验收截图：`docs-linhay/spaces/account-pool/screenshots/20260707/accounts/20260707-account-group-bulk-enable-after-v01.png`。

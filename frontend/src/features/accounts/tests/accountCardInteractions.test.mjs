@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-import { buildAccountCardContentText } from '../model/accountCardActions.ts';
+import { buildAccountCardContentText, buildCPAAuthFileContentText } from '../model/accountCardActions.ts';
 import { buildAccountCardRefreshAction } from '../model/accountCardRefresh.ts';
 import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions.ts';
 
@@ -92,6 +92,26 @@ test('buildAccountCardContentText returns structured account summary json', () =
   });
 });
 
+test('buildCPAAuthFileContentText returns naked CPA auth json for file copy', () => {
+  const content = buildCPAAuthFileContentText(JSON.stringify({
+    type: 'codex',
+    access_token: 'copied-access-token',
+    email: 'team-codex@example.com',
+  }));
+
+  assert.equal(content.endsWith('\n'), true);
+  assert.deepEqual(JSON.parse(content), {
+    type: 'codex',
+    access_token: 'copied-access-token',
+    email: 'team-codex@example.com',
+  });
+  assert.doesNotMatch(content, /gettokens\.account-card\.v1/);
+  assert.throws(
+    () => buildCPAAuthFileContentText(JSON.stringify({ schema: 'gettokens.account-card.v1', credentialSource: 'auth-file' })),
+    /CPA auth JSON/,
+  );
+});
+
 test('account card action menu uses explicit copy labels', async () => {
   const source = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
 
@@ -100,6 +120,63 @@ test('account card action menu uses explicit copy labels', async () => {
   assert.doesNotMatch(source, /t\('accounts\.copy_account_name'\)/);
   assert.doesNotMatch(source, /t\('common\.copy_content'\)/);
   assert.doesNotMatch(source, /navigator\.clipboard\.writeText/);
+});
+
+test('account card action menu can copy auth-file as normalized CPA file content', async () => {
+  const source = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+  const groupSource = await readFile(new URL('../components/AccountGroupSection.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const zh = await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8');
+  const en = await readFile(new URL('../../../locales/en.json', import.meta.url), 'utf8');
+
+  assert.match(source, /buildCPAAuthFileContentText/);
+  assert.match(source, /FileJson2/);
+  assert.match(source, /normalizeAuthFileContent\?: \(content: string\) => Promise<string>;/);
+  assert.match(source, /const canCopyCPAFile = account\.credentialSource === 'auth-file' && Boolean\(account\.name && downloadAuthFile && normalizeAuthFileContent\);/);
+  assert.match(source, /async function copyAccountCPAFileContent\(\)/);
+  assert.match(source, /const normalizedContent = await normalizeAuthFileContent\(rawContent\);/);
+  assert.match(source, /await copyText\(buildCPAAuthFileContentText\(normalizedContent\)\);/);
+  assert.match(source, /key: 'copy-cpa-file'/);
+  assert.match(source, /label: t\('accounts\.copy_cpa_file'\)/);
+  assert.match(source, /onClick: \(\) => void copyAccountCPAFileContent\(\)/);
+  assert.doesNotMatch(source, /buildCPAAuthFileContentText\(buildAccountCardContentText/);
+  assert.match(groupSource, /normalizeAuthFileContent\?: \(content: string\) => Promise<string>;/);
+  assert.match(groupSource, /normalizeAuthFileContent=\{normalizeAuthFileContent\}/);
+  assert.match(featureSource, /getAccountsPreviewAuthFileContent/);
+  assert.match(featureSource, /encodeUTF8Base64/);
+  assert.match(featureSource, /const downloadAuthFileForAccountCard = useCallback/);
+  assert.match(featureSource, /contentBase64: encodeUTF8Base64\(getAccountsPreviewAuthFileContent\(accountName\)\)/);
+  assert.match(featureSource, /const normalizeAuthFileContentForAccountCard = useCallback/);
+  assert.match(featureSource, /Browser preview only; production CPA normalization stays in Wails\/backend\./);
+  assert.match(featureSource, /NormalizeAuthFileContent\(content\)/);
+  assert.match(featureSource, /downloadAuthFile=\{downloadAuthFileForAccountCard\}/);
+  assert.match(featureSource, /normalizeAuthFileContent=\{normalizeAuthFileContentForAccountCard\}/);
+  assert.match(zh, /"copy_cpa_file":\s*"复制为 CPA 文件"/);
+  assert.match(en, /"copy_cpa_file":\s*"Copy As CPA File"/);
+});
+
+test('account card action menu item clicks do not bubble into card detail opening', async () => {
+  const source = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /onClick: \(\{ domEvent \}\) => \{\s*domEvent\.stopPropagation\(\);\s*setIsActionMenuOpen\(false\);\s*\}/);
+  assert.match(source, /key: 'toggle'[\s\S]*label: isStatusPending \? t\('common\.loading'\) : account\.disabled \? t\('common\.enable'\) : t\('common\.disable'\)[\s\S]*onClick: \(\) => onToggleDisabled\(account\)/);
+});
+
+test('account card failure reason copy action reuses the account clipboard pipeline', async () => {
+  const source = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+  const zh = await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8');
+  const en = await readFile(new URL('../../../locales/en.json', import.meta.url), 'utf8');
+
+  assert.match(source, /import \{ Copy,/);
+  assert.match(source, /failureReasonAction=\{failureReason \? \(/);
+  assert.match(source, /data-account-card-copy-failure-reason="true"/);
+  assert.match(source, /aria-label=\{t\('accounts\.copy_failure_reason'\)\}/);
+  assert.match(source, /title=\{t\('accounts\.copy_failure_reason'\)\}/);
+  assert.match(source, /event\.stopPropagation\(\);\s*void copyText\(failureReason\);/);
+  assert.match(source, /copyState === 'success' \? t\('accounts\.copy_done'\) : copyState === 'error' \? t\('accounts\.copy_failed'\) : t\('accounts\.copy_failure_reason'\)/);
+  assert.doesNotMatch(source, /navigator\.clipboard\.writeText\(failureReason\)/);
+  assert.match(zh, /"copy_failure_reason":\s*"复制错误信息"/);
+  assert.match(en, /"copy_failure_reason":\s*"Copy Error Message"/);
 });
 
 test('account card action menu includes reauth for every codex auth-file account', async () => {

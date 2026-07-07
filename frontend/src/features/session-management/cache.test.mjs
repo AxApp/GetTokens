@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
+  cleanupSessionManagementSnapshotStorage,
   persistSessionManagementSnapshot,
   readStoredSessionManagementSnapshot,
 } from './cache.ts';
@@ -59,12 +61,54 @@ test('session management snapshot cache roundtrips a valid snapshot', () => {
   globalThis.localStorage = originalLocalStorage;
 });
 
+test('session management snapshot hook disables WebView storage cache in Wails runtime', async () => {
+  const source = await readFile(new URL('./useSessionManagementSnapshot.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /hasWailsAppBindings/);
+  assert.match(source, /const browserSnapshotCacheEnabled = !hasWailsAppBindings\(\)/);
+  assert.match(source, /cleanupSessionManagementSnapshotStorage\(\)/);
+  assert.match(source, /readStoredSessionManagementSnapshot\(workspace, \{ enabled: browserSnapshotCacheEnabled \}\)/);
+  assert.match(source, /persistSessionManagementSnapshot\(workspace, nextSnapshot, \{ enabled: browserSnapshotCacheEnabled \}\)/);
+});
+
 test('session management snapshot cache ignores invalid payloads', () => {
   const originalLocalStorage = globalThis.localStorage;
   globalThis.localStorage = createStorage();
   globalThis.localStorage.setItem('gettokens.sessionManagement.snapshot.codex', '{invalid json');
 
   assert.equal(readStoredSessionManagementSnapshot('codex'), null);
+
+  globalThis.localStorage = originalLocalStorage;
+});
+
+test('session management snapshot cache can be disabled for Wails runtime storage pressure', () => {
+  const originalLocalStorage = globalThis.localStorage;
+  globalThis.localStorage = createStorage();
+
+  persistSessionManagementSnapshot('codex', {
+    stats: {
+      projectCount: 1,
+      sessionCount: 1,
+      activeSessionCount: 1,
+      archivedSessionCount: 0,
+      lastScanAt: '2026-07-07 16:10',
+      providerSummary: 'codex 1',
+    },
+    projects: [],
+  }, { enabled: false });
+
+  assert.equal(globalThis.localStorage.getItem('gettokens.sessionManagement.snapshot.codex'), null);
+  assert.equal(readStoredSessionManagementSnapshot('codex', { enabled: false }), null);
+
+  globalThis.localStorage.setItem('gettokens.sessionManagement.snapshot', 'legacy snapshot');
+  globalThis.localStorage.setItem('gettokens.sessionManagement.snapshot.codex', 'codex snapshot');
+  globalThis.localStorage.setItem('gettokens.sessionManagement.snapshot.claude', 'claude snapshot');
+
+  cleanupSessionManagementSnapshotStorage(globalThis.localStorage);
+
+  assert.equal(globalThis.localStorage.getItem('gettokens.sessionManagement.snapshot'), null);
+  assert.equal(globalThis.localStorage.getItem('gettokens.sessionManagement.snapshot.codex'), null);
+  assert.equal(globalThis.localStorage.getItem('gettokens.sessionManagement.snapshot.claude'), null);
 
   globalThis.localStorage = originalLocalStorage;
 });

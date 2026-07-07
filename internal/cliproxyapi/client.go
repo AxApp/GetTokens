@@ -467,6 +467,31 @@ func (c *Client) DeleteAccountsBatch(input AccountBatchDeleteInput) (*AccountBat
 	return &response, nil
 }
 
+func (c *Client) PatchAccountsStatusBatch(input AccountBatchStatusInput) (*AccountBatchStatusResult, error) {
+	if input.AccountKeys == nil {
+		input.AccountKeys = []string{}
+	}
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/accounts/batch-status", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response AccountBatchStatusResult
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.UpdatedAccountKeys == nil {
+		response.UpdatedAccountKeys = []string{}
+	}
+	if response.Errors == nil {
+		response.Errors = []AccountBatchStatusError{}
+	}
+	return &response, nil
+}
+
 func (c *Client) GetAccountModels(accountKey string) ([]map[string]interface{}, error) {
 	body, _, err := c.request("GET", "/v0/management/accounts/"+url.PathEscape(accountKey)+"/models", nil, nil, "")
 	if err != nil {

@@ -17,6 +17,7 @@ import {
   ListChannelRouteDecisions,
   ListRateLimitRules,
   ListRelaySupportedModels,
+  NormalizeAuthFileContent,
   ProbeCodexAccountRouting,
   PreviewDeepLinkImport,
   UpdateOpenAICompatibleProvider,
@@ -46,7 +47,10 @@ import UnifiedAccountDetailModal from "./components/UnifiedAccountDetailModal";
 import type { OAuthModelProbeState } from "./components/OAuthModelProbeSection";
 import { useAccountsPageStateContext } from "./AccountsPageStateContext";
 import useOpenAICompatibleState from "./hooks/useOpenAICompatibleState";
-import { getAccountsPreviewRelayModelNames } from "./previewData";
+import {
+  getAccountsPreviewAuthFileContent,
+  getAccountsPreviewRelayModelNames,
+} from "./previewData";
 import { isCodexAuthFile } from "./model/accountPresentation";
 import { readAccountClipboardFallback } from "./model/accountClipboard";
 import { resolveAccountDetailSelection } from "./model/accountDetailSelection";
@@ -97,7 +101,7 @@ import {
   normalizeFormatBaseUrls as normalizeDetailFormatBaseUrls,
   type ApiKeyConfigDraft,
 } from "./model/accountDetailConfig";
-import type { AccountImportPayloadItem } from "./model/accountTransfer";
+import { encodeUTF8Base64, type AccountImportPayloadItem } from "./model/accountTransfer";
 import { toErrorMessage } from "../../utils/error";
 
 interface AccountsFeatureProps {
@@ -508,6 +512,34 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       }),
     [relayEndpoints, sidecarStatus.port],
   );
+  const downloadAuthFileForAccountCard = useCallback(
+    async (accountName: string) => {
+      if (previewMode) {
+        return { contentBase64: encodeUTF8Base64(getAccountsPreviewAuthFileContent(accountName)) };
+      }
+      return DownloadAuthFile(accountName);
+    },
+    [previewMode],
+  );
+  const normalizeAuthFileContentForAccountCard = useCallback(
+    async (content: string) => {
+      if (!previewMode) {
+        return NormalizeAuthFileContent(content);
+      }
+
+      // Browser preview only; production CPA normalization stays in Wails/backend.
+      const parsed = JSON.parse(content);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Invalid preview auth file content.");
+      }
+      const payload = parsed as Record<string, unknown>;
+      if (!payload.type) {
+        payload.type = "codex";
+      }
+      return `${JSON.stringify(payload, null, 2)}\n`;
+    },
+    [previewMode],
+  );
 
   const openDeepLinkImport = useCallback(
     async (rawURL: string) => {
@@ -671,9 +703,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const setGroupDisabled = useCallback(
     (groupAccounts: AccountRecord[], nextDisabled: boolean) => {
-      void runAccountsBulkSetDisabled(groupAccounts, nextDisabled);
+      const label = nextDisabled ? t('accounts.disable_group') : t('accounts.enable_group');
+      void runAccountsBulkSetDisabled(groupAccounts, nextDisabled, label);
     },
-    [runAccountsBulkSetDisabled],
+    [runAccountsBulkSetDisabled, t],
   );
 
   const deleteGroup = useCallback(
@@ -1603,7 +1636,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   }}
                   onCancelDelete={() => setPendingDeleteID(null)}
                   onConfirmDelete={(account) => void deleteAccount(account)}
-                  downloadAuthFile={DownloadAuthFile}
+                  downloadAuthFile={downloadAuthFileForAccountCard}
+                  normalizeAuthFileContent={normalizeAuthFileContentForAccountCard}
                   resolveLocalCliActions={resolveLocalCliActionsForAccount}
                 />
               ))}

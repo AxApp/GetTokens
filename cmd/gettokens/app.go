@@ -211,6 +211,29 @@ func (a *App) SetAccountDisabled(id string, disabled bool) error {
 	return a.core.SetAccountDisabled(id, disabled)
 }
 
+func (a *App) SetAccountsDisabledBatch(input SetAccountsDisabledBatchInput) (*SetAccountsDisabledBatchResult, error) {
+	result, err := a.core.SetAccountsDisabledBatch(wailsapp.SetAccountsDisabledBatchInput{
+		AccountIDs: input.AccountIDs,
+		Disabled:   input.Disabled,
+	})
+	if err != nil {
+		return nil, err
+	}
+	errors := make([]SetAccountsDisabledBatchError, 0, len(result.Errors))
+	for _, item := range result.Errors {
+		errors = append(errors, SetAccountsDisabledBatchError{
+			AccountID: item.AccountID,
+			Error:     item.Error,
+		})
+	}
+	return &SetAccountsDisabledBatchResult{
+		UpdatedAccountIDs: result.UpdatedAccountIDs,
+		Errors:            errors,
+		Succeeded:         result.Succeeded,
+		Failed:            result.Failed,
+	}, nil
+}
+
 func (a *App) DeleteAuthFiles(names []string) error {
 	return a.core.DeleteAuthFiles(names)
 }

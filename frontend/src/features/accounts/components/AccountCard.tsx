@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Checkbox, Dropdown, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
-import { FileText, MoreVertical, Power, RefreshCw, RotateCw, Terminal, Trash2 } from 'lucide-react';
+import { Copy, FileJson2, FileText, MoreVertical, Power, RefreshCw, RotateCw, Terminal, Trash2 } from 'lucide-react';
 import { buildQuotaBlockBadgeLabel, buildQuotaDisplay, extractBilling, hasQuotaEmptyBlock } from '../model/accountQuota';
-import { buildAccountCardContentText } from '../model/accountCardActions';
+import { buildAccountCardContentText, buildCPAAuthFileContentText } from '../model/accountCardActions';
 import { writeAccountClipboardText } from '../model/accountClipboard';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
 import { buildAccountCardRefreshAction } from '../model/accountCardRefresh';
@@ -49,6 +49,7 @@ interface AccountCardProps {
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
   downloadAuthFile?: (accountName: string) => Promise<{ contentBase64: string }>;
+  normalizeAuthFileContent?: (content: string) => Promise<string>;
   localCliActions?: ReadonlyArray<AccountCardLocalCliAction>;
   defaultActionMenuOpen?: boolean;
   extraBadges?: AttributionCardBadge[];
@@ -92,6 +93,7 @@ export default function AccountCard({
   onCancelDelete,
   onConfirmDelete,
   downloadAuthFile,
+  normalizeAuthFileContent,
   localCliActions = [],
   defaultActionMenuOpen = false,
   extraBadges = [],
@@ -136,6 +138,7 @@ export default function AccountCard({
           ? 'warning'
           : 'critical';
   const badges: AttributionCardBadge[] = [...buildAccountAttributionBadges(account, quotaDisplay), ...extraBadges];
+  const canCopyCPAFile = account.credentialSource === 'auth-file' && Boolean(account.name && downloadAuthFile && normalizeAuthFileContent);
   if (account.disabled) {
     badges.push({ label: t('accounts.rotation_disabled_badge'), tone: 'critical' });
   }
@@ -186,6 +189,10 @@ export default function AccountCard({
       setCopyState('error');
     }
 
+    scheduleCopyStateReset();
+  }
+
+  function scheduleCopyStateReset() {
     if (copyResetTimerRef.current !== null) {
       window.clearTimeout(copyResetTimerRef.current);
     }
@@ -214,6 +221,25 @@ export default function AccountCard({
     await copyText(buildAccountCardContentText(account));
   }
 
+  async function copyAccountCPAFileContent() {
+    if (!account.name || !downloadAuthFile || !normalizeAuthFileContent) {
+      setCopyState('error');
+      scheduleCopyStateReset();
+      return;
+    }
+
+    try {
+      const response = await downloadAuthFile(account.name);
+      const rawContent = decodeBase64Utf8(response.contentBase64);
+      const normalizedContent = await normalizeAuthFileContent(rawContent);
+      await copyText(buildCPAAuthFileContentText(normalizedContent));
+    } catch (error) {
+      console.warn('Account card CPA file copy failed.', error);
+      setCopyState('error');
+      scheduleCopyStateReset();
+    }
+  }
+
   const deleteOverlay = isPendingDelete
     ? buildAccountDeleteOverlay({
         t,
@@ -233,6 +259,24 @@ export default function AccountCard({
       eyebrow={operationalState.label}
       eyebrowPrefix={eyebrowPrefix}
       failureReason={failureReason}
+      failureReasonAction={failureReason ? (
+        <Tooltip
+          title={copyState === 'success' ? t('accounts.copy_done') : copyState === 'error' ? t('accounts.copy_failed') : t('accounts.copy_failure_reason')}
+        >
+          <Button
+            type="text"
+            size="small"
+            icon={<Copy size={14} strokeWidth={2} />}
+            aria-label={t('accounts.copy_failure_reason')}
+            title={t('accounts.copy_failure_reason')}
+            data-account-card-copy-failure-reason="true"
+            onClick={(event) => {
+              event.stopPropagation();
+              void copyText(failureReason);
+            }}
+          />
+        </Tooltip>
+      ) : undefined}
       badges={badges}
       usageSummary={usageSummary}
       refreshFeedback={refreshFeedback}
@@ -288,6 +332,12 @@ export default function AccountCard({
                     label: t('accounts.copy_account_config'),
                     onClick: () => void copyAccountContent(),
                   },
+                  ...(canCopyCPAFile ? [{
+                    key: 'copy-cpa-file',
+                    icon: <FileJson2 size={14} />,
+                    label: t('accounts.copy_cpa_file'),
+                    onClick: () => void copyAccountCPAFileContent(),
+                  }] : []),
                   ...(canMenuReauth ? [{
                     key: 'reauth',
                     icon: <RotateCw size={14} />,
@@ -326,7 +376,10 @@ export default function AccountCard({
                     onClick: () => onRequestDelete(account.id),
                   }] : []),
                 ],
-                onClick: () => setIsActionMenuOpen(false),
+                onClick: ({ domEvent }) => {
+                  domEvent.stopPropagation();
+                  setIsActionMenuOpen(false);
+                },
               }}
               trigger={['click']}
               open={isActionMenuOpen}

@@ -41,6 +41,7 @@ interface AccountGroupSectionProps {
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
   downloadAuthFile?: (accountName: string) => Promise<{ contentBase64: string }>;
+  normalizeAuthFileContent?: (content: string) => Promise<string>;
   resolveLocalCliActions?: (account: AccountRecord) => ReadonlyArray<AccountCardLocalCliAction>;
 }
 
@@ -76,6 +77,7 @@ export default function AccountGroupSection({
   onCancelDelete,
   onConfirmDelete,
   downloadAuthFile,
+  normalizeAuthFileContent,
   resolveLocalCliActions,
 }: AccountGroupSectionProps) {
   return (
@@ -123,6 +125,7 @@ export default function AccountGroupSection({
           onCancelDelete={onCancelDelete}
           onConfirmDelete={onConfirmDelete}
           downloadAuthFile={downloadAuthFile}
+          normalizeAuthFileContent={normalizeAuthFileContent}
           localCliActions={resolveLocalCliActions?.(account) || []}
         />
       )}

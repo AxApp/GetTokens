@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import {
+  ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE,
   ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY,
   buildRuntimeSyncAccountKeys,
+  chunkRuntimeSyncAccountKeys,
   normalizeRuntimeSyncDocumentHidden,
   runAccountRuntimeRequestPool,
   shouldRunRuntimeSyncOnVisibilityRestore,
@@ -99,6 +101,16 @@ test('runtime sync account keys are stable and deduplicated by account key', () 
   ]);
 });
 
+test('runtime quota status keys are chunked before calling the management API', () => {
+  const quotaKeys = Array.from({ length: ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE * 2 + 17 }, (_, index) => `acct-${index}`);
+  const chunks = chunkRuntimeSyncAccountKeys(quotaKeys);
+
+  assert.equal(ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE, 200);
+  assert.deepEqual(chunks.map((chunk) => chunk.length), [200, 200, 17]);
+  assert.deepEqual(chunks.flat(), quotaKeys);
+  assert.ok(chunks.every((chunk) => chunk.length <= ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE));
+});
+
 test('runtime request pool caps concurrent account refreshes', async () => {
   const items = Array.from({ length: 23 }, (_, index) => index);
   let active = 0;
@@ -137,7 +149,8 @@ test('quota runtime sync reads sidecar status without triggering active quota re
   const syncSource = source.slice(syncStart, syncEnd);
 
   assert.match(syncSource, /GetQuotaStatuses/);
-  assert.match(syncSource, /accountKeys: quotaKeys/);
+  assert.match(syncSource, /chunkRuntimeSyncAccountKeys\(quotaKeys\)/);
+  assert.match(syncSource, /accountKeys: quotaStatusChunk/);
   assert.match(syncSource, /GetAllQuotaStatuses/);
   assert.match(syncSource, /fallback: true/);
   assert.doesNotMatch(syncSource, /GetCodexQuota/);
@@ -256,6 +269,28 @@ test('selected bulk delete uses the sidecar batch endpoint', async () => {
   assert.match(actionsSource, /main\.DeleteAccountsBatchInput\.createFrom/);
   assert.doesNotMatch(bulkDeleteSource, /executeDeleteAccount/);
   assert.doesNotMatch(bulkDeleteSource, /for \(const account of selectedAccounts\)/);
+});
+
+test('selected and group bulk disabled changes use the Wails batch endpoint', async () => {
+  const actionsSource = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const bulkDisableStart = actionsSource.indexOf('const runAccountsBulkSetDisabled = useCallback');
+  assert.notEqual(bulkDisableStart, -1);
+  const bulkDisableEnd = actionsSource.indexOf('const runSelectedBulkSetDisabled = useCallback', bulkDisableStart);
+  assert.notEqual(bulkDisableEnd, -1);
+  const bulkDisableSource = actionsSource.slice(bulkDisableStart, bulkDisableEnd);
+
+  assert.match(actionsSource, /SetAccountsDisabledBatch/);
+  assert.match(actionsSource, /main\.SetAccountsDisabledBatchInput\.createFrom\(\{ accountIDs, disabled: nextDisabled \}\)/);
+  assert.match(bulkDisableSource, /resolveBulkSetDisabledTargets\(targetAccounts, nextDisabled\)/);
+  assert.match(bulkDisableSource, /const label = labelOverride \|\| \(nextDisabled \? t\('accounts\.bulk_disable_selected'\) : t\('accounts\.bulk_enable_selected'\)\)/);
+  assert.match(bulkDisableSource, /resolution\.targets\.forEach\(\(account\) => \{/);
+  assert.match(bulkDisableSource, /patchAccountDisabledLocally\(account, nextDisabled\)/);
+  assert.match(featureSource, /const label = nextDisabled \? t\('accounts\.disable_group'\) : t\('accounts\.enable_group'\)/);
+  assert.match(featureSource, /runAccountsBulkSetDisabled\(groupAccounts, nextDisabled, label\)/);
+  assert.doesNotMatch(bulkDisableSource, /for \(const account of resolution\.targets\)/);
+  assert.doesNotMatch(bulkDisableSource, /setAccountDisabled\(account, nextDisabled/);
+  assert.doesNotMatch(bulkDisableSource, /SetAccountDisabled\(account\.id, nextDisabled\)/);
 });
 
 test('background usage sync skips backend account resolution', async () => {

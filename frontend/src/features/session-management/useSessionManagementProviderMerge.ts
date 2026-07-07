@@ -5,6 +5,7 @@ import type { ProjectSummary, SessionManagementSnapshot } from './model.ts';
 import type { ProviderMergeRow } from './SessionManagementView.tsx';
 import { getProviderDisplayLabel } from './SessionManagementView.tsx';
 import { normalizeProviderInput, toErrorMessage } from './sessionManagementUtils.ts';
+import { hasWailsAppBindings } from '../../utils/previewMode';
 
 interface UseSessionManagementProviderMergeOptions {
   snapshot: SessionManagementSnapshot;
@@ -120,7 +121,7 @@ export function useSessionManagementProviderMerge({
     setProviderEditorError(null);
     try {
       const nextSnapshot = await updateCodexSessionProviders(editingProject.id, mappings, snapshot);
-      persistSessionManagementSnapshot('codex', nextSnapshot);
+      persistSessionManagementSnapshot('codex', nextSnapshot, { enabled: !hasWailsAppBindings() });
       onSnapshotUpdated(nextSnapshot);
       closeProviderEditor();
     } catch (error) {

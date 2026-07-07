@@ -267,6 +267,55 @@ func (a *App) DeleteAccountsBatch(input DeleteAccountsBatchInput) (*DeleteAccoun
 	}, nil
 }
 
+func (a *App) SetAccountsDisabledBatch(input SetAccountsDisabledBatchInput) (*SetAccountsDisabledBatchResult, error) {
+	if !a.hasManagementClient() {
+		return nil, errors.New("account-store management client 未就绪")
+	}
+	accountIDs := normalizeBatchDeleteAccountIDs(input.AccountIDs)
+	if len(accountIDs) == 0 {
+		return nil, errors.New("未选择账号")
+	}
+
+	result, err := a.managementClient().PatchAccountsStatusBatch(cliproxyapi.AccountBatchStatusInput{
+		AccountKeys: accountIDs,
+		Disabled:    input.Disabled,
+	})
+	if err != nil {
+		if !isSidecarNotFoundError(err) {
+			return nil, err
+		}
+		result = setAccountsDisabledBatchWithSingleStatusFallback(a.managementClient(), accountIDs, input.Disabled)
+	}
+
+	for _, accountID := range result.UpdatedAccountKeys {
+		if syncErr := clearManualDisabledRuntimeState(accountID); syncErr != nil {
+			return nil, syncErr
+		}
+		if input.Disabled {
+			if pruneErr := pruneRelayModelAccountCacheEntries(accountID); pruneErr != nil {
+				log.Printf("prune relay model account cache for %s failed: %v", accountID, pruneErr)
+			}
+		}
+	}
+	if len(result.UpdatedAccountKeys) > 0 {
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
+
+	errors := make([]SetAccountsDisabledBatchError, 0, len(result.Errors))
+	for _, item := range result.Errors {
+		errors = append(errors, SetAccountsDisabledBatchError{
+			AccountID: item.AccountKey,
+			Error:     item.Error,
+		})
+	}
+	return &SetAccountsDisabledBatchResult{
+		UpdatedAccountIDs: result.UpdatedAccountKeys,
+		Errors:            errors,
+		Succeeded:         result.Succeeded,
+		Failed:            result.Failed,
+	}, nil
+}
+
 func deleteAccountsBatchWithSingleDeleteFallback(client *cliproxyapi.Client, accountIDs []string) *cliproxyapi.AccountBatchDeleteResult {
 	result := &cliproxyapi.AccountBatchDeleteResult{
 		DeletedAccountKeys: make([]string, 0, len(accountIDs)),
@@ -282,6 +331,26 @@ func deleteAccountsBatchWithSingleDeleteFallback(client *cliproxyapi.Client, acc
 			continue
 		}
 		result.DeletedAccountKeys = append(result.DeletedAccountKeys, accountID)
+		result.Succeeded++
+	}
+	return result
+}
+
+func setAccountsDisabledBatchWithSingleStatusFallback(client *cliproxyapi.Client, accountIDs []string, disabled bool) *cliproxyapi.AccountBatchStatusResult {
+	result := &cliproxyapi.AccountBatchStatusResult{
+		UpdatedAccountKeys: make([]string, 0, len(accountIDs)),
+		Errors:             make([]cliproxyapi.AccountBatchStatusError, 0),
+	}
+	for _, accountID := range accountIDs {
+		if _, err := client.PatchAccountStatus(accountID, disabled); err != nil {
+			result.Errors = append(result.Errors, cliproxyapi.AccountBatchStatusError{
+				AccountKey: accountID,
+				Error:      err.Error(),
+			})
+			result.Failed++
+			continue
+		}
+		result.UpdatedAccountKeys = append(result.UpdatedAccountKeys, accountID)
 		result.Succeeded++
 	}
 	return result

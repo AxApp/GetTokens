@@ -252,12 +252,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .account-card-meta-row {
-    container-type: inline-size;
-  }
-
   .account-card-meta-badge {
-    max-width: 5.25rem;
+    max-width: 100%;
   }
 
   .account-card-quota-refresh-skeleton {
@@ -280,12 +276,6 @@
 
     .account-card-list-actions {
       justify-self: end;
-    }
-  }
-
-  @container (max-width: 176px) {
-    .account-card-meta-badge[data-account-card-badge-priority="3"] {
-      display: none;
     }
   }
 
@@ -318,18 +308,6 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
-  }
-
-  @container (max-width: 128px) {
-    .account-card-meta-badge[data-account-card-badge-priority="2"] {
-      display: none;
-    }
-  }
-
-  @container (max-width: 96px) {
-    .account-card-meta-badge[data-account-card-badge-priority="1"] {
-      display: none;
-    }
   }
 
   @container (max-width: 288px) {

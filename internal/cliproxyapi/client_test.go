@@ -118,6 +118,16 @@ func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 		case method == "PATCH" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001/status":
 			assertJSONContains(t, body, `"disabled":true`)
 			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","disabled":true}`), 200, nil
+		case method == "POST" && path == "/v0/management/accounts/batch-status":
+			payload, err := io.ReadAll(body)
+			if err != nil {
+				t.Fatalf("read body: %v", err)
+			}
+			if !strings.Contains(string(payload), `"account_keys":["acct_00000000-0000-4000-8000-000000000001","acct_00000000-0000-4000-8000-000000000002"]`) ||
+				!strings.Contains(string(payload), `"disabled":true`) {
+				t.Fatalf("unexpected payload: %s", payload)
+			}
+			return []byte(`{"updated_account_keys":["acct_00000000-0000-4000-8000-000000000001"],"errors":[{"account_key":"acct_00000000-0000-4000-8000-000000000002","error":"account not found"}],"succeeded":1,"failed":1}`), 200, nil
 		case method == "PATCH" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001/priority":
 			assertJSONContains(t, body, `"priority":9`)
 			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","priority":9}`), 200, nil
@@ -155,6 +165,13 @@ func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 	}
 	if account, err := client.PatchAccountStatus("acct_00000000-0000-4000-8000-000000000001", true); err != nil || !account.Disabled {
 		t.Fatalf("PatchAccountStatus = %#v, err = %v", account, err)
+	}
+	status, err := client.PatchAccountsStatusBatch(AccountBatchStatusInput{
+		AccountKeys: []string{"acct_00000000-0000-4000-8000-000000000001", "acct_00000000-0000-4000-8000-000000000002"},
+		Disabled:    true,
+	})
+	if err != nil || status == nil || status.Succeeded != 1 || status.Failed != 1 || len(status.UpdatedAccountKeys) != 1 || len(status.Errors) != 1 {
+		t.Fatalf("PatchAccountsStatusBatch = %#v, err = %v", status, err)
 	}
 	if account, err := client.PatchAccountPriority("acct_00000000-0000-4000-8000-000000000001", 9); err != nil || account.Priority != 9 {
 		t.Fatalf("PatchAccountPriority = %#v, err = %v", account, err)

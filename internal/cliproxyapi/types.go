@@ -743,6 +743,11 @@ type AccountBatchDeleteInput struct {
 	AccountKeys []string `json:"account_keys"`
 }
 
+type AccountBatchStatusInput struct {
+	AccountKeys []string `json:"account_keys"`
+	Disabled    bool     `json:"disabled"`
+}
+
 type AccountBatchCreateInput struct {
 	Accounts []AccountWriteRequest `json:"accounts"`
 }
@@ -796,6 +801,18 @@ type AccountBatchDeleteError struct {
 type AccountBatchDeleteResult struct {
 	DeletedAccountKeys []string                  `json:"deleted_account_keys"`
 	Errors             []AccountBatchDeleteError `json:"errors"`
+	Succeeded          int                       `json:"succeeded"`
+	Failed             int                       `json:"failed"`
+}
+
+type AccountBatchStatusError struct {
+	AccountKey string `json:"account_key"`
+	Error      string `json:"error"`
+}
+
+type AccountBatchStatusResult struct {
+	UpdatedAccountKeys []string                  `json:"updated_account_keys"`
+	Errors             []AccountBatchStatusError `json:"errors"`
 	Succeeded          int                       `json:"succeeded"`
 	Failed             int                       `json:"failed"`
 }
