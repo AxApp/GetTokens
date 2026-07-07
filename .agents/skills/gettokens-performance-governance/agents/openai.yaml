@@ -1,0 +1,4 @@
+interface:
+  display_name: "GetTokens Performance Governance"
+  short_description: "Govern GetTokens memory, WebView, sidecar, and scale regressions with budgets and profiling gates."
+  default_prompt: "Use this skill to triage a GetTokens performance or memory concern, define the budget, choose the right profiling surface, and add a regression gate."

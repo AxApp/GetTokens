@@ -4,9 +4,11 @@ package sidecar
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +20,9 @@ const (
 	pollInterval         = 500 * time.Millisecond
 	sidecarShutdownGrace = 2 * time.Second
 	orphanShutdownGrace  = 1500 * time.Millisecond
+	sidecarLogFileName   = "sidecar.log"
+	sidecarLogMaxBytes   = int64(10 * 1024 * 1024)
+	sidecarLogMaxBackups = 2
 	// ManagementKey is used for local management API auth between app frontend and sidecar.
 	ManagementKey = "gettokens-local-management-key"
 )
@@ -121,9 +126,8 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 
 	cmd := exec.CommandContext(ctx, binPath, "-config", configFile)
 
-	// Redirect sidecar stdout/stderr to files for debugging.
-	logFile := filepath.Join(configDir, "sidecar.log")
-	if f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600); err == nil {
+	// Redirect sidecar stdout/stderr to a bounded file for debugging.
+	if f, err := openSidecarLog(configDir); err == nil {
 		cmd.Stdout = f
 		cmd.Stderr = f
 		defer f.Close()
@@ -192,6 +196,155 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 			m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("后端意外退出: %v", err)}, notify)
 		}
 	}
+}
+
+func openSidecarLog(configDir string) (*os.File, error) {
+	logPath := filepath.Join(configDir, sidecarLogFileName)
+	if err := prepareSidecarLog(logPath); err != nil {
+		return nil, err
+	}
+	return os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+}
+
+func prepareSidecarLog(logPath string) error {
+	if strings.TrimSpace(logPath) == "" {
+		return fmt.Errorf("empty sidecar log path")
+	}
+	if err := os.MkdirAll(filepath.Dir(logPath), 0700); err != nil {
+		return err
+	}
+	if err := removeStaleSidecarLogBackups(logPath); err != nil {
+		return err
+	}
+	if err := capExistingSidecarLogBackups(logPath); err != nil {
+		return err
+	}
+	info, err := os.Stat(logPath)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if info.Size() <= sidecarLogMaxBytes {
+		return nil
+	}
+	if err := shiftSidecarLogBackups(logPath); err != nil {
+		return err
+	}
+	if err := copyFileTail(logPath, sidecarLogBackupPath(logPath, 1), sidecarLogMaxBytes); err != nil {
+		return err
+	}
+	return os.Truncate(logPath, 0)
+}
+
+func shiftSidecarLogBackups(logPath string) error {
+	for index := sidecarLogMaxBackups; index >= 1; index-- {
+		current := sidecarLogBackupPath(logPath, index)
+		if index == sidecarLogMaxBackups {
+			if err := removeIfExists(current); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, err := os.Stat(current); os.IsNotExist(err) {
+			continue
+		} else if err != nil {
+			return err
+		}
+		if err := os.Rename(current, sidecarLogBackupPath(logPath, index+1)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func capExistingSidecarLogBackups(logPath string) error {
+	for index := 1; index <= sidecarLogMaxBackups; index++ {
+		path := sidecarLogBackupPath(logPath, index)
+		info, err := os.Stat(path)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if info.Size() <= sidecarLogMaxBytes {
+			continue
+		}
+		if err := copyFileTail(path, path, sidecarLogMaxBytes); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func removeStaleSidecarLogBackups(logPath string) error {
+	matches, err := filepath.Glob(logPath + ".*")
+	if err != nil {
+		return err
+	}
+	prefix := filepath.Base(logPath) + "."
+	for _, match := range matches {
+		suffix := strings.TrimPrefix(filepath.Base(match), prefix)
+		index, err := strconv.Atoi(suffix)
+		if err != nil {
+			continue
+		}
+		if index > sidecarLogMaxBackups {
+			if err := removeIfExists(match); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func sidecarLogBackupPath(logPath string, index int) string {
+	return fmt.Sprintf("%s.%d", logPath, index)
+}
+
+func copyFileTail(srcPath string, dstPath string, maxBytes int64) error {
+	in, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	info, err := in.Stat()
+	if err != nil {
+		return err
+	}
+	offset := int64(0)
+	if info.Size() > maxBytes {
+		offset = info.Size() - maxBytes
+	}
+	if _, err := in.Seek(offset, io.SeekStart); err != nil {
+		return err
+	}
+	tmpPath := dstPath + ".tmp"
+	out, err := os.OpenFile(tmpPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	_, copyErr := io.Copy(out, in)
+	closeErr := out.Close()
+	if copyErr != nil {
+		_ = os.Remove(tmpPath)
+		return copyErr
+	}
+	if closeErr != nil {
+		_ = os.Remove(tmpPath)
+		return closeErr
+	}
+	return os.Rename(tmpPath, dstPath)
+}
+
+func removeIfExists(path string) error {
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
 
 // Stop sends SIGTERM to the sidecar process.

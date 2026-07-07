@@ -1,6 +1,7 @@
 package sidecar
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"os"
@@ -197,6 +198,72 @@ func TestNewManagerUsesDevProfileFromEnv(t *testing.T) {
 	}
 	if manager.port != devPort {
 		t.Fatalf("manager port = %d, want %d", manager.port, devPort)
+	}
+}
+
+func TestPrepareSidecarLogRotatesOversizedActiveLog(t *testing.T) {
+	dir := t.TempDir()
+	logPath := filepath.Join(dir, "sidecar.log")
+	oldActive := append([]byte("old-active:"), bytes.Repeat([]byte("a"), int(sidecarLogMaxBytes)+64)...)
+	oldBackup1 := append([]byte("old-backup-1:"), bytes.Repeat([]byte("b"), 128)...)
+	oldBackup2 := []byte("old-backup-2")
+	oldBackup3 := []byte("old-backup-3")
+
+	if err := os.WriteFile(logPath, oldActive, 0o600); err != nil {
+		t.Fatalf("seed active log: %v", err)
+	}
+	if err := os.WriteFile(logPath+".1", oldBackup1, 0o600); err != nil {
+		t.Fatalf("seed backup 1: %v", err)
+	}
+	if err := os.WriteFile(logPath+".2", oldBackup2, 0o600); err != nil {
+		t.Fatalf("seed backup 2: %v", err)
+	}
+	if err := os.WriteFile(logPath+".3", oldBackup3, 0o600); err != nil {
+		t.Fatalf("seed stale backup 3: %v", err)
+	}
+
+	f, err := openSidecarLog(dir)
+	if err != nil {
+		t.Fatalf("openSidecarLog returned error: %v", err)
+	}
+	if _, err := f.WriteString("new-entry\n"); err != nil {
+		t.Fatalf("write active log: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatalf("close active log: %v", err)
+	}
+
+	active, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatalf("read active log: %v", err)
+	}
+	if got := string(active); got != "new-entry\n" {
+		t.Fatalf("active log = %q, want new entry only", got)
+	}
+
+	rotated, err := os.ReadFile(logPath + ".1")
+	if err != nil {
+		t.Fatalf("read rotated backup: %v", err)
+	}
+	if int64(len(rotated)) > sidecarLogMaxBytes {
+		t.Fatalf("rotated backup size = %d, want <= %d", len(rotated), sidecarLogMaxBytes)
+	}
+	if bytes.Contains(rotated, []byte("old-active:")) {
+		t.Fatalf("rotated backup kept the oldest oversized log prefix")
+	}
+	if !bytes.HasSuffix(rotated, bytes.Repeat([]byte("a"), 64)) {
+		t.Fatalf("rotated backup did not keep the newest active log tail")
+	}
+
+	moved, err := os.ReadFile(logPath + ".2")
+	if err != nil {
+		t.Fatalf("read shifted backup: %v", err)
+	}
+	if string(moved) != string(oldBackup1) {
+		t.Fatalf("backup .2 = %q, want previous .1", string(moved))
+	}
+	if _, err := os.Stat(logPath + ".3"); !os.IsNotExist(err) {
+		t.Fatalf("stale backup .3 still exists: %v", err)
 	}
 }
 
