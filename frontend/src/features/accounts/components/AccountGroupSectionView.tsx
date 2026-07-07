@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight, MoreVertical, Power, RefreshCw, SquareCheckB
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountGroup, AccountRecord, Translator } from '../model/types';
-import { resolveBulkDeleteTargets, resolveBulkQuotaRefreshTargets, resolveBulkSetDisabledTargets } from '../model/accountSelection';
+import { resolveAccountGroupActionAvailability } from '../model/accountSelection';
 import { countRenderedGridColumns } from '../model/accountCardLayout';
 import {
   ACCOUNT_GROUP_FULL_ROW_ESTIMATE,
@@ -54,13 +54,17 @@ export default function AccountGroupSectionView({
     rowHeight: resolveEstimatedAccountGroupRowHeight(displayMode),
   }));
   const gridRef = useRef<HTMLDivElement | null>(null);
-  const hasAccounts = group.accounts.length > 0;
-  const allGroupSelected = hasAccounts && group.accounts.every((account) => selectedAccountIDSet?.has(account.id));
-  const canRefreshGroup = resolveBulkQuotaRefreshTargets(group.accounts).targets.length > 0;
-  const canEnableGroup = resolveBulkSetDisabledTargets(group.accounts, false).targets.length > 0;
-  const canDisableGroup = resolveBulkSetDisabledTargets(group.accounts, true).targets.length > 0;
-  const deleteGroupResolution = resolveBulkDeleteTargets(group.accounts);
-  const canDeleteGroup = deleteGroupResolution.targets.length > 0;
+  const {
+    hasAccounts,
+    allGroupSelected,
+    canRefreshGroup,
+    canEnableGroup,
+    canDisableGroup,
+    canDeleteGroup,
+  } = useMemo(
+    () => resolveAccountGroupActionAvailability(group.accounts, selectedAccountIDSet),
+    [group.accounts, selectedAccountIDSet],
+  );
   const groupBodyID = `account-group-body-${group.id}`;
   const collapseLabel = isCollapsed
     ? t('accounts.group_expand')

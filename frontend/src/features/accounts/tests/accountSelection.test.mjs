@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   areAllAccountIDsSelected,
   filterSelectedAccountIDs,
+  resolveAccountGroupActionAvailability,
   resolveBulkDeleteTargets,
   resolveBulkQuotaRefreshTargets,
   resolveBulkSetDisabledTargets,
@@ -38,6 +39,57 @@ test('toggleAccountGroupSelection selects or clears one group without touching o
   assert.equal(areAllAccountIDsSelected(['x', 'a'], groupAccounts), false);
   assert.deepEqual(toggleAccountGroupSelection(['x'], groupAccounts), ['x', 'a', 'b']);
   assert.deepEqual(toggleAccountGroupSelection(['x', 'a', 'b'], groupAccounts), ['x']);
+});
+
+test('resolveAccountGroupActionAvailability summarizes large group actions in one model call', () => {
+  const groupAccounts = [
+    {
+      id: 'acct_auth_file',
+      accountKind: 'auth-file',
+      credentialSource: 'auth-file',
+      provider: 'codex',
+      name: 'codex.json',
+      quotaKey: 'codex.json',
+      disabled: false,
+    },
+    {
+      id: 'acct_disabled_provider',
+      accountKind: 'openai-compatible',
+      credentialSource: 'api-key',
+      provider: 'deepseek',
+      quotaKey: 'acct_disabled_provider',
+      quotaEnabled: true,
+      quotaCurl: 'curl https://example.com/quota',
+      disabled: true,
+    },
+    {
+      id: 'legacy:skip-delete',
+      credentialSource: 'api-key',
+      provider: 'codex',
+      disabled: false,
+    },
+  ];
+
+  assert.deepEqual(
+    resolveAccountGroupActionAvailability(groupAccounts, new Set(groupAccounts.map((account) => account.id))),
+    {
+      hasAccounts: true,
+      allGroupSelected: true,
+      canRefreshGroup: true,
+      canEnableGroup: true,
+      canDisableGroup: true,
+      canDeleteGroup: true,
+    },
+  );
+  assert.equal(resolveAccountGroupActionAvailability(groupAccounts, new Set(['acct_auth_file'])).allGroupSelected, false);
+  assert.deepEqual(resolveAccountGroupActionAvailability([], new Set()), {
+    hasAccounts: false,
+    allGroupSelected: false,
+    canRefreshGroup: false,
+    canEnableGroup: false,
+    canDisableGroup: false,
+    canDeleteGroup: false,
+  });
 });
 
 test('resolveBulkQuotaRefreshTargets only includes accounts with quota telemetry keys', () => {

@@ -247,3 +247,35 @@
 - 2026-06-09 追加：`./scripts/ensure-sidecar.sh darwin arm64` 确认 `build/bin/cli-proxy-api` 为 `6cb40578`；手动同步 dev bundle 后 `shasum` 一致；重启 dev 后 `~/.config/gettokens-dev/sidecar.log` 显示 `CLIProxyAPI Version: v7.1.28-98-g6cb40578, Commit: 6cb40578`。
 - 2026-06-09 追加：`bash -n scripts/wails-cli.sh scripts/ensure-sidecar.sh scripts/build-sidecar.sh`、`go test ./internal/sidecar -run 'TestResolveBinaryCandidatesPrefersFreshBuildBinInDev|TestReadBinaryGitHashReadsAdjacentMetadata'`、`go test ./internal/api/handlers/management -run 'TestQuotaRefreshBatchJobCancelsWhenTargetAccountIsDeleted|TestQuotaRefreshBatchJobStoreCancelAllStopsRunningJobs'` 均通过。
 - 2026-06-09 追加：Browser/Playwright 打开 `http://localhost:34115/#frame=accounts`，账号页渲染 `226 UNITS`，DOM 中 `data-account-card=20`，窗口化渲染仍生效；console 仍有一个 usage sync `404`，已记录为非本轮问题。
+
+## 2026-07-07 Phase 2.1：2000+ 账号滚动 CPU 热路径收窄（已完成）
+
+### 主流方案调研
+
+- 主流虚拟列表方案优先从“只渲染可视窗口 + overscan”入手，典型库包括 TanStack Virtual 与 react-window；React 官方性能建议则要求用 `useMemo`/`memo` 避免昂贵计算和无意义重渲染；CSS `content-visibility` 只能作为浏览器布局/绘制辅助，不替代 React 侧窗口化。
+- GetTokens 账号页已有 `AccountGroupSectionView` 自研分组窗口化，本轮不新增依赖，先沿用当前虚拟窗口模型，收窄滚动时仍会反复执行的分组头部聚合计算。
+
+参考：
+- https://tanstack.com/virtual/latest/docs/framework/react/react-virtual
+- https://react-window.vercel.app/
+- https://react.dev/reference/react/useMemo
+- https://developer.mozilla.org/en-US/docs/Web/CSS/content-visibility
+
+### 证据
+
+- 2026-07-07 复跑 2000 preview：`ACCOUNTS_PREVIEW_COUNT=2000 ACCOUNTS_SCALE_MAX_RENDERED_CARDS=220 node docs-linhay/scripts/accounts-scale-browser-check.mjs`。
+- 结果：首屏实际渲染 `41` 张账号卡，滚动后 `56` 张，`totalPreviewAccounts=2000`，`virtualizedGroups=2`，说明 DOM 节点数量没有退化成 2000。
+- 代码热路径：`AccountGroupSectionView` 在每次虚拟窗口滚动更新时重新执行 `group.accounts.every(...)`、`resolveBulkQuotaRefreshTargets(group.accounts)`、`resolveBulkSetDisabledTargets(group.accounts, ...)` 和 `resolveBulkDeleteTargets(group.accounts)`。在 2000+ 大分组下，这些分组头部动作可用性扫描与滚动位置无关，却会跟着 `renderMetrics` state 重算。
+
+### 修复
+
+- 新增 `resolveAccountGroupActionAvailability()`，用一次模型扫描汇总 `hasAccounts / allGroupSelected / canRefreshGroup / canEnableGroup / canDisableGroup / canDeleteGroup`。
+- `AccountGroupSectionView` 用 `useMemo(() => resolveAccountGroupActionAvailability(group.accounts, selectedAccountIDSet), [group.accounts, selectedAccountIDSet])` 缓存分组动作状态，滚动窗口变化时不再重复扫全组账号。
+- 保持原有虚拟窗口和分组动作语义：删除、刷新、启用/禁用仍按 `group.accounts` 作为操作范围。
+
+### 已验证
+
+- 红灯：新增源码守护后，旧代码缺少 `resolveAccountGroupActionAvailability`，`node --test frontend/src/features/accounts/tests/accountListLayout.test.mjs` 失败。
+- 绿灯：`node --test frontend/src/features/accounts/tests/accountListLayout.test.mjs frontend/src/features/accounts/tests/accountSelection.test.mjs`
+- `npm --prefix frontend run typecheck`
+- `ACCOUNTS_PREVIEW_COUNT=2000 ACCOUNTS_SCALE_MAX_RENDERED_CARDS=220 node docs-linhay/scripts/accounts-scale-browser-check.mjs`

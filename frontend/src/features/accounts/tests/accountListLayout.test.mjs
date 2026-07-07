@@ -73,6 +73,18 @@ test('AccountGroupSectionView virtualizes large account groups instead of mappin
   assert.doesNotMatch(source, /group\.accounts\.map\(\(account\) => renderAccount\(account\)\)/);
 });
 
+test('AccountGroupSectionView memoizes large group action availability outside scroll metrics', async () => {
+  const viewSource = await readFile(new URL('../components/AccountGroupSectionView.tsx', import.meta.url), 'utf8');
+  const selectionSource = await readFile(new URL('../model/accountSelection.ts', import.meta.url), 'utf8');
+
+  assert.match(selectionSource, /export function resolveAccountGroupActionAvailability/);
+  assert.match(viewSource, /resolveAccountGroupActionAvailability/);
+  assert.match(viewSource, /useMemo\(\s*\(\) => resolveAccountGroupActionAvailability\(group\.accounts, selectedAccountIDSet\)/);
+  assert.doesNotMatch(viewSource, /resolveBulkQuotaRefreshTargets\(group\.accounts\)/);
+  assert.doesNotMatch(viewSource, /resolveBulkSetDisabledTargets\(group\.accounts/);
+  assert.doesNotMatch(viewSource, /resolveBulkDeleteTargets\(group\.accounts\)/);
+});
+
 test('account plan groups can collapse without changing group actions scope', async () => {
   const viewSource = await readFile(new URL('../components/AccountGroupSectionView.tsx', import.meta.url), 'utf8');
   const wrapperSource = await readFile(new URL('../components/AccountGroupSection.tsx', import.meta.url), 'utf8');
@@ -168,7 +180,7 @@ test('account group menu exposes destructive delete behind a confirmation state'
   assert.match(source, /t\('accounts\.group_remove_confirm'\)/);
   assert.match(source, /t\('accounts\.group_remove_visible_confirm'\)/);
   assert.match(source, /onDeleteGroup\(group\.accounts\)/);
-  assert.match(source, /resolveBulkDeleteTargets\(group\.accounts\)/);
+  assert.match(source, /canDeleteGroup/);
 });
 
 test('accounts toolbar display mode switch only offers full and list views', async () => {

@@ -10,6 +10,15 @@ export interface BulkAccountTargetResolution {
   skipped: AccountRecord[];
 }
 
+export interface AccountGroupActionAvailability {
+  hasAccounts: boolean;
+  allGroupSelected: boolean;
+  canRefreshGroup: boolean;
+  canEnableGroup: boolean;
+  canDisableGroup: boolean;
+  canDeleteGroup: boolean;
+}
+
 export function filterSelectedAccountIDs(selectedAccountIDs: string[], validAccountIDs: Iterable<string>) {
   const validIDs = new Set(validAccountIDs);
   return selectedAccountIDs.filter((id) => validIDs.has(id));
@@ -45,6 +54,49 @@ export function toggleAccountGroupSelection(selectedAccountIDs: string[], accoun
     accounts,
     areAllAccountIDsSelected(selectedAccountIDs, accounts),
   );
+}
+
+export function resolveAccountGroupActionAvailability(
+  accounts: AccountRecord[],
+  selectedAccountIDSet?: ReadonlySet<string>,
+): AccountGroupActionAvailability {
+  let allGroupSelected = accounts.length > 0;
+  let canRefreshGroup = false;
+  let canEnableGroup = false;
+  let canDisableGroup = false;
+  let canDeleteGroup = false;
+
+  for (const account of accounts) {
+    if (!selectedAccountIDSet?.has(account.id)) {
+      allGroupSelected = false;
+    }
+
+    if (!canRefreshGroup && supportsQuota(account) && Boolean(String(account.quotaKey || '').trim())) {
+      canRefreshGroup = true;
+    }
+
+    if (!canEnableGroup || !canDisableGroup) {
+      const canToggle = canToggleRotationAccountDisabled(account);
+      if (canToggle && account.disabled) {
+        canEnableGroup = true;
+      } else if (canToggle) {
+        canDisableGroup = true;
+      }
+    }
+
+    if (!canDeleteGroup && String(account.id || '').trim().startsWith('acct_')) {
+      canDeleteGroup = true;
+    }
+  }
+
+  return {
+    hasAccounts: accounts.length > 0,
+    allGroupSelected,
+    canRefreshGroup,
+    canEnableGroup,
+    canDisableGroup,
+    canDeleteGroup,
+  };
 }
 
 export function resolveBulkQuotaRefreshTargets(selectedAccounts: AccountRecord[]): BulkAccountTargetResolution {
