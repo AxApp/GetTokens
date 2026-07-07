@@ -18,7 +18,6 @@ import {
   deriveGetTokensExtensionCodexConfigDryRunView,
   deriveGetTokensExtensionCodexConfigStagedApplyView,
   deriveGetTokensExtensionRegistryView,
-  formatRegistryGeneratedAt,
 } from './model';
 import {
   getGetTokensExtensionCodexConfigDryRunPreview,
@@ -43,7 +42,6 @@ const stagedApplyConfigText = [
 const extensionRegistryPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const extensionRegistryMutedPanelClass = 'rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
 const extensionRegistrySectionTitleClass = 'flex items-center gap-2 text-[length:var(--gt-font-size-sm)] font-semibold text-[var(--gt-ink-primary)]';
-const extensionRegistryMetaClass = 'text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const extensionRegistryTinyMetaClass = 'text-[length:var(--gt-font-size-2xs)] font-normal text-[var(--gt-ink-muted)]';
 const extensionRegistryChipClass = 'inline-flex items-center gap-1.5 rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 
@@ -60,7 +58,6 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
   const [stagedApplyResult, setStagedApplyResult] = useState<main.GetTokensExtensionCodexConfigStagedApplyResult | null>(null);
   const [stagedApplyError, setStagedApplyError] = useState('');
   const [stagedApplyPhase, setStagedApplyPhase] = useState<'idle' | 'preparing' | 'applying'>('idle');
-  const [message, setMessage] = useState('Registry snapshot 已加载；enable-state 操作仅写 GetTokens 本地 state file。');
 
   const inputKey = JSON.stringify(input || {});
   const view = useMemo(
@@ -123,9 +120,8 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
       setSnapshot(nextSnapshot);
       setCodexConfigDryRun(nextDryRun);
       resetStagedApplyState();
-      setMessage('Registry snapshot 与 Codex config dry-run 已刷新；未读取或写入 Codex Skills/MCP 配置。');
     } catch (error) {
-      setMessage(`读取 extension registry snapshot 失败：${toErrorMessage(error)}`);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -142,16 +138,13 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
         enabled,
         statePath: input?.statePath,
       } as main.SetGetTokensExtensionEnabledInput);
-      setMessage(
-        `${extensionID} 已${enabled ? '启用' : '停用'}；只写 GetTokens 本地 enable-state file，未写 Codex config，未执行 capability。`,
-      );
       const nextSnapshot = await loadGetTokensExtensionRegistrySnapshot(input);
       const nextDryRun = await previewGetTokensExtensionCodexConfigDryRun(mapDryRunInput(input));
       setSnapshot(nextSnapshot);
       setCodexConfigDryRun(nextDryRun);
       resetStagedApplyState();
     } catch (error) {
-      setMessage(`更新 extension enable-state 失败：${toErrorMessage(error)}`);
+      console.error(error);
     } finally {
       setMutatingExtensionID('');
     }
@@ -180,10 +173,8 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
         configText: stagedApplyConfigText,
       }));
       setStagedApplyPlan(plan);
-      setMessage('Codex config staged test plan 已准备；目标仅为 /tmp测试文件，未写真实 ~/.codex/config.toml。');
     } catch (error) {
       setStagedApplyError(toErrorMessage(error));
-      setMessage(`准备 staged test apply 失败：${toErrorMessage(error)}`);
     } finally {
       setStagedApplyPhase('idle');
     }
@@ -206,10 +197,8 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
         confirmationToken: stagedApplyPlan.confirmationToken,
       }));
       setStagedApplyResult(result);
-      setMessage(`Codex config staged test transaction ${result.status || 'finished'}；结果只写入 /tmp 测试目标。`);
     } catch (error) {
       setStagedApplyError(toErrorMessage(error));
-      setMessage(`执行 staged test transaction 失败：${toErrorMessage(error)}`);
     } finally {
       setStagedApplyPhase('idle');
     }
@@ -306,37 +295,26 @@ export default function GetTokensExtensionRegistryFeature({ input }: GetTokensEx
       ].join(' / ')}
       actions={<RefreshActionButton label="刷新 snapshot" loading={loading} onClick={() => void reloadSnapshot()} />}
       toolbar={
-        <>
-          <div className="grid gap-3">
-            <SearchInput
-              value={query}
-              onChange={setQuery}
-              placeholder="搜索 extension、diagnostic、capability"
-              clearLabel="清空搜索"
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={extensionRegistryChipClass}>
-                <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />
-                Local enable-state only
-              </span>
-              <span className={extensionRegistryChipClass}>
-                contract {snapshot.contractVersion || 'unknown'}
-              </span>
-              <span className={extensionRegistryChipClass}>
-                mode {snapshot.registryMode || 'unknown'}
-              </span>
-            </div>
+        <div className="grid w-full gap-3">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder="搜索 extension、diagnostic、capability"
+            clearLabel="清空搜索"
+            className="w-full"
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={extensionRegistryChipClass}>
+              <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2.5} />
+              Local enable-state only
+            </span>
+            <span className={extensionRegistryChipClass}>
+              contract {snapshot.contractVersion || 'unknown'}
+            </span>
+            <span className={extensionRegistryChipClass}>
+              mode {snapshot.registryMode || 'unknown'}
+            </span>
           </div>
-          <div className={`grid content-start gap-2 ${extensionRegistryMetaClass}`}>
-            <div>Generated {formatRegistryGeneratedAt(snapshot.generatedAt)}</div>
-            <div>{message}</div>
-          </div>
-        </>
-      }
-      notice={
-        <div className="border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal leading-5 text-[var(--gt-ink-muted)]">
-          此页展示 extension registry snapshot、diagnostics、capability kinds、source/root 信息；enable/disable 仅更新 GetTokens dev/app-local extension enable-state file，不写 Codex config，不执行 capability。
-          Codex config preview 是 dry-run diff/validation，不读取或写入真实 ~/.codex/config.toml。
         </div>
       }
       contentClassName="grid min-h-0 flex-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(22rem,26rem)]"

@@ -96,13 +96,8 @@ const checks = {
   workspaceEntry: hasAny(dom, ['Extension Registry', "workspace === 'extension-registry'"]),
   title: hasAny(dom, ['GetTokens Extension Registry']),
   collaboration: hasAny(dom, ['PAGE_GETTOKENS_EXTENSION_REGISTRY', 'AssetWorkbenchShell']),
-  registryPageBoundary: (
-    hasAny(dom, ['Read-only only']) && hasAny(dom, ['mode read-only']) &&
-    hasAny(dom, ['只展示 extension registry snapshot、diagnostics、capability kinds、source/root 信息'])
-  ) || (
-    hasAny(dom, ['Local enable-state only', 'dev/app-local extension enable-state file', 'data-gettokens-extension-enable-action=']) &&
-    hasAny(dom, ['不写 Codex config', 'Codex config and capabilities are untouched'])
-  ),
+  registryPageBoundary: hasAny(dom, ['Local enable-state only', 'Read-only only']) &&
+    hasAny(dom, ['mode read-only', 'data-gettokens-extension-enable-action=']),
   localEnableStateBoundary: hasAny(dom, ['Local enable-state only', 'dev/app-local extension enable-state file', 'data-gettokens-extension-enable-action=']) ||
     (readme.includes('SetGetTokensExtensionEnabled') && readme.includes('不写 Codex config') && readme.includes('不执行 capability')),
   rootMarkers: hasAny(dom, [/data-gettokens-extension-registry-root=/, /\bRoots\b/]) &&
@@ -110,13 +105,13 @@ const checks = {
   diagnosticMarkers: hasAny(dom, [/data-gettokens-extension-registry-diagnostic=/, /Registry Diagnostics/]) &&
     hasAny(dom, ['unknown-capability-kind', 'forbidden-permission', 'extension-root-not-found', 'No registry diagnostics']),
   capabilityMarkers: ['quota-probe', 'provider-metadata', 'model-catalog-source'].every((marker) => dom.includes(marker)),
-  sourceMarkers: hasAny(dom, [/data-gettokens-extension-registry-source="true"/, /\bManifest\b/, /\bSource\b/]) &&
-    hasAny(dom, ['file:///']),
+  sourceMarkers: hasAny(dom, [/data-gettokens-extension-registry-source="true"/, /\bManifest\b/, /\bSource\b/]),
   stagedApplyTestSurface: hasAny(dom, [
     /data-gettokens-extension-codex-config-staged-apply="true"/,
     'Staged Temp Apply',
   ]) && hasAny(dom, [
     '/tmp/gettokens-extension-codex-config-staged-preview.toml',
+    'staged-preview.toml',
   ]),
   stagedApplyActions: hasAny(dom, [
     /data-gettokens-extension-codex-config-staged-apply-action="prepare"/,
@@ -129,8 +124,8 @@ const checks = {
     'Wails runtime is required before staged test apply can run',
     'status=blocked',
   ]) && hasAny(dom, [
-    'real ~/.codex/config.toml',
-    'outside ~/.codex/config.toml',
+    'staged-preview.toml',
+    '/tmp/gettokens-extension-codex-config-staged-preview.toml',
   ]),
   noForbiddenMutationBindings: !/SaveGetTokensExtension|EnableGetTokensExtension|DisableGetTokensExtension|RunGetTokensExtensionCapability|SaveCodex|RemoveCodex|PreflightCodexMcpServer/.test(dom),
   noMarketplace: !/marketplace/i.test(dom),
@@ -159,10 +154,10 @@ if (missing.length > 0) {
       rootMarkers: missingCheck(dom, ['data-gettokens-extension-registry-root=', 'Roots', 'app-owned|bundled|extensions']),
       diagnosticMarkers: missingCheck(dom, ['data-gettokens-extension-registry-diagnostic=', 'Registry Diagnostics', 'unknown-capability-kind|forbidden-permission|extension-root-not-found|No registry diagnostics']),
       capabilityMarkers: missingCheck(dom, ['quota-probe', 'provider-metadata', 'model-catalog-source']),
-      sourceMarkers: missingCheck(dom, ['data-gettokens-extension-registry-source="true"', 'Manifest', 'Source', 'file:///']),
-      stagedApplyTestSurface: missingCheck(dom, ['data-gettokens-extension-codex-config-staged-apply="true"', 'Staged Temp Apply', '/tmp/gettokens-extension-codex-config-staged-preview.toml']),
+      sourceMarkers: missingCheck(dom, ['data-gettokens-extension-registry-source="true"', 'Manifest', 'Source']),
+      stagedApplyTestSurface: missingCheck(dom, ['data-gettokens-extension-codex-config-staged-apply="true"', 'Staged Temp Apply', 'staged-preview.toml']),
       stagedApplyActions: missingCheck(dom, ['data-gettokens-extension-codex-config-staged-apply-action="prepare"', 'Prepare Test Plan', 'data-gettokens-extension-codex-config-staged-apply-action="apply"', 'Apply Test Transaction']),
-      stagedApplyRuntimeBoundary: missingCheck(dom, ['Wails runtime is required before staged test apply can run', 'status=blocked', 'real ~/.codex/config.toml', 'outside ~/.codex/config.toml']),
+      stagedApplyRuntimeBoundary: missingCheck(dom, ['Wails runtime is required before staged test apply can run', 'status=blocked', 'staged-preview.toml']),
     },
   }, null, 2));
   process.exit(1);

@@ -52,14 +52,15 @@ test('extension registry feature consumes snapshot plus local enable-state bindi
   assert.match(modalSource, /Enable State/);
   assert.match(modalSource, /data-gettokens-extension-enable-action=/);
   assert.match(modalSource, /data-gettokens-extension-detail-close="true"/);
-  assert.match(source, /dev\/app-local extension enable-state file/);
-  assert.match(source, /不写 Codex config，不执行 capability/);
+  assert.match(source, /Local enable-state only/);
+  assert.match(source, /mode \{snapshot\.registryMode \|\| 'unknown'\}/);
   assert.match(asideSource, /data-gettokens-extension-codex-config-staged-apply="true"/);
   assert.match(asideSource, /data-gettokens-extension-codex-config-staged-apply-action="prepare"/);
   assert.match(asideSource, /data-gettokens-extension-codex-config-staged-apply-action="apply"/);
   assert.match(source, /stagedApplyTestTargetPath = '\/tmp\/gettokens-extension-codex-config-staged-preview\.toml'/);
-  assert.match(source, /未写真实 ~\/\.codex\/config\.toml/);
-  assert.match(source, /展示 extension registry snapshot、diagnostics、capability kinds、source\/root 信息/);
+  assert.match(source, /outside ~\/\.codex\/config\.toml/);
+  assert.doesNotMatch(source, /Generated \{formatRegistryGeneratedAt\(snapshot\.generatedAt\)\}/);
+  assert.doesNotMatch(source, /展示 extension registry snapshot、diagnostics、capability kinds、source\/root 信息/);
   assert.doesNotMatch(source, /SaveCodex|RemoveCodex|OpenCodexSkillInFinder|PreflightCodexMcpServer/);
   assert.doesNotMatch(source, /marketplace/i);
   assert.doesNotMatch(source, /SaveGetTokensExtension|EnableGetTokensExtension|DisableGetTokensExtension|RunGetTokensExtensionCapability/);
@@ -82,6 +83,8 @@ test('extension registry feature uses the quiet workspace shell', async () => {
   assert.match(asideSource, /items=\{\[/);
   assert.match(modalSource, /items=\{tabs\}/);
   assert.match(source, /const extensionRegistryPanelClass = 'rounded border border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-canvas\)\]/);
+  assert.match(source, /<div className="grid w-full gap-3">/);
+  assert.match(source, /<SearchInput[\s\S]*className="w-full"/);
   assert.match(source, /data-gettokens-extension-registry-list-header="true"/);
   assert.match(source, /data-gettokens-extension-registry-aside="true"/);
   assert.match(modalSource, /data-gettokens-extension-registry-selected="true"/);
