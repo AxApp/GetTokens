@@ -4,6 +4,13 @@ import type { CodexLiveSessionsView, SidecarStatus } from '../../types';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import CodexLiveSessionsWorkbench from './components/CodexLiveSessionsWorkbench';
 import { mapBackendCodexLiveSessionHistory, mapBackendCodexLiveSessionsSnapshot } from './model/adapters';
+import {
+  canLoadMoreBoundedCodexLiveHistory,
+  codexLiveDetailHistoryMaxRetainedRequests,
+  codexLiveOverviewHistoryMaxRetainedRequests,
+  mergeBoundedCodexLiveHistoryRefresh,
+  mergeBoundedCodexLiveHistoryRequests,
+} from './model/historyMemory';
 import { buildAnimatedCodexLiveSessionsPreviewSnapshot } from './model/mockData';
 import {
   resolveCodexLiveSessionDetailPollIntervalMs,
@@ -181,15 +188,20 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
         const limit = history.limit || current.limit || codexLiveOverviewHistoryLimit;
         const offset = history.offset || current.offset || 0;
         const requests = offset === current.offset
-          ? mergeCodexLiveHistoryRefresh(current.requests, refreshedRequests)
-          : refreshedRequests;
+          ? mergeBoundedCodexLiveHistoryRefresh(current.requests, refreshedRequests, codexLiveOverviewHistoryMaxRetainedRequests)
+          : refreshedRequests.slice(0, codexLiveOverviewHistoryMaxRetainedRequests);
         return {
           requests,
           generatedAt: history.generatedAt,
           window: history.window || current.window || 'all',
           limit,
           offset,
-          hasMore: requests.length > refreshedRequests.length || refreshedRequests.length >= limit,
+          hasMore: canLoadMoreBoundedCodexLiveHistory(
+            requests.length,
+            requests.length > refreshedRequests.length ? limit : refreshedRequests.length,
+            limit,
+            codexLiveOverviewHistoryMaxRetainedRequests,
+          ),
           loading: false,
           error: undefined,
         };
@@ -229,17 +241,30 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
         return;
       }
       const nextRequests = markCodexLiveHistoryRequests(history.items);
-      setOverviewState((current) => ({
-        ...current,
-        requests: mergeCodexLiveHistoryRequests(current.requests, nextRequests),
-        generatedAt: history.generatedAt,
-        window: history.window || current.window,
-        limit: history.limit || limit,
-        offset: current.offset,
-        hasMore: nextRequests.length >= (history.limit || limit),
-        loading: false,
-        error: undefined,
-      }));
+      setOverviewState((current) => {
+        const nextLimit = history.limit || limit;
+        const requests = mergeBoundedCodexLiveHistoryRequests(
+          current.requests,
+          nextRequests,
+          codexLiveOverviewHistoryMaxRetainedRequests,
+        );
+        return {
+          ...current,
+          requests,
+          generatedAt: history.generatedAt,
+          window: history.window || current.window,
+          limit: nextLimit,
+          offset: current.offset,
+          hasMore: canLoadMoreBoundedCodexLiveHistory(
+            requests.length,
+            nextRequests.length,
+            nextLimit,
+            codexLiveOverviewHistoryMaxRetainedRequests,
+          ),
+          loading: false,
+          error: undefined,
+        };
+      });
     } catch (error) {
       if (overviewRequestVersionRef.current != requestVersion) {
         return;
@@ -319,8 +344,8 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
         const limit = history.limit || current.limit || codexLiveDetailHistoryLimit;
         const offset = history.offset || current.offset || 0;
         const requests = current.sessionID === selectedSessionID && offset === current.offset
-          ? mergeCodexLiveHistoryRefresh(current.requests, refreshedRequests)
-          : refreshedRequests;
+          ? mergeBoundedCodexLiveHistoryRefresh(current.requests, refreshedRequests, codexLiveDetailHistoryMaxRetainedRequests)
+          : refreshedRequests.slice(0, codexLiveDetailHistoryMaxRetainedRequests);
         return {
           sessionID: selectedSessionID,
           requests,
@@ -328,7 +353,12 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
           window: history.window || current.window || 'all',
           limit,
           offset,
-          hasMore: requests.length > refreshedRequests.length || refreshedRequests.length >= limit,
+          hasMore: canLoadMoreBoundedCodexLiveHistory(
+            requests.length,
+            requests.length > refreshedRequests.length ? limit : refreshedRequests.length,
+            limit,
+            codexLiveDetailHistoryMaxRetainedRequests,
+          ),
           loading: false,
           error: undefined,
         };
@@ -374,18 +404,31 @@ export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewCh
         return;
       }
       const nextRequests = markCodexLiveHistoryRequests(history.items);
-      setDetailState((current) => ({
-        ...current,
-        sessionID: selectedSessionID,
-        requests: mergeCodexLiveHistoryRequests(current.requests, nextRequests),
-        generatedAt: history.generatedAt,
-        window: history.window || current.window,
-        limit: history.limit || limit,
-        offset: current.offset,
-        hasMore: nextRequests.length >= (history.limit || limit),
-        loading: false,
-        error: undefined,
-      }));
+      setDetailState((current) => {
+        const nextLimit = history.limit || limit;
+        const requests = mergeBoundedCodexLiveHistoryRequests(
+          current.requests,
+          nextRequests,
+          codexLiveDetailHistoryMaxRetainedRequests,
+        );
+        return {
+          ...current,
+          sessionID: selectedSessionID,
+          requests,
+          generatedAt: history.generatedAt,
+          window: history.window || current.window,
+          limit: nextLimit,
+          offset: current.offset,
+          hasMore: canLoadMoreBoundedCodexLiveHistory(
+            requests.length,
+            nextRequests.length,
+            nextLimit,
+            codexLiveDetailHistoryMaxRetainedRequests,
+          ),
+          loading: false,
+          error: undefined,
+        };
+      });
     } catch (error) {
       if (detailRequestVersionRef.current != requestVersion) {
         return;
@@ -542,27 +585,6 @@ function markCodexLiveHistoryRequests(requests: readonly CodexLiveRequest[]): Co
 
 function isCodexLiveHistoryUnclosed(status: string): boolean {
   return status === 'active' || status === 'streaming' || status === 'reconnecting' || status === 'upstream_disconnected';
-}
-
-function mergeCodexLiveHistoryRequests(current: readonly CodexLiveRequest[], next: readonly CodexLiveRequest[]): CodexLiveRequest[] {
-  const seen = new Set(current.map((request) => request.requestID));
-  const merged = [...current];
-  next.forEach((request) => {
-    if (!seen.has(request.requestID)) {
-      seen.add(request.requestID);
-      merged.push(request);
-    }
-  });
-  return merged;
-}
-
-function mergeCodexLiveHistoryRefresh(current: readonly CodexLiveRequest[], refreshed: readonly CodexLiveRequest[]): CodexLiveRequest[] {
-  if (current.length <= refreshed.length) {
-    return [...refreshed];
-  }
-  const refreshedIDs = new Set(refreshed.map((request) => request.requestID));
-  const preservedTail = current.filter((request) => !refreshedIDs.has(request.requestID));
-  return [...refreshed, ...preservedTail];
 }
 
 function buildHistoryWindowLabel(state: Pick<CodexLiveSessionOverviewState, 'requests' | 'limit' | 'offset' | 'window'>): string {

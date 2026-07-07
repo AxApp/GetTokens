@@ -49,6 +49,13 @@ import {
   resolveCodexLiveTimingMetricSummary,
 } from './model/requestTimingTrend.ts';
 import { mergeCodexLiveSessionsSnapshot } from './model/snapshotMerge.ts';
+import {
+  canLoadMoreBoundedCodexLiveHistory,
+  codexLiveDetailHistoryMaxRetainedRequests,
+  codexLiveOverviewHistoryMaxRetainedRequests,
+  mergeBoundedCodexLiveHistoryRefresh,
+  mergeBoundedCodexLiveHistoryRequests,
+} from './model/historyMemory.ts';
 
 test('filterCodexLiveSessions searches request ids and keeps active sessions first', () => {
   const rows = filterCodexLiveSessions({
@@ -367,6 +374,49 @@ test('codex live history rows mark unclosed historical statuses instead of curre
   assert.equal(marked.historyState, 'historical_unclosed');
   assert.equal(rows[0].request?.historyState, 'historical_unclosed');
   assert.equal(summary.statusLabel, '历史未闭合');
+});
+
+test('codex live history request retention keeps overview and detail windows bounded', () => {
+  const buildRequest = (requestID) => ({
+    ...codexLiveSessionsPreviewSnapshot.sessions[0].requests[0],
+    requestID,
+  });
+  const currentOverview = Array.from({ length: codexLiveOverviewHistoryMaxRetainedRequests - 2 }, (_, index) =>
+    buildRequest(`overview-${index}`),
+  );
+  const mergedOverview = mergeBoundedCodexLiveHistoryRequests(
+    currentOverview,
+    [
+      buildRequest('overview-5'),
+      buildRequest(`overview-${codexLiveOverviewHistoryMaxRetainedRequests - 2}`),
+      buildRequest(`overview-${codexLiveOverviewHistoryMaxRetainedRequests - 1}`),
+      buildRequest(`overview-${codexLiveOverviewHistoryMaxRetainedRequests}`),
+    ],
+    codexLiveOverviewHistoryMaxRetainedRequests,
+  );
+
+  assert.equal(mergedOverview.length, codexLiveOverviewHistoryMaxRetainedRequests);
+  assert.equal(mergedOverview[0].requestID, 'overview-0');
+  assert.equal(mergedOverview.at(-1)?.requestID, `overview-${codexLiveOverviewHistoryMaxRetainedRequests - 1}`);
+  assert.equal(mergedOverview.some((request) => request.requestID === `overview-${codexLiveOverviewHistoryMaxRetainedRequests}`), false);
+
+  const currentDetail = Array.from({ length: codexLiveDetailHistoryMaxRetainedRequests }, (_, index) =>
+    buildRequest(`detail-${index}`),
+  );
+  const refreshedDetail = mergeBoundedCodexLiveHistoryRefresh(
+    currentDetail,
+    [buildRequest('detail-fresh'), buildRequest('detail-0')],
+    codexLiveDetailHistoryMaxRetainedRequests,
+  );
+
+  assert.equal(refreshedDetail.length, codexLiveDetailHistoryMaxRetainedRequests);
+  assert.equal(refreshedDetail[0].requestID, 'detail-fresh');
+  assert.equal(refreshedDetail[1].requestID, 'detail-0');
+  assert.equal(refreshedDetail.filter((request) => request.requestID === 'detail-0').length, 1);
+  assert.equal(refreshedDetail.some((request) => request.requestID === `detail-${codexLiveDetailHistoryMaxRetainedRequests - 1}`), false);
+  assert.equal(canLoadMoreBoundedCodexLiveHistory(codexLiveDetailHistoryMaxRetainedRequests - 1, 50, 50, codexLiveDetailHistoryMaxRetainedRequests), true);
+  assert.equal(canLoadMoreBoundedCodexLiveHistory(codexLiveDetailHistoryMaxRetainedRequests, 50, 50, codexLiveDetailHistoryMaxRetainedRequests), false);
+  assert.equal(canLoadMoreBoundedCodexLiveHistory(0, 0, 0, codexLiveDetailHistoryMaxRetainedRequests), false);
 });
 
 test('buildRequestRowSummary designs request rollup labels around request, project, model, and timing', () => {
@@ -978,9 +1028,13 @@ test('codex live session history window exposes load-more controls and offset pa
   assert.match(featureSource, /const nextOffset = overviewState\.offset \+ overviewState\.requests\.length/);
   assert.match(featureSource, /const nextOffset = detailState\.offset \+ detailState\.requests\.length/);
   assert.match(featureSource, /offset: current\.offset/);
-  assert.match(featureSource, /mergeCodexLiveHistoryRequests/);
-  assert.match(featureSource, /mergeCodexLiveHistoryRefresh/);
-  assert.match(featureSource, /requests\.length > refreshedRequests\.length/);
+  assert.match(featureSource, /mergeBoundedCodexLiveHistoryRequests/);
+  assert.match(featureSource, /mergeBoundedCodexLiveHistoryRefresh/);
+  assert.match(featureSource, /canLoadMoreBoundedCodexLiveHistory/);
+  assert.match(featureSource, /codexLiveOverviewHistoryMaxRetainedRequests/);
+  assert.match(featureSource, /codexLiveDetailHistoryMaxRetainedRequests/);
+  assert.doesNotMatch(featureSource, /function mergeCodexLiveHistoryRequests/);
+  assert.doesNotMatch(featureSource, /function mergeCodexLiveHistoryRefresh/);
   assert.match(workbenchSource, /overviewCanLoadMore/);
   assert.match(workbenchSource, /detailCanLoadMore/);
   assert.match(detailSource, /data-codex-history-window-control="true"/);

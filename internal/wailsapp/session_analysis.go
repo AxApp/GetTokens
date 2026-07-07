@@ -1,8 +1,12 @@
 package wailsapp
 
 import (
+	"bufio"
+	"encoding/json"
 	"errors"
+	"io"
 	"math"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -102,6 +106,17 @@ type sessionAnalysisAccumulator struct {
 	sessionSummaries []SessionAnalysisSessionSummary
 }
 
+type sessionAnalysisMessageAccumulator struct {
+	detail        SessionManagementSessionDetail
+	segmenter     *gojieba.Jieba
+	termCounts    map[string]int
+	phraseCounts  map[string]int
+	roleMessages  map[string]int
+	roleTerms     map[string]int
+	totalMessages int
+	totalTerms    int
+}
+
 func (a *App) AnalyzeCodexSessions(input AnalyzeCodexSessionsInput) (*SessionAnalysisResult, error) {
 	codexHome, err := resolveCodexHomePath()
 	if err != nil {
@@ -138,7 +153,7 @@ func (a *App) AnalyzeCodexSessions(input AnalyzeCodexSessionsInput) (*SessionAna
 			return nil, err
 		}
 		relativePath = filepath.ToSlash(relativePath)
-		result, err := parseSessionFile(codexHome, absolutePath, relativePath, threadNames, true)
+		result, err := parseSessionFile(codexHome, absolutePath, relativePath, threadNames, false)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +167,10 @@ func (a *App) AnalyzeCodexSessions(input AnalyzeCodexSessionsInput) (*SessionAna
 			continue
 		}
 
-		summary := analyzeSessionDetail(result.detail, segmenter)
+		summary, err := analyzeCodexSessionFile(absolutePath, result.detail, segmenter)
+		if err != nil {
+			return nil, err
+		}
 		if summary.MessageCount == 0 || summary.TermCount == 0 {
 			skipped++
 			continue
@@ -237,6 +255,53 @@ func resolveCodexSessionAnalysisTargets(codexHome string, input AnalyzeCodexSess
 	return listCodexRolloutPaths(codexHome)
 }
 
+func analyzeCodexSessionFile(absolutePath string, detail SessionManagementSessionDetail, segmenter *gojieba.Jieba) (SessionAnalysisSessionSummary, error) {
+	file, err := os.Open(absolutePath)
+	if err != nil {
+		return SessionAnalysisSessionSummary{}, err
+	}
+	defer file.Close()
+
+	accumulator := newSessionAnalysisMessageAccumulator(detail, segmenter)
+	reader := bufio.NewReaderSize(file, 1024*128)
+	for {
+		line, readErr := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			var envelope struct {
+				Type    string          `json:"type"`
+				Payload json.RawMessage `json:"payload"`
+			}
+			if unmarshalErr := json.Unmarshal(line, &envelope); unmarshalErr == nil {
+				switch envelope.Type {
+				case "response_item":
+					var item responseItemEnvelope
+					if unmarshalErr := json.Unmarshal(envelope.Payload, &item); unmarshalErr == nil {
+						role, title, text, ok := extractResponseItemRecord(item)
+						if ok {
+							accumulator.addRaw(role, title, text)
+						}
+					}
+				case "event_msg":
+					var eventPayload eventMessageEnvelope
+					if unmarshalErr := json.Unmarshal(envelope.Payload, &eventPayload); unmarshalErr == nil {
+						role, title, text, ok := extractEventRecord(eventPayload)
+						if ok {
+							accumulator.addRaw(role, title, text)
+						}
+					}
+				}
+			}
+		}
+		if readErr != nil {
+			if !errors.Is(readErr, io.EOF) {
+				return SessionAnalysisSessionSummary{}, readErr
+			}
+			break
+		}
+	}
+	return accumulator.summary(), nil
+}
+
 func nowForSessionAnalysis() time.Time {
 	return time.Now()
 }
@@ -250,6 +315,17 @@ func newSessionAnalysisAccumulator() *sessionAnalysisAccumulator {
 		roleMessages:     map[string]int{},
 		roleTerms:        map[string]int{},
 		sessionSummaries: []SessionAnalysisSessionSummary{},
+	}
+}
+
+func newSessionAnalysisMessageAccumulator(detail SessionManagementSessionDetail, segmenter *gojieba.Jieba) *sessionAnalysisMessageAccumulator {
+	return &sessionAnalysisMessageAccumulator{
+		detail:       detail,
+		segmenter:    segmenter,
+		termCounts:   map[string]int{},
+		phraseCounts: map[string]int{},
+		roleMessages: map[string]int{},
+		roleTerms:    map[string]int{},
 	}
 }
 
@@ -383,51 +459,61 @@ func (accumulator *sessionAnalysisAccumulator) roleContributions() []SessionAnal
 }
 
 func analyzeSessionDetail(detail SessionManagementSessionDetail, segmenter *gojieba.Jieba) SessionAnalysisSessionSummary {
-	termCounts := map[string]int{}
-	phraseCounts := map[string]int{}
-	roleMessages := map[string]int{}
-	roleTerms := map[string]int{}
-	totalMessages := 0
-	totalTerms := 0
-
+	accumulator := newSessionAnalysisMessageAccumulator(detail, segmenter)
 	for _, message := range detail.Messages {
-		if !isAnalyzableSessionRole(message.Role) {
-			continue
-		}
-		text := strings.TrimSpace(strings.Join([]string{message.Title, message.Summary, message.Content}, " "))
-		if text == "" {
-			continue
-		}
-		terms := segmentSessionAnalysisText(segmenter, text)
-		if len(terms) == 0 {
-			continue
-		}
-		totalMessages++
-		roleMessages[message.Role]++
-		roleTerms[message.Role] += len(terms)
-		totalTerms += len(terms)
-		for _, term := range terms {
-			termCounts[term]++
-		}
-		for _, phrase := range extractSessionAnalysisPhrases(segmentSessionAnalysisPhraseTerms(segmenter, text)) {
-			phraseCounts[phrase]++
-		}
+		accumulator.addPrepared(message.Role, message.Title, message.Summary, message.Content)
 	}
+	return accumulator.summary()
+}
 
+func (accumulator *sessionAnalysisMessageAccumulator) addRaw(role string, title string, raw string) {
+	title, summary, content, _ := buildSessionMessageContent(role, title, raw)
+	accumulator.addPrepared(role, title, summary, content)
+}
+
+func (accumulator *sessionAnalysisMessageAccumulator) addPrepared(role string, title string, summary string, content string) {
+	if accumulator == nil || !isAnalyzableSessionRole(role) {
+		return
+	}
+	text := strings.TrimSpace(strings.Join([]string{title, summary, content}, " "))
+	if text == "" {
+		return
+	}
+	terms := segmentSessionAnalysisText(accumulator.segmenter, text)
+	if len(terms) == 0 {
+		return
+	}
+	accumulator.totalMessages++
+	accumulator.roleMessages[role]++
+	accumulator.roleTerms[role] += len(terms)
+	accumulator.totalTerms += len(terms)
+	for _, term := range terms {
+		accumulator.termCounts[term]++
+	}
+	for _, phrase := range extractSessionAnalysisPhrases(segmentSessionAnalysisPhraseTerms(accumulator.segmenter, text)) {
+		accumulator.phraseCounts[phrase]++
+	}
+}
+
+func (accumulator *sessionAnalysisMessageAccumulator) summary() SessionAnalysisSessionSummary {
+	if accumulator == nil {
+		return SessionAnalysisSessionSummary{}
+	}
+	detail := accumulator.detail
 	sessionAccumulator := newSessionAnalysisAccumulator()
-	sessionAccumulator.termCounts = termCounts
+	sessionAccumulator.termCounts = accumulator.termCounts
 	sessionAccumulator.termSessions = map[string]map[string]struct{}{}
-	for term := range termCounts {
+	for term := range accumulator.termCounts {
 		sessionAccumulator.termSessions[term] = map[string]struct{}{detail.SessionID: struct{}{}}
 	}
-	sessionAccumulator.phraseCounts = phraseCounts
+	sessionAccumulator.phraseCounts = accumulator.phraseCounts
 	sessionAccumulator.phraseSessions = map[string]map[string]struct{}{}
-	for phrase := range phraseCounts {
+	for phrase := range accumulator.phraseCounts {
 		sessionAccumulator.phraseSessions[phrase] = map[string]struct{}{detail.SessionID: struct{}{}}
 	}
-	sessionAccumulator.roleMessages = roleMessages
-	sessionAccumulator.roleTerms = roleTerms
-	sessionAccumulator.termCount = totalTerms
+	sessionAccumulator.roleMessages = accumulator.roleMessages
+	sessionAccumulator.roleTerms = accumulator.roleTerms
+	sessionAccumulator.termCount = accumulator.totalTerms
 	keywords := sessionAccumulator.topKeywords(10)
 	commonPhrases := sessionAccumulator.commonPhrases(8)
 
@@ -451,8 +537,8 @@ func analyzeSessionDetail(detail SessionManagementSessionDetail, segmenter *goji
 		Status:            detail.Status,
 		Provider:          detail.Provider,
 		Model:             detail.Model,
-		MessageCount:      totalMessages,
-		TermCount:         totalTerms,
+		MessageCount:      accumulator.totalMessages,
+		TermCount:         accumulator.totalTerms,
 		TopicLine:         topicLine,
 		Keywords:          keywords,
 		CommonPhrases:     commonPhrases,

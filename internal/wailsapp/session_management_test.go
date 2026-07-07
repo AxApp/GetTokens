@@ -1296,6 +1296,19 @@ func TestAnalyzeCodexSessionsCanTargetSelectedSessionIDs(t *testing.T) {
 	}
 }
 
+func TestAnalyzeCodexSessionsUsesStreamingParserInsteadOfFullDetailMessages(t *testing.T) {
+	source, err := os.ReadFile("session_analysis.go")
+	if err != nil {
+		t.Fatalf("read session_analysis.go: %v", err)
+	}
+	if strings.Contains(string(source), "parseSessionFile(codexHome, absolutePath, relativePath, threadNames, true)") {
+		t.Fatal("AnalyzeCodexSessions must not build full session detail message slices")
+	}
+	if !strings.Contains(string(source), "analyzeCodexSessionFile") {
+		t.Fatal("AnalyzeCodexSessions should use the streaming analysis parser")
+	}
+}
+
 func analysisHasKeyword(items []SessionAnalysisKeyword, term string, minCount int, minSessionCount int) bool {
 	for _, item := range items {
 		if item.Term == term && item.Count >= minCount && item.SessionCount >= minSessionCount {

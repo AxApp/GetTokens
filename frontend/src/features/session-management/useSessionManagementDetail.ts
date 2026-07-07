@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { getSessionDetail, getSessionMessagePage, getSessionMessageRawJSON } from './api.ts';
 import type { SessionMessage } from './model.ts';
 import type { SessionDetailState } from './SessionManagementView.tsx';
+import { appendBoundedSessionMessages, putBoundedRawJSON } from './sessionMemory.ts';
 import { INITIAL_DETAIL_STATE, toErrorMessage } from './sessionManagementUtils.ts';
 import type { SessionManagementWorkspace } from '../../types';
 
@@ -57,7 +58,7 @@ export function useSessionManagementDetail(workspace: SessionManagementWorkspace
         const mergedDetail = {
           ...detail,
           messageCount: Math.max(detail.messageCount, page.messageCount),
-          messages: page.messages,
+          messages: appendBoundedSessionMessages([], page.messages),
         };
         setDetailState({
           sessionID,
@@ -144,7 +145,7 @@ export function useSessionManagementDetail(workspace: SessionManagementWorkspace
           detail: {
             ...previous.detail,
             messageCount: Math.max(previous.detail.messageCount, page.messageCount),
-            messages: [...previous.detail.messages, ...page.messages],
+            messages: appendBoundedSessionMessages(previous.detail.messages, page.messages),
           },
           messagePageLoading: false,
           messagePageError: null,
@@ -203,10 +204,7 @@ export function useSessionManagementDetail(workspace: SessionManagementWorkspace
         }
         return {
           ...previous,
-          rawJSONByMessageID: {
-            ...previous.rawJSONByMessageID,
-            [message.id]: result.rawJSON,
-          },
+          rawJSONByMessageID: putBoundedRawJSON(previous.rawJSONByMessageID, message.id, result.rawJSON),
           rawJSONLoadingMessageID: null,
           rawJSONError: null,
         };
