@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  
+
   <style>
     :root {
       /* AntD v6 & GetTokens Classic Light 语义 Token */
@@ -16,33 +16,33 @@
       --gt-primary-hover: #4096ff;
       --gt-primary-active: #0958d9;
       --gt-primary-bg: #e6f4ff;
-      
+
       --gt-surface-canvas: #ffffff;
       --gt-surface-muted: #f5f5f5;
       --gt-surface-card: #fafafa;
       --gt-surface-overlay: #ffffff;
-      
+
       --gt-border-primary: #d9d9d9;
       --gt-border-subtle: #f0f0f0;
       --gt-border-focus: #1677ff;
-      
+
       --gt-ink-primary: rgba(0, 0, 0, 0.88);
       --gt-ink-secondary: rgba(0, 0, 0, 0.65);
       --gt-ink-muted: rgba(0, 0, 0, 0.45);
       --gt-ink-disabled: rgba(0, 0, 0, 0.25);
-      
+
       --gt-status-success: #52c41a;
       --gt-status-success-bg: #f6ffed;
       --gt-status-success-border: #b7eb8f;
-      
+
       --gt-status-danger: #ff4d4f;
       --gt-status-danger-bg: #fff2f0;
       --gt-status-danger-border: #ffccc7;
-      
+
       --gt-status-warning: #faad14;
       --gt-status-warning-bg: #fffbe6;
       --gt-status-warning-border: #ffe58f;
-      
+
       --gt-shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
       --gt-shadow-card: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02);
       --gt-shadow-overlay: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
@@ -53,7 +53,7 @@
       --gt-font-size-base: 15px;
       --gt-font-size-lg: 16px;
       --gt-font-size-xl: 20px;
-      
+
       --gt-radius-small: 4px;
       --gt-radius-medium: 6px;
       --gt-radius-large: 8px;
@@ -793,7 +793,7 @@
           <button class="tab-btn active" onclick="switchTab('file')">文件导入</button>
           <button class="tab-btn" onclick="switchTab('paste')">手动粘贴文本</button>
         </div>
-        
+
         <!-- File Input Tab -->
         <div class="tab-content active" id="tab-file">
           <div class="dropzone" onclick="triggerFileSelect()">
@@ -964,7 +964,7 @@
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      
+
       const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.textContent.includes(tabId === 'file' ? '文件' : '粘贴'));
       if (activeBtn) activeBtn.classList.add('active');
       document.getElementById('tab-' + tabId).classList.add('active');
@@ -1007,7 +1007,7 @@
     function saveCardEdit(id) {
       const name = document.getElementById('input-name-' + id).value;
       document.getElementById('card-name-' + id).textContent = name;
-      
+
       if (id === '2') {
         const typeInput = document.getElementById('input-type-2');
         if (!typeInput.value.trim()) {
@@ -1021,7 +1021,7 @@
         if (errorBar) errorBar.remove();
         typeInput.classList.remove('has-error');
       }
-      
+
       toggleCardEdit(id);
       updateSelectedCount();
     }
@@ -1055,11 +1055,11 @@
       cbs.forEach(cb => {
         if (cb.checked) selected++;
       });
-      
+
       document.getElementById('selectedCount').textContent = selected;
       document.getElementById('totalCount').textContent = total;
       document.getElementById('selectAllCheckbox').checked = total > 0 && selected === total;
-      
+
       if (total === 0) {
         document.getElementById('summaryText').textContent = '导入队列为空';
         document.getElementById('submitBtn').disabled = true;
