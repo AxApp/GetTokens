@@ -279,3 +279,12 @@
 - 绿灯：`node --test frontend/src/features/accounts/tests/accountListLayout.test.mjs frontend/src/features/accounts/tests/accountSelection.test.mjs`
 - `npm --prefix frontend run typecheck`
 - `ACCOUNTS_PREVIEW_COUNT=2000 ACCOUNTS_SCALE_MAX_RENDERED_CARDS=220 node docs-linhay/scripts/accounts-scale-browser-check.mjs`
+
+### 2026-07-07 追加验收矩阵
+
+- 验收脚本已支持 `ACCOUNTS_PREVIEW_HASH` 和 `ACCOUNTS_SCALE_CASE`，用于同一 2000 账号 preview 覆盖不同分组/密度，并输出独立截图文件。
+- `plan-full`：`#frame=accounts`，首屏 `41` 张卡片，滚动后 `56` 张。
+- `provider-full`：`#frame=accounts&group=provider`，首屏 `104` 张卡片，滚动后 `65` 张。
+- `status-full`：`#frame=accounts&group=status`，首屏 `25` 张卡片，滚动后 `40` 张。
+- `plan-list`：`#frame=accounts&density=list`，首屏 `29` 张卡片，滚动后 `35` 张。
+- 四组均满足 `totalPreviewAccounts=2000` 且滚动后 virtual window / spacer 发生变化；没有出现 DOM 中一次性挂载 2000 张账号卡。

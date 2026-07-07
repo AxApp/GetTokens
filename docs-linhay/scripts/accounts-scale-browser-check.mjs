@@ -12,13 +12,15 @@ const chromeExecutablePath = process.env.CHROME_PATH || '/Applications/Google Ch
 const previewBaseURL = process.env.ACCOUNTS_PREVIEW_BASE_URL || 'http://127.0.0.1:5173';
 const previewCount = Number.parseInt(process.env.ACCOUNTS_PREVIEW_COUNT || '1652', 10);
 const maxRenderedCards = Number.parseInt(process.env.ACCOUNTS_SCALE_MAX_RENDERED_CARDS || '180', 10);
+const previewHash = normalizePreviewHash(process.env.ACCOUNTS_PREVIEW_HASH || 'frame=accounts');
+const caseSlug = sanitizeSlug(process.env.ACCOUNTS_SCALE_CASE || previewHash);
 const screenshotDir = path.resolve(
   'docs-linhay/spaces/20260608-account-pool-scale-optimization/screenshots/20260609/accounts-scale',
 );
-const initialScreenshotPath = path.join(screenshotDir, '20260609-accounts-scale-initial-baseline-v01.png');
-const scrolledScreenshotPath = path.join(screenshotDir, '20260609-accounts-scale-scrolled-baseline-v01.png');
+const initialScreenshotPath = path.join(screenshotDir, `20260609-accounts-scale-${caseSlug}-initial-baseline-v01.png`);
+const scrolledScreenshotPath = path.join(screenshotDir, `20260609-accounts-scale-${caseSlug}-scrolled-baseline-v01.png`);
 
-const url = `${previewBaseURL}/?preview=accounts&accountsPreviewCount=${previewCount}#frame=accounts`;
+const url = `${previewBaseURL}/?preview=accounts&accountsPreviewCount=${previewCount}#${previewHash}`;
 
 const port = await findFreePort();
 const userDataDir = path.join('/tmp', `gettokens-accounts-scale-chrome-${process.pid}`);
@@ -85,6 +87,8 @@ try {
 
   const summary = {
     url,
+    previewHash,
+    caseSlug,
     previewCount,
     maxRenderedCards,
     initial: initialMetrics,
@@ -432,6 +436,28 @@ async function findFreePort() {
   const address = server.address();
   await new Promise((resolve) => server.close(resolve));
   return address.port;
+}
+
+function normalizePreviewHash(value) {
+  const normalized = String(value || '').trim().replace(/^#/, '');
+  if (!normalized) {
+    return 'frame=accounts';
+  }
+  const params = new URLSearchParams(normalized);
+  if (!params.get('frame')) {
+    params.set('frame', 'accounts');
+  }
+  return params.toString();
+}
+
+function sanitizeSlug(value) {
+  return String(value || 'accounts')
+    .trim()
+    .toLowerCase()
+    .replace(/^#/, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'accounts';
 }
 
 function delay(ms) {
