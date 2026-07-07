@@ -64,7 +64,10 @@ For sidecar performance or memory:
 3. Use pprof or benchmarks when a claim depends on allocations, CPU, or goroutines; otherwise use deterministic counters such as request count, query count, log size, and payload size.
 4. Keep sidecar authority in `CLIProxyAPI#gettokens/sidecar` for hot-path runtime state. Do not fake sidecar-completed work in frontend or Wails.
 5. For admission, routing, quota, rate-limit, and usage hooks, prove the no-op path before any write, lock, or broad scan. In large account pools, feature-disabled or no-rule cases must return before SQLite writes such as reservation expiry; add a regression that the empty-rule path does not deny admission or mutate the shared store.
-6. Rebuild or verify the actual sidecar binary used by dev App before claiming runtime acceptance.
+6. For large route diagnostics or decision history, store totals plus bounded samples instead of full candidate sets. Preserve the selected auth and candidate count for explainability, but do not materialize or clone thousands of candidates on the request path.
+7. For per-account liveness checks inside batch workers, prefer the narrowest query that proves the required fact, such as `SELECT 1` existence checks. Avoid full account/card/credential reads when the worker only needs to know whether the account still exists.
+8. In-memory job/result stores must have a terminal-history cap or TTL. Keep active jobs observable, but do not retain completed large `items/errors/account_keys` payloads without a bounded policy.
+9. Rebuild or verify the actual sidecar binary used by dev App before claiming runtime acceptance.
 
 ## 5. Regression Gates
 

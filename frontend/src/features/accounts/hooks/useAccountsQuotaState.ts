@@ -12,7 +12,11 @@ import type { AccountRecord } from '../../../types';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import { beginQuotaRefreshState, failQuotaRefreshState, supportsQuota } from '../model/accountQuota';
 import { persistAccountQuotaStates, readStoredAccountQuotaStates } from '../model/accountQuotaCache';
-import { chunkRuntimeSyncAccountKeys } from '../model/accountRuntimeSync';
+import {
+  ACCOUNT_RUNTIME_QUOTA_STATUS_REQUEST_CONCURRENCY,
+  chunkRuntimeSyncAccountKeys,
+  runAccountRuntimeRequestPool,
+} from '../model/accountRuntimeSync';
 import { getAccountsPreviewQuotaStateByKey } from '../previewData';
 import type { CodexQuotaState, TrackRequest } from '../model/types';
 
@@ -46,15 +50,20 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
       let quotaStatuses: any[] = [];
       try {
         const quotaStatusChunks = chunkRuntimeSyncAccountKeys(quotaKeys);
-        for (let chunkIndex = 0; chunkIndex < quotaStatusChunks.length; chunkIndex += 1) {
-          const quotaStatusChunk = quotaStatusChunks[chunkIndex];
-          const chunkStatuses = await trackRequest(
-            'GetQuotaStatuses',
-            { accountKeys: quotaStatusChunk, chunkIndex: chunkIndex + 1, chunkCount: quotaStatusChunks.length },
-            () => GetQuotaStatuses(quotaStatusChunk),
-          );
-          quotaStatuses.push(...(chunkStatuses || []));
-        }
+        const quotaStatusesByChunk: any[][] = Array.from({ length: quotaStatusChunks.length }, () => []);
+        await runAccountRuntimeRequestPool(
+          quotaStatusChunks,
+          async (quotaStatusChunk, chunkIndex) => {
+            const chunkStatuses = await trackRequest(
+              'GetQuotaStatuses',
+              { accountKeys: quotaStatusChunk, chunkIndex: chunkIndex + 1, chunkCount: quotaStatusChunks.length },
+              () => GetQuotaStatuses(quotaStatusChunk),
+            );
+            quotaStatusesByChunk[chunkIndex] = chunkStatuses || [];
+          },
+          { concurrency: ACCOUNT_RUNTIME_QUOTA_STATUS_REQUEST_CONCURRENCY },
+        );
+        quotaStatuses = quotaStatusesByChunk.flat();
       } catch (error) {
         console.error(error);
         try {

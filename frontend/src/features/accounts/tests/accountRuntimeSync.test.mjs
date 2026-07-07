@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 import {
   ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE,
+  ACCOUNT_RUNTIME_QUOTA_STATUS_REQUEST_CONCURRENCY,
   ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY,
   buildRuntimeSyncAccountKeys,
   chunkRuntimeSyncAccountKeys,
@@ -140,6 +141,10 @@ test('runtime quota refresh uses a conservative request pool size', () => {
   assert.equal(ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY, 6);
 });
 
+test('runtime quota status sync uses a conservative chunk request pool size', () => {
+  assert.equal(ACCOUNT_RUNTIME_QUOTA_STATUS_REQUEST_CONCURRENCY, 4);
+});
+
 test('quota runtime sync reads sidecar status without triggering active quota refresh', async () => {
   const source = await readFile(new URL('../hooks/useAccountsQuotaState.ts', import.meta.url), 'utf8');
   const syncStart = source.indexOf('const syncCodexQuotaStatuses = useCallback');
@@ -150,6 +155,9 @@ test('quota runtime sync reads sidecar status without triggering active quota re
 
   assert.match(syncSource, /GetQuotaStatuses/);
   assert.match(syncSource, /chunkRuntimeSyncAccountKeys\(quotaKeys\)/);
+  assert.match(syncSource, /runAccountRuntimeRequestPool\(\s*quotaStatusChunks/);
+  assert.match(syncSource, /ACCOUNT_RUNTIME_QUOTA_STATUS_REQUEST_CONCURRENCY/);
+  assert.match(syncSource, /quotaStatusesByChunk\.flat\(\)/);
   assert.match(syncSource, /accountKeys: quotaStatusChunk/);
   assert.match(syncSource, /GetAllQuotaStatuses/);
   assert.match(syncSource, /fallback: true/);

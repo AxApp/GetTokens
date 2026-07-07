@@ -2,6 +2,7 @@ import type { AccountRecord } from '../../../types';
 
 export const ACCOUNT_RUNTIME_SYNC_INTERVAL_MS = 30000;
 export const ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY = 6;
+export const ACCOUNT_RUNTIME_QUOTA_STATUS_REQUEST_CONCURRENCY = 4;
 export const ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE = 200;
 
 export interface AccountRuntimeSyncScheduleState {
