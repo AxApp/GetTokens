@@ -65,6 +65,17 @@ test('sidebar navigation follows Ant Design navigation menu contract', async () 
   assert.match(themeSource, /collapsedWidth: 76/);
 });
 
+test('sidebar collapsed menu stays inside the fixed-width rail', async () => {
+  const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../style.css', import.meta.url), 'utf8');
+
+  assert.match(source, /isCollapsed \? 'w-full min-w-0 overflow-x-hidden px-0 py-1' : 'w-full min-w-0 overflow-x-hidden px-2 py-1'/);
+  assert.match(source, /className="gt-sidebar-menu w-full min-w-0 overflow-x-hidden/);
+  assert.match(source, /inlineIndent=\{18\}/);
+  assert.match(styleSource, /\.gt-sidebar-menu\.ant-menu-inline-collapsed/);
+  assert.match(styleSource, /width: 100%;/);
+});
+
 test('app shell publishes sidebar width for fixed modal layout', async () => {
   const appSource = await readFile(new URL('../../App.tsx', import.meta.url), 'utf8');
   const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');

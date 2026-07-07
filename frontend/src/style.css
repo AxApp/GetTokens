@@ -164,6 +164,11 @@
 }
 
 @layer components {
+  .gt-sidebar-menu.ant-menu-inline-collapsed {
+    width: 100%;
+    min-width: 0;
+  }
+
   .codex-live-session-list-item-idle:hover {
     background-color: color-mix(in srgb, var(--gt-border-strong) 5%, var(--gt-surface-canvas));
   }

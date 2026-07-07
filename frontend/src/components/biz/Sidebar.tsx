@@ -253,11 +253,14 @@ export default function Sidebar({
       </div>
 
       <nav
-        className="min-h-0 flex-1 overscroll-contain overflow-y-auto px-2 py-1"
+        className={[
+          'min-h-0 flex-1 overscroll-contain overflow-y-auto',
+          isCollapsed ? 'w-full min-w-0 overflow-x-hidden px-0 py-1' : 'w-full min-w-0 overflow-x-hidden px-2 py-1',
+        ].join(' ')}
         aria-label={t('nav.sidebar_navigation')}
       >
         <Menu
-          className="gt-sidebar-menu !bg-transparent !font-sans ![border-inline-end:0]"
+          className="gt-sidebar-menu w-full min-w-0 overflow-x-hidden !bg-transparent !font-sans ![border-inline-end:0]"
           data-sidebar-menu="antd"
           mode="inline"
           selectable
@@ -265,6 +268,7 @@ export default function Sidebar({
           selectedKeys={[selectedMenuKey]}
           openKeys={sidebarOpenKeys}
           inlineCollapsed={isCollapsed}
+          inlineIndent={18}
           onClick={({ key }) => handleMenuClick({ key: String(key) })}
           onOpenChange={handleOpenChange}
           triggerSubMenuAction="click"

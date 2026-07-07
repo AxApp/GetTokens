@@ -51,3 +51,33 @@
 - 候选模式：GetTokens 主应用侧边导航应以 AntD Menu 为权威交互组件，使用 openKeys / selectedKeys / inlineCollapsed 表达层级、当前位置和折叠态，避免自定义 hover portal 与展开态行为分叉。
 - 决策：这是侧边导航专属实现模式，已由本 plan 和源码测试固定；暂不新增 skill、不更新 AGENTS.md。若后续还有其他导航容器重构，再沉淀进 gettokens-frontend-design-quality。
 - 沉淀判断：本轮是 AntD design-language contract 在侧边导航的具体落地；已有 antd / gettokens-frontend-design-quality skill 覆盖原则层，当前只写回本 plan 与 memory。
+
+## 2026-07-07 折叠态宽度修正
+
+### 问题来源
+
+- 用户在 `http://127.0.0.1:34115/#frame=codex&workspace=account-list` 浏览器批注侧栏菜单：菜单项“没对齐，还超出父容器了”。
+
+### 当前事实位置
+
+- `frontend/src/components/biz/Sidebar.tsx` 的折叠态侧栏宽度为 `4.75rem`，即 76px。
+- `frontend/src/context/antdTheme.ts` 固定 AntD Menu `collapsedWidth: 76`。
+- 旧 `nav` 同时保留 `px-2`，导致 76px collapsed Menu 从 `x=8` 开始布局，菜单右边界到 `84px`，超过 `aside` 右边界 `76px`。
+
+### 修复
+
+- 折叠态 `nav` 横向 padding 改为 `px-0`；展开态继续保留 `px-2`。
+- `Menu` 增加 `w-full min-w-0 overflow-x-hidden`，并在 `style.css` 中为 `.gt-sidebar-menu.ant-menu-inline-collapsed` 固定 `width: 100%; min-width: 0;`。
+- `Menu` 设置 `inlineIndent={18}`，使展开态二级导航缩进与 15rem 侧栏宽度匹配。
+
+### 验收证据
+
+- 红灯测试：新增 `sidebar collapsed menu stays inside the fixed-width rail` 源码契约，先在旧实现下失败。
+- 自动化：`node --test frontend/src/components/biz/sidebarState.test.mjs` 通过，7 pass。
+- AntD lint：`antd lint frontend/src/components/biz/Sidebar.tsx --format json` 无 issue。
+- 类型检查：`npm --prefix frontend run typecheck` 通过。
+- 浏览器几何验收：866x964 视口、折叠态下 `aside.right=76`、`menu.right=75`、`maxItemRight=71`，`nav/menu/item` 均无横向溢出。
+
+### 沉淀判断
+
+- 这是既有侧栏 AntD Menu contract 的折叠态宽度补丁，复用当前 plan 和源码测试即可；不新增项目级 skill，不更新 `AGENTS.md`。
