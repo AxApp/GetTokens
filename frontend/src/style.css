@@ -261,29 +261,10 @@
   }
 
   [data-account-card-refreshing='true'] {
-    animation: account-card-refresh-pulse 900ms ease-in-out infinite;
-  }
-
-  [data-account-card-refreshing='true'] .account-card-frame-inner::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--gt-ink-primary) 8%, transparent), transparent);
-    transform: translateX(-100%);
-    animation: account-card-refresh-sweep 1100ms ease-in-out infinite;
-  }
-
-  @keyframes account-card-refresh-pulse {
-    50% {
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--gt-ink-primary) 18%, transparent);
-    }
-  }
-
-  @keyframes account-card-refresh-sweep {
-    to {
-      transform: translateX(100%);
-    }
+    background-color: color-mix(in srgb, var(--gt-accent-primary) 4%, var(--gt-surface-canvas));
+    box-shadow:
+      inset 3px 0 0 color-mix(in srgb, var(--gt-accent-primary) 72%, var(--gt-border-subtle)),
+      0 0 0 1px color-mix(in srgb, var(--gt-accent-primary) 16%, transparent);
   }
 
   @container (min-width: 46rem) {

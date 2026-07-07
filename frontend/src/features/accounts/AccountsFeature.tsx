@@ -105,11 +105,11 @@ interface AccountsFeatureProps {
 }
 
 const accountsFeatureShellClass =
-  "h-full w-full overflow-auto bg-[var(--gt-surface-canvas)] p-12";
+  "h-full w-full overflow-auto bg-[var(--gt-surface-canvas)] p-8";
 const accountsFeatureContentClass =
-  "mx-auto max-w-6xl space-y-8 pb-32";
+  "mx-auto max-w-6xl space-y-6 pb-32";
 const accountsFeatureSelectionToolbarShellClass =
-  "sticky -top-12 z-40 -mx-12 !mt-4 bg-[var(--gt-surface-canvas)] px-12 py-1.5";
+  "sticky -top-8 z-40 -mx-8 !mt-3 bg-[var(--gt-surface-canvas)] px-8 py-1.5";
 const accountsFeatureNoticeClass =
   "flex items-start justify-between gap-3 rounded-md border px-4 py-3 text-[length:var(--gt-font-size-sm)] font-semibold tracking-normal";
 const accountsFeatureNoticeToneClass = {
@@ -1531,7 +1531,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           ) : null}
 
           {showAccountSkeletons ? (
-            <div className="account-card-grid-full grid gap-8">
+            <div className="account-card-grid-full grid gap-6">
               {[...Array(6)].map((_, i) => (
                 <AccountCardSkeleton key={i} />
               ))}
@@ -1560,7 +1560,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               ) : null}
             </div>
           ) : (
-            <div className={isSelectionMode ? "space-y-8 !mt-4" : "space-y-8"}>
+            <div className={isSelectionMode ? "space-y-6 !mt-3" : "space-y-6"}>
               {groupedAccounts.map((group) => (
                 <AccountGroupSection
                   key={group.id}

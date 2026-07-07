@@ -251,8 +251,10 @@ test('account quota refresh also refreshes route guard status and marks guard ro
   assert.match(sectionsSource, /data-rate-limit-refreshing=\{refreshing \? 'true' : undefined\}/);
   assert.match(sectionsSource, /account-card-quota-refresh-skeleton/);
   assert.match(styleSource, /\[data-account-card-refreshing='true'\]/);
-  assert.match(styleSource, /@keyframes account-card-refresh-pulse/);
-  assert.match(styleSource, /@keyframes account-card-refresh-sweep/);
+  assert.doesNotMatch(styleSource, /@keyframes account-card-refresh-pulse/);
+  assert.doesNotMatch(styleSource, /@keyframes account-card-refresh-sweep/);
+  assert.doesNotMatch(styleSource, /account-card-refresh-sweep|linear-gradient\(90deg/);
+  assert.match(styleSource, /box-shadow:\s*inset 3px 0 0 color-mix\(in srgb, var\(--gt-accent-primary\) 72%, var\(--gt-border-subtle\)\)/);
   assert.doesNotMatch(sectionsSource, /repeating-linear-gradient/);
   assert.doesNotMatch(styleSource.match(/\.account-card-quota-refresh-skeleton\s*\{[\s\S]*?\n\s*\}/)?.[0] || '', /repeating-linear-gradient|animation:/);
 });
@@ -283,9 +285,9 @@ test('full account cards keep unbounded traffic statistics rows without a headin
   assert.doesNotMatch(sectionsSource, /value === 0\) return '—'/);
   assert.match(sectionsSource, /\{value\} \/ ∞/);
   const trafficRowSource = sectionsSource.slice(sectionsSource.indexOf('function TrafficStatisticsRow'));
-  assert.match(trafficRowSource, /<Progress[\s\S]*percent=\{activityPercent\}[\s\S]*railColor="var\(--gt-surface-muted\)"/);
+  assert.match(trafficRowSource, /<Progress[\s\S]*percent=\{activityPercent\}[\s\S]*railColor="color-mix\(in srgb, var\(--gt-border-strong\) 20%, var\(--gt-surface-muted\)\)"/);
   assert.match(trafficRowSource, /data-account-card-traffic-activity-fill/);
-  assert.match(trafficRowSource, /strokeColor="color-mix\(in srgb, var\(--gt-ink-primary\) 16%, transparent\)"/);
+  assert.match(trafficRowSource, /strokeColor="color-mix\(in srgb, var\(--gt-ink-primary\) 32%, transparent\)"/);
   assert.doesNotMatch(trafficRowSource, /color-chart-blue/);
   assert.doesNotMatch(trafficRowSource, /width: `\$\{activityPercent\}%`/);
   assert.doesNotMatch(trafficRowSource, /<span className="shrink-0">0<\/span>/);

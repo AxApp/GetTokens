@@ -185,7 +185,7 @@ export default function AccountGroupSectionView({
         data-account-group-header="true"
         className={isListMode
           ? 'flex items-center justify-between gap-3 border-b border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2.5'
-          : 'flex items-center justify-between gap-3 rounded-md border px-3 py-2.5'}
+          : 'flex items-center justify-between gap-3 rounded-md border px-3.5 py-2.5'}
         style={isListMode ? undefined : {
           borderColor: 'var(--gt-border-subtle)',
           backgroundColor: 'color-mix(in srgb, var(--gt-surface-muted) 54%, transparent)',
@@ -196,11 +196,12 @@ export default function AccountGroupSectionView({
             <Tooltip title={collapseLabel}>
               <Button
                 size="small"
+                type="text"
                 aria-label={collapseLabel}
                 aria-controls={groupBodyID}
                 aria-expanded={!isCollapsed}
                 onClick={() => onToggleCollapsed(group.id)}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--gt-ink-secondary)] transition-colors hover:bg-[var(--gt-surface-canvas)]"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md !border-0 !bg-transparent !shadow-none text-[var(--gt-ink-secondary)] transition-colors hover:!bg-transparent hover:text-[var(--gt-ink-primary)]"
                 icon={isCollapsed ? (
                   <ChevronRight size={16} strokeWidth={2} />
                 ) : (
@@ -210,7 +211,7 @@ export default function AccountGroupSectionView({
             </Tooltip>
           ) : null}
           <h3
-            className="min-w-0 truncate font-sans text-[length:var(--gt-font-size-sm)] font-semibold leading-tight text-[var(--gt-ink-primary)]"
+            className="min-w-0 truncate font-sans text-[length:var(--gt-font-size-md)] font-semibold leading-tight text-[var(--gt-ink-primary)]"
           >
             {group.label}
           </h3>

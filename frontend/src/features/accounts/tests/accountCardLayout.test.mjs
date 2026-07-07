@@ -92,6 +92,18 @@ test('account cards render a subtle status edge tint', async () => {
   assert.match(styleSource, /\[data-account-card\]\.account-card-status-tint-critical\s*\{[^}]*--account-card-status-accent:\s*var\(--gt-status-danger\)/s);
 });
 
+test('account card refresh feedback avoids full-card sweep animation', async () => {
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+  const refreshBlock = styleSource.match(/\[data-account-card-refreshing='true'\]\s*\{[\s\S]*?\n\s*\}/)?.[0] || '';
+
+  assert.match(refreshBlock, /box-shadow:\s*inset 3px 0 0 color-mix\(in srgb, var\(--gt-accent-primary\) 72%, var\(--gt-border-subtle\)\)/);
+  assert.match(refreshBlock, /background-color:\s*color-mix\(in srgb, var\(--gt-accent-primary\) 4%, var\(--gt-surface-canvas\)\)/);
+  assert.doesNotMatch(styleSource, /account-card-refresh-sweep/);
+  assert.doesNotMatch(styleSource, /\[data-account-card-refreshing='true'\] \.account-card-frame-inner::after/);
+  assert.doesNotMatch(refreshBlock, /animation:/);
+  assert.doesNotMatch(refreshBlock, /linear-gradient/);
+});
+
 test('full account card subtitle renders as its own header row', async () => {
   const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
   const fullSource = source.split('// ── Full density ──')[1] || '';
@@ -231,6 +243,14 @@ test('quota rows keep label and percentage together above the progress bar', asy
   assert.doesNotMatch(source, /tracking-\[0\.08em\]/, 'account card quota, balance, and rate-limit values must not use wide tracking');
   assert.doesNotMatch(source, /\bfont-black\b/, 'account card quota and balance values must not use heavy brutalist weight');
   assert.doesNotMatch(styleSource, /\.account-card-quota-row\s*\{[^}]*grid-template-columns:\s*4\.25rem/s);
+});
+
+test('unbounded traffic activity progress keeps the rail visible when usage is zero', async () => {
+  const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /strokeColor="color-mix\(in srgb, var\(--gt-ink-primary\) 32%, transparent\)"/);
+  assert.match(source, /railColor="color-mix\(in srgb, var\(--gt-border-strong\) 20%, var\(--gt-surface-muted\)\)"/);
+  assert.doesNotMatch(source, /strokeColor="color-mix\(in srgb, var\(--gt-ink-primary\) 16%, transparent\)"/);
 });
 
 

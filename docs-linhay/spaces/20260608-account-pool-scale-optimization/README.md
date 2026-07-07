@@ -295,3 +295,11 @@
 - 当前代码事实：`resolveAccountGroupRenderWindow()` 使用 `ACCOUNT_GROUP_FULL_ROW_ESTIMATE = 448` 作为 full card 行高；`AccountGroupSectionView` 只在滚动时测量视口和列数，没有测量已渲染卡片的真实行高。
 - 复现现象：`ACCOUNTS_PREVIEW_BASE_URL=http://127.0.0.1:5174 ACCOUNTS_PREVIEW_COUNT=2000 ACCOUNTS_SCALE_MAX_RENDERED_CARDS=220 node docs-linhay/scripts/accounts-scale-browser-check.mjs` 在旧逻辑下显示 `plan:pro` 首屏 `window=0:15`、`bottomSpacer=234752`，该值等于 `524 * 448`，内部滚动高度接近 `299k px`。
 - 预期验收：2000 账号 preview 仍保持窗口化渲染，但 bottom spacer 的单位行高必须贴近真实卡片行距；验收脚本需要输出并校验 spacer 与实测行高的比例，避免再次用过大的固定估算把滚动高度放大。
+
+### 2026-07-07 账号页浏览器批注视觉收紧
+
+- 问题来源：用户在 `http://127.0.0.1:5173/#frame=accounts` 浏览器批注中指出 5 个问题：账号卡刷新动画奇怪、页面纵向间距过大、分组标题太小、收起分组按钮不需要背景色、今日请求/Token 轨道颜色太淡。
+- 当前代码事实：刷新态在 `frontend/src/style.css` 使用 `account-card-refresh-pulse` 与 `account-card-refresh-sweep` 对整张卡做循环扫光；账号页 shell 使用 `p-12 / space-y-8 / gap-8`；full 模式分组标题使用 `--gt-font-size-sm`；折叠按钮仍是默认 AntD small button；无上限使用量进度轨道为 `var(--gt-surface-muted)`，0 值时对比度不足。
+- 修复：刷新反馈改为静态浅蓝底、左侧强调线和 1px 外描边，移除 sweep/pulse keyframes；账号页主间距收紧到 `p-8 / space-y-6 / gap-6`；full 模式分组标题升到 `--gt-font-size-md`；折叠按钮使用 transparent text button；无上限使用量进度轨道和 0 值 stroke 加深。
+- 验收截图：`docs-linhay/spaces/20260608-account-pool-scale-optimization/screenshots/20260707/accounts-polish/20260707-accounts-polish-after-v01.png`。
+- 已验证：先补红灯源码守护，旧代码在 `accountListLayout.test.mjs` 与 `accountCardLayout.test.mjs` 失败；修复后 `node --test frontend/src/features/accounts/tests/*.test.mjs` 通过 `530 pass / 0 fail`，`npm --prefix frontend run typecheck` 与 `npm --prefix frontend run build` 通过，Chrome headless 在 `1033x964` 桌面窗口生成验收截图。

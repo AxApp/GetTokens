@@ -125,12 +125,12 @@ test('account plan groups can collapse without changing group actions scope', as
   assert.match(viewSource, /data-account-group-collapsed=\{isCollapsed \? 'true' : 'false'\}/);
   assert.match(viewSource, /data-account-group-header="true"/);
   assert.match(viewSource, /className=\{isListMode/);
-  assert.match(viewSource, /'flex items-center justify-between gap-3 rounded-md border px-3 py-2\.5'/);
+  assert.match(viewSource, /'flex items-center justify-between gap-3 rounded-md border px-3\.5 py-2\.5'/);
   assert.match(viewSource, /'flex items-center justify-between gap-3 border-b border-\[var\(--gt-border-subtle\)\] bg-\[var\(--gt-surface-muted\)\] px-3 py-2\.5'/);
   assert.match(viewSource, /backgroundColor: 'color-mix\(in srgb, var\(--gt-surface-muted\) 54%, transparent\)'/);
   assert.match(viewSource, /className="flex min-w-0 items-center gap-2"/);
-  assert.match(viewSource, /className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-\[var\(--gt-ink-secondary\)\] transition-colors hover:bg-\[var\(--gt-surface-canvas\)\]"/);
-  assert.match(viewSource, /className="min-w-0 truncate font-sans text-\[length:var\(--gt-font-size-sm\)\] font-semibold leading-tight text-\[var\(--gt-ink-primary\)\]"/);
+  assert.match(viewSource, /type="text"[\s\S]*className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md !border-0 !bg-transparent !shadow-none text-\[var\(--gt-ink-secondary\)\] transition-colors hover:!bg-transparent hover:text-\[var\(--gt-ink-primary\)\]"/);
+  assert.match(viewSource, /className="min-w-0 truncate font-sans text-\[length:var\(--gt-font-size-md\)\] font-semibold leading-tight text-\[var\(--gt-ink-primary\)\]"/);
   assert.match(viewSource, /className="font-mono text-\[length:var\(--gt-font-size-xs\)\] font-normal leading-none text-\[var\(--gt-ink-muted\)\]"/);
   assert.match(viewSource, /<Button[\s\S]*aria-pressed=\{allGroupSelected\}[\s\S]*icon=\{<SquareCheckBig size=\{13\} strokeWidth=\{2\} \/>}/);
   assert.match(viewSource, /<Tooltip title=\{t\('accounts\.refresh_group'\)\}>[\s\S]*aria-label=\{t\('accounts\.refresh_group'\)\}[\s\S]*icon=\{<RefreshCw size=\{13\} strokeWidth=\{2\} \/>}/);
@@ -160,6 +160,17 @@ test('account plan groups can collapse without changing group actions scope', as
   assert.match(enLocale, /"group_expand": "Expand Group"/);
 });
 
+test('accounts page keeps the account inventory rhythm compact on desktop', async () => {
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /"h-full w-full overflow-auto bg-\[var\(--gt-surface-canvas\)\] p-8"/);
+  assert.match(featureSource, /"mx-auto max-w-6xl space-y-6 pb-32"/);
+  assert.match(featureSource, /"sticky -top-8 z-40 -mx-8 !mt-3 bg-\[var\(--gt-surface-canvas\)\] px-8 py-1\.5"/);
+  assert.match(featureSource, /<div className="account-card-grid-full grid gap-6">/);
+  assert.match(featureSource, /className=\{isSelectionMode \? ["']space-y-6 !mt-3["'] : ["']space-y-6["']\}/);
+  assert.doesNotMatch(featureSource, /p-12|space-y-8|-top-12|-mx-12|px-12|grid gap-8/);
+});
+
 test('accounts selection toolbar stays sticky while scrolling selected accounts', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 
@@ -172,7 +183,7 @@ test('accounts selection toolbar stays sticky while scrolling selected accounts'
   );
   assert.match(source, /bg-\[var\(--gt-surface-canvas\)\]/);
   assert.doesNotMatch(source, /backdrop-blur/);
-  assert.match(source, /className=\{isSelectionMode \? [\"']space-y-8 !mt-4[\"'] : [\"']space-y-8[\"']\}/);
+  assert.match(source, /className=\{isSelectionMode \? [\"']space-y-6 !mt-3[\"'] : [\"']space-y-6[\"']\}/);
   assert.doesNotMatch(source, /shadow-\[6px_6px_0_var\(--gt-shadow-panel\)\]/);
   assert.doesNotMatch(source, /className="border-2 border-\[var\(--gt-border-strong\)\] bg-\[var\(--bg-(main|surface)\)\] px-4 pb-4/);
   assert.match(source, /<AccountsSelectionActions/);

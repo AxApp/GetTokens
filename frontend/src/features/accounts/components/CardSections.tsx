@@ -428,8 +428,8 @@ function TrafficStatisticsRow({
           showInfo={false}
           size={{ height: 16 }}
           strokeLinecap="square"
-          strokeColor="color-mix(in srgb, var(--gt-ink-primary) 16%, transparent)"
-          railColor="var(--gt-surface-muted)"
+          strokeColor="color-mix(in srgb, var(--gt-ink-primary) 32%, transparent)"
+          railColor="color-mix(in srgb, var(--gt-border-strong) 20%, var(--gt-surface-muted))"
           style={{ marginBottom: 0 }}
         />
         {refreshing ? (
