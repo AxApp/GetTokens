@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Button, Dropdown, Tooltip } from 'antd';
 import { ChevronDown, ChevronRight, MoreVertical, Power, RefreshCw, SquareCheckBig, Trash2 } from 'lucide-react';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountGroup, AccountRecord, Translator } from '../model/types';
 import { resolveAccountGroupActionAvailability } from '../model/accountSelection';
@@ -54,6 +54,7 @@ export default function AccountGroupSectionView({
     viewportEnd: resolveEstimatedAccountGroupRowHeight(displayMode) * 8,
     rowHeight: resolveEstimatedAccountGroupRowHeight(displayMode),
   }));
+  const virtualWrapperRef = useRef<HTMLDivElement | null>(null);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const {
     hasAccounts,
@@ -111,17 +112,18 @@ export default function AccountGroupSectionView({
     if (!shouldVirtualize) {
       return undefined;
     }
+    const virtualWrapperNode = virtualWrapperRef.current;
     const gridNode = gridRef.current;
-    if (!gridNode) {
+    if (!virtualWrapperNode || !gridNode) {
       return undefined;
     }
 
-    const scrollParent = resolveAccountGroupScrollParent(gridNode);
+    const scrollParent = resolveAccountGroupScrollParent(virtualWrapperNode);
     let frameID = 0;
 
     const measure = () => {
       frameID = 0;
-      const gridRect = gridNode.getBoundingClientRect();
+      const wrapperRect = virtualWrapperNode.getBoundingClientRect();
       const rootRect = getAccountGroupScrollRootRect(scrollParent);
       const columns = resolveAccountGroupRenderedColumns(gridNode);
       const fallbackRowHeight = resolveEstimatedAccountGroupRowHeight(displayMode);
@@ -130,8 +132,8 @@ export default function AccountGroupSectionView({
       setRenderMetrics((current) => {
         const nextMetrics = {
           columns,
-          viewportStart: rootRect.top - gridRect.top,
-          viewportEnd: rootRect.bottom - gridRect.top,
+          viewportStart: rootRect.top - wrapperRect.top,
+          viewportEnd: rootRect.bottom - wrapperRect.top,
           rowHeight,
         };
         if (
@@ -155,6 +157,7 @@ export default function AccountGroupSectionView({
 
     scheduleMeasure();
     const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleMeasure);
+    resizeObserver?.observe(virtualWrapperNode);
     resizeObserver?.observe(gridNode);
     if (scrollParent instanceof HTMLElement) {
       resizeObserver?.observe(scrollParent);
@@ -322,31 +325,40 @@ export default function AccountGroupSectionView({
       emptyContent
     ) : (
       <div
-        id={groupBodyID}
-        ref={gridRef}
-        className={
-          displayMode === 'list'
-            ? 'grid grid-cols-1 divide-y divide-[var(--gt-border-subtle)]'
-            : 'account-card-grid-full grid gap-8'
-        }
-        data-plan-group-grid={group.id}
+        ref={virtualWrapperRef}
+        className={shouldVirtualize ? 'account-group-virtual-wrapper' : undefined}
         data-account-group-virtualized={shouldVirtualize ? 'true' : undefined}
+        data-account-group-total-count={shouldVirtualize ? group.accounts.length : undefined}
         data-account-group-render-window={shouldVirtualize ? `${renderWindow.startIndex}:${renderWindow.endIndex}` : undefined}
+        data-account-group-rendered-count={shouldVirtualize ? renderWindow.renderedCount : undefined}
+        data-account-group-hidden-before-count={shouldVirtualize ? renderWindow.startIndex : undefined}
+        data-account-group-hidden-after-count={shouldVirtualize ? group.accounts.length - renderWindow.endIndex : undefined}
       >
         {shouldVirtualize && renderWindow.topSpacerHeight > 0 ? (
           <div
             aria-hidden="true"
-            className="col-span-full"
             data-account-group-virtual-spacer="top"
+            data-account-group-hidden-count={renderWindow.startIndex}
             style={{ height: renderWindow.topSpacerHeight }}
           />
         ) : null}
-        {visibleAccounts.map((account) => renderAccount(account))}
+        <div
+          id={groupBodyID}
+          ref={gridRef}
+          className={
+            displayMode === 'list'
+              ? 'grid grid-cols-1 divide-y divide-[var(--gt-border-subtle)]'
+              : 'account-card-grid-full grid gap-8'
+          }
+          data-plan-group-grid={group.id}
+        >
+          {visibleAccounts.map((account) => renderAccount(account))}
+        </div>
         {shouldVirtualize && renderWindow.bottomSpacerHeight > 0 ? (
           <div
             aria-hidden="true"
-            className="col-span-full"
             data-account-group-virtual-spacer="bottom"
+            data-account-group-hidden-count={group.accounts.length - renderWindow.endIndex}
             style={{ height: renderWindow.bottomSpacerHeight }}
           />
         ) : null}

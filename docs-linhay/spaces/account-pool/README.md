@@ -557,3 +557,12 @@
 - 预期改动：新增 `SetAccountsDisabledBatch` Wails 批量桥；前端分组启停和已选批量启停都只发一次批量调用；分组入口反馈使用 `激活本组 / 禁用本组` 标签，已选入口继续使用 `激活已选 / 禁用已选`；Wails 优先调用 sidecar `POST /v0/management/accounts/batch-status`，旧 sidecar 404 时才在 Wails/root 边界内兼容回退到单账号 PATCH。
 - 验收方式：前端源码测试禁止 `runAccountsBulkSetDisabled` 中出现 `for (const account of resolution.targets)` 与 `SetAccountDisabled(account.id, nextDisabled)`；cliproxyapi/Wails Go 测试固定批量 status payload、去重、部分失败摘要和 404 回退路径；浏览器预览点击 `Pro` 分组 `激活本组` 后，提示为 `激活本组：成功 1 / 跳过 2`，`disabled-route@example.com` 从已禁用变为可用，且不打开详情。
 - 验收截图：`docs-linhay/spaces/account-pool/screenshots/20260707/accounts/20260707-account-group-bulk-enable-after-v01.png`。
+
+## 2026-07-07 大分组虚拟化评论高亮误判证据
+
+- 问题来源：用户在 `http://localhost:34115/#frame=accounts` 标注 K12 账号分组容器，截图中浏览器评论蓝色高亮覆盖 `#account-group-body-plan:k12` 的大块空白区域，反馈“为什么账号卡片没加载了？”
+- 代码事实位置：`frontend/src/features/accounts/components/AccountGroupSectionView.tsx` 在账号数超过 `ACCOUNT_GROUP_VIRTUALIZATION_THRESHOLD=120` 时启用虚拟窗口；旧结构把 `id=account-group-body-*`、卡片 grid、`data-account-group-virtual-spacer` 放在同一个 DOM 容器内。
+- 当前现象：DOM 证据显示 K12 分组有 875 个账号，`data-account-group-render-window` 随滚动更新，当前视口只渲染窗口内卡片；评论工具选中同一个全高容器时，会把 bottom spacer 也高亮，造成“已加载但像没加载”的视觉误判。
+- 根因边界：账号数据与虚拟窗口计算正常；问题在虚拟化 DOM 边界耦合，真实卡片 grid 和 spacer 占位共享同一个可被评论工具框选的容器。
+- 预期改动：拆分虚拟化 wrapper 与真实卡片 grid；`#account-group-body-*` 只包当前可见账号卡片，不再包含 spacer；wrapper 承担虚拟化状态、spacer 和滚动测量；spacer 设置 `pointer-events: none` 与 `user-select: none`。
+- 验收方式：前端源码测试断言 `AccountGroupSectionView` 存在 `account-group-virtual-wrapper`、`virtualWrapperRef` / `gridRef` 双 ref、spacer 位于 grid 外；样式测试断言 `[data-account-group-virtual-spacer]` 禁止 pointer/select；浏览器 DOM 验证 `#account-group-body-plan:k12` 不包含 spacer，grid 高度远小于 wrapper 高度，滚动后 `renderWindow` 正常更新且可见卡片持续渲染。

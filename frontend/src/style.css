@@ -219,6 +219,11 @@
     justify-content: start;
   }
 
+  [data-account-group-virtual-spacer] {
+    pointer-events: none;
+    user-select: none;
+  }
+
   .account-card-list-row {
     grid-template-columns: minmax(0, 1fr);
   }

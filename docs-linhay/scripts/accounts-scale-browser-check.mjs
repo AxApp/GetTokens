@@ -157,7 +157,7 @@ function collectAccountScaleMetricsExpression() {
   return `(() => {
     const cards = Array.from(document.querySelectorAll('[data-account-card]'));
     const groups = Array.from(document.querySelectorAll('[data-plan-group-grid]'));
-    const virtualizedGroups = groups.filter((node) => node.getAttribute('data-account-group-virtualized') === 'true');
+    const virtualizedGroups = groups.filter((node) => resolveVirtualWrapper(node));
     const scrollContainers = Array.from(document.querySelectorAll('*'))
       .filter((node) => node instanceof HTMLElement)
       .map((node) => ({
@@ -184,7 +184,8 @@ function collectAccountScaleMetricsExpression() {
       groupCount: groups.length,
       virtualizedGroups: virtualizedGroups.length,
       virtualWindows: virtualizedGroups.map((node) => {
-        const windowValue = node.getAttribute('data-account-group-render-window') || '';
+        const wrapper = resolveVirtualWrapper(node) || node;
+        const windowValue = wrapper.getAttribute('data-account-group-render-window') || '';
         const [startIndex, endIndex] = windowValue.split(':').map((value) => Number.parseInt(value || '0', 10));
         const style = getComputedStyle(node);
         const columns = Math.max(1, countGridColumns(style.gridTemplateColumns));
@@ -196,8 +197,8 @@ function collectAccountScaleMetricsExpression() {
         const remainingRows = Math.max(0, rowCount - endRow);
         const rowGap = Number.parseFloat(style.rowGap || '0') || 0;
         const measuredRowHeight = measureRenderedRowHeight(node, rowGap);
-        const topSpacer = Number(node.querySelector('[data-account-group-virtual-spacer="top"]')?.style.height?.replace('px', '') || 0);
-        const bottomSpacer = Number(node.querySelector('[data-account-group-virtual-spacer="bottom"]')?.style.height?.replace('px', '') || 0);
+        const topSpacer = Number(wrapper.querySelector('[data-account-group-virtual-spacer="top"]')?.style.height?.replace('px', '') || 0);
+        const bottomSpacer = Number(wrapper.querySelector('[data-account-group-virtual-spacer="bottom"]')?.style.height?.replace('px', '') || 0);
         const expectedBottomSpacer = measuredRowHeight > 0 ? remainingRows * measuredRowHeight : 0;
         const spacerEstimateRatio = expectedBottomSpacer > 0
           ? bottomSpacer / expectedBottomSpacer
@@ -245,6 +246,14 @@ function collectAccountScaleMetricsExpression() {
       }
       const maxCardHeight = cards.reduce((max, card) => Math.max(max, card.height), 0);
       return maxCardHeight > 0 ? Math.round(maxCardHeight + rowGap) : 0;
+    }
+
+    function resolveVirtualWrapper(groupNode) {
+      const parent = groupNode.parentElement;
+      if (parent?.getAttribute('data-account-group-virtualized') === 'true') {
+        return parent;
+      }
+      return groupNode.getAttribute('data-account-group-virtualized') === 'true' ? groupNode : null;
     }
   })()`;
 }
