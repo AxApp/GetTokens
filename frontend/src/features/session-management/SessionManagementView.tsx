@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowRight, BarChart3, Check, MoreVertical, Pencil, RefreshCw, X } from 'lucide-react';
 import { Alert, Button, Tooltip } from 'antd';
@@ -15,6 +15,7 @@ import type {
 } from './model.ts';
 import {
   formatSessionMetadataDate,
+  resolveSessionListRenderWindow,
   shouldUseSessionsPanelActionMenu,
 } from './sessionManagementUtils.ts';
 
@@ -832,10 +833,25 @@ export function SessionsPanel({
   onSelectSession: (sessionID: string) => void;
 }) {
   const panelRef = useRef<HTMLElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
   const [panelWidth, setPanelWidth] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const useActionMenu = shouldUseSessionsPanelActionMenu(panelWidth);
+  const renderWindow = useMemo(
+    () => resolveSessionListRenderWindow({
+      total: visibleSessions.length,
+      scrollTop,
+      viewportHeight,
+    }),
+    [scrollTop, viewportHeight, visibleSessions.length],
+  );
+  const renderedSessions = useMemo(
+    () => visibleSessions.slice(renderWindow.startIndex, renderWindow.endIndex),
+    [renderWindow.endIndex, renderWindow.startIndex, visibleSessions],
+  );
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -861,6 +877,36 @@ export function SessionsPanel({
       observer.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const updateViewport = () => {
+      setViewportHeight(container.clientHeight);
+    };
+    updateViewport();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(updateViewport);
+    observer.observe(container);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTop = 0;
+    }
+    setScrollTop(0);
+  }, [visibleSessions]);
 
   useEffect(() => {
     if (!useActionMenu) {
@@ -1008,37 +1054,50 @@ export function SessionsPanel({
               {copy.loadFailed} / {snapshotError}
             </div>
           ) : null}
-          <div className="min-h-0 overflow-y-auto overflow-x-hidden">
+          <div
+            ref={scrollContainerRef}
+            className="min-h-0 overflow-y-auto overflow-x-hidden"
+            onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+          >
             {visibleSessions.length ? (
-              visibleSessions.map((session) => (
-                <button
-                  key={session.id}
-                  type="button"
-                  data-session-management-session-row="gmail-list"
-                  onClick={() => onSelectSession(session.id)}
-                  className="group block w-full rounded-sm border-l-2 border-l-transparent border-b border-b-[var(--gt-border-subtle)] px-6 py-2.5 text-left transition-colors hover:border-l-[var(--gt-ink-muted)]/45 hover:bg-[var(--gt-surface-muted)] active:bg-[var(--gt-surface-muted)]"
-                >
-                  <span className="line-clamp-2 min-w-0 break-words text-[length:var(--gt-font-size-md)] font-semibold leading-5 text-[var(--gt-ink-primary)]">
-                    {session.displayTitle || session.title || 'UNTITLED SESSION'}
-                  </span>
+              <div
+                data-session-management-session-window="true"
+                style={{
+                  paddingTop: renderWindow.paddingTop,
+                  paddingBottom: renderWindow.paddingBottom,
+                }}
+              >
+                {renderedSessions.map((session) => (
+                  <button
+                    key={session.id}
+                    type="button"
+                    data-session-management-session-row="gmail-list"
+                    onClick={() => onSelectSession(session.id)}
+                    className="group block w-full rounded-sm border-l-2 border-l-transparent border-b border-b-[var(--gt-border-subtle)] px-6 py-2.5 text-left transition-colors hover:border-l-[var(--gt-ink-muted)]/45 hover:bg-[var(--gt-surface-muted)] active:bg-[var(--gt-surface-muted)]"
+                    style={renderWindow.isWindowed ? { minHeight: renderWindow.rowHeight } : undefined}
+                  >
+                    <span className="line-clamp-2 min-w-0 break-words text-[length:var(--gt-font-size-md)] font-semibold leading-5 text-[var(--gt-ink-primary)]">
+                      {session.displayTitle || session.title || 'UNTITLED SESSION'}
+                    </span>
 
-                  <span className="mt-1.5 flex min-w-0 items-center gap-2 text-[length:var(--gt-font-size-2xs)] font-normal leading-none text-[var(--gt-ink-muted)]">
-                    <span className={`shrink-0 rounded border px-2 py-0.5 text-[length:var(--gt-font-size-2xs)] font-normal leading-none ${
-                      session.status === 'active'
-                        ? 'border-[color-mix(in_srgb,var(--gt-status-success)_35%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-ink-primary)]'
-                        : 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)]'
-                    }`}>
-                      {session.status}
+                    <span className="mt-1.5 flex min-w-0 items-center gap-2 text-[length:var(--gt-font-size-2xs)] font-normal leading-none text-[var(--gt-ink-muted)]">
+                      <span className={`shrink-0 rounded border px-2 py-0.5 text-[length:var(--gt-font-size-2xs)] font-normal leading-none ${
+                        session.status === 'active'
+                          ? 'border-[color-mix(in_srgb,var(--gt-status-success)_35%,transparent)] bg-[color-mix(in_srgb,var(--gt-status-success)_10%,transparent)] text-[var(--gt-ink-primary)]'
+                          : 'border-[var(--gt-border-subtle)] text-[var(--gt-ink-muted)]'
+                      }`}>
+                        {session.status}
+                      </span>
+                      <span className="tabular-nums">
+                        {session.messageCount}
+                      </span>
+                      <span className="tabular-nums">
+                        {formatSessionMetadataDate(session.updatedAt)}
+                      </span>
                     </span>
-                    <span className="tabular-nums">
-                      {session.messageCount}
-                    </span>
-                    <span className="tabular-nums">
-                      {formatSessionMetadataDate(session.updatedAt)}
-                    </span>
-                  </span>
-                </button>
-              ))
+                  </button>
+                ))}
+              </div>
             ) : (
               <StatePanel
                 title={searchActive ? copy.searchNoResults : copy.noSessions}

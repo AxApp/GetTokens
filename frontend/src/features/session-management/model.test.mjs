@@ -30,8 +30,10 @@ import {
   formatSessionMetadataDate,
   SESSIONS_PANEL_COMPACT_META_MAX_WIDTH,
   SESSIONS_PANEL_ACTIONS_MENU_MAX_WIDTH,
+  SESSION_LIST_OVERSCAN_ROWS,
   shouldUseCompactSessionMetadata,
   shouldUseSessionsPanelActionMenu,
+  resolveSessionListRenderWindow,
 } from './sessionManagementUtils.ts';
 
 function createProviderMergeSnapshotFixture() {
@@ -83,6 +85,27 @@ test('sessions panel uses compact metadata only when row width is constrained', 
   assert.equal(shouldUseCompactSessionMetadata(SESSIONS_PANEL_COMPACT_META_MAX_WIDTH), true);
   assert.equal(shouldUseCompactSessionMetadata(SESSIONS_PANEL_COMPACT_META_MAX_WIDTH + 1), false);
   assert.equal(shouldUseCompactSessionMetadata(0), false);
+});
+
+test('session list render window caps large project DOM rows around the viewport', () => {
+  const first = resolveSessionListRenderWindow({ total: 5000, scrollTop: 0, viewportHeight: 600 });
+  assert.equal(first.startIndex, 0);
+  assert.ok(first.endIndex < 80, `endIndex = ${first.endIndex}, want a bounded first window`);
+  assert.equal(first.paddingTop, 0);
+  assert.ok(first.paddingBottom > 0);
+
+  const middle = resolveSessionListRenderWindow({ total: 5000, scrollTop: 2400, viewportHeight: 600 });
+  assert.ok(middle.startIndex > 0);
+  assert.ok(middle.startIndex <= Math.floor(2400 / middle.rowHeight));
+  assert.ok(middle.endIndex - middle.startIndex < 80);
+  assert.ok(middle.paddingTop > 0);
+  assert.ok(middle.paddingBottom > 0);
+
+  const small = resolveSessionListRenderWindow({ total: SESSION_LIST_OVERSCAN_ROWS, scrollTop: 0, viewportHeight: 600 });
+  assert.deepEqual(
+    { startIndex: small.startIndex, endIndex: small.endIndex, paddingTop: small.paddingTop, paddingBottom: small.paddingBottom },
+    { startIndex: 0, endIndex: SESSION_LIST_OVERSCAN_ROWS, paddingTop: 0, paddingBottom: 0 },
+  );
 });
 
 test('session management search matches project names case-insensitively', () => {

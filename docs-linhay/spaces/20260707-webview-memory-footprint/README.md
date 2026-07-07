@@ -12,6 +12,13 @@
 - `~/Library/WebKit/com.wails.GetTokens/WebsiteData/LocalStorage` 与 `IndexedDB` 为 `0B`，`~/Library/Caches/com.wails.GetTokens` 约 `772K`，排除“持久化 WebKit cache/localStorage 本身很大”作为主因。
 - 本机 `~/.codex/sessions` 约 `3.5G`、`~/.codex/archived_sessions` 约 `9.7G`、会话相关文件约 `5947` 个；会话管理页面属于高风险入口。
 
+二次安装新代码后，用户反馈 PID `29498` 仍希望继续压缩。2026-07-07 14:10 只读调查确认：
+
+- `29498` 仍为 `/Applications/GetTokens.app` 关联的 `com.apple.WebKit.WebContent`。
+- `top` 显示 WebContent 约 `411MB`，`vmmap -summary 29498` 显示 `Physical footprint: 410.6M`、峰值 `941.9M`。
+- `footprint -p 29498 -summary` 大头为 `WebKit malloc 236MB` 与 graphics `150MB`，已不是上轮多 GB 会话正文驻留形态。
+- `SessionManagementView.tsx` 中 `SessionsPanel` 对 `visibleSessions.map(...)` 全量渲染当前项目会话；在本机会话文件约 `5947` 个的输入规模下，仍会制造大量 DOM/图层对象。
+
 ## 目标
 
 1. 明确 GetTokens WebView 内存高占用的可证实责任边界。
@@ -22,6 +29,7 @@
 ## 范围
 
 - 前端 `session-management` 详情状态、消息分页保留策略、RAW JSON 缓存策略。
+- 前端 `session-management` 会话列表 DOM 窗口化。
 - 前端 `codex-live-sessions` overview/detail 历史加载 state 的保留策略。
 - Wails `AnalyzeCodexSessions` 批量会话分析的瞬时内存峰值路径。
 - 只读运行态证据：`ps`、`vmmap`、WebKit 站点数据目录大小、本机会话数据规模。
@@ -45,11 +53,14 @@
 | 高风险入口 | 本机会话文件总量约 `13.2G`，session-management 当前代码按页追加消息且 RAW JSON 按消息缓存 | 需要测试锁定上限 | 前端已有明确消息/RAW JSON 保留上限 |
 | 相邻风险入口 | `codex-live-sessions` overview/detail 的历史 `load more` 会把分页请求对象继续 merge 到 React state | 需要测试锁定前端保留窗口 | 手动加载历史已明确有前端 request 上限 |
 | Wails 分析峰值 | `AnalyzeCodexSessions` 旧实现会对每个目标调用 `parseSessionFile(..., true)`，先构造完整 `Messages` 再分析 | 需要改成逐文件流式聚合并补测试 | 已经是流式读取，不构造 full detail messages |
+| 二次压缩入口 | 新代码安装后 PID `29498` 为 WebKit，footprint 约 `410.6M`，大头为 WebKit malloc 与 graphics；`SessionsPanel` 仍对当前项目 `visibleSessions.map` 全量渲染 | 需要改成列表窗口化并用测试锁定 DOM 渲染窗口 | 会话列表已按可视窗口渲染，不再全量挂 DOM |
 | 验收方式 | focused test 证明消息窗口和 RAW JSON cache 有上限；运行相关测试和构建/typecheck | 实现后执行 | 测试不能覆盖大消息保留边界 |
 
 ## 根因判断
 
 我认为本轮可证实的根因切片是：`session-management` 详情 hook 在 `frontend/src/features/session-management/useSessionManagementDetail.ts` 中对分页消息使用 `messages: [...previous.detail.messages, ...page.messages]` 无界追加，并用 `rawJSONByMessageID` 按消息无界缓存 RAW JSON；在本机 `~/.codex/sessions + archived_sessions` 超过 `13G` 的输入规模下，这会让 WebKit WebContent 长期保留大量 JS/React/DOM 相关对象。
+
+二次压缩的根因切片是：详情状态收敛后，`frontend/src/features/session-management/SessionManagementView.tsx` 的 `SessionsPanel` 仍对当前项目 `visibleSessions` 全量 `map` 渲染；在数千会话摘要输入下，这会把大量 row DOM 与渲染图层留在 WebKit 中，对应 PID `29498` 当前 `WebKit malloc / graphics` 大头。
 
 这解释了以下症状：
 
@@ -70,13 +81,17 @@
 - `CodexLiveSessionsFeature` 的 overview/detail refresh 与 load-more 路径均接入 bounded helpers，移除旧的无界 `mergeCodexLiveHistoryRequests` / `mergeCodexLiveHistoryRefresh`。
 - `internal/wailsapp/session_analysis.go` 的 `AnalyzeCodexSessions` 不再为批量分析调用 `parseSessionFile(..., true)`，改为先读取 metadata，再用 `analyzeCodexSessionFile` 逐行扫描 JSONL 并累计关键词、短语、角色贡献。
 - `internal/wailsapp/session_management_test.go` 增加源码守护，防止 `AnalyzeCodexSessions` 重新构造完整 detail message slice。
-- 沉淀到 `.agents/skills/gettokens-domain-engineering/SKILL.md`：`Session Management Local Files` 的详情/RAW JSON state 必须显式有界；`Codex Live Sessions` 的前端历史 state 也必须有固定 request 窗口。
+- `frontend/src/features/session-management/sessionManagementUtils.ts` 新增 `resolveSessionListRenderWindow`，按 `scrollTop / viewportHeight / rowHeight / overscan` 计算会话列表渲染窗口。
+- `SessionManagementView.tsx` 的 `SessionsPanel` 接入滚动容器测量，只渲染窗口内 `renderedSessions`，用 `paddingTop / paddingBottom` 保持滚动高度。
+- `frontend/src/features/session-management/model.test.mjs` 增加大项目列表窗口化回归，锁定 5000 条会话时渲染窗口不会超过固定小窗口。
+- 沉淀到 `.agents/skills/gettokens-domain-engineering/SKILL.md`：`Session Management Local Files` 的详情/RAW JSON state 必须显式有界，数千级会话列表必须窗口化；`Codex Live Sessions` 的前端历史 state 也必须有固定 request 窗口。
 
 ## Scope Blast 结论
 
 | 区域 | 结论 | 处理 |
 | --- | --- | --- |
 | `session-management` detail messages / RAW JSON | 同类且高风险：会话文件可达多 GB，旧实现无界追加与无界 RAW JSON cache | 已修，消息 300 条、RAW JSON 20 条 |
+| `session-management` sessions panel DOM | 同类且仍有压缩空间：详情 state 修复后 WebKit 约 410MB，剩余大头是 WebKit malloc / graphics；旧 sessions panel 会全量渲染当前项目所有 session row | 已修，列表窗口化，只渲染可视区域附近的固定小窗口 |
 | `codex-live-sessions` overview/detail history | 相邻风险：默认轮询快照有界，但用户手动历史加载旧实现可继续累积 request 对象 | 已修，overview 400 条、detail 250 条 |
 | `AnalyzeCodexSessions` Wails 批量分析 | 相邻风险：不会常驻 WebKit，但旧实现会在 Wails 进程内为每个目标构造完整消息切片，容易形成多 GB session 输入下的瞬时峰值 | 已修，逐文件流式聚合，不保留 full detail messages |
 | `codex-live-sessions` structural merge `JSON.stringify` | 只证明存在轮询 transient allocation/CPU 候选，未证明长期持有大对象 | 本轮不改，保留为后续性能候选 |
@@ -88,14 +103,16 @@
 - 红灯：`node --test src/features/session-management/sessionMemory.test.mjs` 先因缺少 `sessionMemory.ts` 失败。
 - 绿灯 focused：`node --test src/features/session-management/sessionMemory.test.mjs`，4 pass。
 - session-management 相关：`node --test src/features/session-management/model.test.mjs src/features/session-management/cache.test.mjs src/features/session-management/sessionMemory.test.mjs src/features/session-management/sessionPluginConsolePanel.test.mjs`，37 pass。
+- session-management 二次压缩：`node --test src/features/session-management/model.test.mjs src/features/session-management/sessionMemory.test.mjs src/features/session-management/cache.test.mjs src/features/session-management/sessionPluginConsolePanel.test.mjs`，38 pass。
 - codex-live-sessions focused：`node --test src/features/codex-live-sessions/model.test.mjs`，73 pass。
-- 前端全集：`npm run test:unit`，1091 pass。
+- 前端全集：`npm run test:unit`，1092 pass。
 - 类型检查：`npm run typecheck` 通过。
 - 生产构建：`npm run build` 通过，仅保留既有 Vite chunk-size warning。
 - Wails focused：`go test ./internal/wailsapp -run 'TestAnalyzeCodexSessions' -count=1` 通过。
 - Wails 回归：`go test ./internal/wailsapp -count=1` 通过。
 - Go 全量：`go test ./... -count=1` 首次在 `internal/codexbinary` 偶发版本检测超时后，单包复测 `go test ./internal/codexbinary -count=1 -v` 通过，随后 `go test ./... -count=1` 通过。
 - 桌面构建：`./scripts/wails-cli.sh build` 通过，产物位于仓库内 `build/bin/GetTokens.app`，未安装或替换 `/Applications/GetTokens.app`。
+- 二次压缩桌面构建：`./scripts/wails-cli.sh build` 通过，产物位于仓库内 `build/bin/GetTokens.app`，未安装或替换 `/Applications/GetTokens.app`。
 - 文档与空白：`docs-linhay/scripts/check-docs.sh`、`git diff --check` 通过。
 
 ## 剩余风险
@@ -103,6 +120,7 @@
 - 本轮没有触碰正式版 `/Applications/GetTokens.app`，修复需要进入下一次 dev/build/release 后才会影响正式版。
 - Codex live sessions 的轮询结构比较仍可能产生 transient allocation/CPU 峰值，但本轮证据尚不足以认定它是 PID `90119` 这次内存峰值的主因，先记录为后续候选。
 - 300 条消息 / 20 条 RAW JSON 是前端当前保留上限；如未来支持“全量会话连续浏览”，需要虚拟化消息列表或后端只读流式窗口，而不是取消上限。
+- 会话列表窗口化使用固定估算行高 `76px`。当前列表行样式已固定为两行标题加一行 meta，后续若改成可变高度列表，需要同步调整窗口测量策略。
 - 实时会话页手动历史加载现在是 dashboard 级保留窗口，不再承诺在前端一次性浏览完整磁盘历史；若未来需要深度历史浏览，应做独立虚拟化/检索页面。
 - `AnalyzeCodexSessions` 仍会线性读取目标 JSONL 并维护关键词/短语统计 map；它已经不再保留完整消息正文，但如果未来要做“全量语义内容分析”，需要单独设计窗口、预算或后台任务。
 
@@ -111,9 +129,10 @@
 1. `session-management` 详情状态有明确的前端消息保留上限；超过上限时只保留最近窗口，并保持 `nextMessageOffset / hasMoreMessages` 语义可继续分页。
 2. RAW JSON 展开缓存有明确条目上限，不会随点击次数无界增长。
 3. `AnalyzeCodexSessions` 不再构造 full detail message slice，批量分析按文件流式聚合。
-4. 新增测试先能在旧实现下失败，并在修复后通过。
-5. 运行 focused frontend tests；若影响类型或构建，运行 `npm run typecheck` / `npm run build`。
-6. 文档和 memory 写回本轮判断、修复范围与剩余风险。
+4. `session-management` 会话列表不再全量渲染当前项目全部 session row，5000 条输入时只渲染可视区域附近的固定窗口。
+5. 新增测试先能在旧实现下失败，并在修复后通过。
+6. 运行 focused frontend tests；若影响类型或构建，运行 `npm run typecheck` / `npm run build`。
+7. 文档和 memory 写回本轮判断、修复范围与剩余风险。
 
 ## 设计稿入口
 
