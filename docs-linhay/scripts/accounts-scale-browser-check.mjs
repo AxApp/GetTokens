@@ -12,6 +12,7 @@ const chromeExecutablePath = process.env.CHROME_PATH || '/Applications/Google Ch
 const previewBaseURL = process.env.ACCOUNTS_PREVIEW_BASE_URL || 'http://127.0.0.1:5173';
 const previewCount = Number.parseInt(process.env.ACCOUNTS_PREVIEW_COUNT || '1652', 10);
 const maxRenderedCards = Number.parseInt(process.env.ACCOUNTS_SCALE_MAX_RENDERED_CARDS || '180', 10);
+const maxSpacerEstimateRatio = Number.parseFloat(process.env.ACCOUNTS_SCALE_MAX_SPACER_ESTIMATE_RATIO || '1.35');
 const previewHash = normalizePreviewHash(process.env.ACCOUNTS_PREVIEW_HASH || 'frame=accounts');
 const caseSlug = sanitizeSlug(process.env.ACCOUNTS_SCALE_CASE || previewHash);
 const screenshotDir = path.resolve(
@@ -122,6 +123,20 @@ function validateMetrics(label, metrics) {
   if (!metrics.virtualWindows.some((item) => item.window && item.window !== '0:0')) {
     failures.push('expected at least one non-empty virtual render window');
   }
+  const missingMeasuredRows = metrics.virtualWindows.filter((item) => item.bottomSpacer > 0 && !(item.measuredRowHeight > 0));
+  if (missingMeasuredRows.length > 0) {
+    failures.push(`expected measurable row heights for bottom spacers: ${missingMeasuredRows.map((item) => item.group).join(', ')}`);
+  }
+  const excessiveSpacerRatios = metrics.virtualWindows.filter(
+    (item) => item.spacerEstimateRatio > maxSpacerEstimateRatio,
+  );
+  if (excessiveSpacerRatios.length > 0) {
+    failures.push(
+      `expected spacer estimate ratio <= ${maxSpacerEstimateRatio}, got ${excessiveSpacerRatios
+        .map((item) => `${item.group}:${item.spacerEstimateRatio.toFixed(2)}`)
+        .join(', ')}`,
+    );
+  }
   if (failures.length > 0) {
     throw new Error(`${label} account scale check failed: ${failures.join('; ')}\n${JSON.stringify(metrics, null, 2)}`);
   }
@@ -168,17 +183,69 @@ function collectAccountScaleMetricsExpression() {
       totalPreviewAccounts,
       groupCount: groups.length,
       virtualizedGroups: virtualizedGroups.length,
-      virtualWindows: virtualizedGroups.map((node) => ({
-        group: node.getAttribute('data-plan-group-grid') || '',
-        window: node.getAttribute('data-account-group-render-window') || '',
-        cardCount: node.querySelectorAll('[data-account-card]').length,
-        topSpacer: Number(node.querySelector('[data-account-group-virtual-spacer="top"]')?.style.height?.replace('px', '') || 0),
-        bottomSpacer: Number(node.querySelector('[data-account-group-virtual-spacer="bottom"]')?.style.height?.replace('px', '') || 0),
-      })),
+      virtualWindows: virtualizedGroups.map((node) => {
+        const windowValue = node.getAttribute('data-account-group-render-window') || '';
+        const [startIndex, endIndex] = windowValue.split(':').map((value) => Number.parseInt(value || '0', 10));
+        const style = getComputedStyle(node);
+        const columns = Math.max(1, countGridColumns(style.gridTemplateColumns));
+        const groupText = node.closest('section')?.querySelector('[data-account-group-header="true"] p')?.textContent || '';
+        const groupCountMatch = groupText.match(/(\\d+)\\s+项资产/);
+        const groupItemCount = groupCountMatch ? Number(groupCountMatch[1]) : 0;
+        const rowCount = groupItemCount > 0 ? Math.ceil(groupItemCount / columns) : 0;
+        const endRow = Number.isFinite(endIndex) ? Math.ceil(endIndex / columns) : 0;
+        const remainingRows = Math.max(0, rowCount - endRow);
+        const rowGap = Number.parseFloat(style.rowGap || '0') || 0;
+        const measuredRowHeight = measureRenderedRowHeight(node, rowGap);
+        const topSpacer = Number(node.querySelector('[data-account-group-virtual-spacer="top"]')?.style.height?.replace('px', '') || 0);
+        const bottomSpacer = Number(node.querySelector('[data-account-group-virtual-spacer="bottom"]')?.style.height?.replace('px', '') || 0);
+        const expectedBottomSpacer = measuredRowHeight > 0 ? remainingRows * measuredRowHeight : 0;
+        const spacerEstimateRatio = expectedBottomSpacer > 0
+          ? bottomSpacer / expectedBottomSpacer
+          : bottomSpacer > 0 ? Number.POSITIVE_INFINITY : 1;
+        return {
+          group: node.getAttribute('data-plan-group-grid') || '',
+          window: windowValue,
+          cardCount: node.querySelectorAll('[data-account-card]').length,
+          columns,
+          groupItemCount,
+          remainingRows,
+          measuredRowHeight,
+          spacerEstimateRatio,
+          topSpacer,
+          bottomSpacer,
+        };
+      }),
       scrollY: window.scrollY,
       scrollContainers,
       documentHeight: document.documentElement.scrollHeight,
     };
+
+    function countGridColumns(value) {
+      const normalized = String(value || '').trim();
+      if (!normalized || normalized === 'none') {
+        return 0;
+      }
+      return normalized.split(/\\s+/).filter(Boolean).length;
+    }
+
+    function measureRenderedRowHeight(groupNode, rowGap) {
+      const groupRect = groupNode.getBoundingClientRect();
+      const cards = Array.from(groupNode.querySelectorAll('[data-account-card]'))
+        .map((card) => {
+          const rect = card.getBoundingClientRect();
+          return {
+            top: Math.round(rect.top - groupRect.top),
+            height: rect.height,
+          };
+        })
+        .filter((item) => Number.isFinite(item.top) && item.height > 0);
+      const rowTops = Array.from(new Set(cards.map((card) => card.top))).sort((a, b) => a - b);
+      if (rowTops.length > 1) {
+        return Math.max(1, rowTops[1] - rowTops[0]);
+      }
+      const maxCardHeight = cards.reduce((max, card) => Math.max(max, card.height), 0);
+      return maxCardHeight > 0 ? Math.round(maxCardHeight + rowGap) : 0;
+    }
   })()`;
 }
 

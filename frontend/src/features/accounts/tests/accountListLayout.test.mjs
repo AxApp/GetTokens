@@ -11,6 +11,7 @@ import {
   buildAccountListDisplayModeHash,
   parseAccountListDisplayMode,
   resolveAccountGroupRenderWindow,
+  resolveAccountGroupMeasuredRowHeight,
   shouldUseAccountsSelectionActionMenu,
 } from '../model/accountListLayout.ts';
 
@@ -62,10 +63,37 @@ test('resolveAccountGroupRenderWindow keeps high-volume account groups windowed 
   assert.equal(renderWindow.bottomSpacerHeight, ACCOUNT_GROUP_FULL_ROW_ESTIMATE * 227);
 });
 
+test('resolveAccountGroupMeasuredRowHeight prefers measured card row stride over the fallback estimate', () => {
+  assert.equal(
+    resolveAccountGroupMeasuredRowHeight(
+      [
+        { top: 0, height: 224 },
+        { top: 0, height: 220 },
+        { top: 256, height: 228 },
+        { top: 256, height: 224 },
+      ],
+      { fallbackRowHeight: ACCOUNT_GROUP_FULL_ROW_ESTIMATE, rowGap: 32 },
+    ),
+    256,
+  );
+  assert.equal(
+    resolveAccountGroupMeasuredRowHeight(
+      [
+        { top: 0, height: 224 },
+        { top: 0, height: 220 },
+      ],
+      { fallbackRowHeight: ACCOUNT_GROUP_FULL_ROW_ESTIMATE, rowGap: 32 },
+    ),
+    256,
+  );
+});
+
 test('AccountGroupSectionView virtualizes large account groups instead of mapping every card', async () => {
   const source = await readFile(new URL('../components/AccountGroupSectionView.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /ACCOUNT_GROUP_VIRTUALIZATION_THRESHOLD/);
+  assert.match(source, /resolveAccountGroupMeasuredRowHeight/);
+  assert.match(source, /measureRenderedAccountGroupRowHeight/);
   assert.match(source, /data-account-group-virtualized/);
   assert.match(source, /data-account-group-render-window/);
   assert.match(source, /data-account-group-virtual-spacer="top"/);

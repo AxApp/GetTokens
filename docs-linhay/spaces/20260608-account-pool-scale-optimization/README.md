@@ -288,3 +288,10 @@
 - `status-full`：`#frame=accounts&group=status`，首屏 `25` 张卡片，滚动后 `40` 张。
 - `plan-list`：`#frame=accounts&density=list`，首屏 `29` 张卡片，滚动后 `35` 张。
 - 四组均满足 `totalPreviewAccounts=2000` 且滚动后 virtual window / spacer 发生变化；没有出现 DOM 中一次性挂载 2000 张账号卡。
+
+### 2026-07-07 底部占位过大回归
+
+- 问题来源：用户通过调试定位到 `frontend/src/features/accounts/components/AccountGroupSectionView.tsx` 的 `data-account-group-virtual-spacer="bottom"`，反馈虚拟滚动底部空白过大。
+- 当前代码事实：`resolveAccountGroupRenderWindow()` 使用 `ACCOUNT_GROUP_FULL_ROW_ESTIMATE = 448` 作为 full card 行高；`AccountGroupSectionView` 只在滚动时测量视口和列数，没有测量已渲染卡片的真实行高。
+- 复现现象：`ACCOUNTS_PREVIEW_BASE_URL=http://127.0.0.1:5174 ACCOUNTS_PREVIEW_COUNT=2000 ACCOUNTS_SCALE_MAX_RENDERED_CARDS=220 node docs-linhay/scripts/accounts-scale-browser-check.mjs` 在旧逻辑下显示 `plan:pro` 首屏 `window=0:15`、`bottomSpacer=234752`，该值等于 `524 * 448`，内部滚动高度接近 `299k px`。
+- 预期验收：2000 账号 preview 仍保持窗口化渲染，但 bottom spacer 的单位行高必须贴近真实卡片行距；验收脚本需要输出并校验 spacer 与实测行高的比例，避免再次用过大的固定估算把滚动高度放大。

@@ -188,8 +188,9 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Account-list large-scale rendering must stay windowed:
     - 1600+ account previews must not render one `data-account-card` DOM node per account
     - layout changes to `AccountGroupSectionView` / `accountListLayout` must preserve virtual window behavior across search, grouping, selection, detail hash restoration, and internal scroll
+    - virtual spacer height must be derived from measured rendered row stride when cards are present; fixed row-height estimates are only first-render/fallback values, because overestimated rows create visible blank space and oversized scroll ranges
     - scroll-driven virtual window state must not recompute group-wide action availability, selection status, quota refresh eligibility, disable eligibility, or delete eligibility on every scroll frame; derive those aggregates in a model helper and memoize them by `group.accounts` plus selection state
-    - acceptance for large-list UI work should run `docs-linhay/scripts/accounts-scale-browser-check.mjs` or an equivalent headless scale check that records total accounts, rendered card count, scrolled virtual window, internal scroll position, and screenshots under the matching `space`
+    - acceptance for large-list UI work should run `docs-linhay/scripts/accounts-scale-browser-check.mjs` or an equivalent headless scale check that records total accounts, rendered card count, scrolled virtual window, spacer-to-measured-row ratio, internal scroll position, and screenshots under the matching `space`
 
 ## 3.2 Codex Workspace & Local Config Surfaces
 - **Codex Binary**: For Codex CLI binary version/source management, use the dedicated `gettokens-codex-binary-management` skill. Keep it as an independent binary-management business; do not merge it into account pool, local apply, usage, session, or routing flows.

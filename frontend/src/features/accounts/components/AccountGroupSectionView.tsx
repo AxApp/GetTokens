@@ -10,6 +10,7 @@ import {
   ACCOUNT_GROUP_FULL_ROW_ESTIMATE,
   ACCOUNT_GROUP_LIST_ROW_ESTIMATE,
   ACCOUNT_GROUP_VIRTUALIZATION_THRESHOLD,
+  resolveAccountGroupMeasuredRowHeight,
   resolveAccountGroupRenderWindow,
 } from '../model/accountListLayout';
 
@@ -123,13 +124,15 @@ export default function AccountGroupSectionView({
       const gridRect = gridNode.getBoundingClientRect();
       const rootRect = getAccountGroupScrollRootRect(scrollParent);
       const columns = resolveAccountGroupRenderedColumns(gridNode);
+      const fallbackRowHeight = resolveEstimatedAccountGroupRowHeight(displayMode);
+      const rowHeight = measureRenderedAccountGroupRowHeight(gridNode, fallbackRowHeight);
 
       setRenderMetrics((current) => {
         const nextMetrics = {
           columns,
           viewportStart: rootRect.top - gridRect.top,
           viewportEnd: rootRect.bottom - gridRect.top,
-          rowHeight: resolveEstimatedAccountGroupRowHeight(displayMode),
+          rowHeight,
         };
         if (
           current.columns === nextMetrics.columns &&
@@ -381,6 +384,23 @@ function resolveAccountGroupRenderedColumns(gridNode: HTMLElement) {
   }
   const columns = countRenderedGridColumns(window.getComputedStyle(gridNode).gridTemplateColumns);
   return Math.max(1, columns);
+}
+
+function measureRenderedAccountGroupRowHeight(gridNode: HTMLElement, fallbackRowHeight: number) {
+  const gridRect = gridNode.getBoundingClientRect();
+  const gridStyle = window.getComputedStyle(gridNode);
+  const rowGap = Number.parseFloat(gridStyle.rowGap || '0') || 0;
+  const measurements = Array.from(gridNode.children)
+    .filter((child): child is HTMLElement => child instanceof HTMLElement && child.hasAttribute('data-account-card'))
+    .map((card) => {
+      const rect = card.getBoundingClientRect();
+      return {
+        top: rect.top - gridRect.top,
+        height: rect.height,
+      };
+    });
+
+  return resolveAccountGroupMeasuredRowHeight(measurements, { fallbackRowHeight, rowGap });
 }
 
 function resolveAccountGroupScrollParent(node: HTMLElement): HTMLElement | Window {

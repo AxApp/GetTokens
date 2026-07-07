@@ -24,6 +24,11 @@ export interface AccountGroupRenderWindow {
   bottomSpacerHeight: number;
 }
 
+export interface AccountGroupRenderedRowMeasurement {
+  top: number;
+  height: number;
+}
+
 export function parseAccountListDisplayMode(value: string | null | undefined): AccountListDisplayMode {
   if (value === 'list' || value === 'full') {
     return value;
@@ -102,6 +107,41 @@ export function resolveAccountGroupRenderWindow({
     topSpacerHeight: startRow * safeRowHeight,
     bottomSpacerHeight: Math.max(0, rowCount - endRow) * safeRowHeight,
   };
+}
+
+export function resolveAccountGroupMeasuredRowHeight(
+  measurements: AccountGroupRenderedRowMeasurement[],
+  {
+    fallbackRowHeight,
+    rowGap = 0,
+  }: {
+    fallbackRowHeight: number;
+    rowGap?: number;
+  },
+): number {
+  const safeFallbackRowHeight = Math.max(1, Math.round(fallbackRowHeight));
+  const safeRowGap = Number.isFinite(rowGap) ? Math.max(0, rowGap) : 0;
+  const renderedMeasurements = measurements
+    .map((item) => ({
+      top: Number.isFinite(item.top) ? Math.round(item.top) : Number.NaN,
+      height: Number.isFinite(item.height) ? item.height : 0,
+    }))
+    .filter((item) => Number.isFinite(item.top) && item.height > 0);
+
+  const rowTops = Array.from(new Set(renderedMeasurements.map((item) => item.top))).sort((a, b) => a - b);
+  if (rowTops.length > 1) {
+    const measuredStride = rowTops[1] - rowTops[0];
+    if (measuredStride > 0) {
+      return Math.max(1, Math.round(measuredStride));
+    }
+  }
+
+  const maxCardHeight = renderedMeasurements.reduce((max, item) => Math.max(max, item.height), 0);
+  if (maxCardHeight > 0) {
+    return Math.max(1, Math.round(maxCardHeight + safeRowGap));
+  }
+
+  return safeFallbackRowHeight;
 }
 
 export function buildAccountListDisplayModeHash(
