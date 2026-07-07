@@ -49,9 +49,10 @@ Treat large account/session data as hostile input:
 
 - Account list and group actions must avoid N single-account Wails calls when a batch bridge exists or can be added.
 - Quota/status reads must cap batch size and avoid oversized GET query strings.
+- Account-card usage refresh should reuse the current frontend `AccountRecord[]` snapshot by default. Do not ask Wails/sidecar to rescan the account pool just to resolve usage attribution for cards; request unresolved attribution only when the frontend can join it locally by stable facts such as `accountKey`, `quotaKey`, or `authIndex`, and build a reusable attribution index instead of scanning all usage items once per account. Full Usage Desk and diagnostics surfaces may opt into backend account resolution when they explicitly need cross-account attribution.
 - Session-management and live-session views must cap retained detail/history state separately from backend storage.
 - Local caches must be write-if-changed, bounded, and disabled in Wails runtime when they duplicate backend cache without clear benefit.
-- Logs must summarize repeated ids such as `account_key` / `account_keys`; never expand thousands of account ids into access logs.
+- Logs must summarize repeated ids such as `account_key` / `account_keys`; never expand thousands of account ids into access logs. Runtime performance probes should prefer counts, booleans, and durations (`items`, `unresolved`, `resolve_account_keys`, `*_ms`) over identities or payload excerpts.
 - Storage retention budgets must preserve the largest product query window unless the UI/API contract is intentionally changed; for example, do not set usage-attribution retention below an existing `30D` Usage Desk view.
 - When adding wall-clock pruning to shared stores, protect tests or helpers that intentionally use simulated clocks; use explicit clock injection, startup-only pruning, or test-only prune disablement rather than breaking rate-limit/window fixtures.
 
@@ -67,7 +68,8 @@ For sidecar performance or memory:
 6. For large route diagnostics or decision history, store totals plus bounded samples instead of full candidate sets. Preserve the selected auth and candidate count for explainability, but do not materialize or clone thousands of candidates on the request path.
 7. For per-account liveness checks inside batch workers, prefer the narrowest query that proves the required fact, such as `SELECT 1` existence checks. Avoid full account/card/credential reads when the worker only needs to know whether the account still exists.
 8. In-memory job/result stores must have a terminal-history cap or TTL. Keep active jobs observable, but do not retain completed large `items/errors/account_keys` payloads without a bounded policy.
-9. Rebuild or verify the actual sidecar binary used by dev App before claiming runtime acceptance.
+9. Post-request local accounting must not depend on the client request context after the upstream response completes. Usage attribution, reservation release, and rate-limit refresh should use a bounded background context so client cancellation does not skip local state cleanup or flood logs with `context canceled`.
+10. Rebuild or verify the actual sidecar binary used by dev App before claiming runtime acceptance.
 
 ## 5. Regression Gates
 

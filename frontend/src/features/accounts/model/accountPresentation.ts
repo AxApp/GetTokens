@@ -147,13 +147,101 @@ function inferProviderFromBaseURL(baseUrl?: string): string | null {
   return null;
 }
 
-export function resolveAccountFailureReason(account: AccountRecord) {
+function accountFailureMessages(account: AccountRecord): string[] {
+  return [
+    account.runtimeReason,
+    account.statusMessage,
+    account.rawAuthFile?.statusMessage,
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+}
+
+function translate(t: Translator | undefined, key: string, fallback: string) {
+  if (!t) {
+    return fallback;
+  }
+  const value = t(key);
+  return value && value !== key ? value : fallback;
+}
+
+function isUsageLimitReachedText(value: unknown) {
+  const text = String(value || '').trim();
+  if (!text) {
+    return false;
+  }
+  return /\busage_limit_reached\b/i.test(text) || /usage limit has been reached/i.test(text);
+}
+
+function extractJSONStringField(raw: string, field: string) {
+  const match = raw.match(new RegExp(`"${field}"\\s*:\\s*"([^"]*)"`, 'i'));
+  return match?.[1]?.trim() || '';
+}
+
+function extractJSONNumberField(raw: string, field: string) {
+  const match = raw.match(new RegExp(`"${field}"\\s*:\\s*(\\d+)`, 'i'));
+  if (!match?.[1]) {
+    return 0;
+  }
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function formatCompactDuration(seconds: number) {
+  const totalSeconds = Math.max(0, Math.floor(seconds));
+  if (totalSeconds <= 0) {
+    return '';
+  }
+
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+  if (days > 0) {
+    return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  }
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m`;
+  }
+  return `${totalSeconds}s`;
+}
+
+function summarizeUsageLimitReachedReason(rawReason: string, t?: Translator) {
+  const summary = translate(t, 'accounts.usage_limit_reached_reason', '用量已达上限，等待额度重置。');
+  const planType = extractJSONStringField(rawReason, 'plan_type').toUpperCase();
+  const resetsInSeconds = extractJSONNumberField(rawReason, 'resets_in_seconds');
+  const duration = formatCompactDuration(resetsInSeconds);
+  const resetPart = duration
+    ? translate(t, 'accounts.usage_limit_reset_in', '约 {duration} 后重置').replace('{duration}', duration)
+    : '';
+
+  return [summary, planType, resetPart].filter(Boolean).join(' · ');
+}
+
+function normalizeFailureReason(rawReason: string, t?: Translator) {
+  const reason = rawReason.trim();
+  if (!reason) {
+    return '';
+  }
+  if (isUsageLimitReachedText(reason)) {
+    return summarizeUsageLimitReachedReason(reason, t);
+  }
+  return reason;
+}
+
+function isAccountUsageLimitReached(account: AccountRecord) {
+  return accountFailureMessages(account).some(isUsageLimitReachedText);
+}
+
+export function resolveAccountFailureReason(account: AccountRecord, t?: Translator) {
   const runtimeStatus = String(account.runtimeStatus || '')
     .trim()
     .toLowerCase();
   if (runtimeStatus === 'degraded' || runtimeStatus === 'applied_not_registered') {
-    return String(account.runtimeReason || account.statusMessage || account.rawAuthFile?.statusMessage || '')
-      .trim();
+    return normalizeFailureReason(String(account.runtimeReason || account.statusMessage || account.rawAuthFile?.statusMessage || ''), t);
   }
   const status = String(account.status || '')
     .trim()
@@ -161,8 +249,7 @@ export function resolveAccountFailureReason(account: AccountRecord) {
   if (status === 'ACTIVE' || status === 'CONFIGURED' || status === 'DISABLED' || status === 'LOCAL') {
     return '';
   }
-  return String(account.statusMessage || account.rawAuthFile?.statusMessage || '')
-    .trim();
+  return normalizeFailureReason(String(account.statusMessage || account.rawAuthFile?.statusMessage || ''), t);
 }
 
 export function buildAccountDetailStatusMessage(account: AccountRecord, t: Translator) {
@@ -170,9 +257,10 @@ export function buildAccountDetailStatusMessage(account: AccountRecord, t: Trans
     .trim()
     .toLowerCase();
   if (runtimeStatus === 'degraded' || runtimeStatus === 'applied_not_registered') {
+    const usageLimitReached = isAccountUsageLimitReached(account);
     return {
-      title: t('accounts.detail_error_title'),
-      body: resolveAccountFailureReason(account) || t('accounts.detail_error_fallback'),
+      title: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.detail_error_title'),
+      body: resolveAccountFailureReason(account, t) || t('accounts.detail_error_fallback'),
       tone: 'danger' as const,
     };
   }
@@ -184,9 +272,10 @@ export function buildAccountDetailStatusMessage(account: AccountRecord, t: Trans
     return null;
   }
 
+  const usageLimitReached = isAccountUsageLimitReached(account);
   return {
-    title: t('accounts.detail_error_title'),
-    body: resolveAccountFailureReason(account) || t('accounts.detail_error_fallback'),
+    title: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.detail_error_title'),
+    body: resolveAccountFailureReason(account, t) || t('accounts.detail_error_fallback'),
     tone: 'danger' as const,
   };
 }
@@ -227,10 +316,12 @@ export function resolveAccountOperationalState(
   const runtimeStatus = String(account.runtimeStatus || '')
     .trim()
     .toLowerCase();
+  const usageLimitReached = isAccountUsageLimitReached(account)
+    || isUsageLimitReachedText(quotaDisplay?.degradedReason);
   if (runtimeStatus === 'degraded' || runtimeStatus === 'applied_not_registered') {
     return {
       tone: 'danger' as const,
-      label: t('accounts.status_error_display'),
+      label: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.status_error_display'),
     };
   }
   if (runtimeStatus === 'pending') {
@@ -267,7 +358,7 @@ export function resolveAccountOperationalState(
   if (status !== 'ACTIVE' && status !== 'CONFIGURED') {
     return {
       tone: 'danger' as const,
-      label: t('accounts.status_error_display'),
+      label: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.status_error_display'),
     };
   }
 
@@ -281,7 +372,7 @@ export function resolveAccountOperationalState(
   if (account.credentialSource === 'auth-file' && isQuotaRefreshFailure(quotaDisplay)) {
     return {
       tone: 'danger' as const,
-      label: t('accounts.status_error_display'),
+      label: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.status_error_display'),
     };
   }
 
@@ -295,7 +386,7 @@ export function resolveAccountOperationalState(
   if (usageSummary?.hasData && usageSummary.failure > 0) {
     return {
       tone: 'danger' as const,
-      label: t('accounts.status_error_display'),
+      label: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.status_error_display'),
     };
   }
 
@@ -354,6 +445,9 @@ export function isCodexReauthEligible(account: AccountRecord) {
   if (!String(account.name || '').trim()) {
     return false;
   }
+  if (isAccountUsageLimitReached(account)) {
+    return false;
+  }
 
   const status = String(account.status || '')
     .trim()
@@ -408,7 +502,7 @@ export function resolveAccountPrimaryLabel(account: AccountRecord) {
 }
 
 export function buildAccountStabilitySummary(account: AccountRecord, quotaDisplay: QuotaDisplay, t: Translator): AccountStabilitySummary {
-  const failureReason = resolveAccountFailureReason(account);
+  const failureReason = resolveAccountFailureReason(account, t);
   if (failureReason) {
     return {
       title: t('accounts.stability_attention_title'),

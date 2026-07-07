@@ -1616,6 +1616,9 @@
     "status_waiting_check": "等待检测",
     "status_disabled_display": "已禁用",
     "status_error_display": "异常",
+    "status_usage_limit_display": "用量已达上限",
+    "usage_limit_reached_reason": "用量已达上限，等待额度重置。",
+    "usage_limit_reset_in": "约 {duration} 后重置",
     "detail_error_title": "账号异常",
     "detail_error_fallback": "当前账号状态异常，但 sidecar 未返回具体原因。",
     "quick_actions": "快速控制指令"

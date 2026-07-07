@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -68,6 +69,8 @@ type codexAttributionIdentityEntry struct {
 type codexAttributionIdentityStore map[string]codexAttributionIdentityEntry
 
 func (a *App) GetSidecarUsageAttribution(input SidecarUsageAttributionInput) (*SidecarUsageAttributionResponse, error) {
+	startedAt := time.Now()
+	resolveAccountKeys := input.ResolveAccountKeys == nil || *input.ResolveAccountKeys
 	query := url.Values{}
 	if window := strings.TrimSpace(input.Window); window != "" {
 		query.Set("window", window)
@@ -77,12 +80,30 @@ func (a *App) GetSidecarUsageAttribution(input SidecarUsageAttributionInput) (*S
 	}
 	query.Set("include_unresolved", "true")
 
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/gettokens/usage-attribution", query, nil, "")
+	sidecarStartedAt := time.Now()
+	body, statusCode, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/gettokens/usage-attribution", query, nil, "")
+	sidecarDurationMs := time.Since(sidecarStartedAt).Milliseconds()
 	if err != nil {
+		log.Printf(
+			"usage attribution bridge failed status=%d resolve_account_keys=%t include_unresolved=%t sidecar_ms=%d total_ms=%d",
+			statusCode,
+			resolveAccountKeys,
+			input.IncludeUnresolved,
+			sidecarDurationMs,
+			time.Since(startedAt).Milliseconds(),
+		)
 		return nil, err
 	}
 	var response SidecarUsageAttributionResponse
 	if err := json.Unmarshal(body, &response); err != nil {
+		log.Printf(
+			"usage attribution bridge decode failed status=%d resolve_account_keys=%t include_unresolved=%t sidecar_ms=%d total_ms=%d",
+			statusCode,
+			resolveAccountKeys,
+			input.IncludeUnresolved,
+			sidecarDurationMs,
+			time.Since(startedAt).Milliseconds(),
+		)
 		return nil, err
 	}
 	if response.Items == nil {
@@ -91,19 +112,53 @@ func (a *App) GetSidecarUsageAttribution(input SidecarUsageAttributionInput) (*S
 	if response.Unresolved == nil {
 		response.Unresolved = []SidecarUsageAttributionItem{}
 	}
-	if input.ResolveAccountKeys != nil && !*input.ResolveAccountKeys {
+	sidecarItems := len(response.Items)
+	sidecarUnresolved := len(response.Unresolved)
+	if !resolveAccountKeys {
 		if !input.IncludeUnresolved {
 			response.Unresolved = []SidecarUsageAttributionItem{}
 		}
+		log.Printf(
+			"usage attribution bridge complete resolve_account_keys=false include_unresolved=%t sidecar_items=%d sidecar_unresolved=%d returned_items=%d returned_unresolved=%d sidecar_ms=%d total_ms=%d",
+			input.IncludeUnresolved,
+			sidecarItems,
+			sidecarUnresolved,
+			len(response.Items),
+			len(response.Unresolved),
+			sidecarDurationMs,
+			time.Since(startedAt).Milliseconds(),
+		)
 		return &response, nil
 	}
+	resolveStartedAt := time.Now()
 	resolved, err := a.resolveSidecarUsageAttributionAccountKeys(&response)
+	resolveDurationMs := time.Since(resolveStartedAt).Milliseconds()
 	if err != nil {
+		log.Printf(
+			"usage attribution bridge resolution failed include_unresolved=%t sidecar_items=%d sidecar_unresolved=%d sidecar_ms=%d resolve_ms=%d total_ms=%d",
+			input.IncludeUnresolved,
+			sidecarItems,
+			sidecarUnresolved,
+			sidecarDurationMs,
+			resolveDurationMs,
+			time.Since(startedAt).Milliseconds(),
+		)
 		return nil, err
 	}
 	if !input.IncludeUnresolved {
 		resolved.Unresolved = []SidecarUsageAttributionItem{}
 	}
+	log.Printf(
+		"usage attribution bridge complete resolve_account_keys=true include_unresolved=%t sidecar_items=%d sidecar_unresolved=%d returned_items=%d returned_unresolved=%d sidecar_ms=%d resolve_ms=%d total_ms=%d",
+		input.IncludeUnresolved,
+		sidecarItems,
+		sidecarUnresolved,
+		len(resolved.Items),
+		len(resolved.Unresolved),
+		sidecarDurationMs,
+		resolveDurationMs,
+		time.Since(startedAt).Milliseconds(),
+	)
 	return resolved, nil
 }
 
@@ -111,15 +166,36 @@ func (a *App) resolveSidecarUsageAttributionAccountKeys(response *SidecarUsageAt
 	if response == nil {
 		return &SidecarUsageAttributionResponse{Items: []SidecarUsageAttributionItem{}}, nil
 	}
+	startedAt := time.Now()
+	inputItems := len(response.Items)
+	inputUnresolved := len(response.Unresolved)
+	authIndexStartedAt := time.Now()
 	authIndexIndex, err := a.loadAuthIndexAttributionIndex()
+	authIndexDurationMs := time.Since(authIndexStartedAt).Milliseconds()
+	authIndexFailed := err != nil
 	if err != nil {
 		authIndexIndex = map[string]string{}
 	}
+	identityStartedAt := time.Now()
 	identityIndex, err := loadCodexAttributionIdentityIndex()
+	identityDurationMs := time.Since(identityStartedAt).Milliseconds()
 	if err != nil {
+		log.Printf(
+			"usage attribution account resolution failed stage=identity input_items=%d input_unresolved=%d auth_index_entries=%d auth_index_failed=%t auth_index_ms=%d identity_ms=%d total_ms=%d",
+			inputItems,
+			inputUnresolved,
+			len(authIndexIndex),
+			authIndexFailed,
+			authIndexDurationMs,
+			identityDurationMs,
+			time.Since(startedAt).Milliseconds(),
+		)
 		return nil, err
 	}
+	providerStartedAt := time.Now()
 	providerIndex, err := a.loadOpenAICompatibleAttributionIndex()
+	providerDurationMs := time.Since(providerStartedAt).Milliseconds()
+	providerFailed := err != nil
 	if err != nil {
 		providerIndex = map[string]string{}
 	}
@@ -142,6 +218,22 @@ func (a *App) resolveSidecarUsageAttributionAccountKeys(response *SidecarUsageAt
 	})
 	response.Items = items
 	response.Unresolved = unresolved
+	log.Printf(
+		"usage attribution account resolution complete input_items=%d input_unresolved=%d output_items=%d output_unresolved=%d auth_index_entries=%d identity_entries=%d provider_entries=%d auth_index_failed=%t provider_failed=%t auth_index_ms=%d identity_ms=%d provider_ms=%d total_ms=%d",
+		inputItems,
+		inputUnresolved,
+		len(items),
+		len(unresolved),
+		len(authIndexIndex),
+		len(identityIndex),
+		len(providerIndex),
+		authIndexFailed,
+		providerFailed,
+		authIndexDurationMs,
+		identityDurationMs,
+		providerDurationMs,
+		time.Since(startedAt).Milliseconds(),
+	)
 	return response, nil
 }
 

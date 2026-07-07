@@ -429,6 +429,51 @@ test('buildAccountUsageSummary consumes sidecar attribution items for openai-com
   assert.equal(summary.totalTokens, 259);
 });
 
+test('buildAccountUsageSummary reuses local auth index to consume unresolved attribution items', () => {
+  const summaries = buildAccountUsageSummaryMap(
+    [
+      {
+        id: 'acct_auth',
+        quotaKey: 'acct_auth',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'auth.json',
+        status: 'ACTIVE',
+        authIndex: 'auth-runtime-1',
+      },
+    ],
+    {
+      items: [],
+      unresolved: [
+        {
+          attributionKey: 'auth-index:auth-runtime-1',
+          attributionKind: 'auth_index',
+          provider: 'codex',
+          requestCount: 3,
+          failedCount: 1,
+          totalTokens: 300,
+          buckets: [
+            {
+              start: '2026-04-27T09:00:00.000Z',
+              requestCount: 3,
+              failedCount: 1,
+              totalTokens: 300,
+            },
+          ],
+        },
+      ],
+    },
+    Date.parse('2026-04-27T10:30:00.000Z')
+  );
+
+  const summary = summaries.acct_auth;
+  assert.equal(summary.source, 'attribution');
+  assert.equal(summary.hasData, true);
+  assert.equal(summary.requestCount, 3);
+  assert.equal(summary.failedCount, 1);
+  assert.equal(summary.totalTokens, 300);
+});
+
 test('shouldScheduleAccountUsageRefresh only polls live account cards', () => {
   const accounts = [
     {

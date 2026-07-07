@@ -116,7 +116,7 @@ export default function AccountCard({
     rateLimitRefreshing,
   });
   const primaryLabel = resolveAccountPrimaryLabel(account);
-  const failureReason = resolveAccountFailureReason(account);
+  const failureReason = resolveAccountFailureReason(account, t);
   const canReauth = isCodexReauthEligible(account);
   const showFooterReauth = showFooterReauthAction && canReauth;
   const canMenuReauth = isCodexAuthFile(account);

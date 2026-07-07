@@ -1616,6 +1616,9 @@
     "status_waiting_check": "Waiting Check",
     "status_disabled_display": "Disabled",
     "status_error_display": "Error",
+    "status_usage_limit_display": "Usage Limit Reached",
+    "usage_limit_reached_reason": "Usage limit reached; waiting for quota reset.",
+    "usage_limit_reset_in": "Resets in about {duration}",
     "detail_error_title": "Account Error",
     "detail_error_fallback": "The account is in an error state, but sidecar did not return a concrete reason.",
     "quick_actions": "Quick Actions"

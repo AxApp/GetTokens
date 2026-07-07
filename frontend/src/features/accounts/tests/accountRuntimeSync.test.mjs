@@ -305,6 +305,10 @@ test('background usage sync skips backend account resolution', async () => {
   const source = await readFile(new URL('../hooks/useAccountsUsageState.ts', import.meta.url), 'utf8');
 
   assert.match(source, /resolveAccountKeys\?: boolean/);
-  assert.match(source, /resolveAccountKeys: options\.resolveAccountKeys !== false/);
+  assert.match(source, /const shouldResolveAccountKeys = options\.resolveAccountKeys === true/);
+  assert.match(source, /const includeUnresolved = options\.includeUnresolved \?\? !shouldResolveAccountKeys/);
+  assert.match(source, /includeUnresolved/);
+  assert.match(source, /resolveAccountKeys: shouldResolveAccountKeys/);
+  assert.doesNotMatch(source, /resolveAccountKeys: options\.resolveAccountKeys !== false/);
   assert.doesNotMatch(source, /GetUsageStatistics/);
 });

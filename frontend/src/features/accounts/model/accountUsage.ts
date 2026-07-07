@@ -152,7 +152,8 @@ export function buildAccountTodayUsageTotals(
 
 export interface AccountUsageAttributionItem {
   attributionKey?: string;
-  accountKey: string;
+  attributionKind?: string;
+  accountKey?: string;
   provider?: string;
   requestedModels?: string[];
   requestCount: number;
@@ -169,6 +170,11 @@ export interface AccountUsageAttributionItem {
 export interface AccountUsageAttributionResponse {
   items?: AccountUsageAttributionItem[];
   unresolved?: AccountUsageAttributionItem[];
+}
+
+interface AccountUsageAttributionIndex {
+  byAccountKey: Map<string, AccountUsageAttributionItem[]>;
+  byAuthIndex: Map<string, AccountUsageAttributionItem[]>;
 }
 
 export const ACCOUNT_USAGE_REFRESH_INTERVAL_MS = 15_000;
@@ -614,14 +620,16 @@ function calculateStatusBarDataFromAttributionBuckets(
 function buildAccountUsageSummaryFromAttribution(
   account: AccountRecord,
   attribution: AccountUsageAttributionResponse,
+  index?: AccountUsageAttributionIndex,
 ): AccountUsageSummary {
-  const item = attribution.items?.find((entry) => String(entry.accountKey || '').trim() === account.id);
-  if (!item) {
+  const matchedItems = collectAccountUsageAttributionItems(account, attribution, index);
+  if (matchedItems.length === 0) {
     return buildEmptyAccountUsageSummary();
   }
 
-  const requestCount = Math.max(0, Number(item.requestCount ?? 0));
-  const failedCount = Math.max(0, Number(item.failedCount ?? 0));
+  const item = mergeAccountUsageAttributionItems(matchedItems);
+  const requestCount = item.requestCount;
+  const failedCount = item.failedCount ?? 0;
   const success = Math.max(0, requestCount - failedCount);
   const lastActivityAt = item.lastActivityAt ? parseTimestampMs(item.lastActivityAt) : Number.NaN;
   const trafficBuckets = Array.isArray(item.buckets)
@@ -662,7 +670,7 @@ function buildAccountUsageSummaryFromAttribution(
     totalTokens: Math.max(0, Number(item.totalTokens ?? 0)),
     lastActivityAt: Number.isFinite(lastActivityAt) ? lastActivityAt : null,
     attributionKey: typeof item.attributionKey === 'string' ? item.attributionKey.trim() : '',
-    attributionKind: '',
+    attributionKind: typeof item.attributionKind === 'string' ? item.attributionKind.trim() : '',
     provider: typeof item.provider === 'string' ? item.provider.trim() : String(account.provider || ''),
     requestedModels: Array.isArray(item.requestedModels)
       ? item.requestedModels
@@ -672,6 +680,215 @@ function buildAccountUsageSummaryFromAttribution(
     trafficBuckets,
     statusBar: calculateStatusBarDataFromAttributionBuckets(item.buckets ?? []),
   };
+}
+
+function collectAccountUsageAttributionItems(
+  account: AccountRecord,
+  attribution: AccountUsageAttributionResponse,
+  index?: AccountUsageAttributionIndex,
+): AccountUsageAttributionItem[] {
+  if (index) {
+    const seen = new Set<AccountUsageAttributionItem>();
+    const items: AccountUsageAttributionItem[] = [];
+    buildAccountUsageAccountKeys(account).forEach((key) => {
+      for (const item of index.byAccountKey.get(key) ?? []) {
+        if (!seen.has(item)) {
+          seen.add(item);
+          items.push(item);
+        }
+      }
+    });
+    buildAccountUsageAuthIndexes(account).forEach((authIndex) => {
+      for (const item of index.byAuthIndex.get(authIndex) ?? []) {
+        if (!seen.has(item)) {
+          seen.add(item);
+          items.push(item);
+        }
+      }
+    });
+    return items;
+  }
+
+  return [
+    ...(attribution.items ?? []),
+    ...(attribution.unresolved ?? []),
+  ].filter((item) => usageAttributionItemMatchesAccount(account, item));
+}
+
+function buildAccountUsageAttributionIndex(attribution: AccountUsageAttributionResponse): AccountUsageAttributionIndex {
+  const index: AccountUsageAttributionIndex = {
+    byAccountKey: new Map(),
+    byAuthIndex: new Map(),
+  };
+
+  for (const item of [...(attribution.items ?? []), ...(attribution.unresolved ?? [])]) {
+    const accountKey = String(item.accountKey || '').trim();
+    if (accountKey) {
+      appendAttributionIndexItem(index.byAccountKey, accountKey, item);
+    }
+    const attributionKey = String(item.attributionKey || '').trim();
+    if (attributionKey.startsWith('auth-index:')) {
+      const authIndex = normalizeAuthIndex(attributionKey.slice('auth-index:'.length));
+      if (authIndex) {
+        appendAttributionIndexItem(index.byAuthIndex, authIndex, item);
+      }
+    }
+  }
+
+  return index;
+}
+
+function appendAttributionIndexItem(
+  index: Map<string, AccountUsageAttributionItem[]>,
+  key: string,
+  item: AccountUsageAttributionItem,
+) {
+  const existing = index.get(key);
+  if (existing) {
+    existing.push(item);
+    return;
+  }
+  index.set(key, [item]);
+}
+
+function usageAttributionItemMatchesAccount(account: AccountRecord, item: AccountUsageAttributionItem) {
+  const accountKeys = buildAccountUsageAccountKeys(account);
+  const itemAccountKey = String(item.accountKey || '').trim();
+  if (itemAccountKey && accountKeys.has(itemAccountKey)) {
+    return true;
+  }
+
+  const attributionKey = String(item.attributionKey || '').trim();
+  if (!attributionKey) {
+    return false;
+  }
+
+  if (attributionKey.startsWith('auth-index:')) {
+    const authIndex = normalizeAuthIndex(attributionKey.slice('auth-index:'.length));
+    return Boolean(authIndex && buildAccountUsageAuthIndexes(account).has(authIndex));
+  }
+
+  return false;
+}
+
+function buildAccountUsageAccountKeys(account: AccountRecord) {
+  return new Set(
+    [account.id, account.quotaKey]
+      .map((value) => (typeof value === 'string' ? value.trim() : ''))
+      .filter((value) => value.length > 0),
+  );
+}
+
+function buildAccountUsageAuthIndexes(account: AccountRecord) {
+  const values = [
+    normalizeAuthIndex(account.authIndex),
+    normalizeAuthIndex(account.rawAuthFile?.authIndex),
+    account.id,
+    account.quotaKey,
+  ];
+  return new Set(
+    values
+      .map((value) => (typeof value === 'string' ? value.trim() : ''))
+      .filter((value) => value.length > 0),
+  );
+}
+
+function mergeAccountUsageAttributionItems(items: AccountUsageAttributionItem[]): AccountUsageAttributionItem {
+  const models = new Set<string>();
+  const bucketsByStart = new Map<string, AccountUsageAttributionBucket>();
+  let requestCount = 0;
+  let failedCount = 0;
+  let inputTokens = 0;
+  let cachedInputTokens = 0;
+  let outputTokens = 0;
+  let totalTokens = 0;
+  let latencyWeightedTotal = 0;
+  let latencyWeight = 0;
+  let lastActivityAt = '';
+  let lastActivityAtMs = Number.NEGATIVE_INFINITY;
+
+  items.forEach((item) => {
+    const itemRequestCount = Math.max(0, Number(item.requestCount ?? 0));
+    requestCount += itemRequestCount;
+    failedCount += Math.max(0, Number(item.failedCount ?? 0));
+    inputTokens += Math.max(0, Number(item.inputTokens ?? 0));
+    cachedInputTokens += Math.max(0, Number(item.cachedInputTokens ?? 0));
+    outputTokens += Math.max(0, Number(item.outputTokens ?? 0));
+    totalTokens += normalizeAttributionTokenTotal(item.totalTokens, item.inputTokens, item.cachedInputTokens, item.outputTokens);
+
+    if (typeof item.latencyAverageMs === 'number' && Number.isFinite(item.latencyAverageMs) && itemRequestCount > 0) {
+      latencyWeightedTotal += item.latencyAverageMs * itemRequestCount;
+      latencyWeight += itemRequestCount;
+    }
+
+    if (Array.isArray(item.requestedModels)) {
+      item.requestedModels.forEach((value) => {
+        const model = typeof value === 'string' ? value.trim() : '';
+        if (model) {
+          models.add(model);
+        }
+      });
+    }
+
+    const itemLastActivityAtMs = item.lastActivityAt ? parseTimestampMs(item.lastActivityAt) : Number.NaN;
+    if (Number.isFinite(itemLastActivityAtMs) && itemLastActivityAtMs > lastActivityAtMs) {
+      lastActivityAtMs = itemLastActivityAtMs;
+      lastActivityAt = item.lastActivityAt || '';
+    }
+
+    (item.buckets ?? []).forEach((bucket) => {
+      const start = typeof bucket.start === 'string' ? bucket.start.trim() : '';
+      if (!start) {
+        return;
+      }
+      const existing = bucketsByStart.get(start);
+      const merged: AccountUsageAttributionBucket = {
+        start,
+        requestCount: Math.max(0, Number(existing?.requestCount ?? 0)) + Math.max(0, Number(bucket.requestCount ?? 0)),
+        failedCount: Math.max(0, Number(existing?.failedCount ?? 0)) + Math.max(0, Number(bucket.failedCount ?? 0)),
+        inputTokens: Math.max(0, Number(existing?.inputTokens ?? 0)) + Math.max(0, Number(bucket.inputTokens ?? 0)),
+        cachedInputTokens:
+          Math.max(0, Number(existing?.cachedInputTokens ?? 0)) + Math.max(0, Number(bucket.cachedInputTokens ?? 0)),
+        outputTokens: Math.max(0, Number(existing?.outputTokens ?? 0)) + Math.max(0, Number(bucket.outputTokens ?? 0)),
+        totalTokens:
+          Math.max(0, Number(existing?.totalTokens ?? 0)) +
+          normalizeAttributionTokenTotal(bucket.totalTokens, bucket.inputTokens, bucket.cachedInputTokens, bucket.outputTokens),
+      };
+      bucketsByStart.set(start, merged);
+    });
+  });
+
+  const first = items[0] ?? ({} as AccountUsageAttributionItem);
+  return {
+    ...first,
+    requestedModels: Array.from(models),
+    requestCount,
+    failedCount,
+    latencyAverageMs: latencyWeight > 0 ? Math.round(latencyWeightedTotal / latencyWeight) : undefined,
+    inputTokens,
+    cachedInputTokens,
+    outputTokens,
+    totalTokens,
+    lastActivityAt,
+    buckets: Array.from(bucketsByStart.values()).sort((left, right) => parseTimestampMs(left.start) - parseTimestampMs(right.start)),
+  };
+}
+
+function normalizeAttributionTokenTotal(
+  totalTokens: unknown,
+  inputTokens: unknown,
+  cachedInputTokens: unknown,
+  outputTokens: unknown,
+) {
+  const explicitTotal = Math.max(0, Number(totalTokens ?? 0));
+  if (explicitTotal > 0) {
+    return explicitTotal;
+  }
+  return (
+    Math.max(0, Number(inputTokens ?? 0)) +
+    Math.max(0, Number(cachedInputTokens ?? 0)) +
+    Math.max(0, Number(outputTokens ?? 0))
+  );
 }
 
 function resolveAccountUsageDetails(account: AccountRecord, usageDetails: UsageDetail[]) {
@@ -754,6 +971,14 @@ export function buildAccountUsageSummary(account: AccountRecord, usageData: unkn
 }
 
 export function buildAccountUsageSummaryMap(accounts: AccountRecord[], usageData: unknown, nowMs: number = Date.now()) {
+  if (isAttributionResponse(usageData)) {
+    const index = buildAccountUsageAttributionIndex(usageData);
+    return accounts.reduce<Record<string, AccountUsageSummary>>((result, account) => {
+      result[account.id] = buildAccountUsageSummaryFromAttribution(account, usageData, index);
+      return result;
+    }, {});
+  }
+
   return accounts.reduce<Record<string, AccountUsageSummary>>((result, account) => {
     result[account.id] = buildAccountUsageSummary(account, usageData, nowMs);
     return result;

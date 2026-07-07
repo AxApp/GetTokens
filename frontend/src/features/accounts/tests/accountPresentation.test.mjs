@@ -334,6 +334,48 @@ test('resolveAccountFailureReason only returns message for failed statuses', () 
   );
 });
 
+test('usage-limit runtime failures render as quota exhaustion instead of reauth errors', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_usage_limit_display': '用量已达上限',
+      'accounts.status_error_display': '异常',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_available': '可用',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_local': '本地草稿',
+      'accounts.detail_error_title': '账号异常',
+      'accounts.detail_error_fallback': '当前账号状态异常，但 sidecar 未返回具体原因。',
+      'accounts.usage_limit_reached_reason': '用量已达上限，等待额度重置。',
+      'accounts.usage_limit_reset_in': '约 {duration} 后重置',
+    })[key] || key;
+  const usageLimitReason = '{"error":{"type":"usage_limit_reached","message":"The usage limit has been reached","plan_type":"k12","resets_in_seconds":7200}} after bounded reconcile';
+  const account = {
+    id: 'auth-file:k12',
+    provider: 'codex',
+    credentialSource: 'auth-file',
+    displayName: 'k12.json',
+    name: 'k12.json',
+    status: 'ERROR',
+    runtimeStatus: 'degraded',
+    runtimeReason: usageLimitReason,
+  };
+
+  assert.equal(
+    resolveAccountFailureReason(account, t),
+    '用量已达上限，等待额度重置。 · K12 · 约 2h 后重置',
+  );
+  assert.deepEqual(resolveAccountOperationalState(account, undefined, undefined, t), {
+    tone: 'danger',
+    label: '用量已达上限',
+  });
+  assert.deepEqual(buildAccountDetailStatusMessage(account, t), {
+    title: '用量已达上限',
+    body: '用量已达上限，等待额度重置。 · K12 · 约 2h 后重置',
+    tone: 'danger',
+  });
+  assert.equal(isCodexReauthEligible(account), false);
+});
+
 test('buildAccountDetailStatusMessage exposes failed account diagnostics for detail page', () => {
   const t = (key) =>
     ({
