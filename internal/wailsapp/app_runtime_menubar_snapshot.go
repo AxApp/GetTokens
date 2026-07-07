@@ -53,6 +53,8 @@ type menuBarQuotaCandidate struct {
 	risky        bool
 }
 
+const menuBarQuotaRefreshBatchConcurrency = 4
+
 func (a *App) refreshMenuBarQuotaSnapshot() {
 	if a == nil || a.menuBar == nil || !a.hasManagementClient() {
 		return
@@ -83,12 +85,25 @@ func (a *App) refreshMenuBarQuotaSnapshotActive() {
 		a.refreshMenuBarQuotaSnapshot()
 		return
 	}
+	accountKeys := make([]string, 0, len(accounts))
+	seenAccountKeys := map[string]struct{}{}
 	for _, account := range accounts {
 		if !menuBarAccountCanRefreshQuota(account) {
 			continue
 		}
-		if _, err := client.RefreshQuota(account.AccountKey, true, false); err != nil {
-			log.Printf("menu bar active quota refresh failed for %s: %v", account.AccountKey, err)
+		if _, exists := seenAccountKeys[account.AccountKey]; exists {
+			continue
+		}
+		seenAccountKeys[account.AccountKey] = struct{}{}
+		accountKeys = append(accountKeys, account.AccountKey)
+	}
+	if len(accountKeys) > 0 {
+		if _, err := client.RefreshQuotaBatch(cliproxyapi.QuotaRefreshBatchInput{
+			AccountKeys:    accountKeys,
+			IncludeBilling: true,
+			Concurrency:    menuBarQuotaRefreshBatchConcurrency,
+		}); err != nil {
+			log.Printf("menu bar active quota batch refresh failed: %v", err)
 		}
 	}
 	a.refreshMenuBarQuotaSnapshot()

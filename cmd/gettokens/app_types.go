@@ -27,6 +27,24 @@ type UploadFilePayload struct {
 	ContentBase64 string `json:"contentBase64"`
 }
 
+type AuthFileUploadResult struct {
+	Succeeded       int  `json:"succeeded"`
+	Skipped         int  `json:"skipped"`
+	SkippedExisting int  `json:"skippedExisting"`
+	SkippedInBatch  int  `json:"skippedInBatch"`
+	Failed          int  `json:"failed"`
+	FallbackUsed    bool `json:"fallbackUsed,omitempty"`
+}
+
+type AuthFileUploadPreviewResult struct {
+	Supported       bool `json:"supported"`
+	WouldCreate     int  `json:"wouldCreate"`
+	Skipped         int  `json:"skipped"`
+	SkippedExisting int  `json:"skippedExisting"`
+	SkippedInBatch  int  `json:"skippedInBatch"`
+	Failed          int  `json:"failed"`
+}
+
 type DownloadFileResponse struct {
 	Name          string `json:"name"`
 	ContentBase64 string `json:"contentBase64"`

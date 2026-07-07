@@ -106,6 +106,12 @@ func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 		case method == "POST" && path == "/v0/management/accounts":
 			assertJSONContains(t, body, `"kind":"codex-api-key"`)
 			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000002","kind":"codex-api-key","title":"Created","provider":"codex"}`), 200, nil
+		case method == "POST" && path == "/v0/management/accounts/batch-create":
+			assertJSONContains(t, body, `"accounts":[{"kind":"codex-api-key"`)
+			return []byte(`{"accounts":[{"account_key":"acct_00000000-0000-4000-8000-000000000003","kind":"codex-api-key","title":"Batch Created","provider":"codex"}],"skipped":[],"errors":[],"succeeded":1,"skipped_count":0,"failed":0}`), 200, nil
+		case method == "POST" && path == "/v0/management/accounts/batch-preview":
+			assertJSONContains(t, body, `"accounts":[{"kind":"auth-file"`)
+			return []byte(`{"items":[{"index":0,"title":"auth.json","action":"skip","reason":"existing_account","existing_account_key":"acct_00000000-0000-4000-8000-000000000001"}],"skipped":[{"index":0,"title":"auth.json","reason":"existing_account","existing_account_key":"acct_00000000-0000-4000-8000-000000000001"}],"errors":[],"would_create":0,"skipped_count":1,"failed":0}`), 200, nil
 		case method == "PATCH" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001":
 			assertJSONContains(t, body, `"title":"Updated"`)
 			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","title":"Updated","provider":"codex"}`), 200, nil
@@ -135,6 +141,14 @@ func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 	}
 	if account, err := client.CreateAccount(AccountWriteRequest{Kind: AccountKindCodexAPIKey, Title: "Created"}); err != nil || account.AccountKey == "" {
 		t.Fatalf("CreateAccount = %#v, err = %v", account, err)
+	}
+	created, supported, err := client.CreateAccountsBatch(AccountBatchCreateInput{Accounts: []AccountWriteRequest{{Kind: AccountKindCodexAPIKey, Title: "Batch Created"}}})
+	if err != nil || !supported || created == nil || created.Succeeded != 1 || created.SkippedCount != 0 || created.Failed != 0 || len(created.Accounts) != 1 || len(created.Skipped) != 0 || len(created.Errors) != 0 {
+		t.Fatalf("CreateAccountsBatch = %#v supported=%v err=%v", created, supported, err)
+	}
+	preview, supported, err := client.PreviewCreateAccountsBatch(AccountBatchCreateInput{Accounts: []AccountWriteRequest{{Kind: AccountKindAuthFile, Title: "auth.json"}}})
+	if err != nil || !supported || preview == nil || preview.WouldCreate != 0 || preview.SkippedCount != 1 || preview.Failed != 0 || len(preview.Items) != 1 || len(preview.Skipped) != 1 || len(preview.Errors) != 0 {
+		t.Fatalf("PreviewCreateAccountsBatch = %#v supported=%v err=%v", preview, supported, err)
 	}
 	if account, err := client.PatchAccount("acct_00000000-0000-4000-8000-000000000001", AccountWriteRequest{Kind: AccountKindCodexAPIKey, Title: "Updated"}); err != nil || account.Title != "Updated" {
 		t.Fatalf("PatchAccount = %#v, err = %v", account, err)

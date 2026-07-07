@@ -16,6 +16,7 @@ import {
   resolveCopiedOpenAICompatibleProviderName,
   resolveNumberedDuplicateTitle,
   resolvePastedAuthFileName,
+  summarizeAccountImportQueueSelection,
   validateAccountImportPayloadItem,
 } from '../model/accountTransfer.ts';
 import { buildAccountCardContentText } from '../model/accountCardActions.ts';
@@ -436,6 +437,52 @@ test('resolveAccountImportQueueRenderWindow keeps large import queues virtualize
   assert.equal(renderWindow.visibleCount, 11);
   assert.equal(renderWindow.topOffset, ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT * 496);
   assert.equal(renderWindow.totalHeight, ACCOUNT_IMPORT_QUEUE_ITEM_HEIGHT * 1000);
+});
+
+test('summarizeAccountImportQueueSelection scans selected import items once for footer and submit state', () => {
+  const items = [
+    {
+      id: 'auth-1',
+      payload: {
+        type: 'auth-file',
+        name: 'codex-auth.json',
+        content: '{"type":"codex","access_token":"token"}',
+      },
+    },
+    {
+      id: 'api-1',
+      payload: {
+        type: 'codex-api-key',
+        label: 'API Key',
+        apiKey: 'sk-test',
+        baseUrl: 'https://api.openai.com/v1',
+      },
+    },
+    {
+      id: 'provider-1',
+      payload: {
+        type: 'openai-compatible',
+        name: 'DeepSeek',
+        apiKey: '',
+        baseUrl: 'https://api.deepseek.com',
+      },
+    },
+  ];
+
+  const summary = summarizeAccountImportQueueSelection({
+    items,
+    selectedIds: new Set(['auth-1', 'provider-1']),
+  });
+
+  assert.equal(summary.totalCount, 3);
+  assert.equal(summary.selectedCount, 2);
+  assert.equal(summary.authFiles, 1);
+  assert.equal(summary.apiKeys, 0);
+  assert.equal(summary.providers, 1);
+  assert.equal(summary.allValid, false);
+  assert.equal(summary.invalidCount, 1);
+  assert.equal(summary.selectedPayloads.length, 2);
+  assert.deepEqual(summary.selectedPayloads.map((item) => item.type), ['auth-file', 'openai-compatible']);
 });
 
 test('resolveCopiedAuthFileName creates a new auth-file asset name when importing into existing accounts', () => {

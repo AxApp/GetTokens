@@ -33,6 +33,51 @@
 5. **智能剪贴板**：当剪贴板里有合法 JSON 时，页面能检测到并允许一键导入。
 6. **兼容性与回归**：测试（例如 `accountTransfer.test.mjs`）保持通过，且 Wails 打包和构建无影响。
 
+## 2026-07-06 批量导入卡顿止血
+
+### 问题来源
+- 用户在正式环境导入 875 个账号时，导入弹窗长时间停留在“导入中”。
+- 当前轮不触碰正式版 GetTokens、不重启正式进程，只在仓库 dev 代码与测试中处理。
+
+### 代码事实
+- 前端 `submitAccountImport` 已经把 auth-file 候选合并成一次 `UploadAuthFiles(authFilePayload)`。
+- Wails 层 `internal/wailsapp/auth_files.go` 在 `UploadAuthFiles` 内逐条调用 `client.CreateAccount(write)`。
+- sidecar 当前只有单条 `POST /v0/management/accounts` 与批量删除 `POST /v0/management/accounts/batch-delete`，缺少批量创建。
+
+### 当前现象
+- 875 个 auth file 会被放大为 875 次 management create 请求，并触发 875 次账号存储写入和运行态 apply/reconcile，符合“导入中”长时间卡住的现象。
+
+### 验收方式
+- 新增 sidecar `POST /v0/management/accounts/batch-create`，一次事务写入多账号，昂贵的 account-store apply 只触发一次。
+- Wails `UploadAuthFiles` 优先调用 `CreateAccountsBatch`；如果旧 sidecar 返回 404/501，再退回逐条 `CreateAccount`，保证已发布 dev/prod 组合兼容。
+- 聚焦测试覆盖 sidecar handler、accountstore、Wails 批量与回退、cliproxyapi client 契约。
+
+### 处理结果
+- 已在 CLIProxyAPI sidecar fork 增加 `CreateAccounts` store 方法、`CreateAccountsBatch` management handler 与 `/accounts/batch-create` 路由。
+- 已在 GetTokens management client 增加 `CreateAccountsBatch`，并让 `UploadAuthFiles` 优先批量创建、旧 sidecar 缺路由时回退单条创建。
+- 已重建本地 dev sidecar；因 fork 尚未提交，sidecar meta 当前记录 dirty 源码指纹。
+
+## 2026-07-07 导入链路继续优化
+
+### 问题来源
+- 用户要求在批量导入与刷新止血后“继续优化”。
+- 继续排查后确认，后端批量创建之外，前端导入链路仍有多处放大：多文件选择、提交后 reload 和队列统计。
+
+### 代码事实
+- `AccountImportModal` 的 AntD `Upload.beforeUpload` 会按文件逐个触发；旧实现每次都创建 `DataTransfer` 并调用 `handleAddFiles(dt.files)`，选择 800 个 JSON 时会变成 800 次解析入口和 800 次队列追加。
+- `submitAccountImport` 成功后调用 `await loadAccounts()`，而 `loadAccounts()` 默认还会触发 quota / usage / rate-limit supplemental 同步；导入完成被运行态同步拖慢。
+- 导入弹窗 footer 的 selected summary 和 allValid 分别扫描选中队列，提交前又再次 filter/validate，在 800+ 队列下形成重复计算。
+
+### 处理结果
+- `submitAccountImport` 成功后改为 `loadAccounts({ refreshSupplementalData: false })`，导入完成只刷新账号资产列表，不等待运行态数据。
+- `AccountImportModal` 新增 `pendingUploadFilesRef` 与 `queueMicrotask` 聚合，文件选择路径和拖拽路径一样批量进入 `readUploadFiles`。
+- `accountTransfer.ts` 新增 `summarizeAccountImportQueueSelection`，一次扫描产出 footer 统计、合法性和提交 payload。
+
+### 验收记录
+- `node --test frontend/src/features/accounts/tests/accountRuntimeSync.test.mjs frontend/src/features/accounts/tests/accountTransfer.test.mjs frontend/src/features/accounts/tests/accountCardInteractions.test.mjs` 通过。
+- `npm --prefix frontend run typecheck` 通过。
+- `node --test frontend/src/features/accounts/tests/*.test.mjs` 通过，`524 pass / 0 fail`。
+
 ## 设计稿入口
 
 - 本期设计稿：`docs-linhay/spaces/20260706-import-accounts-redesign/design-preview.html`
@@ -46,5 +91,5 @@
 ## 相关链接
 
 ## 当前状态
-- 状态：planning
-- 最近更新：2026-07-06
+- 状态：verification
+- 最近更新：2026-07-07

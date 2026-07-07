@@ -1,6 +1,7 @@
 package wailsapp
 
 import (
+	"encoding/json"
 	"io"
 	"net/url"
 	"testing"
@@ -169,6 +170,7 @@ func TestRefreshMenuBarQuotaSnapshotReadsOnlyRuntimeSnapshot(t *testing.T) {
 
 func TestRefreshMenuBarQuotaSnapshotActiveRefreshesConfiguredAccounts(t *testing.T) {
 	paths := []string{}
+	var batchInput cliproxyapi.QuotaRefreshBatchInput
 	app := &App{
 		menuBar: menubar.NewController(),
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
@@ -181,10 +183,21 @@ func TestRefreshMenuBarQuotaSnapshotActiveRefreshesConfiguredAccounts(t *testing
 					{"account_key":"acct_disabled","kind":"codex-api-key","title":"disabled","provider":"codex","credential_source":"sidecar-management-api","disabled":true,"codex_api_key":{"api_key":"sk-test","base_url":"https://api.openai.com/v1","quota_enabled":true,"quota_curl":"curl {{baseUrl}}/quota"}},
 					{"account_key":"acct_unconfigured","kind":"codex-api-key","title":"unconfigured","provider":"codex","credential_source":"sidecar-management-api","codex_api_key":{"api_key":"sk-test","base_url":"https://api.openai.com/v1"}}
 				]}`), 200, nil
-			case ManagementAPIPrefix + "/gettokens/quota-refresh/acct_active":
-				return []byte(`{"account_key":"acct_active","status":"success","windows":[{"id":"weekly","label":"7D","remaining_percent":42}],"sources":[]}`), 200, nil
-			case ManagementAPIPrefix + "/gettokens/quota-refresh/acct_billing":
-				return []byte(`{"account_key":"acct_billing","status":"success","windows":[],"billing":{"is_available":true,"balance_infos":[{"currency":"USD","total_balance":"12.00"}]},"sources":[]}`), 200, nil
+			case ManagementAPIPrefix + "/gettokens/quota-refresh-batch":
+				if contentType != "application/json" {
+					t.Fatalf("contentType = %q, want application/json", contentType)
+				}
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read batch body: %v", err)
+				}
+				if err := json.Unmarshal(payload, &batchInput); err != nil {
+					t.Fatalf("decode batch body %s: %v", payload, err)
+				}
+				return []byte(`{"items":[
+					{"account_key":"acct_active","status":"success","windows":[{"id":"weekly","label":"7D","remaining_percent":42}],"sources":[]},
+					{"account_key":"acct_billing","status":"success","windows":[],"billing":{"is_available":true,"balance_infos":[{"currency":"USD","total_balance":"12.00"}]},"sources":[]}
+				],"errors":[],"succeeded":2,"failed":0}`), 200, nil
 			case ManagementAPIPrefix + "/gettokens/quota-status":
 				return []byte(`{"items":[{"account_key":"acct_active","status":"success","windows":[{"id":"weekly","label":"7D","remaining_percent":42}],"sources":[]}]}`), 200, nil
 			default:
@@ -198,8 +211,7 @@ func TestRefreshMenuBarQuotaSnapshotActiveRefreshesConfiguredAccounts(t *testing
 
 	want := []string{
 		"GET " + ManagementAPIPrefix + "/accounts",
-		"POST " + ManagementAPIPrefix + "/gettokens/quota-refresh/acct_active",
-		"POST " + ManagementAPIPrefix + "/gettokens/quota-refresh/acct_billing",
+		"POST " + ManagementAPIPrefix + "/gettokens/quota-refresh-batch",
 		"GET " + ManagementAPIPrefix + "/gettokens/quota-status",
 		"GET " + ManagementAPIPrefix + "/accounts",
 	}
@@ -210,5 +222,16 @@ func TestRefreshMenuBarQuotaSnapshotActiveRefreshesConfiguredAccounts(t *testing
 		if paths[index] != want[index] {
 			t.Fatalf("paths[%d] = %q, want %q; all paths = %#v", index, paths[index], want[index], paths)
 		}
+	}
+	if len(batchInput.AccountKeys) != 2 ||
+		batchInput.AccountKeys[0] != "acct_active" ||
+		batchInput.AccountKeys[1] != "acct_billing" {
+		t.Fatalf("batch account keys = %#v", batchInput.AccountKeys)
+	}
+	if !batchInput.IncludeBilling {
+		t.Fatalf("batch include billing = false, want true")
+	}
+	if batchInput.Concurrency <= 0 {
+		t.Fatalf("batch concurrency = %d, want positive", batchInput.Concurrency)
 	}
 }

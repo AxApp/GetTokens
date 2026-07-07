@@ -225,6 +225,68 @@ export interface AccountImportQueueRenderWindow {
   totalHeight: number;
 }
 
+export interface AccountImportQueueSelectionItem {
+  id: string;
+  payload: AccountImportPayloadItem;
+}
+
+export interface AccountImportQueueSelectionSummary {
+  totalCount: number;
+  selectedCount: number;
+  authFiles: number;
+  apiKeys: number;
+  providers: number;
+  allValid: boolean;
+  invalidCount: number;
+  invalidReason: string;
+  selectedPayloads: AccountImportPayloadItem[];
+}
+
+export function summarizeAccountImportQueueSelection({
+  items,
+  selectedIds,
+}: {
+  items: readonly AccountImportQueueSelectionItem[];
+  selectedIds: ReadonlySet<string>;
+}): AccountImportQueueSelectionSummary {
+  const summary: AccountImportQueueSelectionSummary = {
+    totalCount: items.length,
+    selectedCount: 0,
+    authFiles: 0,
+    apiKeys: 0,
+    providers: 0,
+    allValid: false,
+    invalidCount: 0,
+    invalidReason: '',
+    selectedPayloads: [],
+  };
+
+  for (const item of items) {
+    if (!selectedIds.has(item.id)) {
+      continue;
+    }
+    summary.selectedCount += 1;
+    summary.selectedPayloads.push(item.payload);
+    if (item.payload.type === 'upload-file' || item.payload.type === 'auth-file') {
+      summary.authFiles += 1;
+    } else if (item.payload.type === 'codex-api-key') {
+      summary.apiKeys += 1;
+    } else {
+      summary.providers += 1;
+    }
+    const validation = validateAccountImportPayloadItem(item.payload);
+    if (!validation.valid) {
+      summary.invalidCount += 1;
+      if (!summary.invalidReason) {
+        summary.invalidReason = validation.error || '';
+      }
+    }
+  }
+
+  summary.allValid = summary.selectedCount > 0 && summary.invalidCount === 0;
+  return summary;
+}
+
 export function resolveAccountImportQueueRenderWindow({
   itemCount,
   scrollTop,

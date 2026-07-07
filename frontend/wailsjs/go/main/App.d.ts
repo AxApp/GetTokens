@@ -243,6 +243,8 @@ export function PreflightCodexMcpServer(arg1:main.PreflightCodexMcpServerInput):
 
 export function PrepareGetTokensExtensionCodexConfigApply(arg1:main.PrepareGetTokensExtensionCodexConfigApplyInput):Promise<main.GetTokensExtensionCodexConfigStagedApplyPlan>;
 
+export function PreviewAuthFileUploads(arg1:Array<main.UploadFilePayload>):Promise<main.AuthFileUploadPreviewResult>;
+
 export function PreviewBudgetWindowFacts(arg1:main.BudgetWindowFactsPreviewRequest):Promise<Array<main.QuotaWindowFact>>;
 
 export function PreviewCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
@@ -351,7 +353,7 @@ export function UpdateRelayServiceAPIKeys(arg1:Array<string>):Promise<main.Relay
 
 export function UpdateSidecarProxySettings(arg1:main.SidecarProxySettings):Promise<main.SidecarProxySettings>;
 
-export function UploadAuthFiles(arg1:Array<main.UploadFilePayload>):Promise<void>;
+export function UploadAuthFiles(arg1:Array<main.UploadFilePayload>):Promise<main.AuthFileUploadResult>;
 
 export function UseCodexBinary(arg1:codexbinary.UseInput):Promise<codexbinary.UseResult>;
 

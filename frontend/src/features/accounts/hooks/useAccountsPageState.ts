@@ -160,11 +160,13 @@ export default function useAccountsPageState({
   const [oauthFlow, setOAuthFlow] = useState<OAuthFlowState>(null);
   const [oauthDialog, setOAuthDialog] = useState<OAuthDialogState>(null);
   const [pendingStatusAccountID, setPendingStatusAccountID] = useState<string | null>(null);
+  const [runtimeRefreshing, setRuntimeRefreshing] = useState(false);
   const [apiKeyVerifyStateByID, setAPIKeyVerifyStateByID] = useState<Record<string, APIKeyVerifyState>>({});
   const legacyAPIKeyLabelsRef = useRef<Record<string, string>>(loadAPIKeyLabels());
   const accountRecordsRef = useRef<AccountRecord[]>(initialCachedAccounts);
   const liveAccountsLoadedRef = useRef(false);
   const sqliteSnapshotRequestedRef = useRef(false);
+  const runtimeRefreshingRef = useRef(false);
   const {
     isSelectionMode,
     selectedAccountIDs,
@@ -492,15 +494,22 @@ export default function useAccountsPageState({
   ]);
 
   const refreshAccountsRuntime = useCallback(async () => {
-    if (!ready || runtimeSyncAccounts.length === 0) {
+    if (!ready || runtimeSyncAccounts.length === 0 || runtimeRefreshingRef.current) {
       return;
     }
 
-    await Promise.all([
-      syncCodexQuotaStatuses(runtimeSyncAccounts, { replace: false }),
-      refreshAccountUsage(runtimeSyncAccounts),
-      refreshAccountRateLimits(runtimeSyncAccounts),
-    ]);
+    runtimeRefreshingRef.current = true;
+    setRuntimeRefreshing(true);
+    try {
+      await Promise.allSettled([
+        syncCodexQuotaStatuses(runtimeSyncAccounts, { replace: false }),
+        refreshAccountUsage(runtimeSyncAccounts),
+        refreshAccountRateLimits(runtimeSyncAccounts),
+      ]);
+    } finally {
+      runtimeRefreshingRef.current = false;
+      setRuntimeRefreshing(false);
+    }
   }, [ready, refreshAccountRateLimits, refreshAccountUsage, runtimeSyncAccounts, syncCodexQuotaStatuses]);
 
   useEffect(() => {
@@ -886,6 +895,7 @@ export default function useAccountsPageState({
     accountRateLimitByID,
     rateLimitRefreshingAccountIDSet,
     rateLimitStrategies,
+    runtimeRefreshing,
     isSelectionMode,
     selectedAccountIDs,
     isHeaderActionsMenuOpen,

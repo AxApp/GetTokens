@@ -7,7 +7,7 @@ import { toErrorMessage } from '../../../utils/error';
 import {
   parseAccountImportPayloads,
   readUploadFiles,
-  validateAccountImportPayloadItem,
+  summarizeAccountImportQueueSelection,
   type AccountImportPayloadItem,
 } from '../model/accountTransfer';
 import { readAccountClipboardText } from '../model/accountClipboard';
@@ -62,6 +62,8 @@ export default function AccountImportModal({
 }: AccountImportModalProps) {
   const pasteInputRef = useRef<TextAreaRef | null>(null);
   const nextIDRef = useRef(0);
+  const pendingUploadFilesRef = useRef<File[]>([]);
+  const uploadFlushScheduledRef = useRef(false);
 
   const [queueItems, setQueueItems] = useState<AccountImportQueueItem[]>(() =>
     initialItems.map((payload) => createQueueItem(nextIDRef, 'paste', payload))
@@ -105,31 +107,16 @@ export default function AccountImportModal({
     void checkClipboard();
   }, [initialPasteContent]);
 
-  // Selected Count Statistics
-  const selectedSummary = useMemo(() => {
-    const selectedItems = queueItems.filter((item) => selectedIds.has(item.id));
-    return selectedItems.reduce(
-      (summary, item) => {
-        if (item.payload.type === 'upload-file' || item.payload.type === 'auth-file') {
-          summary.authFiles += 1;
-        } else if (item.payload.type === 'codex-api-key') {
-          summary.apiKeys += 1;
-        } else {
-          summary.providers += 1;
-        }
-        return summary;
-      },
-      { authFiles: 0, apiKeys: 0, providers: 0 },
-    );
-  }, [queueItems, selectedIds]);
+  const selectedQueueSummary = useMemo(
+    () =>
+      summarizeAccountImportQueueSelection({
+        items: queueItems,
+        selectedIds,
+      }),
+    [queueItems, selectedIds],
+  );
 
-  const allValid = useMemo(() => {
-    const selectedItems = queueItems.filter((item) => selectedIds.has(item.id));
-    if (selectedItems.length === 0) return false;
-    return selectedItems.every((item) => validateAccountImportPayloadItem(item.payload).valid);
-  }, [queueItems, selectedIds]);
-
-  async function handleAddFiles(files: FileList | null) {
+  async function handleAddFiles(files: FileList | File[] | null) {
     if (!files?.length) {
       return;
     }
@@ -160,6 +147,25 @@ export default function AccountImportModal({
     } finally {
       setReadingFiles(false);
     }
+  }
+
+  function flushPendingUploadFiles() {
+    uploadFlushScheduledRef.current = false;
+    const files = pendingUploadFilesRef.current;
+    pendingUploadFilesRef.current = [];
+    if (files.length === 0 || readingFiles || submitting) {
+      return;
+    }
+    void handleAddFiles(files);
+  }
+
+  function scheduleUploadFile(file: File) {
+    pendingUploadFilesRef.current.push(file);
+    if (uploadFlushScheduledRef.current) {
+      return;
+    }
+    uploadFlushScheduledRef.current = true;
+    queueMicrotask(flushPendingUploadFiles);
   }
 
   function handleFileDragOver(event: DragEvent<HTMLButtonElement>) {
@@ -299,22 +305,25 @@ export default function AccountImportModal({
   }
 
   async function handleSubmit() {
-    const selectedItems = queueItems.filter((item) => selectedIds.has(item.id));
-    if (selectedItems.length === 0) {
+    if (selectedQueueSummary.selectedCount === 0) {
       setError(t('accounts.import_account_queue_required'));
       return;
     }
 
-    const invalidItems = selectedItems.filter((item) => !validateAccountImportPayloadItem(item.payload).valid);
-    if (invalidItems.length > 0) {
-      setError(t('accounts.import_account_invalid_item').replace('{reason}', 'Please fix fields in editing cards first'));
+    if (!selectedQueueSummary.allValid) {
+      setError(
+        t('accounts.import_account_invalid_item').replace(
+          '{reason}',
+          selectedQueueSummary.invalidReason || 'Please fix fields in editing cards first',
+        ),
+      );
       return;
     }
 
     setSubmitting(true);
     setError('');
     try {
-      await onSubmit(selectedItems.map((item) => item.payload));
+      await onSubmit(selectedQueueSummary.selectedPayloads);
       onClose();
     } catch (err) {
       setError(toErrorMessage(err));
@@ -350,14 +359,14 @@ export default function AccountImportModal({
       footer={
         <>
           <div className={accountImportModalSummaryClass}>
-            {selectedIds.size === 0
+            {selectedQueueSummary.selectedCount === 0
               ? t('accounts.import_account_queue_empty')
               : t('accounts.import_account_selected_summary')
-                  .replace('{selected}', String(selectedIds.size))
-                  .replace('{total}', String(queueItems.length))
-                  .replace('{authFiles}', String(selectedSummary.authFiles))
-                  .replace('{apiKeys}', String(selectedSummary.apiKeys))
-                  .replace('{providers}', String(selectedSummary.providers))}
+                  .replace('{selected}', String(selectedQueueSummary.selectedCount))
+                  .replace('{total}', String(selectedQueueSummary.totalCount))
+                  .replace('{authFiles}', String(selectedQueueSummary.authFiles))
+                  .replace('{apiKeys}', String(selectedQueueSummary.apiKeys))
+                  .replace('{providers}', String(selectedQueueSummary.providers))}
           </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={onClose} disabled={submitting}>
@@ -366,7 +375,7 @@ export default function AccountImportModal({
             <Button
               type="primary"
               onClick={() => void handleSubmit()}
-              disabled={submitting || selectedIds.size === 0 || !allValid}
+              disabled={submitting || selectedQueueSummary.selectedCount === 0 || !selectedQueueSummary.allValid}
             >
               {submitting ? (
                 <span className="flex items-center gap-2">
@@ -435,9 +444,7 @@ export default function AccountImportModal({
                       accept=".json,.zip,.tar,.tar.gz,.tgz,.gz,.gzip,application/json,application/zip,application/gzip,application/x-tar"
                       showUploadList={false}
                       beforeUpload={(file) => {
-                        const dt = new DataTransfer();
-                        dt.items.add(file);
-                        void handleAddFiles(dt.files);
+                        scheduleUploadFile(file);
                         return false;
                       }}
                     >

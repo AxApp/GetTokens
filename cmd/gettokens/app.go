@@ -495,7 +495,7 @@ func mapChannelAccountRuntimeState(input *wailsapp.ChannelAccountRuntimeState) *
 	}
 }
 
-func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
+func (a *App) UploadAuthFiles(files []UploadFilePayload) (*AuthFileUploadResult, error) {
 	payload := make([]wailsapp.UploadFilePayload, 0, len(files))
 	for _, file := range files {
 		payload = append(payload, wailsapp.UploadFilePayload{
@@ -503,7 +503,40 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 			ContentBase64: file.ContentBase64,
 		})
 	}
-	return a.core.UploadAuthFiles(payload)
+	result, err := a.core.UploadAuthFiles(payload)
+	if result == nil {
+		return nil, err
+	}
+	return &AuthFileUploadResult{
+		Succeeded:       result.Succeeded,
+		Skipped:         result.Skipped,
+		SkippedExisting: result.SkippedExisting,
+		SkippedInBatch:  result.SkippedInBatch,
+		Failed:          result.Failed,
+		FallbackUsed:    result.FallbackUsed,
+	}, err
+}
+
+func (a *App) PreviewAuthFileUploads(files []UploadFilePayload) (*AuthFileUploadPreviewResult, error) {
+	payload := make([]wailsapp.UploadFilePayload, 0, len(files))
+	for _, file := range files {
+		payload = append(payload, wailsapp.UploadFilePayload{
+			Name:          file.Name,
+			ContentBase64: file.ContentBase64,
+		})
+	}
+	result, err := a.core.PreviewAuthFileUploads(payload)
+	if result == nil {
+		return nil, err
+	}
+	return &AuthFileUploadPreviewResult{
+		Supported:       result.Supported,
+		WouldCreate:     result.WouldCreate,
+		Skipped:         result.Skipped,
+		SkippedExisting: result.SkippedExisting,
+		SkippedInBatch:  result.SkippedInBatch,
+		Failed:          result.Failed,
+	}, err
 }
 
 func (a *App) GetAuthFileModels(name string) ([]map[string]interface{}, error) {

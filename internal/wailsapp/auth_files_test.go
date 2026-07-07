@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -344,20 +345,28 @@ func TestUploadAuthFilesConvertsChatGPTSessionToCPA(t *testing.T) {
 
 	var accountWrite map[string]interface{}
 	var authFileCredential map[string]interface{}
+	singleCreateCalls := 0
 
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			switch {
 			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
 				return []byte(`{"accounts":[]}`), http.StatusOK, nil
-			case method == http.MethodPost && path == ManagementAPIPrefix+"/accounts":
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/accounts/batch-create":
 				raw, err := io.ReadAll(body)
 				if err != nil {
 					t.Fatalf("ReadAll account body: %v", err)
 				}
-				if err := json.Unmarshal(raw, &accountWrite); err != nil {
+				var request struct {
+					Accounts []map[string]interface{} `json:"accounts"`
+				}
+				if err := json.Unmarshal(raw, &request); err != nil {
 					t.Fatalf("account payload is invalid json: %v; raw=%s", err, raw)
 				}
+				if len(request.Accounts) != 1 {
+					t.Fatalf("batch accounts = %d, want 1", len(request.Accounts))
+				}
+				accountWrite = request.Accounts[0]
 				rawCredential, err := json.Marshal(accountWrite["auth_file"])
 				if err != nil {
 					t.Fatalf("Marshal auth_file: %v", err)
@@ -365,7 +374,11 @@ func TestUploadAuthFilesConvertsChatGPTSessionToCPA(t *testing.T) {
 				if err := json.Unmarshal(rawCredential, &authFileCredential); err != nil {
 					t.Fatalf("auth_file payload is invalid json: %v; raw=%s", err, rawCredential)
 				}
-				return []byte(`{"account_key":"acct_imported","kind":"auth-file","title":"chatgpt-session.json","provider":"codex","auth_file":{"source_file_name":"chatgpt-session.json"}}`), http.StatusOK, nil
+				return []byte(`{"accounts":[{"account_key":"acct_imported","kind":"auth-file","title":"chatgpt-session.json","provider":"codex","auth_file":{"source_file_name":"chatgpt-session.json"}}],"errors":[],"succeeded":1,"failed":0}`), http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/accounts":
+				singleCreateCalls++
+				t.Fatalf("single CreateAccount should not be used when batch-create is supported")
+				return nil, 0, nil
 			default:
 				t.Fatalf("unexpected request: %s %s", method, path)
 				return nil, 0, nil
@@ -373,12 +386,18 @@ func TestUploadAuthFilesConvertsChatGPTSessionToCPA(t *testing.T) {
 		},
 	}
 
-	err := app.UploadAuthFiles([]UploadFilePayload{{
+	result, err := app.UploadAuthFiles([]UploadFilePayload{{
 		Name:          "chatgpt-session.json",
 		ContentBase64: base64.StdEncoding.EncodeToString([]byte(sessionBody)),
 	}})
 	if err != nil {
 		t.Fatalf("UploadAuthFiles: %v", err)
+	}
+	if result == nil || result.Succeeded != 1 || result.Skipped != 0 || result.Failed != 0 {
+		t.Fatalf("UploadAuthFiles result = %#v, want one success", result)
+	}
+	if singleCreateCalls != 0 {
+		t.Fatalf("single create calls = %d, want 0", singleCreateCalls)
 	}
 
 	if got := accountWrite["kind"]; got != "auth-file" {
@@ -416,6 +435,143 @@ func TestUploadAuthFilesConvertsChatGPTSessionToCPA(t *testing.T) {
 	}
 	if got := uploadedPayload["id_token_synthetic"]; got != true {
 		t.Fatalf("id_token_synthetic = %#v, want true", got)
+	}
+}
+
+func TestUploadAuthFilesFallsBackToSingleCreateWhenBatchCreateUnsupported(t *testing.T) {
+	app := &App{}
+	batchCreateCalls := 0
+	singleCreateCalls := 0
+	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		switch {
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+			return []byte(`{"accounts":[]}`), http.StatusOK, nil
+		case method == http.MethodPost && path == ManagementAPIPrefix+"/accounts/batch-create":
+			batchCreateCalls++
+			return []byte(`{"error":"not found"}`), http.StatusNotFound, nil
+		case method == http.MethodPost && path == ManagementAPIPrefix+"/accounts":
+			singleCreateCalls++
+			raw, err := io.ReadAll(body)
+			if err != nil {
+				t.Fatalf("ReadAll fallback account body: %v", err)
+			}
+			if !strings.Contains(string(raw), `"kind":"auth-file"`) {
+				t.Fatalf("fallback account payload = %s, want auth-file kind", raw)
+			}
+			return []byte(`{"account_key":"acct_imported","kind":"auth-file","title":"imported.json","provider":"codex"}`), http.StatusOK, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+			return nil, 0, nil
+		}
+	}
+
+	files := []UploadFilePayload{
+		{Name: "one.json", ContentBase64: base64.StdEncoding.EncodeToString([]byte(`{"type":"codex","email":"one@example.com","access_token":"a","refresh_token":"r"}`))},
+		{Name: "two.json", ContentBase64: base64.StdEncoding.EncodeToString([]byte(`{"type":"codex","email":"two@example.com","access_token":"a","refresh_token":"r"}`))},
+	}
+	result, err := app.UploadAuthFiles(files)
+	if err != nil {
+		t.Fatalf("UploadAuthFiles: %v", err)
+	}
+	if result == nil || result.Succeeded != 2 || !result.FallbackUsed {
+		t.Fatalf("UploadAuthFiles fallback result = %#v, want two successes with fallback", result)
+	}
+	if batchCreateCalls != 1 {
+		t.Fatalf("batch create calls = %d, want 1", batchCreateCalls)
+	}
+	if singleCreateCalls != 2 {
+		t.Fatalf("single create calls = %d, want 2", singleCreateCalls)
+	}
+}
+
+func TestUploadAuthFilesReturnsSkippedDuplicateSummary(t *testing.T) {
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				return []byte(`{"accounts":[]}`), http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/accounts/batch-create":
+				return []byte(`{"accounts":[],"skipped":[{"index":0,"title":"one.json","reason":"existing_account","existing_account_key":"acct_existing"},{"index":1,"title":"two.json","reason":"duplicate_in_batch","existing_account_key":"acct_existing"}],"errors":[],"succeeded":0,"skipped_count":2,"failed":0}`), http.StatusOK, nil
+			default:
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	files := []UploadFilePayload{
+		{Name: "one.json", ContentBase64: base64.StdEncoding.EncodeToString([]byte(`{"type":"codex","email":"one@example.com","access_token":"a","id_token":"same"}`))},
+		{Name: "two.json", ContentBase64: base64.StdEncoding.EncodeToString([]byte(`{"type":"codex","email":"two@example.com","access_token":"b","id_token":"same"}`))},
+	}
+	result, err := app.UploadAuthFiles(files)
+	if err != nil {
+		t.Fatalf("UploadAuthFiles: %v", err)
+	}
+	if result == nil || result.Succeeded != 0 || result.Skipped != 2 || result.SkippedExisting != 1 || result.SkippedInBatch != 1 || result.Failed != 0 {
+		t.Fatalf("UploadAuthFiles result = %#v, want skipped duplicate summary", result)
+	}
+}
+
+func TestPreviewAuthFileUploadsReturnsSkippedDuplicateSummary(t *testing.T) {
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				return []byte(`{"accounts":[]}`), http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/accounts/batch-preview":
+				raw, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("ReadAll preview body: %v", err)
+				}
+				if !strings.Contains(string(raw), `"accounts":[{"kind":"auth-file"`) {
+					t.Fatalf("preview payload = %s, want auth-file account writes", raw)
+				}
+				return []byte(`{"items":[{"index":0,"title":"one.json","action":"skip","reason":"existing_account"},{"index":1,"title":"two.json","action":"skip","reason":"duplicate_in_batch"}],"skipped":[{"index":0,"title":"one.json","reason":"existing_account","existing_account_key":"acct_existing"},{"index":1,"title":"two.json","reason":"duplicate_in_batch","existing_account_key":"acct_existing"}],"errors":[],"would_create":0,"skipped_count":2,"failed":0}`), http.StatusOK, nil
+			default:
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	files := []UploadFilePayload{
+		{Name: "one.json", ContentBase64: base64.StdEncoding.EncodeToString([]byte(`{"type":"codex","email":"one@example.com","access_token":"a","id_token":"same"}`))},
+		{Name: "two.json", ContentBase64: base64.StdEncoding.EncodeToString([]byte(`{"type":"codex","email":"two@example.com","access_token":"b","id_token":"same"}`))},
+	}
+	result, err := app.PreviewAuthFileUploads(files)
+	if err != nil {
+		t.Fatalf("PreviewAuthFileUploads: %v", err)
+	}
+	if result == nil || !result.Supported || result.WouldCreate != 0 || result.Skipped != 2 || result.SkippedExisting != 1 || result.SkippedInBatch != 1 || result.Failed != 0 {
+		t.Fatalf("PreviewAuthFileUploads result = %#v, want skipped duplicate summary", result)
+	}
+}
+
+func TestPreviewAuthFileUploadsReturnsUnsupportedForOldSidecar(t *testing.T) {
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				return []byte(`{"accounts":[]}`), http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/accounts/batch-preview":
+				return []byte(`{"error":"not found"}`), http.StatusNotFound, nil
+			default:
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	files := []UploadFilePayload{
+		{Name: "one.json", ContentBase64: base64.StdEncoding.EncodeToString([]byte(`{"type":"codex","email":"one@example.com","access_token":"a","id_token":"one"}`))},
+		{Name: "two.json", ContentBase64: base64.StdEncoding.EncodeToString([]byte(`{"type":"codex","email":"two@example.com","access_token":"b","id_token":"two"}`))},
+	}
+	result, err := app.PreviewAuthFileUploads(files)
+	if err != nil {
+		t.Fatalf("PreviewAuthFileUploads: %v", err)
+	}
+	if result == nil || result.Supported || result.WouldCreate != 2 || result.Skipped != 0 || result.Failed != 0 {
+		t.Fatalf("PreviewAuthFileUploads old sidecar result = %#v, want unsupported with wouldCreate=2", result)
 	}
 }
 

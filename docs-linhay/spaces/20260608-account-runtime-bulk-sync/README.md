@@ -37,6 +37,15 @@
 - 验收路径：源码守护验证全局运行态只读 `syncCodexQuotaStatuses`；sidecar/Wails/client 测试验证 batch refresh 单请求、部分失败可返回；前端 typecheck 验证真实 Wails 绑定。
 - 反证条件：若全局运行态仍出现 `runAccountRuntimeRequestPool(runtimeSyncAccounts, refreshCodexQuota)`，或选中批量刷新仍 `for resolution.targets` 逐账号调用单刷新，则视为未完成。
 
+### 2026-07-07 全局 runtime 刷新回归止血
+
+- 问题来源：用户反馈正式环境导入 800 个账号后卡住，并补充“刷新也很慢，我们之前也解决过，捞方案处理”。
+- 当前事实位置：`frontend/src/features/accounts/hooks/useAccountsPageState.ts` 已保留 2026-06-08 的快路径，`refreshAccountsRuntime` 读取 `syncCodexQuotaStatuses(runtimeSyncAccounts, { replace: false })`；但 `frontend/src/features/accounts/AccountsFeature.tsx` 又定义了同名本地函数，header `onRefreshRuntime` 实际调用本地 `refreshAccountQuotasBatch(accounts)`，把全局运行态刷新重新变成所有账号主动 quota refresh。
+- 同类事实位置：`internal/wailsapp/app_runtime_menubar_snapshot.go` 的菜单栏主动刷新仍对每个配置账号调用 `client.RefreshQuota(account.AccountKey, true, false)`，形成 N 次 management HTTP。
+- 修复边界：账号页 header 只消费 `useAccountsPageStateContext` 暴露的 `runtimeRefreshing/refreshAccountsRuntime`；hook 内部维护 busy guard，并继续用 quota snapshot 读 + usage/rate-limit 刷新。菜单栏主动刷新收集可刷新账号 key 后一次调用 `RefreshQuotaBatch`，再读取 runtime snapshot。
+- 验收路径：前端静态测试断言 `AccountsFeature` 不得定义页面本地 `refreshAccountsRuntime`，不得从全局 header 调 `refreshAccountQuotasBatch(accounts)`；Wails 菜单栏测试断言只发一次 `/gettokens/quota-refresh-batch`。
+- 反证条件：若账号页 header 再次绕过 `useAccountsPageState.refreshAccountsRuntime`，或菜单栏主动刷新重新出现 `/gettokens/quota-refresh/<account>` 循环，则视为回归。
+
 ## 设计稿入口
 
 - 本期设计稿：`（未产出）`
@@ -51,9 +60,15 @@
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-06-08
+- 最近更新：2026-07-07
 
 ## 验证记录
+- 2026-07-07 回归止血：
+  - `node --test frontend/src/features/accounts/tests/accountRuntimeSync.test.mjs frontend/src/features/accounts/tests/accountHeaderMenu.test.mjs` 先红后绿。
+  - `go test ./internal/wailsapp -run 'TestRefreshMenuBarQuotaSnapshot' -count=1` 先红后绿。
+  - `npm --prefix frontend run typecheck` 通过。
+  - `go test ./internal/wailsapp -count=1` 通过。
+  - `node --test frontend/src/features/accounts/tests/*.test.mjs` 通过，`522 pass / 0 fail`。
 - `go test ./internal/api/handlers/management -run 'TestQuotaRefresh.*Batch|TestQuotaRefreshCodexAPIKeyAccountWritesRuntimeGuard|TestQuotaRefreshOpenAICompatibleAccountWritesBillingRuntime' -count=1` 通过。
 - `go test ./internal/api/handlers/management -count=1` 通过。
 - `go test ./internal/cliproxyapi ./internal/wailsapp -run 'TestQuotaRefreshClientEndpoints|TestQuotaRuntimeBridgeCallsReadOnlyManagementAPI|TestRefreshCodexQuotasBatchCallsBatchManagementAPI' -count=1` 通过。

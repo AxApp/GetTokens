@@ -358,6 +358,68 @@ func (c *Client) CreateAccount(input AccountWriteRequest) (*UnifiedAccount, erro
 	return &account, nil
 }
 
+func (c *Client) CreateAccountsBatch(input AccountBatchCreateInput) (*AccountBatchCreateResult, bool, error) {
+	if input.Accounts == nil {
+		input.Accounts = []AccountWriteRequest{}
+	}
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, false, err
+	}
+	body, status, err := c.request("POST", "/v0/management/accounts/batch-create", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, false, err
+	}
+	if status == 404 || status == 501 {
+		return nil, false, nil
+	}
+	var response AccountBatchCreateResult
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, false, err
+	}
+	if response.Accounts == nil {
+		response.Accounts = []UnifiedAccount{}
+	}
+	if response.Skipped == nil {
+		response.Skipped = []AccountBatchCreateSkipped{}
+	}
+	if response.Errors == nil {
+		response.Errors = []AccountBatchCreateError{}
+	}
+	return &response, true, nil
+}
+
+func (c *Client) PreviewCreateAccountsBatch(input AccountBatchCreateInput) (*AccountBatchCreatePreviewResult, bool, error) {
+	if input.Accounts == nil {
+		input.Accounts = []AccountWriteRequest{}
+	}
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, false, err
+	}
+	body, status, err := c.request("POST", "/v0/management/accounts/batch-preview", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, false, err
+	}
+	if status == 404 || status == 501 {
+		return nil, false, nil
+	}
+	var response AccountBatchCreatePreviewResult
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, false, err
+	}
+	if response.Items == nil {
+		response.Items = []AccountBatchCreatePreviewItem{}
+	}
+	if response.Skipped == nil {
+		response.Skipped = []AccountBatchCreateSkipped{}
+	}
+	if response.Errors == nil {
+		response.Errors = []AccountBatchCreateError{}
+	}
+	return &response, true, nil
+}
+
 func (c *Client) PatchAccount(accountKey string, input AccountWriteRequest) (*UnifiedAccount, error) {
 	payload, err := json.Marshal(input)
 	if err != nil {

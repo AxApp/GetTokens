@@ -743,6 +743,51 @@ type AccountBatchDeleteInput struct {
 	AccountKeys []string `json:"account_keys"`
 }
 
+type AccountBatchCreateInput struct {
+	Accounts []AccountWriteRequest `json:"accounts"`
+}
+
+type AccountBatchCreateError struct {
+	Index int    `json:"index"`
+	Title string `json:"title,omitempty"`
+	Error string `json:"error"`
+}
+
+type AccountBatchCreateSkipped struct {
+	Index              int    `json:"index"`
+	Title              string `json:"title,omitempty"`
+	Reason             string `json:"reason"`
+	ExistingAccountKey string `json:"existing_account_key,omitempty"`
+	DedupeKeyKind      string `json:"dedupe_key_kind,omitempty"`
+}
+
+type AccountBatchCreatePreviewItem struct {
+	Index              int    `json:"index"`
+	Title              string `json:"title,omitempty"`
+	Action             string `json:"action"`
+	Reason             string `json:"reason,omitempty"`
+	ExistingAccountKey string `json:"existing_account_key,omitempty"`
+	DedupeKeyKind      string `json:"dedupe_key_kind,omitempty"`
+}
+
+type AccountBatchCreatePreviewResult struct {
+	Items        []AccountBatchCreatePreviewItem `json:"items"`
+	Skipped      []AccountBatchCreateSkipped     `json:"skipped"`
+	Errors       []AccountBatchCreateError       `json:"errors"`
+	WouldCreate  int                             `json:"would_create"`
+	SkippedCount int                             `json:"skipped_count"`
+	Failed       int                             `json:"failed"`
+}
+
+type AccountBatchCreateResult struct {
+	Accounts     []UnifiedAccount            `json:"accounts"`
+	Skipped      []AccountBatchCreateSkipped `json:"skipped"`
+	Errors       []AccountBatchCreateError   `json:"errors"`
+	Succeeded    int                         `json:"succeeded"`
+	SkippedCount int                         `json:"skipped_count"`
+	Failed       int                         `json:"failed"`
+}
+
 type AccountBatchDeleteError struct {
 	AccountKey string `json:"account_key"`
 	Error      string `json:"error"`

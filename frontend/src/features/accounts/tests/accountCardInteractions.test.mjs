@@ -265,6 +265,10 @@ test('account import modal uses merged input panel beside account preview', asyn
   assert.ok(pasteIndex < queueIndex);
   assert.match(source, /onDrop=\{handleFileDrop\}/);
   assert.match(pageSource, /onDrop=\{handleFileDrop\}/);
+  assert.match(source, /pendingUploadFilesRef/);
+  assert.match(source, /flushPendingUploadFiles/);
+  assert.match(source, /queueMicrotask/);
+  assert.doesNotMatch(source, /const dt = new DataTransfer\(\)/);
   assert.match(source, /readAccountClipboardText/);
   assert.match(pageSource, /readAccountClipboardText/);
   assert.match(source, /onClick=\{\(\) => void handlePasteFromClipboard\(\)\}/);

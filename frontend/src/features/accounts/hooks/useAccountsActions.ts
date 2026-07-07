@@ -7,6 +7,7 @@ import {
   DeleteCodexAPIKey,
   DeleteOpenAICompatibleProvider,
   DownloadAuthFile,
+  PreviewAuthFileUploads,
   SetAccountDisabled,
   UpdateCodexAPIKeyConfig,
   UpdateCodexAPIKeyLabel,
@@ -262,12 +263,48 @@ export default function useAccountsActions({
 
       try {
         if (authFilePayload.length > 0) {
-          await trackRequest(
-            'UploadAuthFiles',
+          const previewResult = await trackRequest(
+            'PreviewAuthFileUploads',
             { files: authFilePayload.map((item) => ({ name: item.name })) },
-            () => UploadAuthFiles(authFilePayload),
+            () => PreviewAuthFileUploads(authFilePayload),
           );
-          mutated = true;
+          const skipUploadAfterPreview =
+            previewResult?.supported &&
+            previewResult.failed === 0 &&
+            previewResult.wouldCreate === 0 &&
+            previewResult.skipped === authFilePayload.length;
+          if (previewResult?.supported && previewResult.skipped > 0) {
+            const message =
+              previewResult.wouldCreate > 0
+                ? t('accounts.import_account_upload_preview_summary')
+                    .replace('{wouldCreate}', String(previewResult.wouldCreate))
+                    .replace('{skipped}', String(previewResult.skipped))
+                : t('accounts.import_account_upload_preview_all_skipped').replace('{skipped}', String(previewResult.skipped));
+            setAccountActionNotice({
+              tone: previewResult.wouldCreate > 0 ? 'success' : 'warning',
+              message,
+            });
+          }
+          if (!skipUploadAfterPreview) {
+            const uploadResult = await trackRequest(
+              'UploadAuthFiles',
+              { files: authFilePayload.map((item) => ({ name: item.name })) },
+              () => UploadAuthFiles(authFilePayload),
+            );
+            if (uploadResult?.skipped && uploadResult.skipped > 0) {
+              const message =
+                uploadResult.succeeded > 0
+                  ? t('accounts.import_account_upload_skipped_summary')
+                      .replace('{succeeded}', String(uploadResult.succeeded))
+                      .replace('{skipped}', String(uploadResult.skipped))
+                  : t('accounts.import_account_upload_all_skipped').replace('{skipped}', String(uploadResult.skipped));
+              setAccountActionNotice({
+                tone: uploadResult.succeeded > 0 ? 'success' : 'warning',
+                message,
+              });
+            }
+            mutated = true;
+          }
         }
 
         const existingApiKeyTitles = accounts.flatMap((account) => {
@@ -349,11 +386,11 @@ export default function useAccountsActions({
       } finally {
         if (mutated) {
           setSearchTerm('');
-          await loadAccounts();
+          await loadAccounts({ refreshSupplementalData: false });
         }
       }
     },
-    [accounts, loadAccounts, setDeleteError, setSearchTerm, t, trackRequest],
+    [accounts, loadAccounts, setAccountActionNotice, setDeleteError, setSearchTerm, t, trackRequest],
   );
 
   const exportSelectedAccounts = useCallback(async () => {

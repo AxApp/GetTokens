@@ -74,6 +74,11 @@ test('AccountsHeader menu row styles stay flat instead of card-like', () => {
 test('AccountsHeader exposes separate account-list and runtime refresh actions', () => {
   const headerSource = readFileSync(new URL('../components/AccountsHeader.tsx', import.meta.url), 'utf8');
   const featureSource = readFileSync(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const contextEnd = featureSource.indexOf('} = useAccountsPageStateContext();');
+  assert.notEqual(contextEnd, -1);
+  const contextStart = featureSource.lastIndexOf('const {', contextEnd);
+  assert.notEqual(contextStart, -1);
+  const contextSource = featureSource.slice(contextStart, contextEnd);
 
   assert.match(headerSource, /onRefreshAccounts/);
   assert.match(headerSource, /onRefreshRuntime/);
@@ -86,8 +91,10 @@ test('AccountsHeader exposes separate account-list and runtime refresh actions',
   assert.match(headerSource, /<Activity className="h-4 w-4" size=\{16\} strokeWidth=\{2\} \/>/);
   assert.doesNotMatch(headerSource, /animate-pulse/);
   assert.doesNotMatch(headerSource, /<Activity className=\{`h-4 w-4 \$\{loading \? 'animate-pulse' : ''\}`\}/);
-  assert.match(featureSource, /const \[runtimeRefreshing, setRuntimeRefreshing\] = useState\(false\)/);
-  assert.match(featureSource, /await Promise\.allSettled\(\[/);
+  assert.match(contextSource, /runtimeRefreshing/);
+  assert.match(contextSource, /refreshAccountsRuntime/);
+  assert.doesNotMatch(featureSource, /const \[runtimeRefreshing, setRuntimeRefreshing\] = useState\(false\)/);
+  assert.doesNotMatch(featureSource, /const refreshAccountsRuntime = useCallback/);
   assert.match(featureSource, /runtimeRefreshing=\{runtimeRefreshing\}/);
   assert.match(featureSource, /onRefreshAccounts=\{\(\) => void loadAccounts\(\{ refreshSupplementalData: false \}\)\}/);
   assert.match(featureSource, /onRefreshRuntime=\{\(\) => void refreshAccountsRuntime\(\)\}/);

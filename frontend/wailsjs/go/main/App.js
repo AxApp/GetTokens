@@ -478,6 +478,10 @@ export function PrepareGetTokensExtensionCodexConfigApply(arg1) {
   return window['go']['main']['App']['PrepareGetTokensExtensionCodexConfigApply'](arg1);
 }
 
+export function PreviewAuthFileUploads(arg1) {
+  return window['go']['main']['App']['PreviewAuthFileUploads'](arg1);
+}
+
 export function PreviewBudgetWindowFacts(arg1) {
   return window['go']['main']['App']['PreviewBudgetWindowFacts'](arg1);
 }

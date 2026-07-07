@@ -78,36 +78,146 @@ func (a *App) DeleteAuthFiles(names []string) error {
 	return nil
 }
 
-func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
+func (a *App) UploadAuthFiles(files []UploadFilePayload) (*AuthFileUploadResult, error) {
 	if len(files) == 0 {
-		return errors.New("未选择文件")
+		return nil, errors.New("未选择文件")
 	}
 
-	existingNames, err := a.listExistingAccountStoreAuthFileNames()
+	writes, err := a.buildAuthFileUploadWrites(files)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	if len(writes) == 0 {
+		return &AuthFileUploadResult{}, nil
 	}
 
 	client := a.managementClient()
+	if result, supported, err := client.CreateAccountsBatch(cliproxyapi.AccountBatchCreateInput{Accounts: writes}); err != nil {
+		return nil, err
+	} else if supported {
+		if result != nil && result.Failed > 0 {
+			return nil, authFilesBatchCreateError(result)
+		}
+		return authFileUploadResultFromBatch(result), nil
+	}
+
+	out := &AuthFileUploadResult{FallbackUsed: true}
+	for _, write := range writes {
+		if _, err := client.CreateAccount(write); err != nil {
+			return nil, err
+		}
+		out.Succeeded++
+	}
+
+	return out, nil
+}
+
+func (a *App) PreviewAuthFileUploads(files []UploadFilePayload) (*AuthFileUploadPreviewResult, error) {
+	if len(files) == 0 {
+		return nil, errors.New("未选择文件")
+	}
+	writes, err := a.buildAuthFileUploadWrites(files)
+	if err != nil {
+		return nil, err
+	}
+	if len(writes) == 0 {
+		return &AuthFileUploadPreviewResult{Supported: true}, nil
+	}
+	result, supported, err := a.managementClient().PreviewCreateAccountsBatch(cliproxyapi.AccountBatchCreateInput{Accounts: writes})
+	if err != nil {
+		return nil, err
+	}
+	if !supported {
+		return &AuthFileUploadPreviewResult{Supported: false, WouldCreate: len(writes)}, nil
+	}
+	return authFileUploadPreviewResultFromBatch(result), nil
+}
+
+func (a *App) buildAuthFileUploadWrites(files []UploadFilePayload) ([]cliproxyapi.AccountWriteRequest, error) {
+	existingNames, err := a.listExistingAccountStoreAuthFileNames()
+	if err != nil {
+		return nil, err
+	}
+
+	writes := make([]cliproxyapi.AccountWriteRequest, 0, len(files))
 	for _, f := range files {
 		if strings.TrimSpace(f.Name) == "" || strings.TrimSpace(f.ContentBase64) == "" {
 			continue
 		}
 		decoded, err := base64.StdEncoding.DecodeString(f.ContentBase64)
 		if err != nil {
-			return fmt.Errorf("文件 %s base64 解码失败: %w", f.Name, err)
+			return nil, fmt.Errorf("文件 %s base64 解码失败: %w", f.Name, err)
 		}
 		if normalized, _, normalizeErr := accountsdomain.NormalizeAuthFileForSidecar(decoded); normalizeErr == nil {
 			decoded = normalized
 		}
 		resolvedName := uniqueAuthFileUploadName(f.Name, existingNames)
-		write := authFileCreateAccountWrite(resolvedName, decoded)
-		if _, err := client.CreateAccount(write); err != nil {
-			return err
+		writes = append(writes, authFileCreateAccountWrite(resolvedName, decoded))
+	}
+	return writes, nil
+}
+
+func authFileUploadResultFromBatch(result *cliproxyapi.AccountBatchCreateResult) *AuthFileUploadResult {
+	out := &AuthFileUploadResult{}
+	if result == nil {
+		return out
+	}
+	out.Succeeded = result.Succeeded
+	out.Skipped = result.SkippedCount
+	out.Failed = result.Failed
+	if out.Skipped == 0 {
+		out.Skipped = len(result.Skipped)
+	}
+	for _, item := range result.Skipped {
+		switch item.Reason {
+		case "existing_account":
+			out.SkippedExisting++
+		case "duplicate_in_batch":
+			out.SkippedInBatch++
 		}
 	}
+	return out
+}
 
-	return nil
+func authFileUploadPreviewResultFromBatch(result *cliproxyapi.AccountBatchCreatePreviewResult) *AuthFileUploadPreviewResult {
+	out := &AuthFileUploadPreviewResult{Supported: true}
+	if result == nil {
+		return out
+	}
+	out.WouldCreate = result.WouldCreate
+	out.Skipped = result.SkippedCount
+	out.Failed = result.Failed
+	if out.Skipped == 0 {
+		out.Skipped = len(result.Skipped)
+	}
+	for _, item := range result.Skipped {
+		switch item.Reason {
+		case "existing_account":
+			out.SkippedExisting++
+		case "duplicate_in_batch":
+			out.SkippedInBatch++
+		}
+	}
+	return out
+}
+
+func authFilesBatchCreateError(result *cliproxyapi.AccountBatchCreateResult) error {
+	if result == nil {
+		return errors.New("批量导入账号失败")
+	}
+	if len(result.Errors) == 0 {
+		return fmt.Errorf("批量导入账号失败: %d 项失败", result.Failed)
+	}
+	first := result.Errors[0]
+	label := strings.TrimSpace(first.Title)
+	if label == "" {
+		label = fmt.Sprintf("#%d", first.Index+1)
+	}
+	message := strings.TrimSpace(first.Error)
+	if message == "" {
+		message = "未知错误"
+	}
+	return fmt.Errorf("批量导入账号失败: %s: %s", label, message)
 }
 
 func authFileCreateAccountWrite(sourceFileName string, authJSON []byte) cliproxyapi.AccountWriteRequest {

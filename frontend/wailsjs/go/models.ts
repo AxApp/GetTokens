@@ -1104,6 +1104,50 @@ export namespace main {
 	        this.modified = source["modified"];
 	    }
 	}
+	export class AuthFileUploadPreviewResult {
+	    supported: boolean;
+	    wouldCreate: number;
+	    skipped: number;
+	    skippedExisting: number;
+	    skippedInBatch: number;
+	    failed: number;
+
+	    static createFrom(source: any = {}) {
+	        return new AuthFileUploadPreviewResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.supported = source["supported"];
+	        this.wouldCreate = source["wouldCreate"];
+	        this.skipped = source["skipped"];
+	        this.skippedExisting = source["skippedExisting"];
+	        this.skippedInBatch = source["skippedInBatch"];
+	        this.failed = source["failed"];
+	    }
+	}
+	export class AuthFileUploadResult {
+	    succeeded: number;
+	    skipped: number;
+	    skippedExisting: number;
+	    skippedInBatch: number;
+	    failed: number;
+	    fallbackUsed?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new AuthFileUploadResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.succeeded = source["succeeded"];
+	        this.skipped = source["skipped"];
+	        this.skippedExisting = source["skippedExisting"];
+	        this.skippedInBatch = source["skippedInBatch"];
+	        this.failed = source["failed"];
+	        this.fallbackUsed = source["fallbackUsed"];
+	    }
+	}
 	export class AuthFilesResponse {
 	    files: AuthFileItem[];
 	    total?: number;

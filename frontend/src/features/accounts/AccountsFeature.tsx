@@ -165,6 +165,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     accountRateLimitByID,
     rateLimitRefreshingAccountIDSet,
     rateLimitStrategies,
+    runtimeRefreshing,
     isSelectionMode,
     selectedAccountIDs,
     isHeaderActionsMenuOpen,
@@ -177,6 +178,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     selectedAccountIDSet,
     allFilteredSelected,
     loadAccounts,
+    refreshAccountsRuntime,
     refreshAccountUsage,
     loadAccountRateLimits,
     refreshAccountRateLimits,
@@ -294,22 +296,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     useState<AccountDetailScriptRoute | "">(() =>
       readAccountDetailScriptFromHash(),
     );
-  const [runtimeRefreshing, setRuntimeRefreshing] = useState(false);
-  const refreshAccountsRuntime = useCallback(async () => {
-    if (runtimeRefreshing) {
-      return;
-    }
-    setRuntimeRefreshing(true);
-    try {
-      await Promise.allSettled([
-        refreshAccountQuotasBatch(accounts),
-        refreshAccountUsage(accounts),
-        refreshAccountRateLimits(accounts),
-      ]);
-    } finally {
-      setRuntimeRefreshing(false);
-    }
-  }, [accounts, refreshAccountQuotasBatch, refreshAccountRateLimits, refreshAccountUsage, runtimeRefreshing]);
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const [accountModelNamesByID, setAccountModelNamesByID] = useState<Record<string, string[]>>({});

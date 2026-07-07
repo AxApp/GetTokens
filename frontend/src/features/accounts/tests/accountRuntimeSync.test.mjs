@@ -184,21 +184,59 @@ test('selected bulk quota refresh uses the sidecar batch job endpoint with sync 
   assert.match(quotaHookSource, /status === 'canceled'/);
 });
 
-test('visible account refresh entrypoints use batch quota refresh for large account sets', async () => {
+test('account import reloads account inventory without supplemental runtime sync', async () => {
+  const actionsSource = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const importStart = actionsSource.indexOf('const submitAccountImport = useCallback');
+  assert.notEqual(importStart, -1);
+  const importEnd = actionsSource.indexOf('const exportSelectedAccounts = useCallback', importStart);
+  assert.notEqual(importEnd, -1);
+  const importSource = actionsSource.slice(importStart, importEnd);
+
+  const previewIndex = importSource.indexOf('PreviewAuthFileUploads(authFilePayload)');
+  const uploadIndex = importSource.indexOf('UploadAuthFiles(authFilePayload)');
+  assert.notEqual(previewIndex, -1);
+  assert.notEqual(uploadIndex, -1);
+  assert.ok(previewIndex < uploadIndex, 'account import should preflight auth-file duplicates before upload');
+  assert.match(importSource, /skipUploadAfterPreview/);
+  assert.match(importSource, /previewResult\.wouldCreate === 0/);
+  assert.match(importSource, /previewResult\.skipped === authFilePayload\.length/);
+  assert.match(importSource, /import_account_upload_preview_summary/);
+  assert.match(importSource, /import_account_upload_preview_all_skipped/);
+  assert.match(importSource, /uploadResult\?\.skipped/);
+  assert.match(importSource, /import_account_upload_skipped_summary/);
+  assert.match(importSource, /import_account_upload_all_skipped/);
+  assert.match(importSource, /setAccountActionNotice/);
+  assert.match(importSource, /await loadAccounts\(\{ refreshSupplementalData: false \}\)/);
+  assert.doesNotMatch(importSource, /await loadAccounts\(\);/);
+  assert.doesNotMatch(importSource, /refreshAccountQuotasBatch/);
+});
+
+test('visible account runtime refresh uses snapshot sync instead of active all-account quota refresh', async () => {
   const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
-  const runtimeRefreshStart = featureSource.indexOf('const refreshAccountsRuntime = useCallback');
+  const pageStateSource = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+  const contextEnd = featureSource.indexOf('} = useAccountsPageStateContext();');
+  assert.notEqual(contextEnd, -1);
+  const contextStart = featureSource.lastIndexOf('const {', contextEnd);
+  assert.notEqual(contextStart, -1);
+  const contextSource = featureSource.slice(contextStart, contextEnd);
+  const runtimeRefreshStart = pageStateSource.indexOf('const refreshAccountsRuntime = useCallback');
   assert.notEqual(runtimeRefreshStart, -1);
-  const runtimeRefreshEnd = featureSource.indexOf('const [relayModelNames', runtimeRefreshStart);
+  const runtimeRefreshEnd = pageStateSource.indexOf('useEffect(() => {', runtimeRefreshStart);
   assert.notEqual(runtimeRefreshEnd, -1);
-  const runtimeRefreshSource = featureSource.slice(runtimeRefreshStart, runtimeRefreshEnd);
+  const runtimeRefreshSource = pageStateSource.slice(runtimeRefreshStart, runtimeRefreshEnd);
   const groupRefreshStart = featureSource.indexOf('const refreshGroupQuota = useCallback');
   assert.notEqual(groupRefreshStart, -1);
   const groupRefreshEnd = featureSource.indexOf('const setGroupDisabled = useCallback', groupRefreshStart);
   assert.notEqual(groupRefreshEnd, -1);
   const groupRefreshSource = featureSource.slice(groupRefreshStart, groupRefreshEnd);
 
-  assert.match(runtimeRefreshSource, /refreshAccountQuotasBatch\(accounts\)/);
-  assert.doesNotMatch(runtimeRefreshSource, /accounts\.map\(\(account\) => refreshCodexQuota\(account\)\)/);
+  assert.match(contextSource, /runtimeRefreshing/);
+  assert.match(contextSource, /refreshAccountsRuntime/);
+  assert.doesNotMatch(featureSource, /const refreshAccountsRuntime = useCallback/);
+  assert.doesNotMatch(featureSource, /refreshAccountQuotasBatch\(accounts\)/);
+  assert.match(runtimeRefreshSource, /syncCodexQuotaStatuses\(runtimeSyncAccounts, \{ replace: false \}\)/);
+  assert.doesNotMatch(runtimeRefreshSource, /refreshCodexQuotasBatch\(runtimeSyncAccounts/);
+  assert.doesNotMatch(runtimeRefreshSource, /refreshAccountQuotasBatch\(runtimeSyncAccounts/);
   assert.match(groupRefreshSource, /refreshAccountQuotasBatch\(groupAccounts\)/);
   assert.doesNotMatch(groupRefreshSource, /groupAccounts\.forEach\(\(account\) => \{\s*void refreshCodexQuota\(account\);/);
 });
