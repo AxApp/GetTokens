@@ -1656,7 +1656,7 @@ test('ChannelRoutingWorkbench uses left conditions and right diagnostic result l
   assert.match(source, /lg:grid-cols-2/);
   assert.match(source, /channelRoutingFieldClass/);
   assert.match(source, /channelRoutingPrimaryButtonClass/);
-  assert.match(source, /import \{ Button, Select \} from 'antd'/);
+  assert.match(source, /import \{ Button, Segmented, Select \} from 'antd'/);
   assert.match(source, /grid min-h-\[3\.25rem\] min-w-0 grid-cols-\[2\.5rem_minmax\(0,1fr\)\]/);
   assert.match(source, /className=\{channelRoutingPrimaryButtonClass\}/);
   assert.match(source, /\$\{channelRoutingFieldClass\} min-w-0/);
@@ -1716,21 +1716,27 @@ test('ChannelRoutingWorkbench opens route mode help as a modal next to route mod
 test('ChannelRoutingWorkbench keeps route mode toggles in the header and removes the save button', async () => {
   const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
 
+  assert.match(source, /import \{ Button, Segmented, Select \} from 'antd';/);
   assert.match(source, /routeModes\.map/);
-  assert.match(source, /onModeChange\(mode\)/);
+  assert.match(source, /<Segmented/);
+  assert.match(source, /data-channel-routing-mode-switch="true"/);
+  assert.match(source, /onChange=\{\(value\) => onModeChange\(value as ChannelRouteMode\)\}/);
   assert.match(source, /onOpenProjectConfig/);
   assert.match(source, />\s*项目配置\s*</);
   assert.match(source, /<header className=\{`\$\{channelRoutingHeaderClass\} p-4`\}>/);
-  assert.match(source, /grid min-w-0 flex-1 gap-2 sm:max-w-\[28rem\] sm:flex-none sm:grid-cols-2/);
+  assert.doesNotMatch(source, /<StrategyButton/);
+  assert.doesNotMatch(source, /function StrategyButton/);
+  assert.doesNotMatch(source, /grid min-w-0 flex-1 gap-2 sm:max-w-\[28rem\] sm:flex-none sm:grid-cols-2/);
   assert.doesNotMatch(source, /active \? '当前' : cue/);
   assert.doesNotMatch(source, /\bonSave\b/);
   assert.doesNotMatch(source, /\bSave\b/);
 });
 
-test('ChannelRoutingWorkbench presents route mode heading as a large status lockup', async () => {
+test('ChannelRoutingWorkbench presents route mode heading with the standard inline icon treatment', async () => {
   const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /flex h-11 w-11 shrink-0 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--gt-ink-primary\)\] text-\[var\(--gt-surface-canvas\)\]/);
+  assert.match(source, /<Split className="h-5 w-5 shrink-0 text-\[var\(--gt-ink-secondary\)\]" strokeWidth=\{2\.5\} \/>/);
+  assert.doesNotMatch(source, /flex h-11 w-11 shrink-0 items-center justify-center rounded border border-\[var\(--gt-border-strong\)\] bg-\[var\(--gt-ink-primary\)\] text-\[var\(--gt-surface-canvas\)\]/);
   assert.match(source, /<h2 className="min-w-0 text-\[length:var\(--gt-font-size-lg\)\] font-semibold leading-5 text-\[var\(--gt-ink-primary\)\]">/);
   assert.doesNotMatch(source, /tracking-\[0\]/);
   assert.match(source, /查看请求模式说明/);

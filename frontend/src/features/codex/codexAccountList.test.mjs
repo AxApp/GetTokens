@@ -1241,13 +1241,15 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
 
   assert.match(source, /CODEX_ACCOUNT_ORDER_SECTION_TOOLBAR_CLASS/);
   assert.match(source, /'pt-4'/);
-  assert.match(source, /import \{ Button, Checkbox \} from 'antd';/);
+  assert.match(source, /import \{ Button, Checkbox, Segmented \} from 'antd';/);
   assert.match(source, /<Button/);
   assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_MENU_CLASS =/);
   assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_TITLE_CLASS =/);
   assert.match(source, /const CODEX_ACCOUNT_ORDER_FILTER_OPTION_CLASS =/);
-  assert.match(source, /import \{ Button, Checkbox \} from 'antd';/);
-  assert.match(source, /const CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS =/);
+  assert.match(source, /data-codex-account-order-density-switch="true"/);
+  assert.match(source, /<Segmented/);
+  assert.match(source, /onChange=\{\(value\) => onDensityChange\(value as CodexAccountOrderDisplayMode\)\}/);
+  assert.doesNotMatch(source, /const CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS =/);
   assert.match(source, /--gt-surface-canvas/);
   assert.match(source, /--gt-surface-muted/);
   assert.match(source, /--gt-border-subtle/);
@@ -1267,8 +1269,8 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.match(refreshButtonSource, /iconOnly \? null/);
   assert.doesNotMatch(source, /SegmentedControl/);
   assert.doesNotMatch(source, /fitContent/);
-  assert.match(source, /function DisplayModeButton/);
-  assert.match(source, /grid h-10 shrink-0 grid-cols-2/);
+  assert.doesNotMatch(source, /function DisplayModeButton/);
+  assert.doesNotMatch(source, /grid h-10 shrink-0 grid-cols-2/);
   assert.doesNotMatch(source, /account_list_density_compact/);
   assert.doesNotMatch(source, /grid-cols-\[minmax\(12rem,17rem\)_5\.75rem_minmax\(12rem,auto\)_12\.5rem\]/);
   assert.match(source, /accounts\.filter_group_presets/);

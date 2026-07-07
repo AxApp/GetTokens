@@ -47,6 +47,12 @@
 - 体验：这次把“选中就是当前”的反馈落到视觉上，避免标题区再额外重复状态词，也让请求模式卡的身份更像工作台锁定区。
 - 归档：验收截图保存为 `docs-linhay/spaces/20260511-codex-account-list-tab/screenshots/20260526/codex/20260526-codex-account-list-route-mode-header-after-v02.png`。
 
+## 2026-07-07 请求模式与密度切换批注收紧
+
+- 决策：根据 34115 浏览器批注，`ChannelRoutingWorkbench` 左侧标题不再使用黑底 `Split` 徽标，改为普通线性图标 + `请求模式` 标题 + 说明按钮；右侧 `顺序 / 均衡` 从自绘按钮切换为 AntD `Segmented`。2026-05-26 的黑底徽标口径仅作为历史记录，不再作为当前视觉目标。
+- 请求顺序 toolbar 的 `完整 / 列表` 密度切换也从自绘双按钮改为 AntD `Segmented`，避免 AntD Button 的中文自动空格和自定义 grid 组合造成 `完 整 / 列 表` 视觉错位。
+- 验收：focused 源码测试锁住 `Segmented`、禁止旧 `StrategyButton` / `DisplayModeButton`，并通过 34115 in-app browser DOM/bounding rect 验证：两个切换器均为 `.ant-segmented`，旧黑底图标不存在，`完整/列表` 同行对齐且未分字。
+
 ## 设计稿入口
 
 - 本期设计稿：`（未产出）`

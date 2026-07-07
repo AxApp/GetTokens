@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { Button, Checkbox } from 'antd';
+import { Button, Checkbox, Segmented } from 'antd';
 import { type DragEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import SearchInput from '../../../components/ui/SearchInput';
@@ -54,8 +54,7 @@ const CODEX_ACCOUNT_ORDER_STATUS_TEXT_CLASS = (saving: boolean) =>
   `shrink-0 text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal ${
     saving ? 'text-[var(--gt-ink-muted)]' : 'text-[var(--gt-status-danger)]'
   }`;
-const CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS =
-  'grid h-10 shrink-0 grid-cols-2 overflow-hidden rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)]';
+
 export function CodexAccountOrderSection({
   ready,
   loading,
@@ -524,14 +523,17 @@ function InlineActionControls({
             iconOnly
             className="!min-h-10"
           />
-          <div className={CODEX_ACCOUNT_ORDER_DISPLAY_SWITCH_CLASS}>
-            <DisplayModeButton id="full" active={density === 'full'} onClick={onDensityChange}>
-              {t('codex.account_list_density_full')}
-            </DisplayModeButton>
-            <DisplayModeButton id="list" active={density === 'list'} onClick={onDensityChange}>
-              {t('codex.account_list_density_list')}
-            </DisplayModeButton>
-          </div>
+          <Segmented
+            data-codex-account-order-density-switch="true"
+            value={density}
+            disabled={disabled}
+            onChange={(value) => onDensityChange(value as CodexAccountOrderDisplayMode)}
+            options={[
+              { label: t('codex.account_list_density_full'), value: 'full' },
+              { label: t('codex.account_list_density_list'), value: 'list' },
+            ]}
+            className="!h-10 !bg-[var(--gt-surface-canvas)]"
+          />
         </div>
       </div>
     </div>
@@ -624,31 +626,6 @@ function FilterBinaryOptionRow({
         </FilterPillOption>
       </div>
     </div>
-  );
-}
-
-function DisplayModeButton({
-  id,
-  active,
-  children,
-  onClick,
-}: {
-  id: CodexAccountOrderDisplayMode;
-  active: boolean;
-  children: ReactNode;
-  onClick: (id: CodexAccountOrderDisplayMode) => void;
-}) {
-  return (
-    <Button
-      size="small"
-      onClick={() => onClick(id)}
-      className={`${active
-        ? 'bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
-        : 'bg-[var(--gt-surface-muted)] text-[var(--gt-ink-muted)] hover:bg-[var(--gt-surface-canvas)] hover:text-[var(--gt-ink-primary)]'
-      }`}
-    >
-      {children}
-    </Button>
   );
 }
 

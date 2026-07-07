@@ -9,7 +9,7 @@ import {
   Split,
   X,
 } from 'lucide-react';
-import { Button, Select } from 'antd';
+import { Button, Segmented, Select } from 'antd';
 import { useEffect, useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import { RunRouteResilienceAction } from '../../../../wailsjs/go/main/App';
@@ -60,10 +60,9 @@ const routeModes: Array<{
   mode: ChannelRouteMode;
   icon: LucideIcon;
   label: string;
-  cue: string;
 }> = [
-  { mode: 'sequential', icon: Split, label: '顺序', cue: '01→02→03' },
-  { mode: 'balanced', icon: Shuffle, label: '均衡', cue: '空闲优先' },
+  { mode: 'sequential', icon: Split, label: '顺序' },
+  { mode: 'balanced', icon: Shuffle, label: '均衡' },
 ];
 
 const channelRoutingPanelClass =
@@ -188,10 +187,8 @@ export default function ChannelRoutingWorkbench({
     >
       <header className={`${channelRoutingHeaderClass} p-4`}>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded border border-[var(--gt-border-strong)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]">
-              <Split className="h-4 w-4" strokeWidth={4} />
-            </div>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Split className="h-5 w-5 shrink-0 text-[var(--gt-ink-secondary)]" strokeWidth={2.5} />
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h2 className="min-w-0 text-[length:var(--gt-font-size-lg)] font-semibold leading-5 text-[var(--gt-ink-primary)]">
                 请求模式
@@ -217,26 +214,24 @@ export default function ChannelRoutingWorkbench({
                 size="small"
                 onClick={onOpenProjectConfig}
                 disabled={disabled || saving}
-                className={channelRoutingSecondaryButtonClass}
+                title="项目配置"
                 icon={<Settings2 className="h-3.5 w-3.5" strokeWidth={4} />}
               >
                 项目配置
               </Button>
             ) : null}
-            <div className="grid min-w-0 flex-1 gap-2 sm:max-w-[28rem] sm:flex-none sm:grid-cols-2">
-              {routeModes.map((item) => (
-                <StrategyButton
-                  key={item.mode}
-                  mode={item.mode}
-                  icon={item.icon}
-                  label={item.label}
-                  cue={item.cue}
-                  active={config.routeMode === item.mode}
-                  disabled={disabled || saving}
-                  onModeChange={onModeChange}
-                />
-              ))}
-            </div>
+            <Segmented
+              data-channel-routing-mode-switch="true"
+              value={config.routeMode}
+              disabled={disabled || saving}
+              onChange={(value) => onModeChange(value as ChannelRouteMode)}
+              options={routeModes.map(({ mode, icon: Icon, label }) => ({
+                value: mode,
+                label,
+                icon: <Icon className="h-3.5 w-3.5" strokeWidth={3} />,
+              }))}
+              className="!h-9 !bg-[var(--gt-surface-canvas)]"
+            />
           </div>
         </div>
       </header>
@@ -723,41 +718,6 @@ function RouteModeHelpModal({ onClose }: { onClose: () => void }) {
         ))}
       </div>
     </ModalFrame>
-  );
-}
-
-function StrategyButton({
-  mode,
-  icon: Icon,
-  label,
-  cue,
-  active,
-  disabled,
-  onModeChange,
-}: {
-  mode: ChannelRouteMode;
-  icon: LucideIcon;
-  label: string;
-  cue: string;
-  active: boolean;
-  disabled: boolean;
-  onModeChange: (mode: ChannelRouteMode) => void;
-}) {
-  return (
-    <Button
-      size="small"
-      onClick={() => onModeChange(mode)}
-      disabled={disabled}
-      aria-pressed={active}
-      icon={<Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />}
-      className={`grid min-h-10 grid-cols-[1.5rem_minmax(0,1fr)] items-center gap-2 rounded border px-3 py-2 text-left transition-colors ${
-        active
-          ? 'border-[var(--gt-ink-primary)] bg-[var(--gt-ink-primary)] text-[var(--gt-surface-canvas)]'
-          : 'border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] text-[var(--gt-ink-primary)] [@media(hover:hover)]:hover:border-[var(--gt-ink-primary)]'
-      }`}
-    >
-      <span className="min-w-0 truncate text-[length:var(--gt-font-size-sm)] font-semibold">{label}</span>
-    </Button>
   );
 }
 
