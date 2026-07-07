@@ -101,6 +101,31 @@ test('AccountGroupSectionView virtualizes large account groups instead of mappin
   assert.doesNotMatch(source, /group\.accounts\.map\(\(account\) => renderAccount\(account\)\)/);
 });
 
+test('AccountGroupSectionView keeps virtual spacers outside the selectable account grid', async () => {
+  const source = await readFile(new URL('../components/AccountGroupSectionView.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+
+  assert.match(source, /const virtualWrapperRef = useRef<HTMLDivElement \| null>\(null\)/);
+  assert.match(source, /const gridRef = useRef<HTMLDivElement \| null>\(null\)/);
+  assert.match(source, /ref=\{virtualWrapperRef\}/);
+  assert.match(source, /id=\{groupBodyID\}[\s\S]*ref=\{gridRef\}/);
+  assert.match(source, /data-account-group-virtualized=\{shouldVirtualize \? 'true' : undefined\}/);
+  assert.match(source, /data-account-group-total-count=\{shouldVirtualize \? group\.accounts\.length : undefined\}/);
+  assert.match(source, /data-account-group-rendered-count=\{shouldVirtualize \? renderWindow\.renderedCount : undefined\}/);
+  assert.match(source, /data-account-group-hidden-before-count=\{shouldVirtualize \? renderWindow\.startIndex : undefined\}/);
+  assert.match(source, /data-account-group-hidden-after-count=\{shouldVirtualize \? group\.accounts\.length - renderWindow\.endIndex : undefined\}/);
+
+  const gridStart = source.indexOf('id={groupBodyID}');
+  const gridEnd = source.indexOf("{shouldVirtualize && renderWindow.bottomSpacerHeight > 0", gridStart);
+  const gridBlock = gridStart >= 0 && gridEnd > gridStart ? source.slice(gridStart, gridEnd) : '';
+  assert.ok(gridBlock, 'expected the account grid block to be present');
+  assert.doesNotMatch(gridBlock, /data-account-group-virtual-spacer/);
+
+  const spacerBlock = styleSource.match(/\[data-account-group-virtual-spacer\]\s*\{[\s\S]*?\n\s*\}/)?.[0] || '';
+  assert.match(spacerBlock, /pointer-events:\s*none/);
+  assert.match(spacerBlock, /user-select:\s*none/);
+});
+
 test('AccountGroupSectionView memoizes large group action availability outside scroll metrics', async () => {
   const viewSource = await readFile(new URL('../components/AccountGroupSectionView.tsx', import.meta.url), 'utf8');
   const selectionSource = await readFile(new URL('../model/accountSelection.ts', import.meta.url), 'utf8');
