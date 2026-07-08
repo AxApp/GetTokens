@@ -362,17 +362,17 @@ export function resolveAccountOperationalState(
     };
   }
 
+  if (account.credentialSource === 'auth-file' && (isQuotaRefreshFailure(quotaDisplay) || isQuotaAuthErrorBlocked(quotaDisplay))) {
+    return {
+      tone: 'danger' as const,
+      label: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.status_error_display'),
+    };
+  }
+
   if (usageSummary?.success && usageSummary.success > 0) {
     return {
       tone: 'positive' as const,
       label: t('accounts.status_available'),
-    };
-  }
-
-  if (account.credentialSource === 'auth-file' && isQuotaRefreshFailure(quotaDisplay)) {
-    return {
-      tone: 'danger' as const,
-      label: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.status_error_display'),
     };
   }
 
@@ -414,6 +414,14 @@ function isQuotaRefreshFailure(quotaDisplay: QuotaDisplay | undefined) {
   return true;
 }
 
+function isQuotaAuthErrorBlocked(quotaDisplay: QuotaDisplay | undefined) {
+  if (!quotaDisplay?.blocked) {
+    return false;
+  }
+  const sourceText = quotaRuntimeBlockText(quotaDisplay);
+  return sourceText.includes('auth-error');
+}
+
 export function isAccountUnavailable(account: AccountRecord) {
   if (account.disabled || account.rawAuthFile?.unavailable) {
     return true;
@@ -435,7 +443,7 @@ export function isAccountUnavailable(account: AccountRecord) {
   return status !== 'ACTIVE' && status !== 'CONFIGURED' && status !== 'LOCAL';
 }
 
-export function isCodexReauthEligible(account: AccountRecord) {
+export function isCodexReauthEligible(account: AccountRecord, quotaDisplay?: QuotaDisplay) {
   if (account.credentialSource !== 'auth-file') {
     return false;
   }
@@ -448,11 +456,42 @@ export function isCodexReauthEligible(account: AccountRecord) {
   if (isAccountUsageLimitReached(account)) {
     return false;
   }
+  if (isQuotaReauthRequired(quotaDisplay)) {
+    return true;
+  }
 
   const status = String(account.status || '')
     .trim()
     .toUpperCase();
   return status !== 'ACTIVE' && status !== 'CONFIGURED' && status !== 'DISABLED' && status !== 'LOCAL';
+}
+
+function isQuotaReauthRequired(quotaDisplay: QuotaDisplay | undefined) {
+  const reason = [
+    quotaDisplay?.degradedReason,
+    quotaDisplay?.blockReason,
+    ...(quotaDisplay?.sources || []).flatMap((source) => [source.source, source.reason]),
+  ].map((value) => String(value || '').trim()).filter(Boolean).join(' ').toLowerCase();
+  if (!reason) {
+    return false;
+  }
+  return reason.includes('token_invalidated') ||
+    reason.includes('invalid_refresh_token') ||
+    reason.includes('invalid_grant') ||
+    reason.includes('refresh_token_reused') ||
+    reason.includes('app_session_terminated') ||
+    reason.includes('authentication token has been invalidated') ||
+    reason.includes('could not validate your refresh token') ||
+    reason.includes('session has ended') ||
+    reason.includes('please try signing in again') ||
+    reason.includes('please log in again');
+}
+
+function quotaRuntimeBlockText(quotaDisplay: QuotaDisplay | undefined) {
+  return [
+    quotaDisplay?.blockReason,
+    ...(quotaDisplay?.sources || []).flatMap((source) => [source.source, source.reason]),
+  ].map((value) => String(value || '').trim()).filter(Boolean).join(' ').toLowerCase();
 }
 
 export function isCodexAuthFile(account: AccountRecord) {

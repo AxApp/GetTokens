@@ -103,3 +103,101 @@
 ## 当前状态
 - 状态：implemented / verified
 - 最近更新：2026-06-09
+
+## 2026-07-08 追加：token_invalidated 重登与路由剔除
+
+### 背景
+
+用户提供 ChatGPT usage endpoint 响应：
+
+```json
+{
+  "error": {
+    "message": "Your authentication token has been invalidated. Please try signing in again.",
+    "type": "invalid_request_error",
+    "code": "token_invalidated",
+    "param": null
+  },
+  "status": 401
+}
+```
+
+该状态不是普通 quota stale，也不是 usage-limit。它表示 OAuth 凭证已经失效，用户需要重新登录；在恢复前，该账号也不能继续进入 sidecar 路由候选池。
+
+### 证据矩阵
+
+| 项目 | 内容 |
+| --- | --- |
+| 问题来源 | 用户要求：`/backend-api/wham/usage` 对 OAuth 账号返回 `401 token_invalidated` 时显示“重新登录”，并移除出路由账号直到恢复正常 |
+| 代码事实位置 1 | `internal/wailsapp/quota.go` 已把 auth-file usage 非 2xx 转成 stale/degraded quota runtime 并携带 `token_invalidated` |
+| 代码事实位置 2 | `docs-linhay/references/CLIProxyAPI/internal/gettokenshooks/quota_runtime.go` 的 `QuotaRuntimeStore.Upsert` 是 quota runtime -> route guard 的 sidecar 真源 |
+| 代码事实位置 3 | `frontend/src/features/accounts/model/accountPresentation.ts` 的 `isCodexReauthEligible()` 决定账号卡底部是否展示可见重登 CTA |
+| 当前现象 | ACTIVE auth-file 账号即使 quota runtime 已带 `token_invalidated`，底部重登 CTA 不一定出现；sidecar quota runtime stale denied reason 不会写 `auth-error` route guard |
+| 预期验收 | `401 token_invalidated` 写入 account-scoped `auth-error` guard，候选池排除该 OAuth 账号；下一次 fresh success 清理该 guard；账号卡显示“重新登录”并按原文件名回填 OAuth |
+
+### 实现结果
+
+1. CLIProxyAPI sidecar `QuotaRuntimeStore.syncGuard()` 识别 denied/auth invalidated quota runtime，写入 account-scoped `auth-error` route guard；fresh success 会清理同账号 `auth-error`、`quota-empty`、`quota-threshold`。
+2. 账号卡 `isCodexReauthEligible(account, quotaDisplay)` 读取 quota runtime `degradedReason`，当 ACTIVE OAuth/auth-file 账号出现 `token_invalidated / invalid_grant / authentication token has been invalidated` 时显示可见“重新登录”按钮。
+3. OAuth 启动流程用当前账号的 quota runtime 证据判断是否回填 `existingName`，避免 token invalidated 场景走成新增登录。
+4. `402 deactivated_workspace` 保持异常展示，不自动作为重登 CTA。
+
+### 验证结果
+
+1. `go test ./internal/gettokenshooks -run 'TestQuotaRuntimeStoreTokenInvalidatedFeedsAuthErrorGuardUntilRecovery|TestQuotaRuntimeStoreRecoveryClearsAuthScopedQuotaEmptyByAccountKey' -count=1`（CLIProxyAPI）
+2. `go test ./internal/wailsapp -run 'TestGetCodexQuotaSurfacesAuthFileUsageUnauthorizedMessage|TestQuotaUpstreamFailureReasonIncludesDetailCodeWhenMessageMissing' -count=1`
+3. `node --test frontend/src/features/accounts/tests/accountPresentation.test.mjs`
+4. `node --test frontend/src/features/accounts/tests/accountCardLayout.test.mjs`
+5. `npm --prefix frontend run typecheck`
+6. `docs-linhay/scripts/check-docs.sh`
+
+### 沉淀结果
+
+已更新 `.agents/skills/gettokens-domain-engineering/SKILL.md`，明确 ChatGPT usage `401 token_invalidated` 同时是展示失败和路由失败：sidecar 必须写 `auth-error` route guard，前端必须展示重登入口，fresh success 才恢复候选资格。
+
+### 2026-07-08 补充修正：消费 route guard source
+
+用户反馈仍显示“等待检测”。复核发现上一轮只让账号卡状态消费 `stale + degradedReason`，但 sidecar 也可能只返回 `blocked=true` 与 `sources[].source=auth-error`，尤其是 quota runtime 没有窗口或没有 degradedReason 的时候。这个状态已经代表账号不可路由，不应再落到等待检测。
+
+补充修复：
+
+1. `resolveAccountOperationalState()` 对 OAuth/auth-file 账号优先消费 quota runtime `auth-error` route guard source，显示“异常”。
+2. `isCodexReauthEligible()` 同时读取 `blockReason` 和 `sources[].reason/source`，让无 `degradedReason` 但带 `auth-error token_invalidated` 的账号仍显示【重新登录】。
+3. 新增前端回归测试覆盖 `blocked=true + sources=[auth-error]` 时不显示等待检测。
+
+补充验证：
+
+1. `node --test frontend/src/features/accounts/tests/accountPresentation.test.mjs`
+2. `npm --prefix frontend run typecheck`
+
+### 2026-07-08 补充扩展：OAuth token refresh invalid_refresh_token
+
+用户继续提供 OpenAI OAuth token endpoint 响应：
+
+```json
+{
+  "error": {
+    "code": "invalid_refresh_token",
+    "message": "Could not validate your refresh token. Please try signing in again.",
+    "param": null,
+    "type": "invalid_request_error"
+  }
+}
+```
+
+智者咨询结论：这不是单个 endpoint 的特例，应归入“终态 OAuth 凭证失效 / 需要重登”统一治理类。纳入边界是明确证明凭证不可自恢复的 code/message，例如 `token_invalidated`、`invalid_refresh_token`、`invalid_grant`、`refresh_token_reused`、`app_session_terminated`、`Could not validate your refresh token`、`please try signing in again`、`please log in again`。排除边界是 workspace/billing/quota/rate-limit、网络、5xx、泛化 `refresh_failed`。
+
+本轮实现：
+
+1. `internal/auth/codex/openai_auth.go` 将 `invalid_refresh_token` 与明确重登文案识别为 non-retryable refresh error，避免刷新失败继续重试 3 次。
+2. `sdk/cliproxy/auth/conductor.go` 将同类错误识别为 unauthorized terminal OAuth credential error，写入 `LastError`、`Unavailable=true`，停止 auto-refresh 调度，使运行时候选不再继续选择该 auth。
+3. `internal/gettokenshooks/quota_runtime.go` 将同类 quota/runtime evidence 映射为 account-scoped `auth-error` route guard，fresh success 后清理。
+4. `frontend/src/features/accounts/model/accountPresentation.ts` 将同类 runtime evidence 纳入 `isCodexReauthEligible()`，账号卡显示【重新登录】。
+
+本轮验证：
+
+1. 红灯确认：新增 `invalid_refresh_token` 聚焦测试后，refresh 曾继续重试 3 次、quota runtime 未写 `auth-error`、manager 未写 unauthorized、前端不显示重登。
+2. `go test ./internal/auth/codex ./internal/gettokenshooks ./sdk/cliproxy/auth -run 'TestRefreshTokensWithRetry_InvalidRefreshTokenOnlyAttemptsOnce|TestQuotaRuntimeStoreInvalidRefreshTokenFeedsAuthErrorGuardUntilRecovery|TestManager_RefreshAuthInvalidRefreshTokenStopsAutoRefreshRetry' -count=1`
+3. `go test ./internal/auth/codex ./internal/gettokenshooks ./sdk/cliproxy/auth -count=1`
+4. `node --test frontend/src/features/accounts/tests/accountPresentation.test.mjs`
+5. `npm --prefix frontend run typecheck`

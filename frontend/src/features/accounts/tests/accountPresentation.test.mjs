@@ -493,6 +493,62 @@ test('isCodexReauthEligible only allows failed codex auth-file accounts', () => 
   );
 });
 
+test('isCodexReauthEligible allows active oauth account when quota runtime requires relogin', () => {
+  const activeOAuthAccount = {
+    id: 'auth-file:codex',
+    provider: 'codex',
+    credentialSource: 'auth-file',
+    displayName: 'codex.json',
+    name: 'codex.json',
+    status: 'ACTIVE',
+  };
+
+  assert.equal(
+    isCodexReauthEligible(activeOAuthAccount, {
+      status: 'success',
+      stale: true,
+      degradedReason: 'ChatGPT usage request failed (401): Your authentication token has been invalidated. Please try signing in again. (token_invalidated)',
+      planType: 'PLUS',
+      windows: [{ id: 'weekly', label: 'WEEKLY', remainingPercent: 80, usedLabel: '20%', resetLabel: 'soon' }],
+    }),
+    true
+  );
+
+  assert.equal(
+    isCodexReauthEligible(activeOAuthAccount, {
+      status: 'success',
+      stale: true,
+      degradedReason: 'ChatGPT usage request failed (402) (deactivated_workspace)',
+      planType: 'PLUS',
+      windows: [{ id: 'weekly', label: 'WEEKLY', remainingPercent: 80, usedLabel: '20%', resetLabel: 'soon' }],
+    }),
+    false
+  );
+
+  assert.equal(
+    isCodexReauthEligible(activeOAuthAccount, {
+      status: 'empty',
+      planType: '',
+      windows: [],
+      blocked: true,
+      blockReason: 'auth-error=token_invalidated',
+      sources: [{ source: 'auth-error', reason: 'token_invalidated' }],
+    }),
+    true
+  );
+
+  assert.equal(
+    isCodexReauthEligible(activeOAuthAccount, {
+      status: 'success',
+      stale: true,
+      degradedReason: 'OpenAI OAuth token refresh failed (400): Could not validate your refresh token. Please try signing in again. (invalid_refresh_token)',
+      planType: 'PLUS',
+      windows: [{ id: 'weekly', label: 'WEEKLY', remainingPercent: 80, usedLabel: '20%', resetLabel: 'soon' }],
+    }),
+    true
+  );
+});
+
 test('isCodexAuthFile allows any codex auth-file with a file name', () => {
   assert.equal(
     isCodexAuthFile({
@@ -1504,6 +1560,40 @@ test('resolveAccountOperationalState treats generic stale quota refresh errors a
         degradedReason: 'management api-call failed',
         planType: 'PLUS',
         windows: [{ id: 'weekly', label: 'WEEKLY', remainingPercent: 80, usedLabel: '20%', resetLabel: 'soon' }],
+      },
+      t,
+    ),
+    { tone: 'danger', label: '异常' },
+  );
+});
+
+test('resolveAccountOperationalState treats auth-error route guard as unavailable instead of waiting-check', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_available': '可用',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_error_display': '异常',
+      'accounts.status_local': '本地草稿',
+    })[key] || key;
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'auth-file:codex',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'codex.json',
+        status: 'ACTIVE',
+      },
+      undefined,
+      {
+        status: 'empty',
+        planType: '',
+        windows: [],
+        blocked: true,
+        blockReason: 'auth-error=token_invalidated',
+        sources: [{ source: 'auth-error', reason: 'token_invalidated' }],
       },
       t,
     ),

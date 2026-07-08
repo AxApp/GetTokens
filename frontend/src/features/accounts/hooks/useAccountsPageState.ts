@@ -42,6 +42,7 @@ import {
   persistStoredAccountRecords,
   readStoredAccountRecords,
 } from '../model/accountListCache';
+import { buildQuotaDisplay } from '../model/accountQuota';
 import {
   removeDeletedAPIKeyRecord,
   shouldClearDeletedSelectedAccount,
@@ -694,7 +695,9 @@ export default function useAccountsPageState({
       setOAuthBanner(null);
       try {
         const result = await trackRequest('StartCodexOAuth', {}, () => StartCodexOAuth());
-        const existingName = account && isCodexReauthEligible(account) ? String(account.name || '').trim() : '';
+        const quotaState = account?.quotaKey ? codexQuotaByName[account.quotaKey] : undefined;
+        const quotaDisplay = account ? buildQuotaDisplay(account, quotaState) : undefined;
+        const existingName = account && isCodexReauthEligible(account, quotaDisplay) ? String(account.name || '').trim() : '';
         setOAuthFlow({
           state: String(result.state || '').trim(),
           existingName,
@@ -716,7 +719,7 @@ export default function useAccountsPageState({
         });
       }
     },
-    [authFileRecords, oauthFlow, ready, t, trackRequest]
+    [authFileRecords, codexQuotaByName, oauthFlow, ready, t, trackRequest]
   );
 
   const openOAuthDialogInBrowser = useCallback(() => {

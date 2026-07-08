@@ -117,7 +117,7 @@ export default function AccountCard({
   });
   const primaryLabel = resolveAccountPrimaryLabel(account);
   const failureReason = resolveAccountFailureReason(account, t);
-  const canReauth = isCodexReauthEligible(account);
+  const canReauth = isCodexReauthEligible(account, quotaDisplay);
   const showFooterReauth = showFooterReauthAction && canReauth;
   const canMenuReauth = isCodexAuthFile(account);
   const operationalState = resolveAccountOperationalState(account, usageSummary, quotaDisplay, t);
