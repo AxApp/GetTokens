@@ -2,8 +2,11 @@ package sidecar
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -622,5 +625,88 @@ func assertContains(t *testing.T, content string, expected string) {
 	t.Helper()
 	if !strings.Contains(content, expected) {
 		t.Fatalf("expected config to contain %q, got:\n%s", expected, content)
+	}
+}
+
+// newManagerWithDone builds a minimal Manager whose done channel and exitErr
+// are pre-seeded so that waitHealthy tests do not need a real subprocess.
+func newManagerWithDone(done chan struct{}, exitErr error) *Manager {
+	m := &Manager{}
+	m.done = done
+	m.exitErr = exitErr
+	return m
+}
+
+// TestWaitHealthyReturnsImmediatelyOnNonZeroProcessExit verifies that
+// waitHealthy stops waiting as soon as the subprocess done channel is closed
+// with a non-nil exitErr, without needing to reach the 30-second deadline.
+func TestWaitHealthyReturnsImmediatelyOnNonZeroProcessExit(t *testing.T) {
+	done := make(chan struct{})
+	exitErr := fmt.Errorf("exit status 1")
+	m := newManagerWithDone(done, exitErr)
+
+	// Close done immediately to simulate instant subprocess crash.
+	close(done)
+
+	// Point at an address that will never respond (port 1 is reserved).
+	start := time.Now()
+	err := m.waitHealthy(t.Context(), "http://127.0.0.1:1/healthz")
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Fatal("waitHealthy returned nil, want early-exit error")
+	}
+	if !strings.Contains(err.Error(), "进程提前退出") {
+		t.Fatalf("error = %q, want to contain '进程提前退出'", err.Error())
+	}
+	if !strings.Contains(err.Error(), exitErr.Error()) {
+		t.Fatalf("error = %q, want to contain wrapped exitErr %q", err.Error(), exitErr.Error())
+	}
+	// Must return well within the 30-second timeout.
+	if elapsed > 3*time.Second {
+		t.Fatalf("waitHealthy took %s, want < 3s on immediate process exit", elapsed)
+	}
+}
+
+// TestWaitHealthyReturnsImmediatelyOnCleanProcessExit verifies that even a
+// zero-exit subprocess is treated as a failure when health has not been
+// confirmed yet.
+func TestWaitHealthyReturnsImmediatelyOnCleanProcessExit(t *testing.T) {
+	done := make(chan struct{})
+	m := newManagerWithDone(done, nil) // exitErr == nil → exit 0
+
+	close(done)
+
+	start := time.Now()
+	err := m.waitHealthy(t.Context(), "http://127.0.0.1:1/healthz")
+	elapsed := time.Since(start)
+
+	if err == nil {
+		t.Fatal("waitHealthy returned nil, want early-exit error")
+	}
+	if !strings.Contains(err.Error(), "进程提前退出 (exit 0)") {
+		t.Fatalf("error = %q, want '进程提前退出 (exit 0)'", err.Error())
+	}
+	if elapsed > 3*time.Second {
+		t.Fatalf("waitHealthy took %s, want < 3s on immediate clean exit", elapsed)
+	}
+}
+
+// TestWaitHealthySucceedsWhenEndpointResponds verifies the happy path:
+// when /healthz returns 200 the function returns nil without error.
+func TestWaitHealthySucceedsWhenEndpointResponds(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	done := make(chan struct{}) // never closed – subprocess "still running"
+	m := newManagerWithDone(done, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := m.waitHealthy(ctx, srv.URL); err != nil {
+		t.Fatalf("waitHealthy returned unexpected error: %v", err)
 	}
 }

@@ -55,15 +55,32 @@ func resolveBinaryCandidates(exeDir string, binaryName string, profile string) [
 	}
 }
 
-// waitHealthy polls the health endpoint until it returns 200 or ctx/timeout expires.
+// waitHealthy polls the health endpoint until it returns 200, ctx/timeout expires,
+// or the sidecar subprocess exits prematurely.
 func (m *Manager) waitHealthy(ctx context.Context, url string) error {
 	deadline := time.Now().Add(startupTimeout)
 	client := &http.Client{Timeout: 2 * time.Second}
 
+	// Capture done channel once; it may be nil before Start sets it,
+	// but by the time waitHealthy is called the goroutine is already running.
+	m.mu.Lock()
+	done := m.done
+	m.mu.Unlock()
+
 	for time.Now().Before(deadline) {
+		// Check context and process-exit before each HTTP attempt.
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
+		case <-done:
+			// Subprocess exited before health check passed.
+			m.mu.Lock()
+			exitErr := m.exitErr
+			m.mu.Unlock()
+			if exitErr != nil {
+				return fmt.Errorf("进程提前退出: %w", exitErr)
+			}
+			return fmt.Errorf("进程提前退出 (exit 0)")
 		default:
 		}
 
@@ -76,7 +93,21 @@ func (m *Manager) waitHealthy(ctx context.Context, url string) error {
 		if resp != nil {
 			resp.Body.Close()
 		}
-		time.Sleep(pollInterval)
+
+		// Sleep with early-exit awareness: wake immediately if process dies.
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-done:
+			m.mu.Lock()
+			exitErr := m.exitErr
+			m.mu.Unlock()
+			if exitErr != nil {
+				return fmt.Errorf("进程提前退出: %w", exitErr)
+			}
+			return fmt.Errorf("进程提前退出 (exit 0)")
+		case <-time.After(pollInterval):
+		}
 	}
 	return fmt.Errorf("timed out after %s", startupTimeout)
 }
