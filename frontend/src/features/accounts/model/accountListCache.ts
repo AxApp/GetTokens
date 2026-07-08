@@ -9,19 +9,13 @@ interface StoredAccountListCache {
 }
 
 type ReadableStorage = Pick<Storage, 'getItem'>;
-type WritableStorage = Pick<Storage, 'setItem'>;
+type WritableStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export function readStoredAccountRecords(
   storage: ReadableStorage | null | undefined,
 ): AccountRecord[] {
   try {
-    const raw = storage?.getItem(ACCOUNT_LIST_CACHE_STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw) as StoredAccountListCache;
-    const items = Array.isArray(parsed?.items) ? parsed.items : [];
+    const items = readStoredAccountRecordItems(storage) ?? [];
     return items.map(normalizeStoredAccountRecord).filter((item): item is AccountRecord => item !== null);
   } catch {
     return [];
@@ -33,17 +27,33 @@ export function persistStoredAccountRecords(
   accounts: AccountRecord[],
 ): void {
   try {
+    const items = accounts.map(toStoredAccountRecord).filter((item): item is AccountRecord => item !== null);
+    const previousItems = readStoredAccountRecordItems(storage);
+    if (previousItems && JSON.stringify(previousItems) === JSON.stringify(items)) {
+      return;
+    }
+
     storage?.setItem(
       ACCOUNT_LIST_CACHE_STORAGE_KEY,
       JSON.stringify({
         version: 1,
         updatedAt: Date.now(),
-        items: accounts.map(toStoredAccountRecord).filter((item): item is AccountRecord => item !== null),
+        items,
       } satisfies StoredAccountListCache),
     );
   } catch {
     // The account list cache is only a first-paint convenience.
   }
+}
+
+function readStoredAccountRecordItems(storage: ReadableStorage | null | undefined): unknown[] | null {
+  const raw = storage?.getItem(ACCOUNT_LIST_CACHE_STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  const parsed = JSON.parse(raw) as StoredAccountListCache;
+  return Array.isArray(parsed?.items) ? parsed.items : null;
 }
 
 function normalizeStoredAccountRecord(value: unknown): AccountRecord | null {

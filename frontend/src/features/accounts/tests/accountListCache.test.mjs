@@ -10,14 +10,17 @@ import {
 
 function createMemoryStorage(initial = {}) {
   const values = { ...initial };
+  const writes = [];
   return {
     getItem(key) {
       return Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null;
     },
     setItem(key, value) {
+      writes.push([key, value]);
       values[key] = value;
     },
     values,
+    writes,
   };
 }
 
@@ -111,6 +114,56 @@ test('persistStoredAccountRecords stores display data without account secrets', 
   assert.equal(records[0].routeable, false);
   assert.equal(records[0].apiKey, undefined);
   assert.equal(records[0].rawAuthFile, undefined);
+});
+
+test('persistStoredAccountRecords skips localStorage writes when display data is unchanged', () => {
+  const cachedItem = {
+    id: 'acct_cache_1',
+    accountKind: 'codex-api-key',
+    provider: 'openai',
+    credentialSource: 'api-key',
+    displayName: 'Cached API Key',
+    status: 'ACTIVE',
+    quotaKey: 'acct_cache_1',
+    supportedFormats: ['openai_responses'],
+    formatBaseUrls: { openai_responses: 'https://api.openai.com/v1' },
+  };
+  const storage = createMemoryStorage({
+    [ACCOUNT_LIST_CACHE_STORAGE_KEY]: JSON.stringify({
+      version: 1,
+      updatedAt: 1781000000000,
+      items: [cachedItem],
+    }),
+  });
+
+  persistStoredAccountRecords(storage, [cachedItem]);
+
+  assert.equal(storage.writes.length, 0);
+});
+
+test('persistStoredAccountRecords writes when display data changes', () => {
+  const cachedItem = {
+    id: 'acct_cache_1',
+    accountKind: 'codex-api-key',
+    provider: 'openai',
+    credentialSource: 'api-key',
+    displayName: 'Cached API Key',
+    status: 'ACTIVE',
+    quotaKey: 'acct_cache_1',
+  };
+  const storage = createMemoryStorage({
+    [ACCOUNT_LIST_CACHE_STORAGE_KEY]: JSON.stringify({
+      version: 1,
+      updatedAt: 1781000000000,
+      items: [cachedItem],
+    }),
+  });
+
+  persistStoredAccountRecords(storage, [{ ...cachedItem, displayName: 'Renamed API Key' }]);
+
+  assert.equal(storage.writes.length, 1);
+  const parsed = JSON.parse(storage.values[ACCOUNT_LIST_CACHE_STORAGE_KEY]);
+  assert.equal(parsed.items[0].displayName, 'Renamed API Key');
 });
 
 test('useAccountsPageState seeds first paint from account list cache and refreshes it from ListAccounts', async () => {

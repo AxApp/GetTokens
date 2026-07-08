@@ -79,8 +79,10 @@ import type {
 } from '../model/types';
 import { shouldEnsureAccountSnapshot } from '../model/accountSnapshot';
 import {
-  ACCOUNT_RUNTIME_SYNC_INTERVAL_MS,
   normalizeRuntimeSyncDocumentHidden,
+  resolveAutomaticAccountRuntimeSyncTargets,
+  resolveAccountRuntimeSyncIntervalMs,
+  shouldRunImmediateAccountRuntimeSync,
   shouldRunRuntimeSyncOnVisibilityRestore,
   shouldScheduleAccountRuntimeSync,
 } from '../model/accountRuntimeSync';
@@ -167,6 +169,8 @@ export default function useAccountsPageState({
   const liveAccountsLoadedRef = useRef(false);
   const sqliteSnapshotRequestedRef = useRef(false);
   const runtimeRefreshingRef = useRef(false);
+  const automaticRuntimeSyncTargetIDsByGroupRef = useRef<Record<string, string[]>>({});
+  const [automaticRuntimeSyncTargetAccountIDs, setAutomaticRuntimeSyncTargetAccountIDs] = useState<string[]>([]);
   const {
     isSelectionMode,
     selectedAccountIDs,
@@ -195,10 +199,37 @@ export default function useAccountsPageState({
     () => [...authFileRecords, ...apiKeyRecords],
     [apiKeyRecords, authFileRecords],
   );
+  const automaticRuntimeSyncAccounts = useMemo(
+    () => resolveAutomaticAccountRuntimeSyncTargets(runtimeSyncAccounts, automaticRuntimeSyncTargetAccountIDs),
+    [automaticRuntimeSyncTargetAccountIDs, runtimeSyncAccounts],
+  );
 
   useEffect(() => {
     accountRecordsRef.current = runtimeSyncAccounts;
   }, [runtimeSyncAccounts]);
+
+  const updateAutomaticRuntimeSyncTargets = useCallback((groupID: string, accountIDs: string[]) => {
+    const normalizedGroupID = groupID.trim();
+    if (!normalizedGroupID) {
+      return;
+    }
+
+    const normalizedAccountIDs = Array.from(new Set(accountIDs.map((id) => id.trim()).filter(Boolean)));
+    const current = automaticRuntimeSyncTargetIDsByGroupRef.current[normalizedGroupID] || [];
+    if (areStringArraysEqual(current, normalizedAccountIDs)) {
+      return;
+    }
+
+    automaticRuntimeSyncTargetIDsByGroupRef.current = {
+      ...automaticRuntimeSyncTargetIDsByGroupRef.current,
+      [normalizedGroupID]: normalizedAccountIDs,
+    };
+
+    const nextAccountIDs = Array.from(
+      new Set(Object.values(automaticRuntimeSyncTargetIDsByGroupRef.current).flat()),
+    );
+    setAutomaticRuntimeSyncTargetAccountIDs((prev) => (areStringArraysEqual(prev, nextAccountIDs) ? prev : nextAccountIDs));
+  }, []);
 
   const {
     accounts,
@@ -473,23 +504,23 @@ export default function useAccountsPageState({
       !shouldScheduleAccountRuntimeSync({
         ready,
         hasRuntimeBindings,
-        accountCount: runtimeSyncAccounts.length,
+        accountCount: automaticRuntimeSyncAccounts.length,
         documentHidden,
       })
     ) {
       return;
     }
-    void syncCodexQuotaStatuses(runtimeSyncAccounts, { replace: false });
-    void loadAccountUsage(runtimeSyncAccounts, {
+    void syncCodexQuotaStatuses(automaticRuntimeSyncAccounts, { replace: false });
+    void loadAccountUsage(automaticRuntimeSyncAccounts, {
       merge: true,
       resolveAccountKeys: false,
     });
-    void loadAccountRateLimits(runtimeSyncAccounts);
+    void loadAccountRateLimits(automaticRuntimeSyncAccounts);
   }, [
+    automaticRuntimeSyncAccounts,
     loadAccountRateLimits,
     loadAccountUsage,
     ready,
-    runtimeSyncAccounts,
     syncCodexQuotaStatuses,
   ]);
 
@@ -535,7 +566,7 @@ export default function useAccountsPageState({
       const canSchedule = shouldScheduleAccountRuntimeSync({
         ready,
         hasRuntimeBindings: hasWailsAppBindings(),
-        accountCount: runtimeSyncAccounts.length,
+        accountCount: automaticRuntimeSyncAccounts.length,
         documentHidden,
       });
       if (
@@ -550,14 +581,16 @@ export default function useAccountsPageState({
       wasHidden = documentHidden;
     };
 
-    runSync();
-    const timer = window.setInterval(runSync, ACCOUNT_RUNTIME_SYNC_INTERVAL_MS);
+    if (shouldRunImmediateAccountRuntimeSync(runtimeSyncAccounts.length)) {
+      runSync();
+    }
+    const timer = window.setInterval(runSync, resolveAccountRuntimeSyncIntervalMs(runtimeSyncAccounts.length));
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [ready, runtimeSyncAccounts.length, syncAccountRuntime]);
+  }, [automaticRuntimeSyncAccounts.length, ready, runtimeSyncAccounts.length, syncAccountRuntime]);
 
   useEffect(() => {
     if (!oauthFlow) {
@@ -913,6 +946,7 @@ export default function useAccountsPageState({
     refreshAccountsRuntime,
     loadAccountRateLimits,
     refreshAccountRateLimits,
+    updateAutomaticRuntimeSyncTargets,
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,
@@ -1006,6 +1040,10 @@ function persistAccountRecordsCache(accounts: AccountRecord[]) {
     return;
   }
   persistStoredAccountRecords(window.localStorage, accounts);
+}
+
+function areStringArraysEqual(left: string[], right: string[]) {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function applyDisabledOverridesToPreviewAccounts(accounts: AccountRecord[], overrides: Record<string, boolean>) {

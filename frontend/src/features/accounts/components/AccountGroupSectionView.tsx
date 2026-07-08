@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Button, Dropdown, Tooltip } from 'antd';
 import { ChevronDown, ChevronRight, MoreVertical, Power, RefreshCw, SquareCheckBig, Trash2 } from 'lucide-react';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountGroup, AccountRecord, Translator } from '../model/types';
 import { resolveAccountGroupActionAvailability } from '../model/accountSelection';
@@ -18,11 +18,13 @@ interface AccountGroupSectionViewProps {
   t: Translator;
   group: AccountGroup;
   displayMode: AccountListDisplayMode;
+  isRefreshing?: boolean;
   isCollapsed?: boolean;
   isSelectionMode?: boolean;
   isFilteredView?: boolean;
   selectedAccountIDSet?: ReadonlySet<string>;
   onToggleCollapsed?: (groupID: string) => void;
+  onVisibleAccountsChange?: (groupID: string, accountIDs: string[]) => void;
   onToggleGroupSelection?: (accounts: AccountRecord[]) => void;
   onRefreshGroup?: (accounts: AccountRecord[]) => void;
   onSetGroupDisabled?: (accounts: AccountRecord[], nextDisabled: boolean) => void;
@@ -35,11 +37,13 @@ export default function AccountGroupSectionView({
   t,
   group,
   displayMode,
+  isRefreshing = false,
   isCollapsed = false,
   isSelectionMode = false,
   isFilteredView = false,
   selectedAccountIDSet,
   onToggleCollapsed,
+  onVisibleAccountsChange,
   onToggleGroupSelection,
   onRefreshGroup,
   onSetGroupDisabled,
@@ -100,6 +104,20 @@ export default function AccountGroupSectionView({
     () => group.accounts.slice(renderWindow.startIndex, renderWindow.endIndex),
     [group.accounts, renderWindow.endIndex, renderWindow.startIndex],
   );
+  const visibleAccountIDs = useMemo(
+    () => (isCollapsed ? [] : visibleAccounts.map((account) => account.id)),
+    [isCollapsed, visibleAccounts],
+  );
+
+  useEffect(() => {
+    onVisibleAccountsChange?.(group.id, visibleAccountIDs);
+  }, [group.id, onVisibleAccountsChange, visibleAccountIDs]);
+
+  useEffect(() => {
+    return () => {
+      onVisibleAccountsChange?.(group.id, []);
+    };
+  }, [group.id, onVisibleAccountsChange]);
 
   useLayoutEffect(() => {
     setRenderMetrics((current) => ({
@@ -243,8 +261,11 @@ export default function AccountGroupSectionView({
                 type="text"
                 size="small"
                 aria-label={t('accounts.refresh_group')}
+                aria-busy={isRefreshing ? 'true' : undefined}
+                data-account-group-refreshing={isRefreshing ? 'true' : undefined}
                 onClick={() => onRefreshGroup(group.accounts)}
-                disabled={!canRefreshGroup}
+                disabled={!canRefreshGroup || isRefreshing}
+                loading={isRefreshing}
                 icon={<RefreshCw size={13} strokeWidth={2} />}
               />
             </Tooltip>

@@ -97,6 +97,10 @@ test('AccountGroupSectionView virtualizes large account groups instead of mappin
   assert.match(source, /data-account-group-virtualized/);
   assert.match(source, /data-account-group-render-window/);
   assert.match(source, /data-account-group-virtual-spacer="top"/);
+  assert.match(source, /onVisibleAccountsChange\?: \(groupID: string, accountIDs: string\[\]\) => void/);
+  assert.match(source, /const visibleAccountIDs = useMemo/);
+  assert.match(source, /onVisibleAccountsChange\?\.\(group\.id, visibleAccountIDs\)/);
+  assert.match(source, /onVisibleAccountsChange\?\.\(group\.id, \[\]\)/);
   assert.match(source, /visibleAccounts\.map\(\(account\) => renderAccount\(account\)\)/);
   assert.doesNotMatch(source, /group\.accounts\.map\(\(account\) => renderAccount\(account\)\)/);
 });
@@ -146,6 +150,7 @@ test('account plan groups can collapse without changing group actions scope', as
   const enLocale = await readFile(new URL('../../../locales/en.json', import.meta.url), 'utf8');
 
   assert.match(viewSource, /isCollapsed\?: boolean/);
+  assert.match(viewSource, /isRefreshing\?: boolean/);
   assert.match(viewSource, /onToggleCollapsed\?: \(groupID: string\) => void/);
   assert.match(viewSource, /data-account-group-collapsed=\{isCollapsed \? 'true' : 'false'\}/);
   assert.match(viewSource, /data-account-group-header="true"/);
@@ -159,6 +164,10 @@ test('account plan groups can collapse without changing group actions scope', as
   assert.match(viewSource, /className="font-mono text-\[length:var\(--gt-font-size-xs\)\] font-normal leading-none text-\[var\(--gt-ink-muted\)\]"/);
   assert.match(viewSource, /<Button[\s\S]*aria-pressed=\{allGroupSelected\}[\s\S]*icon=\{<SquareCheckBig size=\{13\} strokeWidth=\{2\} \/>}/);
   assert.match(viewSource, /<Tooltip title=\{t\('accounts\.refresh_group'\)\}>[\s\S]*aria-label=\{t\('accounts\.refresh_group'\)\}[\s\S]*icon=\{<RefreshCw size=\{13\} strokeWidth=\{2\} \/>}/);
+  assert.match(viewSource, /aria-busy=\{isRefreshing \? 'true' : undefined\}/);
+  assert.match(viewSource, /data-account-group-refreshing=\{isRefreshing \? 'true' : undefined\}/);
+  assert.match(viewSource, /disabled=\{!canRefreshGroup \|\| isRefreshing\}/);
+  assert.match(viewSource, /loading=\{isRefreshing\}/);
   assert.match(viewSource, /<Dropdown[\s\S]*label: deleteGroupLabel/);
   assert.doesNotMatch(viewSource, /<RefreshCw size=\{13\} strokeWidth=\{2\} \/>\s*\{t\('accounts\.refresh_group'\)\}/);
   assert.doesNotMatch(viewSource, /className="btn-swiss mb-1 flex h-8 w-8/);
@@ -170,14 +179,23 @@ test('account plan groups can collapse without changing group actions scope', as
   assert.match(viewSource, /groupSelectionAction\(group\.accounts\)/);
 
   assert.match(wrapperSource, /isCollapsed\?: boolean/);
+  assert.match(wrapperSource, /onVisibleAccountsChange\?: \(groupID: string, accountIDs: string\[\]\) => void/);
+  assert.match(wrapperSource, /const isGroupRefreshing = group\.accounts\.some/);
+  assert.match(wrapperSource, /quotaState\?\.refreshing === true/);
+  assert.match(wrapperSource, /usageRefreshingAccountIDSet\.has\(account\.id\)/);
+  assert.match(wrapperSource, /rateLimitRefreshingAccountIDSet\.has\(account\.id\)/);
   assert.match(wrapperSource, /onToggleCollapsed\?: \(groupID: string\) => void/);
   assert.match(wrapperSource, /isCollapsed=\{isCollapsed\}/);
+  assert.match(wrapperSource, /isRefreshing=\{isGroupRefreshing\}/);
   assert.match(wrapperSource, /onToggleCollapsed=\{onToggleCollapsed\}/);
+  assert.match(wrapperSource, /onVisibleAccountsChange=\{onVisibleAccountsChange\}/);
 
   assert.match(featureSource, /collapsedAccountGroupIDs/);
   assert.match(featureSource, /toggleAccountGroupCollapsed/);
+  assert.match(featureSource, /updateAutomaticRuntimeSyncTargets/);
   assert.match(featureSource, /isCollapsed=\{collapsedAccountGroupIDs\.has\(group\.id\)\}/);
   assert.match(featureSource, /onToggleCollapsed=\{toggleAccountGroupCollapsed\}/);
+  assert.match(featureSource, /onVisibleAccountsChange=\{updateAutomaticRuntimeSyncTargets\}/);
 
   assert.match(zhLocale, /"group_collapse": "收起分组"/);
   assert.match(zhLocale, /"group_expand": "展开分组"/);

@@ -186,6 +186,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     refreshAccountUsage,
     loadAccountRateLimits,
     refreshAccountRateLimits,
+    updateAutomaticRuntimeSyncTargets,
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,
@@ -1616,6 +1617,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   isFilteredView={isAccountListFiltered}
                   onToggleSelection={toggleAccountSelection}
                   onToggleCollapsed={toggleAccountGroupCollapsed}
+                  onVisibleAccountsChange={updateAutomaticRuntimeSyncTargets}
                   onToggleGroupSelection={toggleGroupSelection}
                   onRefreshGroup={refreshGroupQuota}
                   onSetGroupDisabled={setGroupDisabled}

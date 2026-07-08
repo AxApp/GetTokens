@@ -9,6 +9,7 @@ import {
 import { EventsOn } from '../../wailsjs/runtime/runtime';
 import { hasPreviewMode, hasWailsRuntime } from '../utils/previewMode';
 import { DebugContext, type DebugEntry, type DebugEventPayload, type TrackRequestOptions } from './DebugContextValue';
+import { limitDebugEntries, summarizeDebugPayload } from './debugPayload';
 
 function normalizeError(error: unknown) {
   if (error instanceof Error) {
@@ -37,21 +38,23 @@ export function DebugProvider({ children }: { children?: ReactNode }) {
     const id = payload.id || `${Date.now()}-${sequenceRef.current}`;
     const startedAt = payload.startedAt || new Date().toISOString();
 
-    setEntries((prev) => [
-      {
-        id,
-        name: payload.name,
-        transport: payload.transport ?? 'http',
-        status: payload.status,
-        request: payload.request,
-        response: payload.response,
-        error: payload.error,
-        startedAt,
-        endedAt: payload.endedAt,
-        durationMs: payload.durationMs,
-      },
-      ...prev,
-    ]);
+    setEntries((prev) =>
+      limitDebugEntries([
+        {
+          id,
+          name: payload.name,
+          transport: payload.transport ?? 'http',
+          status: payload.status,
+          request: summarizeDebugPayload(payload.request),
+          response: summarizeDebugPayload(payload.response),
+          error: payload.error,
+          startedAt,
+          endedAt: payload.endedAt,
+          durationMs: payload.durationMs,
+        },
+        ...prev,
+      ])
+    );
   }, []);
 
   useEffect(() => {
@@ -98,17 +101,19 @@ export function DebugProvider({ children }: { children?: ReactNode }) {
       const startedAtMs = Date.now();
       const startedAt = new Date(startedAtMs).toISOString();
 
-      setEntries((prev) => [
-        {
-          id,
-          name,
-          transport: options?.transport ?? 'wails',
-          status: 'pending',
-          request,
-          startedAt,
-        },
-        ...prev,
-      ]);
+      setEntries((prev) =>
+        limitDebugEntries([
+          {
+            id,
+            name,
+            transport: options?.transport ?? 'wails',
+            status: 'pending',
+            request: summarizeDebugPayload(request),
+            startedAt,
+          },
+          ...prev,
+        ])
+      );
 
       try {
         const result = await executor();
@@ -119,7 +124,7 @@ export function DebugProvider({ children }: { children?: ReactNode }) {
               ? {
                   ...entry,
                   status: 'success',
-                  response: options?.mapSuccess ? options.mapSuccess(result) : result,
+                  response: summarizeDebugPayload(options?.mapSuccess ? options.mapSuccess(result) : result),
                   endedAt: new Date(endedAtMs).toISOString(),
                   durationMs: endedAtMs - startedAtMs,
                 }

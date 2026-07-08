@@ -1,6 +1,11 @@
 import type { AccountRecord } from '../../../types';
 
 export const ACCOUNT_RUNTIME_SYNC_INTERVAL_MS = 30000;
+export const ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_THRESHOLD = 500;
+export const ACCOUNT_RUNTIME_SYNC_LARGE_POOL_THRESHOLD = 1000;
+export const ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_INTERVAL_MS = 120000;
+export const ACCOUNT_RUNTIME_SYNC_LARGE_POOL_INTERVAL_MS = 300000;
+export const ACCOUNT_RUNTIME_SYNC_IMMEDIATE_MAX_ACCOUNT_COUNT = ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_THRESHOLD;
 export const ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY = 6;
 export const ACCOUNT_RUNTIME_QUOTA_STATUS_REQUEST_CONCURRENCY = 4;
 export const ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE = 200;
@@ -14,6 +19,46 @@ export interface AccountRuntimeSyncScheduleState {
 
 export function shouldScheduleAccountRuntimeSync(state: AccountRuntimeSyncScheduleState) {
   return state.ready && state.hasRuntimeBindings && state.accountCount > 0 && !state.documentHidden;
+}
+
+export function resolveAccountRuntimeSyncIntervalMs(accountCount: number) {
+  const safeAccountCount = Number.isFinite(accountCount) ? Math.max(0, Math.floor(accountCount)) : 0;
+  if (safeAccountCount > ACCOUNT_RUNTIME_SYNC_LARGE_POOL_THRESHOLD) {
+    return ACCOUNT_RUNTIME_SYNC_LARGE_POOL_INTERVAL_MS;
+  }
+  if (safeAccountCount > ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_THRESHOLD) {
+    return ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_INTERVAL_MS;
+  }
+  return ACCOUNT_RUNTIME_SYNC_INTERVAL_MS;
+}
+
+export function shouldRunImmediateAccountRuntimeSync(accountCount: number) {
+  const safeAccountCount = Number.isFinite(accountCount) ? Math.max(0, Math.floor(accountCount)) : 0;
+  return safeAccountCount > 0 && safeAccountCount <= ACCOUNT_RUNTIME_SYNC_IMMEDIATE_MAX_ACCOUNT_COUNT;
+}
+
+export function resolveAutomaticAccountRuntimeSyncTargets<T extends Pick<AccountRecord, 'id'>>(
+  accounts: T[],
+  targetAccountIDs: Iterable<string>,
+  options: { largePoolThreshold?: number } = {},
+): T[] {
+  const largePoolThreshold = options.largePoolThreshold ?? ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_THRESHOLD;
+  const targetIDSet = new Set(
+    Array.from(targetAccountIDs)
+      .map((id) => String(id || '').trim())
+      .filter(Boolean),
+  );
+
+  if (targetIDSet.size === 0) {
+    return accounts.length > largePoolThreshold ? [] : accounts;
+  }
+
+  const targets = accounts.filter((account) => targetIDSet.has(account.id));
+  if (targets.length > 0) {
+    return targets;
+  }
+
+  return accounts.length > largePoolThreshold ? [] : accounts;
 }
 
 export interface AccountRuntimeSyncVisibilityState {

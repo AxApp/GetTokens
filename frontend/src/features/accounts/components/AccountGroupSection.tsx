@@ -29,6 +29,7 @@ interface AccountGroupSectionProps {
   isFilteredView?: boolean;
   onToggleSelection: (accountID: string) => void;
   onToggleCollapsed?: (groupID: string) => void;
+  onVisibleAccountsChange?: (groupID: string, accountIDs: string[]) => void;
   onToggleGroupSelection?: (accounts: AccountRecord[]) => void;
   onRefreshGroup?: (accounts: AccountRecord[]) => void;
   onSetGroupDisabled?: (accounts: AccountRecord[], nextDisabled: boolean) => void;
@@ -65,6 +66,7 @@ export default function AccountGroupSection({
   isFilteredView = false,
   onToggleSelection,
   onToggleCollapsed,
+  onVisibleAccountsChange,
   onToggleGroupSelection,
   onRefreshGroup,
   onSetGroupDisabled,
@@ -80,16 +82,28 @@ export default function AccountGroupSection({
   normalizeAuthFileContent,
   resolveLocalCliActions,
 }: AccountGroupSectionProps) {
+  const isGroupRefreshing = group.accounts.some((account) => {
+    const quotaState = codexQuotaByName[account.quotaKey || ''];
+    return (
+      quotaState?.status === 'loading' ||
+      quotaState?.refreshing === true ||
+      usageRefreshingAccountIDSet.has(account.id) ||
+      rateLimitRefreshingAccountIDSet.has(account.id)
+    );
+  });
+
   return (
     <AccountGroupSectionView
       t={t}
       group={group}
       displayMode={displayMode}
+      isRefreshing={isGroupRefreshing}
       isCollapsed={isCollapsed}
       isSelectionMode={isSelectionMode}
       isFilteredView={isFilteredView}
       selectedAccountIDSet={selectedAccountIDSet}
       onToggleCollapsed={onToggleCollapsed}
+      onVisibleAccountsChange={onVisibleAccountsChange}
       onToggleGroupSelection={onToggleGroupSelection}
       onRefreshGroup={onRefreshGroup}
       onSetGroupDisabled={onSetGroupDisabled}

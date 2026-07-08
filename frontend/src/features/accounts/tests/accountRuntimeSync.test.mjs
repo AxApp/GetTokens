@@ -3,13 +3,22 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import {
+  ACCOUNT_RUNTIME_SYNC_IMMEDIATE_MAX_ACCOUNT_COUNT,
   ACCOUNT_RUNTIME_QUOTA_STATUS_CHUNK_SIZE,
   ACCOUNT_RUNTIME_QUOTA_STATUS_REQUEST_CONCURRENCY,
   ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY,
+  ACCOUNT_RUNTIME_SYNC_INTERVAL_MS,
+  ACCOUNT_RUNTIME_SYNC_LARGE_POOL_INTERVAL_MS,
+  ACCOUNT_RUNTIME_SYNC_LARGE_POOL_THRESHOLD,
+  ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_INTERVAL_MS,
+  ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_THRESHOLD,
   buildRuntimeSyncAccountKeys,
   chunkRuntimeSyncAccountKeys,
   normalizeRuntimeSyncDocumentHidden,
+  resolveAutomaticAccountRuntimeSyncTargets,
+  resolveAccountRuntimeSyncIntervalMs,
   runAccountRuntimeRequestPool,
+  shouldRunImmediateAccountRuntimeSync,
   shouldRunRuntimeSyncOnVisibilityRestore,
   shouldScheduleAccountRuntimeSync,
 } from '../model/accountRuntimeSync.ts';
@@ -85,6 +94,25 @@ test('runtime sync runs once when the accounts page becomes visible again', () =
   }), false);
 });
 
+test('large account pools use slower automatic runtime sync intervals', () => {
+  assert.equal(resolveAccountRuntimeSyncIntervalMs(1), ACCOUNT_RUNTIME_SYNC_INTERVAL_MS);
+  assert.equal(resolveAccountRuntimeSyncIntervalMs(ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_THRESHOLD), ACCOUNT_RUNTIME_SYNC_INTERVAL_MS);
+  assert.equal(
+    resolveAccountRuntimeSyncIntervalMs(ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_THRESHOLD + 1),
+    ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_INTERVAL_MS,
+  );
+  assert.equal(
+    resolveAccountRuntimeSyncIntervalMs(ACCOUNT_RUNTIME_SYNC_LARGE_POOL_THRESHOLD + 1),
+    ACCOUNT_RUNTIME_SYNC_LARGE_POOL_INTERVAL_MS,
+  );
+});
+
+test('large account pools skip duplicate immediate runtime sync after load', () => {
+  assert.equal(shouldRunImmediateAccountRuntimeSync(0), false);
+  assert.equal(shouldRunImmediateAccountRuntimeSync(ACCOUNT_RUNTIME_SYNC_IMMEDIATE_MAX_ACCOUNT_COUNT), true);
+  assert.equal(shouldRunImmediateAccountRuntimeSync(ACCOUNT_RUNTIME_SYNC_IMMEDIATE_MAX_ACCOUNT_COUNT + 1), false);
+});
+
 test('runtime sync account keys are stable and deduplicated by account key', () => {
   const accounts = [
     { id: 'auth-file:legacy', quotaKey: 'acct-a' },
@@ -99,6 +127,33 @@ test('runtime sync account keys are stable and deduplicated by account key', () 
     'acct-a',
     'acct-b',
     'codex-api-key:stable-001',
+  ]);
+});
+
+test('automatic runtime sync targets visible or dirty accounts instead of the whole large pool', () => {
+  const accounts = Array.from({ length: ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_THRESHOLD + 10 }, (_, index) => ({
+    id: `acct-${index}`,
+    quotaKey: `acct-${index}`,
+  }));
+
+  assert.deepEqual(
+    resolveAutomaticAccountRuntimeSyncTargets(accounts, ['acct-2', 'acct-9']).map((account) => account.id),
+    ['acct-2', 'acct-9'],
+  );
+  assert.deepEqual(resolveAutomaticAccountRuntimeSyncTargets(accounts, []).map((account) => account.id), []);
+  assert.deepEqual(resolveAutomaticAccountRuntimeSyncTargets(accounts, ['missing']).map((account) => account.id), []);
+});
+
+test('automatic runtime sync keeps small pools compatible when no target window is reported', () => {
+  const accounts = Array.from({ length: 3 }, (_, index) => ({
+    id: `acct-${index}`,
+    quotaKey: `acct-${index}`,
+  }));
+
+  assert.deepEqual(resolveAutomaticAccountRuntimeSyncTargets(accounts, []).map((account) => account.id), [
+    'acct-0',
+    'acct-1',
+    'acct-2',
   ]);
 });
 
@@ -172,15 +227,19 @@ test('accounts feature owns the unified account runtime sync loop', async () => 
   const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
   const hookSource = await readFile(new URL('../hooks/useAccountsRateLimitState.ts', import.meta.url), 'utf8');
 
-  assert.match(source, /ACCOUNT_RUNTIME_SYNC_INTERVAL_MS/);
+  assert.match(source, /resolveAccountRuntimeSyncIntervalMs/);
+  assert.match(source, /shouldRunImmediateAccountRuntimeSync/);
+  assert.match(source, /automaticRuntimeSyncAccounts/);
+  assert.match(source, /updateAutomaticRuntimeSyncTargets/);
   assert.match(source, /normalizeRuntimeSyncDocumentHidden/);
   assert.match(source, /runtimeSyncAccounts/);
-  assert.match(source, /syncCodexQuotaStatuses\(runtimeSyncAccounts, \{ replace: false \}\)/);
+  assert.match(source, /syncCodexQuotaStatuses\(automaticRuntimeSyncAccounts, \{ replace: false \}\)/);
   assert.doesNotMatch(source, /runAccountRuntimeRequestPool\(runtimeSyncAccounts,\s*refreshCodexQuota/);
   assert.doesNotMatch(source, /ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY/);
   assert.doesNotMatch(source, /Promise\.all\(runtimeSyncAccounts\.map\(\(account\) => refreshCodexQuota\(account\)\)\)/);
   assert.match(source, /resolveAccountKeys: false/);
-  assert.match(source, /loadAccountRateLimits\(runtimeSyncAccounts\)/);
+  assert.match(source, /loadAccountRateLimits\(automaticRuntimeSyncAccounts\)/);
+  assert.match(source, /window\.setInterval\(runSync, resolveAccountRuntimeSyncIntervalMs\(runtimeSyncAccounts\.length\)\)/);
   assert.match(source, /visibilitychange/);
   assert.doesNotMatch(hookSource, /setInterval/);
 });
@@ -253,6 +312,7 @@ test('visible account runtime refresh uses snapshot sync instead of active all-a
 
   assert.match(contextSource, /runtimeRefreshing/);
   assert.match(contextSource, /refreshAccountsRuntime/);
+  assert.match(contextSource, /updateAutomaticRuntimeSyncTargets/);
   assert.doesNotMatch(featureSource, /const refreshAccountsRuntime = useCallback/);
   assert.doesNotMatch(featureSource, /refreshAccountQuotasBatch\(accounts\)/);
   assert.match(runtimeRefreshSource, /syncCodexQuotaStatuses\(runtimeSyncAccounts, \{ replace: false \}\)/);
