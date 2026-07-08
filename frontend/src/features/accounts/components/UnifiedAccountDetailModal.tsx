@@ -25,7 +25,6 @@ import {
   AccountBillingSection,
   AccountCredentialVerifySection,
   AccountDetailFooter,
-  AccountDetailHeader,
   AccountQuotaSection,
   AccountRuntimeRouteSection,
   type APIKeyVerifyState,
@@ -62,6 +61,28 @@ const SECTION_TITLES: Record<string, string> = {
   quota: '额度追踪',
   billing: '余额管理',
 };
+
+function resolveInitialAccountDetailSection(items: ReadonlyArray<{ id: string }>) {
+  const requested = new URLSearchParams(window.location.search).get('accountDetailSection') || '';
+  return items.some((item) => item.id === requested) ? requested : (items[0]?.id ?? '');
+}
+
+function resolveAccountDetailTypeTitle(
+  account: AccountRecord,
+  codexRow: CodexAccountRow | undefined,
+  t: (key: string) => string,
+) {
+  if (codexRow) {
+    return sourceKindLabel(t, codexRow.sourceKind);
+  }
+  if (account.credentialSource === 'auth-file') {
+    return 'CODEX OAUTH';
+  }
+  if (account.provider === 'codex' || account.accountKind === 'codex-api-key') {
+    return 'CODEX API KEY';
+  }
+  return 'OPENAI COMPATIBLE';
+}
 
 export interface UnifiedAccountDetailProps {
   account: AccountRecord;
@@ -230,6 +251,19 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     }
     return modulePlan.map((id) => ({ id, title: SECTION_TITLES[id] ?? id }));
   }, [modulePlan, props.isCodex, t]);
+  const initialActiveSectionID = useMemo(() => resolveInitialAccountDetailSection(sectionNavItems), [sectionNavItems]);
+  const [activeSectionID, setActiveSectionID] = useState(initialActiveSectionID);
+
+  useEffect(() => {
+    setActiveSectionID((current) => (
+      sectionNavItems.some((item) => item.id === current)
+        ? current
+        : initialActiveSectionID
+    ));
+  }, [sectionNavItems, initialActiveSectionID]);
+
+  const activeSectionTitle = sectionNavItems.find((item) => item.id === activeSectionID)?.title ?? sectionNavItems[0]?.title ?? '';
+  const accountTypeTitle = resolveAccountDetailTypeTitle(account, props.codexRow, t);
 
   function renderActiveSection(moduleID: string) {
     switch (moduleID) {
@@ -248,10 +282,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
           />
         );
       case 'auth-file-actions':
-        if (props.isCodex) {
-          return <CodexAuthFileSummarySection account={account} />;
-        }
-        return <AuthFileSummarySection account={account} />;
+        return <AuthFileSummarySection account={account} localCliActions={props.localCliActions} />;
       case 'models':
         if (props.isCodex && props.codexRow) {
           return <CodexAuthFileModelsSection row={props.codexRow} />;
@@ -426,7 +457,8 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
       onClose={props.onClose}
       size="detail"
       panelAttributes={{ 'data-account-detail-modal': 'unified' }}
-      headerClassName="hidden"
+      header={<AccountDetailModalTitleBar typeLabel={accountTypeTitle} sectionTitle={activeSectionTitle} />}
+      headerClassName="min-h-16 px-6 py-0 pr-16"
       footer={
         isApiLikeAccount || (codexSourceKind ? canEditCodexModelMappings(codexSourceKind) : false) || rateLimitDirty ? (
           <div data-codex-account-detail-footer="true" className="contents">
@@ -446,15 +478,8 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         <div data-codex-account-detail-body="true" className="h-full w-full min-w-0 min-h-0 flex flex-col">
           <AccountDetailLayout
             sectionNavItems={sectionNavItems}
-            localCliActions={props.localCliActions}
-            header={
-              props.isCodex && props.codexRow ? (
-                <CodexAccountDetailHeader row={props.codexRow} t={t} />
-              ) : (
-                // Story matching: header={<AccountDetailHeader {...props} />}
-                <AccountDetailHeader {...props} />
-              )
-            }
+            activeSectionID={activeSectionID}
+            onActiveSectionChange={setActiveSectionID}
             notice={notice}
           >
             {modulePlan.map((moduleID) => (
@@ -467,15 +492,8 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
       ) : (
         <AccountDetailLayout
           sectionNavItems={sectionNavItems}
-          localCliActions={props.localCliActions}
-          header={
-            props.isCodex && props.codexRow ? (
-              <CodexAccountDetailHeader row={props.codexRow} t={t} />
-            ) : (
-              // Story matching: header={<AccountDetailHeader {...props} />}
-              <AccountDetailHeader {...props} />
-            )
-          }
+          activeSectionID={activeSectionID}
+          onActiveSectionChange={setActiveSectionID}
           notice={notice}
         >
           {modulePlan.map((moduleID) => (
@@ -486,6 +504,43 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         </AccountDetailLayout>
       )}
     </ModalFrame>
+  );
+}
+
+const accountDetailModalTitleBarClass =
+  'flex min-h-16 min-w-0 items-center';
+const accountDetailModalTitleTypeClass =
+  'm-0 min-w-0 truncate text-[length:var(--gt-font-size-lg)] font-semibold leading-tight text-[var(--gt-ink-primary)]';
+const accountDetailModalTitleDividerClass =
+  'shrink-0 text-[length:var(--gt-font-size-lg)] font-normal leading-tight text-[var(--gt-ink-muted)]';
+const accountDetailModalSectionTitleClass =
+  'min-w-0 truncate text-[length:var(--gt-font-size-lg)] font-normal leading-tight text-[var(--gt-ink-muted)]';
+
+function AccountDetailModalTitleBar({
+  typeLabel,
+  sectionTitle,
+}: {
+  typeLabel: string;
+  sectionTitle: string;
+}) {
+  return (
+    <div data-account-detail-modal-titlebar className={accountDetailModalTitleBarClass}>
+      <div className="flex min-w-0 items-baseline gap-1.5">
+        <h2 data-account-detail-modal-type className={accountDetailModalTitleTypeClass}>
+          {typeLabel}
+        </h2>
+        {sectionTitle ? (
+          <>
+            <span data-account-detail-modal-title-divider className={accountDetailModalTitleDividerClass}>
+              /
+            </span>
+            <span data-account-detail-modal-section-title className={accountDetailModalSectionTitleClass}>
+              {sectionTitle}
+            </span>
+          </>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -500,8 +555,6 @@ const codexAccountDetailMetaLabelClass =
   'shrink-0 font-mono text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexAccountDetailMetaValueClass =
   'min-w-0 truncate font-mono text-[length:var(--gt-font-size-xs)] font-semibold leading-snug text-[var(--gt-ink-primary)]';
-const codexAuthFileSummaryMetaClass =
-  'text-[length:var(--gt-font-size-xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)]';
 const codexModelRoutingPanelClass =
   'overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
 const codexModelRoutingHeaderClass =
@@ -578,26 +631,6 @@ export function CodexAccountDetailHeader({
             value={row.disabled ? t('common.no') : t('common.yes')}
           />
         </dl>
-      </div>
-    </div>
-  );
-}
-
-function CodexAuthFileSummarySection({ account }: { account: Pick<AccountRecord, 'name' | 'displayName' | 'id' | 'email' | 'planType'> }) {
-  return (
-    <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
-      <div className="text-[length:var(--gt-font-size-2xs)] font-semibold tracking-normal text-[var(--gt-ink-muted)] mb-2">
-        Auth File · 文件摘要
-      </div>
-      <div className="grid gap-3">
-        <div className={codexAuthFileSummaryMetaClass}>
-          {account.name || account.displayName || account.id}
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          <span className="inline-flex items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">OAUTH</span>
-          <span className="inline-flex items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">{account.email || 'NO EMAIL'}</span>
-          <span className="inline-flex items-center rounded border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-2 py-0.5 text-[length:var(--gt-font-size-xs)] font-semibold text-[var(--gt-ink-primary)]">{account.planType || 'UNKNOWN PLAN'}</span>
-        </div>
       </div>
     </div>
   );

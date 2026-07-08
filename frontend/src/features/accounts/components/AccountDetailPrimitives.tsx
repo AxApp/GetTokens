@@ -1,7 +1,13 @@
 import { type ReactNode } from 'react';
-import { Alert, Descriptions, Empty, Tag, Typography } from 'antd';
+import { Alert, Empty, Tag, Typography } from 'antd';
 
 export type AccountDetailSectionSpan = 'auto' | 'wide';
+
+const accountDetailStatGridColumnsClass: Record<2 | 3 | 6, string> = {
+  2: 'sm:grid-cols-2',
+  3: 'sm:grid-cols-3',
+  6: 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6',
+};
 
 /* ── Section ── */
 
@@ -59,13 +65,12 @@ export function AccountDetailStatGrid({
   className?: string;
 }) {
   return (
-    <Descriptions
-      column={columns === 6 ? 6 : columns}
-      size="small"
-      className={className}
+    <div
+      data-account-detail-stat-grid={columns}
+      className={`grid grid-cols-1 gap-x-8 gap-y-4 ${accountDetailStatGridColumnsClass[columns]} ${className}`}
     >
       {children}
-    </Descriptions>
+    </div>
   );
 }
 
@@ -81,10 +86,15 @@ export function AccountDetailStatCell({
   className?: string;
 }) {
   return (
-    <Descriptions.Item label={label} className={className}>
-      <div className="font-sans font-semibold tabular-nums">{value}</div>
+    <div data-account-detail-stat-cell className={`min-w-0 ${className}`}>
+      <div className="text-[length:var(--gt-font-size-xs)] leading-tight text-[var(--gt-ink-muted)]">
+        {label}
+      </div>
+      <div data-account-detail-stat-value className="mt-1 break-words font-sans font-semibold leading-tight text-[var(--gt-ink-primary)] tabular-nums">
+        {value}
+      </div>
       {meta && <div className="mt-1 text-[length:var(--gt-font-size-xs)] text-[var(--gt-ink-muted)]">{meta}</div>}
-    </Descriptions.Item>
+    </div>
   );
 }
 
@@ -172,13 +182,12 @@ export function AccountDetailEvidenceGrid({
   className?: string;
 }) {
   return (
-    <Descriptions
-      column={2}
-      size="small"
-      className={className}
+    <div
+      data-account-detail-evidence-grid
+      className={`grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2 ${className}`}
     >
       {children}
-    </Descriptions>
+    </div>
   );
 }
 
@@ -192,9 +201,12 @@ export function AccountDetailEvidenceRow({
   className?: string;
 }) {
   return (
-    <Descriptions.Item label={label} className={className}>
-      <div className="break-all font-sans">{value}</div>
-    </Descriptions.Item>
+    <div data-account-detail-evidence-row className={`min-w-0 text-[length:var(--gt-font-size-sm)] leading-relaxed ${className}`}>
+      <span className="text-[var(--gt-ink-muted)]">{label}: </span>
+      <span data-account-detail-evidence-value className="break-all font-sans text-[var(--gt-ink-primary)]">
+        {value}
+      </span>
+    </div>
   );
 }
 

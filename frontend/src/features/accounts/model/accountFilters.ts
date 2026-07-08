@@ -8,7 +8,7 @@ export interface AccountsFilterSummaryPart {
   label: string;
 }
 
-export type AccountsFilterPresetID = 'all' | 'available' | 'attention' | 'http-errors' | 'with-quota' | 'api-key';
+export type AccountsFilterPresetID = 'all' | 'available' | 'attention' | 'disabled' | 'http-errors' | 'with-quota' | 'api-key';
 
 export interface AccountsEmptyState {
   kind: 'empty' | 'filtered';
@@ -130,9 +130,19 @@ export function buildAccountsFilterPresetState(
     return applyAccountsFilterState(defaultAccountsFilterState, {
       status: {
         error: true,
+        disabled: false,
+        requestable: false,
+        requestStatusCodes: {},
+      },
+    });
+  }
+  if (preset === 'disabled') {
+    return applyAccountsFilterState(defaultAccountsFilterState, {
+      status: {
+        error: false,
         disabled: true,
         requestable: false,
-        requestStatusCodes: Object.fromEntries(normalizeStatusCodeList(availableRequestStatusCodes).map((code) => [code, true])),
+        requestStatusCodes: {},
       },
     });
   }

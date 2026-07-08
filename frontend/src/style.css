@@ -169,6 +169,26 @@
     min-width: 0;
   }
 
+  .account-detail-section-nav-menu .ant-menu-item .ant-menu-title-content {
+    font-weight: 400;
+  }
+
+  .account-detail-section-nav-menu .ant-menu-item-selected .ant-menu-title-content {
+    font-weight: 600;
+  }
+
+  .gettokens-oauth-model-probe-combobox-popup {
+    width: max-content;
+    min-width: min(28rem, calc(100vw - 4rem));
+    max-width: min(40rem, calc(100vw - 4rem));
+  }
+
+  .gettokens-oauth-model-probe-combobox-popup .ant-select-item-option-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .codex-live-session-list-item-idle:hover {
     background-color: color-mix(in srgb, var(--gt-border-strong) 5%, var(--gt-surface-canvas));
   }

@@ -7,6 +7,7 @@ import {
   filterAccounts,
   groupAccounts,
   groupAccountsByVendor,
+  resolveAccountOperationalStatus,
 } from '../model/accountSelectors.ts';
 import {
   beginQuotaRefreshState,
@@ -14,7 +15,7 @@ import {
   buildQuotaDisplay,
   failQuotaRefreshState,
 } from '../model/accountQuota.ts';
-import { defaultAccountsFilterState } from '../model/accountFilters.ts';
+import { buildAccountsFilterPresetState, defaultAccountsFilterState } from '../model/accountFilters.ts';
 
 const t = (key) => key;
 
@@ -37,6 +38,62 @@ const quotaState = {
     ],
   },
 };
+
+test('resolveAccountOperationalStatus separates requestable, attention, disabled, and pending buckets', () => {
+  const active = {
+    id: 'auth-file:active',
+    provider: 'codex',
+    credentialSource: 'auth-file',
+    displayName: 'Active',
+    status: 'ACTIVE',
+  };
+  const pending = {
+    id: 'auth-file:pending',
+    provider: 'codex',
+    credentialSource: 'auth-file',
+    displayName: 'Pending',
+    status: '',
+  };
+  const disabled = {
+    id: 'auth-file:disabled',
+    provider: 'codex',
+    credentialSource: 'auth-file',
+    displayName: 'Disabled',
+    status: 'DISABLED',
+    disabled: true,
+  };
+  const reauth = {
+    id: 'auth-file:reauth',
+    provider: 'codex',
+    credentialSource: 'auth-file',
+    displayName: 'Needs Reauth',
+    name: 'reauth.json',
+    status: 'ACTIVE',
+    runtimeStatus: 'registered_routeable',
+    quotaKey: 'reauth',
+  };
+  const reauthQuota = {
+    status: 'success',
+    quota: {
+      accountKey: 'reauth',
+      status: 'stale',
+      windows: [],
+      stale: true,
+      blocked: true,
+      blockReason: 'OpenAI OAuth token refresh failed (400): Could not validate your refresh token. Please try signing in again. (invalid_refresh_token)',
+      sources: [{ source: 'auth-error', reason: 'invalid_refresh_token' }],
+    },
+  };
+
+  assert.deepEqual(resolveAccountOperationalStatus(active), { bucket: 'requestable', reasons: [] });
+  assert.deepEqual(resolveAccountOperationalStatus(pending), { bucket: 'pending', reasons: ['not_observed'] });
+  assert.deepEqual(resolveAccountOperationalStatus(disabled), { bucket: 'disabled', reasons: ['manual_disabled'] });
+
+  const reauthStatus = resolveAccountOperationalStatus(reauth, reauthQuota);
+  assert.equal(reauthStatus.bucket, 'needs_attention');
+  assert.equal(reauthStatus.reasons.includes('reauth_required'), true);
+  assert.equal(reauthStatus.reasons.includes('auth_error'), true);
+});
 
 test('quota refresh keeps existing windows visible while marking internal refresh state', () => {
   const refreshingState = beginQuotaRefreshState(quotaState);
@@ -339,6 +396,65 @@ test('filterAccounts can select requestable accounts from the status group', () 
       codexQuotaByName: {},
     }).map((item) => item.id),
     ['auth-file:active']
+  );
+});
+
+test('filterAccounts excludes auth-error runtime accounts from requestable and includes them as errors', () => {
+  const accounts = [
+    {
+      id: 'auth-file:active',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Active',
+      status: 'ACTIVE',
+      quotaKey: 'active',
+    },
+    {
+      id: 'auth-file:reauth',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Needs Reauth',
+      status: 'ACTIVE',
+      runtimeStatus: 'registered_routeable',
+      quotaKey: 'reauth',
+    },
+  ];
+  const codexQuotaByName = {
+    reauth: {
+      status: 'success',
+      quota: {
+        accountKey: 'reauth',
+        status: 'stale',
+        planType: 'k12',
+        windows: [],
+        stale: true,
+        degradedReason: 'ChatGPT usage request failed (401): Provided authentication token is expired. Please try signing in again. (token_expired)',
+        blocked: true,
+        blockReason: 'ChatGPT usage request failed (401): Provided authentication token is expired. Please try signing in again. (token_expired)',
+        sources: [{ source: 'auth-error', reason: 'token_expired' }],
+      },
+    },
+  };
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: buildAccountsFilterPresetState('available'),
+      codexQuotaByName,
+    }).map((item) => item.id),
+    ['auth-file:active'],
+  );
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        status: { error: true, disabled: false, requestable: false },
+      },
+      codexQuotaByName,
+    }).map((item) => item.id),
+    ['auth-file:reauth'],
   );
 });
 
@@ -928,6 +1044,55 @@ test('filterAccounts risk preset keeps resource filters unrestricted while selec
       codexQuotaByName: {},
     }).map((item) => item.id),
     ['auth-file:disabled-without-resource', 'auth-file:error-without-resource'],
+  );
+});
+
+test('groupAccounts status grouping treats auth-error runtime accounts as errors', () => {
+  const accounts = [
+    {
+      id: 'auth-file:active',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Active',
+      status: 'ACTIVE',
+      quotaKey: 'active',
+    },
+    {
+      id: 'auth-file:reauth',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Needs Reauth',
+      status: 'ACTIVE',
+      runtimeStatus: 'registered_routeable',
+      quotaKey: 'reauth',
+    },
+  ];
+
+  assert.deepEqual(
+    groupAccounts({
+      accounts,
+      groupMode: 'status',
+      sortMode: 'priority',
+      codexQuotaByName: {
+        reauth: {
+          status: 'success',
+          quota: {
+            accountKey: 'reauth',
+            status: 'stale',
+            windows: [],
+            stale: true,
+            blocked: true,
+            blockReason: 'auth-error=token_expired',
+            sources: [{ source: 'auth-error', reason: 'token_expired' }],
+          },
+        },
+      },
+      t,
+    }).map((group) => [group.id, group.accounts.map((account) => account.id)]),
+    [
+      ['status:requestable', ['auth-file:active']],
+      ['status:error', ['auth-file:reauth']],
+    ],
   );
 });
 

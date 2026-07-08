@@ -82,6 +82,20 @@ test('resolveAccountGroupActionAvailability summarizes large group actions in on
     },
   );
   assert.equal(resolveAccountGroupActionAvailability(groupAccounts, new Set(['acct_auth_file'])).allGroupSelected, false);
+  assert.equal(
+    resolveAccountGroupActionAvailability(
+      [
+        {
+          id: 'acct_runtime_only',
+          accountKind: 'openai-compatible',
+          credentialSource: 'api-key',
+          provider: 'deepseek',
+        },
+      ],
+      new Set(),
+    ).canRefreshGroup,
+    true,
+  );
   assert.deepEqual(resolveAccountGroupActionAvailability([], new Set()), {
     hasAccounts: false,
     allGroupSelected: false,

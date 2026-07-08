@@ -164,6 +164,7 @@ export default function useAccountsPageState({
   const [oauthDialog, setOAuthDialog] = useState<OAuthDialogState>(null);
   const [pendingStatusAccountID, setPendingStatusAccountID] = useState<string | null>(null);
   const [runtimeRefreshing, setRuntimeRefreshing] = useState(false);
+  const [lastRuntimeSyncAt, setLastRuntimeSyncAt] = useState<number | null>(null);
   const [apiKeyVerifyStateByID, setAPIKeyVerifyStateByID] = useState<Record<string, APIKeyVerifyState>>({});
   const legacyAPIKeyLabelsRef = useRef<Record<string, string>>(loadAPIKeyLabels());
   const accountRecordsRef = useRef<AccountRecord[]>(initialCachedAccounts);
@@ -511,6 +512,7 @@ export default function useAccountsPageState({
     ) {
       return;
     }
+    setLastRuntimeSyncAt(Date.now());
     void syncCodexQuotaStatuses(automaticRuntimeSyncAccounts, { replace: false });
     void loadAccountUsage(automaticRuntimeSyncAccounts, {
       merge: true,
@@ -532,6 +534,7 @@ export default function useAccountsPageState({
 
     runtimeRefreshingRef.current = true;
     setRuntimeRefreshing(true);
+    setLastRuntimeSyncAt(Date.now());
     try {
       await Promise.allSettled([
         syncCodexQuotaStatuses(runtimeSyncAccounts, { replace: false }),
@@ -932,6 +935,8 @@ export default function useAccountsPageState({
     rateLimitRefreshingAccountIDSet,
     rateLimitStrategies,
     runtimeRefreshing,
+    lastRuntimeSyncAt,
+    automaticRuntimeSyncTargetAccountIDs,
     isSelectionMode,
     selectedAccountIDs,
     isHeaderActionsMenuOpen,

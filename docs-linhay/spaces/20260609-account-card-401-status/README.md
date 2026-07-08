@@ -201,3 +201,157 @@
 3. `go test ./internal/auth/codex ./internal/gettokenshooks ./sdk/cliproxy/auth -count=1`
 4. `node --test frontend/src/features/accounts/tests/accountPresentation.test.mjs`
 5. `npm --prefix frontend run typecheck`
+
+### 2026-07-08 补充修正：auth-error 必须覆盖 registered_routeable
+
+用户在 dev 账号页继续标注：同一张卡同时显示“可用”和【重新登录】。复核真实页面数据发现目标账号 quota runtime 已经是 `blocked=true`、`sources[].source=auth-error`，原因是 `401 token_expired / Provided authentication token is expired. Please try signing in again.`，但账号卡顶部仍可能显示“可用”。
+
+根因：
+
+1. `resolveAccountOperationalState()` 先判断 `runtimeStatus === "registered_routeable"` 并直接返回“可用”。
+2. OAuth/auth-file quota `stale + degradedReason` 或 `blocked + auth-error` 的判断在其后，导致已失效账号只要仍保留 runtime 注册态，就会被错误显示为“可用”。
+3. `isCodexReauthEligible()` 走另一条 quota reason/status 判断，所以底部【重新登录】已经出现，形成“可用 + 重新登录”的矛盾展示。
+
+补充修复：
+
+1. 将 auth-file quota refresh failure / route guard `auth-error` 判断提前到 `registered_routeable` 之前。
+2. 将 `token_expired / authentication token is expired` 纳入重登证据。
+3. 新增前端回归测试覆盖 `runtimeStatus=registered_routeable + blocked auth-error + token_expired` 时必须显示“异常”。
+
+补充验证：
+
+1. `node --test frontend/src/features/accounts/tests/accountPresentation.test.mjs`
+2. `npm --prefix frontend run typecheck`
+3. 当前 dev URL DOM 验收：目标卡 `acct_6822596a-519d-46fb-a048-637a62e511af` 显示“异常 ... unauthorized ... 重新登录”，不再包含“可用”。
+
+### 2026-07-08 补充修正：异常文案必须同步驱动卡片 tint
+
+用户继续标注：重启后异常卡片顶部文案已显示“异常”，底部也显示【重新登录】，但卡片左侧 tint / 背景仍是绿色。
+
+根因：
+
+1. `resolveAccountOperationalState()` 已经返回 `tone=danger` 和“异常”。
+2. `AccountCard.tsx` 颜色派生却在 `operationalState.tone` 不是 positive/warning 时回退到 `resolveAccountStatusTone(account)`。
+3. 对仍保留 `runtimeStatus=registered_routeable` 的 auth-file 账号，回退结果是 positive，导致“异常文字 + 绿色卡片”的矛盾 UI。
+
+补充修复：
+
+1. `AccountCard.tsx` 直接将 `operationalState.tone=danger` 映射为 `critical` tint，不再用账号 runtime 注册态覆盖异常展示。
+2. 新增 `accountCardLayout.test.mjs` 静态回归测试，锁定卡片 tint 跟随 operational danger，而不是 routeable fallback。
+
+### 2026-07-08 补充修正：同 OpenAI account_id 的 auth-error 需要组内传播
+
+用户重启 dev app 后继续标注：K12 组只有 2 个账号显示异常，但同组多张卡实际使用同一个 OpenAI / ChatGPT `account_id`，应该一起不可用。
+
+复核真实 dev 数据：
+
+1. K12 组共 875 张 auth-file 账号。
+2. 其中 675 张共享同一个 `auth_json.account_id = 7bf3a2ce-3298-40b0-ac9b-3c922a5a91a6`。
+3. 已持久化的 `token_invalidated` `auth-error` 只绑定在 Abeb/Accola 两个 `acct_*` key 上，导致 sibling 账号重启后仍显示可用。
+
+根因：
+
+1. route guard lookup 只索引 `authID / acct_* / auth-file` 等单资产 key。
+2. `quota-status` 查询 sibling `acct_*` 时不会命中同一 OpenAI `account_id` 上已经确认的终态失败。
+3. 这些 sibling 账号当前 access token 尚未到自动刷新时间，不能依赖 auto-refresh 再逐个写入失败。
+
+补充修复：
+
+1. CLIProxyAPI sidecar 新增 account-store identity resolver，从 auth-file `auth_json.account_id / chatgpt_account_id` 派生 `openai-account-id:<id>` 与 `provider-account-id:openai:<id>` lookup key。
+2. `normalizeAccountRouteGuardBlock()` 写入或水合 block 时按 `acct_*` 反查 provider identity，把历史已持久化的单卡 `auth-error` 索引到共享 OpenAI account identity。
+3. `accountRouteGuardKeysForAuth()` / management `quota-status` 查询账号时也按同一 identity 扩展 lookup key，使 sibling 账号进入同一 route guard。
+4. `QuotaRuntimeStore.withGuardState()` 对重复 `source/reason/expiresAt` 做展示去重，避免多个历史 block 让卡片 reason 重复。
+
+补充验证：
+
+1. `go test ./internal/gettokenshooks -run 'TestHydratedAuthErrorBlocksSiblingAccountWithSharedOpenAIAccountID|TestAccountRouteGuardResultHookBlocksTerminalOAuthRefreshFailureOnAuthUpdated|TestSetChannelRoutingPolicyConfigPathHydratesPersistedRuntimeStatesForQuotaStatus' -count=1`
+2. `go test ./internal/gettokenshooks -count=1`
+3. `go test ./sdk/cliproxy/auth -count=1`
+4. `./scripts/ensure-sidecar.sh darwin arm64`
+5. 重启 `./scripts/wails-cli.sh dev` 后，dev sidecar `BuiltAt: 2026-07-08T07:54:52Z`；真实 API 验收：K12 `total=875`、`blocked=675`、`authError=675`、共享 OpenAI `account_id` 分组 `675/675` blocked，截图里的 `AcocellaStfort067 / AdsideBurak7077 / AgleBooher238 / AhlbergLinderholm146` 均返回 `blocked=true`、`sources[0].source=auth-error`。
+
+补充验证：
+
+1. `node --test frontend/src/features/accounts/tests/accountCardLayout.test.mjs frontend/src/features/accounts/tests/accountPresentation.test.mjs`
+2. `npm --prefix frontend run typecheck`
+3. 当前 dev URL DOM 验收：`jchrb770@...` 与 `AbebSuell275@outlook.com` 异常卡均为 `account-card-status-tint-critical`，不再包含 `account-card-status-tint-positive`。
+
+### 2026-07-08 补充修正：可请求筛选必须排除 operational auth-error
+
+用户继续标注：工具栏激活【可请求】筛选时，列表仍显示“异常”红色卡片与【重新登录】入口。
+
+智者咨询结论：
+
+1. 第一刀做语义修复，不做大 UI 文案/布局重设计。
+2. 【可请求】应表示账号 active/registered 且没有 auth-error 这类操作性阻塞。
+3. 【异常】应包含需要重登或修配置的账号。
+4. 【已禁用】仍然表示用户或系统显式关闭，继续和异常分离。
+
+根因：
+
+1. `filterAccounts()` 的状态筛选只看 `AccountRecord.status / disabled / rawAuthFile.unavailable`。
+2. `isAccountRequestable()` 走 `!isAccountUnavailable(account)`，没有消费 quota runtime `blocked=true`、`stale + degradedReason` 或 `sources[].source=auth-error`。
+3. 账号卡 operational state 已经把这些证据显示为“异常”，但筛选 status bucket 仍把它们归为 requestable。
+
+补充修复：
+
+1. 将 `hasAccountOperationalFailure(account, quotaDisplay)` 抽为账号展示/筛选共享的纯判断。
+2. `matchesStatusSelection()`、状态分组和状态排序都消费 `CodexQuotaState`，让 `auth-error` 账号进入【异常】，并从【可请求】/ available preset 中排除。
+3. 保持【已禁用】独立，不把 disabled 与 operational error 合并。
+
+补充验证：
+
+1. 新增红灯测试确认 `registered_routeable + blocked auth-error` 曾被【可请求】选中，并归到 `status:requestable`。
+2. `node --test frontend/src/features/accounts/tests/accountSelectors.test.mjs`
+3. 当前 dev URL DOM 验收：`可请求` 筛选下不再出现 `AbebSuell275@outlook.com` 异常卡；`异常` 筛选下出现该卡和其他重登卡。
+
+### 2026-07-08 补充修正：重启后 persisted auth-error 必须水合回 management quota-status
+
+用户继续反馈：异常账号在重启 app 后又被重置为“可用”。复核 dev sidecar 证据：
+
+1. `~/.config/gettokens-dev/channel-routing/config.json.runtimeStates` 中仍存在 `AbebSuell275@outlook.com` 和 `AccolaPallazzo3379@outlook.com` 的 `auth-error token_invalidated`。
+2. 重启后 `/v0/management/gettokens/quota-status?account_keys=acct_b094...,acct_8df...` 返回 `blocked=false`、`sources=[]`。
+3. 实际请求路由的 `account-route-guard` 会懒加载 persisted runtimeStates，但账号页 management quota-status 只看内存 `AccountRouteGuardStore`，所以卡片展示和请求路由分裂。
+
+补充修复：
+
+1. CLIProxyAPI sidecar 新增 `hydrateAccountRouteGuardStoreFromPersistedRuntimeStates()`，把 `channel-routing/config.json.runtimeStates` 中仍有效的 route-blocking sources 水合回 `AccountRouteGuardStore` 内存索引。
+2. `SetChannelRoutingPolicyConfigPathFromConfig()` 设置 profile-local channel routing 配置路径后立即执行水合。
+3. 水合不调用 `MarkBlocked()`，不会在启动时重写配置文件；真实恢复仍由 fresh success 触发既有 `ClearAuth()` 清理。
+
+补充验证：
+
+1. 新增回归测试：`TestSetChannelRoutingPolicyConfigPathHydratesPersistedRuntimeStatesForQuotaStatus`，断言 persisted `auth-error` 在配置路径加载后通过 `QuotaRuntimeStore.StatesForAccounts()` 返回 `blocked=true` 与 `sources=[auth-error]`。
+2. `go test ./internal/gettokenshooks -run 'TestSetChannelRoutingPolicyConfigPathHydratesPersistedRuntimeStatesForQuotaStatus|TestAccountRouteGuardPolicyDeniesCandidatesFromPersistedRuntimeStates|TestAccountRouteGuardStorePersistsRuntimeStateToChannelRoutingConfig' -count=1`
+3. `go test ./internal/gettokenshooks -count=1`
+4. `./scripts/ensure-sidecar.sh darwin arm64` 已重建本仓 dev sidecar 二进制；当前运行中的 dev sidecar 进程仍需重启 app 后加载新二进制。
+
+### 2026-07-08 补充修正：auto-refresh 终态 OAuth 失败必须写入 route guard
+
+用户重启 dev app 后继续反馈：K12 组只有 2 个账号被标记为异常，但预期这组都应异常。复核证据：
+
+1. K12 组共有 875 个 `auth_file.plan_type=k12` 账号。
+2. `channel-routing/config.json.runtimeStates` 中只有 2 个 K12 `acct_*` 有 `auth-error`。
+3. `/v0/management/gettokens/quota-status?account_keys=<875 K12 keys>` 只返回 2 个 `blocked=true`。
+4. sidecar 启动日志中存在批量 `invalid_refresh_token`、`refresh_token_reused`、`refresh_token_invalidated` auto-refresh 失败，但这些失败没有进入 `runtimeStates`。
+
+根因：
+
+1. `Manager.refreshAuth()` 在 refresh 失败时只更新 auth manager 内存状态，没有触发 `OnAuthUpdated` hook。
+2. `AccountRouteGuardResultHook.OnAuthUpdated()` 只同步 quota-empty，没有把 `auth.LastError=unauthorized` 的终态 OAuth refresh failure 转成 route guard `auth-error`。
+3. 因此账号页只能看到历史已持久化的 2 个异常，重启后启动期新发现的 K12 refresh 失败不会驱动卡片状态。
+
+补充修复：
+
+1. `sdk/cliproxy/auth.Manager.refreshAuth()` 在 refresh 失败更新 `LastError / Unavailable / StatusError` 后，发出 `OnAuthUpdated` hook。
+2. `AccountRouteGuardResultHook.OnAuthUpdated()` 对 `LastError` 为 `401 / unauthorized` 的 auth state 写入 account-scoped `auth-error` route guard，并保留原有 quota-empty 同步。
+3. 新增回归测试覆盖 `invalid_refresh_token` refresh failure 必须通知 hook，以及 hook 必须让 `QuotaRuntimeStore.StatesForAccounts()` 返回 `blocked=true sources=[auth-error]`。
+
+补充验证：
+
+1. 红灯确认：新增测试前，refresh failure 不通知 hook，hook 也不会写 guard。
+2. `go test ./sdk/cliproxy/auth -run 'TestManager_RefreshAuthInvalidRefreshTokenNotifiesAuthUpdatedHook|TestManager_RefreshAuthInvalidRefreshTokenStopsAutoRefreshRetry' -count=1`
+3. `go test ./internal/gettokenshooks -run 'TestAccountRouteGuardResultHookBlocksTerminalOAuthRefreshFailureOnAuthUpdated|TestSetChannelRoutingPolicyConfigPathHydratesPersistedRuntimeStatesForQuotaStatus' -count=1`
+4. `go test ./sdk/cliproxy/auth -count=1`
+5. `go test ./internal/gettokenshooks -count=1`
+6. `./scripts/ensure-sidecar.sh darwin arm64` 已重建 dev sidecar；当前正在运行的 dev sidecar 进程仍需重启后加载本轮新逻辑。

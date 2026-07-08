@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button } from 'antd';
+import { Button } from 'antd';
 import { Combobox } from '../../../components/ui/Combobox.tsx';
 import { normalizeAPIKeyModelNames } from '../model/apiKeyModelCatalog';
 import {
-  AccountDetailEmptyState,
   AccountDetailPill,
   AccountDetailSection,
 } from './AccountDetailPrimitives';
 
 const oauthModelProbeFieldLabelClass =
   'text-[length:var(--gt-font-size-xs)] font-normal tracking-normal text-[var(--gt-ink-muted)]';
+const oauthModelProbeStatusClass =
+  'rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-sm)] font-normal leading-snug text-[var(--gt-ink-muted)]';
 
 export type OAuthModelProbeState = {
   model: string;
@@ -69,7 +70,7 @@ export function OAuthModelProbeSection({
           : 'READY';
   const message = disabled
     ? disabledReason || '当前账号不可执行模型测试'
-    : probeState?.message || '只允许当前 OAuth 账号参与本次路由探测，fallback 已关闭。';
+    : probeState?.message || '';
 
   return (
     <AccountDetailSection
@@ -91,6 +92,9 @@ export function OAuthModelProbeSection({
               options={options}
               placeholder={defaultModel}
               maxOptions={12}
+              className="w-full"
+              popupMatchSelectWidth={false}
+              popupClassName="gettokens-oauth-model-probe-combobox-popup"
               onChange={setModel}
             />
           </label>
@@ -104,19 +108,13 @@ export function OAuthModelProbeSection({
           </Button>
         </div>
         {message ? (
-          <Alert
-            type={
-              currentStatus === 'success' ? 'success' :
-              currentStatus === 'error' ? 'error' :
-              currentStatus === 'loading' ? 'warning' : 'info'
-            }
-            message={message}
-            showIcon={false}
+          <div
             data-oauth-model-probe-status={currentStatus}
-          />
-        ) : (
-          <AccountDetailEmptyState>暂无测试结果</AccountDetailEmptyState>
-        )}
+            className={oauthModelProbeStatusClass}
+          >
+            {message}
+          </div>
+        ) : null}
       </div>
     </AccountDetailSection>
   );

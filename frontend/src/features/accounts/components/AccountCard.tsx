@@ -12,7 +12,6 @@ import {
   isCodexAuthFile,
   isCodexReauthEligible,
   resolveAccountOperationalState,
-  resolveAccountStatusTone,
   resolveAccountFailureReason,
   resolveAccountPrimaryLabel,
 } from '../model/accountPresentation';
@@ -126,7 +125,7 @@ export default function AccountCard({
       ? 'positive'
       : operationalState.tone === 'warning'
         ? 'warning'
-      : resolveAccountStatusTone(account);
+        : 'critical';
   const guardTone = rateLimitStateTone(rateLimitStatus);
   const quotaBlocked = hasQuotaEmptyBlock(quotaDisplay);
   const cardTone =

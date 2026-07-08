@@ -9,6 +9,8 @@ export interface ComboboxProps {
   align?: 'left' | 'right';
   maxOptions?: number;
   className?: string;
+  popupMatchSelectWidth?: boolean | number;
+  popupClassName?: string;
   onChange: (value: string) => void;
 }
 
@@ -20,6 +22,8 @@ export function Combobox({
   align = 'left',
   maxOptions,
   className = '',
+  popupMatchSelectWidth = true,
+  popupClassName = '',
   onChange,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -50,6 +54,7 @@ export function Combobox({
     value: option,
     label: option,
   }));
+  const autoCompleteClassName = align === 'right' ? 'w-full text-right' : 'w-full';
 
   return (
     <div
@@ -60,7 +65,9 @@ export function Combobox({
         options={antdOptions}
         placeholder={placeholder}
         disabled={disabled}
-        className={align === 'right' ? 'text-right' : undefined}
+        className={autoCompleteClassName}
+        popupMatchSelectWidth={popupMatchSelectWidth}
+        classNames={popupClassName ? { popup: { root: popupClassName } } : undefined}
         onSearch={(text) => {
           setInputValue(text);
           onChange(text);

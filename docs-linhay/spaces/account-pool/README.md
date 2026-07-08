@@ -179,6 +179,95 @@
    - 无头浏览器打开 `#frame=accounts`，确认菜单包含 `复制为 CPA 文件`，点击后复制内容 `type=codex`、无 `schema` 字段、保留 JSON 结尾换行。
    - 验收截图：`screenshots/20260707/accounts/20260707-account-card-copy-cpa-menu-after-v01.png`。
 
+### 2026-07-07 账号详情配置管理 CPA 数据与本地应用入口证据
+
+1. 问题来源：用户在 `http://localhost:34115/#frame=accounts&detail=acct_b0948918-9955-4a05-a871-ec35260b395e` 浏览器评论中标注配置管理区域，指出：
+   - 主内容只显示 `账号名称` 和“配置预览基于账号数据库生成...”说明，没有真实配置数据。
+   - 顶部 `预览配置 / 下载配置 / 应用配置` 应改为下载 CPA 文件、应用到 Codex、应用到 Claude Code 等操作。
+   - 左侧底部 `应用到 Codex / 应用到 Claude Code` 逻辑已经应移到配置管理顶部。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/components/AccountDetailAuthFileSection.tsx`
+   - `frontend/src/features/accounts/components/UnifiedAccountDetailModal.tsx`
+   - `frontend/src/features/accounts/components/AccountDetailLayout.tsx`
+   - `frontend/src/features/accounts/tests/accountDetailLayout.test.mjs`
+3. 当前现象：`AuthFileSummarySection` 仍是旧 auth-file summary/write-back 面板，显示说明卡和旧 `ApplyAuthFileConfig` 动作；本地 CLI 应用入口由详情左侧 nav 底部承载，导致有用动作和配置数据分散。
+4. 预期改动：
+   - 配置管理主体直接显示基于账号 auth-file 生成的 CPA JSON 预览。
+   - 模块顶部动作只保留真实可执行入口：`下载 CPA 文件`、`应用到 Codex`、`应用到 Claude Code`。
+   - 侧栏只负责 section 导航，不再承载本地 CLI 应用按钮。
+   - 去掉旧说明文案、旧 `预览配置 / 下载配置 / 应用配置` 和写回账号数据库语义。
+5. 验收方式：
+   - 源码测试固定 `DownloadAuthFile -> NormalizeAuthFileContent -> buildCPAAuthFileContentText -> downloadTextFile` 链路、`data-auth-file-config-preview="cpa-json"`、`data-auth-file-config-action="download-cpa"` 和 `data-auth-file-config-local-cli-action`。
+   - 无头浏览器打开目标详情页并指定 `accountDetailSection=auth-file-actions`，确认顶部动作包含 `下载 CPA 文件 / 应用到 Codex / 应用到 Claude Code`，CPA 预览包含 `type: "codex"`，旧说明/旧动作/侧栏底部本地应用区不存在。
+   - 验收截图：`screenshots/20260707/accounts/20260707-account-detail-config-cpa-actions-after-v01.png`。
+
+### 2026-07-07 账号详情配置管理标题栏与预览高度证据
+
+1. 问题来源：用户在 `http://localhost:34115/#frame=accounts&detail=acct_b0948918-9955-4a05-a871-ec35260b395e` 浏览器评论中继续标注配置管理页，指出：
+   - CPA JSON 预览高度过低，详情页下方还有大量可用空间。
+   - 正文里的 `配置管理` 标题应进入顶部标题区域。
+   - `CODEX OAUTH` 应放到标题区，并与右上关闭按钮垂直居中对齐。
+   - 左侧 nav 选中项字体字重需要变化。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/components/UnifiedAccountDetailModal.tsx`
+   - `frontend/src/features/accounts/components/AccountDetailLayout.tsx`
+   - `frontend/src/features/accounts/components/AccountDetailAuthFileSection.tsx`
+   - `frontend/src/features/accounts/tests/accountDetailLayout.test.mjs`
+3. 当前现象：`ModalFrame` header 被 `headerClassName="hidden"` 隐藏，账号类型 header 作为 body 内容渲染；`AuthFileSummarySection` 在正文重复显示 section 标题；CPA 预览 `max-h-[22rem]`，没有吃掉桌面详情页剩余空间；AntD nav selected 只变背景，字重层级不明显。
+4. 预期改动：
+   - `ModalFrame` 顶部标题栏承载账号类型与当前 section 标题，标题栏高度与关闭按钮中心对齐。
+   - 正文配置管理 section 不再重复标题，只保留动作和数据。
+   - CPA JSON 预览使用更高的桌面高度约束，充分利用详情页剩余空间。
+   - 左侧 nav selected 文本使用更明显的 600 字重，未选中维持 400。
+5. 验收方式：
+   - 源码测试固定 modal header titlebar、active section title、受控 active section 状态、nav selected 字重和 CPA 预览高度。
+   - 无头浏览器打开目标详情页，确认 header 标题区显示 `CODEX OAUTH` 与 `配置管理`，标题区和关闭按钮中心线接近，正文不再重复 `配置管理` 标题，CPA 预览高度大于旧高度，左侧选中项 font-weight 为 600。
+   - 本轮无头浏览器 DOM 验收结果：标题区 `CODEX OAUTH / 配置管理`，标题栏中心与关闭按钮中心差值 `0px`，CPA 预览高度 `416px`、max-height `544px`，左侧选中项 `font-weight=600`，正文内无重复 `配置管理` 标题。
+   - 验收截图：`screenshots/20260707/accounts/20260707-account-detail-config-titlebar-height-after-v01.png`。
+
+### 2026-07-07 账号详情模型映射只读标签与标题栏分隔证据
+
+1. 问题来源：用户在 `http://localhost:34115/#frame=accounts&detail=acct_preview_claude_relay_json` 浏览器评论中标注模型映射区域，指出：
+   - OAuth 账号模型映射行显示 `只读`，语义不清楚。
+   - 单行样式像裸文本串，不像当前工作台的映射列表。
+   - 顶部 `CODEX OAUTH 模型映射` 两段标题字号不一致，需要同字号，用颜色、字重和 `/` 分割。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/components/AccountDetailModelsSection.tsx`
+   - `frontend/src/features/accounts/components/UnifiedAccountDetailModal.tsx`
+   - `frontend/src/features/accounts/tests/accountDetailLayout.test.mjs`
+3. 当前现象：`CompatibleModelsSection` 对 `auth-file` 账号使用 `displayedModels = GetAuthFileModels(...)`，这些数据只是 OAuth 账号的运行时模型目录/routeability 事实，不是可编辑映射；但前端每行额外渲染 `只读` pill，容易让用户误以为这里有一个被禁用的编辑权限。标题栏用 `lg` + `sm` 字号混排，没有显式 `/` 分隔。
+4. 预期改动：
+   - OAuth auth-file 模型目录不再显示 `只读` pill；用稳定的三列表达 `source model / route status`。
+   - 只读模型行使用边框列表/行样式，避免散落文本。
+   - 顶部标题栏中账号类型与当前 section 使用同一字号，通过 `CODEX OAUTH / 模型映射` 的 slash、颜色和字重表达层级。
+5. 验收方式：
+   - 源码测试固定模型映射只读行不渲染 `只读` / `AccountDetailPill`，并使用 `data-account-model-mapping-card="readonly"` 的列表行样式。
+   - 源码测试固定 `AccountDetailModalTitleBar` 渲染 `/` 分隔符，type 与 section title 使用同一字号 token。
+   - 无头浏览器打开目标详情页，确认模型映射区域无 `只读` 文案，标题栏文本为 `CODEX OAUTH / 模型映射` 且两段字号一致。
+   - 本轮无头浏览器 DOM 验收结果：标题 `CODEX OAUTH / 模型映射`，type 与 section 字号均为 `14px`，字重分别为 `600 / 400`；模型映射区域 `bodyTextIncludesReadonly=false`，3 行 `data-account-model-mapping-card="readonly"`，列表边框 `1px`、圆角 `6px`。
+   - 验收截图：`screenshots/20260707/accounts/20260707-account-detail-model-mapping-readonly-title-after-v01.png`。
+
+### 2026-07-07 账号详情模型探测下拉宽度与默认说明证据
+
+1. 问题来源：用户在 `http://localhost:34115/#frame=accounts&detail=acct_preview_claude_relay_json` 浏览器评论中标注模型探测区域，指出：
+   - 模型下拉中的 `codex-gpt-5-4` 选项被输入框宽度限制。
+   - 默认提示 `只允许当前 OAuth 账号参与本次路由探测，fallback 已关闭。` 暴露实现细节，不清楚对用户有什么意义。
+2. 当前代码位置：
+   - `frontend/src/features/accounts/components/OAuthModelProbeSection.tsx`
+   - `frontend/src/components/ui/Combobox.tsx`
+   - `frontend/src/style.css`
+   - `frontend/src/features/accounts/tests/accountDetailLayout.test.mjs`
+3. 当前现象：模型探测使用项目封装 `Combobox`，底层 AntD `AutoComplete` 默认 `popupMatchSelectWidth=true`，导致下拉宽度跟随触发输入框；idle 状态始终渲染一条 info alert，解释 `allowFallback: false` 的技术策略。
+4. 预期改动：
+   - 模型探测下拉不跟随窄输入框，使用可读的专用 popup 宽度和稳定 class。
+   - 单账号探测和关闭 fallback 仍作为请求参数保留，但默认 UI 不展示这条实现解释；只在禁用、测试中、成功或失败结果有信息时显示 alert。
+5. 验收方式：
+   - 源码测试固定 `Combobox` 支持 `popupMatchSelectWidth` / `popupClassName` 并透传到 AntD `AutoComplete`。
+   - 源码测试固定模型探测调用 `popupMatchSelectWidth={false}`，使用专用 popup class，并移除默认 fallback alert 文案。
+   - 无头浏览器打开目标详情页，确认模型探测 idle 状态没有 fallback alert；打开模型下拉后 popup 宽度大于触发输入框，长模型名不再被触发框宽度限制。
+   - 本轮无头浏览器 DOM 验收结果：idle 状态 `statusCount=0`、`fallbackVisible=false`；模型输入触发器宽度 `534.2px`，popup 宽度 `534.2px`，首个选项 `codex-gpt-5-4` 完整显示。
+   - 验收截图：`screenshots/20260707/accounts/20260707-account-detail-model-probe-dropdown-after-v01.png`。
+
 ### 分组模式规划
 
 1. 账号池主列表需要支持可切换分组模式和排序模式，二者只改变列表组织方式，不改变筛选、选择、路由、轮动、禁用或导出语义。
@@ -566,3 +655,12 @@
 - 根因边界：账号数据与虚拟窗口计算正常；问题在虚拟化 DOM 边界耦合，真实卡片 grid 和 spacer 占位共享同一个可被评论工具框选的容器。
 - 预期改动：拆分虚拟化 wrapper 与真实卡片 grid；`#account-group-body-*` 只包当前可见账号卡片，不再包含 spacer；wrapper 承担虚拟化状态、spacer 和滚动测量；spacer 设置 `pointer-events: none` 与 `user-select: none`。
 - 验收方式：前端源码测试断言 `AccountGroupSectionView` 存在 `account-group-virtual-wrapper`、`virtualWrapperRef` / `gridRef` 双 ref、spacer 位于 grid 外；样式测试断言 `[data-account-group-virtual-spacer]` 禁止 pointer/select；浏览器 DOM 验证 `#account-group-body-plan:k12` 不包含 spacer，grid 高度远小于 wrapper 高度，滚动后 `renderWindow` 正常更新且可见卡片持续渲染。
+
+## 2026-07-07 运行态路由详情值缺失证据
+
+- 问题来源：用户在 `http://localhost:34115/#frame=accounts&detail=acct_b0948918-9955-4a05-a871-ec35260b395e` 标注“运行态路由”区域，反馈 `Routeability / Registered Models / Requestable / runtime_status / routeable / account_status` 都只显示标签没有值。
+- 代码事实位置：`frontend/src/features/accounts/components/AccountDetailSections.tsx` 的 `AccountRuntimeRouteSection` 已经给 `AccountDetailStatCell` 与 `AccountDetailEvidenceRow` 传入 `value`，例如 `routeStatusLabel`、`registeredModelCount`、`requestableLabel`、`runtimeStatus || 'unknown'` 等。
+- 当前现象：页面显示 antd `Descriptions` 的 label 与冒号，但 value 区域为空；这说明不是后端完全缺字段，而是 detail primitive 渲染层丢失了 value children。
+- 根因边界：`frontend/src/features/accounts/components/AccountDetailPrimitives.tsx` 用自定义组件 `AccountDetailStatCell` / `AccountDetailEvidenceRow` 包装 `Descriptions.Item`，但父级 `Descriptions` 会在渲染前读取直接子节点 props；它读取到了自定义组件的 `label` prop，却读不到组件内部返回的 `Descriptions.Item` children，因此 value 被丢弃。
+- 预期改动：账号详情 primitive 不再用 antd `Descriptions` 承载自定义 item；改为项目内 div/grid primitive，由 `AccountDetailStatCell` / `AccountDetailEvidenceRow` 自己渲染 label 和 value。
+- 验收方式：新增源码守护，断言 stat/evidence grid 不再依赖 `Descriptions`，cell/row 自带 `data-account-detail-*-cell/row` 且直接渲染 `{value}`；浏览器 DOM 验证运行态路由区域能看到 `ROUTEABLE`、`YES`、`registered_routeable`、`true`、账号状态等实际值。

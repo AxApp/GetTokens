@@ -1,17 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Button, Menu, Tooltip } from 'antd';
+import { Menu } from 'antd';
 import type { MenuProps } from 'antd';
-import type { AccountDetailLocalCliAction } from './AccountDetailSections';
 
 export interface AccountDetailSectionNavItem {
   id: string;
   title: string;
 }
 
-const accountDetailNavLocalActionsClass =
-  'select-text border-t border-[var(--gt-border-subtle)] px-3 py-3';
-const accountDetailNavLocalActionButtonClass =
-  '!h-8 !w-full !rounded-md !border-[var(--gt-border-subtle)] !bg-[var(--gt-surface-muted)] !px-3 !text-[length:var(--gt-font-size-xs)] !font-semibold !text-[var(--gt-ink-primary)] hover:!border-[var(--gt-ink-primary)] hover:!bg-[var(--gt-surface-canvas)] disabled:!cursor-not-allowed disabled:!opacity-45';
+const accountDetailSectionNavMenuClass =
+  'account-detail-section-nav-menu select-text !bg-transparent !font-sans ![border-inline-end:0]';
 
 /* ── Sidebar Navigation ── */
 
@@ -19,12 +16,10 @@ function SectionNav({
   items,
   activeId,
   onSelect,
-  localCliActions = [],
 }: {
   items: AccountDetailSectionNavItem[];
   activeId: string;
   onSelect: (id: string) => void;
-  localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
 }) {
   const menuItems = useMemo<MenuProps['items']>(
     () => items.map((item) => ({ key: item.id, label: item.title })),
@@ -48,36 +43,9 @@ function SectionNav({
           selectedKeys={[activeId]}
           onClick={handleMenuClick}
           data-account-detail-section-nav="antd"
-          className="select-text !bg-transparent !font-sans ![border-inline-end:0]"
+          className={accountDetailSectionNavMenuClass}
         />
       </div>
-      {localCliActions.length > 0 ? (
-        <div data-account-detail-nav-local-cli-actions className={accountDetailNavLocalActionsClass}>
-          {localCliActions.map((action) => (
-            <Tooltip title={action.disabledReason || action.detail || action.label}>
-              <Button
-                key={action.id}
-                data-account-detail-nav-local-cli-action={action.id}
-                htmlType="button"
-                type="default"
-                size="small"
-                block
-                disabled={action.disabled}
-                aria-label={action.label}
-                onClick={() => {
-                  if (action.disabled) {
-                    return;
-                  }
-                  action.onSelect();
-                }}
-                className={accountDetailNavLocalActionButtonClass}
-              >
-                {action.label}
-              </Button>
-            </Tooltip>
-          ))}
-        </div>
-      ) : null}
     </nav>
   );
 }
@@ -86,22 +54,30 @@ function SectionNav({
 
 export function AccountDetailLayout({
   sectionNavItems,
-  localCliActions,
+  activeSectionID,
+  onActiveSectionChange,
   header,
   notice,
   children,
 }: {
   sectionNavItems: AccountDetailSectionNavItem[];
-  localCliActions?: ReadonlyArray<AccountDetailLocalCliAction>;
+  activeSectionID?: string;
+  onActiveSectionChange?: (id: string) => void;
   header?: ReactNode;
   notice?: ReactNode;
   children: ReactNode;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState(() => {
+  const [uncontrolledActiveSection, setUncontrolledActiveSection] = useState(() => {
     const requested = new URLSearchParams(window.location.search).get('accountDetailSection') || '';
     return sectionNavItems.some((item) => item.id === requested) ? requested : (sectionNavItems[0]?.id ?? '');
   });
+  const activeSection = activeSectionID ?? uncontrolledActiveSection;
+
+  function updateActiveSection(sectionId: string) {
+    setUncontrolledActiveSection(sectionId);
+    onActiveSectionChange?.(sectionId);
+  }
 
   // Scroll-spy: observe section elements and update active section
   useEffect(() => {
@@ -118,7 +94,7 @@ export function AccountDetailLayout({
         if (visible.length > 0) {
           const sectionId = visible[0].target.getAttribute('data-account-detail-section');
           if (sectionId) {
-            setActiveSection(sectionId);
+            updateActiveSection(sectionId);
           }
         }
       },
@@ -134,11 +110,11 @@ export function AccountDetailLayout({
     sections.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
-  }, [children]);
+  }, [children, onActiveSectionChange]);
 
   // Click navigation: scroll to section
   function handleSelect(sectionId: string) {
-    setActiveSection(sectionId);
+    updateActiveSection(sectionId);
     const container = scrollRef.current;
     if (!container) return;
     const target = container.querySelector(`[data-account-detail-section="${sectionId}"]`);
@@ -162,7 +138,6 @@ export function AccountDetailLayout({
         items={sectionNavItems}
         activeId={activeSection}
         onSelect={handleSelect}
-        localCliActions={localCliActions}
       />
       <div
         ref={scrollRef}

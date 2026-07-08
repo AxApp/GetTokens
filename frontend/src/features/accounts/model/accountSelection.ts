@@ -71,7 +71,7 @@ export function resolveAccountGroupActionAvailability(
       allGroupSelected = false;
     }
 
-    if (!canRefreshGroup && supportsQuota(account) && Boolean(String(account.quotaKey || '').trim())) {
+    if (!canRefreshGroup && canRefreshAccountRuntime(account)) {
       canRefreshGroup = true;
     }
 
@@ -97,6 +97,13 @@ export function resolveAccountGroupActionAvailability(
     canDisableGroup,
     canDeleteGroup,
   };
+}
+
+function canRefreshAccountRuntime(account: AccountRecord) {
+  if (String(account.id || '').trim()) {
+    return true;
+  }
+  return supportsQuota(account) && Boolean(String(account.quotaKey || '').trim());
 }
 
 export function resolveBulkQuotaRefreshTargets(selectedAccounts: AccountRecord[]): BulkAccountTargetResolution {

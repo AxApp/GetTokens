@@ -92,6 +92,17 @@ test('account cards render a subtle status edge tint', async () => {
   assert.match(styleSource, /\[data-account-card\]\.account-card-status-tint-critical\s*\{[^}]*--account-card-status-accent:\s*var\(--gt-status-danger\)/s);
 });
 
+test('account card tint follows operational danger instead of routeable fallback', async () => {
+  const source = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+  const toneBlock = source.match(/const statusTone =[\s\S]*?;\n  const guardTone/)?.[0] || '';
+
+  assert.match(toneBlock, /operationalState\.tone === 'positive'[\s\S]*\? 'positive'/);
+  assert.match(toneBlock, /operationalState\.tone === 'warning'[\s\S]*\? 'warning'/);
+  assert.match(toneBlock, /: 'critical';/);
+  assert.doesNotMatch(toneBlock, /resolveAccountStatusTone\(account\)/);
+  assert.doesNotMatch(source, /resolveAccountStatusTone,\n/);
+});
+
 test('account card refresh feedback avoids full-card sweep animation', async () => {
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
   const refreshBlock = styleSource.match(/\[data-account-card-refreshing='true'\]\s*\{[\s\S]*?\n\s*\}/)?.[0] || '';

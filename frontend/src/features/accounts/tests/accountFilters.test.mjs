@@ -243,7 +243,15 @@ test('buildAccountsFilterPresetState maps common toolbar presets to concrete fil
     buildAccountsFilterPresetState('attention', defaultAccountsFilterState, ['401', '402']),
     {
       ...defaultAccountsFilterState,
-      status: { error: true, disabled: true, requestable: false, requestStatusCodes: { 401: true, 402: true } },
+      status: { error: true, disabled: false, requestable: false, requestStatusCodes: {} },
+    },
+  );
+
+  assert.deepEqual(
+    buildAccountsFilterPresetState('disabled', defaultAccountsFilterState, ['401', '402']),
+    {
+      ...defaultAccountsFilterState,
+      status: { error: false, disabled: true, requestable: false, requestStatusCodes: {} },
     },
   );
 
@@ -368,7 +376,10 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.filter_group_request_status'), true);
   assert.equal(source.includes('accounts.filter_preset_available'), true);
   assert.equal(source.includes('accounts.filter_preset_attention'), true);
-  assert.equal(source.includes('accounts.filter_preset_http_errors'), true);
+  assert.equal(source.includes('accounts.filter_preset_disabled'), true);
+  assert.equal(source.includes('accounts.filter_preset_http_errors'), false);
+  assert.equal(source.includes('accounts.filter_preset_with_quota'), false);
+  assert.equal(source.includes('accounts.filter_preset_api_key'), false);
   assert.equal(source.includes('accounts.filter_remove_condition'), true);
   assert.equal(source.includes('accounts.filter_group_resource'), false);
   assert.equal(source.includes('accounts.filter_has_quota_match'), true);
@@ -396,6 +407,7 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes("overlayClassName=\"accounts-toolbar-filter-popover\""), true);
   assert.equal(source.includes('SlidersHorizontal'), true);
   assert.equal(source.includes('icon={<SlidersHorizontal size={13} strokeWidth={2} />}'), true);
+  assert.equal(source.includes('formatFilterSummaryPartLabel(t, part)'), true);
   assert.equal(source.includes('className="parchment-toolbar-action-secondary h-10 !px-3 !py-2 !text-[length:var(--gt-font-size-sm-plus)]"'), false);
   assert.equal(source.includes('text-[length:var(--gt-font-size-sm-plus)] font-semibold leading-none tracking-normal'), false);
   assert.equal(source.includes('<Button'), true);

@@ -60,18 +60,22 @@ test('account detail section nav exposes local CLI apply actions from the accoun
   const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const layoutSource = await readFile(new URL('../components/AccountDetailLayout.tsx', import.meta.url), 'utf8');
+  const authFileSource = await readFile(new URL('../components/AccountDetailAuthFileSection.tsx', import.meta.url), 'utf8');
   const sectionsSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
   const footerSource = sourceBlock(sectionsSource, 'export function AccountDetailFooter', 'function normalizeBillingDisplay');
-  const sectionNavSource = sourceBlock(layoutSource, 'function SectionNav', '/* ── Layout: sidebar + scrollable content with scroll-spy ── */');
 
   assert.match(featureSource, /localCliActions=\{resolveLocalCliActionsForAccount\(selectedAccount\)\.map/);
   assert.match(featureSource, /onSelect: \(\) => action\.onSelect\(\)/);
-  assert.match(modalSource, /<AccountDetailLayout[\s\S]*localCliActions=\{props\.localCliActions\}/);
-  assert.match(sectionNavSource, /data-account-detail-nav-local-cli-actions/);
-  assert.match(sectionNavSource, /data-account-detail-nav-local-cli-action/);
-  assert.match(sectionNavSource, /action\.label/);
-  assert.match(sectionNavSource, /action\.disabledReason \|\| action\.detail \|\| action\.label/);
-  assert.match(sectionNavSource, /disabled=\{action\.disabled\}/);
+  assert.match(modalSource, /<AuthFileSummarySection[\s\S]*localCliActions=\{props\.localCliActions\}/);
+  assert.match(authFileSource, /localCliActions\.map/);
+  assert.match(authFileSource, /data-auth-file-config-local-cli-action=\{action\.id\}/);
+  assert.match(authFileSource, /action\.disabledReason \|\| action\.detail \|\| action\.label/);
+  assert.match(authFileSource, /disabled=\{action\.disabled\}/);
+  assert.doesNotMatch(layoutSource, /data-account-detail-nav-local-cli-actions/);
+  assert.doesNotMatch(layoutSource, /data-account-detail-nav-local-cli-action/);
+  assert.match(layoutSource, /account-detail-section-nav-menu/);
+  assert.match(styleSource, /\.account-detail-section-nav-menu \.ant-menu-item-selected \.ant-menu-title-content\s*\{[\s\S]*font-weight: 600;/);
   assert.doesNotMatch(footerSource, /localCliActions/);
   assert.doesNotMatch(footerSource, /data-account-detail-local-cli-actions/);
 });
@@ -84,7 +88,8 @@ test('account detail layout delegates close to ModalFrame', async () => {
   const layoutComponentSource = sourceBlock(layoutSource, 'export function AccountDetailLayout', undefined);
   const layoutReturnSource = sourceBlock(layoutComponentSource, 'return (', ');\n}');
 
-  assert.match(layoutSource, /import \{ Button, Menu, Tooltip \} from 'antd'/);
+  assert.match(layoutSource, /import \{ Menu \} from 'antd'/);
+  assert.doesNotMatch(layoutSource, /import \{ Button, Menu, Tooltip \} from 'antd'/);
   assert.doesNotMatch(layoutSource, /import \{ X \} from 'lucide-react'/);
   assert.doesNotMatch(layoutSource, /onClose:\s*\(\) => void/);
   assert.doesNotMatch(layoutReturnSource, /data-account-detail-layout-close/);
@@ -119,21 +124,40 @@ test('auth-file account detail exposes single-account OAuth model probe', async 
 
 test('OAuthModelProbeSection uses the quiet workspace control shell', async () => {
   const source = await readFile(new URL('../components/OAuthModelProbeSection.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+  const comboboxBlock = source.match(/<Combobox[\s\S]*?\/>/)?.[0] ?? '';
 
   assert.match(source, /const oauthModelProbeFieldLabelClass =/);
-  assert.match(source, /import \{ Alert, Button \} from 'antd'/);
+  assert.match(source, /import \{ Button \} from 'antd'/);
   assert.match(source, /<Button[\s\S]*data-oauth-model-probe-button="run"/);
-  assert.match(source, /<Alert[\s\S]*data-oauth-model-probe-status=\{currentStatus\}/);
   assert.match(source, /data-oauth-model-probe-shell="quiet"/);
   assert.match(source, /data-oauth-model-probe-button="run"/);
   assert.match(source, /data-oauth-model-probe-status=\{currentStatus\}/);
   assert.match(source, /Combobox/);
+  assert.match(comboboxBlock, /className="w-full"/);
+  assert.match(comboboxBlock, /popupMatchSelectWidth=\{false\}/);
+  assert.match(comboboxBlock, /popupClassName="gettokens-oauth-model-probe-combobox-popup"/);
+  assert.match(source, /probeState\?\.message \|\| ''/);
+  assert.doesNotMatch(source, /只允许当前 OAuth 账号参与本次路由探测/);
+  assert.doesNotMatch(source, /fallback 已关闭/);
+  assert.match(styleSource, /\.gettokens-oauth-model-probe-combobox-popup\s*\{/);
   assert.doesNotMatch(source, /btn-swiss/);
   assert.doesNotMatch(source, /border-2/);
   assert.doesNotMatch(source, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(source, /uppercase/);
   assert.doesNotMatch(source, /tracking-\[/);
   assert.doesNotMatch(source, /--color-status-/);
+});
+
+test('Combobox exposes AntD popup sizing hooks for long model options', async () => {
+  const source = await readFile(new URL('../../../components/ui/Combobox.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /popupMatchSelectWidth\?: boolean \| number/);
+  assert.match(source, /popupClassName\?: string/);
+  assert.match(source, /popupMatchSelectWidth = true/);
+  assert.match(source, /popupClassName = ''/);
+  assert.match(source, /popupMatchSelectWidth=\{popupMatchSelectWidth\}/);
+  assert.match(source, /classNames=\{popupClassName \? \{ popup: \{ root: popupClassName \} \} : undefined\}/);
 });
 
 test('auth-file summary keeps raw content hidden and retains model catalog', async () => {
@@ -826,8 +850,8 @@ test('account detail footer uses the quiet workspace action shell', async () => 
   assert.match(source, /const accountDetailFooterStatusClass =/);
   assert.match(source, /const accountDetailFooterActionsClass =/);
   assert.match(source, /import \{ .*Button, Input, Select, Tooltip.*\} from 'antd'/);
-  assert.match(layoutSource, /const accountDetailNavLocalActionButtonClass =/);
-  assert.match(sectionNavSource, /data-account-detail-nav-local-cli-actions/);
+  assert.doesNotMatch(layoutSource, /const accountDetailNavLocalActionButtonClass =/);
+  assert.doesNotMatch(sectionNavSource, /data-account-detail-nav-local-cli-actions/);
   assert.match(targetSource, /data-account-detail-footer-status="single-line"/);
   assert.match(targetSource, /data-account-detail-footer-actions/);
   assert.match(source, /--gt-surface-canvas/);
@@ -849,17 +873,23 @@ test('account detail credential fields are plaintext and use balanced grid spaci
   assert.doesNotMatch(source, /type="password"/);
 });
 
-test('codex auth-file detail is database config management, not raw file summary', async () => {
+test('codex auth-file detail exposes CPA data and local apply actions in config management', async () => {
   const source = await readFile(new URL('../components/AccountDetailAuthFileSection.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /账号名称/);
-  assert.match(source, /配置预览/);
-  assert.match(source, /下载配置/);
-  assert.match(source, /应用配置/);
-  assert.match(source, /账号数据库/);
+  assert.match(source, /CPA 文件预览/);
+  assert.match(source, /下载 CPA 文件/);
+  assert.match(source, /data-auth-file-config-preview="cpa-json"/);
+  assert.match(source, /h-\[52vh\]/);
+  assert.match(source, /max-h-\[34rem\]/);
+  assert.doesNotMatch(source, /title="配置管理"/);
+  assert.match(source, /data-auth-file-config-local-cli-action=\{action\.id\}/);
+  assert.match(source, /buildCPAAuthFileContentText/);
+  assert.match(source, /downloadTextFile/);
   assert.doesNotMatch(source, /文件摘要/);
   assert.doesNotMatch(source, /脱敏/);
   assert.doesNotMatch(source, /复制原文/);
+  assert.doesNotMatch(source, /配置预览基于账号数据库生成/);
 });
 test('account detail proxy route edits the account proxy url without proxy pool dependencies', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
@@ -880,8 +910,13 @@ test('auth-file compatible model catalog renders source-to-route mapping cards',
 
   assert.match(source, /data-account-model-mapping-grid="source-route"/);
   assert.match(source, /data-account-model-mapping-card=\{editable \? 'editable' : 'readonly'\}/);
+  assert.match(source, /modelReadonlyCardClass/);
+  assert.match(source, /grid-cols-\[minmax\(0,1fr\)_2rem_minmax\(0,1fr\)\]/);
   assert.match(source, /data-account-model-mapping-input="source"/);
   assert.match(source, /data-account-model-mapping-input="alias"/);
+  assert.match(source, /data-account-model-mapping-route-status/);
+  assert.doesNotMatch(source, />只读</);
+  assert.doesNotMatch(source, /<AccountDetailPill/);
   assert.doesNotMatch(source, /data-account-model-default-list="true"/);
   assert.doesNotMatch(source, /当前账号支持模型<\/div>/);
   assert.match(source, /import \{ RefreshCw, Trash2 \} from 'lucide-react'/);
@@ -955,19 +990,19 @@ test('account copy import and model fetch preserve multi-endpoint account config
   assert.match(modalSource, /resolveManagementBaseUrl\(\{ baseUrl: draft\.baseUrl, formatBaseUrls: draft\.formatBaseUrls \}\)/);
   assert.match(modalSource, /baseUrl:\s*resolveManagementBaseUrl\(\{ baseUrl: draft\.baseUrl, formatBaseUrls: draft\.formatBaseUrls \}\)/);
 });
-test('auth-file config management keeps apply API boundary explicit', async () => {
+test('auth-file config management downloads CPA files and moves local apply actions into the module header', async () => {
   const source = await readFile(new URL('../components/AccountDetailAuthFileSection.tsx', import.meta.url), 'utf8');
-  const authFileBlock = source.match(/export function AuthFileSummarySection[\s\S]*?\n\}/)?.[0] ?? '';
+  const authFileBlock = sourceBlock(source, 'export function AuthFileSummarySection', 'function resolveCPAFilename');
 
   assert.match(source, /data-auth-file-config-management="quiet"/);
-  assert.match(source, /data-auth-file-config-action="preview"/);
-  assert.match(source, /data-auth-file-config-action="download"/);
-  assert.match(source, /data-auth-file-config-action="apply"/);
-  assert.match(authFileBlock, /data-auth-file-config-action="preview"[\s\S]*data-auth-file-config-action="download"[\s\S]*data-auth-file-config-action="apply"/);
+  assert.match(source, /data-auth-file-config-action="download-cpa"/);
+  assert.match(source, /data-auth-file-config-local-cli-action=\{action\.id\}/);
+  assert.match(authFileBlock, /data-auth-file-config-action="download-cpa"[\s\S]*localCliActions\.map/);
   assert.doesNotMatch(authFileBlock, /md:grid-cols-\[minmax\(0,1fr\)_auto\]/);
-  assert.match(source, /ApplyAuthFileConfig/);
-  assert.match(source, /trackRequest\('ApplyAuthFileConfig'/);
-  assert.match(source, /写回账号数据库并刷新运行时配置/);
+  assert.match(source, /NormalizeAuthFileContent/);
+  assert.match(source, /trackRequest\('NormalizeAuthFileContent'/);
+  assert.doesNotMatch(source, /ApplyAuthFileConfig/);
+  assert.doesNotMatch(source, /写回账号数据库并刷新运行时配置/);
   assert.doesNotMatch(source, /待接入 account-store management API/);
   assert.doesNotMatch(source, /SaveAuthFileConfig/);
 });
@@ -981,25 +1016,41 @@ test('real account detail modal uses section-nav layout instead of legacy band g
   assert.match(layoutSource, /accountDetailSection/);
   assert.match(layoutSource, /new URLSearchParams\(window\.location\.search\)/);
   assert.match(layoutSource, /IntersectionObserver/);
-  assert.match(layoutSource, /!text-\[length:var\(--gt-font-size-xs\)\]/);
+  assert.match(layoutSource, /data-account-detail-section-nav="antd"/);
+  assert.doesNotMatch(layoutSource, /data-account-detail-nav-local-cli-actions/);
+  assert.match(layoutSource, /activeSectionID\?: string/);
+  assert.match(layoutSource, /onActiveSectionChange\?: \(id: string\) => void/);
   assert.doesNotMatch(layoutSource, /!text-xs/);
-  assert.match(modalSource, /<AccountDetailLayout[\s\S]*sectionNavItems=\{sectionNavItems\}[\s\S]*header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}/);
+  assert.match(modalSource, /header=\{<AccountDetailModalTitleBar/);
+  assert.match(modalSource, /activeSectionID=\{activeSectionID\}/);
+  assert.match(modalSource, /onActiveSectionChange=\{setActiveSectionID\}/);
   assert.doesNotMatch(modalSource, /<AccountDetailLayout[\s\S]*onClose=\{props\.onClose\}/);
   assert.doesNotMatch(modalSource, /<AccountDetailModuleStack layout="bands">/);
   assert.doesNotMatch(modalSource, /<AccountDetailModuleStack layout="cards">/);
 });
 
-test('real account detail header uses compact account type summary', async () => {
+test('real account detail modal titlebar uses account type and active section title', async () => {
   const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const titlebarSource = sourceBlock(modalSource, 'const accountDetailModalTitleBarClass', 'const codexAccountDetailHeaderClass');
 
   assert.match(sectionSource, /data-account-detail-header="quiet"/);
   assert.match(sectionSource, /\{accountTypeLabel\}/);
   assert.match(sectionSource, /return 'CODEX OAUTH'/);
   assert.match(sectionSource, /return 'CODEX API KEY'/);
   assert.match(sectionSource, /return 'OPENAI COMPATIBLE'/);
-  assert.match(modalSource, /headerClassName="hidden"/);
-  assert.match(modalSource, /header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}/);
+  assert.match(modalSource, /function AccountDetailModalTitleBar/);
+  assert.match(modalSource, /data-account-detail-modal-titlebar/);
+  assert.match(modalSource, /data-account-detail-modal-type/);
+  assert.match(modalSource, /data-account-detail-modal-title-divider/);
+  assert.match(modalSource, /data-account-detail-modal-section-title/);
+  assert.match(titlebarSource, /accountDetailModalTitleTypeClass[\s\S]*var\(--gt-font-size-lg\)/);
+  assert.match(titlebarSource, /accountDetailModalSectionTitleClass[\s\S]*var\(--gt-font-size-lg\)/);
+  assert.match(modalSource, /min-h-16/);
+  assert.match(modalSource, /pr-16/);
+  assert.doesNotMatch(modalSource, /headerClassName="hidden"/);
+  assert.doesNotMatch(modalSource, /header=\{<AccountDetailHeader \{\.\.\.props\} \/>\}/);
+  assert.doesNotMatch(titlebarSource, /accountDetailModalSectionTitleClass[\s\S]*var\(--gt-font-size-sm\)/);
   assert.doesNotMatch(sectionSource, /data-account-detail-header-chips/);
   assert.doesNotMatch(sectionSource, /!?text-(?:xs|sm|base|lg|xl|2xl|3xl)\b/);
   assert.doesNotMatch(sectionSource, /text-base font-(?:medium|bold|extrabold|black)/);
@@ -1020,6 +1071,24 @@ test('account detail primitives use the current quiet token shell', async () => 
   assert.doesNotMatch(primitiveSource, /bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(primitiveSource, /font-(?:medium|bold|extrabold|black)/);
   assert.doesNotMatch(primitiveSource, /\btext-xs\b/);
+});
+
+test('account detail stat and evidence primitives render values without antd child extraction', async () => {
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+  const statGridSource = sourceBlock(primitiveSource, 'export function AccountDetailStatGrid', 'export function AccountDetailStatCell');
+  const statCellSource = sourceBlock(primitiveSource, 'export function AccountDetailStatCell', '/* ── Pill ── */');
+  const evidenceGridSource = sourceBlock(primitiveSource, 'export function AccountDetailEvidenceGrid', 'export function AccountDetailEvidenceRow');
+  const evidenceRowSource = sourceBlock(primitiveSource, 'export function AccountDetailEvidenceRow', '/* ── Legacy backward-compatible exports ── */');
+
+  assert.doesNotMatch(primitiveSource, /Descriptions/);
+  assert.match(statGridSource, /data-account-detail-stat-grid/);
+  assert.match(statCellSource, /data-account-detail-stat-cell/);
+  assert.match(statCellSource, /data-account-detail-stat-value/);
+  assert.match(statCellSource, /\{value\}/);
+  assert.match(evidenceGridSource, /data-account-detail-evidence-grid/);
+  assert.match(evidenceRowSource, /data-account-detail-evidence-row/);
+  assert.match(evidenceRowSource, /data-account-detail-evidence-value/);
+  assert.match(evidenceRowSource, /\{value\}/);
 });
 
 test('account detail quota and billing render as stacked section-nav modules', async () => {
@@ -1054,12 +1123,13 @@ test('unified account detail modal internals use the section-nav quiet workspace
   const modelSource = await readFile(new URL('../components/AccountDetailModelsSection.tsx', import.meta.url), 'utf8');
 
   assert.match(modalSource, /panelAttributes=\{\{ 'data-account-detail-modal': 'unified' \}\}/);
-  assert.match(modalSource, /headerClassName="hidden"/);
+  assert.match(modalSource, /headerClassName="min-h-16 px-6 py-0 pr-16"/);
   assert.match(layoutSource, /bg-\[var\(--gt-surface-canvas\)\]/);
   assert.match(layoutSource, /border-\[var\(--gt-border-subtle\)\]/);
   assert.doesNotMatch(layoutSource, /fontSize:/);
   assert.match(authSource, /data-auth-file-config-management="quiet"/);
-  assert.match(authSource, /data-auth-file-config-notice/);
+  assert.match(authSource, /data-auth-file-config-preview="cpa-json"/);
+  assert.doesNotMatch(authSource, /data-auth-file-config-notice/);
   assert.match(modelSource, /data-account-model-mapping-grid="source-route"/);
   assert.match(modelSource, /data-account-model-mapping-card/);
   assert.doesNotMatch(modelSource, /text-\[10px\]/);

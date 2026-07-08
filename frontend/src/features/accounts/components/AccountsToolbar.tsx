@@ -9,6 +9,7 @@ import {
   defaultAccountsFilterState,
   removeAccountsFilterSummaryPart,
   summarizeAccountsFilterState,
+  type AccountsFilterSummaryPart,
   type AccountsFilterPresetID,
 } from '../model/accountFilters';
 import type { AccountPlanType } from '../../../types';
@@ -211,17 +212,11 @@ export default function AccountsToolbar({
                     <FilterPillOption active={isAvailablePresetActive(filters)} onClick={() => setFilterPreset('available')}>
                       {t('accounts.filter_preset_available')}
                     </FilterPillOption>
-                    <FilterPillOption active={isAttentionPresetActive(filters, availableRequestStatusCodes)} onClick={() => setFilterPreset('attention')}>
+                    <FilterPillOption active={isAttentionPresetActive(filters)} onClick={() => setFilterPreset('attention')}>
                       {t('accounts.filter_preset_attention')}
                     </FilterPillOption>
-                    <FilterPillOption active={isHTTPErrorPresetActive(filters, availableRequestStatusCodes)} onClick={() => setFilterPreset('http-errors')}>
-                      {t('accounts.filter_preset_http_errors')}
-                    </FilterPillOption>
-                    <FilterPillOption active={filters.resource.hasQuota && !filters.resource.noQuota} onClick={() => setFilterPreset('with-quota')}>
-                      {t('accounts.filter_preset_with_quota')}
-                    </FilterPillOption>
-                    <FilterPillOption active={!filters.source.authFile && filters.source.apiKey} onClick={() => setFilterPreset('api-key')}>
-                      {t('accounts.filter_preset_api_key')}
+                    <FilterPillOption active={isDisabledPresetActive(filters)} onClick={() => setFilterPreset('disabled')}>
+                      {t('accounts.filter_preset_disabled')}
                     </FilterPillOption>
                   </div>
                 </div>
@@ -239,7 +234,7 @@ export default function AccountsToolbar({
                           color="blue"
                           className="m-0"
                         >
-                          {part.label}
+                          {formatFilterSummaryPartLabel(t, part)}
                         </Tag>
                       ))}
                     </div>
@@ -373,7 +368,7 @@ export default function AccountsToolbar({
                   className="m-0 max-w-[210px]"
                   title={t('accounts.filter_remove_condition')}
                 >
-                  <span className="truncate">{part.label}</span>
+                  <span className="truncate">{formatFilterSummaryPartLabel(t, part)}</span>
                 </Tag>
               ))}
             </div>
@@ -793,6 +788,16 @@ function buildToolbarFilterLabel(t: Translator, parts: readonly unknown[]) {
   return `${t('accounts.display_filters')} · ${parts.length}`;
 }
 
+function formatFilterSummaryPartLabel(t: Translator, part: AccountsFilterSummaryPart) {
+  const groupLabels: Record<AccountsFilterSummaryPart['kind'], string> = {
+    source: t('accounts.filter_group_source'),
+    resource: t('accounts.filter_group_other'),
+    status: t('accounts.filter_group_status'),
+    plan: t('accounts.filter_group_plan'),
+  };
+  return `${groupLabels[part.kind]}: ${part.label}`;
+}
+
 function isPlanOptionSelected(selection: AccountsFilterState['plan'], planType: AccountPlanType) {
   return selection[planType] !== false;
 }
@@ -819,29 +824,20 @@ function isAvailablePresetActive(filters: AccountsFilterState) {
   return !filters.status.error && !filters.status.disabled && filters.status.requestable && Object.keys(filters.status.requestStatusCodes).length === 0;
 }
 
-function isAttentionPresetActive(filters: AccountsFilterState, availableRequestStatusCodes: readonly string[]) {
-  return (
-    filters.status.error &&
-    filters.status.disabled &&
-    !filters.status.requestable &&
-    selectedRequestStatusCodesMatch(filters, availableRequestStatusCodes)
-  );
-}
-
-function isHTTPErrorPresetActive(filters: AccountsFilterState, availableRequestStatusCodes: readonly string[]) {
+function isAttentionPresetActive(filters: AccountsFilterState) {
   return (
     filters.status.error &&
     !filters.status.disabled &&
     !filters.status.requestable &&
-    selectedRequestStatusCodesMatch(filters, availableRequestStatusCodes)
+    Object.keys(filters.status.requestStatusCodes).length === 0
   );
 }
 
-function selectedRequestStatusCodesMatch(filters: AccountsFilterState, availableRequestStatusCodes: readonly string[]) {
-  const selected = Object.keys(filters.status.requestStatusCodes).sort();
-  const available = Array.from(new Set(availableRequestStatusCodes)).sort();
-  if (available.length === 0) {
-    return selected.length === 0;
-  }
-  return selected.length === available.length && selected.every((code, index) => code === available[index]);
+function isDisabledPresetActive(filters: AccountsFilterState) {
+  return (
+    !filters.status.error &&
+    filters.status.disabled &&
+    !filters.status.requestable &&
+    Object.keys(filters.status.requestStatusCodes).length === 0
+  );
 }

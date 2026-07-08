@@ -547,6 +547,20 @@ test('isCodexReauthEligible allows active oauth account when quota runtime requi
     }),
     true
   );
+
+  assert.equal(
+    isCodexReauthEligible(activeOAuthAccount, {
+      status: 'stale',
+      stale: true,
+      degradedReason: 'ChatGPT usage request failed (401): Provided authentication token is expired. Please try signing in again. (token_expired)',
+      planType: 'free',
+      windows: [],
+      blocked: true,
+      blockReason: 'ChatGPT usage request failed (401): Provided authentication token is expired. Please try signing in again. (token_expired)',
+      sources: [{ source: 'auth-error', reason: 'token_expired' }],
+    }),
+    true
+  );
 });
 
 test('isCodexAuthFile allows any codex auth-file with a file name', () => {
@@ -1594,6 +1608,43 @@ test('resolveAccountOperationalState treats auth-error route guard as unavailabl
         blocked: true,
         blockReason: 'auth-error=token_invalidated',
         sources: [{ source: 'auth-error', reason: 'token_invalidated' }],
+      },
+      t,
+    ),
+    { tone: 'danger', label: '异常' },
+  );
+});
+
+test('resolveAccountOperationalState lets auth-error override registered routeable runtime status', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_available': '可用',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_error_display': '异常',
+      'accounts.status_local': '本地草稿',
+    })[key] || key;
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'auth-file:codex',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'codex.json',
+        status: 'ACTIVE',
+        runtimeStatus: 'registered_routeable',
+      },
+      { hasData: true, success: 1, failure: 0 },
+      {
+        status: 'stale',
+        planType: 'free',
+        windows: [],
+        stale: true,
+        degradedReason: 'ChatGPT usage request failed (401): Provided authentication token is expired. Please try signing in again. (token_expired)',
+        blocked: true,
+        blockReason: 'ChatGPT usage request failed (401): Provided authentication token is expired. Please try signing in again. (token_expired)',
+        sources: [{ source: 'auth-error', reason: 'token_expired' }],
       },
       t,
     ),

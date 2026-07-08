@@ -16,17 +16,22 @@ import { getVendorPreset } from '../model/vendorPresets';
 import { resolveVendorPresetID } from '../model/vendorPresetHelpers';
 import {
   AccountDetailEmptyState,
-  AccountDetailPill,
   AccountDetailSection,
 } from './AccountDetailPrimitives';
 import { getAccountsPreviewAuthFileModels } from '../previewData';
 
-const modelCardClass =
-  'flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-[var(--gt-surface-muted)] transition-colors';
+const modelMappingGridClass =
+  'overflow-hidden rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)]';
+const modelEditableCardClass =
+  'grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)_2.5rem] items-center gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2 last:border-b-0';
+const modelReadonlyCardClass =
+  'grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)] items-center gap-2 border-b border-[var(--gt-border-subtle)] px-3 py-2 last:border-b-0';
 const modelArrowClass =
-  'text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)] shrink-0';
+  'shrink-0 text-center text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-muted)]';
 const modelValueClass =
-  'truncate text-[length:var(--gt-font-size-sm)] text-[var(--gt-ink-primary)]';
+  'min-w-0 truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-primary)]';
+const modelRouteValueClass =
+  'min-w-0 truncate font-mono text-[length:var(--gt-font-size-sm)] font-normal text-[var(--gt-ink-muted)]';
 const fetchStatusClass =
   'rounded-md border border-[var(--gt-border-default)] bg-[var(--gt-surface-muted)] px-3 py-2 text-[length:var(--gt-font-size-xs)] font-normal text-[var(--gt-ink-muted)]';
 const fetchErrorClass =
@@ -223,12 +228,16 @@ export function CompatibleModelsSection({
           {editable ? '暂无模型映射；可拉取模型后添加映射，或直接手动添加。' : '暂无模型数据'}
         </AccountDetailEmptyState>
       ) : (
-        <div data-account-model-mapping-grid="source-route" className="flex flex-col gap-1.5">
+        <div data-account-model-mapping-grid="source-route" className={modelMappingGridClass}>
           {displayedModels.map((model, index) => {
             const modelName = String(model.name ?? model.id ?? model.display_name ?? `MODEL ${index + 1}`);
             const routeLabel = String(model.alias ?? (isAuthFile ? 'oauth available' : modelName));
             return (
-              <div key={index} data-account-model-mapping-card={editable ? 'editable' : 'readonly'} className={modelCardClass}>
+              <div
+                key={index}
+                data-account-model-mapping-card={editable ? 'editable' : 'readonly'}
+                className={editable ? modelEditableCardClass : modelReadonlyCardClass}
+              >
                 <div className="min-w-0">
                   {editable ? (
                     <div data-account-model-mapping-input="source">
@@ -242,7 +251,7 @@ export function CompatibleModelsSection({
                     </div>
                   ) : (
                     <div className={modelValueClass}>{modelName}</div>
-                  )}
+                )}
                 </div>
                 <div className={modelArrowClass}>→</div>
                 <div className="min-w-0">
@@ -257,7 +266,7 @@ export function CompatibleModelsSection({
                       />
                     </div>
                   ) : (
-                    <div className={modelValueClass}>{routeLabel}</div>
+                    <div data-account-model-mapping-route-status className={modelRouteValueClass}>{routeLabel}</div>
                   )}
                 </div>
                 {editable ? (
@@ -270,9 +279,7 @@ export function CompatibleModelsSection({
                       aria-label="删除映射"
                     />
                   </Tooltip>
-                ) : (
-                  <AccountDetailPill className="!min-h-0 !py-0.5 text-[length:var(--gt-font-size-xs)]">只读</AccountDetailPill>
-                )}
+                ) : null}
               </div>
             );
           })}

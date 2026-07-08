@@ -37,6 +37,7 @@ import AccountsHeader from "./components/AccountsHeader";
 import AccountsToolbar, {
   AccountsSelectionActions,
 } from "./components/AccountsToolbar";
+import AccountsDiagnosticsPanel from "./components/AccountsDiagnosticsPanel";
 import ApiKeyComposeModal from "./components/ApiKeyComposeModal";
 import CodexOAuthModal from "./components/CodexOAuthModal";
 import OpenAICompatibleComposeModal from "./components/OpenAICompatibleComposeModal";
@@ -170,6 +171,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     rateLimitRefreshingAccountIDSet,
     rateLimitStrategies,
     runtimeRefreshing,
+    lastRuntimeSyncAt,
+    automaticRuntimeSyncTargetAccountIDs,
     isSelectionMode,
     selectedAccountIDs,
     isHeaderActionsMenuOpen,
@@ -1643,6 +1646,17 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   resolveLocalCliActions={resolveLocalCliActionsForAccount}
                 />
               ))}
+              {import.meta.env.DEV ? (
+                <AccountsDiagnosticsPanel
+                  accounts={accounts}
+                  filteredAccounts={filteredAccounts}
+                  codexQuotaByName={codexQuotaByName}
+                  runtimeSyncTargetAccountIDs={automaticRuntimeSyncTargetAccountIDs}
+                  runtimeRefreshing={runtimeRefreshing}
+                  lastRuntimeSyncAt={lastRuntimeSyncAt}
+                  sidecarStatus={sidecarStatus}
+                />
+              ) : null}
             </div>
           )}
 

@@ -5,6 +5,8 @@ import type { AccountUsageSummary } from './accountUsage';
 import { buildQuotaDisplay, extractBilling, hasDisplayableBilling, hasPositiveLongestQuota, selectLongestQuotaWindow } from './accountQuota.ts';
 import {
   compareAccountRecords,
+  hasAccountOperationalFailure,
+  isCodexReauthEligible,
   isAccountUnavailable,
 } from './accountPresentation.ts';
 
@@ -40,6 +42,21 @@ interface AccountGroupDescriptor {
   id: string;
   label: string;
   rank: number;
+}
+
+export type AccountOperationalBucket = 'requestable' | 'needs_attention' | 'disabled' | 'pending';
+export type AccountOperationalReason =
+  | 'reauth_required'
+  | 'auth_error'
+  | 'quota_empty'
+  | 'rate_limited'
+  | 'upstream_error'
+  | 'not_observed'
+  | 'manual_disabled';
+
+export interface AccountOperationalStatus {
+  bucket: AccountOperationalBucket;
+  reasons: AccountOperationalReason[];
 }
 
 type AccountStatusBucket = 'requestable' | 'disabled' | 'error' | 'unknown';
@@ -121,7 +138,7 @@ function matchesResourceSelection(
 }
 
 function matchesStatusSelection(selection: AccountsFilterState['status'], account: AccountRecord, quotaState?: CodexQuotaState) {
-  if (!matchesBaseStatusSelection(selection, account)) {
+  if (!matchesBaseStatusSelection(selection, account, quotaState)) {
     return false;
   }
   return matchesRequestStatusCodeSelection(selection.requestStatusCodes || {}, resolveAccountRequestStatusCodes(account, quotaState));
@@ -144,19 +161,78 @@ function isAccountDisabled(account: AccountRecord) {
   return String(account.status || '').trim().toUpperCase() === 'DISABLED';
 }
 
-function isAccountError(account: AccountRecord) {
-  if (isAccountDisabled(account)) {
-    return false;
-  }
-  if (account.rawAuthFile?.unavailable) {
-    return true;
-  }
-  const status = String(account.status || '').trim().toUpperCase();
-  return status !== 'ACTIVE' && status !== 'CONFIGURED' && status !== 'LOCAL';
+function isAccountError(account: AccountRecord, quotaState?: CodexQuotaState) {
+  return resolveAccountOperationalStatus(account, quotaState).bucket === 'needs_attention';
 }
 
-function isAccountRequestable(account: AccountRecord) {
-  return !isAccountUnavailable(account);
+function isAccountRequestable(account: AccountRecord, quotaState?: CodexQuotaState) {
+  return resolveAccountOperationalStatus(account, quotaState).bucket === 'requestable';
+}
+
+export function resolveAccountOperationalStatus(account: AccountRecord, quotaState?: CodexQuotaState): AccountOperationalStatus {
+  if (isAccountDisabled(account)) {
+    return { bucket: 'disabled', reasons: ['manual_disabled'] };
+  }
+
+  const normalizedStatus = String(account.status || '').trim().toUpperCase();
+  if (!normalizedStatus && !quotaState?.quota && !account.rawAuthFile?.unavailable) {
+    return { bucket: 'pending', reasons: ['not_observed'] };
+  }
+
+  const quotaDisplay = buildQuotaDisplay(account, quotaState);
+
+  if (hasAccountOperationalFailure(account, quotaDisplay)) {
+    return {
+      bucket: 'needs_attention',
+      reasons: resolveOperationalFailureReasons(account, quotaState),
+    };
+  }
+
+  if (account.rawAuthFile?.unavailable || isAccountUnavailable(account)) {
+    return { bucket: 'needs_attention', reasons: ['upstream_error'] };
+  }
+
+  if (normalizedStatus !== 'ACTIVE' && normalizedStatus !== 'CONFIGURED' && normalizedStatus !== 'LOCAL') {
+    return { bucket: 'needs_attention', reasons: ['upstream_error'] };
+  }
+
+  return { bucket: 'requestable', reasons: [] };
+}
+
+function resolveOperationalFailureReasons(account: AccountRecord, quotaState?: CodexQuotaState): AccountOperationalReason[] {
+  const quotaDisplay = buildQuotaDisplay(account, quotaState);
+  const reasons = new Set<AccountOperationalReason>();
+  const diagnosticText = collectOperationalDiagnosticText(account, quotaState).toLowerCase();
+
+  if (isCodexReauthEligible(account, quotaDisplay)) {
+    reasons.add('reauth_required');
+    reasons.add('auth_error');
+  } else if (diagnosticText.includes('auth-error') || diagnosticText.includes('authentication') || diagnosticText.includes('token')) {
+    reasons.add('auth_error');
+  }
+  if (diagnosticText.includes('rate limit') || diagnosticText.includes('rate_limit') || diagnosticText.includes('429')) {
+    reasons.add('rate_limited');
+  }
+  if (diagnosticText.includes('quota') || diagnosticText.includes('limit') || diagnosticText.includes('usage')) {
+    reasons.add('quota_empty');
+  }
+  if (reasons.size === 0) {
+    reasons.add('upstream_error');
+  }
+  return [...reasons];
+}
+
+function collectOperationalDiagnosticText(account: AccountRecord, quotaState?: CodexQuotaState) {
+  return [
+    account.statusMessage,
+    account.rawAuthFile?.statusMessage,
+    ...(account.requestability?.evidence || []),
+    quotaState?.quota?.degradedReason,
+    quotaState?.quota?.blockReason,
+    ...(quotaState?.quota?.sources || []).map((source) => `${source.source}:${source.reason}`),
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 function resolveAccountPlanType(account: AccountRecord, state?: CodexQuotaState): AccountPlanType | null {
@@ -236,14 +312,18 @@ function normalizeProviderKey(provider: string): string {
   return provider.trim().toLowerCase();
 }
 
-function buildGroupMeta(accounts: AccountRecord[]): NonNullable<AccountGroup['meta']> {
+function buildGroupMeta(
+  accounts: AccountRecord[],
+  codexQuotaByName: Record<string, CodexQuotaState> = {},
+): NonNullable<AccountGroup['meta']> {
   return accounts.reduce(
     (meta, account) => {
+      const quotaState = getQuotaStateForAccount(account, codexQuotaByName);
       if (isAccountDisabled(account)) {
         meta.disabledCount += 1;
-      } else if (isAccountError(account)) {
+      } else if (isAccountError(account, quotaState)) {
         meta.errorCount += 1;
-      } else if (isAccountRequestable(account)) {
+      } else if (isAccountRequestable(account, quotaState)) {
         meta.requestableCount += 1;
       }
       return meta;
@@ -260,18 +340,15 @@ function getQuotaStateForAccount(account: AccountRecord, codexQuotaByName: Recor
   return codexQuotaByName[account.quotaKey || ''];
 }
 
-function resolveAccountStatusBucket(account: AccountRecord): AccountStatusBucket {
-  if (isAccountDisabled(account)) {
-    return 'disabled';
-  }
-  const normalizedStatus = String(account.status || '').trim().toUpperCase();
-  if (!normalizedStatus) {
-    return 'unknown';
-  }
-  if (isAccountError(account)) {
+function resolveAccountStatusBucket(account: AccountRecord, state?: CodexQuotaState): AccountStatusBucket {
+  const operationalStatus = resolveAccountOperationalStatus(account, state);
+  if (operationalStatus.bucket === 'needs_attention') {
     return 'error';
   }
-  return 'requestable';
+  if (operationalStatus.bucket === 'pending') {
+    return 'unknown';
+  }
+  return operationalStatus.bucket;
 }
 
 function resolvePlanGroup(
@@ -302,8 +379,8 @@ function resolveSourceGroup(account: AccountRecord, t: Translator): AccountGroup
   return { id: 'source:other', label: t('accounts.group_source_other'), rank: 40 };
 }
 
-function resolveStatusGroup(account: AccountRecord, t: Translator): AccountGroupDescriptor {
-  const bucket = resolveAccountStatusBucket(account);
+function resolveStatusGroup(account: AccountRecord, state: CodexQuotaState | undefined, t: Translator): AccountGroupDescriptor {
+  const bucket = resolveAccountStatusBucket(account, state);
   if (bucket === 'requestable') {
     return { id: 'status:requestable', label: t('accounts.group_status_requestable'), rank: 10 };
   }
@@ -355,7 +432,7 @@ function resolveAccountGroup(
     case 'source':
       return resolveSourceGroup(account, t);
     case 'status':
-      return resolveStatusGroup(account, t);
+      return resolveStatusGroup(account, state, t);
     case 'resource':
       return resolveResourceGroup(account, state, t);
     case 'provider':
@@ -412,14 +489,19 @@ function compareByName(left: AccountRecord, right: AccountRecord) {
   return 0;
 }
 
-function compareByStatus(left: AccountRecord, right: AccountRecord) {
+function compareByStatus(
+  left: AccountRecord,
+  right: AccountRecord,
+  codexQuotaByName: Record<string, CodexQuotaState>,
+) {
   const rank: Record<AccountStatusBucket, number> = {
     error: 10,
     disabled: 20,
     unknown: 30,
     requestable: 40,
   };
-  return rank[resolveAccountStatusBucket(left)] - rank[resolveAccountStatusBucket(right)];
+  return rank[resolveAccountStatusBucket(left, getQuotaStateForAccount(left, codexQuotaByName))]
+    - rank[resolveAccountStatusBucket(right, getQuotaStateForAccount(right, codexQuotaByName))];
 }
 
 export function compareAccountsBySortMode(
@@ -432,7 +514,7 @@ export function compareAccountsBySortMode(
   if (sortMode === 'name') {
     result = compareByName(left, right);
   } else if (sortMode === 'status') {
-    result = compareByStatus(left, right);
+    result = compareByStatus(left, right, codexQuotaByName);
   } else if (sortMode === 'quota') {
     result = compareNullableNumbers(
       resolveLongestQuotaRemainingPercent(left, getQuotaStateForAccount(left, codexQuotaByName)),
@@ -522,14 +604,14 @@ export function groupAccounts({
     const existing = groups.get(descriptor.id);
     if (existing) {
       existing.accounts.push(account);
-      existing.meta = buildGroupMeta(existing.accounts);
+      existing.meta = buildGroupMeta(existing.accounts, codexQuotaByName);
       continue;
     }
     groups.set(descriptor.id, {
       ...descriptor,
       mode: groupMode,
       accounts: [account],
-      meta: buildGroupMeta([account]),
+      meta: buildGroupMeta([account], codexQuotaByName),
     });
   }
 
@@ -539,7 +621,7 @@ export function groupAccounts({
       accounts: [...group.accounts].sort((left, right) =>
         compareAccountsBySortMode(left, right, sortMode, codexQuotaByName),
       ),
-      meta: buildGroupMeta(group.accounts),
+      meta: buildGroupMeta(group.accounts, codexQuotaByName),
     }))
     .sort((left, right) => {
       if (left.rank !== right.rank) {
@@ -592,7 +674,11 @@ function matchesBinaryFacetSelection(value: boolean, positiveSelected: boolean, 
   return value ? positiveSelected : negativeSelected;
 }
 
-function matchesBaseStatusSelection(selection: AccountsFilterState['status'], account: AccountRecord) {
+function matchesBaseStatusSelection(
+  selection: AccountsFilterState['status'],
+  account: AccountRecord,
+  quotaState?: CodexQuotaState,
+) {
   const baseSelection = {
     error: selection.error,
     disabled: selection.disabled,
@@ -601,13 +687,13 @@ function matchesBaseStatusSelection(selection: AccountsFilterState['status'], ac
   if (isSelectionComplete(baseSelection)) {
     return true;
   }
-  if (selection.error && isAccountError(account)) {
+  if (selection.error && isAccountError(account, quotaState)) {
     return true;
   }
   if (selection.disabled && isAccountDisabled(account)) {
     return true;
   }
-  if (selection.requestable && isAccountRequestable(account)) {
+  if (selection.requestable && isAccountRequestable(account, quotaState)) {
     return true;
   }
   return false;

@@ -318,6 +318,12 @@ export function resolveAccountOperationalState(
     .toLowerCase();
   const usageLimitReached = isAccountUsageLimitReached(account)
     || isUsageLimitReachedText(quotaDisplay?.degradedReason);
+  if (hasAccountOperationalFailure(account, quotaDisplay)) {
+    return {
+      tone: 'danger' as const,
+      label: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.status_error_display'),
+    };
+  }
   if (runtimeStatus === 'degraded' || runtimeStatus === 'applied_not_registered') {
     return {
       tone: 'danger' as const,
@@ -362,13 +368,6 @@ export function resolveAccountOperationalState(
     };
   }
 
-  if (account.credentialSource === 'auth-file' && (isQuotaRefreshFailure(quotaDisplay) || isQuotaAuthErrorBlocked(quotaDisplay))) {
-    return {
-      tone: 'danger' as const,
-      label: usageLimitReached ? t('accounts.status_usage_limit_display') : t('accounts.status_error_display'),
-    };
-  }
-
   if (usageSummary?.success && usageSummary.success > 0) {
     return {
       tone: 'positive' as const,
@@ -394,6 +393,10 @@ export function resolveAccountOperationalState(
     tone: 'warning' as const,
     label: t('accounts.status_waiting_check'),
   };
+}
+
+export function hasAccountOperationalFailure(account: AccountRecord, quotaDisplay: QuotaDisplay | undefined) {
+  return account.credentialSource === 'auth-file' && (isQuotaRefreshFailure(quotaDisplay) || isQuotaAuthErrorBlocked(quotaDisplay));
 }
 
 function isQuotaRefreshFailure(quotaDisplay: QuotaDisplay | undefined) {
@@ -477,10 +480,12 @@ function isQuotaReauthRequired(quotaDisplay: QuotaDisplay | undefined) {
   }
   return reason.includes('token_invalidated') ||
     reason.includes('invalid_refresh_token') ||
+    reason.includes('token_expired') ||
     reason.includes('invalid_grant') ||
     reason.includes('refresh_token_reused') ||
     reason.includes('app_session_terminated') ||
     reason.includes('authentication token has been invalidated') ||
+    reason.includes('authentication token is expired') ||
     reason.includes('could not validate your refresh token') ||
     reason.includes('session has ended') ||
     reason.includes('please try signing in again') ||
