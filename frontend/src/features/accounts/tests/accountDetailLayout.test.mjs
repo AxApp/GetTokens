@@ -454,6 +454,13 @@ test('unified compose modal uses the quiet workspace shell', async () => {
   assert.doesNotMatch(targetSource, /shadow-hard|shadow-\[/);
 });
 
+test('account detail modal frame forwards footer slots to the shared modal shell', async () => {
+  const source = await readFile(new URL('../components/AccountDetailModalFrame.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /footer=\{footer\}/);
+  assert.match(source, /footerClassName=\{footerClassName\}/);
+});
+
 test('unified compose submits third-party vendors as openai-compatible accounts', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
   const submitStart = source.indexOf('const handleUnifiedComposeSubmit = useCallback(async () => {');

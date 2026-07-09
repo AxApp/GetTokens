@@ -129,6 +129,21 @@
 - Storybook 静态预览：`CodexAccountOrder Detail` story 已验证 `AccountDetailOverviewGrid`、`CodexAccountEvidenceSection`、`AccountRuntimeSnapshotSection` 均渲染；1440px 宽度下 runtime slot 与 evidence slot 并排且高度均为 `327.8515625px`，新增模型按钮位于 `CodexModelRoutingSection` 头部右上角，console 无错误。
 - 2026-05-25：`go test ./...`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit -- src/features/accounts/tests/accountConfig.test.mjs src/features/accounts/tests/accountPresentation.test.mjs` 通过；新增 root mapper 回归测试和 generated Wails `AccountRecord.statusMessage` 断言。
 
+## 2026-07-08 回归证据
+
+- 问题来源：用户在 `#frame=accounts` 的「添加第三方厂商账号 -> OpenRouter」弹窗留言“没有保存按钮啊”。
+- 当前 UI / 代码事实位置：
+  - 弹窗入口与 footer 定义在 `frontend/src/features/accounts/components/UnifiedComposeModal.tsx`
+  - 统一详情壳层转发在 `frontend/src/features/accounts/components/AccountDetailModalFrame.tsx`
+  - 底层 modal footer 渲染在 `frontend/src/components/ui/ModalFrame.tsx`
+- 可复现现象：`UnifiedComposeModal` 已向 `AccountDetailModalFrame` 传入 `footer={<UnifiedComposeFooter ... />}`，但 `AccountDetailModalFrame` 没有继续把 `footer` / `footerClassName` 传给 `ModalFrame`，导致第三方厂商创建弹窗底部动作区完全不渲染，而不是滚动被遮挡。
+- 验收方式：
+  1. 增加 focused test，锁定 `AccountDetailModalFrame` 必须透传 `footer` 与 `footerClassName`。
+  2. 修复后运行账户前端相关单测，确认统一创建弹窗恢复底部操作区。
+  3. 浏览器预览下再次打开 OpenRouter 创建弹窗，确认底部出现保存/提交动作。
+- 验收产物：
+  - `screenshots/20260708/accounts/20260708-accounts-openrouter-compose-footer-after-v01.png`
+
 ## 截图归档
 - `screenshots/20260522/accounts/20260522-accounts-detail-api-key-after-v01.png`
 - `screenshots/20260522/accounts/20260522-accounts-detail-openai-compatible-after-v01.png`
