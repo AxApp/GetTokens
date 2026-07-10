@@ -116,7 +116,7 @@ export default function AccountsDiagnosticsPanel({
 function DiagnosticsCell({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-sm border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] px-2 py-1.5">
-      <div className="font-mono text-[length:var(--gt-font-size-2xs)] uppercase text-[var(--gt-ink-muted)]">{label}</div>
+      <div className="font-mono text-[length:var(--gt-font-size-2xs)] text-[var(--gt-ink-muted)]">{label}</div>
       <div className="truncate font-mono text-[var(--gt-ink-primary)]" title={value}>{value}</div>
     </div>
   );
