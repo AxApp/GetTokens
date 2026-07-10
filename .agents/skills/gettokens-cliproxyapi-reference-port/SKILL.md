@@ -21,6 +21,7 @@ Use this skill when the user asks to inspect new upstream CLIProxyAPI versions, 
 - Use upstream commits only as reference input.
 - Reimplement accepted behavior narrowly inside GetTokens sidecar boundaries.
 - Preserve GetTokens-specific runtime ownership: account selection, route guard, rate-limit, live sessions, usage attribution, system proxy, and Codex WebSocket hot paths remain sidecar-owned.
+- For auth/quota/routing incidents, add non-secret structured logs at the sidecar-owned state boundaries instead of relying on frontend symptoms: refresh start/fail/success, terminal OAuth error code, route guard block write, and quota success state overlaid by guard. Fields may include provider, auth id, account key, refresh scope, source names, fact state, and error code; never log tokens, cookies, API keys, or raw auth JSON.
 - Reject or defer upstream build workflow, Docker, README, sponsorship, plugin examples, or release packaging changes unless there is a separate product or release decision.
 
 ## 3. Intake Planning

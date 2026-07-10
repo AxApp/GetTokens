@@ -279,6 +279,19 @@ test('codex model routing detail exposes fetch-model action from the account lis
   assert.match(featureSource, /onFetchModelOptions=\{\(\) => void fetchDetailModelOptions\(detailRowWithModels\)\}/);
 });
 
+test('codex oauth detail shows fetched passthrough model rows without saving them as aliases', async () => {
+  const modalSource = await readFile(new URL('../accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const modelsBlock = modalSource.match(/function CodexAuthFileModelsSection[\s\S]*?\nfunction CodexModelRoutingSection/)?.[0] ?? '';
+  const routingSetupBlock = modalSource.match(/const oauthPassthroughMappings[\s\S]*?const modelOptionNames/)?.[0] ?? '';
+  const routingBlock = modalSource.match(/function CodexModelRoutingSection[\s\S]*?\nfunction buildEditableModelMappings/)?.[0] ?? '';
+
+  assert.match(modelsBlock, /modelOptions: CodexModelMappingRow\[\]/);
+  assert.match(modelsBlock, /uniqueCodexModelNames\(\[[\s\S]*\.\.\.modelOptions,[\s\S]*\.\.\.row\.modelMappings/);
+  assert.match(routingSetupBlock, /props\.codexRow\.sourceKind === 'codex-auth-file' && mappingDraft\.length === 0/);
+  assert.match(routingSetupBlock, /displayOnlyModelMappings = oauthPassthroughMappings\.length > 0/);
+  assert.match(routingBlock, /editableModelMappings && !displayOnlyModelMappings/);
+});
+
 test('codex account list modals are hash-routed', async () => {
   const source = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
 

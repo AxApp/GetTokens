@@ -285,7 +285,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         return <AuthFileSummarySection account={account} localCliActions={props.localCliActions} />;
       case 'models':
         if (props.isCodex && props.codexRow) {
-          return <CodexAuthFileModelsSection row={props.codexRow} />;
+          return <CodexAuthFileModelsSection row={props.codexRow} modelOptions={props.modelOptions || []} />;
         }
         return (
           <CompatibleModelsSection
@@ -347,7 +347,16 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         if (props.isCodex && props.codexRow) {
           const editableModelMappings = canEditCodexModelMappings(props.codexRow.sourceKind);
           const showModelMappings = editableModelMappings;
-          const displayedModelMappings = editableModelMappings ? mappingDraft : props.codexRow.modelMappings;
+          const oauthPassthroughMappings =
+            props.codexRow.sourceKind === 'codex-auth-file' && mappingDraft.length === 0
+              ? props.modelOptions || []
+              : [];
+          const displayedModelMappings = oauthPassthroughMappings.length > 0
+            ? oauthPassthroughMappings
+            : editableModelMappings
+              ? mappingDraft
+              : props.codexRow.modelMappings;
+          const displayOnlyModelMappings = oauthPassthroughMappings.length > 0;
           const modelOptionNames = buildCodexModelOptionNames(props.modelOptions || []);
           const codexModelOptionNames = buildCodexModelAliasOptionNames([
             ...(props.codexModelOptions || []),
@@ -362,6 +371,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
               editableModelMappings={editableModelMappings}
               showModelMappings={showModelMappings}
               displayedModelMappings={displayedModelMappings}
+              displayOnlyModelMappings={displayOnlyModelMappings}
               loadingModelMappings={props.loadingModelMappings || false}
               modelMappingError={props.modelMappingError || ''}
               loadingModelOptions={props.loadingModelOptions || false}
@@ -636,8 +646,17 @@ export function CodexAccountDetailHeader({
   );
 }
 
-function CodexAuthFileModelsSection({ row }: { row: CodexAccountRow }) {
-  const modelNames = row.modelMappings.map((mapping) => mapping.realModel).filter(Boolean);
+function CodexAuthFileModelsSection({
+  row,
+  modelOptions,
+}: {
+  row: CodexAccountRow;
+  modelOptions: CodexModelMappingRow[];
+}) {
+  const modelNames = uniqueCodexModelNames([
+    ...modelOptions,
+    ...row.modelMappings,
+  ]);
 
   return (
     <div className="rounded-md border border-[var(--gt-border-subtle)] bg-[var(--gt-surface-canvas)] p-4">
@@ -671,6 +690,7 @@ function CodexModelRoutingSection({
   editableModelMappings,
   showModelMappings,
   displayedModelMappings,
+  displayOnlyModelMappings,
   loadingModelMappings,
   modelMappingError,
   loadingModelOptions,
@@ -689,6 +709,7 @@ function CodexModelRoutingSection({
   editableModelMappings: boolean;
   showModelMappings: boolean;
   displayedModelMappings: CodexModelMappingRow[];
+  displayOnlyModelMappings: boolean;
   loadingModelMappings: boolean;
   modelMappingError: string;
   loadingModelOptions: boolean;
@@ -752,7 +773,7 @@ function CodexModelRoutingSection({
                     key={`mapping-${index}`}
                     className={codexModelRoutingRowClass}
                   >
-                    {editableModelMappings ? (
+                    {editableModelMappings && !displayOnlyModelMappings ? (
                       <ModelCombobox
                         value={mapping.realModel}
                         options={modelOptionNames}
@@ -765,7 +786,7 @@ function CodexModelRoutingSection({
                       </span>
                     )}
                     <span className={codexModelRoutingArrowClass}>-&gt;</span>
-                    {editableModelMappings ? (
+                    {editableModelMappings && !displayOnlyModelMappings ? (
                       <ModelCombobox
                         value={mapping.codexModel}
                         options={codexModelOptionNames}
@@ -778,7 +799,7 @@ function CodexModelRoutingSection({
                         {mapping.codexModel}
                       </span>
                     )}
-                    {editableModelMappings ? (
+                    {editableModelMappings && !displayOnlyModelMappings ? (
                       <Button
                         size="small"
                         icon={<Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />}
@@ -839,4 +860,18 @@ function buildEditableModelMappings(row: Pick<CodexAccountRow, 'sourceKind' | 'm
   return row.modelMappings.length > 0
     ? row.modelMappings.map((mapping) => ({ ...mapping }))
     : [{ realModel: '', codexModel: '' }];
+}
+
+function uniqueCodexModelNames(mappings: CodexModelMappingRow[]): string[] {
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const mapping of mappings) {
+    const name = String(mapping.realModel || '').trim();
+    if (!name || seen.has(name)) {
+      continue;
+    }
+    seen.add(name);
+    names.push(name);
+  }
+  return names;
 }

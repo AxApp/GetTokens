@@ -65,7 +65,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 ## 3. 模型映射语义
 - openai-compatible 映射方向固定为：真实模型 `models[].name` -> Codex 模型 `models[].alias || name`。
 - openai-compatible 保存时按 `name + alias` 去重，允许同一个真实模型映射到多个 Codex alias。
-- OAuth/auth-file 默认原样穿透模型名，不展示同名 `model -> model` 映射。
+- OAuth/auth-file 默认原样穿透模型名；保存语义上不把同名 `model -> model` 写成显式 alias，但账号详情仍应把已拉到的 OAuth/Web 模型作为只读透传列表展示，避免用户误以为没有模型。
 - OAuth/auth-file 只有配置显式 alias 后才关闭默认透传；保存空映射应删除 channel alias。
 - OAuth 映射按 provider/channel 生效，同一 `codex` channel 共享映射。
 - 模型选择使用项目自定义 combobox，不回退到原生 `datalist`。
