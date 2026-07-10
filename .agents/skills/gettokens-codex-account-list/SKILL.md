@@ -69,6 +69,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - OAuth/auth-file 只有配置显式 alias 后才关闭默认透传；保存空映射应删除 channel alias。
 - OAuth 映射按 provider/channel 生效，同一 `codex` channel 共享映射。
 - OAuth/auth-file 的单账号模型探测必须使用该账号当前支持模型作为候选：Codex 详情用当前账号 `modelOptions` 与显式 alias，账号池详情用 `GetAuthFileModels` 拉到的 auth-file 模型目录；不得混入全局 Codex catalog、全局 relay 模型列表或仅按 `acct_` 前缀决定是否可测试。
+- OAuth/auth-file 的管理模型目录不能只依赖当前进程 `ModelRegistry`。当 `/v0/management/accounts/:account_key/models` 通过 registry 查不到模型，但 account-store 中该账号是 Codex auth-file 且未禁用时，必须按 `plan_type` 回退到 Codex 静态模型集；该兜底只适用于 Codex auth-file，不扩展到 Claude/Gemini 等其他 auth-file。
 - 模型选择使用项目自定义 combobox，不回退到原生 `datalist`。
 
 ## 3.1 Codex 模型路由语义
@@ -163,6 +164,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - `codex-api-key:<id>`
   - `openai-compatible:<name>`
 - 路由探测用的 loopback header 是调试口子；不要把它和持久化账号配置混在一起。
+- Management 账号详情读取是 read path：`GET /v0/management/accounts/:account_key` 只能在 runtime apply 状态为 `pending` 时补做 apply，不能每次打开详情都重新 apply。否则 apply hook 的瞬时失败会把已经 `applied / registered_routeable` 的账号冲成 `failed / degraded`，造成账号卡异常和模型列表被清空。
 
 ### 7.1 Codex WebSocket relay failure boundary
 - GetTokens-managed local Codex provider 默认必须写 `supports_websockets=false`，WebSocket 只能作为高级 opt-in；显式开启时必须对齐 Codex `Provider.websocket_url_for_path()` 语义：`http://` 转 `ws://`、`https://` 转 `wss://`，`ws://` / `wss://` 原样保留。Status 页应检测当前本地 GetTokens relay provider 的存量 `supports_websockets=true` 并提示显式修复，不静默改用户配置。
