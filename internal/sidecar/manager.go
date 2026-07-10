@@ -25,6 +25,8 @@ const (
 	sidecarLogMaxBackups = 2
 	// ManagementKey is used for local management API auth between app frontend and sidecar.
 	ManagementKey = "gettokens-local-management-key"
+	// ManagementKeyHash is the bcrypt form expected by CLIProxyAPI config.
+	ManagementKeyHash = "$2a$04$on2jx2w4y/LyaxvZ5nbVh.DdeegSisqPOycOuXua112isQrFHG4/y"
 )
 
 // StatusCode describes the current state of the sidecar.

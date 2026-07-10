@@ -110,9 +110,23 @@
   - `GOCACHE=/private/tmp/gettokens-go-build-cache go test ./internal/translator/claude/gemini ./internal/translator/claude/openai/chat-completions ./internal/translator/gemini/openai/chat-completions ./internal/translator/codex/claude ./internal/runtime/executor/helps ./internal/runtime/executor ./internal/config ./internal/auth/codex ./sdk/api/handlers/openai -count=1`
   - `GOCACHE=/private/tmp/gettokens-go-build-cache go test ./... -count=1`
   - `./scripts/ensure-sidecar.sh darwin arm64`
+  - `go test ./internal/sidecar ./internal/wailsapp -count=1`
+  - `go test ./... -count=1`
 - sidecar build meta：
   - 第一批：`64d11c3bd9d0faeebf8f0f783f9b7af63f2f4f61:clean:5e5bbc367ae302e0a74ed4a96855183561af427e9043f6810115130ffe226ca4:darwin:arm64`
   - 完整同步：`c1b0dd6c49952160bf84ec21076dab3ca104e027:clean:30bac5e7872369c3ea81a8fe30d687f28d42eb81ba4a47d6b113eac05babd506:darwin:arm64`
+
+## Dev App 验收
+
+- 启动命令：`GETTOKENS_APP_PROFILE=dev ./scripts/wails-cli.sh dev`
+- 进程隔离：
+  - dev App：`build/bin/GetTokens.app/Contents/MacOS/GetTokens`
+  - dev sidecar：`build/bin/cli-proxy-api -config /Users/linhey/.config/gettokens-dev/config.yaml`
+  - 正式版未修改、未重启、未 kill。
+- sidecar health：`curl http://127.0.0.1:18317/healthz` 返回 `{"status":"ok"}`。
+- 管理认证修复：同步后的 sidecar 要求 `remote-management.secret-key` 为 bcrypt hash；GetTokens App 侧已改为写入 `sidecar.ManagementKey` 的 bcrypt hash，Wails 仍用本地明文 key 调 management API。
+- 运行态证据：dev App 日志出现 `usage attribution bridge complete`，不再是 `status=403`。
+- 模型定义验证：`/v0/management/model-definitions/codex` 返回 `gpt-5.6-luna`、`gpt-5.6-sol`、`gpt-5.6-terra`。
 
 ### Planned / 需要独立切片
 

@@ -103,6 +103,10 @@ Every implementation slice needs real dev App acceptance unless blocked and docu
   - prod App: `/Applications/GetTokens.app` must not be killed, restarted, or replaced
 - Confirm health:
   - `curl http://127.0.0.1:18317/healthz`
+- Confirm App-to-sidecar management auth still works after upstream sync:
+  - The dev App log should show management-backed bridges such as `usage attribution bridge complete`, not repeated `status=401` or `status=403`.
+  - For model registry/model-list changes, call the management model endpoint with the App's local management key and verify the expected model ids are returned.
+  - If management endpoints return 403 after a sidecar sync, check whether upstream changed `remote-management.secret-key` semantics. Current GetTokens writes a bcrypt hash to config while Wails calls sidecar with the local plaintext `sidecar.ManagementKey`.
 - Archive a screenshot under:
   - `docs-linhay/spaces/<space-key>/screenshots/<YYYYMMDD>/<module>/<YYYYMMDD>-<module>-<scene>-(before|after|baseline|failed)-vNN.png`
 - Redact account emails, API keys, bearer tokens, cookies, raw payloads, or other credentials before committing screenshots.

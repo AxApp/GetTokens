@@ -62,7 +62,7 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 		MaxRetryInterval:       defaultMaxRetryInterval,
 	}
 	cfg.RemoteManagement.AllowRemote = false
-	cfg.RemoteManagement.SecretKey = ManagementKey
+	cfg.RemoteManagement.SecretKey = ManagementKeyHash
 	cfg.RemoteManagement.DisableControlPanel = true
 	cfg.RemoteManagement.DisableAutoUpdatePanel = true
 

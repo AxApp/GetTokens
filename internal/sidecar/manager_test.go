@@ -14,6 +14,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/yaml.v3"
 )
 
 func TestSetStatusPreservesStartedAtUnixUntilStopped(t *testing.T) {
@@ -301,7 +304,7 @@ func TestWriteConfigCreatesMinimalConfig(t *testing.T) {
 	assertContains(t, content, "allow-remote: false")
 	assertContains(t, content, "disable-control-panel: true")
 	assertContains(t, content, "disable-auto-update-panel: true")
-	assertContains(t, content, "secret-key: "+ManagementKey)
+	assertManagementSecretKeyHash(t, path)
 	assertContains(t, content, "api-keys:")
 	assertContains(t, content, "- "+apiKey)
 }
@@ -494,7 +497,7 @@ api-keys:
 	assertContains(t, content, "allow-remote: false")
 	assertContains(t, content, "disable-control-panel: true")
 	assertContains(t, content, "disable-auto-update-panel: true")
-	assertContains(t, content, "secret-key: "+ManagementKey)
+	assertManagementSecretKeyHash(t, path)
 	assertContains(t, content, "api-keys:")
 	assertContains(t, content, "- relay-key-1")
 	assertContains(t, content, "- relay-key-2")
@@ -625,6 +628,31 @@ func assertContains(t *testing.T, content string, expected string) {
 	t.Helper()
 	if !strings.Contains(content, expected) {
 		t.Fatalf("expected config to contain %q, got:\n%s", expected, content)
+	}
+}
+
+func assertManagementSecretKeyHash(t *testing.T, path string) {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read config for management key: %v", err)
+	}
+	var cfg struct {
+		RemoteManagement struct {
+			SecretKey string `yaml:"secret-key"`
+		} `yaml:"remote-management"`
+	}
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		t.Fatalf("parse config for management key: %v", err)
+	}
+	if cfg.RemoteManagement.SecretKey == "" {
+		t.Fatal("remote-management.secret-key is empty")
+	}
+	if cfg.RemoteManagement.SecretKey == ManagementKey {
+		t.Fatal("remote-management.secret-key stores plaintext management key")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(cfg.RemoteManagement.SecretKey), []byte(ManagementKey)); err != nil {
+		t.Fatalf("remote-management.secret-key does not verify ManagementKey: %v", err)
 	}
 }
 
