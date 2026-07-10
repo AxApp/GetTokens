@@ -184,14 +184,21 @@ test('buildCodexAccountDetailModulePlan merges account detail modules with model
 test('codex oauth detail exposes single-account model probe with fallback disabled', async () => {
   const modalSource = await readFile(new URL('../accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const featureSource = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
+  const codexProbeOptionsBlock =
+    modalSource.match(/const probeModelOptions = buildCodexModelAliasOptionNames\([\s\S]*?\);\n\s*const canProbeOAuthAccount/)?.[0] ?? '';
 
   assert.match(modalSource, /<OAuthModelProbeSection/);
   assert.match(modalSource, /onOAuthModelProbe/);
+  assert.match(codexProbeOptionsBlock, /buildCodexModelAliasOptionNames\(\[[\s\S]*\.\.\.\(props\.modelOptions \|\| \[\]\),[\s\S]*\.\.\.props\.codexRow\.modelMappings/);
+  assert.doesNotMatch(codexProbeOptionsBlock, /props\.codexModelOptions/);
+  assert.doesNotMatch(codexProbeOptionsBlock, /buildCodexModelOptionNames/);
   assert.match(featureSource, /async function runDetailOAuthModelProbe\(row: CodexAccountRow, model: string\)/);
   assert.match(featureSource, /ProbeCodexAccountRouting/);
   assert.match(featureSource, /allowAccountIDs:\s*\[row\.id\]/);
   assert.match(featureSource, /orderAccountIDs:\s*\[row\.id\]/);
   assert.match(featureSource, /allowFallback:\s*false/);
+  assert.doesNotMatch(featureSource, /runDetailOAuthModelProbe[\s\S]{0,180}startsWith\('acct_'\)/);
+  assert.doesNotMatch(featureSource, /onOAuthModelProbe=\{[\s\S]{0,180}startsWith\('acct_'\)/);
 });
 
 test('codex account detail header keeps labeled identity and metadata blocks', async () => {

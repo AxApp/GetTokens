@@ -63,6 +63,7 @@ export function CompatibleModelsSection({
   cachedModelNames = [],
   editable,
   onFetchModels,
+  onAuthFileModelNamesChange,
 }: {
   account: AccountRecord;
   draft: ApiKeyConfigDraft;
@@ -72,6 +73,7 @@ export function CompatibleModelsSection({
   cachedModelNames?: string[];
   editable: boolean;
   onFetchModels?: (input: { apiKey: string; baseUrl: string; headers?: Record<string, string> }) => Promise<{ models: string[]; message: string }>;
+  onAuthFileModelNamesChange?: (modelNames: string[]) => void;
 }) {
   const { trackRequest } = useDebug();
   const [models, setModels] = useState<any[]>([]);
@@ -107,8 +109,12 @@ export function CompatibleModelsSection({
   const displayedModels = isAuthFile ? models : staticModels;
 
   useEffect(() => {
-    if (!isAuthFile || !account.name) return;
+    if (!isAuthFile || !account.name) {
+      onAuthFileModelNamesChange?.([]);
+      return;
+    }
     let cancelled = false;
+    onAuthFileModelNamesChange?.([]);
     setLoading(true);
     void (async () => {
       try {
@@ -116,19 +122,22 @@ export function CompatibleModelsSection({
           const previewModels = getAccountsPreviewAuthFileModels(account.name!);
           if (cancelled) return;
           setModels(previewModels);
+          onAuthFileModelNamesChange?.(normalizeAuthFileModelNames(previewModels));
           setLoading(false);
           return;
         }
         const result = await trackRequest('GetAuthFileModels', { name: account.name }, () => GetAuthFileModels(account.name!));
         if (cancelled) return;
-        setModels((result as any)?.models ?? []);
+        const nextModels = (result as any)?.models ?? [];
+        setModels(nextModels);
+        onAuthFileModelNamesChange?.(normalizeAuthFileModelNames(nextModels));
       } catch {
         // Model catalog is optional detail metadata.
       }
       if (!cancelled) setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [account.name, isAuthFile, trackRequest]);
+  }, [account.name, isAuthFile, onAuthFileModelNamesChange, trackRequest]);
 
   function onAddModelMapping() {
     const usedNames = new Set(draft.models.map((model) => String(model.name ?? '').trim()).filter(Boolean));
@@ -287,4 +296,8 @@ export function CompatibleModelsSection({
       )}
     </AccountDetailSection>
   );
+}
+
+function normalizeAuthFileModelNames(models: any[]): string[] {
+  return normalizeAPIKeyModelNames((models || []).map((model) => String(model?.id || model?.name || model?.display_name || '').trim()));
 }

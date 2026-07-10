@@ -143,6 +143,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
   const [saveError, setSaveError] = useState('');
   const [savingConfig, setSavingConfig] = useState(false);
   const [proxyRouteError, setProxyRouteError] = useState('');
+  const [authFileModelNames, setAuthFileModelNames] = useState<string[]>([]);
 
   const [mappingDraft, setMappingDraft] = useState<CodexModelMappingRow[]>(() => {
     if (props.isCodex && props.codexRow) {
@@ -170,7 +171,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     setConfigDraft(buildApiKeyConfigDraft(account));
   }, [account.id, account.apiKey, account.baseUrl, account.formatBaseUrls, account.prefix, account.quotaCurl, account.quotaEnabled, account.billingCurl, account.billingEnabled, account.proxyUrl, account.models, isApiKey]);
 
-  useEffect(() => { setRateLimitDirty(false); setSaveError(''); }, [account.id]);
+  useEffect(() => { setRateLimitDirty(false); setSaveError(''); setAuthFileModelNames([]); }, [account.id]);
   useEffect(() => { setSaveError(''); }, [configDraft]);
 
   const missingFields = useMemo(() => {
@@ -297,16 +298,16 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
             cachedModelNames={props.cachedModelNames}
             editable={isApiKey && Boolean(props.onSaveConfig)}
             onFetchModels={props.onFetchModels}
+            onAuthFileModelNamesChange={setAuthFileModelNames}
           />
         );
       case 'model-probe': {
         if (props.isCodex && props.codexRow) {
-          const probeModelOptions = buildCodexModelOptionNames([
+          const probeModelOptions = buildCodexModelAliasOptionNames([
             ...(props.modelOptions || []),
-            ...(props.codexModelOptions || []),
             ...props.codexRow.modelMappings,
           ]);
-          const canProbeOAuthAccount = props.codexRow.sourceKind === 'codex-auth-file' && props.codexRow.id.startsWith('acct_');
+          const canProbeOAuthAccount = props.codexRow.sourceKind === 'codex-auth-file';
           return (
             <OAuthModelProbeSection
               accountID={props.codexRow.id}
@@ -317,17 +318,16 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
               disabledReason={
                 canProbeOAuthAccount
                   ? '当前运行环境不可执行模型测试'
-                  : '仅支持统一账号库 acct_ OAuth 账号模型测试'
+                  : '仅支持 Codex OAuth 账号模型测试'
               }
               probeState={props.oauthModelProbeState}
               onProbe={props.onOAuthModelProbe}
             />
           );
         }
-        const canProbeOAuthAccount = account.credentialSource === 'auth-file' && account.id.startsWith('acct_');
+        const canProbeOAuthAccount = account.credentialSource === 'auth-file';
         const modelOptions = normalizeAPIKeyModelNames([
-          ...(props.modelNames ?? []),
-          ...(props.localModelNames ?? []),
+          ...authFileModelNames,
           ...(account.models ?? []).map((model) => model.name),
         ]);
         return (
@@ -337,7 +337,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
             modelOptions={modelOptions}
             defaultModel={modelOptions[0] || 'gpt-5.4-mini'}
             disabled={!canProbeOAuthAccount || !props.onOAuthModelProbe}
-            disabledReason={canProbeOAuthAccount ? '当前运行环境不可执行模型测试' : '仅支持统一账号库 acct_ OAuth 账号模型测试'}
+            disabledReason={canProbeOAuthAccount ? '当前运行环境不可执行模型测试' : '仅支持 Codex OAuth 账号模型测试'}
             probeState={props.oauthModelProbeState}
             onProbe={props.onOAuthModelProbe}
           />

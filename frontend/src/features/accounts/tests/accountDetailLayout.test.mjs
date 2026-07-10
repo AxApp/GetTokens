@@ -113,13 +113,23 @@ test('accounts page loads auth-file rows from unified account store only', async
 test('auth-file account detail exposes single-account OAuth model probe', async () => {
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const modelsSource = await readFile(new URL('../components/AccountDetailModelsSection.tsx', import.meta.url), 'utf8');
+  const accountProbeBlock = modalSource.match(/const canProbeOAuthAccount = account\.credentialSource === 'auth-file';[\s\S]*?return \(\n\s*<OAuthModelProbeSection/)?.[0] ?? '';
 
   assert.match(modalSource, /<OAuthModelProbeSection/);
   assert.match(modalSource, /onOAuthModelProbe/);
+  assert.match(modalSource, /authFileModelNames/);
+  assert.match(modalSource, /onAuthFileModelNamesChange=\{setAuthFileModelNames\}/);
+  assert.match(accountProbeBlock, /\.\.\.authFileModelNames/);
+  assert.doesNotMatch(accountProbeBlock, /props\.modelNames/);
+  assert.doesNotMatch(accountProbeBlock, /props\.localModelNames/);
+  assert.match(modelsSource, /onAuthFileModelNamesChange\?: \(modelNames: string\[\]\) => void/);
+  assert.match(modelsSource, /onAuthFileModelNamesChange\?\.\(normalizeAuthFileModelNames\(nextModels\)\)/);
   assert.match(featureSource, /ProbeCodexAccountRouting/);
   assert.match(featureSource, /allowAccountIDs:\s*\[selectedAccount\.id\]/);
   assert.match(featureSource, /orderAccountIDs:\s*\[selectedAccount\.id\]/);
   assert.match(featureSource, /allowFallback:\s*false/);
+  assert.doesNotMatch(featureSource, /selectedAccountCanProbeOAuthModel[\s\S]{0,140}startsWith\("acct_"\)/);
 });
 
 test('OAuthModelProbeSection uses the quiet workspace control shell', async () => {
@@ -138,6 +148,7 @@ test('OAuthModelProbeSection uses the quiet workspace control shell', async () =
   assert.match(comboboxBlock, /popupMatchSelectWidth=\{false\}/);
   assert.match(comboboxBlock, /popupClassName="gettokens-oauth-model-probe-combobox-popup"/);
   assert.match(source, /probeState\?\.message \|\| ''/);
+  assert.match(source, /\[accountID, defaultModel, options, probeState\?\.model\]/);
   assert.doesNotMatch(source, /只允许当前 OAuth 账号参与本次路由探测/);
   assert.doesNotMatch(source, /fallback 已关闭/);
   assert.match(styleSource, /\.gettokens-oauth-model-probe-combobox-popup\s*\{/);

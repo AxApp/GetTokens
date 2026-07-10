@@ -922,8 +922,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     : false;
   const selectedAccountCanSaveApiConfig = selectedAccount?.credentialSource === "api-key";
   const selectedAccountCanProbeOAuthModel =
-    selectedAccount?.credentialSource === "auth-file" &&
-    selectedAccount.id.startsWith("acct_");
+    selectedAccount?.credentialSource === "auth-file";
 
   useEffect(() => {
     if (!selectedAccount || !ready || previewMode || !hasWailsAppBindings()) {

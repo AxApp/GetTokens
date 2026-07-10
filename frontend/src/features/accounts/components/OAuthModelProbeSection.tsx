@@ -46,7 +46,7 @@ export function OAuthModelProbeSection({
 
   useEffect(() => {
     setModel(probeState?.model || options[0] || defaultModel);
-  }, [accountID]);
+  }, [accountID, defaultModel, options, probeState?.model]);
 
   const currentStatus = probeState?.status || 'idle';
   const running = currentStatus === 'loading';

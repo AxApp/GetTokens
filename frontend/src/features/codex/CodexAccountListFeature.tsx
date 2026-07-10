@@ -1046,7 +1046,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   }
 
   async function runDetailOAuthModelProbe(row: CodexAccountRow, model: string) {
-    if (row.sourceKind !== 'codex-auth-file' || !row.id.startsWith('acct_')) {
+    if (row.sourceKind !== 'codex-auth-file') {
       return;
     }
     const nextModel = model.trim();
@@ -1572,7 +1572,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onSaveModelMappings={(mappings) => saveModelMappings(detailRowWithModels, mappings)}
           onFetchModelOptions={() => void fetchDetailModelOptions(detailRowWithModels)}
           onOAuthModelProbe={
-            detailRowWithModels.sourceKind === 'codex-auth-file' && detailRowWithModels.id.startsWith('acct_')
+            detailRowWithModels.sourceKind === 'codex-auth-file'
               ? (model) => void runDetailOAuthModelProbe(detailRowWithModels, model)
               : undefined
           }

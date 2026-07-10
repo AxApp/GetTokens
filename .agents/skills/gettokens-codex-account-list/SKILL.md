@@ -68,6 +68,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - OAuth/auth-file 默认原样穿透模型名；保存语义上不把同名 `model -> model` 写成显式 alias，但账号详情仍应把已拉到的 OAuth/Web 模型作为只读透传列表展示，避免用户误以为没有模型。
 - OAuth/auth-file 只有配置显式 alias 后才关闭默认透传；保存空映射应删除 channel alias。
 - OAuth 映射按 provider/channel 生效，同一 `codex` channel 共享映射。
+- OAuth/auth-file 的单账号模型探测必须使用该账号当前支持模型作为候选：Codex 详情用当前账号 `modelOptions` 与显式 alias，账号池详情用 `GetAuthFileModels` 拉到的 auth-file 模型目录；不得混入全局 Codex catalog、全局 relay 模型列表或仅按 `acct_` 前缀决定是否可测试。
 - 模型选择使用项目自定义 combobox，不回退到原生 `datalist`。
 
 ## 3.1 Codex 模型路由语义
