@@ -187,6 +187,17 @@ GetTokens 账号体系已经从文件账号、配置项、API key 列表迁移�
 - doctor per-account evidence 返回账号 key、kind、provider、runtime apply/routeability、auth id、model catalog source/count/routeable/reason，不返回 secret。
 - 服务级测试覆盖 Codex OAuth plan fallback 与 openai-compatible 空模型 fail-closed 的 doctor 输出。
 
+### Phase 7：route guard evidence 展示投影
+
+- 问题来源：dev profile 按正式数据重建后，目标 Codex OAuth 账号在 snapshot/detail 中仍是 `applied / registered_routeable`，但 sidecar 日志和 doctor diagnostics 同时显示 active route guard `auth-error`，原因是上游返回 `refresh_token_reused`。
+- 事实位置：sidecar management `GET /v0/management/accounts`、`GET /v0/management/accounts/:account_key`、route guard store、Wails `BuildUnifiedAccountRecords()`、前端账号卡状态。
+- 当前现象：卡片可显示“可用”，但真实请求/refresh 已被 route guard 阻断，用户看到“可用/异常”摇摆。
+- 预期行为：账号资产态和 SQLite runtime apply state 不被读接口改写；management 读响应要叠加 active route guard evidence，输出 degraded reason/failure class，让卡片和详情能展示真实阻断。
+- mock upstream facts：route guard store 已存在 `auth-error` block，block 绑定同一 account key/auth id，reason 包含 `refresh_token_reused`。
+- mock downstream/spy outputs：detail 和 snapshot JSON 投影 `runtime_routeability_status=degraded`、`runtime_failure_class=auth-error`、`runtime_routeability_reason` 包含 `refresh_token_reused`；SQLite 中原始 runtime routeability 仍为 `registered_routeable`。
+- 可证伪条件：若 route guard block 清除后响应仍 degraded，或读接口把 SQLite 持久状态写成 degraded，说明实现越界。
+- 验收方式：sidecar management 服务级测试 + dev profile API smoke。
+
 ## 验收标准
 
 - 账号详情 read path 连续读取不会改变 runtime apply/routeability 状态。
