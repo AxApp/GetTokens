@@ -1,5 +1,7 @@
 # Account System Hardening Technical Design
 
+> 状态：v1 stabilization baseline。2026-07-11 用户授权破坏性重构后，下一阶段实施以 `account-runtime-authority-v2.md` 为准。本文件保留用于解释 Phase 0-9 已完成的止血和边界演进。
+
 ## 结论
 
 采用 `sidecar DB 独占 + API 契约`。

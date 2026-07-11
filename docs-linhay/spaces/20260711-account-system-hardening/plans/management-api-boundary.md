@@ -1,5 +1,7 @@
 # Management API Boundary
 
+> 状态：v1 API boundary baseline。read/command/reconcile/probe 分类继续有效；v2 路由、revision、OAuth session 和 migration contract 以 `account-runtime-authority-v2.md` 为准，不保留旧 API 兼容。
+
 ## 结论
 
 management API 必须按 `read / command / reconcile / probe` 四类收敛。当前最大问题是 read path 中混入了 runtime apply/reconcile。

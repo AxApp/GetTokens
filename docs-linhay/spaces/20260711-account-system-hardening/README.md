@@ -1,5 +1,13 @@
 # Account System Hardening
 
+## 当前裁决优先级
+
+`plans/account-runtime-authority-v2.md` 是账号运行态下一阶段的实施权威方案。
+
+2026-07-11：R1 authority cutover 已在本仓实现并通过隔离 profile smoke；正式版未修改。R2 已落地 generation-owned guard/quota runtime facts foundation，rate-limit 自有 SQLite 的统一收口属于后续增强，不阻塞 R1。
+
+Phase 0-9 和原 `technical-design.md` 记录 v1 止血、证据和已经完成的边界收敛；其中涉及 `accounts-v1.sqlite`、FileTokenStore fallback、provider identity 级 guard、channel routing `runtimeStates` 的机制不得作为 v2 最终设计继续扩展。
+
 ## 背景
 
 GetTokens 账号体系已经从文件账号、配置项、API key 列表迁移到 SQLite account-store，但当前运行链路仍同时存在多份状态：
@@ -198,6 +206,44 @@ GetTokens 账号体系已经从文件账号、配置项、API key 列表迁移�
 - 可证伪条件：若 route guard block 清除后响应仍 degraded，或读接口把 SQLite 持久状态写成 degraded，说明实现越界。
 - 验收方式：sidecar management 服务级测试 + dev profile API smoke。
 
+### Phase 8：账号列表、详情与数据链契约闭环
+
+- 列表读取改为 secret-free inventory summary；完整 credential 仅通过 `GetAccountDetail(account_key)` 按需进入当前详情 modal。
+- account-store `revision` 贯穿 sidecar、Wails 和 frontend；mutation 使用 `expected_revision`，过期编辑返回 `409 account_revision_conflict`，不得写库或触发 runtime apply。
+- mutation 返回权威账号记录；前端局部 patch，不再保存后全量重载。冲突时提示用户并重新拉取最新详情，不自动 merge/retry。
+- inventory 使用稳定 `inventory_revision`；无变化时不替换前端集合。Wails `accounts:changed` 使用单调 `eventId` 和安全 summary，事件缺口或 inventory invalidation 才 reconcile。
+- quota、rate-limit、usage、route 保持独立资源时钟：quota/rate 有评估时间与 stale/degraded evidence，usage 有 `generatedAt`，route 有 decision id、recordedAt、snapshot/policy version；不引入伪全局版本。
+- usage attribution 的账号归属由 sidecar 内部 runtime auth 的 `AccountKey` 决定；删除 App 侧全账号扫描、本地 identity JSON 和 `resolveAccountKeys` 二次解析。
+- 账号页删除旧 API key 标签迁移触发的第二次 full `ListAccounts()`；root Wails `ListAccounts()` 收敛为安全摘要兼容入口，内部 full record 仅允许 backend-only 业务消费者使用。
+- 验收：主仓与 sidecar `go test ./...`、frontend 1137 项 unit、typecheck、production build、Wails build readiness、文档与 diff 门禁。
+
+### Phase 9：删除后重新登录继承旧 route guard
+
+- 问题来源：正式版 `1.2.13` 中，用户删除异常 Codex OAuth 卡后重新登录，同一 Apple Relay 账号生成的新卡仍显示异常。
+- 正式环境只读证据：
+  - 旧卡在 `2026-07-11 15:13:50` soft-delete，新登录在 `15:14:21` 创建新卡；两者拥有相同 OpenAI `account_id`。
+  - 新卡 SQLite 状态为 `applied / registered_routeable`，新 token 的 `last_refresh` 与过期时间均已更新。
+  - 新卡 quota upstream 请求成功后，sidecar 仍记录 `quota runtime success state is blocked by route guard`。
+- 最终 owner 证据：`doctor-diagnostics` 返回阻断新卡的 `authId` 为 `migration-backups/accounts-v1-20260530T022221Z/codex-rf5gqn9grh@privaterelay.appleid.com-plus.json`。该备份凭证与新卡拥有同一 OpenAI `account_id`，但 refresh token 停留在 2026 年 5 月。
+- 根因：`applyAccountStoreDelete -> applyCoreAuthRemoval` 仅禁用旧 runtime auth，没有完整清理旧 auth 拥有的 route guard。第一轮修复只按 `auth.ID` 清理，但正式重现中的 quota/runtime block 只有 `AccountKey`、没有 `AuthID`，所以仍留在内存身份索引中，并通过 `openai-account-id:<id>` 命中新登录 auth。新 auth 的健康更新同样只按新 auth id 清理，无法删除旧 account-key block。
+- 源头根因：account-store synthesizer 已过滤 `migration-backups`，但通用 `FileTokenStore.List()` 仍递归读取整个 `auth-dir`，把备份 JSON 注册成 runtime orphan auth；旧备份刷新失败后通过 provider identity 阻断新卡。
+- 实现：
+  - `FileTokenStore.List()` 遇到 `migration-backups` 直接 `SkipDir`，不读取、不刷新、不注册备份凭证。
+  - route guard 新增按完整 `coreauth.Auth` 展开 lookup keys 的清理入口，覆盖 auth id、account key、文件名和 provider account identity。
+  - `applyCoreAuthRemoval` 在保留 disabled tombstone 前清理所有 guard source；健康 credential replacement / OAuth reauthorization 也通过相同入口清理 transient guard。
+- 回归：新增 filestore 备份排除测试，以及两条共享 OpenAI account identity 场景；三条测试均先红后绿。
+- 验收：sidecar 聚焦回归和 `go test ./...` 全量通过；正式版数据、进程和配置未被修改。
+
+### Phase 10：Account Runtime Authority V2 破坏性重构方案
+
+- 用户明确授权不保留历史运行兼容，方案不再围绕 v1 文件扫描、fallback 和身份级清理继续打补丁。
+- 最终方向：`accounts-v2.sqlite` 作为账号资产/credential 唯一真源；`runtime-v1.sqlite` 保存带 generation 的可恢复运行事实；live session、WebSocket pin 和 refresh lease 只保存在内存。
+- OAuth 迁移不复制旧 refresh token，账号元数据迁移后统一进入 `reauth_required`；API key 和 openai-compatible 可一次性迁移。
+- `account_key` 是资产所有权，`credential_generation` 标识凭证替换，`token_revision` 标识同代 token 轮换；旧代 refresh、guard、quota、rate-limit 结果没有写入当前代的资格。
+- R1 必须同时完成 v2 单源切换和旧 runtime credential discovery 删除；不允许双读、feature flag fallback、GET 隐式迁移。
+- route guard 从 channel routing `runtimeStates` 移出，provider identity 默认不得跨账号阻断。
+- 完整 schema、状态机、迁移、API、分期、BDD、doctor 和性能门禁见 `plans/account-runtime-authority-v2.md`。
+
 ## 验收标准
 
 - 账号详情 read path 连续读取不会改变 runtime apply/routeability 状态。
@@ -228,6 +274,9 @@ GetTokens 账号体系已经从文件账号、配置项、API key 列表迁移�
 - `docs-linhay/spaces/20260711-account-system-hardening/plans/management-api-boundary.md`
 - `docs-linhay/spaces/20260711-account-system-hardening/plans/runtime-consistency-fixtures.md`
 - `docs-linhay/spaces/20260711-account-system-hardening/plans/wise-council-verdict.md`
+- `docs-linhay/spaces/20260711-account-system-hardening/plans/account-detail-optimization-report.md`
+- `docs-linhay/spaces/20260711-account-system-hardening/plans/account-detail-optimization-implementation-plan.md`
+- `docs-linhay/spaces/20260711-account-system-hardening/plans/account-runtime-authority-v2.md`
 - `docs-linhay/dev/account-credential-sqlite-store-design.md`
 - `docs-linhay/dev/20260615-account-store-runtime-routeability.md`
 - `docs-linhay/dev/20260616-gettokens-domain-glossary.md`

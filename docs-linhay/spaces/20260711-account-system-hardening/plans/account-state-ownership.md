@@ -1,5 +1,7 @@
 # Account State Ownership
 
+> 状态：v1 ownership baseline。资产态/运行态/展示态三层原则继续有效；具体数据库、credential generation 和 route guard ownership 以 `account-runtime-authority-v2.md` 为准。
+
 ## 结论
 
 账号体系拆成三层：

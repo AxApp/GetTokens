@@ -1,5 +1,7 @@
 # Runtime Consistency Fixtures
 
+> 状态：v1 regression baseline。Fixture C 中 provider identity 级共享阻断只用于证明旧事故和止血，不是 v2 目标行为。v2 必须按 generation ownership 隔离，完整 BDD 以 `account-runtime-authority-v2.md` 为准。
+
 ## 目的
 
 后续治理不能只靠真实账号复现。每个 slice 都必须有 mock upstream facts 和 mock downstream/spy outputs，证明 DB、runtime、management API、Wails DTO、frontend view model 对同一 fixture 的解释一致。

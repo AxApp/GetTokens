@@ -88,3 +88,25 @@ GetTokens 主账号库 `accounts-v1.sqlite` 由 sidecar 独占。App/Wails 不�
 
 - 状态：accepted
 - 最近更新：2026-07-11
+
+## V2 破坏性架构追加仲裁
+
+用户明确“不需要兼容历史”后，第二轮咨询强制比较：
+
+- A：新建 v2 DB，一次迁移后单读。
+- B：原地升级 v1。
+- C：完全清空并要求所有账号重建。
+
+Advisor force-rank 为 `A > B > C`，主控采纳 A。
+
+追加裁决：
+
+1. `accounts-v2.sqlite` 只保存账号资产与 credential。
+2. `runtime-v1.sqlite` 保存 guard、quota、rate-limit 和 bounded evidence。
+3. live session、WebSocket pin、refresh lease 只保存在内存。
+4. OAuth 只迁移资产元数据，统一 `reauth_required`，不复制旧 refresh token。
+5. R1 同批完成 v2 runtime cutover 和旧 credential discovery 删除，不允许把旧 source 删除推迟到后续 phase。
+6. migration 失败 fail-closed；回滚只能恢复 v1 备份并回退旧二进制。
+7. provider identity 默认不得产生跨账号阻断；只有带 TTL 和审计证据的明确 provider-global 上游事件可以例外。
+
+完整裁决已落到 `plans/account-runtime-authority-v2.md`。
