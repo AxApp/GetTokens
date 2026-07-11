@@ -328,6 +328,26 @@ func (c *Client) ListAccounts() ([]UnifiedAccount, error) {
 	return response.Items, nil
 }
 
+func (c *Client) ListAccountSnapshot(allowStale bool) ([]UnifiedAccount, error) {
+	query := url.Values{}
+	if allowStale {
+		query.Set("allow_stale", "1")
+	}
+	body, _, err := c.request("GET", "/v0/management/accounts/snapshot", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var response UnifiedAccountsResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []UnifiedAccount{}, nil
+	}
+	return response.Items, nil
+}
+
 func (c *Client) GetAccount(accountKey string) (*UnifiedAccount, error) {
 	body, _, err := c.request("GET", "/v0/management/accounts/"+url.PathEscape(accountKey), nil, nil, "")
 	if err != nil {

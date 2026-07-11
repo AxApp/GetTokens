@@ -101,6 +101,11 @@ func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 		switch {
 		case method == "GET" && path == "/v0/management/accounts":
 			return []byte(`{"accounts":[{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","title":"Primary","provider":"codex","codex_api_key":{"api_key":"sk-test","base_url":"https://api.example.com/v1","websockets":true}}]}`), 200, nil
+		case method == "GET" && path == "/v0/management/accounts/snapshot":
+			if query.Get("allow_stale") != "1" {
+				t.Fatalf("allow_stale query = %q, want 1", query.Get("allow_stale"))
+			}
+			return []byte(`{"accounts":[{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","title":"Primary","provider":"codex","codex_api_key":{"api_key":"sk-test","base_url":"https://api.example.com/v1","websockets":true}}]}`), 200, nil
 		case method == "GET" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001":
 			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","title":"Primary","provider":"codex"}`), 200, nil
 		case method == "POST" && path == "/v0/management/accounts":
@@ -145,6 +150,10 @@ func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 	accounts, err := client.ListAccounts()
 	if err != nil || len(accounts) != 1 || accounts[0].AccountKey == "" {
 		t.Fatalf("ListAccounts = %#v, err = %v", accounts, err)
+	}
+	snapshot, err := client.ListAccountSnapshot(true)
+	if err != nil || len(snapshot) != 1 || snapshot[0].AccountKey == "" {
+		t.Fatalf("ListAccountSnapshot = %#v, err = %v", snapshot, err)
 	}
 	if account, err := client.GetAccount("acct_00000000-0000-4000-8000-000000000001"); err != nil || account.AccountKey == "" {
 		t.Fatalf("GetAccount = %#v, err = %v", account, err)

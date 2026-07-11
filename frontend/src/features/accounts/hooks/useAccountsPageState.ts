@@ -169,7 +169,7 @@ export default function useAccountsPageState({
   const legacyAPIKeyLabelsRef = useRef<Record<string, string>>(loadAPIKeyLabels());
   const accountRecordsRef = useRef<AccountRecord[]>(initialCachedAccounts);
   const liveAccountsLoadedRef = useRef(false);
-  const sqliteSnapshotRequestedRef = useRef(false);
+  const accountSnapshotRequestedRef = useRef(false);
   const runtimeRefreshingRef = useRef(false);
   const automaticRuntimeSyncTargetIDsByGroupRef = useRef<Record<string, string[]>>({});
   const [automaticRuntimeSyncTargetAccountIDs, setAutomaticRuntimeSyncTargetAccountIDs] = useState<string[]>([]);
@@ -400,13 +400,13 @@ export default function useAccountsPageState({
   }, [loadAccountRateLimits, loadAccountUsage, loadCodexQuotas, migrateLegacyAPIKeyLabels, ready, trackRequest]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !hasWailsAppBindings() || sqliteSnapshotRequestedRef.current) {
+    if (typeof window === 'undefined' || !hasWailsAppBindings() || accountSnapshotRequestedRef.current) {
       return;
     }
-    sqliteSnapshotRequestedRef.current = true;
+    accountSnapshotRequestedRef.current = true;
     let cancelled = false;
 
-    async function loadSQLiteSnapshot() {
+    async function loadAccountSnapshot() {
       try {
         const snapshot = await trackRequest('ListCachedAccounts', { args: [] }, () => ListCachedAccounts());
         if (cancelled || liveAccountsLoadedRef.current) {
@@ -431,7 +431,7 @@ export default function useAccountsPageState({
       }
     }
 
-    void loadSQLiteSnapshot();
+    void loadAccountSnapshot();
     return () => {
       cancelled = true;
     };
