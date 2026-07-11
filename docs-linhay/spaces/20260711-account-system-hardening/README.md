@@ -156,17 +156,36 @@ GetTokens 账号体系已经从文件账号、配置项、API key 列表迁移�
 - App 不直接写 runtime apply state，不绕过 sidecar 更新运行态。
 - 验收：spy sidecar command 测试 + SQLite 状态 + runtime auth/model registry 同步断言。
 
+实现进展：
+
+- App 首屏快照已改为 sidecar `GET /v0/management/accounts/snapshot?allow_stale=1`；静态检查确认 Wails `ListCachedAccounts()` 不再 `sql.Open` 主 `accounts-v1.sqlite`。
+- runtime apply 仍保留在 sidecar command / reconcile / login callback 路径，不再由账号列表或账号详情 GET 隐式触发。
+- `GET /v0/management/gettokens/account-system-doctor` 提供只读 command/reconcile 结果证据，便于后续定位 DB/runtime 是否对齐。
+
 ### Phase 5：模型目录与路由候选一致性
 
 - 统一 `/models`、route explain/probe、真实请求的模型能力来源。
 - 对 Codex OAuth/API key/openai-compatible 建立同一组 fixture。
 - 验收：同一个账号在 `/accounts/:id/models`、`/v1/models`、route explain/probe、前端详情的模型目录中表现一致。
 
+实现进展：
+
+- sidecar 新增 `internal/gettokens/modelcatalog`，统一 registry、Codex plan fallback、Codex API key default、openai-compatible self-described models 与 fail-closed 规则。
+- `GET /v0/management/accounts/:account_key/models` 改用统一 resolver，并返回 `source`、`routeable`、`reason` 追踪字段。
+- auth manager legacy route filter 与 scheduler fast path 均改用统一 resolver；Codex OAuth registry 缺失时仍能按 `plan_type` 参与模型路由。
+- openai-compatible 只使用 account-store/runtime 自描述模型；缺失模型时 fail closed，不回退旧 config。
+
 ### Phase 6：dev/正式诊断与迁移护栏
 
 - 固化正式环境只读诊断脚本和 dev profile 数据复制/恢复脚本。
 - 增加 account-system doctor：检查 DB、runtime registry、routeability、models、quota/rate-limit 的一致性。
 - 验收：在 dev profile 中可用复制的正式 DB 复现并生成脱敏报告；不写正式路径。
+
+实现进展：
+
+- 新增 `GET /v0/management/gettokens/account-system-doctor` 只读诊断端点，汇总 total/disabled/pending/failed/missing runtime auth/unrouteable catalog/runtime orphan/model source counts。
+- doctor per-account evidence 返回账号 key、kind、provider、runtime apply/routeability、auth id、model catalog source/count/routeable/reason，不返回 secret。
+- 服务级测试覆盖 Codex OAuth plan fallback 与 openai-compatible 空模型 fail-closed 的 doctor 输出。
 
 ## 验收标准
 
@@ -208,5 +227,5 @@ GetTokens 账号体系已经从文件账号、配置项、API key 列表迁移�
 
 ## 当前状态
 
-- 状态：implementation-in-progress
+- 状态：implemented
 - 最近更新：2026-07-11

@@ -86,3 +86,12 @@
 - Phase 2 测试：`TestManager_RefreshAuthDeduplicatesConcurrentRefreshForProviderIdentity`。
 - Phase 3：`internal/wailsapp/account_store_snapshot.go` 仅调用 management snapshot API；旧 SQLite parser 已删除。
 - Phase 3 测试：`TestListCachedAccountsReadsSidecarSnapshotWithoutSecrets`、`TestListCachedAccountsWithoutManagementClientReturnsEmptySnapshot`。
+
+## Phase 4-6 实现证据
+
+- Phase 4：App/Wails 首屏读取已通过 sidecar snapshot API，sidecar runtime apply 保留在 command/reconcile/login callback 路径；GET 读路径只返回 evidence。
+- Phase 5：新增 `internal/gettokens/modelcatalog`，`GET /accounts/:account_key/models`、auth manager legacy route filter、scheduler fast path 共用 resolver。
+- Phase 5 测试：`TestResolveRuntimeCodexPlanFallbackSupportsRouteModel`、`TestResolveAccountRecordOpenAICompatibleUsesSelfDescribedModels`、`TestResolveAccountRecordOpenAICompatibleWithoutModelsFailsClosed`、`TestManager_PickNextUsesCodexPlanFallbackWhenRegistryMissing`。
+- Phase 6：新增 `GET /v0/management/gettokens/account-system-doctor`，只读汇总 DB/runtime/model catalog 一致性，不返回 credential secret。
+- Phase 6 测试：`TestAccountSystemDoctorReportsModelCatalogAndRuntimeAlignment`。
+- 全量验证：sidecar `go test ./...`、父仓 `go test ./internal/cliproxyapi ./internal/wailsapp ./cmd/gettokens`、前端 `npm --prefix frontend run test:unit -- src/features/accounts/tests/accountListCache.test.mjs` 均通过。

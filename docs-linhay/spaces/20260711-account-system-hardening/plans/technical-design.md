@@ -173,6 +173,12 @@ type AccountModelCatalog struct {
 - openai-compatible：只信 account-store 自描述 `models_json` / runtime `openai_compat_models`，缺失则 fail closed。
 - fallback 不写 registry，只作为 read evidence。
 
+实现结果：
+
+- 已新增 `internal/gettokens/modelcatalog`，提供 `ResolveRuntime`、`ResolveAccountRecord` 和 `SupportsModel`。
+- `GET /v0/management/accounts/:account_key/models`、auth manager legacy route filter、scheduler fast path 均已接入同一 resolver。
+- 当前实现覆盖 management account models、route candidate filtering 与 scheduler model shards；`/v1/models` 仍以 registry provider 汇总为主，不写 fallback registry，避免 read evidence 反向污染运行态。
+
 ### Phase 5：doctor 与正式只读诊断
 
 新增 account-system doctor，不触碰正式 DB：
@@ -185,6 +191,12 @@ type AccountModelCatalog struct {
 - OAuth refresh trace 最近事件。
 
 正式环境只读诊断只能读日志、management API、SQLite snapshot backup；修复与验证仍在 dev profile。
+
+实现结果：
+
+- 已新增 `GET /v0/management/gettokens/account-system-doctor`。
+- 输出账号总数、pending/failed runtime、missing runtime auth、runtime orphan、unrouteable catalog、model source counts。
+- per-account evidence 包含 runtime 状态、auth id、model catalog source/count/routeable/reason，不返回 credential secret。
 
 ## 日志与追踪
 
@@ -204,7 +216,9 @@ type AccountModelCatalog struct {
 3. `TestManagementGetAccountModelsUsesCodexPlanFallbackWithoutRuntimeMutation`
 4. `TestCodexOAuthRefreshSingleflightUsesProviderIdentity`
 5. `TestWailsFirstPaintUsesManagementSnapshotInsteadOfAccountStoreSQLite`
-6. `TestAccountModelCatalogResolverSourcesAreConsistentAcrossReadAndRouteExplain`
+6. `TestResolveRuntimeCodexPlanFallbackSupportsRouteModel`
+7. `TestManager_PickNextUsesCodexPlanFallbackWhenRegistryMissing`
+8. `TestAccountSystemDoctorReportsModelCatalogAndRuntimeAlignment`
 
 ## 不做
 
@@ -215,5 +229,5 @@ type AccountModelCatalog struct {
 
 ## 当前状态
 
-- 状态：proposed
+- 状态：implemented
 - 最近更新：2026-07-11
