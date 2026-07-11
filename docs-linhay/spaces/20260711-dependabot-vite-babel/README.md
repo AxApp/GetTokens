@@ -97,7 +97,7 @@ GitHub 对 Vite 的两个 manifest 位置分别计数，因此 3 个漏洞事实
 
 ## 当前状态
 
-- 状态：completed
+- 状态：implemented-awaiting-github-recalculation
 - 最近更新：2026-07-11
 
 ## 实施结果
@@ -112,4 +112,8 @@ GitHub 对 Vite 的两个 manifest 位置分别计数，因此 3 个漏洞事实
 - GetTokens `go test ./...` 通过。
 - Wails build readiness 通过，生成绑定无漂移，未触碰正式 App。
 - `check-docs.sh` 与 `git diff --check` 通过。
-- GitHub alerts 需在修复提交推送后等待 Dependabot 重新计算；不手工 dismiss。
+- 修复提交 `271d15fd` 已推送到 `origin/master`，远端 manifest/lockfile 已确认
+  为安全版本。
+- 2026-07-11 23:01（Asia/Shanghai）前持续轮询约 9 分钟，alerts #2 至 #6
+  仍为 open，且 `updated_at` 仍停留在 2026-06-27/30；这是 GitHub 尚未重算
+  依赖图的外部状态，不手工 dismiss。
