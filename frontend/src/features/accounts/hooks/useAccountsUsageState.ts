@@ -17,7 +17,6 @@ export default function useAccountsUsageState(trackRequest: TrackRequest) {
         showRefreshing?: boolean;
         merge?: boolean;
         includeUnresolved?: boolean;
-        resolveAccountKeys?: boolean;
       } = {},
     ) => {
       if (accounts.length === 0) {
@@ -31,8 +30,7 @@ export default function useAccountsUsageState(trackRequest: TrackRequest) {
       const startedAt = Date.now();
       const showRefreshing = options.showRefreshing === true && accountIDs.length > 0;
       const mergeUsage = options.merge === true;
-      const shouldResolveAccountKeys = options.resolveAccountKeys === true;
-      const includeUnresolved = options.includeUnresolved ?? !shouldResolveAccountKeys;
+      const includeUnresolved = options.includeUnresolved === true;
       if (showRefreshing) {
         setUsageRefreshingAccountIDSet((prev) => new Set([...prev, ...accountIDs]));
       }
@@ -46,13 +44,12 @@ export default function useAccountsUsageState(trackRequest: TrackRequest) {
 
         const attribution = await trackRequest<any>(
           'GetSidecarUsageAttribution',
-          { args: [{ window: '24h', bucket: '1h', includeUnresolved, resolveAccountKeys: shouldResolveAccountKeys }] },
+          { args: [{ window: '24h', bucket: '1h', includeUnresolved }] },
           () =>
             GetSidecarUsageAttribution({
               window: '24h',
               bucket: '1h',
               includeUnresolved,
-              resolveAccountKeys: shouldResolveAccountKeys,
             }),
         );
         const hasAttributionData = Array.isArray(attribution?.items) && attribution.items.length > 0;

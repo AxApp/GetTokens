@@ -103,6 +103,8 @@ function toStoredAccountRecord(account: AccountRecord): AccountRecord | null {
     runtimeStatus: optionalString(account.runtimeStatus),
     runtimeReason: optionalString(account.runtimeReason),
     runtimeFailureClass: optionalString(account.runtimeFailureClass),
+    credentialStatus: optionalString(account.credentialStatus),
+    credentialGeneration: optionalNumber(account.credentialGeneration),
     routeable: optionalBoolean(account.routeable),
     registeredModelCount: optionalNumber(account.registeredModelCount),
     runtimeRepairTriggerClass: optionalString(account.runtimeRepairTriggerClass),

@@ -80,8 +80,11 @@ func TestListCachedAccountsReadsSidecarSnapshotWithoutSecrets(t *testing.T) {
 	if codex.ID != "acct_00000000-0000-4000-8000-000000000001" || codex.BaseURL != "https://api.openai.com/v1" {
 		t.Fatalf("unexpected codex snapshot: %#v", codex)
 	}
-	if codex.APIKey != "" || len(codex.APIKeys) != 0 || codex.Headers != nil || codex.PlatformCookie != "" || codex.QuotaCurl != "" || codex.BillingCurl != "" {
+	if codex.APIKey != "" || len(codex.APIKeys) != 0 || codex.Headers != nil || codex.ProxyURL != "" || codex.AuthIndex != nil || codex.PlatformCookie != "" || codex.QuotaCurl != "" || codex.BillingCurl != "" {
 		t.Fatalf("codex snapshot leaked secret fields: %#v", codex)
+	}
+	if codex.DetailLoaded {
+		t.Fatalf("codex summary must not be marked detail loaded: %#v", codex)
 	}
 
 	auth := records[1]

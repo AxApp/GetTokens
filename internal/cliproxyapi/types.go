@@ -184,6 +184,8 @@ type UnifiedAccount struct {
 	Priority                     int                     `json:"priority"`
 	Disabled                     bool                    `json:"disabled"`
 	Revision                     int                     `json:"revision"`
+	CredentialStatus             string                  `json:"credential_status,omitempty"`
+	CredentialGeneration         int64                   `json:"credential_generation,omitempty"`
 	MetadataJSON                 string                  `json:"metadata_json,omitempty"`
 	CreatedAtUnixMs              int64                   `json:"created_at_unix_ms,omitempty"`
 	UpdatedAtUnixMs              int64                   `json:"updated_at_unix_ms,omitempty"`
@@ -208,7 +210,13 @@ type UnifiedAccount struct {
 }
 
 type UnifiedAccountsResponse struct {
-	Items []UnifiedAccount `json:"accounts"`
+	Items             []UnifiedAccount `json:"accounts"`
+	InventoryRevision string           `json:"inventory_revision,omitempty"`
+}
+
+type UnifiedAccountInventory struct {
+	Accounts          []UnifiedAccount
+	InventoryRevision string
 }
 
 type AccountMigrationCandidate struct {
@@ -252,6 +260,7 @@ type AccountMigrationDeleteResultItem struct {
 }
 
 type AccountWriteRequest struct {
+	ExpectedRevision *int                               `json:"expected_revision,omitempty"`
 	Kind             AccountKind                        `json:"kind"`
 	Title            string                             `json:"title,omitempty"`
 	Provider         string                             `json:"provider,omitempty"`

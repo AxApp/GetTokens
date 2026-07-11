@@ -30,6 +30,51 @@ type App struct {
 	ctx                context.Context
 	pendingDeepLinkMu  sync.Mutex
 	pendingDeepLinkURL []string
+	accountEventMu     sync.Mutex
+	accountEventID     uint64
+}
+
+func (a *App) emitAccountChange(eventType string, accountID string, record *AccountRecord) {
+	if a == nil || a.ctx == nil {
+		return
+	}
+	a.accountEventMu.Lock()
+	a.accountEventID++
+	eventID := a.accountEventID
+	a.accountEventMu.Unlock()
+
+	var summary *AccountRecord
+	revision := 0
+	if record != nil {
+		safe := sanitizeAccountEventRecord(*record)
+		summary = &safe
+		revision = safe.Revision
+		if strings.TrimSpace(accountID) == "" {
+			accountID = safe.ID
+		}
+	}
+	wailsruntime.EventsEmit(a.ctx, "accounts:changed", AccountChangeEvent{
+		EventID:   eventID,
+		Type:      eventType,
+		AccountID: strings.TrimSpace(accountID),
+		Revision:  revision,
+		Account:   summary,
+	})
+}
+
+func sanitizeAccountEventRecord(record AccountRecord) AccountRecord {
+	record.APIKey = ""
+	record.APIKeys = nil
+	record.Headers = nil
+	record.ProxyURL = ""
+	record.AuthIndex = nil
+	record.QuotaCurl = ""
+	record.BillingCurl = ""
+	record.PlatformCookie = ""
+	record.CurlVariables = nil
+	record.ModelFetchAPIKey = ""
+	record.ModelFetchBaseURL = ""
+	return record
 }
 
 func mapCodexConfigChangeInputs(inputs []CodexConfigChangeInput) []wailsapp.CodexConfigChangeInput {
@@ -207,8 +252,13 @@ func (a *App) SetAuthFileStatus(name string, disabled bool) error {
 	return a.core.SetAuthFileStatus(name, disabled)
 }
 
-func (a *App) SetAccountDisabled(id string, disabled bool) error {
-	return a.core.SetAccountDisabled(id, disabled)
+func (a *App) SetAccountDisabled(id string, disabled bool) (*AccountRecord, error) {
+	record, err := a.core.SetAccountDisabled(id, disabled)
+	mapped, err := mapAccountRecordPointer(record, err)
+	if err == nil {
+		a.emitAccountChange("account_disabled_changed", id, mapped)
+	}
+	return mapped, err
 }
 
 func (a *App) SetAccountsDisabledBatch(input SetAccountsDisabledBatchInput) (*SetAccountsDisabledBatchResult, error) {
@@ -226,27 +276,46 @@ func (a *App) SetAccountsDisabledBatch(input SetAccountsDisabledBatchInput) (*Se
 			Error:     item.Error,
 		})
 	}
-	return &SetAccountsDisabledBatchResult{
+	mapped := &SetAccountsDisabledBatchResult{
 		UpdatedAccountIDs: result.UpdatedAccountIDs,
 		Errors:            errors,
 		Succeeded:         result.Succeeded,
 		Failed:            result.Failed,
-	}, nil
+	}
+	if mapped.Succeeded > 0 {
+		a.emitAccountChange("inventory_invalidated", "", nil)
+	}
+	return mapped, nil
 }
 
 func (a *App) DeleteAuthFiles(names []string) error {
-	return a.core.DeleteAuthFiles(names)
+	err := a.core.DeleteAuthFiles(names)
+	if err == nil && len(names) > 0 {
+		a.emitAccountChange("inventory_invalidated", "", nil)
+	}
+	return err
 }
 
-func (a *App) UpdateCodexAPIKeyPriority(input UpdateCodexAPIKeyPriorityInput) error {
-	return a.core.UpdateCodexAPIKeyPriority(input.ID, input.Priority)
+func (a *App) UpdateCodexAPIKeyPriority(input UpdateCodexAPIKeyPriorityInput) (*AccountRecord, error) {
+	record, err := a.core.UpdateCodexAPIKeyPriority(input.ID, input.Priority, input.ExpectedRevision)
+	mapped, err := mapAccountRecordPointer(record, err)
+	if err == nil {
+		a.emitAccountChange("account_priority_changed", input.ID, mapped)
+	}
+	return mapped, err
 }
 
-func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) error {
-	return a.core.UpdateAccountPriority(wailsapp.UpdateAccountPriorityInput{
-		ID:       input.ID,
-		Priority: input.Priority,
+func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) (*AccountRecord, error) {
+	record, err := a.core.UpdateAccountPriority(wailsapp.UpdateAccountPriorityInput{
+		ID:               input.ID,
+		Priority:         input.Priority,
+		ExpectedRevision: input.ExpectedRevision,
 	})
+	mapped, err := mapAccountRecordPointer(record, err)
+	if err == nil {
+		a.emitAccountChange("account_priority_changed", input.ID, mapped)
+	}
+	return mapped, err
 }
 
 func (a *App) ProbeCodexAccountRouting(input ProbeCodexAccountRoutingInput) (*CodexAccountRoutingProbeResult, error) {
@@ -1603,16 +1672,31 @@ func mapOpenAIQuotaResetCredit(credit *wailsapp.OpenAIQuotaResetCredit) *OpenAIQ
 }
 
 func (a *App) ListAccounts() ([]AccountRecord, error) {
-	result, err := a.core.ListAccounts()
+	inventory, err := a.ListAccountInventory()
 	if err != nil {
 		return nil, err
 	}
+	return inventory.Accounts, nil
+}
 
-	records := make([]AccountRecord, 0, len(result))
-	for _, record := range result {
+func (a *App) ListAccountInventory() (*AccountInventory, error) {
+	result, err := a.core.ListAccountInventory()
+	if err != nil {
+		return nil, err
+	}
+	records := make([]AccountRecord, 0, len(result.Accounts))
+	for _, record := range result.Accounts {
 		records = append(records, mapAccountRecord(record))
 	}
-	return records, nil
+	return &AccountInventory{
+		Accounts:          records,
+		InventoryRevision: result.InventoryRevision,
+	}, nil
+}
+
+func (a *App) GetAccountDetail(id string) (*AccountRecord, error) {
+	record, err := a.core.GetAccountDetail(id)
+	return mapAccountRecordPointer(record, err)
 }
 
 func (a *App) ListCodexAccountInventory() ([]AccountRecord, error) {
@@ -2030,7 +2114,11 @@ func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, 
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
-	return a.core.CreateCodexAPIKey(mapCreateCodexAPIKeyInputToWails(input))
+	err := a.core.CreateCodexAPIKey(mapCreateCodexAPIKeyInputToWails(input))
+	if err == nil {
+		a.emitAccountChange("account_created", "", nil)
+	}
+	return err
 }
 
 func mapCreateCodexAPIKeyInputToWails(input CreateCodexAPIKeyInput) wailsapp.CreateCodexAPIKeyInput {
@@ -2054,37 +2142,50 @@ func mapCreateCodexAPIKeyInputToWails(input CreateCodexAPIKeyInput) wailsapp.Cre
 	}
 }
 
-func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
-	return a.core.UpdateCodexAPIKeyLabel(wailsapp.UpdateCodexAPIKeyLabelInput{
-		ID:    input.ID,
-		Label: input.Label,
+func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) (*AccountRecord, error) {
+	record, err := a.core.UpdateCodexAPIKeyLabel(wailsapp.UpdateCodexAPIKeyLabelInput{
+		ID:               input.ID,
+		Label:            input.Label,
+		ExpectedRevision: input.ExpectedRevision,
 	})
+	mapped, err := mapAccountRecordPointer(record, err)
+	if err == nil {
+		a.emitAccountChange("account_updated", input.ID, mapped)
+	}
+	return mapped, err
 }
 
-func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error {
-	return a.core.UpdateCodexAPIKeyConfig(mapUpdateCodexAPIKeyConfigInputToWails(input))
+func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) (*AccountRecord, error) {
+	record, err := a.core.UpdateCodexAPIKeyConfig(mapUpdateCodexAPIKeyConfigInputToWails(input))
+	mapped, err := mapAccountRecordPointer(record, err)
+	if err == nil {
+		a.emitAccountChange("account_updated", input.ID, mapped)
+	}
+	return mapped, err
 }
 
 func mapUpdateCodexAPIKeyConfigInputToWails(input UpdateCodexAPIKeyConfigInput) wailsapp.UpdateCodexAPIKeyConfigInput {
 	return wailsapp.UpdateCodexAPIKeyConfigInput{
-		ID:             input.ID,
-		APIKey:         input.APIKey,
-		BaseURL:        input.BaseURL,
-		FormatBaseURLs: input.FormatBaseURLs,
-		Prefix:         input.Prefix,
-		ProxyURL:       input.ProxyURL,
-		Models:         mapOpenAICompatibleModelsToWails(input.Models),
-		QuotaCurl:      input.QuotaCurl,
-		QuotaEnabled:   input.QuotaEnabled,
-		BillingCurl:    input.BillingCurl,
-		BillingEnabled: input.BillingEnabled,
-		PlatformCookie: input.PlatformCookie,
-		CurlVariables:  input.CurlVariables,
+		ID:               input.ID,
+		ExpectedRevision: input.ExpectedRevision,
+		Label:            input.Label,
+		APIKey:           input.APIKey,
+		BaseURL:          input.BaseURL,
+		FormatBaseURLs:   input.FormatBaseURLs,
+		Prefix:           input.Prefix,
+		ProxyURL:         input.ProxyURL,
+		Models:           mapOpenAICompatibleModelsToWails(input.Models),
+		QuotaCurl:        input.QuotaCurl,
+		QuotaEnabled:     input.QuotaEnabled,
+		BillingCurl:      input.BillingCurl,
+		BillingEnabled:   input.BillingEnabled,
+		PlatformCookie:   input.PlatformCookie,
+		CurlVariables:    input.CurlVariables,
 	}
 }
 
 func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProviderInput) error {
-	return a.core.CreateOpenAICompatibleProvider(wailsapp.CreateOpenAICompatibleProviderInput{
+	err := a.core.CreateOpenAICompatibleProvider(wailsapp.CreateOpenAICompatibleProviderInput{
 		Name:              input.Name,
 		BaseURL:           input.BaseURL,
 		Prefix:            input.Prefix,
@@ -2100,15 +2201,24 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 		ModelFetchAPIKey:  input.ModelFetchAPIKey,
 		ModelFetchBaseURL: input.ModelFetchBaseURL,
 	})
+	if err == nil {
+		a.emitAccountChange("account_created", "", nil)
+	}
+	return err
 }
 
 func (a *App) DeleteOpenAICompatibleProvider(name string) error {
-	return a.core.DeleteOpenAICompatibleProvider(name)
+	err := a.core.DeleteOpenAICompatibleProvider(name)
+	if err == nil {
+		a.emitAccountChange("account_deleted", name, nil)
+	}
+	return err
 }
 
-func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProviderInput) error {
-	return a.core.UpdateOpenAICompatibleProvider(wailsapp.UpdateOpenAICompatibleProviderInput{
+func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProviderInput) (*AccountRecord, error) {
+	record, err := a.core.UpdateOpenAICompatibleProvider(wailsapp.UpdateOpenAICompatibleProviderInput{
 		CurrentName:       input.CurrentName,
+		ExpectedRevision:  input.ExpectedRevision,
 		Name:              input.Name,
 		BaseURL:           input.BaseURL,
 		FormatBaseURLs:    input.FormatBaseURLs,
@@ -2127,6 +2237,11 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		ModelFetchAPIKey:  input.ModelFetchAPIKey,
 		ModelFetchBaseURL: input.ModelFetchBaseURL,
 	})
+	mapped, err := mapAccountRecordPointer(record, err)
+	if err == nil {
+		a.emitAccountChange("account_updated", input.CurrentName, mapped)
+	}
+	return mapped, err
 }
 
 func (a *App) VerifyOpenAICompatibleProvider(input VerifyOpenAICompatibleProviderInput) (*VerifyOpenAICompatibleProviderResult, error) {
@@ -2384,7 +2499,11 @@ func cloneIntPtrMain(input *int) *int {
 }
 
 func (a *App) DeleteCodexAPIKey(id string) error {
-	return a.core.DeleteCodexAPIKey(id)
+	err := a.core.DeleteCodexAPIKey(id)
+	if err == nil {
+		a.emitAccountChange("account_deleted", id, nil)
+	}
+	return err
 }
 
 func (a *App) DeleteAccountsBatch(input DeleteAccountsBatchInput) (*DeleteAccountsBatchResult, error) {
@@ -2399,10 +2518,14 @@ func (a *App) DeleteAccountsBatch(input DeleteAccountsBatchInput) (*DeleteAccoun
 			Error:     item.Error,
 		})
 	}
-	return &DeleteAccountsBatchResult{
+	mapped := &DeleteAccountsBatchResult{
 		DeletedAccountIDs: result.DeletedAccountIDs,
 		Errors:            errors,
 		Succeeded:         result.Succeeded,
 		Failed:            result.Failed,
-	}, nil
+	}
+	if mapped.Succeeded > 0 {
+		a.emitAccountChange("inventory_invalidated", "", nil)
+	}
+	return mapped, nil
 }

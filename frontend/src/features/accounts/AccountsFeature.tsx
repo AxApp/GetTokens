@@ -10,6 +10,7 @@ import {
   DeleteRateLimitRule,
   DownloadAuthFile,
   FetchOpenAICompatibleProviderModels,
+  GetAccountDetail,
   GetAppRuntimeSettings,
   GetLocalCodexAuthState,
   GetLocalCodexModelProviderStateView,
@@ -52,9 +53,13 @@ import {
   getAccountsPreviewAuthFileContent,
   getAccountsPreviewRelayModelNames,
 } from "./previewData";
-import { isCodexAuthFile } from "./model/accountPresentation";
+import { isCodexAuthFile, mapBackendAccountRecord } from "./model/accountPresentation";
 import { readAccountClipboardFallback } from "./model/accountClipboard";
 import { resolveAccountDetailSelection } from "./model/accountDetailSelection";
+import {
+  ACCOUNT_REVISION_CONFLICT_MESSAGE,
+  isAccountRevisionConflictError,
+} from "./model/accountRevision";
 import {
   buildRelayModelProviderSignature,
   normalizeAPIKeyModelNames,
@@ -304,6 +309,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     useState<AccountDetailScriptRoute | "">(() =>
       readAccountDetailScriptFromHash(),
     );
+  const accountDetailRequestRef = useRef(new Set<string>());
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const [accountModelNamesByID, setAccountModelNamesByID] = useState<Record<string, string[]>>({});
@@ -640,6 +646,41 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     setSelectedAccount,
   ]);
 
+  useEffect(() => {
+    if (
+      !selectedAccount?.id?.startsWith("acct_") ||
+      selectedAccount.detailLoaded ||
+      !hasWailsAppBindings()
+    ) {
+      return;
+    }
+    const accountID = selectedAccount.id;
+    const requestKey = `${accountID}:${selectedAccount.revision || 0}`;
+    if (accountDetailRequestRef.current.has(requestKey)) {
+      return;
+    }
+    accountDetailRequestRef.current.add(requestKey);
+    let cancelled = false;
+    void trackRequest(
+      "GetAccountDetail",
+      { id: accountID, revision: selectedAccount.revision },
+      () => GetAccountDetail(accountID),
+    )
+      .then((detail) => {
+        accountDetailRequestRef.current.delete(requestKey);
+        if (!cancelled) {
+          setSelectedAccount(mapBackendAccountRecord(detail));
+        }
+      })
+      .catch((error) => {
+        accountDetailRequestRef.current.delete(requestKey);
+        console.error(error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAccount, setSelectedAccount, trackRequest]);
+
   const updateDisplayMode = useCallback((nextMode: AccountListDisplayMode) => {
     setDisplayMode(nextMode);
     if (typeof window === "undefined") {
@@ -792,6 +833,24 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     setSelectedAccount(null);
     clearAccountDetailInHash();
   }, [clearAccountDetailInHash, setSelectedAccount]);
+
+  const recoverSelectedAccountRevisionConflict = useCallback(
+    async (error: unknown, accountID: string) => {
+      if (!isAccountRevisionConflictError(error)) {
+        return null;
+      }
+      if (hasWailsAppBindings() && accountID.startsWith("acct_")) {
+        const detail = await trackRequest(
+          "GetAccountDetail",
+          { id: accountID, reason: "revision-conflict" },
+          () => GetAccountDetail(accountID),
+        );
+        patchAccountLocally(accountID, mapBackendAccountRecord(detail));
+      }
+      return new Error(ACCOUNT_REVISION_CONFLICT_MESSAGE);
+    },
+    [patchAccountLocally, trackRequest],
+  );
 
   const openUnifiedCompose = useCallback(() => {
     setUnifiedComposeError("");
@@ -1103,13 +1162,14 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       }
 
       try {
-        await trackRequest(
+        const updatedAccount = await trackRequest(
           "UpdateOpenAICompatibleProvider",
           { id: selectedAccount.id, baseUrl: nextBaseURL, models: nextModels },
           () =>
             UpdateOpenAICompatibleProvider(
               main.UpdateOpenAICompatibleProviderInput.createFrom({
                 currentName: selectedAccount.id.startsWith("acct_") ? selectedAccount.id : selectedAccount.provider,
+                expectedRevision: selectedAccount.revision,
                 name: nextLabel || selectedAccount.provider,
                 baseUrl: nextBaseURL,
                 formatBaseUrls: nextFormatBaseURLs,
@@ -1130,31 +1190,16 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               }),
             ),
         );
-        patchAccountLocally(selectedAccount.id, {
-          displayName: nextLabel || selectedAccount.displayName,
-          provider: nextLabel || selectedAccount.provider,
-          apiKey: nextAPIKey,
-          apiKeys: nextAPIKeys,
-          baseUrl: nextBaseURL,
-          formatBaseUrls: nextFormatBaseURLs,
-          prefix: nextPrefix,
-          quotaCurl: nextQuotaCurl,
-          quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
-          billingCurl: nextBillingCurl,
-          billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
-          platformCookie: nextPlatformCookie,
-          curlVariables: nextCurlVariables,
-          proxyUrl: nextProxyURL,
-          models: nextModels,
-        });
-        await loadAccounts({ refreshSupplementalData: false });
+        patchAccountLocally(selectedAccount.id, mapBackendAccountRecord(updatedAccount));
       } catch (error) {
         console.error(error);
-        setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
-        throw error;
+        const conflictError = await recoverSelectedAccountRevisionConflict(error, selectedAccount.id);
+        const resolvedError = conflictError ?? error;
+        setDeleteError(`SAVE ERROR: ${toErrorMessage(resolvedError)}`);
+        throw resolvedError;
       }
     },
-    [loadAccounts, patchAccountLocally, selectedAccount, setDeleteError, t, trackRequest, updateSelectedApiKeyConfig],
+    [patchAccountLocally, recoverSelectedAccountRevisionConflict, selectedAccount, setDeleteError, t, trackRequest, updateSelectedApiKeyConfig],
   );
 
   const resolveLocalCliMappingsForAccount = useCallback(

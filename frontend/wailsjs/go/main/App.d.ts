@@ -87,6 +87,8 @@ export function FetchVendorStatusRSS(arg1:string):Promise<string>;
 
 export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<void>;
 
+export function GetAccountDetail(arg1:string):Promise<main.AccountRecord>;
+
 export function GetAccountMigrationPreview():Promise<main.AccountMigrationPreview>;
 
 export function GetAccountStoreDiagnostics():Promise<main.AccountStoreDiagnostics>;
@@ -192,6 +194,8 @@ export function GetUsageStatistics():Promise<main.UsageStatisticsResponse>;
 export function GetVersion():Promise<string>;
 
 export function ImportCodexBinary(arg1:codexbinary.ImportLocalInput):Promise<codexbinary.InstallResult>;
+
+export function ListAccountInventory():Promise<main.AccountInventory>;
 
 export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
@@ -301,7 +305,7 @@ export function SaveCodexMcpServer(arg1:main.SaveCodexMcpServerInput):Promise<ma
 
 export function SaveCodexSkillEnabled(arg1:main.SaveCodexSkillEnabledInput):Promise<main.SaveCodexSkillEnabledResult>;
 
-export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<void>;
+export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<main.AccountRecord>;
 
 export function SetAccountsDisabledBatch(arg1:main.SetAccountsDisabledBatchInput):Promise<main.SetAccountsDisabledBatchResult>;
 
@@ -321,17 +325,17 @@ export function TestCodexAPIKeyBillingCurl(arg1:main.TestCodexAPIKeyQuotaCurlInp
 
 export function TestCodexAPIKeyQuotaCurl(arg1:main.TestCodexAPIKeyQuotaCurlInput):Promise<main.CodexQuotaResponse>;
 
-export function UpdateAccountPriority(arg1:main.UpdateAccountPriorityInput):Promise<void>;
+export function UpdateAccountPriority(arg1:main.UpdateAccountPriorityInput):Promise<main.AccountRecord>;
 
 export function UpdateAppRuntimeSettings(arg1:main.AppRuntimeSettings):Promise<main.AppRuntimeSettings>;
 
 export function UpdateBudgetWindowDefinition(arg1:string,arg2:main.BudgetWindowDefinition):Promise<Array<main.BudgetWindowDefinition>>;
 
-export function UpdateCodexAPIKeyConfig(arg1:main.UpdateCodexAPIKeyConfigInput):Promise<void>;
+export function UpdateCodexAPIKeyConfig(arg1:main.UpdateCodexAPIKeyConfigInput):Promise<main.AccountRecord>;
 
-export function UpdateCodexAPIKeyLabel(arg1:main.UpdateCodexAPIKeyLabelInput):Promise<void>;
+export function UpdateCodexAPIKeyLabel(arg1:main.UpdateCodexAPIKeyLabelInput):Promise<main.AccountRecord>;
 
-export function UpdateCodexAPIKeyPriority(arg1:main.UpdateCodexAPIKeyPriorityInput):Promise<void>;
+export function UpdateCodexAPIKeyPriority(arg1:main.UpdateCodexAPIKeyPriorityInput):Promise<main.AccountRecord>;
 
 export function UpdateCodexSessionProviders(arg1:main.UpdateSessionProvidersInput):Promise<main.SessionManagementSnapshot>;
 
@@ -339,7 +343,7 @@ export function UpdateLocalProjectedUsageSettings(arg1:main.LocalProjectedUsageS
 
 export function UpdateOAuthModelAliases(arg1:main.UpdateOAuthModelAliasesInput):Promise<void>;
 
-export function UpdateOpenAICompatibleProvider(arg1:main.UpdateOpenAICompatibleProviderInput):Promise<void>;
+export function UpdateOpenAICompatibleProvider(arg1:main.UpdateOpenAICompatibleProviderInput):Promise<main.AccountRecord>;
 
 export function UpdateProjectCandidatePoolRule(arg1:main.ProjectCandidatePoolRule):Promise<Array<main.ProjectCandidatePoolRule>>;
 

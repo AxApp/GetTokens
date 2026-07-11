@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
@@ -63,6 +64,7 @@ type CreateOpenAICompatibleProviderInput struct {
 
 type UpdateOpenAICompatibleProviderInput struct {
 	CurrentName       string                  `json:"currentName"`
+	ExpectedRevision  *int                    `json:"expectedRevision,omitempty"`
 	Name              string                  `json:"name"`
 	BaseURL           string                  `json:"baseUrl"`
 	FormatBaseURLs    map[string]string       `json:"formatBaseUrls,omitempty"`
@@ -191,7 +193,7 @@ func (a *App) DeleteOpenAICompatibleProvider(name string) error {
 	return err
 }
 
-func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProviderInput) error {
+func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProviderInput) (*accountsdomain.AccountRecord, error) {
 	currentName := strings.TrimSpace(input.CurrentName)
 	name := strings.TrimSpace(input.Name)
 	baseURL := strings.TrimSpace(input.BaseURL)
@@ -202,24 +204,24 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 
 	switch {
 	case currentName == "":
-		return errors.New("current name 不能为空")
+		return nil, errors.New("current name 不能为空")
 	case name == "":
-		return errors.New("name 不能为空")
+		return nil, errors.New("name 不能为空")
 	case baseURL == "":
-		return errors.New("base url 不能为空")
+		return nil, errors.New("base url 不能为空")
 	case len(apiKeys) == 0:
-		return errors.New("api key 不能为空")
+		return nil, errors.New("api key 不能为空")
 	}
 
 	target, err := a.findOpenAICompatibleAccount(currentName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if target.OpenAICompatible == nil {
-		return errors.New("provider 不存在")
+		return nil, errors.New("provider 不存在")
 	}
 	if err := a.ensureOpenAICompatibleProviderNameAvailable(name, target.AccountKey); err != nil {
-		return err
+		return nil, err
 	}
 
 	nextModels := make([]cliproxyapi.OpenAICompatibleModel, 0, len(models))
@@ -249,7 +251,7 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 	if input.FormatBaseURLs != nil {
 		nextFormatBaseURLs = normalizeFormatBaseURLs(input.FormatBaseURLs)
 	}
-	_, err = a.managementClient().PatchAccount(target.AccountKey, openAICompatibleAccountWrite(
+	write := openAICompatibleAccountWrite(
 		title,
 		name,
 		target.Priority,
@@ -268,11 +270,13 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		nextModels,
 		strings.TrimSpace(input.ModelFetchAPIKey),
 		strings.TrimSpace(input.ModelFetchBaseURL),
-	))
+	)
+	write.ExpectedRevision = input.ExpectedRevision
+	updated, err := a.managementClient().PatchAccount(target.AccountKey, write)
 	if err == nil {
 		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
 	}
-	return err
+	return accountRecordFromUnifiedMutation(updated, err)
 }
 
 func (a *App) UpdateOpenAICompatibleProviderPriority(name string, priority int) error {

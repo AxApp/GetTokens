@@ -784,7 +784,7 @@ test('api-key config save has an explicit browser preview path', async () => {
   assert.match(saveBlock, /return;/);
 });
 
-test('api-key detail rename and priority saves patch the local list copy before reload', async () => {
+test('api-key detail rename and priority saves consume mutation records without inventory reload', async () => {
   const source = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
   const renameStart = source.indexOf('const renameSelectedApiKey = useCallback(');
   const priorityStart = source.indexOf('const updateSelectedApiKeyPriority = useCallback(', renameStart);
@@ -794,39 +794,83 @@ test('api-key detail rename and priority saves patch the local list copy before 
 
   assert.ok(renameStart >= 0, 'renameSelectedApiKey block should exist');
   assert.ok(priorityStart > renameStart, 'updateSelectedApiKeyPriority block should follow renameSelectedApiKey');
-  assert.match(renameBlock, /patchAccountLocally\(selectedAccount\.id, \{/);
-  assert.match(renameBlock, /displayName: trimmedName \|\| fallbackAPIKeyDisplayName\(selectedAccount\.apiKey \|\| ''\)/);
-  assert.ok(
-    renameBlock.indexOf('patchAccountLocally(selectedAccount.id') < renameBlock.indexOf('await loadAccounts({ refreshSupplementalData: false })'),
-    'rename should patch local records before relying on reload',
-  );
+  assert.match(renameBlock, /const updatedAccount = await trackRequest/);
+  assert.match(renameBlock, /expectedRevision: selectedAccount\.revision/);
+  assert.match(renameBlock, /patchAccountLocally\(selectedAccount\.id, mapBackendAccountRecord\(updatedAccount\)\)/);
+  assert.doesNotMatch(renameBlock, /loadAccounts/);
   assert.doesNotMatch(renameBlock, /setSelectedAccount\(\(prev\) =>/);
 
-  assert.match(priorityBlock, /patchAccountLocally\(selectedAccount\.id, \{\s*priority: nextPriority,\s*\}\)/);
-  assert.ok(
-    priorityBlock.indexOf('patchAccountLocally(selectedAccount.id') < priorityBlock.indexOf('await loadAccounts({ refreshSupplementalData: false })'),
-    'priority should patch local records before relying on reload',
-  );
+  assert.match(priorityBlock, /const updatedAccount = await trackRequest/);
+  assert.match(priorityBlock, /expectedRevision: selectedAccount\.revision/);
+  assert.match(priorityBlock, /patchAccountLocally\(selectedAccount\.id, mapBackendAccountRecord\(updatedAccount\)\)/);
+  assert.doesNotMatch(priorityBlock, /loadAccounts/);
   assert.doesNotMatch(priorityBlock, /setSelectedAccount\(\(prev\) =>/);
 });
 
-test('openai-compatible detail config save patches the local list copy before reload', async () => {
+test('openai-compatible detail config save consumes mutation record without inventory reload', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
   const saveStart = source.indexOf('const saveSelectedApiLikeConfig = useCallback(');
   const nextBlockStart = source.indexOf('const resolveLocalCliMappingsForAccount = useCallback(', saveStart);
   const saveBlock = source.slice(saveStart, nextBlockStart);
-  const patchCalls = saveBlock.match(/patchAccountLocally\(selectedAccount\.id, \{/g) ?? [];
-
   assert.ok(saveStart >= 0, 'saveSelectedApiLikeConfig block should exist');
   assert.match(source, /patchAccountLocally,/);
-  assert.equal(patchCalls.length, 2);
-  assert.match(saveBlock, /formatBaseUrls: nextFormatBaseURLs/);
-  assert.match(saveBlock, /apiKeys: nextAPIKeys/);
-  assert.ok(
-    saveBlock.lastIndexOf('patchAccountLocally(selectedAccount.id') < saveBlock.indexOf('await loadAccounts({ refreshSupplementalData: false })'),
-    'openai-compatible save should patch local records before relying on reload',
-  );
+  assert.match(saveBlock, /const updatedAccount = await trackRequest/);
+  assert.match(saveBlock, /patchAccountLocally\(selectedAccount\.id, mapBackendAccountRecord\(updatedAccount\)\)/);
+  assert.doesNotMatch(saveBlock, /loadAccounts/);
   assert.doesNotMatch(saveBlock, /setSelectedAccount\(\(prev\) =>/);
+});
+
+test('api-key config save is one atomic mutation and consumes its returned record', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const saveStart = source.indexOf('const updateSelectedApiKeyConfig = useCallback(');
+  const saveEnd = source.indexOf('const formatBulkActionMessage = useCallback(', saveStart);
+  const saveBlock = source.slice(saveStart, saveEnd);
+
+  assert.match(saveBlock, /label: nextLabel/);
+  assert.match(saveBlock, /expectedRevision: selectedAccount\.revision/);
+  assert.equal((saveBlock.match(/UpdateCodexAPIKeyConfig\(/g) ?? []).length, 1);
+  assert.doesNotMatch(saveBlock, /UpdateCodexAPIKeyLabel\(/);
+  assert.match(saveBlock, /const updatedAccount = await trackRequest/);
+  assert.match(saveBlock, /patchAccountLocally\(selectedAccount\.id, mapBackendAccountRecord\(updatedAccount\)\)/);
+  assert.doesNotMatch(saveBlock, /loadAccounts/);
+});
+
+test('generated account mutation bindings return AccountRecord', async () => {
+  const source = await readFile(new URL('../../../../wailsjs/go/main/App.d.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /SetAccountDisabled\(arg1:string,arg2:boolean\):Promise<main\.AccountRecord>/);
+  assert.match(source, /UpdateCodexAPIKeyConfig\(arg1:main\.UpdateCodexAPIKeyConfigInput\):Promise<main\.AccountRecord>/);
+  assert.match(source, /UpdateCodexAPIKeyLabel\(arg1:main\.UpdateCodexAPIKeyLabelInput\):Promise<main\.AccountRecord>/);
+  assert.match(source, /UpdateCodexAPIKeyPriority\(arg1:main\.UpdateCodexAPIKeyPriorityInput\):Promise<main\.AccountRecord>/);
+  assert.match(source, /UpdateOpenAICompatibleProvider\(arg1:main\.UpdateOpenAICompatibleProviderInput\):Promise<main\.AccountRecord>/);
+});
+
+test('account revision conflicts reload the latest detail instead of auto-merging writes', async () => {
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const pageStateSource = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+  const actionsSource = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const revisionSource = await readFile(new URL('../model/accountRevision.ts', import.meta.url), 'utf8');
+
+  assert.match(revisionSource, /account_revision_conflict/);
+  assert.match(featureSource, /reason: "revision-conflict"/);
+  assert.match(pageStateSource, /reason: 'revision-conflict'/);
+  assert.match(featureSource, /GetAccountDetail\(accountID\)/);
+  assert.match(pageStateSource, /GetAccountDetail\(accountID\)/);
+  assert.match(actionsSource, /recoverAccountRevisionConflict\(error, selectedAccount\.id\)/);
+  assert.doesNotMatch(revisionSource, /retry|merge/i);
+});
+
+test('account list summaries stay secret-free and details load on demand', async () => {
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const stateSource = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+  const summarySource = await readFile(new URL('../model/accountSummary.ts', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /GetAccountDetail\(accountID\)/);
+  assert.match(featureSource, /selectedAccount\.detailLoaded/);
+  assert.match(stateSource, /sanitizeAccountSummaryPatch\(patch\)/);
+  for (const field of ['apiKey', 'apiKeys', 'headers', 'proxyUrl', 'authIndex', 'platformCookie', 'quotaCurl', 'billingCurl']) {
+    assert.match(summarySource, new RegExp(`${field}: undefined`));
+  }
 });
 test('account detail header removes status pill and uses type label for codex auth-file', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');

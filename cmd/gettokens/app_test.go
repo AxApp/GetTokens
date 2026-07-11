@@ -460,8 +460,10 @@ func TestCodexAPIKeyRootInputsPreserveManagementFields(t *testing.T) {
 		t.Fatalf("create input = %#v, want management fields preserved", createInput)
 	}
 
+	label := "Renamed Key"
 	updateInput := mapUpdateCodexAPIKeyConfigInputToWails(UpdateCodexAPIKeyConfigInput{
 		ID:             "acct_codex_key",
+		Label:          &label,
 		APIKey:         "sk-test",
 		BaseURL:        "https://relay.example.com/codex/v1",
 		QuotaCurl:      `curl -sS "{{baseUrl}}/usage"`,
@@ -474,6 +476,9 @@ func TestCodexAPIKeyRootInputsPreserveManagementFields(t *testing.T) {
 	if updateInput.PlatformCookie != "session=abc" || updateInput.CurlVariables["region"] != "cn" {
 		t.Fatalf("update input = %#v, want management fields preserved", updateInput)
 	}
+	if updateInput.Label == nil || *updateInput.Label != "Renamed Key" {
+		t.Fatalf("update label = %v, want atomic label mapping", updateInput.Label)
+	}
 }
 
 func TestBuildApplicationMenuKeepsCheckForUpdatesOutOfHelpMenu(t *testing.T) {
@@ -485,6 +490,41 @@ func TestBuildApplicationMenuKeepsCheckForUpdatesOutOfHelpMenu(t *testing.T) {
 	}
 	if updateItem != nil {
 		t.Fatalf("application menu model should not include %q; it is inserted into the native App menu", macOSCheckForUpdatesMenuLabel)
+	}
+}
+
+func TestSanitizeAccountEventRecordRemovesSecrets(t *testing.T) {
+	record := sanitizeAccountEventRecord(AccountRecord{
+		ID:                         "acct_secret",
+		Revision:                   7,
+		APIKey:                     "sk-secret",
+		APIKeys:                    []string{"sk-secret", "sk-backup"},
+		Headers:                    map[string]string{"Authorization": "Bearer secret"},
+		ProxyURL:                   "http://user:pass@proxy.example.com",
+		AuthIndex:                  map[string]any{"token": "secret"},
+		QuotaCurl:                  "curl -H 'Authorization: secret'",
+		BillingCurl:                "curl -H 'Cookie: secret'",
+		PlatformCookie:             "session=secret",
+		CurlVariables:              map[string]string{"token": "secret"},
+		ModelFetchAPIKey:           "sk-model",
+		ModelFetchBaseURL:          "https://models.example.com",
+		DisplayName:                "Safe Name",
+		Provider:                   "codex",
+		CredentialSource:           "api-key",
+		Status:                     "active",
+		KeyFingerprint:             "sha256:safe",
+		RuntimeRepairOutcome:       "healthy",
+		RuntimeRepairAction:        "none",
+		RuntimeRepairTriggerStatus: "active",
+	})
+	if record.APIKey != "" || len(record.APIKeys) != 0 || record.Headers != nil || record.ProxyURL != "" ||
+		record.AuthIndex != nil || record.QuotaCurl != "" || record.BillingCurl != "" ||
+		record.PlatformCookie != "" || record.CurlVariables != nil || record.ModelFetchAPIKey != "" ||
+		record.ModelFetchBaseURL != "" {
+		t.Fatalf("sanitized event leaked secrets: %#v", record)
+	}
+	if record.ID != "acct_secret" || record.Revision != 7 || record.DisplayName != "Safe Name" || record.KeyFingerprint != "sha256:safe" {
+		t.Fatalf("sanitized event removed summary fields: %#v", record)
 	}
 }
 

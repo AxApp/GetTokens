@@ -29,12 +29,15 @@ func sanitizeLocalAccountSnapshotRecords(records []accountsdomain.AccountRecord)
 		record.APIKey = ""
 		record.APIKeys = nil
 		record.Headers = nil
+		record.ProxyURL = ""
+		record.AuthIndex = nil
 		record.QuotaCurl = ""
 		record.BillingCurl = ""
 		record.PlatformCookie = ""
 		record.CurlVariables = nil
 		record.ModelFetchAPIKey = ""
 		record.ModelFetchBaseURL = ""
+		record.DetailLoaded = false
 		out = append(out, record)
 	}
 	return out

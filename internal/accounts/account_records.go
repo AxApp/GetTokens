@@ -124,6 +124,10 @@ type AccountRecord struct {
 	RuntimeRepairTriggerClass  string                   `json:"runtimeRepairTriggerClass,omitempty"`
 	RuntimeRepairTriggerReason string                   `json:"runtimeRepairTriggerReason,omitempty"`
 	LastRuntimeRepairAtUnixMs  int64                    `json:"lastRuntimeRepairAtUnixMs,omitempty"`
+	Revision                   int                      `json:"revision,omitempty"`
+	CredentialStatus           string                   `json:"credentialStatus,omitempty"`
+	CredentialGeneration       int64                    `json:"credentialGeneration,omitempty"`
+	DetailLoaded               bool                     `json:"detailLoaded,omitempty"`
 	Priority                   int                      `json:"priority,omitempty"`
 	Disabled                   bool                     `json:"disabled,omitempty"`
 	Email                      string                   `json:"email,omitempty"`
@@ -327,15 +331,16 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 }
 
 func BuildUnifiedAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
+	var record AccountRecord
 	switch account.Kind {
 	case cliproxyapi.AccountKindAuthFile:
-		return buildUnifiedAuthFileAccountRecord(account)
+		record = buildUnifiedAuthFileAccountRecord(account)
 	case cliproxyapi.AccountKindCodexAPIKey:
-		return buildUnifiedCodexAPIKeyAccountRecord(account)
+		record = buildUnifiedCodexAPIKeyAccountRecord(account)
 	case cliproxyapi.AccountKindOpenAICompatible:
-		return buildUnifiedOpenAICompatibleAccountRecord(account)
+		record = buildUnifiedOpenAICompatibleAccountRecord(account)
 	default:
-		return AccountRecord{
+		record = AccountRecord{
 			ID:               strings.TrimSpace(account.AccountKey),
 			AccountKind:      string(account.Kind),
 			Provider:         strings.TrimSpace(account.Provider),
@@ -346,6 +351,11 @@ func BuildUnifiedAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord
 			Disabled:         account.Disabled,
 		}
 	}
+	record.Revision = account.Revision
+	record.CredentialStatus = strings.TrimSpace(account.CredentialStatus)
+	record.CredentialGeneration = account.CredentialGeneration
+	record.DetailLoaded = true
+	return record
 }
 
 func BuildUnifiedAccountRecords(accounts []cliproxyapi.UnifiedAccount) []AccountRecord {
@@ -518,6 +528,9 @@ func unifiedStatus(account cliproxyapi.UnifiedAccount) string {
 	if account.Disabled {
 		return "disabled"
 	}
+	if strings.EqualFold(strings.TrimSpace(account.CredentialStatus), "reauth_required") {
+		return "error"
+	}
 	switch strings.TrimSpace(strings.ToLower(account.RuntimeRouteabilityStatus)) {
 	case "registered_routeable":
 		return "active"
@@ -569,7 +582,7 @@ func resolveUnifiedRuntimeState(account cliproxyapi.UnifiedAccount) unifiedRunti
 	switch state.Status {
 	case "registered_routeable":
 		state.Routeable = true
-	case "applied_not_registered", "degraded", "pending":
+	case "applied_not_registered", "degraded", "pending", "reauth_required":
 		state.Routeable = false
 	default:
 		state.Status = ""
@@ -596,6 +609,12 @@ func resolveUnifiedRuntimeState(account cliproxyapi.UnifiedAccount) unifiedRunti
 	}
 	if state.Status == "degraded" && state.Reason == "" {
 		state.Reason = strings.TrimSpace(account.RuntimeApplyError)
+	}
+	if state.Status == "reauth_required" {
+		state.FailureClass = "credential_not_ready"
+		if state.Reason == "" {
+			state.Reason = "credential requires sign-in"
+		}
 	}
 
 	return state

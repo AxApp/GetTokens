@@ -225,6 +225,7 @@ function resolveOperationalFailureReasons(account: AccountRecord, quotaState?: C
 function collectOperationalDiagnosticText(account: AccountRecord, quotaState?: CodexQuotaState) {
   return [
     account.statusMessage,
+    account.credentialStatus,
     account.rawAuthFile?.statusMessage,
     ...(account.requestability?.evidence || []),
     quotaState?.quota?.degradedReason,

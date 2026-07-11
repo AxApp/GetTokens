@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { GetAllRateLimitStatuses, ListRateLimitStrategies } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
@@ -15,6 +15,26 @@ export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
   const [accountRateLimitByID, setAccountRateLimitByID] = useState<Record<string, RateLimitState>>({});
   const [rateLimitStrategies, setRateLimitStrategies] = useState<RateLimitStrategyMeta[]>(DEFAULT_RATE_LIMIT_STRATEGIES);
   const [rateLimitRefreshingAccountIDSet, setRateLimitRefreshingAccountIDSet] = useState<Set<string>>(new Set());
+  const rateLimitStrategiesRequestRef = useRef<Promise<void> | null>(null);
+
+  const loadRateLimitStrategies = useCallback(() => {
+    if (rateLimitStrategiesRequestRef.current) {
+      return rateLimitStrategiesRequestRef.current;
+    }
+
+    const request = trackRequest<any>('ListRateLimitStrategies', { args: [] }, () => ListRateLimitStrategies())
+      .then((strategies) => {
+        setRateLimitStrategies(
+          Array.isArray(strategies) && strategies.length > 0 ? strategies : DEFAULT_RATE_LIMIT_STRATEGIES,
+        );
+      })
+      .catch((error) => {
+        rateLimitStrategiesRequestRef.current = null;
+        console.error(error);
+      });
+    rateLimitStrategiesRequestRef.current = request;
+    return request;
+  }, [trackRequest]);
 
   const loadAccountRateLimits = useCallback(
     async (accounts: AccountRecord[]) => {
@@ -29,13 +49,10 @@ export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
         return;
       }
 
+      void loadRateLimitStrategies();
       try {
-        const [strategies, statuses] = await Promise.all([
-          trackRequest<any>('ListRateLimitStrategies', { args: [] }, () => ListRateLimitStrategies()),
-          trackRequest<any>('GetAllRateLimitStatuses', { args: [] }, () => GetAllRateLimitStatuses()),
-        ]);
-        setRateLimitStrategies(
-          Array.isArray(strategies) && strategies.length > 0 ? strategies : DEFAULT_RATE_LIMIT_STRATEGIES,
+        const statuses = await trackRequest<any>('GetAllRateLimitStatuses', { args: [] }, () =>
+          GetAllRateLimitStatuses(),
         );
         const statusMap = buildRateLimitStatusMap(statuses);
         const accountIDSet = new Set(accounts.map((account) => account.id));
@@ -47,7 +64,7 @@ export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
         setAccountRateLimitByID({});
       }
     },
-    [trackRequest],
+    [loadRateLimitStrategies, trackRequest],
   );
 
   const refreshAccountRateLimits = useCallback(
@@ -67,12 +84,9 @@ export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
           return;
         }
 
-        const [strategies, statuses] = await Promise.all([
-          trackRequest<any>('ListRateLimitStrategies', { args: [] }, () => ListRateLimitStrategies()),
-          trackRequest<any>('GetAllRateLimitStatuses', { args: [] }, () => GetAllRateLimitStatuses()),
-        ]);
-        setRateLimitStrategies(
-          Array.isArray(strategies) && strategies.length > 0 ? strategies : DEFAULT_RATE_LIMIT_STRATEGIES,
+        void loadRateLimitStrategies();
+        const statuses = await trackRequest<any>('GetAllRateLimitStatuses', { args: [] }, () =>
+          GetAllRateLimitStatuses(),
         );
         const statusMap = buildRateLimitStatusMap(statuses);
         setAccountRateLimitByID((prev) => ({
@@ -93,7 +107,7 @@ export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
         });
       }
     },
-    [trackRequest],
+    [loadRateLimitStrategies, trackRequest],
   );
 
   return {

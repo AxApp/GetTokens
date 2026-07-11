@@ -294,7 +294,8 @@ func TestWriteConfigCreatesMinimalConfig(t *testing.T) {
 	assertContains(t, content, "host: \"\"")
 	assertContains(t, content, "port: 9317")
 	assertContains(t, content, "auth-dir: "+dir)
-	assertContains(t, content, "account-store-db: "+filepath.Join(dir, "accounts-v1.sqlite"))
+	assertContains(t, content, "account-store-db: "+filepath.Join(dir, "accounts-v2.sqlite"))
+	assertContains(t, content, "runtime-state-db: "+filepath.Join(dir, "runtime-v1.sqlite"))
 	assertContains(t, content, "use-system-proxy: false")
 	assertContains(t, content, "usage-statistics-enabled: true")
 	assertContains(t, content, "request-retry: 3")
@@ -492,7 +493,8 @@ api-keys:
 	assertContains(t, content, "prefix: team-a")
 	assertContains(t, content, "port: 9417")
 	assertContains(t, content, "auth-dir: "+dir)
-	assertContains(t, content, "account-store-db: "+filepath.Join(dir, "accounts-v1.sqlite"))
+	assertContains(t, content, "account-store-db: "+filepath.Join(dir, "accounts-v2.sqlite"))
+	assertContains(t, content, "runtime-state-db: "+filepath.Join(dir, "runtime-v1.sqlite"))
 	assertContains(t, content, "usage-statistics-enabled: true")
 	assertContains(t, content, "allow-remote: false")
 	assertContains(t, content, "disable-control-panel: true")
@@ -510,6 +512,7 @@ func TestWriteConfigRewritesAccountStoreDBToCurrentAuthDir(t *testing.T) {
 port: 8317
 auth-dir: /Users/example/.config/gettokens
 account-store-db: ~/.config/gettokens/accounts-v1.sqlite
+runtime-state-db: ~/.config/gettokens/runtime-old.sqlite
 api-keys:
   - relay-key
 `
@@ -527,7 +530,8 @@ api-keys:
 	}
 	content := string(data)
 	assertContains(t, content, "auth-dir: "+dir)
-	assertContains(t, content, "account-store-db: "+filepath.Join(dir, "accounts-v1.sqlite"))
+	assertContains(t, content, "account-store-db: "+filepath.Join(dir, "accounts-v2.sqlite"))
+	assertContains(t, content, "runtime-state-db: "+filepath.Join(dir, "runtime-v1.sqlite"))
 	if strings.Contains(content, "~/.config/gettokens/accounts-v1.sqlite") {
 		t.Fatalf("config still points at production account store: %s", content)
 	}

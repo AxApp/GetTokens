@@ -50,6 +50,10 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		RuntimeRepairTriggerClass:  record.RuntimeRepairTriggerClass,
 		RuntimeRepairTriggerReason: record.RuntimeRepairTriggerReason,
 		LastRuntimeRepairAtUnixMs:  record.LastRuntimeRepairAtUnixMs,
+		Revision:                   record.Revision,
+		CredentialStatus:           record.CredentialStatus,
+		CredentialGeneration:       record.CredentialGeneration,
+		DetailLoaded:               record.DetailLoaded,
 		Priority:                   record.Priority,
 		Disabled:                   record.Disabled,
 		Email:                      record.Email,
@@ -81,6 +85,17 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 			Manual:   record.Requestability.Manual,
 		},
 	}
+}
+
+func mapAccountRecordPointer(record *accountsdomain.AccountRecord, err error) (*AccountRecord, error) {
+	if err != nil {
+		return nil, err
+	}
+	if record == nil {
+		return nil, nil
+	}
+	mapped := mapAccountRecord(*record)
+	return &mapped, nil
 }
 
 func mapAccountMigrationPreview(result *wailsapp.AccountMigrationPreview) *AccountMigrationPreview {
@@ -1415,10 +1430,9 @@ func mapLocalProjectedUsageResponse(result *wailsapp.LocalProjectedUsageResponse
 
 func mapSidecarUsageAttributionInput(input SidecarUsageAttributionInput) wailsapp.SidecarUsageAttributionInput {
 	return wailsapp.SidecarUsageAttributionInput{
-		Window:             input.Window,
-		Bucket:             input.Bucket,
-		IncludeUnresolved:  input.IncludeUnresolved,
-		ResolveAccountKeys: input.ResolveAccountKeys,
+		Window:            input.Window,
+		Bucket:            input.Bucket,
+		IncludeUnresolved: input.IncludeUnresolved,
 	}
 }
 

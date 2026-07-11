@@ -25,7 +25,7 @@ import {
   emptyApiKeyForm,
   parseMaybeJSON,
 } from '../model/accountConfig';
-import { fallbackAPIKeyDisplayName } from '../model/accountPresentation';
+import { fallbackAPIKeyDisplayName, mapBackendAccountRecord } from '../model/accountPresentation';
 import {
   type AccountImportPayloadItem,
   buildAccountsExportFilename,
@@ -71,6 +71,7 @@ interface UseAccountsActionsArgs {
   removeDeletedAccountLocally: (account: AccountRecord) => void;
   patchAccountLocally: (accountID: string, patch: Partial<AccountRecord>) => void;
   patchAccountDisabledLocally: (account: AccountRecord, disabled: boolean) => void;
+  recoverAccountRevisionConflict: (error: unknown, accountID: string) => Promise<Error | null>;
   refreshAccountQuotasBatch: (accounts: AccountRecord[]) => Promise<{ succeeded: number; failed: number }>;
   loadAccounts: (options?: { showLoading?: boolean; refreshSupplementalData?: boolean }) => Promise<void>;
 }
@@ -94,30 +95,27 @@ export default function useAccountsActions({
   removeDeletedAccountLocally,
   patchAccountLocally,
   patchAccountDisabledLocally,
+  recoverAccountRevisionConflict,
   refreshAccountQuotasBatch,
   loadAccounts,
 }: UseAccountsActionsArgs) {
   const [bulkActionPending, setBulkActionPending] = useState<AccountBulkActionID | null>(null);
 
   const setAccountDisabled = useCallback(
-    async (account: AccountRecord, nextDisabled: boolean, options?: { reload?: boolean }) => {
+    async (account: AccountRecord, nextDisabled: boolean) => {
       if (!ready || !hasWailsAppBindings()) {
         patchAccountDisabledLocally(account, nextDisabled);
         publishAccountDisabledChange({ id: account.id, disabled: nextDisabled }, 'accounts');
         return;
       }
 
-      await trackRequest('SetAccountDisabled', { id: account.id, disabled: nextDisabled }, () =>
+      const updatedAccount = await trackRequest('SetAccountDisabled', { id: account.id, disabled: nextDisabled }, () =>
         SetAccountDisabled(account.id, nextDisabled)
       );
-      patchAccountDisabledLocally(account, nextDisabled);
+      patchAccountLocally(account.id, mapBackendAccountRecord(updatedAccount));
       publishAccountDisabledChange({ id: account.id, disabled: nextDisabled }, 'accounts');
-
-      if (options?.reload ?? true) {
-        await loadAccounts({ showLoading: false, refreshSupplementalData: false });
-      }
     },
-    [loadAccounts, patchAccountDisabledLocally, ready, trackRequest],
+    [patchAccountDisabledLocally, patchAccountLocally, ready, trackRequest],
   );
 
   const toggleAccountDisabled = useCallback(
@@ -469,25 +467,27 @@ export default function useAccountsActions({
       const trimmedName = nextName.trim();
       void (async () => {
         try {
-          await trackRequest(
+          const updatedAccount = await trackRequest(
             'UpdateCodexAPIKeyLabel',
             { id: selectedAccount.id, label: trimmedName },
             () =>
               UpdateCodexAPIKeyLabel({
                 id: selectedAccount.id,
                 label: trimmedName,
+                expectedRevision: selectedAccount.revision,
               })
           );
-          patchAccountLocally(selectedAccount.id, {
-            displayName: trimmedName || fallbackAPIKeyDisplayName(selectedAccount.apiKey || ''),
-          });
-          await loadAccounts({ refreshSupplementalData: false });
+          patchAccountLocally(selectedAccount.id, mapBackendAccountRecord(updatedAccount));
         } catch (error) {
           console.error(error);
+          const conflictError = await recoverAccountRevisionConflict(error, selectedAccount.id);
+          if (conflictError) {
+            setDeleteError(`SAVE ERROR: ${conflictError.message}`);
+          }
         }
       })();
     },
-    [loadAccounts, patchAccountLocally, selectedAccount, trackRequest]
+    [patchAccountLocally, recoverAccountRevisionConflict, selectedAccount, setDeleteError, trackRequest]
   );
 
   const updateSelectedApiKeyPriority = useCallback(
@@ -500,26 +500,29 @@ export default function useAccountsActions({
         const parsedPriority = Number.parseInt(priorityDraft.trim() || '0', 10);
         const nextPriority = Number.isFinite(parsedPriority) ? parsedPriority : 0;
 
-        await trackRequest(
+        const updatedAccount = await trackRequest(
           'UpdateCodexAPIKeyPriority',
           { id: selectedAccount.id, priority: nextPriority },
           () =>
             UpdateCodexAPIKeyPriority({
               id: selectedAccount.id,
               priority: nextPriority,
+              expectedRevision: selectedAccount.revision,
             })
         );
 
-        patchAccountLocally(selectedAccount.id, {
-          priority: nextPriority,
-        });
-        await loadAccounts({ refreshSupplementalData: false });
+        patchAccountLocally(selectedAccount.id, mapBackendAccountRecord(updatedAccount));
       } catch (error) {
         console.error(error);
-        setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
+        const conflictError = await recoverAccountRevisionConflict(error, selectedAccount.id);
+        const resolvedError = conflictError ?? error;
+        setDeleteError(`SAVE ERROR: ${toErrorMessage(resolvedError)}`);
+        if (conflictError) {
+          throw conflictError;
+        }
       }
     },
-    [loadAccounts, patchAccountLocally, selectedAccount, setDeleteError, trackRequest]
+    [patchAccountLocally, recoverAccountRevisionConflict, selectedAccount, setDeleteError, trackRequest]
   );
 
   const updateSelectedApiKeyConfig = useCallback(
@@ -564,27 +567,15 @@ export default function useAccountsActions({
       }
 
       try {
-        if (nextLabel !== selectedAccount.displayName) {
-          await trackRequest(
-            'UpdateCodexAPIKeyLabel',
-            { id: selectedAccount.id, label: nextLabel },
-            () =>
-              UpdateCodexAPIKeyLabel(
-                main.UpdateCodexAPIKeyLabelInput.createFrom({
-                  id: selectedAccount.id,
-                  label: nextLabel,
-                })
-              )
-          );
-        }
-
-        await trackRequest(
+        const updatedAccount = await trackRequest(
           'UpdateCodexAPIKeyConfig',
           { id: selectedAccount.id, baseUrl: nextBaseURL },
           () =>
             UpdateCodexAPIKeyConfig(
               main.UpdateCodexAPIKeyConfigInput.createFrom({
                 id: selectedAccount.id,
+                expectedRevision: selectedAccount.revision,
+                label: nextLabel,
                 apiKey: nextAPIKey,
                 baseUrl: nextBaseURL,
                 formatBaseUrls: nextFormatBaseURLs,
@@ -601,29 +592,16 @@ export default function useAccountsActions({
             )
           );
 
-        patchAccountLocally(selectedAccount.id, {
-          displayName: nextLabel || fallbackAPIKeyDisplayName(nextAPIKey),
-          apiKey: nextAPIKey,
-          baseUrl: nextBaseURL,
-          formatBaseUrls: nextFormatBaseURLs,
-          prefix: nextPrefix,
-          quotaCurl: nextQuotaCurl,
-          quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
-          billingCurl: nextBillingCurl,
-          billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
-          platformCookie: nextPlatformCookie,
-          curlVariables: nextCurlVariables,
-          proxyUrl: nextProxyURL,
-          models: nextModels,
-        });
-        await loadAccounts({ refreshSupplementalData: false });
+        patchAccountLocally(selectedAccount.id, mapBackendAccountRecord(updatedAccount));
       } catch (error) {
         console.error(error);
-        setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
-        throw error;
+        const conflictError = await recoverAccountRevisionConflict(error, selectedAccount.id);
+        const resolvedError = conflictError ?? error;
+        setDeleteError(`SAVE ERROR: ${toErrorMessage(resolvedError)}`);
+        throw resolvedError;
       }
     },
-    [loadAccounts, patchAccountLocally, selectedAccount, setDeleteError, t, trackRequest]
+    [patchAccountLocally, recoverAccountRevisionConflict, selectedAccount, setDeleteError, t, trackRequest]
   );
 
   const formatBulkActionMessage = useCallback(

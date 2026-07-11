@@ -166,6 +166,10 @@ export function FinalizeCodexOAuth(arg1) {
   return window['go']['main']['App']['FinalizeCodexOAuth'](arg1);
 }
 
+export function GetAccountDetail(arg1) {
+  return window['go']['main']['App']['GetAccountDetail'](arg1);
+}
+
 export function GetAccountMigrationPreview() {
   return window['go']['main']['App']['GetAccountMigrationPreview']();
 }
@@ -376,6 +380,10 @@ export function GetVersion() {
 
 export function ImportCodexBinary(arg1) {
   return window['go']['main']['App']['ImportCodexBinary'](arg1);
+}
+
+export function ListAccountInventory() {
+  return window['go']['main']['App']['ListAccountInventory']();
 }
 
 export function ListAccounts() {

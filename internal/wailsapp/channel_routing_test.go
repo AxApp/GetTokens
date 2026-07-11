@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,6 +14,40 @@ import (
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
+
+func TestChannelRoutingStoreIgnoresAndDropsHistoricalRuntimeStates(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	path, err := channelRoutingStorePath()
+	if err != nil {
+		t.Fatalf("channelRoutingStorePath: %v", err)
+	}
+	body := []byte(`{
+  "channels": {},
+  "runtimeStates": {
+    "acct_old": {"accountID":"acct_old","sources":{"auth-error":{"source":"auth-error"}}}
+  }
+}`)
+	if err := os.WriteFile(path, body, 0600); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	store, err := loadChannelRoutingStore()
+	if err != nil {
+		t.Fatalf("loadChannelRoutingStore: %v", err)
+	}
+	if len(store.RuntimeStates) != 0 {
+		t.Fatalf("RuntimeStates=%#v, want ignored", store.RuntimeStates)
+	}
+	if err := saveChannelRoutingStore(store); err != nil {
+		t.Fatalf("saveChannelRoutingStore: %v", err)
+	}
+	saved, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile: %v", err)
+	}
+	if strings.Contains(string(saved), "runtimeStates") {
+		t.Fatalf("saved channel config still contains runtimeStates: %s", saved)
+	}
+}
 
 func TestChannelRoutingStorePathUsesProfileConfigDir(t *testing.T) {
 	home := t.TempDir()
@@ -256,6 +291,7 @@ func TestExplainChannelRoutingCodexRequiresResponsesFormat(t *testing.T) {
 }
 
 func TestSaveChannelRoutingStorePrunesManualDisabledRuntimeStates(t *testing.T) {
+	t.Skip("obsolete: Wails no longer reads or writes channel runtimeStates")
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("GETTOKENS_APP_PROFILE", "dev")
 
@@ -804,6 +840,7 @@ func TestExplainChannelRoutingActivationDoesNotPreemptExistingSticky(t *testing.
 }
 
 func TestChannelRouteAccountResultPersistsCooldownAndExplainFiltersRuntimeState(t *testing.T) {
+	t.Skip("obsolete: route results are sidecar runtime facts, not channel JSON state")
 	t.Setenv("HOME", t.TempDir())
 	app := New("dev", "", "AxApp/GetTokens")
 

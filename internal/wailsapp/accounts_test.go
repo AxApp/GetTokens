@@ -80,6 +80,7 @@ func TestUpdateCodexAPIKeyConfigPersistsFormatBaseURLs(t *testing.T) {
 		Kind:       cliproxyapi.AccountKindCodexAPIKey,
 		Title:      "Codex Key",
 		Provider:   "codex",
+		Revision:   4,
 		CodexAPIKey: &cliproxyapi.CodexAPIKeyAccountCredential{
 			APIKey:  "sk-old",
 			BaseURL: "https://relay.example.com/v1",
@@ -103,6 +104,12 @@ func TestUpdateCodexAPIKeyConfigPersistsFormatBaseURLs(t *testing.T) {
 					if write.CodexAPIKey == nil {
 						t.Fatalf("missing codex api key payload: %s", string(payload))
 					}
+					if write.Title != "Renamed Key" {
+						t.Fatalf("title = %q, want atomic label update", write.Title)
+					}
+					if write.ExpectedRevision == nil || *write.ExpectedRevision != 4 {
+						t.Fatalf("expected revision = %v, want 4", write.ExpectedRevision)
+					}
 					var formatBaseURLs map[string]string
 					if err := json.Unmarshal([]byte(write.CodexAPIKey.FormatBaseURLsJSON), &formatBaseURLs); err != nil {
 						t.Fatalf("unmarshal format base urls: %v", err)
@@ -116,7 +123,11 @@ func TestUpdateCodexAPIKeyConfigPersistsFormatBaseURLs(t *testing.T) {
 					if formatBaseURLs["anthropic"] != "https://relay.example.com/anthropic" {
 						t.Fatalf("anthropic base url = %q", formatBaseURLs["anthropic"])
 					}
-					return testAccountResponse(t, account), 200, nil
+					updated := account
+					updated.Title = write.Title
+					updated.Revision = account.Revision + 1
+					updated.CodexAPIKey = write.CodexAPIKey
+					return testAccountResponse(t, updated), 200, nil
 				}
 				t.Fatalf("unexpected request: %s %s", method, path)
 				return nil, 0, nil
@@ -124,10 +135,13 @@ func TestUpdateCodexAPIKeyConfigPersistsFormatBaseURLs(t *testing.T) {
 		},
 	}
 
-	err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
-		ID:      "acct_codex_key",
-		APIKey:  "sk-new",
-		BaseURL: "https://relay.example.com/v1",
+	label := "Renamed Key"
+	updated, err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
+		ID:               "acct_codex_key",
+		ExpectedRevision: intPointer(4),
+		Label:            &label,
+		APIKey:           "sk-new",
+		BaseURL:          "https://relay.example.com/v1",
 		FormatBaseURLs: map[string]string{
 			"openai_chat":      "https://relay.example.com/openai/v1",
 			"openai_responses": "https://relay.example.com/codex/v1",
@@ -136,6 +150,47 @@ func TestUpdateCodexAPIKeyConfigPersistsFormatBaseURLs(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("UpdateCodexAPIKeyConfig returned error: %v", err)
+	}
+	if updated == nil || updated.ID != "acct_codex_key" || updated.DisplayName != "Renamed Key" || updated.Revision != 5 {
+		t.Fatalf("updated account = %#v", updated)
+	}
+}
+
+func TestGetAccountDetailLoadsSecretsOnlyForRequestedAccount(t *testing.T) {
+	account := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_detail",
+		Kind:       cliproxyapi.AccountKindCodexAPIKey,
+		Title:      "Detail",
+		Provider:   "codex",
+		Revision:   8,
+		CodexAPIKey: &cliproxyapi.CodexAPIKeyAccountCredential{
+			APIKey:         "sk-detail-secret",
+			BaseURL:        "https://api.openai.com/v1",
+			ProxyURL:       "http://user:pass@proxy.example.com",
+			PlatformCookie: "session=secret",
+		},
+	}
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "GET" && path == "/v0/management/accounts/acct_detail" {
+					return testAccountResponse(t, account), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	detail, err := app.GetAccountDetail("acct_detail")
+	if err != nil {
+		t.Fatalf("GetAccountDetail: %v", err)
+	}
+	if detail.APIKey != "sk-detail-secret" || detail.ProxyURL == "" || detail.PlatformCookie == "" {
+		t.Fatalf("detail missing credential fields: %#v", detail)
+	}
+	if !detail.DetailLoaded || detail.Revision != 8 {
+		t.Fatalf("detail metadata = %#v", detail)
 	}
 }
 
@@ -163,7 +218,7 @@ func TestUpdateAccountPrioritySupportsUnifiedOpenAICompatibleProvider(t *testing
 		},
 	}
 
-	if err := app.UpdateAccountPriority(UpdateAccountPriorityInput{
+	if _, err := app.UpdateAccountPriority(UpdateAccountPriorityInput{
 		ID:       "acct_deepseek",
 		Priority: 5,
 	}); err != nil {
@@ -201,12 +256,13 @@ func TestSetAccountDisabledSupportsUnifiedCodexAPIKey(t *testing.T) {
 		},
 	}
 
-	if err := app.SetAccountDisabled("acct_codex_key", true); err != nil {
+	if _, err := app.SetAccountDisabled("acct_codex_key", true); err != nil {
 		t.Fatalf("SetAccountDisabled: %v", err)
 	}
 }
 
 func TestSetAccountDisabledClearsLegacyManualDisabledRuntimeState(t *testing.T) {
+	t.Skip("obsolete: Wails no longer reads or writes channel runtimeStates")
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("GETTOKENS_APP_PROFILE", "dev")
 
@@ -259,7 +315,7 @@ func TestSetAccountDisabledClearsLegacyManualDisabledRuntimeState(t *testing.T) 
 		},
 	}
 
-	if err := app.SetAccountDisabled("acct_codex_key", false); err != nil {
+	if _, err := app.SetAccountDisabled("acct_codex_key", false); err != nil {
 		t.Fatalf("SetAccountDisabled: %v", err)
 	}
 	store, err := loadChannelRoutingStore()
@@ -308,7 +364,7 @@ func TestSetAccountDisabledDoesNotPersistManualDisabledRuntimeState(t *testing.T
 		},
 	}
 
-	if err := app.SetAccountDisabled("acct_codex_key", true); err != nil {
+	if _, err := app.SetAccountDisabled("acct_codex_key", true); err != nil {
 		t.Fatalf("SetAccountDisabled: %v", err)
 	}
 	store, err := loadChannelRoutingStore()
@@ -333,7 +389,7 @@ func TestSetAccountDisabledRejectsLegacyPrefixedRuntimeIDs(t *testing.T) {
 	}
 
 	for _, id := range []string{"auth-file:codex.json", "codex-api-key:stable-001", "openai-compatible:deepseek"} {
-		if err := app.SetAccountDisabled(id, true); err == nil {
+		if _, err := app.SetAccountDisabled(id, true); err == nil {
 			t.Fatalf("SetAccountDisabled(%q) succeeded, want unsupported account type", id)
 		}
 	}
@@ -350,7 +406,7 @@ func TestUpdateAccountPriorityRejectsLegacyPrefixedRuntimeIDs(t *testing.T) {
 	}
 
 	for _, id := range []string{"auth-file:codex.json", "codex-api-key:stable-001", "openai-compatible:deepseek"} {
-		if err := app.UpdateAccountPriority(UpdateAccountPriorityInput{ID: id, Priority: 5}); err == nil {
+		if _, err := app.UpdateAccountPriority(UpdateAccountPriorityInput{ID: id, Priority: 5}); err == nil {
 			t.Fatalf("UpdateAccountPriority(%q) succeeded, want unsupported account type", id)
 		}
 	}
@@ -383,7 +439,7 @@ func TestSetAccountDisabledSupportsOpenAICompatibleProvider(t *testing.T) {
 		},
 	}
 
-	if err := app.SetAccountDisabled("acct_deepseek", true); err != nil {
+	if _, err := app.SetAccountDisabled("acct_deepseek", true); err != nil {
 		t.Fatalf("SetAccountDisabled: %v", err)
 	}
 }
@@ -521,13 +577,15 @@ func TestUnifiedCodexAPIKeyMutationsDoNotFallbackToLegacyOnAccountStoreErrors(t 
 		{
 			name: "label",
 			run: func(app *App) error {
-				return app.UpdateCodexAPIKeyLabel(UpdateCodexAPIKeyLabelInput{ID: "acct_codex_key", Label: "Changed"})
+				_, err := app.UpdateCodexAPIKeyLabel(UpdateCodexAPIKeyLabelInput{ID: "acct_codex_key", Label: "Changed"})
+				return err
 			},
 		},
 		{
 			name: "config",
 			run: func(app *App) error {
-				return app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{ID: "acct_codex_key", APIKey: "sk-new", BaseURL: "https://api.example.com/v1"})
+				_, err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{ID: "acct_codex_key", APIKey: "sk-new", BaseURL: "https://api.example.com/v1"})
+				return err
 			},
 		},
 		{
@@ -539,7 +597,8 @@ func TestUnifiedCodexAPIKeyMutationsDoNotFallbackToLegacyOnAccountStoreErrors(t 
 		{
 			name: "priority",
 			run: func(app *App) error {
-				return app.UpdateCodexAPIKeyPriority("acct_codex_key", 1)
+				_, err := app.UpdateCodexAPIKeyPriority("acct_codex_key", 1, nil)
+				return err
 			},
 		},
 		{
@@ -732,10 +791,10 @@ func TestLegacyCodexAPIKeyIDsRejectedOutsideMigration(t *testing.T) {
 		name string
 		err  error
 	}{
-		{"label", app.UpdateCodexAPIKeyLabel(UpdateCodexAPIKeyLabelInput{ID: legacyID, Label: "Changed"})},
-		{"config", app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{ID: legacyID, APIKey: "sk-new", BaseURL: "https://api.example.com/v1"})},
+		{"label", mutationError(app.UpdateCodexAPIKeyLabel(UpdateCodexAPIKeyLabelInput{ID: legacyID, Label: "Changed"}))},
+		{"config", mutationError(app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{ID: legacyID, APIKey: "sk-new", BaseURL: "https://api.example.com/v1"}))},
 		{"delete", app.DeleteCodexAPIKey(legacyID)},
-		{"priority", app.UpdateCodexAPIKeyPriority(legacyID, 1)},
+		{"priority", mutationError(app.UpdateCodexAPIKeyPriority(legacyID, 1, nil))},
 		{"status", app.SetCodexAPIKeyStatus(legacyID, true)},
 	}
 
@@ -747,6 +806,14 @@ func TestLegacyCodexAPIKeyIDsRejectedOutsideMigration(t *testing.T) {
 			t.Fatalf("%s error = %v, want unsupported account type", check.name, check.err)
 		}
 	}
+}
+
+func mutationError(_ *accountsdomain.AccountRecord, err error) error {
+	return err
+}
+
+func intPointer(value int) *int {
+	return &value
 }
 
 func TestCreateCodexAPIKeyAllowsDuplicateConfigAsSeparateAccounts(t *testing.T) {

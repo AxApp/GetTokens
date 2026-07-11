@@ -12,6 +12,7 @@ import {
   ACCOUNT_RUNTIME_SYNC_LARGE_POOL_THRESHOLD,
   ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_INTERVAL_MS,
   ACCOUNT_RUNTIME_SYNC_MEDIUM_POOL_THRESHOLD,
+  AccountRuntimeRefreshCoordinator,
   buildRuntimeSyncAccountKeys,
   chunkRuntimeSyncAccountKeys,
   normalizeRuntimeSyncDocumentHidden,
@@ -144,17 +145,81 @@ test('automatic runtime sync targets visible or dirty accounts instead of the wh
   assert.deepEqual(resolveAutomaticAccountRuntimeSyncTargets(accounts, ['missing']).map((account) => account.id), []);
 });
 
-test('automatic runtime sync keeps small pools compatible when no target window is reported', () => {
+test('automatic runtime sync does not refresh a whole pool when no target window is reported', () => {
   const accounts = Array.from({ length: 3 }, (_, index) => ({
     id: `acct-${index}`,
     quotaKey: `acct-${index}`,
   }));
 
-  assert.deepEqual(resolveAutomaticAccountRuntimeSyncTargets(accounts, []).map((account) => account.id), [
-    'acct-0',
-    'acct-1',
-    'acct-2',
+  assert.deepEqual(resolveAutomaticAccountRuntimeSyncTargets(accounts, []).map((account) => account.id), []);
+  assert.deepEqual(resolveAutomaticAccountRuntimeSyncTargets(accounts, ['missing']).map((account) => account.id), []);
+});
+
+test('runtime refresh coordinator deduplicates the same resource and account set', async () => {
+  const coordinator = new AccountRuntimeRefreshCoordinator();
+  let calls = 0;
+  let release;
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+
+  const first = coordinator.run('usage', ['acct-b', 'acct-a', 'acct-a'], async (accountKeys) => {
+    calls += 1;
+    assert.deepEqual(accountKeys, ['acct-a', 'acct-b']);
+    await pending;
+  });
+  const duplicate = coordinator.run('usage', ['acct-a', 'acct-b'], async () => {
+    calls += 1;
+  });
+
+  assert.equal(calls, 1);
+  release();
+  await Promise.all([first, duplicate]);
+});
+
+test('runtime refresh coordinator only schedules missing accounts for overlapping batches', async () => {
+  const coordinator = new AccountRuntimeRefreshCoordinator();
+  const batches = [];
+  let release;
+  const pending = new Promise((resolve) => {
+    release = resolve;
+  });
+
+  const first = coordinator.run('quota', ['acct-a', 'acct-b'], async (accountKeys) => {
+    batches.push(accountKeys);
+    await pending;
+  });
+  const overlapping = coordinator.run('quota', ['acct-b', 'acct-c'], async (accountKeys) => {
+    batches.push(accountKeys);
+  });
+
+  assert.deepEqual(batches, [
+    ['acct-a', 'acct-b'],
+    ['acct-c'],
   ]);
+  release();
+  await Promise.all([first, overlapping]);
+});
+
+test('runtime refresh coordinator isolates resources and clears settled requests', async () => {
+  const coordinator = new AccountRuntimeRefreshCoordinator();
+  let usageCalls = 0;
+  let quotaCalls = 0;
+
+  await Promise.all([
+    coordinator.run('usage', ['acct-a'], async () => {
+      usageCalls += 1;
+    }),
+    coordinator.run('quota', ['acct-a'], async () => {
+      quotaCalls += 1;
+    }),
+  ]);
+  await coordinator.run('usage', ['acct-a'], async () => {
+    usageCalls += 1;
+  });
+
+  assert.equal(usageCalls, 2);
+  assert.equal(quotaCalls, 1);
 });
 
 test('runtime quota status keys are chunked before calling the management API', () => {
@@ -233,15 +298,68 @@ test('accounts feature owns the unified account runtime sync loop', async () => 
   assert.match(source, /updateAutomaticRuntimeSyncTargets/);
   assert.match(source, /normalizeRuntimeSyncDocumentHidden/);
   assert.match(source, /runtimeSyncAccounts/);
-  assert.match(source, /syncCodexQuotaStatuses\(automaticRuntimeSyncAccounts, \{ replace: false \}\)/);
+  assert.match(source, /syncCodexQuotaStatuses\(targetAccounts, \{ replace: false \}\)/);
   assert.doesNotMatch(source, /runAccountRuntimeRequestPool\(runtimeSyncAccounts,\s*refreshCodexQuota/);
   assert.doesNotMatch(source, /ACCOUNT_RUNTIME_QUOTA_REFRESH_CONCURRENCY/);
   assert.doesNotMatch(source, /Promise\.all\(runtimeSyncAccounts\.map\(\(account\) => refreshCodexQuota\(account\)\)\)/);
-  assert.match(source, /resolveAccountKeys: false/);
-  assert.match(source, /loadAccountRateLimits\(automaticRuntimeSyncAccounts\)/);
+  assert.doesNotMatch(source, /resolveAccountKeys/);
+  assert.match(source, /loadAccountRateLimits\(targetAccounts\)/);
   assert.match(source, /window\.setInterval\(runSync, resolveAccountRuntimeSyncIntervalMs\(runtimeSyncAccounts\.length\)\)/);
   assert.match(source, /visibilitychange/);
   assert.doesNotMatch(hookSource, /setInterval/);
+});
+
+test('live account inventory load does not trigger all-account supplements', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+  const loadStart = source.indexOf('const loadAccounts = useCallback');
+  assert.notEqual(loadStart, -1);
+  const liveStart = source.indexOf("const inventory = await trackRequest('ListAccountInventory'", loadStart);
+  assert.notEqual(liveStart, -1);
+  const liveEnd = source.indexOf('} catch (error) {', liveStart);
+  assert.notEqual(liveEnd, -1);
+  const liveLoadSource = source.slice(liveStart, liveEnd);
+
+  assert.doesNotMatch(liveLoadSource, /loadCodexQuotas/);
+  assert.doesNotMatch(liveLoadSource, /loadAccountUsage/);
+  assert.doesNotMatch(liveLoadSource, /loadAccountRateLimits/);
+});
+
+test('live account inventory skips collection replacement when inventory revision is unchanged', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /inventoryRevisionRef = useRef\(''\)/);
+  assert.match(source, /inventoryRevisionRef\.current === nextInventoryRevision/);
+  assert.match(source, /inventoryRevisionRef\.current = nextInventoryRevision/);
+});
+
+test('account change events patch summaries directly and reconcile only on event gaps or inventory changes', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /EventsOn\('accounts:changed'/);
+  assert.match(source, /eventID > previousEventID\+1/);
+  assert.match(source, /patchAccountLocally\(payload\.account\.id, mapBackendAccountRecord\(payload\.account\), \{ updateSelected: false \}\)/);
+  assert.match(source, /loadAccounts\(\{ showLoading: false, refreshSupplementalData: false \}\)/);
+});
+
+test('automatic and manual runtime reads share the resource coordinator', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /AccountRuntimeRefreshCoordinator/);
+  assert.match(source, /runtimeRefreshCoordinatorRef/);
+  assert.match(source, /runRuntimeResourceRead\('quota'/);
+  assert.match(source, /runRuntimeResourceRead\('usage'/);
+  assert.match(source, /runRuntimeResourceRead\('rate-limit'/);
+});
+
+test('rate-limit strategies are loaded once and do not share the status failure domain', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsRateLimitState.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /rateLimitStrategiesRequestRef/);
+  assert.match(source, /const loadRateLimitStrategies = useCallback/);
+  assert.match(source, /rateLimitStrategiesRequestRef\.current/);
+  assert.match(source, /rateLimitStrategiesRequestRef\.current = null/);
+  assert.doesNotMatch(source, /const \[strategies, statuses\] = await Promise\.all/);
+  assert.match(source, /const statuses = await trackRequest<any>\('GetAllRateLimitStatuses'/);
 });
 
 test('selected bulk quota refresh uses the sidecar batch job endpoint with sync fallback', async () => {
@@ -315,7 +433,7 @@ test('visible account runtime refresh uses snapshot sync instead of active all-a
   assert.match(contextSource, /updateAutomaticRuntimeSyncTargets/);
   assert.doesNotMatch(featureSource, /const refreshAccountsRuntime = useCallback/);
   assert.doesNotMatch(featureSource, /refreshAccountQuotasBatch\(accounts\)/);
-  assert.match(runtimeRefreshSource, /syncCodexQuotaStatuses\(runtimeSyncAccounts, \{ replace: false \}\)/);
+  assert.match(runtimeRefreshSource, /syncCodexQuotaStatuses\(targetAccounts, \{ replace: false \}\)/);
   assert.doesNotMatch(runtimeRefreshSource, /refreshCodexQuotasBatch\(runtimeSyncAccounts/);
   assert.doesNotMatch(runtimeRefreshSource, /refreshAccountQuotasBatch\(runtimeSyncAccounts/);
   assert.match(groupRefreshSource, /refreshAccountQuotasBatch\(groupAccounts\)/);
@@ -361,14 +479,11 @@ test('selected and group bulk disabled changes use the Wails batch endpoint', as
   assert.doesNotMatch(bulkDisableSource, /SetAccountDisabled\(account\.id, nextDisabled\)/);
 });
 
-test('background usage sync skips backend account resolution', async () => {
+test('background usage sync trusts sidecar account keys without inventory resolution', async () => {
   const source = await readFile(new URL('../hooks/useAccountsUsageState.ts', import.meta.url), 'utf8');
 
-  assert.match(source, /resolveAccountKeys\?: boolean/);
-  assert.match(source, /const shouldResolveAccountKeys = options\.resolveAccountKeys === true/);
-  assert.match(source, /const includeUnresolved = options\.includeUnresolved \?\? !shouldResolveAccountKeys/);
+  assert.doesNotMatch(source, /resolveAccountKeys/);
+  assert.match(source, /const includeUnresolved = options\.includeUnresolved === true/);
   assert.match(source, /includeUnresolved/);
-  assert.match(source, /resolveAccountKeys: shouldResolveAccountKeys/);
-  assert.doesNotMatch(source, /resolveAccountKeys: options\.resolveAccountKeys !== false/);
   assert.doesNotMatch(source, /GetUsageStatistics/);
 });

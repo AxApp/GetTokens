@@ -1,27 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import {
   FinalizeCodexOAuth,
+  GetAccountDetail,
   GetOAuthStatus,
-  ListAccounts,
+  ListAccountInventory,
   ListCachedAccounts,
   StartCodexOAuth,
   TestCodexAPIKeyBillingCurl,
   TestCodexAPIKeyQuotaCurl,
-  UpdateCodexAPIKeyLabel,
   VerifyOpenAICompatibleProvider,
 } from '../../../../wailsjs/go/main/App';
 import { main } from '../../../../wailsjs/go/models';
-import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
+import { BrowserOpenURL, EventsOn } from '../../../../wailsjs/runtime/runtime';
 import type { AccountRecord, CodexQuota } from '../../../types';
 import { toErrorMessage } from '../../../utils/error';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
-import {
-  buildAPIKeyLabelStorageKey,
-  buildCodexAPIKeyVerifyInput,
-  clearAPIKeyLabels,
-  emptyApiKeyForm,
-  loadAPIKeyLabels,
-} from '../model/accountConfig';
+import { buildCodexAPIKeyVerifyInput, emptyApiKeyForm } from '../model/accountConfig';
 import { normalizeCurlVariables } from '../model/accountDetailConfig';
 import {
   defaultAccountsFilterState,
@@ -49,11 +43,16 @@ import {
 } from '../model/accountDelete';
 import { patchAccountDetailByID } from '../model/accountDetailSelection';
 import {
+  ACCOUNT_REVISION_CONFLICT_MESSAGE,
+  isAccountRevisionConflictError,
+} from '../model/accountRevision';
+import {
   filterSelectedAccountIDs,
   useAccountSelectionState,
 } from '../model/accountSelection';
 import { buildCodexOAuthBannerMessage } from '../model/accountOAuth';
 import { buildAccountsView } from '../model/accountSelectors';
+import { sanitizeAccountSummaryPatch } from '../model/accountSummary';
 import {
   isCodexReauthEligible,
   mapBackendAccountRecord,
@@ -80,6 +79,8 @@ import type {
 } from '../model/types';
 import { shouldEnsureAccountSnapshot } from '../model/accountSnapshot';
 import {
+  AccountRuntimeRefreshCoordinator,
+  type AccountRuntimeResource,
   normalizeRuntimeSyncDocumentHidden,
   resolveAutomaticAccountRuntimeSyncTargets,
   resolveAccountRuntimeSyncIntervalMs,
@@ -166,11 +167,13 @@ export default function useAccountsPageState({
   const [runtimeRefreshing, setRuntimeRefreshing] = useState(false);
   const [lastRuntimeSyncAt, setLastRuntimeSyncAt] = useState<number | null>(null);
   const [apiKeyVerifyStateByID, setAPIKeyVerifyStateByID] = useState<Record<string, APIKeyVerifyState>>({});
-  const legacyAPIKeyLabelsRef = useRef<Record<string, string>>(loadAPIKeyLabels());
   const accountRecordsRef = useRef<AccountRecord[]>(initialCachedAccounts);
   const liveAccountsLoadedRef = useRef(false);
+  const inventoryRevisionRef = useRef('');
+  const accountEventIDRef = useRef(0);
   const accountSnapshotRequestedRef = useRef(false);
   const runtimeRefreshingRef = useRef(false);
+  const runtimeRefreshCoordinatorRef = useRef(new AccountRuntimeRefreshCoordinator());
   const automaticRuntimeSyncTargetIDsByGroupRef = useRef<Record<string, string[]>>({});
   const [automaticRuntimeSyncTargetAccountIDs, setAutomaticRuntimeSyncTargetAccountIDs] = useState<string[]>([]);
   const {
@@ -204,6 +207,21 @@ export default function useAccountsPageState({
   const automaticRuntimeSyncAccounts = useMemo(
     () => resolveAutomaticAccountRuntimeSyncTargets(runtimeSyncAccounts, automaticRuntimeSyncTargetAccountIDs),
     [automaticRuntimeSyncTargetAccountIDs, runtimeSyncAccounts],
+  );
+  const runRuntimeResourceRead = useCallback(
+    (
+      resource: AccountRuntimeResource,
+      accounts: AccountRecord[],
+      task: (targetAccounts: AccountRecord[]) => Promise<unknown>,
+    ) => runtimeRefreshCoordinatorRef.current.run(
+      resource,
+      accounts.map((account) => account.id),
+      (targetAccountIDs) => {
+        const targetAccountIDSet = new Set(targetAccountIDs);
+        return task(accounts.filter((account) => targetAccountIDSet.has(account.id)));
+      },
+    ),
+    [],
   );
 
   useEffect(() => {
@@ -288,46 +306,6 @@ export default function useAccountsPageState({
     }
   }, [sortMode]);
 
-  const migrateLegacyAPIKeyLabels = useCallback(
-    async (accounts: main.AccountRecord[]) => {
-      const legacyLabels = legacyAPIKeyLabelsRef.current;
-      const legacyKeys = Object.keys(legacyLabels);
-      if (legacyKeys.length === 0) {
-        return accounts;
-      }
-
-      const updates = accounts
-        .filter((account) => account.credentialSource === 'api-key')
-        .map((account) => {
-          const storageKey = buildAPIKeyLabelStorageKey(account.apiKey || '', account.baseUrl || '', account.prefix || '');
-          const nextLabel = String(legacyLabels[storageKey] || '').trim();
-          if (!nextLabel || nextLabel === String(account.displayName || '').trim()) {
-            return null;
-          }
-          return {
-            id: account.id,
-            label: nextLabel,
-          };
-        })
-        .filter((item): item is { id: string; label: string } => item !== null);
-
-      if (updates.length === 0) {
-        clearAPIKeyLabels();
-        legacyAPIKeyLabelsRef.current = {};
-        return accounts;
-      }
-
-      for (const update of updates) {
-        await trackRequest('UpdateCodexAPIKeyLabel', update, () => UpdateCodexAPIKeyLabel(update));
-      }
-
-      clearAPIKeyLabels();
-      legacyAPIKeyLabelsRef.current = {};
-      return trackRequest('ListAccounts', { migratedLegacyLabels: true }, () => ListAccounts());
-    },
-    [trackRequest]
-  );
-
   const loadAccounts = useCallback(async (options: { showLoading?: boolean; refreshSupplementalData?: boolean; showSupplementalRefreshing?: boolean } = {}) => {
     if (!ready) {
       return;
@@ -365,12 +343,22 @@ export default function useAccountsPageState({
       setLoading(true);
     }
     try {
-      const rawAccountResponse = await trackRequest('ListAccounts', { args: [] }, () => ListAccounts());
-      const accountResponse = await migrateLegacyAPIKeyLabels(rawAccountResponse || []);
-      const mappedAccounts = (accountResponse || []).map((account) => mapBackendAccountRecord(account));
+      const inventory = await trackRequest('ListAccountInventory', { args: [] }, () => ListAccountInventory());
+      const nextInventoryRevision = String(inventory?.inventoryRevision || '');
+      if (
+        nextInventoryRevision &&
+        inventoryRevisionRef.current === nextInventoryRevision &&
+        liveAccountsLoadedRef.current
+      ) {
+        setAccountsLoaded(true);
+        return;
+      }
+      const rawAccountResponse = inventory?.accounts || [];
+      const mappedAccounts = rawAccountResponse.map((account) => mapBackendAccountRecord(account));
       const apiKeyAccounts = mappedAccounts.filter((account) => account.credentialSource === 'api-key');
       const nextAuthFileRecords = mappedAccounts.filter((account) => account.credentialSource === 'auth-file');
       liveAccountsLoadedRef.current = true;
+      inventoryRevisionRef.current = nextInventoryRevision;
       accountRecordsRef.current = mappedAccounts;
       setAuthFileRecords(nextAuthFileRecords);
       setApiKeyRecords(apiKeyAccounts);
@@ -380,13 +368,6 @@ export default function useAccountsPageState({
       setSelectedAccountIDs((prev) =>
         filterSelectedAccountIDs(prev, resolveLoadedAccountIDs(nextAuthFileRecords, apiKeyAccounts))
       );
-      if (options.refreshSupplementalData ?? true) {
-        void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
-        void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts], {
-          showRefreshing: options.showSupplementalRefreshing === true,
-        });
-        void loadAccountRateLimits([...nextAuthFileRecords, ...apiKeyAccounts]);
-      }
     } catch (error) {
       console.error(error);
       if (accountRecordsRef.current.length > 0) {
@@ -397,7 +378,7 @@ export default function useAccountsPageState({
         setLoading(false);
       }
     }
-  }, [loadAccountRateLimits, loadAccountUsage, loadCodexQuotas, migrateLegacyAPIKeyLabels, ready, trackRequest]);
+  }, [loadAccountRateLimits, loadAccountUsage, loadCodexQuotas, ready, trackRequest]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !hasWailsAppBindings() || accountSnapshotRequestedRef.current) {
@@ -448,21 +429,73 @@ export default function useAccountsPageState({
   );
 
   const patchAccountLocally = useCallback(
-    (accountID: string, patch: Partial<AccountRecord>) => {
-      setAuthFileRecords((prev) => patchAccountDetailByID(prev, accountID, patch));
-      setApiKeyRecords((prev) => patchAccountDetailByID(prev, accountID, patch));
-      setSelectedAccount((prev) =>
-        prev?.id === accountID
-          ? {
-              ...prev,
-              ...patch,
-              id: prev.id,
-            }
-          : prev,
-      );
+    (accountID: string, patch: Partial<AccountRecord>, options?: { updateSelected?: boolean }) => {
+      const summaryPatch = sanitizeAccountSummaryPatch(patch);
+      setAuthFileRecords((prev) => patchAccountDetailByID(prev, accountID, summaryPatch));
+      setApiKeyRecords((prev) => patchAccountDetailByID(prev, accountID, summaryPatch));
+      if (options?.updateSelected ?? true) {
+        setSelectedAccount((prev) =>
+          prev?.id === accountID
+            ? {
+                ...prev,
+                ...patch,
+                id: prev.id,
+              }
+            : prev,
+        );
+      }
     },
     [],
   );
+
+  const recoverAccountRevisionConflict = useCallback(
+    async (error: unknown, accountID: string) => {
+      if (!isAccountRevisionConflictError(error)) {
+        return null;
+      }
+      if (hasWailsAppBindings() && accountID.startsWith('acct_')) {
+        const detail = await trackRequest(
+          'GetAccountDetail',
+          { id: accountID, reason: 'revision-conflict' },
+          () => GetAccountDetail(accountID),
+        );
+        patchAccountLocally(accountID, mapBackendAccountRecord(detail));
+      }
+      return new Error(ACCOUNT_REVISION_CONFLICT_MESSAGE);
+    },
+    [patchAccountLocally, trackRequest],
+  );
+
+  useEffect(() => {
+    if (!hasWailsAppBindings()) {
+      return;
+    }
+    return EventsOn('accounts:changed', (payload: {
+      eventId?: number;
+      type?: string;
+      accountId?: string;
+      account?: main.AccountRecord;
+    }) => {
+      const eventID = Number(payload?.eventId || 0);
+      const previousEventID = accountEventIDRef.current;
+      accountEventIDRef.current = Math.max(previousEventID, eventID);
+      if (previousEventID > 0 && eventID > previousEventID+1) {
+        void loadAccounts({ showLoading: false, refreshSupplementalData: false });
+        return;
+      }
+      if (payload?.account?.id) {
+        patchAccountLocally(payload.account.id, mapBackendAccountRecord(payload.account), { updateSelected: false });
+        return;
+      }
+      if (payload?.type === 'account_deleted' && payload.accountId?.startsWith('acct_')) {
+        setAuthFileRecords((prev) => prev.filter((account) => account.id !== payload.accountId));
+        setApiKeyRecords((prev) => prev.filter((account) => account.id !== payload.accountId));
+        setSelectedAccount((prev) => (prev?.id === payload.accountId ? null : prev));
+        return;
+      }
+      void loadAccounts({ showLoading: false, refreshSupplementalData: false });
+    });
+  }, [loadAccounts, patchAccountLocally]);
 
   const patchAccountDisabledChangeLocally = useCallback(
     (change: AccountDisabledChange) => {
@@ -513,17 +546,23 @@ export default function useAccountsPageState({
       return;
     }
     setLastRuntimeSyncAt(Date.now());
-    void syncCodexQuotaStatuses(automaticRuntimeSyncAccounts, { replace: false });
-    void loadAccountUsage(automaticRuntimeSyncAccounts, {
-      merge: true,
-      resolveAccountKeys: false,
-    });
-    void loadAccountRateLimits(automaticRuntimeSyncAccounts);
+    void runRuntimeResourceRead('quota', automaticRuntimeSyncAccounts, (targetAccounts) =>
+      syncCodexQuotaStatuses(targetAccounts, { replace: false }),
+    );
+    void runRuntimeResourceRead('usage', automaticRuntimeSyncAccounts, (targetAccounts) =>
+      loadAccountUsage(targetAccounts, {
+        merge: true,
+      }),
+    );
+    void runRuntimeResourceRead('rate-limit', automaticRuntimeSyncAccounts, (targetAccounts) =>
+      loadAccountRateLimits(targetAccounts),
+    );
   }, [
     automaticRuntimeSyncAccounts,
     loadAccountRateLimits,
     loadAccountUsage,
     ready,
+    runRuntimeResourceRead,
     syncCodexQuotaStatuses,
   ]);
 
@@ -537,15 +576,28 @@ export default function useAccountsPageState({
     setLastRuntimeSyncAt(Date.now());
     try {
       await Promise.allSettled([
-        syncCodexQuotaStatuses(runtimeSyncAccounts, { replace: false }),
-        refreshAccountUsage(runtimeSyncAccounts),
-        refreshAccountRateLimits(runtimeSyncAccounts),
+        runRuntimeResourceRead('quota', runtimeSyncAccounts, (targetAccounts) =>
+          syncCodexQuotaStatuses(targetAccounts, { replace: false }),
+        ),
+        runRuntimeResourceRead('usage', runtimeSyncAccounts, (targetAccounts) =>
+          refreshAccountUsage(targetAccounts),
+        ),
+        runRuntimeResourceRead('rate-limit', runtimeSyncAccounts, (targetAccounts) =>
+          refreshAccountRateLimits(targetAccounts),
+        ),
       ]);
     } finally {
       runtimeRefreshingRef.current = false;
       setRuntimeRefreshing(false);
     }
-  }, [ready, refreshAccountRateLimits, refreshAccountUsage, runtimeSyncAccounts, syncCodexQuotaStatuses]);
+  }, [
+    ready,
+    refreshAccountRateLimits,
+    refreshAccountUsage,
+    runRuntimeResourceRead,
+    runtimeSyncAccounts,
+    syncCodexQuotaStatuses,
+  ]);
 
   useEffect(() => {
     if (
@@ -879,6 +931,7 @@ export default function useAccountsPageState({
     removeDeletedAccountLocally,
     patchAccountLocally,
     patchAccountDisabledLocally,
+    recoverAccountRevisionConflict,
     refreshAccountQuotasBatch: refreshCodexQuotasBatch,
     loadAccounts,
   });

@@ -313,6 +313,14 @@ func (c *Client) PutOAuthModelAliases(items map[string][]OAuthModelAlias) error 
 }
 
 func (c *Client) ListAccounts() ([]UnifiedAccount, error) {
+	inventory, err := c.ListAccountsInventory()
+	if err != nil {
+		return nil, err
+	}
+	return inventory.Accounts, nil
+}
+
+func (c *Client) ListAccountsInventory() (*UnifiedAccountInventory, error) {
 	body, _, err := c.request("GET", "/v0/management/accounts", nil, nil, "")
 	if err != nil {
 		return nil, err
@@ -323,9 +331,12 @@ func (c *Client) ListAccounts() ([]UnifiedAccount, error) {
 		return nil, err
 	}
 	if response.Items == nil {
-		return []UnifiedAccount{}, nil
+		response.Items = []UnifiedAccount{}
 	}
-	return response.Items, nil
+	return &UnifiedAccountInventory{
+		Accounts:          response.Items,
+		InventoryRevision: response.InventoryRevision,
+	}, nil
 }
 
 func (c *Client) ListAccountSnapshot(allowStale bool) ([]UnifiedAccount, error) {
@@ -598,9 +609,17 @@ func (c *Client) PatchAccountStatus(accountKey string, disabled bool) (*UnifiedA
 }
 
 func (c *Client) PatchAccountPriority(accountKey string, priority int) (*UnifiedAccount, error) {
+	return c.PatchAccountPriorityIfRevision(accountKey, priority, nil)
+}
+
+func (c *Client) PatchAccountPriorityIfRevision(accountKey string, priority int, expectedRevision *int) (*UnifiedAccount, error) {
 	payload, err := json.Marshal(struct {
-		Priority int `json:"priority"`
-	}{Priority: priority})
+		Priority         int  `json:"priority"`
+		ExpectedRevision *int `json:"expected_revision,omitempty"`
+	}{
+		Priority:         priority,
+		ExpectedRevision: expectedRevision,
+	})
 	if err != nil {
 		return nil, err
 	}

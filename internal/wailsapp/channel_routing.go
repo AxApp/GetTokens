@@ -263,7 +263,7 @@ type channelRoutingStore struct {
 	Channels      map[string]ChannelRoutingConfig       `json:"channels"`
 	Events        []ChannelRouteEvent                   `json:"events,omitempty"`
 	NextEventID   int                                   `json:"nextEventID,omitempty"`
-	RuntimeStates map[string]ChannelAccountRuntimeState `json:"runtimeStates,omitempty"`
+	RuntimeStates map[string]ChannelAccountRuntimeState `json:"-"`
 }
 
 type channelRouteSortKey struct {
@@ -972,7 +972,6 @@ func saveChannelRoutingStore(store channelRoutingStore) error {
 	if store.Channels == nil {
 		store.Channels = map[string]ChannelRoutingConfig{}
 	}
-	pruneManualDisabledRuntimeStates(store.RuntimeStates)
 	for _, channel := range []string{"codex", "claude"} {
 		if cfg, ok := store.Channels[channel]; ok {
 			normalized, _ := normalizeChannelRoutingConfig(cfg, channel)

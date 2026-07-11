@@ -32,6 +32,41 @@ func (a *App) ListAccounts() ([]accountsdomain.AccountRecord, error) {
 	return accountsdomain.BuildUnifiedAccountRecords(accounts), nil
 }
 
+type AccountInventory struct {
+	Accounts          []accountsdomain.AccountRecord `json:"accounts"`
+	InventoryRevision string                         `json:"inventoryRevision"`
+}
+
+func (a *App) ListAccountInventory() (*AccountInventory, error) {
+	if !a.hasManagementClient() {
+		return nil, errors.New("account-store management client 未就绪")
+	}
+	inventory, err := a.managementClient().ListAccountsInventory()
+	if err != nil {
+		return nil, err
+	}
+	return &AccountInventory{
+		Accounts:          sanitizeLocalAccountSnapshotRecords(accountsdomain.BuildUnifiedAccountRecords(inventory.Accounts)),
+		InventoryRevision: inventory.InventoryRevision,
+	}, nil
+}
+
+func (a *App) GetAccountDetail(id string) (*accountsdomain.AccountRecord, error) {
+	targetID := strings.TrimSpace(id)
+	if !isUnifiedAccountID(targetID) {
+		return nil, errors.New("不支持的账号类型")
+	}
+	if !a.hasManagementClient() {
+		return nil, errors.New("account-store management client 未就绪")
+	}
+	account, err := a.managementClient().GetAccount(targetID)
+	if err != nil {
+		return nil, err
+	}
+	record := accountsdomain.BuildUnifiedAccountRecord(*account)
+	return &record, nil
+}
+
 func (a *App) ListCodexAccountInventory() ([]accountsdomain.AccountRecord, error) {
 	accounts, err := a.ListAccounts()
 	if err != nil {
@@ -77,17 +112,18 @@ type CreateCodexAPIKeyInput struct {
 }
 
 type UpdateAccountPriorityInput struct {
-	ID       string `json:"id"`
-	Priority int    `json:"priority,omitempty"`
+	ID               string `json:"id"`
+	Priority         int    `json:"priority,omitempty"`
+	ExpectedRevision *int   `json:"expectedRevision,omitempty"`
 }
 
-func (a *App) SetAccountDisabled(id string, disabled bool) error {
+func (a *App) SetAccountDisabled(id string, disabled bool) (*accountsdomain.AccountRecord, error) {
 	targetID := strings.TrimSpace(id)
 	if isUnifiedAccountID(targetID) {
-		_, err := a.managementClient().PatchAccountStatus(targetID, disabled)
+		account, err := a.managementClient().PatchAccountStatus(targetID, disabled)
 		if err == nil {
 			if syncErr := clearManualDisabledRuntimeState(targetID); syncErr != nil {
-				return syncErr
+				return nil, syncErr
 			}
 			if disabled {
 				if pruneErr := pruneRelayModelAccountCacheEntries(targetID); pruneErr != nil {
@@ -96,30 +132,33 @@ func (a *App) SetAccountDisabled(id string, disabled bool) error {
 			}
 			a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
 		}
-		return err
+		return accountRecordFromUnifiedMutation(account, err)
 	}
-	return errors.New("不支持的账号类型")
+	return nil, errors.New("不支持的账号类型")
 }
 
 type UpdateCodexAPIKeyLabelInput struct {
-	ID    string `json:"id"`
-	Label string `json:"label,omitempty"`
+	ID               string `json:"id"`
+	Label            string `json:"label,omitempty"`
+	ExpectedRevision *int   `json:"expectedRevision,omitempty"`
 }
 
 type UpdateCodexAPIKeyConfigInput struct {
-	ID             string                  `json:"id"`
-	APIKey         string                  `json:"apiKey"`
-	BaseURL        string                  `json:"baseUrl"`
-	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
-	Prefix         string                  `json:"prefix,omitempty"`
-	ProxyURL       string                  `json:"proxyUrl,omitempty"`
-	Models         []OpenAICompatibleModel `json:"models,omitempty"`
-	QuotaCurl      string                  `json:"quotaCurl,omitempty"`
-	QuotaEnabled   bool                    `json:"quotaEnabled,omitempty"`
-	BillingCurl    string                  `json:"billingCurl,omitempty"`
-	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
-	PlatformCookie string                  `json:"platformCookie,omitempty"`
-	CurlVariables  map[string]string       `json:"curlVariables,omitempty"`
+	ID               string                  `json:"id"`
+	ExpectedRevision *int                    `json:"expectedRevision,omitempty"`
+	Label            *string                 `json:"label,omitempty"`
+	APIKey           string                  `json:"apiKey"`
+	BaseURL          string                  `json:"baseUrl"`
+	FormatBaseURLs   map[string]string       `json:"formatBaseUrls,omitempty"`
+	Prefix           string                  `json:"prefix,omitempty"`
+	ProxyURL         string                  `json:"proxyUrl,omitempty"`
+	Models           []OpenAICompatibleModel `json:"models,omitempty"`
+	QuotaCurl        string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled     bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl      string                  `json:"billingCurl,omitempty"`
+	BillingEnabled   bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie   string                  `json:"platformCookie,omitempty"`
+	CurlVariables    map[string]string       `json:"curlVariables,omitempty"`
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
@@ -139,56 +178,61 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 	return err
 }
 
-func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
+func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) (*accountsdomain.AccountRecord, error) {
 	targetID := strings.TrimSpace(input.ID)
 	if !isUnifiedAccountID(targetID) {
-		return errors.New("不支持的账号类型")
+		return nil, errors.New("不支持的账号类型")
 	}
 	if !a.hasManagementClient() {
-		return errors.New("account-store management client 未就绪")
+		return nil, errors.New("account-store management client 未就绪")
 	}
 	account, err := a.managementClient().GetAccount(targetID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if account == nil || account.Kind != cliproxyapi.AccountKindCodexAPIKey || account.CodexAPIKey == nil {
-		return errors.New("账号不存在")
+		return nil, errors.New("账号不存在")
 	}
 	write := accountWriteFromUnified(*account)
+	write.ExpectedRevision = input.ExpectedRevision
 	write.Title = strings.TrimSpace(input.Label)
-	_, err = a.managementClient().PatchAccount(targetID, write)
+	updated, err := a.managementClient().PatchAccount(targetID, write)
 	if err == nil {
 		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
 	}
-	return err
+	return accountRecordFromUnifiedMutation(updated, err)
 }
 
-func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error {
+func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) (*accountsdomain.AccountRecord, error) {
 	targetID := strings.TrimSpace(input.ID)
 	nextAPIKey := strings.TrimSpace(input.APIKey)
 	nextBaseURL := accountsdomain.NormalizeBaseURL(input.BaseURL)
 	nextPrefix := accountsdomain.NormalizePrefix(input.Prefix)
 	if nextAPIKey == "" {
-		return errors.New("api key 不能为空")
+		return nil, errors.New("api key 不能为空")
 	}
 	if nextBaseURL == "" {
-		return errors.New("base url 不能为空")
+		return nil, errors.New("base url 不能为空")
 	}
 	if !isUnifiedAccountID(targetID) {
-		return errors.New("不支持的账号类型")
+		return nil, errors.New("不支持的账号类型")
 	}
 	if !a.hasManagementClient() {
-		return errors.New("account-store management client 未就绪")
+		return nil, errors.New("account-store management client 未就绪")
 	}
 	account, err := a.managementClient().GetAccount(targetID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if account == nil || account.Kind != cliproxyapi.AccountKindCodexAPIKey || account.CodexAPIKey == nil {
-		return errors.New("账号不存在")
+		return nil, errors.New("账号不存在")
 	}
 
 	write := accountWriteFromUnified(*account)
+	write.ExpectedRevision = input.ExpectedRevision
+	if input.Label != nil {
+		write.Title = strings.TrimSpace(*input.Label)
+	}
 	write.CodexAPIKey.APIKey = nextAPIKey
 	write.CodexAPIKey.BaseURL = nextBaseURL
 	if input.FormatBaseURLs != nil {
@@ -203,11 +247,11 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 	write.CodexAPIKey.BillingEnabled = input.BillingEnabled && write.CodexAPIKey.BillingCurl != ""
 	write.CodexAPIKey.PlatformCookie = normalizePlatformCookie(input.PlatformCookie)
 	write.CodexAPIKey.CurlVariablesJSON = mustJSONString(normalizeCurlVariables(input.CurlVariables, input.PlatformCookie))
-	_, err = a.managementClient().PatchAccount(targetID, write)
+	updated, err := a.managementClient().PatchAccount(targetID, write)
 	if err == nil {
 		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
 	}
-	return err
+	return accountRecordFromUnifiedMutation(updated, err)
 }
 
 func (a *App) DeleteCodexAPIKey(id string) error {
@@ -381,19 +425,19 @@ func normalizeBatchDeleteAccountIDs(values []string) []string {
 	return ids
 }
 
-func (a *App) UpdateCodexAPIKeyPriority(id string, priority int) error {
+func (a *App) UpdateCodexAPIKeyPriority(id string, priority int, expectedRevision *int) (*accountsdomain.AccountRecord, error) {
 	targetID := strings.TrimSpace(id)
 	if !isUnifiedAccountID(targetID) {
-		return errors.New("不支持的账号类型")
+		return nil, errors.New("不支持的账号类型")
 	}
 	if !a.hasManagementClient() {
-		return errors.New("account-store management client 未就绪")
+		return nil, errors.New("account-store management client 未就绪")
 	}
-	_, err := a.managementClient().PatchAccountPriority(targetID, priority)
+	account, err := a.managementClient().PatchAccountPriorityIfRevision(targetID, priority, expectedRevision)
 	if err == nil {
 		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
 	}
-	return err
+	return accountRecordFromUnifiedMutation(account, err)
 }
 
 func (a *App) SetCodexAPIKeyStatus(id string, disabled bool) error {
@@ -419,16 +463,27 @@ func (a *App) SetCodexAPIKeyStatus(id string, disabled bool) error {
 	return err
 }
 
-func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) error {
+func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) (*accountsdomain.AccountRecord, error) {
 	targetID := strings.TrimSpace(input.ID)
 	if isUnifiedAccountID(targetID) {
-		_, err := a.managementClient().PatchAccountPriority(targetID, input.Priority)
+		account, err := a.managementClient().PatchAccountPriorityIfRevision(targetID, input.Priority, input.ExpectedRevision)
 		if err == nil {
 			a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
 		}
-		return err
+		return accountRecordFromUnifiedMutation(account, err)
 	}
-	return errors.New("不支持的账号类型")
+	return nil, errors.New("不支持的账号类型")
+}
+
+func accountRecordFromUnifiedMutation(account *cliproxyapi.UnifiedAccount, err error) (*accountsdomain.AccountRecord, error) {
+	if err != nil {
+		return nil, err
+	}
+	if account == nil {
+		return nil, errors.New("账号 mutation 未返回账号")
+	}
+	record := accountsdomain.BuildUnifiedAccountRecord(*account)
+	return &record, nil
 }
 
 func isUnifiedAccountID(id string) bool {

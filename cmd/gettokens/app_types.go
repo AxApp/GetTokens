@@ -637,6 +637,10 @@ type AccountRecord struct {
 	RuntimeRepairTriggerClass  string                  `json:"runtimeRepairTriggerClass,omitempty"`
 	RuntimeRepairTriggerReason string                  `json:"runtimeRepairTriggerReason,omitempty"`
 	LastRuntimeRepairAtUnixMs  int64                   `json:"lastRuntimeRepairAtUnixMs,omitempty"`
+	Revision                   int                     `json:"revision,omitempty"`
+	CredentialStatus           string                  `json:"credentialStatus,omitempty"`
+	CredentialGeneration       int64                   `json:"credentialGeneration,omitempty"`
+	DetailLoaded               bool                    `json:"detailLoaded,omitempty"`
 	Priority                   int                     `json:"priority,omitempty"`
 	Disabled                   bool                    `json:"disabled,omitempty"`
 	Email                      string                  `json:"email,omitempty"`
@@ -665,6 +669,19 @@ type AccountRecord struct {
 	ModelFetchAPIKey           string                  `json:"modelFetchApiKey,omitempty"`
 	ModelFetchBaseURL          string                  `json:"modelFetchBaseUrl,omitempty"`
 	Requestability             AccountRequestability   `json:"requestability,omitempty"`
+}
+
+type AccountInventory struct {
+	Accounts          []AccountRecord `json:"accounts"`
+	InventoryRevision string          `json:"inventoryRevision"`
+}
+
+type AccountChangeEvent struct {
+	EventID   uint64         `json:"eventId"`
+	Type      string         `json:"type"`
+	AccountID string         `json:"accountId,omitempty"`
+	Revision  int            `json:"revision,omitempty"`
+	Account   *AccountRecord `json:"account,omitempty"`
 }
 
 type AccountRequestability struct {
@@ -720,29 +737,33 @@ type CreateCodexAPIKeyInput struct {
 }
 
 type UpdateCodexAPIKeyPriorityInput struct {
-	ID       string `json:"id"`
-	Priority int    `json:"priority,omitempty"`
+	ID               string `json:"id"`
+	Priority         int    `json:"priority,omitempty"`
+	ExpectedRevision *int   `json:"expectedRevision,omitempty"`
 }
 
 type UpdateCodexAPIKeyLabelInput struct {
-	ID    string `json:"id"`
-	Label string `json:"label,omitempty"`
+	ID               string `json:"id"`
+	Label            string `json:"label,omitempty"`
+	ExpectedRevision *int   `json:"expectedRevision,omitempty"`
 }
 
 type UpdateCodexAPIKeyConfigInput struct {
-	ID             string                  `json:"id"`
-	APIKey         string                  `json:"apiKey"`
-	BaseURL        string                  `json:"baseUrl"`
-	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
-	Prefix         string                  `json:"prefix,omitempty"`
-	ProxyURL       string                  `json:"proxyUrl,omitempty"`
-	Models         []OpenAICompatibleModel `json:"models,omitempty"`
-	QuotaCurl      string                  `json:"quotaCurl,omitempty"`
-	QuotaEnabled   bool                    `json:"quotaEnabled,omitempty"`
-	BillingCurl    string                  `json:"billingCurl,omitempty"`
-	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
-	PlatformCookie string                  `json:"platformCookie,omitempty"`
-	CurlVariables  map[string]string       `json:"curlVariables,omitempty"`
+	ID               string                  `json:"id"`
+	ExpectedRevision *int                    `json:"expectedRevision,omitempty"`
+	Label            *string                 `json:"label,omitempty"`
+	APIKey           string                  `json:"apiKey"`
+	BaseURL          string                  `json:"baseUrl"`
+	FormatBaseURLs   map[string]string       `json:"formatBaseUrls,omitempty"`
+	Prefix           string                  `json:"prefix,omitempty"`
+	ProxyURL         string                  `json:"proxyUrl,omitempty"`
+	Models           []OpenAICompatibleModel `json:"models,omitempty"`
+	QuotaCurl        string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled     bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl      string                  `json:"billingCurl,omitempty"`
+	BillingEnabled   bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie   string                  `json:"platformCookie,omitempty"`
+	CurlVariables    map[string]string       `json:"curlVariables,omitempty"`
 }
 
 type TestCodexAPIKeyQuotaCurlInput struct {
@@ -755,8 +776,9 @@ type TestCodexAPIKeyQuotaCurlInput struct {
 }
 
 type UpdateAccountPriorityInput struct {
-	ID       string `json:"id"`
-	Priority int    `json:"priority,omitempty"`
+	ID               string `json:"id"`
+	Priority         int    `json:"priority,omitempty"`
+	ExpectedRevision *int   `json:"expectedRevision,omitempty"`
 }
 
 type ProbeCodexAccountRoutingInput struct {
@@ -1105,6 +1127,7 @@ type CreateOpenAICompatibleProviderInput struct {
 
 type UpdateOpenAICompatibleProviderInput struct {
 	CurrentName       string                  `json:"currentName"`
+	ExpectedRevision  *int                    `json:"expectedRevision,omitempty"`
 	Name              string                  `json:"name"`
 	BaseURL           string                  `json:"baseUrl"`
 	FormatBaseURLs    map[string]string       `json:"formatBaseUrls,omitempty"`
@@ -1380,10 +1403,9 @@ type UsageStatisticsResponse struct {
 }
 
 type SidecarUsageAttributionInput struct {
-	Window             string `json:"window,omitempty"`
-	Bucket             string `json:"bucket,omitempty"`
-	IncludeUnresolved  bool   `json:"includeUnresolved,omitempty"`
-	ResolveAccountKeys *bool  `json:"resolveAccountKeys,omitempty"`
+	Window            string `json:"window,omitempty"`
+	Bucket            string `json:"bucket,omitempty"`
+	IncludeUnresolved bool   `json:"includeUnresolved,omitempty"`
 }
 
 type SidecarUsageAttributionBucket struct {

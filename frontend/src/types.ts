@@ -98,6 +98,10 @@ export interface AccountRecord {
   runtimeRepairTriggerClass?: string;
   runtimeRepairTriggerReason?: string;
   lastRuntimeRepairAtUnixMs?: number;
+  revision?: number;
+  credentialStatus?: string;
+  credentialGeneration?: number;
+  detailLoaded?: boolean;
   priority?: number;
   disabled?: boolean;
   email?: string;

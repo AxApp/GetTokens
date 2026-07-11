@@ -320,7 +320,7 @@ func TestUpdateOpenAICompatibleProviderReplacesFirstKeyEntryAndAllowsRename(t *t
 		},
 	}
 
-	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+	_, err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
 		CurrentName: "acct_deepseek",
 		Name:        "deepseek-prod",
 		BaseURL:     "https://relay.example.com/v1",
@@ -390,7 +390,7 @@ func TestUpdateOpenAICompatibleProviderUpdatesPrimaryProxyURL(t *testing.T) {
 		},
 	}
 
-	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+	_, err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
 		CurrentName: "acct_deepseek",
 		Name:        "deepseek",
 		BaseURL:     "https://api.deepseek.com/v1",
@@ -456,7 +456,7 @@ func TestUpdateOpenAICompatibleProviderPersistsFormatBaseURLs(t *testing.T) {
 		},
 	}
 
-	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+	_, err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
 		CurrentName: "acct_relay",
 		Name:        "relay",
 		BaseURL:     "https://relay.example.com/v1",
@@ -525,7 +525,7 @@ func TestUpdateOpenAICompatibleProviderKeepsMultipleAliasesForOneRealModel(t *te
 		},
 	}
 
-	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+	_, err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
 		CurrentName: "acct_mi",
 		Name:        "MI",
 		BaseURL:     "https://token-plan-cn.xiaomimimo.com/v1",
@@ -560,7 +560,7 @@ func TestUpdateOpenAICompatibleProviderRejectsDuplicateName(t *testing.T) {
 		},
 	}
 
-	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+	_, err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
 		CurrentName: "acct_deepseek",
 		Name:        "moonshot",
 		BaseURL:     "https://relay.example.com/v1",
@@ -749,7 +749,7 @@ func TestUpdateOpenAICompatibleProviderPersistsModelFetchCredentialOutsideRuntim
 		},
 	}
 
-	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+	_, err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
 		CurrentName:       "acct_mimo_tp",
 		Name:              "xiaomimimo-token-plan",
 		BaseURL:           "https://token-plan-cn.xiaomimimo.com/v1",

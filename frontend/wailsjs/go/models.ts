@@ -624,6 +624,198 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class AccountRequestability {
+	    evidence?: string[];
+	    manual?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountRequestability(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.evidence = source["evidence"];
+	        this.manual = source["manual"];
+	    }
+	}
+	export class OpenAICompatibleModel {
+	    name: string;
+	    alias?: string;
+	    supportedReasoningEfforts?: string[];
+	    defaultReasoningEffort?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new OpenAICompatibleModel(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.alias = source["alias"];
+	        this.supportedReasoningEfforts = source["supportedReasoningEfforts"];
+	        this.defaultReasoningEffort = source["defaultReasoningEffort"];
+	    }
+	}
+	export class AccountRecord {
+	    id: string;
+	    accountKind?: string;
+	    provider: string;
+	    credentialSource: string;
+	    displayName: string;
+	    status: string;
+	    statusMessage?: string;
+	    runtimeStatus?: string;
+	    runtimeReason?: string;
+	    runtimeFailureClass?: string;
+	    routeable?: boolean;
+	    registeredModelCount?: number;
+	    runtimeRepairOutcome?: string;
+	    runtimeRepairAction?: string;
+	    runtimeRepairTriggerStatus?: string;
+	    runtimeRepairTriggerClass?: string;
+	    runtimeRepairTriggerReason?: string;
+	    lastRuntimeRepairAtUnixMs?: number;
+	    revision?: number;
+	    credentialStatus?: string;
+	    credentialGeneration?: number;
+	    detailLoaded?: boolean;
+	    priority?: number;
+	    disabled?: boolean;
+	    email?: string;
+	    planType?: string;
+	    name?: string;
+	    apiKey?: string;
+	    apiKeys?: string[];
+	    headers?: Record<string, string>;
+	    models?: OpenAICompatibleModel[];
+	    keyFingerprint?: string;
+	    keySuffix?: string;
+	    baseUrl?: string;
+	    prefix?: string;
+	    proxyUrl?: string;
+	    authIndex?: any;
+	    quotaKey?: string;
+	    quotaCurl?: string;
+	    quotaEnabled?: boolean;
+	    localOnly?: boolean;
+	    supportedFormats?: string[];
+	    formatBaseUrls?: Record<string, string>;
+	    billingCurl?: string;
+	    billingEnabled?: boolean;
+	    platformCookie?: string;
+	    curlVariables?: Record<string, string>;
+	    modelFetchApiKey?: string;
+	    modelFetchBaseUrl?: string;
+	    requestability?: AccountRequestability;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountRecord(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.accountKind = source["accountKind"];
+	        this.provider = source["provider"];
+	        this.credentialSource = source["credentialSource"];
+	        this.displayName = source["displayName"];
+	        this.status = source["status"];
+	        this.statusMessage = source["statusMessage"];
+	        this.runtimeStatus = source["runtimeStatus"];
+	        this.runtimeReason = source["runtimeReason"];
+	        this.runtimeFailureClass = source["runtimeFailureClass"];
+	        this.routeable = source["routeable"];
+	        this.registeredModelCount = source["registeredModelCount"];
+	        this.runtimeRepairOutcome = source["runtimeRepairOutcome"];
+	        this.runtimeRepairAction = source["runtimeRepairAction"];
+	        this.runtimeRepairTriggerStatus = source["runtimeRepairTriggerStatus"];
+	        this.runtimeRepairTriggerClass = source["runtimeRepairTriggerClass"];
+	        this.runtimeRepairTriggerReason = source["runtimeRepairTriggerReason"];
+	        this.lastRuntimeRepairAtUnixMs = source["lastRuntimeRepairAtUnixMs"];
+	        this.revision = source["revision"];
+	        this.credentialStatus = source["credentialStatus"];
+	        this.credentialGeneration = source["credentialGeneration"];
+	        this.detailLoaded = source["detailLoaded"];
+	        this.priority = source["priority"];
+	        this.disabled = source["disabled"];
+	        this.email = source["email"];
+	        this.planType = source["planType"];
+	        this.name = source["name"];
+	        this.apiKey = source["apiKey"];
+	        this.apiKeys = source["apiKeys"];
+	        this.headers = source["headers"];
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	        this.keyFingerprint = source["keyFingerprint"];
+	        this.keySuffix = source["keySuffix"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.proxyUrl = source["proxyUrl"];
+	        this.authIndex = source["authIndex"];
+	        this.quotaKey = source["quotaKey"];
+	        this.quotaCurl = source["quotaCurl"];
+	        this.quotaEnabled = source["quotaEnabled"];
+	        this.localOnly = source["localOnly"];
+	        this.supportedFormats = source["supportedFormats"];
+	        this.formatBaseUrls = source["formatBaseUrls"];
+	        this.billingCurl = source["billingCurl"];
+	        this.billingEnabled = source["billingEnabled"];
+	        this.platformCookie = source["platformCookie"];
+	        this.curlVariables = source["curlVariables"];
+	        this.modelFetchApiKey = source["modelFetchApiKey"];
+	        this.modelFetchBaseUrl = source["modelFetchBaseUrl"];
+	        this.requestability = this.convertValues(source["requestability"], AccountRequestability);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class AccountInventory {
+	    accounts: AccountRecord[];
+	    inventoryRevision: string;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountInventory(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accounts = this.convertValues(source["accounts"], AccountRecord);
+	        this.inventoryRevision = source["inventoryRevision"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class AccountMigrationKindSummary {
 	    kind: string;
 	    count: number;
@@ -752,158 +944,7 @@ export namespace main {
 	}
 
 
-	export class AccountRequestability {
-	    evidence?: string[];
-	    manual?: boolean;
 
-	    static createFrom(source: any = {}) {
-	        return new AccountRequestability(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.evidence = source["evidence"];
-	        this.manual = source["manual"];
-	    }
-	}
-	export class OpenAICompatibleModel {
-	    name: string;
-	    alias?: string;
-	    supportedReasoningEfforts?: string[];
-	    defaultReasoningEffort?: string;
-
-	    static createFrom(source: any = {}) {
-	        return new OpenAICompatibleModel(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.alias = source["alias"];
-	        this.supportedReasoningEfforts = source["supportedReasoningEfforts"];
-	        this.defaultReasoningEffort = source["defaultReasoningEffort"];
-	    }
-	}
-	export class AccountRecord {
-	    id: string;
-	    accountKind?: string;
-	    provider: string;
-	    credentialSource: string;
-	    displayName: string;
-	    status: string;
-	    statusMessage?: string;
-	    runtimeStatus?: string;
-	    runtimeReason?: string;
-	    runtimeFailureClass?: string;
-	    routeable?: boolean;
-	    registeredModelCount?: number;
-	    runtimeRepairOutcome?: string;
-	    runtimeRepairAction?: string;
-	    runtimeRepairTriggerStatus?: string;
-	    runtimeRepairTriggerClass?: string;
-	    runtimeRepairTriggerReason?: string;
-	    lastRuntimeRepairAtUnixMs?: number;
-	    priority?: number;
-	    disabled?: boolean;
-	    email?: string;
-	    planType?: string;
-	    name?: string;
-	    apiKey?: string;
-	    apiKeys?: string[];
-	    headers?: Record<string, string>;
-	    models?: OpenAICompatibleModel[];
-	    keyFingerprint?: string;
-	    keySuffix?: string;
-	    baseUrl?: string;
-	    prefix?: string;
-	    proxyUrl?: string;
-	    authIndex?: any;
-	    quotaKey?: string;
-	    quotaCurl?: string;
-	    quotaEnabled?: boolean;
-	    localOnly?: boolean;
-	    supportedFormats?: string[];
-	    formatBaseUrls?: Record<string, string>;
-	    billingCurl?: string;
-	    billingEnabled?: boolean;
-	    platformCookie?: string;
-	    curlVariables?: Record<string, string>;
-	    modelFetchApiKey?: string;
-	    modelFetchBaseUrl?: string;
-	    requestability?: AccountRequestability;
-
-	    static createFrom(source: any = {}) {
-	        return new AccountRecord(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.accountKind = source["accountKind"];
-	        this.provider = source["provider"];
-	        this.credentialSource = source["credentialSource"];
-	        this.displayName = source["displayName"];
-	        this.status = source["status"];
-	        this.statusMessage = source["statusMessage"];
-	        this.runtimeStatus = source["runtimeStatus"];
-	        this.runtimeReason = source["runtimeReason"];
-	        this.runtimeFailureClass = source["runtimeFailureClass"];
-	        this.routeable = source["routeable"];
-	        this.registeredModelCount = source["registeredModelCount"];
-	        this.runtimeRepairOutcome = source["runtimeRepairOutcome"];
-	        this.runtimeRepairAction = source["runtimeRepairAction"];
-	        this.runtimeRepairTriggerStatus = source["runtimeRepairTriggerStatus"];
-	        this.runtimeRepairTriggerClass = source["runtimeRepairTriggerClass"];
-	        this.runtimeRepairTriggerReason = source["runtimeRepairTriggerReason"];
-	        this.lastRuntimeRepairAtUnixMs = source["lastRuntimeRepairAtUnixMs"];
-	        this.priority = source["priority"];
-	        this.disabled = source["disabled"];
-	        this.email = source["email"];
-	        this.planType = source["planType"];
-	        this.name = source["name"];
-	        this.apiKey = source["apiKey"];
-	        this.apiKeys = source["apiKeys"];
-	        this.headers = source["headers"];
-	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
-	        this.keyFingerprint = source["keyFingerprint"];
-	        this.keySuffix = source["keySuffix"];
-	        this.baseUrl = source["baseUrl"];
-	        this.prefix = source["prefix"];
-	        this.proxyUrl = source["proxyUrl"];
-	        this.authIndex = source["authIndex"];
-	        this.quotaKey = source["quotaKey"];
-	        this.quotaCurl = source["quotaCurl"];
-	        this.quotaEnabled = source["quotaEnabled"];
-	        this.localOnly = source["localOnly"];
-	        this.supportedFormats = source["supportedFormats"];
-	        this.formatBaseUrls = source["formatBaseUrls"];
-	        this.billingCurl = source["billingCurl"];
-	        this.billingEnabled = source["billingEnabled"];
-	        this.platformCookie = source["platformCookie"];
-	        this.curlVariables = source["curlVariables"];
-	        this.modelFetchApiKey = source["modelFetchApiKey"];
-	        this.modelFetchBaseUrl = source["modelFetchBaseUrl"];
-	        this.requestability = this.convertValues(source["requestability"], AccountRequestability);
-	    }
-
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
 
 	export class AccountStoreReadRecoveryDiagnostics {
 	    count: number;
@@ -7504,7 +7545,6 @@ export namespace main {
 	    window?: string;
 	    bucket?: string;
 	    includeUnresolved?: boolean;
-	    resolveAccountKeys?: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new SidecarUsageAttributionInput(source);
@@ -7515,7 +7555,6 @@ export namespace main {
 	        this.window = source["window"];
 	        this.bucket = source["bucket"];
 	        this.includeUnresolved = source["includeUnresolved"];
-	        this.resolveAccountKeys = source["resolveAccountKeys"];
 	    }
 	}
 	export class SidecarUsageAttributionItem {
@@ -7754,6 +7793,7 @@ export namespace main {
 	export class UpdateAccountPriorityInput {
 	    id: string;
 	    priority?: number;
+	    expectedRevision?: number;
 
 	    static createFrom(source: any = {}) {
 	        return new UpdateAccountPriorityInput(source);
@@ -7763,10 +7803,13 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.priority = source["priority"];
+	        this.expectedRevision = source["expectedRevision"];
 	    }
 	}
 	export class UpdateCodexAPIKeyConfigInput {
 	    id: string;
+	    expectedRevision?: number;
+	    label?: string;
 	    apiKey: string;
 	    baseUrl: string;
 	    formatBaseUrls?: Record<string, string>;
@@ -7787,6 +7830,8 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
+	        this.expectedRevision = source["expectedRevision"];
+	        this.label = source["label"];
 	        this.apiKey = source["apiKey"];
 	        this.baseUrl = source["baseUrl"];
 	        this.formatBaseUrls = source["formatBaseUrls"];
@@ -7822,6 +7867,7 @@ export namespace main {
 	export class UpdateCodexAPIKeyLabelInput {
 	    id: string;
 	    label?: string;
+	    expectedRevision?: number;
 
 	    static createFrom(source: any = {}) {
 	        return new UpdateCodexAPIKeyLabelInput(source);
@@ -7831,11 +7877,13 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.label = source["label"];
+	        this.expectedRevision = source["expectedRevision"];
 	    }
 	}
 	export class UpdateCodexAPIKeyPriorityInput {
 	    id: string;
 	    priority?: number;
+	    expectedRevision?: number;
 
 	    static createFrom(source: any = {}) {
 	        return new UpdateCodexAPIKeyPriorityInput(source);
@@ -7845,6 +7893,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.priority = source["priority"];
+	        this.expectedRevision = source["expectedRevision"];
 	    }
 	}
 	export class UpdateOAuthModelAliasesInput {
@@ -7881,6 +7930,7 @@ export namespace main {
 	}
 	export class UpdateOpenAICompatibleProviderInput {
 	    currentName: string;
+	    expectedRevision?: number;
 	    name: string;
 	    baseUrl: string;
 	    formatBaseUrls?: Record<string, string>;
@@ -7906,6 +7956,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.currentName = source["currentName"];
+	        this.expectedRevision = source["expectedRevision"];
 	        this.name = source["name"];
 	        this.baseUrl = source["baseUrl"];
 	        this.formatBaseUrls = source["formatBaseUrls"];

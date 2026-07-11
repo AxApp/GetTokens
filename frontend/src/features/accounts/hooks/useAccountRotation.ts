@@ -154,7 +154,12 @@ export function useAccountRotation(
     try {
       const priorityUpdates = buildPriorityUpdates(orderedAccounts);
       for (const update of priorityUpdates) {
-        await trackRequest('UpdateAccountPriority', update, () => UpdateAccountPriority(update));
+        const account = orderedAccounts.find((item) => item.id === update.id);
+        const request = {
+          ...update,
+          expectedRevision: account?.revision,
+        };
+        await trackRequest('UpdateAccountPriority', request, () => UpdateAccountPriority(request));
       }
 
       let nextRoutingConfig = routingConfig;
